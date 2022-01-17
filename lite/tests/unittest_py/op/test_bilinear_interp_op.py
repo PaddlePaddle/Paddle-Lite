@@ -29,34 +29,40 @@ import argparse
 class TestBilinearOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # arm has diff
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # x86 has diff
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
-        # opencl demo
-        # opencl has diff
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -65,7 +71,7 @@ class TestBilinearOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         batch = draw(st.integers(min_value=1, max_value=4))
-        channel = draw(st.integers(min_value=1, max_value=32))
+        channel = draw(st.integers(min_value=4, max_value=4))
         height = draw(st.integers(min_value=3, max_value=100))
         width = draw(st.integers(min_value=3, max_value=100))
         in_shape = [batch, channel, height, width]
@@ -80,10 +86,10 @@ class TestBilinearOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32) * 10
 
         def generate_out_size(*args, **kwargs):
-            return np.random.random(out_size_shape).astype(np.int32)
+            return np.random.randint(1, 100, size=out_size_shape)
 
         def generate_size_tensor(*args, **kwargs):
-            return np.random.randint(1, 10, [1]).astype(np.int32)
+            return np.random.randint(4, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
             return np.random.random([1]).astype(np.float32)
@@ -124,7 +130,11 @@ class TestBilinearOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["bilinear_interp"], (1e-5, 1e-5)
+        atol, rtol = 1e-4, 1e-4
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 3e-1, 3e-1
+        return self.get_predictor_configs(), ["bilinear_interp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
