@@ -40,7 +40,6 @@ class TestScaleOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -55,7 +54,6 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -64,25 +62,21 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        in_shape = list(program_config.inputs["input_data"].shape)
-        in_data_type = program_config.inputs["input_data"].dtype
-        if "int8" == in_data_type:
-            print("int8 as Input data type is not supported.")
-            return False
+        # target_type = predictor_config.target()
+        # in_shape = list(program_config.inputs["input_data"].shape)
+        # in_data_type = program_config.inputs["input_data"].dtype
+        # if "int8" == in_data_type:
+        #     print("int8 as Input data type is not supported.")
+        #     return False
 
-        if "ScaleTensor" in program_config.inputs:
-            print("ScaleTensor as Input is not supported on Paddle Lite.")
-            return False
-
-        if target_type in [TargetType.OpenCL, TargetType.Metal]:
-            if len(in_shape) != 4 or in_data_type != "float32":
-                return False
+        # if "ScaleTensor" in program_config.inputs:
+        #     print("ScaleTensor as Input is not supported on Paddle Lite.")
+        #     return False
         return True
 
     def sample_program_configs(self, draw):
@@ -149,10 +143,34 @@ class TestScaleOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["scale"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-2, 1e-2
+        return self.get_predictor_configs(), ["scale"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            in_data_type = program_config.inputs["input_data"].dtype
+            if target_type in [TargetType.OpenCL, TargetType.Metal]:
+                if len(in_shape) != 4 or in_data_type != "float32":
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

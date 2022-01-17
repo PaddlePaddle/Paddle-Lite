@@ -220,6 +220,11 @@ void LightPredictor::BuildRuntimeProgram(
         scope_->Var(var_desc->Name());
       }
     }
+    auto op_size = block_desc->OpsSize();
+    for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
+      auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+      if (op_desc->Type() == "lod_array_length") bool_clear_tensor_ = true;
+    }
   }
   // Only extracting the ops and generate the runtime program from the main
   // block desc
