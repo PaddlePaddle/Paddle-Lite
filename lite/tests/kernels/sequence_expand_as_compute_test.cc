@@ -58,7 +58,8 @@ TEST(sequence_expand_as, run_test) {
 
   std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
-  paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
+  paddle::lite::kernels::arm::SequenceExpandAsCompute<float, PRECISION(kFloat)>
+      sequence_expand_as;
 
   operators::SequenceExpandAsParam param;
 
