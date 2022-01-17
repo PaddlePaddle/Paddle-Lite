@@ -21,7 +21,8 @@ RUN apt-get install -y --no-install-recommends \
         git \
         make \
         patchelf \
-        python3.7 \
+        python3 \
+        python \
         android-tools-adb \
         python-dev \
         python-pip \
