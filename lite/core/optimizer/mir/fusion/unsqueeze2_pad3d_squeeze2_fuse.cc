@@ -50,6 +50,7 @@ void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
                         ->assert_is_op_input(squeeze2_type_, "X")
                         ->AsIntermediate();
   // create output node
+
   auto* sque_out = VarNode("sque_out")
                        ->assert_is_op_output(squeeze2_type_, "Out")
                        ->AsOutput();
