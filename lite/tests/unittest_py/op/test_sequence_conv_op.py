@@ -57,8 +57,8 @@ class TestSequenceConvOp(AutoScanTest):
                 min_size=2,
                 max_size=2))
         filter_dims = [context_length * in_dims[1], kernel_num]
-        lod_info = draw(
-            st.sampled_from([[[0, in_dims[0]]], [[0, 2, in_dims[0]]]]))
+        lod_info = draw(st.sampled_from([[[0, 4]], [[0, 2, 4]]]))
+
         padding_trainable = draw(st.booleans())
 
         assume(context_stride == 1)
