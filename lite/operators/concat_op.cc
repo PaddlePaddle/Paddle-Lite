@@ -72,10 +72,13 @@ bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.x.clear();
   for (auto var : inputs) {
     param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    input_tensor_ptrs_cache_.push_back(
+        scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
   CHECK(scope->FindVar(out));
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.axis = op_desc.GetAttr<int>("axis");
+  output_tensor_ptrs_cache_.push_back(param_.output);
 
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "AxisTensor") !=

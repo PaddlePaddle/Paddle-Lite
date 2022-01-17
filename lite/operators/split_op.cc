@@ -102,7 +102,10 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto outs_name = opdesc.Output("Out");
   for (auto name : outs_name) {
     param_.output.push_back(scope->FindMutableTensor(name));
+    output_tensor_ptrs_cache_.push_back(scope->FindMutableTensor(name));
   }
+  input_tensor_ptrs_cache_.push_back(param_.x);
+
   return true;
 }
 
