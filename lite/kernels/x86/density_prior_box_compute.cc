@@ -64,8 +64,13 @@ void DensityPriorBoxCompute::Run() {
     num_priors += (fixed_ratios.size()) * (pow(densities[i], 2));
   }
 
-  boxes->Resize({feature_height, feature_width, num_priors, 4});
-  vars->Resize({feature_height, feature_width, num_priors, 4});
+  if (param.flatten_to_2d) {
+    boxes->Resize({feature_height * feature_width * num_priors, 4});
+    vars->Resize({feature_height * feature_width * num_priors, 4});
+  } else {
+    boxes->Resize({feature_height, feature_width, num_priors, 4});
+    vars->Resize({feature_height, feature_width, num_priors, 4});
+  }
   auto* boxes_data = boxes->mutable_data<float>();
   auto* vars_data = vars->mutable_data<float>();
 
