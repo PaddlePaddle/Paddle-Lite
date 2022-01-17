@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by chenyaohuang on 2021/12/17.
-//
-
 #include "lite/core/optimizer/mir/fusion/unsqueeze2_pad3d_squeeze2_fuse.h"
 #include <memory>
 #include <vector>
@@ -54,6 +50,7 @@ void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
                         ->assert_is_op_input(squeeze2_type_, "X")
                         ->AsIntermediate();
   // create output node
+
   auto* sque_out = VarNode("sque_out")
                        ->assert_is_op_output(squeeze2_type_, "Out")
                        ->AsOutput();
