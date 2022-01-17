@@ -15,6 +15,7 @@
 #include "core/operation/shape.h"
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -33,12 +34,7 @@ int PrepareShape(hal::Operation* operation) {
   output_type.dimensions.data[0] = shape_size;
   output_type.precision = static_cast<NNAdapterOperandPrecisionCode>(dtype);
   output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-  output_operand->length = sizeof(NNAdapterOperandDimensionType);
-  output_operand->buffer = malloc(output_operand->length);
-  NNADAPTER_CHECK(output_operand->buffer) << "Out of memory!";
-  memset(output_operand->buffer, 0, output_operand->length);
-  *reinterpret_cast<NNAdapterOperandDimensionType*>(output_operand->buffer) =
-      input_type.dimensions;
+  SetTemporaryShape(output_operand, input_type.dimensions);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

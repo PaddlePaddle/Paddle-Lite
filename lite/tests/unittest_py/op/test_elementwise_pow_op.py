@@ -142,7 +142,7 @@ class TestElementwisePowOp(AutoScanTest):
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The elementwise_pow op's result is different from paddle, we should fix it as soon as possible!"
+            "The elementwise_pow op's result is different from paddle, because paddle has bug on this op, wait paddle fix!"
         )
 
     def test(self, *args, **kwargs):

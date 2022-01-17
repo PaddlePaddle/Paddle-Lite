@@ -574,7 +574,7 @@ ge::AscendString GetAscendSocName() {
   ge::AscendString soc_version = "Ascend310";
 #if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
   const char* soc_name = aclrtGetSocName();
-  if (!soc_name) {
+  if (soc_name) {
     soc_version = ge::AscendString(soc_name);
   } else {
     NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "

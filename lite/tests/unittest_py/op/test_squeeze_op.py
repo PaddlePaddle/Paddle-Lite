@@ -50,6 +50,7 @@ class TestSqueezeOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        #check config
         x_dtype = program_config.inputs["input_data"].dtype
         if x_dtype == np.int32 or x_dtype == np.int64:
             return False

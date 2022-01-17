@@ -504,6 +504,26 @@ REGISTER_LITE_KERNEL(less_equal, kHost, kFloat, kAny, less_equal_int64_f, int64)
     .BindPaddleOpVersion("less_equal", 1)
     .Finalize();
 
+// float kernel has higher priority
+using less_equal_int32_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_LessEqualFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(less_equal, kHost, kFloat, kAny, less_equal_int32_f, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("less_equal", 1)
+    .Finalize();
+
 using greater_than_float = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kFloat),
     paddle::lite::kernels::host::_GreaterThanFunctor<float>>;

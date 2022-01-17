@@ -25,17 +25,14 @@ int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
   HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
-  if ((fabs(alpha - 0.2f) >= 1e-5f) || (fabs(beta - 0.5f) >= 1e-5f)) {
-    NNADAPTER_LOG(FATAL)
-        << "Factors for HardSigmoid Op should be: 0.2(alpha) 0.5(beta)";
-  }
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto hard_sigmoid_op =
-      converter->graph()->CreateOperation<tim::vx::ops::HardSigmoid>();
+      converter->graph()->CreateOperation<tim::vx::ops::HardSigmoid>(alpha,
+                                                                     beta);
   hard_sigmoid_op->BindInputs({input_tensor});
   hard_sigmoid_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;

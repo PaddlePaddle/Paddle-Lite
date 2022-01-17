@@ -38,12 +38,12 @@ class TestSequenceExpandOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        dtype = program_config.inputs["x_data"].dtype
-        if "float32" != dtype:
-            print(
-                "The input data type defined in Paddle can be float32, int32, int64. But input data type only support float32 on Host target in Paddle Lite, while got data type",
-                dtype)
-            return False
+        # dtype = program_config.inputs["x_data"].dtype
+        # if "float32" != dtype:
+        #     print(
+        #         "The input data type defined in Paddle can be float32, int32, int64. But input data type only support float32 on Host target in Paddle Lite, while got data type",
+        #         dtype)
+        #     return False
         return True
 
     def sample_program_configs(self, draw):

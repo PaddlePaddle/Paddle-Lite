@@ -452,6 +452,7 @@ struct PoolParam : ParamBase {
   bool adaptive{false};
   bool ceil_mode{false};
   bool use_quantizer{false};
+  std::string padding_algorithm{"EXPLICIT"};
   std::string data_format{"AnyLayout"};
   // for int8
   WITH_INT8_CONFIG

@@ -22,6 +22,7 @@ from __future__ import print_function
 import argparse
 from paddlelite.lite import *
 import numpy as np
+import platform
 
 # Command arguments
 parser = argparse.ArgumentParser()
@@ -31,16 +32,52 @@ parser.add_argument("--model_file", default="", type=str, help="Model file")
 parser.add_argument(
     "--param_file", default="", type=str, help="Combined model param file")
 parser.add_argument(
-    "--enable_opencl", action="store_true", help="Enable OpenCL or not")
+    "--input_shape",
+    default=[1, 3, 224, 224],
+    nargs='+',
+    type=int,
+    required=False,
+    help="Model input shape, eg: 1 3 224 224. Defalut: 1 3 224 224")
 parser.add_argument(
-    "--use_metal",
-    action="store_true",
+    "--backend",
+    default="",
+    type=str,
+    help="To use a particular backend for execution. Should be one of: arm|opencl|x86|x86_opencl|metal|nnadapter"
+)
+parser.add_argument(
+    "--image_path", default="", type=str, help="The path of test image file")
+parser.add_argument(
+    "--label_path", default="", type=str, help="The path of label file")
+parser.add_argument(
+    "--print_results",
+    type=bool,
     default=False,
-    help="use metal on Appel GPU. Default: False")
+    help="Print results. Default: False")
 parser.add_argument(
-    "--disable_print_results",
-    action="store_false",
-    help="Print results or not")
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 
 
 def RunModel(args):
@@ -52,9 +89,16 @@ def RunModel(args):
     else:
         config.set_model_dir(args.model_dir)
 
-    # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
+    if platform.machine() in ["x86_64", "x64", "AMD64"]:
+        platform_place = Place(TargetType.X86, PrecisionType.FP32)
+    else:
+        platform_place = Place(TargetType.ARM, PrecisionType.FP32)
 
-    if args.enable_opencl:
+    if args.backend.upper() in ["ARM"]:
+        places = [Place(TargetType.ARM, PrecisionType.FP32)]
+    elif args.backend.upper() in ["X86"]:
+        places = [Place(TargetType.X86, PrecisionType.FP32)]
+    elif args.backend.upper() in ["OPENCL", "X86_OPENCL"]:
         places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -66,9 +110,7 @@ def RunModel(args):
                       TargetType.OpenCL, PrecisionType.Any,
                       DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
+            platform_place, Place(TargetType.Host, PrecisionType.FP32)
         ]
         '''
         Set opencl kernel binary.
@@ -105,7 +147,7 @@ def RunModel(args):
         CL_PRECISION_FP16, force fp16
         '''
         config.set_opencl_precision(CLPrecisionType.CL_PRECISION_AUTO)
-    elif args.use_metal:
+    elif args.backend.upper() in ["METAL"]:
         # set metallib path
         import paddlelite, os
         module_path = os.path.dirname(paddlelite.__file__)
@@ -114,24 +156,59 @@ def RunModel(args):
         # set places for Metal
         places = [
             Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray), Place(
-                      TargetType.Metal, PrecisionType.FP16,
-                      DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
         ]
+    elif args.backend.upper() in ["NNADAPTER"]:
+        places = [
+            Place(TargetType.NNAdapter, PrecisionType.FP32), platform_place,
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        if args.nnadapter_device_names == "":
+            print(
+                "Please set nnadapter_device_names when backend = nnadapter!")
+            return
+        config.set_nnadapter_device_names(
+            args.nnadapter_device_names.split(","))
+        config.set_nnadapter_context_properties(
+            args.nnadapter_context_properties)
+        config.set_nnadapter_model_cache_dir(args.nnadapter_model_cache_dir)
+        config.set_nnadapter_subgraph_partition_config_path(
+            args.nnadapter_subgraph_partition_config_path)
+        config.set_nnadapter_mixed_precision_quantization_config_path(
+            args.nnadapter_mixed_precision_quantization_config_path)
     else:
-        places = [Place(TargetType.X86, PrecisionType.FP32)]
+        raise ValueError("Unsupported backend: %s." % args.backend)
 
     config.set_valid_places(places)
 
     # 2. Create paddle predictor
     predictor = create_paddle_predictor(config)
+    optimized_model_dir = "opt_" + args.backend
+    predictor.save_optimized_model(optimized_model_dir)
 
     # 3. Set input data
     input_tensor = predictor.get_input(0)
-    input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
+    c, h, w = args.input_shape[1], args.input_shape[2], args.input_shape[3]
+    read_image = len(args.image_path) != 0 and len(args.label_path) != 0
+    if read_image == True:
+        import cv2
+        with open(args.label_path, "r") as f:
+            label_list = f.readlines()
+        image_mean = [0.485, 0.456, 0.406]
+        image_std = [0.229, 0.224, 0.225]
+        image_data = cv2.imread(args.image_path)
+        image_data = cv2.resize(image_data, (h, w))
+        image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        image_data = image_data.transpose((2, 0, 1)) / 255.0
+        image_data = (image_data - np.array(image_mean).reshape(
+            (3, 1, 1))) / np.array(image_std).reshape((3, 1, 1))
+        image_data = image_data.reshape([1, c, h, w]).astype('float32')
+        input_tensor.from_numpy(image_data)
+    else:
+        input_tensor.from_numpy(np.ones((1, c, h, w)).astype("float32"))
 
     # 4. Run model
     predictor.run()
@@ -139,8 +216,19 @@ def RunModel(args):
     # 5. Get output data
     output_tensor = predictor.get_output(0)
     output_data = output_tensor.numpy()
-    if args.disable_print_results:
-        print(output_data)
+    if args.print_results == True:
+        print("result data:\n{}".format(output_data))
+    print("mean:{:.6e}, std:{:.6e}, min:{:.6e}, max:{:.6e}".format(
+        np.mean(output_data),
+        np.std(output_data), np.min(output_data), np.max(output_data)))
+
+    # 6. Post-process
+    if read_image == True:
+        output_data = output_data.flatten()
+        class_id = np.argmax(output_data)
+        class_name = label_list[class_id]
+        score = output_data[class_id]
+        print("class_name: {} score: {}".format(class_name, score))
 
 
 if __name__ == '__main__':

@@ -76,6 +76,13 @@ void Unsqueeze2Pad3dSqueeze2Fuser::InsertNewNode(SSAGraph* graph,
   if (padding.size() == 6 && padding[4] == 0 && padding[5] == 0) {
     pad3d_op_desc->mutable_inputs()->clear();
     pad3d_op_desc->mutable_outputs()->clear();
+    auto data_format =
+        pad3d_instruct->op_info()->GetAttr<std::string>("data_format");
+    if (data_format == "NCDHW") {
+      pad3d_op_desc->SetAttr("data_format", std::string("NCHW"));
+    } else if (data_format == "NDHWC") {
+      pad3d_op_desc->SetAttr("data_format", std::string("NHWC"));
+    }
     pad3d_op_desc->SetAttr(
         "paddings",
         std::vector<int>{padding[0], padding[1], padding[2], padding[3]});
