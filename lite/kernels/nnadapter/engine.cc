@@ -346,7 +346,8 @@ bool Engine::Run() {
                  "program.";
       continue;
     }
-    CHECK_EQ(ret, NNADAPTER_NO_ERROR) << "Program execute failed.";
+    CHECK_EQ(ret, static_cast<int>(NNADAPTER_NO_ERROR))
+        << "Program execute failed.";
     return true;
   }
   // Rebuild the device program corresponding to the input dimensions if not
@@ -385,7 +386,8 @@ bool Engine::Run() {
   CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
   programs_.push_back(program);
   int ret = program->Execute();
-  CHECK_EQ(ret, NNADAPTER_NO_ERROR) << "Program execute failed.";
+  CHECK_EQ(ret, static_cast<int>(NNADAPTER_NO_ERROR))
+      << "Program execute failed.";
   return true;
 }
 
