@@ -644,18 +644,18 @@ void interpolate_v2(lite::Tensor* X,
     out_width = new_size[1];
   } else {
     if (scale_tensor != nullptr) {
-      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
-      if (scale_data.size() > 1) {
-        scale_h = scale_data[0];
-        scale_w = scale_data[1];
+      auto scale_data1 = get_new_data_from_tensor<float>(scale_tensor);
+      if (scale_data1.size() > 1) {
+        scale_h = scale_data1[0];
+        scale_w = scale_data1[1];
       } else {
-        scale_h = scale_data[0];
-        scale_w = scale_data[0];
+        scale_h = scale_data1[0];
+        scale_w = scale_data1[0];
       }
     } else {
-      if (scale_v.size() > 1 && scale_v[0] > 0 && scale_v[1] > 0) {
-        height_scale = scale_v[0];
-        width_scale = scale_v[1];
+      if (scale_data.size() > 1 && scale_data[0] > 0 && scale_data[1] > 0) {
+        height_scale = scale_data[0];
+        width_scale = scale_data[1];
       }
     }
 
