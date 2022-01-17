@@ -659,7 +659,7 @@ void interpolate_v2(lite::Tensor* X,
       }
     }
 
-    if (scale_h > 0. && scale_w > 0.) {
+    if (height_scale > 0. && width_scale > 0.) {
       out_height = static_cast<int>(in_h * height_scale);
       out_width = static_cast<int>(in_w * width_scale);
     }
