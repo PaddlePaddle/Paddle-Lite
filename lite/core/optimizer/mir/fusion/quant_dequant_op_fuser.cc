@@ -517,8 +517,14 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     auto op_info = *quantized_node->stmt()->op_info();
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
+
 #ifndef LITE_WITH_FPGA
-    op_info.SetAttr("enable_int8", true);
+    std::string op_type = op_info.Type();
+    if (std::find(input_activation_quant_op.begin(),
+                  input_activation_quant_op.end(),
+                  op_type) != input_activation_quant_op.end()) {
+      op_info.SetAttr("enable_int8", true);
+    }
 #endif
 
     if (input_var_is_activation) {
