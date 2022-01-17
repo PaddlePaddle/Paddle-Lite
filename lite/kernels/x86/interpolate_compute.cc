@@ -86,6 +86,38 @@ void NearestInterpCompute::Run() {
                                interp_method);
 }
 
+void NearestInterpComputeV2::Run() {
+  auto& param = Param<operators::InterpolateParam>();
+  // required input
+  lite::Tensor* X = param.X;
+  // optionla inputs
+  lite::Tensor* OutSize = param.OutSize;
+  auto SizeTensor = param.SizeTensor;
+  auto Scale = param.Scale;
+  // output
+  lite::Tensor* Out = param.Out;
+  // optional attributes
+  float scale = param.scale;
+  int out_w = param.out_w;
+  int out_h = param.out_h;
+  int align_mode = param.align_mode;
+  // required attributes
+  bool align_corners = param.align_corners;
+  std::string interp_method = "Nearest";
+  lite::x86::math::interpolate_v2(X,
+                                  OutSize,
+                                  SizeTensor,
+                                  Scale,
+                                  Out,
+                                  scale,
+                                  param.scale_v,
+                                  out_h,
+                                  out_w,
+                                  align_mode,
+                                  align_corners,
+                                  interp_method);
+}
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
@@ -140,7 +172,7 @@ REGISTER_LITE_KERNEL(nearest_interp_v2,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::NearestInterpCompute,
+                     paddle::lite::kernels::x86::NearestInterpComputeV2,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("OutSize",

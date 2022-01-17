@@ -37,6 +37,14 @@ class NearestInterpCompute
   virtual ~NearestInterpCompute() = default;
 };
 
+class NearestInterpComputeV2
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~NearestInterpComputeV2() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
