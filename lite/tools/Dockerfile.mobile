@@ -74,7 +74,6 @@ RUN cd /opt && unzip /tmp/android-ndk-r23b-linux.zip
 EXPOSE 5900
 
 # clean
-RUN ln -s /usr/local/bin/pip3 /usr/bin/pip3
 RUN ln -s clang-format-3.8 /usr/bin/clang-format
 RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple wheel
 RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pre-commit
