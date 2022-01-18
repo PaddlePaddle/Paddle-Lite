@@ -566,10 +566,10 @@ inline void prepack_input_nxwc4_dw(const float* din,
       ptr_c3 += 4;
     }
     if (flag_mask_valid) {
-      float tmp0[4];
-      float tmp1[4];
-      float tmp2[4];
-      float tmp3[4];
+      float tmp0[4] = {0};
+      float tmp1[4] = {0};
+      float tmp2[4] = {0};
+      float tmp3[4] = {0};
       for (int i = 0; i < 4; i++) {
         if (vmask_valid[i] > 0) {
           tmp0[i] = *(ptr_c0 + i);
