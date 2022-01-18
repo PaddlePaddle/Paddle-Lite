@@ -21,15 +21,12 @@ RUN apt-get install -y --no-install-recommends \
         git \
         make \
         patchelf \
-        python3 \
-        python \
+        python3.8 \
         android-tools-adb \
-        python-dev \
-        python-pip \
-        python-setuptools \
-        python3-dev \
-        python3-pip \
-        python3-setuptools \
+        python3.8-setuptools \
+        python3.8-dev \
+        python3.8-pip \
+        python3.8-setuptools \
         unzip \
         vim \
         wget
@@ -75,7 +72,7 @@ EXPOSE 5900
 
 # clean
 RUN ln -s clang-format-3.8 /usr/bin/clang-format
-RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple wheel
-RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pre-commit
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple wheel
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pre-commit
 RUN apt-get autoremove -y && apt-get clean
 RUN rm -rf /sdk-tools-linux-4333796.zip /tmp/android-ndk-r17c-linux-x86_64.zip /cmake-3.10.3-Linux-x86_64.tar.gz
