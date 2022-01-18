@@ -72,13 +72,13 @@ ENV PATH=/usr/local/python3.9.0/include:${PATH}
 ENV PATH=/usr/local/python3.9.0/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/python3.9.0/lib:${LD_LIBRARY_PATH}
 ENV CPLUS_INCLUDE_PATH=/usr/local/python3.9.0include/python3.7:$CPLUS_INCLUDE_PATH
-RUN ln -sf /usr/local/python3.9.0/bin/python3.9 /usr/local/bin/python3 && ln -sf /usr/local/python3.9.0/bin/python3.9 /usr/bin/python3
+RUN ln -s /usr/local/python3.9.0/bin/python3.9 /usr/local/bin/python3 && ln -s /usr/local/python3.9.0/bin/python3.9 /usr/bin/python3
 RUN mv /usr/bin/python /usr/bin/python.bak && ln -s /usr/local/python3.9.0/bin/python3.9 /usr/local/bin/python && ln -s /usr/local/python3.9.0/bin/python3.9 /usr/bin/python
 
 WORKDIR /home
 RUN wget https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip && apt-get -y install unzip && unzip setuptools-40.6.2.zip
 WORKDIR /home/setuptools-40.6.2
-RUN python setup.py build && python setup.py install
+RUN python3.9 setup.py build && python3.9 setup.py install
 WORKDIR /home
 RUN python3.9 -m pip uninstall -y pip setuptools
 RUN wget https://files.pythonhosted.org/packages/a7/e0/30642b9c2df516506d40b563b0cbd080c49c6b3f11a70b4c7a670f13a78b/setuptools-50.3.2.zip && apt-get -y install unzip && unzip setuptools-50.3.2.zip
