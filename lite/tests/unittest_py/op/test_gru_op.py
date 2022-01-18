@@ -62,18 +62,17 @@ class TestGruOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        lod_arr = [0, 2, 6, 9]
-        is_rev = draw(st.sampled_from([False, True]))
-        bool_orimode = draw(st.sampled_from([True, False]))
+        shape0 = draw(st.integers(min_value=1, max_value=3))
+        shape1 = draw(st.integers(min_value=1, max_value=3))
+        shape2 = draw(st.integers(min_value=1, max_value=3))
+        lod_arr = [0, shape0, shape0 + shape1, shape0 + shape1 + shape2]
+
+        is_rev = draw(st.sampled_from([False]))
+        bool_orimode = draw(st.sampled_from([False]))
         shape_0 = draw(st.integers(min_value=1, max_value=60))
         in_shape = [shape_0, shape_0 * 3]
-        batch_num = draw(
-            st.integers(
-                min_value=lod_arr[3], max_value=lod_arr[3] + 10))
-        h0_1 = draw(st.sampled_from([3]))
-
-        # ToDo has diff
-        assume(batch_num <= lod_arr[3])
+        batch_num = lod_arr[3]
+        h0_1 = len(lod_arr) - 1
 
         def generate_input(*args, **kwargs):
             return np.random.random(
@@ -112,26 +111,24 @@ class TestGruOp(AutoScanTest):
 
         program_config = ProgramConfig(
             ops=[build_ops],
-            weights={
-                "weight_data": TensorConfig(data_gen=partial(generate_weight)),
-            },
+            weights={},
             inputs={
                 "input_data": TensorConfig(
                     data_gen=partial(generate_input), lod=[lod_arr]),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias)),
                 "h0": TensorConfig(data_gen=partial(generate_h0)),
+                "weight_data": TensorConfig(data_gen=partial(generate_weight)),
             },
             outputs=["hidden"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru"], (6e-4, 6e-4)
+        return self.get_predictor_configs(), ["gru"], (
+            6e-4, 6e-4)  # ARM:6e-4   X86:1e-5
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
-                if predictor_config.precision() == PrecisionType.FP32:
-                    return True
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
                 if predictor_config.precision() == PrecisionType.INT8:
@@ -139,11 +136,11 @@ class TestGruOp(AutoScanTest):
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+            "Lite does not support this op for precision fp16 and int8 on ARM for now."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
