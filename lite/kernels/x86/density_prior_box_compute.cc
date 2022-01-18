@@ -64,13 +64,9 @@ void DensityPriorBoxCompute::Run() {
     num_priors += (fixed_ratios.size()) * (pow(densities[i], 2));
   }
 
-  if (param.flatten_to_2d) {
-    boxes->Resize({feature_height * feature_width * num_priors, 4});
-    vars->Resize({feature_height * feature_width * num_priors, 4});
-  } else {
-    boxes->Resize({feature_height, feature_width, num_priors, 4});
-    vars->Resize({feature_height, feature_width, num_priors, 4});
-  }
+  boxes->Resize({feature_height, feature_width, num_priors, 4});
+  vars->Resize({feature_height, feature_width, num_priors, 4});
+  
   auto* boxes_data = boxes->mutable_data<float>();
   auto* vars_data = vars->mutable_data<float>();
 
@@ -94,6 +90,15 @@ void DensityPriorBoxCompute::Run() {
                                      num_priors,
                                      boxes_data,
                                      vars_data);
+  if (param.flatten_to_2d) {
+    auto out_dims = param.boxes->dims();
+    int64_t sum = 1;
+    for (int i = 0; i < out_dims.size() - 1; i++) {
+      sum *= out_dims[i];
+    }
+    param.boxes->Resize({sum, 4});
+    param.variances->Resize({sum, 4});
+  }
 }
 
 }  // namespace x86
