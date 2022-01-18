@@ -12,6 +12,31 @@ deb <mirror> <version>-security main restricted universe multiverse\n'\
 RUN sed -ie 's|<mirror>|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|' /etc/apt/sources.list
 RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
 
+RUN apt-get update && \
+  apt-get install -y python3.8 python3.8-dev python3.8-distutils \
+  rm /usr/bin/python && ln -s /usr/bin/python2.7 /usr/bin/python && \
+  rm /usr/bin/python3 && ln -s /usr/bin/python3.7 /usr/bin/python3
+
+WORKDIR /home
+RUN wget https://files.pythonhosted.org/packages/a7/e0/30642b9c2df516506d40b563b0cbd080c49c6b3f11a70b4c7a670f13a78b/setuptools-50.3.2.zip && apt-get -y install unzip && unzip setuptools-50.3.2.zip
+WORKDIR /home/setuptools-50.3.2
+RUN python3.8 setup.py build && python3.8 setup.py install
+WORKDIR /home
+RUN wget https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip && apt-get -y install unzip && unzip setuptools-40.6.2.zip
+WORKDIR /home/setuptools-40.6.2
+RUN python setup.py build && python setup.py install
+WORKDIR /home
+RUN wget https://files.pythonhosted.org/packages/28/af/2c76c8aa46ccdf7578b83d97a11a2d1858794d4be4a1610ade0d30182e8b/pip-20.0.1.tar.gz && tar -zxvf pip-20.0.1.tar.gz
+WORKDIR pip-20.0.1
+RUN python3.8 setup.py install
+
+WORKDIR /home
+RUN rm setuptools-40.6.2.zip setuptools-50.3.2.zip pip-20.0.1.tar.gz && \
+    rm -r setuptools-40.6.2 setuptools-50.3.2 pip-20.0.1
+RUN rm /usr/local/bin/pip && ln -s /usr/local/bin/pip2.7 /usr/local/bin/pip && \
+  rm /usr/local/bin/pip3 && ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip3
+
+  
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
         clang-format-3.8 \
