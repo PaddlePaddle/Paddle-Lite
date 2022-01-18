@@ -692,12 +692,10 @@ void interpolate_v2(lite::Tensor* X,
         width_scale = scale_data[1];
       }
     }
-
     if (height_scale > 0. && width_scale > 0.) {
       out_height = static_cast<int>(in_h * height_scale);
       out_width = static_cast<int>(in_w * width_scale);
     }
-
     if (OutSize != nullptr) {
       auto out_size_data = get_new_data_from_tensor<int>(OutSize);
       out_height = out_size_data[0];
@@ -736,21 +734,7 @@ void interpolate_v2(lite::Tensor* X,
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
 
-  if ("Bilinear" == interpolate_type) {
-    LITE_PARALLEL_BEGIN(i, tid, count) {
-      bilinear_interp(din + spatial_in * i,
-                      in_w,
-                      in_h,
-                      dout + spatial_out * i,
-                      out_w,
-                      out_h,
-                      ratio_w,
-                      ratio_h,
-                      with_align,
-                      align_mode);
-    }
-    LITE_PARALLEL_END()
-  } else if ("Nearest" == interpolate_type) {
+  if ("Nearest" == interpolate_type) {
     LITE_PARALLEL_BEGIN(i, tid, count) {
       nearest_interp_v2(din + spatial_in * i,
                         in_w,
