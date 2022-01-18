@@ -282,7 +282,11 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      prelu_alpha,
+      SAMPLER,
+      (int2)(out_c * global_size_dim1 + out_w, out_nh % output_height));
 //}
 #else                     //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
