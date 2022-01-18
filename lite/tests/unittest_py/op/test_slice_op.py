@@ -1,4 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,18 +50,6 @@ class TestSliceOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
-        #All of metal inputs error.
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=metal_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -90,8 +78,9 @@ class TestSliceOp(AutoScanTest):
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
         assume(len(axes) <= len(in_shape))
-        if input_num == 0:
-            assume(len(axes) == 2)
+
+        # if input_num == 0:
+        #     assume(len(axes) == 2)
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
@@ -119,19 +108,25 @@ class TestSliceOp(AutoScanTest):
         def generate_endlist2(*args, **kwargs):
             return np.array([2], dtype="int32")
 
-        dics_intput = [{
-            "Input": ["input_data"],
-            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
-            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-        }, {
-            "Input": ["input_data"],
-            "StartsTensor": ["starts_data"],
-            "EndsTensor": ["ends_data"],
-            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
-            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-        }, {
-            "Input": ["input_data"]
-        }, {}]
+        dics_intput = [
+            {
+                "Input": ["input_data"],
+                # "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
+                # "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+            },
+            {
+                "Input": ["input_data"],
+                "StartsTensor": ["starts_data"],
+                "EndsTensor": ["ends_data"],
+                "StartsTensorList":
+                ["StartsTensorList1", "StartsTensorList2"],
+                "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+            },
+            {
+                "Input": ["input_data"]
+            },
+            {}
+        ]
 
         dics_weight = [{
             "StartsTensorList1":
@@ -182,18 +177,10 @@ class TestSliceOp(AutoScanTest):
         return self.get_predictor_configs(), ["slice"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                if program_config.ops[0].attrs["input_num"] == 0:
-                    return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=150)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
