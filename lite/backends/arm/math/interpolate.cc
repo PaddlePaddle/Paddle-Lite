@@ -471,6 +471,40 @@ void bilinear_interp(const float* src,
   delete[] rowsbuf1;
 }
 
+void nearest_interp_v2(const float* src,
+                       int w_in,
+                       int h_in,
+                       float* dst,
+                       int w_out,
+                       int h_out,
+                       float scale_x,
+                       float scale_y,
+                       bool with_align) {
+  float scale_w_new =
+      (with_align) ? (static_cast<float>(w_in - 1) / (w_out - 1)) : scale_x;
+  float scale_h_new =
+      (with_align) ? (static_cast<float>(h_in - 1) / (h_out - 1)) : scale_y;
+  if (with_align) {
+    for (int h = 0; h < h_out; ++h) {
+      float* dst_p = dst + h * w_out;
+      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      for (int w = 0; w < w_out; ++w) {
+        int near_x = static_cast<int>(scale_w_new * w + 0.5);
+        *dst_p++ = src[near_y * w_in + near_x];
+      }
+    }
+  } else {
+    for (int h = 0; h < h_out; ++h) {
+      float* dst_p = dst + h * w_out;
+      int near_y = static_cast<int>(scale_h_new * h);
+      for (int w = 0; w < w_out; ++w) {
+        int near_x = static_cast<int>(scale_w_new * w);
+        *dst_p++ = src[near_y * w_in + near_x];
+      }
+    }
+  }
+}
+
 void nearest_interp(const float* src,
                     int w_in,
                     int h_in,
@@ -718,15 +752,15 @@ void interpolate_v2(lite::Tensor* X,
     LITE_PARALLEL_END()
   } else if ("Nearest" == interpolate_type) {
     LITE_PARALLEL_BEGIN(i, tid, count) {
-      nearest_interp(din + spatial_in * i,
-                     in_w,
-                     in_h,
-                     dout + spatial_out * i,
-                     out_w,
-                     out_h,
-                     ratio_w,
-                     ratio_h,
-                     with_align);
+      nearest_interp_v2(din + spatial_in * i,
+                        in_w,
+                        in_h,
+                        dout + spatial_out * i,
+                        out_w,
+                        out_h,
+                        ratio_w,
+                        ratio_h,
+                        with_align);
     }
     LITE_PARALLEL_END()
   }
