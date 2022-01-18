@@ -85,6 +85,8 @@ void InitializeGraphBuilder() {
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
+    global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
+    global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination

@@ -27,6 +27,7 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
   std::string pad_mode = ConvertPadModeCodeToGEPadMode(mode);
   int32_t value =
       static_cast<int32_t>(*reinterpret_cast<float*>(value_operand->buffer));
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(5, 0, 3)
   NNADAPTER_CHECK_EQ(pad_mode, "constant")
       << "Only support mode=constant right now, "
          "but received mode is "
@@ -34,6 +35,7 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(value, 0) << "Only support constant_values=0 right now, "
                                   "but received constant_value is "
                                << value;
+#endif
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);

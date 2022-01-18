@@ -52,7 +52,7 @@ namespace huawei_ascend_npu {
     major, minor, patch)                                         \
   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
           NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
-          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <=      \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <       \
       major * 1000 + minor * 100 + patch
 
 // Prepare AscendCL environment and register the finalizer to be called at
