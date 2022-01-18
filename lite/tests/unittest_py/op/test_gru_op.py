@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import argparse
 import numpy as np
@@ -34,27 +34,27 @@ class TestGruOp(AutoScanTest):
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1])
+            thread=[1, 4])
 
-        # not support
+        #not support
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.INT8,
             DataLayoutType.NCHW,
             thread=[1, 4])
 
-        # all cases have precision diff
+        #all cases have precision diff
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,
             DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+            thread=[1, 4])
 
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -67,8 +67,8 @@ class TestGruOp(AutoScanTest):
         shape2 = draw(st.integers(min_value=1, max_value=3))
         lod_arr = [0, shape0, shape0 + shape1, shape0 + shape1 + shape2]
 
-        is_rev = draw(st.sampled_from([False]))
-        bool_orimode = draw(st.sampled_from([False]))
+        is_rev = draw(st.sampled_from([False, True]))
+        bool_orimode = draw(st.sampled_from([True, False]))
         shape_0 = draw(st.integers(min_value=1, max_value=60))
         in_shape = [shape_0, shape_0 * 3]
         batch_num = lod_arr[3]
@@ -123,8 +123,7 @@ class TestGruOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru"], (
-            6e-4, 6e-4)  # ARM:6e-4   X86:1e-5
+        return self.get_predictor_configs(), ["gru"], (6e-4, 6e-4)
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
