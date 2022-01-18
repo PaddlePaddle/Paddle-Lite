@@ -172,10 +172,10 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto host_ptr = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto host_ptr = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(host_ptr);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     auto& input_memory = input_memory_[arg.index];
     if (!input_memory.first || input_memory.second < length) {
       if (input_memory.first) {
@@ -188,10 +188,10 @@ int Program::Execute(uint32_t input_count,
     }
     auto device_ptr = imgdnn_mgr_->LockMemory(input_memory.first,
                                               IMGDNN_LOCK_ACCESS_WRITE_ONLY);
-    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
+    if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
       Symm2AsymmData(reinterpret_cast<const int8_t*>(host_ptr),
                      length,
-                     type->asymm_per_layer_params.zero_point,
+                     type.asymm_per_layer_params.zero_point,
                      reinterpret_cast<uint8_t*>(device_ptr));
     } else {
       memcpy(host_ptr, device_ptr, length);

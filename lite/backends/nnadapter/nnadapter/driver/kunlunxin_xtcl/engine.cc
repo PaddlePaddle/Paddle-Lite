@@ -200,13 +200,13 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
     // Re-initialize the input tensors when the dimensions of inputs are changed
     // if dynamic shape is supported
     input_shapes[arg.index] = std::vector<int64_t>(
-        type->dimensions.data, type->dimensions.data + type->dimensions.count);
+        type.dimensions.data, type.dimensions.data + type.dimensions.count);
     auto tensor = &input_tensors_[arg.index];
     tensor->data = buffer;
     tensor->shape = input_shapes[arg.index].data();

@@ -212,10 +212,10 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     // TODO(hong19860320) Re-initialize the input tensors when the dimensions of
     // inputs are changed if dynamic shape is supported
     NNADAPTER_CHECK_EQ(length, input_tensors_[arg.index]->GetSize());

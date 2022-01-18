@@ -204,14 +204,14 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
-    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
+    auto length = GetOperandTypeBufferLength(type);
+    if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
       Symm2AsymmData(reinterpret_cast<const int8_t*>(buffer),
                      length,
-                     type->asymm_per_layer_params.zero_point,
+                     type.asymm_per_layer_params.zero_point,
                      reinterpret_cast<uint8_t*>(buffer));
     }
     if (!input_tensors_[arg.index]->CopyDataToTensor(buffer, length)) {

@@ -22,8 +22,6 @@ namespace huawei_ascend_npu {
 
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_NE(auto_pad, NNADAPTER_AUTO_PAD_SAME)
-      << "Not support auto_pad: same.";
   operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
                                         filter_height,
                                         auto_pad,

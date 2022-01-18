@@ -198,10 +198,10 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
     MLU_CNRT_CHECK(
         cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
@@ -209,7 +209,7 @@ int Program::Execute(uint32_t input_count,
     auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
     input_tensor->SetData(ptr);
     input_tensor->SetDimensions(
-        ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
+        ConvertToMagicMindDims(type.dimensions.data, type.dimensions.count));
   }
 
   mm_context_->Enqueue(inputs, &outputs, queue_);
