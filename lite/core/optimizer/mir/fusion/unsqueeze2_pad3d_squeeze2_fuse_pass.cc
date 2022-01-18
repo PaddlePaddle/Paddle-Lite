@@ -34,4 +34,4 @@ void Unsqueeze2Pad3dSqueeze2FusePass::Apply(
 REGISTER_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass,
                   paddle::lite::mir::Unsqueeze2Pad3dSqueeze2FusePass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kXPU), TARGET(kBM)});
+    .ExcludeTargets({TARGET(kXPU), TARGET(kBM), TARGET(kHuaweiAscendNPU)});
