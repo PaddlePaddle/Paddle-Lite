@@ -1618,9 +1618,14 @@ bool gemv_int8_trans_oth(const int8_t* A,
   const int8_t* weights_ptr = x;
   int out_cnt = M >> 4;
   int out_remain = M & 15;
-  int zero_ptr[M + 16];  // NOLINT
-  memset(zero_ptr, 0, sizeof(int) * (M + 16));
+#ifdef TARGET_IOS
+  int* zero_ptr = new int[M + 16];
+  float* zerobuf = new float[M + 16];
+#else
+  int zero_ptr[M + 16];   // NOLINT
   float zerobuf[M + 16];  // NOLINT
+#endif
+  memset(zero_ptr, 0, sizeof(int) * (M + 16));
   memset(zerobuf, 0, sizeof(float) * (M + 16));
   const float* bias_ptr = is_bias ? bias : zerobuf;
   float six = alpha;
@@ -2146,6 +2151,10 @@ bool gemv_int8_trans_oth(const int8_t* A,
                  alpha,
                  offset,
                  threshold);
+#ifdef TARGET_IOS
+  delete[] zero_ptr;
+  delete[] zerobuf;
+#endif
   return true;
 }
 

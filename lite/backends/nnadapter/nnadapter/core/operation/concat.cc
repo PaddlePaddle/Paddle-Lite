@@ -83,46 +83,47 @@ int PrepareConcat(hal::Operation* operation) {
   }
   // Derive the shape value of concat's output operand
   if (has_temporary_shape) {
-    auto get_inputs_info = [&](
-        std::vector<int32_t*>& inputs,
-        std::vector<std::vector<int32_t>>& inputs_shapes) {
+    auto peek_input_data = [&](
+        std::vector<int32_t*>& input_data_ptrs,
+        std::vector<std::vector<int32_t>>& input_shapes) {
       for (size_t i = 0; i < input_count - 1; i++) {
         if (IsTemporaryShapeOperand(input_operands[i])) {
           auto& temporary_shape = *(GetTemporaryShape(input_operands[i]));
           NNADAPTER_CHECK(temporary_shape.data);
           NNADAPTER_CHECK(temporary_shape.data[0]);
-          inputs.push_back(temporary_shape.data);
+          input_data_ptrs.push_back(temporary_shape.data);
         } else {  // Constant Operand
           auto input_data =
               reinterpret_cast<int32_t*>(input_operands[i]->buffer);
-          inputs.push_back(input_data);
+          input_data_ptrs.push_back(input_data);
         }
         std::vector<int32_t> input_dims;
         for (size_t j = 0; j < input_operands[i]->type.dimensions.count; j++) {
           input_dims.push_back(input_operands[i]->type.dimensions.data[j]);
         }
-        inputs_shapes.push_back(input_dims);
+        input_shapes.push_back(input_dims);
       }
     };
     // Static shape
-    std::vector<int32_t*> inputs;
-    std::vector<std::vector<int32_t>> inputs_shapes;
-    get_inputs_info(inputs, inputs_shapes);
+    std::vector<int32_t*> input_data_ptrs;
+    std::vector<std::vector<int32_t>> input_shapes;
+    peek_input_data(input_data_ptrs, input_shapes);
     // Dynamic shape
-    std::vector<std::vector<int32_t*>> dynamic_inputs;
-    std::vector<std::vector<std::vector<int32_t>>> dynamic_inputs_shapes;
+    std::vector<std::vector<int32_t*>> dynamic_input_data_ptrs;
+    std::vector<std::vector<std::vector<int32_t>>> dynamic_input_shapes;
     for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
-      get_inputs_info(dynamic_inputs[i], dynamic_inputs_shapes[i]);
+      peek_input_data(dynamic_input_data_ptrs[i], dynamic_input_shapes[i]);
     }
 
     NNAdapterOperandDimensionType dimension_type;
     dimension_type.count = output_operand->type.dimensions.data[0];
     dimension_type.dynamic_count =
         output_operand->type.dimensions.dynamic_count;
-    math::concat<int32_t>(inputs, inputs_shapes, axis, dimension_type.data);
+    math::concat<int32_t>(
+        input_data_ptrs, input_shapes, axis, dimension_type.data);
     for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
-      math::concat<int32_t>(dynamic_inputs[i],
-                            dynamic_inputs_shapes[i],
+      math::concat<int32_t>(dynamic_input_data_ptrs[i],
+                            dynamic_input_shapes[i],
                             axis,
                             dimension_type.dynamic_data[i]);
     }

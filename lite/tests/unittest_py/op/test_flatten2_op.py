@@ -59,14 +59,6 @@ class TestFlatten2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        in_shape = list(program_config.inputs["input_data"].shape)
-        axis = program_config.ops[0].attrs["axis"]
-        if target_type == TargetType.Metal:
-            if len(in_shape) != 4 \
-                or in_shape[0] != 1 \
-                or axis != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -128,7 +120,20 @@ class TestFlatten2Op(AutoScanTest):
         return self.get_predictor_configs(), ["flatten2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["axis"]
+            if target_type == TargetType.Metal:
+                if len(in_shape) != 4 \
+                    or in_shape[0] != 1 \
+                    or axis != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

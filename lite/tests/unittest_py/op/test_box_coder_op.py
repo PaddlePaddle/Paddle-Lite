@@ -66,13 +66,6 @@ class TestBoxCoderOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs[
-                    "code_type"] == "encode_center_size" or program_config.ops[
-                        0].attrs["axis"] != 0 or program_config.ops[0].attrs[
-                            "box_normalized"] == False or "PriorBoxVar" not in program_config.ops[
-                                0].inputs:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -145,6 +138,15 @@ class TestBoxCoderOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                if program_config.ops[0].attrs[
+                        "code_type"] == "encode_center_size" or program_config.ops[
+                            0].attrs["axis"] != 0 or program_config.ops[0].attrs[
+                                "box_normalized"] == False or "PriorBoxVar" not in program_config.ops[
+                                    0].inputs:
+                    return True
+
+        def teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
                 if program_config.ops[0].attrs[
                         "code_type"] == "encode_center_size":
@@ -152,10 +154,13 @@ class TestBoxCoderOp(AutoScanTest):
             return False
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite is not supported on opencl. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
         )
-        pass
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

@@ -43,13 +43,6 @@ class TestSequenceExpandAsOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        if target_type == TargetType.ARM:
-            if program_config.inputs["x_data"].dtype != "float32":
-                print(
-                    "The input data type only support float32 on ARM impl. Skip!"
-                )
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -115,7 +108,19 @@ class TestSequenceExpandAsOp(AutoScanTest):
                                                                       1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.ARM:
+                if program_config.inputs["x_data"].dtype != "float32":
+                    print(
+                        "The input data type only support float32 on ARM impl. Skip!"
+                    )
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

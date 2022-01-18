@@ -46,14 +46,14 @@ class TestNearestInterpV2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data_x"].shape)
-        scale_data = program_config.inputs["Scale"].data
-        SizeTensor = list(program_config.inputs["SizeTensor"].shape)
-        # paddle not support fp16
-        if predictor_config.precision() == PrecisionType.FP16:
-            return False
-        if in_shape[2] * scale_data[0] < 1 or in_shape[3] * scale_data[0] < 1:
-            return False
+        # in_shape = list(program_config.inputs["input_data_x"].shape)
+        # scale_data = program_config.inputs["Scale"].data
+        # SizeTensor = list(program_config.inputs["SizeTensor"].shape)
+        # # paddle not support fp16
+        # if predictor_config.precision() == PrecisionType.FP16:
+        #     return False
+        # if in_shape[2] * scale_data[0] < 1 or in_shape[3] * scale_data[0] < 1:
+        #     return False
         return True
 
     def sample_program_configs(self, draw):

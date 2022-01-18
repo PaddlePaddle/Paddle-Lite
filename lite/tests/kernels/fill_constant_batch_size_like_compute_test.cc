@@ -139,6 +139,10 @@ TEST(fill_constant_batch_size_like, precision) {
   TestFillConstantBatchSizeLike(place, abs_error);
   TestFillConstantBatchSizeLikeValue(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-1;
+  TestFillConstantBatchSizeLike(place, abs_error);
+  return;
 #else
   return;
 #endif
