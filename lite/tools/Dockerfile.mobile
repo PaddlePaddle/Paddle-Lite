@@ -28,11 +28,7 @@ RUN apt-get install -y --no-install-recommends \
         git \
         make \
         patchelf \
-        python \
         android-tools-adb \
-        python-dev \
-        python-pip \
-        python-setuptools \
         unzip \
         vim \
         wget
@@ -44,7 +40,7 @@ RUN apt-get install -y --no-install-recommends \
         redir \
         iptables \
         openjdk-8-jre \
-        default-jdk
+        oracle-java8-installer
 
 # for cmake 3.10
 RUN curl -O https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
