@@ -63,7 +63,7 @@ class TestInstanceNormOp(AutoScanTest):
         ]
         # ToDo:
         # OpenCL and Metal running error
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
         #self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
@@ -98,7 +98,7 @@ class TestInstanceNormOp(AutoScanTest):
             outputs={
                 "Y": ["output_data"],
                 "SavedMean": ["mean_data"],
-                "SavedVariance": ["var_data"],
+                "SavedVariance": ["variance_data"],
             },
             attrs={
                 "epsilon": epsilon  #0~0.001
@@ -111,7 +111,7 @@ class TestInstanceNormOp(AutoScanTest):
                 "scale_data": TensorConfig(data_gen=partial(generate_scale)),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias)),
             },
-            outputs=["output_data", "mean_data", "var_data"])
+            outputs=["output_data", "mean_data", "variance_data"])
         return program_config
 
     def sample_predictor_configs(self):
