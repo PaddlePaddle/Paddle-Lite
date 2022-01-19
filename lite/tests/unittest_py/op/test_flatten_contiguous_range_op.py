@@ -39,11 +39,6 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["input_data"].dtype
-
-        #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -100,7 +95,16 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Host:
+                in_dtype = program_config.inputs["input_data"].dtype
+                if in_dtype != "float32":
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

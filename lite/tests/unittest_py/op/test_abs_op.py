@@ -51,10 +51,6 @@ class TestAbsOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -82,14 +78,7 @@ class TestAbsOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
-
-        self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+        self.run_and_statis(quant=False, min_success_num=25, max_examples=25)
 
 
 if __name__ == "__main__":

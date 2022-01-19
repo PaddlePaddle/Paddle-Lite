@@ -43,11 +43,11 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
   DDim reshape2_out_dims;
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
-    if (op_node->AsStmt().picked_kernel().op_type() == "softmax") {
+    if (op_node->AsStmt().op_type() == "softmax") {
       softmax_node = op_node;
-    } else if (op_node->AsStmt().picked_kernel().op_type() == "reshape2") {
+    } else if (op_node->AsStmt().op_type() == "reshape2") {
       reshape2_node = op_node;
-    } else if (op_node->AsStmt().picked_kernel().op_type() == "fetch") {
+    } else if (op_node->AsStmt().op_type() == "fetch") {
       fetch_node = op_node;
       fetch_in_arg_name = fetch_node->inlinks.front()->AsArg().name;
     }
@@ -132,7 +132,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
   Node* next_inst_node_of_reshape2_out{nullptr};
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "squeeze2") continue;
+    if (node->AsStmt().op_type() != "squeeze2") continue;
     auto* scope = node->AsStmt().op()->scope();
 
     // find inlinks of squeeze2: out_arg_node
@@ -169,7 +169,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
 
         for (auto& out2_link : squeeze2_out_link->outlinks) {
           if (out2_link->IsStmt() &&
-              out2_link->AsStmt().picked_kernel().op_type() == "reshape2") {
+              out2_link->AsStmt().op_type() == "reshape2") {
             reshape2_node = out2_link;
             for (auto& reshape2_out_link : reshape2_node->outlinks) {
               if (reshape2_out_link->IsArg() &&
@@ -208,9 +208,8 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
       next_inst_node_of_reshape2_out = reshape2_out_node->outlinks.front();
       found = true;
       break;
-      VLOG(5)
-          << "next_inst_node_of_reshape2_out->picked_kernel().op_type():"
-          << next_inst_node_of_reshape2_out->AsStmt().picked_kernel().op_type();
+      VLOG(5) << "next_inst_node_of_reshape2_out->picked_kernel().op_type():"
+              << next_inst_node_of_reshape2_out->AsStmt().op_type();
     }
 
     VLOG(5) << "==============================";
@@ -224,8 +223,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
   if (found && out_arg_dims[1] == squeeze2_out_dims[1] &&
       out_arg_dims[1] == reshape2_out_dims[1] && out_arg_dims[1] == 1001 &&
       out_arg_dims[2] == out_arg_dims[3] && out_arg_dims[2] == 1 &&
-      next_inst_node_of_reshape2_out->AsStmt().picked_kernel().op_type() ==
-          "softmax") {
+      next_inst_node_of_reshape2_out->AsStmt().op_type() == "softmax") {
     // link out_arg to op
     IR_NODE_LINK_TO(out_arg_node, next_inst_node_of_reshape2_out);
     // collect nodes to safe remove

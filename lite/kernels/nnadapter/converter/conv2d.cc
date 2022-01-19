@@ -111,19 +111,10 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   NNAdapterOperand* filter_operand = nullptr;
   std::vector<float> bias_scales;
   if (is_quant_mode) {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      std::vector<float> quant_scales;
-      CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
-      CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT operation to
-      // make the quant params obtained from a operand consistent with those
-      // obtained from op_desc
-    } else {
-      // TODO(hong19860320) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT operation to
-      // convert any type to int8 symm per-layer quant operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
+    CHECK(IsNNInt8SymmPerLayerQuantType(*input_type));
+    std::vector<float> quant_scales;
+    CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
+    CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
     CHECK_EQ(filter_scales.size(), output_channel_size);
     if (!IsValidSymmPerChannelQuantParams(filter_scales)) {
       filter_scales = {filter_scales[0]};
@@ -135,12 +126,6 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
       bias_scales[i] = input_scales[0] * filter_scales[i];
     }
   } else {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT to dequantize the input
-      // operand to the same type of operand as the filter operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
     CHECK(input_type->precision ==
           ConvertPrecisionTypeToNNPrecisionCode(filter_precison));
     filter_operand = converter->AddConstantOperand(*filter_tensor);
@@ -180,20 +165,10 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
       auto bias_type = converter->GetOperandType(bias_operand);
       // Check if we can use the bias_operand directly
       if (is_quant_mode) {
-        if (IsNNInt32SymmQuantType(*bias_type)) {
-          std::vector<float> quant_scales;
-          CHECK(GetNNSymmQuantParams(*bias_type, &quant_scales));
-          CHECK(IsSameSymmQuantParams(bias_scales, quant_scales));
-          // TODO(hong19860320) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT
-          // operation to make the quant params obtained from a operand
-          // consistent with those obtained from op_desc
-        } else {
-          // TODO(hong19860320) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT
-          // operation to convert any type to int32 symm per-layer/per-channel
-          // quant operand
-          LOG(FATAL) << "Mixed precision will be supported in future!";
-          return UNSUPPORTED_FEATURE;
-        }
+        CHECK(IsNNInt32SymmQuantType(*bias_type));
+        std::vector<float> quant_scales;
+        CHECK(GetNNSymmQuantParams(*bias_type, &quant_scales));
+        CHECK(IsSameSymmQuantParams(bias_scales, quant_scales));
       } else {
         CHECK(bias_type->precision == input_type->precision);
       }

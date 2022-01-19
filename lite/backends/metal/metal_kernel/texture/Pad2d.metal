@@ -24,8 +24,8 @@ kernel void pad2d(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
-    uint x = gid.x - pm.paddingLeft;
-    uint y = gid.y - pm.paddingTop;
+    int x = gid.x - pm.paddingLeft;
+    int y = gid.y - pm.paddingTop;
     if (pm.mode == 0) {
         if (x < 0 || y < 0 || x >= inTexture.get_width() || y >= inTexture.get_height()) {
             outTexture.write(ftype4(pm.padValue), uint2(gid.xy), gid.z);

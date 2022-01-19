@@ -70,12 +70,15 @@ settings.register_profile(
 
 
 class IgnoreReasonsBase(enum.Enum):
-    # Paddle not support, but paddlelite support, we need to add the feature.
-    PADDLE_NOT_IMPLEMENTED = 0
-    # paddlelite not support.
+    # Paddle cannot predict normally (an error is reported in the prediction process) -- Both paddle and Lite do not predict
+    PADDLE_NOT_SUPPORT = 0
+    # Lite does not have a corresponding operator or Lite predicts an error -- Paddle predicts but Lite does not.
     PADDLELITE_NOT_SUPPORT = 1
-    # Accuracy is abnormal after enabling pass.
+    # When diff exists in the calculation results of Paddle and Lite -- Both Paddle and Lite predict,
+    # but do not compare the results.
     ACCURACY_ERROR = 2
+    #For ignore op fusion
+    OP_FUSION_ERROR = 3
 
 
 class AutoScanBaseTest(unittest.TestCase):
@@ -250,7 +253,6 @@ class AutoScanBaseTest(unittest.TestCase):
                 # judge validity of program
                 if not self.is_program_valid(prog_config, paddlelite_config):
                     self.num_invalid_programs_list[predictor_idx] += 1
-                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
@@ -266,23 +268,17 @@ class AutoScanBaseTest(unittest.TestCase):
                         'lod': tensor_config.lod
                     }
                 results: List[Dict[str, np.ndarray]] = []
-
-                # baseline: cpu no ir_optim run
-                base_config = self.create_inference_config(ir_optim=False)
-                logging.info('[ProgramConfig]: ' + str(prog_config))
-                results.append(
-                    self.run_test_config(model, params, prog_config,
-                                         base_config, feed_data))
-
                 # ignore info
-                ignore_flag = False
+                accuracy_error_flag = False
+                paddle_not_support_flag = False
                 paddle_lite_not_support_flag = False
+                op_fusion_error_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
-                        ignore_flag = True
                         self.num_ignore_tests_list[predictor_idx] += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
+                            accuracy_error_flag = True
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
                                     pred_config))
@@ -294,12 +290,36 @@ class AutoScanBaseTest(unittest.TestCase):
                                             ignore_info[2] + ' ' + ' vs ' +
                                             self.paddlelite_config_str(
                                                 pred_config))
-                            break
+                        elif ignore_info[
+                                1] == IgnoreReasonsBase.PADDLE_NOT_SUPPORT:
+                            paddle_not_support_flag = True
+                            self.ignore_log("[PADDLE_NOT_SUPPORT ERROR] " +
+                                            ignore_info[2] + ' ' + ' vs ' +
+                                            self.paddlelite_config_str(
+                                                pred_config))
+                        elif ignore_info[
+                                1] == IgnoreReasonsBase.OP_FUSION_ERROR:
+                            op_fusion_error_flag = True
+                            self.ignore_log("[OP_FUSION ERROR] " + ignore_info[
+                                2] + ' ' + ' vs ' + self.paddlelite_config_str(
+                                    pred_config))
                         else:
                             raise NotImplementedError
-                        break
+
+                if paddle_not_support_flag:
+                    gl.set_paddle_not_supported_ops(self.get_target(),
+                                                    sys.argv[0])
+                    continue
+
+                # baseline: cpu no ir_optim run
+                base_config = self.create_inference_config(ir_optim=False)
+                logging.info('[ProgramConfig]: ' + str(prog_config))
+                results.append(
+                    self.run_test_config(model, params, prog_config,
+                                         base_config, feed_data))
                 if paddle_lite_not_support_flag:
-                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
+                    gl.set_lite_not_supported_ops(self.get_target(),
+                                                  sys.argv[0])
                     continue
 
                 if os.path.exists(self.cache_dir):
@@ -311,26 +331,24 @@ class AutoScanBaseTest(unittest.TestCase):
                         model, params, feed_data, pred_config)
                     results.append(result)
                     # add ignore methods
-                    if self.passes is not None:
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
-                        # op unit test: we will not check precision in ignore case
-                        if not ignore_flag:
-                            # pass unit test: we will not check fusion in ignore case
+                    if self.passes is not None:  # pass check
+                        if not accuracy_error_flag:
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                     results[0])
+                        if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
-                    else:
+                    else:  # op check
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
-                        if not ignore_flag:
+                        if not accuracy_error_flag:
                             self.assert_tensors_near(atol_, rtol_, results[-1],
                                                      results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
                         '\033[1;31m \nERROR INFO: {}\033[0m'.format(str(e)))
-                    if not ignore_flag:
-                        status = False
-                    continue
+                    status = False
+                    break
                 self.success_log('PredictorConfig: ' +
                                  self.paddlelite_config_str(pred_config))
         self.assertTrue(status)
