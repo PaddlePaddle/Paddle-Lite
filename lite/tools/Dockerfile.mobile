@@ -19,7 +19,7 @@ deb https://debian.opennms.org/ stable main\n'\
 > /etc/apt/sources.list
 RUN sed -ie 's|<mirror>|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|' /etc/apt/sources.list
 RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
-
+RUN wget -O - http://debian.opennms.org/OPENNMS-GPG-KEY | apt-key add -
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
         clang-format-3.8 \
@@ -33,8 +33,7 @@ RUN apt-get install -y --no-install-recommends \
         unzip \
         vim \
         wget
-RUN wget -O - http://debian.opennms.org/OPENNMS-GPG-KEY | apt-key add -
-RUN apt-get update
+
 # for android simulator
 RUN apt-get install -y --no-install-recommends \
         libc6-i386 \
