@@ -154,7 +154,7 @@ class TestSliceOp(AutoScanTest):
 
         ops_config = OpConfig(
             type="slice",
-            inputs=input[input_num],
+            inputs=input,
             outputs={"Out": ["output_data"]},
             attrs={
                 "axes": axes,
