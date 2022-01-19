@@ -31,7 +31,6 @@ import numpy as np
 class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # precision has diff on arm
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
@@ -134,7 +133,9 @@ class TestBoxCoderOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["box_coder"], (1e-5, 1e-5)
+        # code_type = "encode_center_size", abs_error = 1e-4. out = out /variance
+        # code_type = "decode_center_size", abs_error=1e-5.
+        return self.get_predictor_configs(), ["box_coder"], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -146,20 +147,9 @@ class TestBoxCoderOp(AutoScanTest):
                                     0].inputs:
                     return True
 
-        def teller2(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                if program_config.ops[0].attrs[
-                        "code_type"] == "encode_center_size":
-                    return True
-            return False
-
         self.add_ignore_check_case(
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on opencl. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            teller2, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

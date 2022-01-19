@@ -112,6 +112,8 @@ add_kernel(roi_align_compute Host extra SRCS roi_align_compute.cc)
 add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc)
 add_kernel(gaussian_random_compute Host extra SRCS gaussian_random_compute.cc)
 add_kernel(im2sequence_compute Host extra SRCS im2sequence_compute.cc)
+add_kernel(max_pool_with_index_compute Host extra SRCS max_pool_with_index_compute.cc)
+
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)

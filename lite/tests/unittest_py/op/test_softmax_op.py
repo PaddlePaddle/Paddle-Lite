@@ -50,7 +50,6 @@ class TestSoftmaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        # metal demo
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -64,13 +63,22 @@ class TestSoftmaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        x_shape = list(program_config.inputs["input_data"].shape)
+        axis = program_config.ops[0].attrs["axis"]
+        if predictor_config.target() == TargetType.OpenCL:
+            if len(x_shape) < 2 or (len(x_shape) == 4 and axis == 0):
+                return False
+        if predictor_config.target() == TargetType.Metal:
+            if len(x_shape) != 4 or axis != 1 or x_shape[0] != 1:
+                return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=4))
+                    min_value=1, max_value=64), min_size=0, max_size=3))
+        in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(input_axis < len(in_shape))
 
@@ -94,12 +102,15 @@ class TestSoftmaxOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["softmax"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+        return self.get_predictor_configs(), ["softmax"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal \
-               or predictor_config.target() == TargetType.OpenCL :
+            if predictor_config.target() == TargetType.Metal:
                 return True
 
         def teller2(program_config, predictor_config):
@@ -121,10 +132,14 @@ class TestSoftmaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=400)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 100
+        elif target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 2000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":
