@@ -7,19 +7,18 @@ MAINTAINER PaddlePaddle Authors <paddle-dev@baidu.com>
 RUN apt-get update && \
     apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-    xz-utils tk-dev libffi-dev liblzma-dev apt-transport-https ca-certificates
+    xz-utils tk-dev libffi-dev liblzma-dev
 
 
 RUN echo '\
 deb <mirror> <version> main restricted universe multiverse\n\
 deb <mirror> <version>-updates main restricted universe multiverse\n\
 deb <mirror> <version>-backports main restricted universe multiverse\n\
-deb <mirror> <version>-security main restricted universe multiverse\n\
-deb http://debian.opennms.org/ opennms-23 main\n'\
+deb <mirror> <version>-security main restricted universe multiverse\n'\
 > /etc/apt/sources.list
 RUN sed -ie 's|<mirror>|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|' /etc/apt/sources.list
 RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
-RUN wget -O - http://debian.opennms.org/OPENNMS-GPG-KEY | apt-key add -
+
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
         clang-format-3.8 \
@@ -41,7 +40,7 @@ RUN apt-get install -y --no-install-recommends \
         redir \
         iptables \
         openjdk-8-jre \
-        oracle-java8-installer
+        openjdk-8-jdk
 
 # for cmake 3.10
 RUN curl -O https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
