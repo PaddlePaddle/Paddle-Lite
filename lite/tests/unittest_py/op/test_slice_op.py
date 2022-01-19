@@ -111,25 +111,21 @@ class TestSliceOp(AutoScanTest):
 
         input = {}
         if use_tensorlists_input:
-            dics_input = [
-                {
-                    "Input": ["input_data"],
-                    # "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
-                    # "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-                },
-                {
-                    "Input": ["input_data"],
-                    "StartsTensor": ["starts_data"],
-                    "EndsTensor": ["ends_data"],
-                    "StartsTensorList":
-                    ["StartsTensorList1", "StartsTensorList2"],
-                    "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-                },
-                {
-                    "Input": ["input_data"]
-                },
-                {}
-            ]
+            dics_input = [{
+                "Input": ["input_data"],
+                "StartsTensorList":
+                ["StartsTensorList1", "StartsTensorList2"],
+                "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+            }, {
+                "Input": ["input_data"],
+                "StartsTensor": ["starts_data"],
+                "EndsTensor": ["ends_data"],
+                "StartsTensorList":
+                ["StartsTensorList1", "StartsTensorList2"],
+                "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+            }, {
+                "Input": ["input_data"]
+            }, {}]
             input = dics_input[input_num]
         else:
             input = {"Input": ["input_data"]}
