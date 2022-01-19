@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -21,8 +22,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class UnfoldCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+template <typename T, PrecisionType PType>
+class UnfoldCompute : public KernelLite<TARGET(kHost), PType> {
  public:
   void Run() override;
 

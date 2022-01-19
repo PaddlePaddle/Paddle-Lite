@@ -53,13 +53,13 @@ bool UnfoldOpLite::InferShapeImpl() const {
   int output_channels = x_dims[1] * kernel_sizes[0] * kernel_sizes[1];
   std::vector<int64_t> output_shape({x_dims[0], output_channels});
 
-  int output_height = CalcOutputSize(in_dims[2],
+  int output_height = CalcOutputSize(x_dims[2],
                                      kernel_sizes[0],
                                      dilations[0],
                                      paddings[0],
                                      paddings[2],
                                      strides[0]);
-  int output_width = CalcOutputSize(in_dims[3],
+  int output_width = CalcOutputSize(x_dims[3],
                                     kernel_sizes[1],
                                     dilations[1],
                                     paddings[1],
