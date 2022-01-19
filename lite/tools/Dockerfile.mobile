@@ -7,7 +7,7 @@ MAINTAINER PaddlePaddle Authors <paddle-dev@baidu.com>
 RUN apt-get update && \
     apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-    xz-utils tk-dev libffi-dev liblzma-dev
+    xz-utils tk-dev libffi-dev liblzma-dev apt-transport-https ca-certificates
 
 
 RUN echo '\
@@ -15,7 +15,7 @@ deb <mirror> <version> main restricted universe multiverse\n\
 deb <mirror> <version>-updates main restricted universe multiverse\n\
 deb <mirror> <version>-backports main restricted universe multiverse\n\
 deb <mirror> <version>-security main restricted universe multiverse\n\
-deb http://debian.opennms.org/ opennms-23 main\n'\
+deb http://debian.opennms.org/ opennms-23 main\n'
 > /etc/apt/sources.list
 RUN sed -ie 's|<mirror>|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|' /etc/apt/sources.list
 RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
