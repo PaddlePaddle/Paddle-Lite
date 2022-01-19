@@ -465,6 +465,7 @@ struct PoolParam : ParamBase {
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
+  const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
   float dropout_prob{.5f};
