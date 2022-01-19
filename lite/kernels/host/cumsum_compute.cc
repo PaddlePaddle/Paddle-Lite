@@ -33,7 +33,6 @@ void CumsumCompute<T, PType>::Run() {
     int64_t x_size = x->numel();
     if (param.reverse) {
       if (param.exclusive) {
-        // out_data[0] = 0;
         out_data[x_size - 1] = 0;
         for (int64_t i = x_size - 1; i > 0; i--) {
           out_data[i - 1] = x_data[i] + out_data[i];
