@@ -137,13 +137,15 @@ void test_p_norm(Place place, float abs_error) {
 TEST(PNorm, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kHost)
+#elif defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  test_p_norm(place, abs_error);
+      test_p_norm(place, abs_error);
 }
 
 }  // namespace lite
