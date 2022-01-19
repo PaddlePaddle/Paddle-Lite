@@ -63,7 +63,7 @@ class TestSqueeze2Op(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=32), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["int64", "int32", "float"]))
+        input_type = draw(st.sampled_from(["int64", "int32", "float32"]))
         input_axis = draw(
             st.sampled_from([[0, 1, 2, 3], [-1, 2, 3], [], [-1], [1], [2],
                              [3], [-1, 0, 1]]))
