@@ -128,9 +128,6 @@ class TestExpandOp(AutoScanTest):
                     min_value=1, max_value=8),
                 min_size=len(in_shape),
                 max_size=len(in_shape)))
-        if self.get_target() == "OpenCL":
-            with_tensor = False
-            attr_shape[1] = 1
 
         inputs = gnerate_inputs(with_tensor)
         expand_op = OpConfig(
