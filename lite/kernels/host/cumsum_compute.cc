@@ -69,11 +69,9 @@ void CumsumCompute<T, PType>::Run() {
             int64_t step = i * count * post + j;
             const T* src = x_data + step;
             T* dst = out_data + step;
-            // dst[0] = 0;
             dst[(count - 1) * post] = 0;
             int p = 1;
             for (int64_t k = count - 1; k > 0; k--, p++) {
-              // dst[p * post] = src[k * post] + dst[(p-1) * post];
               dst[(k - 1) * post] = src[k * post] + dst[k * post];
             }
           }
