@@ -31,12 +31,11 @@ bool UnfoldOpLite::CheckShape() const {
 inline int CalcOutputSize(int input_size,
                           int filter_size,
                           int dilation,
-                          int pad_left,
-                          int pad_right,
+                          int padding1,
+                          int padding2,
                           int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + pad_left + pad_right - dkernel) / stride + 1;
-
+  int output_size = (input_size + padding1 + padding2 - dkernel) / stride + 1;
   return output_size;
 }
 

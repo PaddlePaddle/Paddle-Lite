@@ -44,12 +44,11 @@ class TestUnfoldOp(AutoScanTest):
     def sample_program_configs(self, draw):
 
         N = draw(st.integers(min_value=2, max_value=4))
-        C = draw(st.integers(min_value=2, max_value=128))
-        H = draw(st.integers(min_value=2, max_value=128))
-        W = draw(st.integers(min_value=2, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
-
-        in_dtype = draw(st.sampled_from([np.float32, np.int32]))
+        C = draw(st.integers(min_value=2, max_value=64))
+        H = draw(st.integers(min_value=2, max_value=64))
+        W = draw(st.integers(min_value=2, max_value=64))
+        in_shape = draw(st.sampled_from([[N, C, H, W]]))
+        in_dtype = draw(st.sampled_from([np.float32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
@@ -57,7 +56,7 @@ class TestUnfoldOp(AutoScanTest):
         paddings = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=20), min_size=2, max_size=2))
+                    min_value=0, max_value=10), min_size=4, max_size=4))
         dilations = draw(
             st.lists(
                 st.integers(
@@ -67,6 +66,23 @@ class TestUnfoldOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=10), min_size=2, max_size=2))
         kernel_sizes = draw(st.sampled_from([[1, 1], [2, 2], [3, 3]]))
+
+        assume(in_shape[2] >= kernel_sizes[0])
+        assume(in_shape[3] >= kernel_sizes[1])
+
+        def cal_output_size(input_size, filter_size, dilation, padding1,
+                            padding2, stride):
+            dkernel = dilation * (filter_size - 1) + 1
+            return (input_size + padding1 + padding2 - dkernel) // stride + 1
+
+        output_height = cal_output_size(in_shape[2], kernel_sizes[0],
+                                        dilations[0], paddings[0], paddings[2],
+                                        strides[0])
+        output_width = cal_output_size(in_shape[3], kernel_sizes[1],
+                                       dilations[1], paddings[1], paddings[3],
+                                       strides[1])
+        assume(output_height > 0)
+        assume(output_width > 0)
 
         unfold_op = OpConfig(
             type="unfold",
@@ -94,7 +110,7 @@ class TestUnfoldOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

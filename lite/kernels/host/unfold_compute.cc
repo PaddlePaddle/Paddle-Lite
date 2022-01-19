@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,11 +67,11 @@ inline void im2col_common(const lite::Tensor& im,
 inline int CalcOutputSize(int input_size,
                           int filter_size,
                           int dilation,
-                          int pad_left,
-                          int pad_right,
+                          int padding1,
+                          int padding2,
                           int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + pad_left + pad_right - dkernel) / stride + 1;
+  int output_size = (input_size + padding1 + padding2 - dkernel) / stride + 1;
 
   return output_size;
 }
@@ -101,6 +101,13 @@ void UnfoldCompute<T, PType>::Run() {
                                     paddings[3],
                                     strides[1]);
 
+  std::vector<int64_t> output_shape(
+      {input_dims[0],
+       input_dims[1] * kernel_sizes[0] * kernel_sizes[1],
+       output_height * output_width});
+  output->Resize(output_shape);
+  output->template mutable_data<T>();
+
   DDim input_shape({input_dims[1], input_dims[2], input_dims[3]});
   DDim output_matrix_shape({input_dims[1],
                             kernel_sizes[0],
@@ -114,11 +121,6 @@ void UnfoldCompute<T, PType>::Run() {
     out_batch.Resize(output_matrix_shape);
     im2col_common<T>(in_batch, dilations, strides, paddings, &out_batch);
   }
-  std::vector<int64_t> output_shape(
-      {input_dims[0],
-       input_dims[1] * kernel_sizes[0] * kernel_sizes[1],
-       output_height * output_width});
-  output->Resize(output_shape);
 }
 
 }  // namespace host
@@ -131,4 +133,25 @@ using unfold_float =
 REGISTER_LITE_KERNEL(unfold, kHost, kFloat, kNCHW, unfold_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .Finalize();
+
+using unfold_int32 =
+    paddle::lite::kernels::host::UnfoldCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(unfold, kHost, kInt32, kNCHW, unfold_int32, def_int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+using unfold_int64 =
+    paddle::lite::kernels::host::UnfoldCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(unfold, kHost, kInt64, kNCHW, unfold_int64, def_int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .Finalize();
+
+using unfold_int8 =
+    paddle::lite::kernels::host::UnfoldCompute<int8_t, PRECISION(kInt8)>;
+REGISTER_LITE_KERNEL(unfold, kHost, kInt8, kNCHW, unfold_int8, def_int8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
     .Finalize();
