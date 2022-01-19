@@ -41,6 +41,7 @@ void GridSamplerCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   const size_t coor_size = n * h * w;
   const size_t workspace_size = coor_size * 12 * sizeof(float);
+  memset(out, 0, param.out->numel() * sizeof(float));
 
   ctx.ExtendWorkspace(workspace_size);
   int32_t* coor_p = ctx.workspace_data<int>();

@@ -12,16 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/dropout_compute.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/max_pool_with_index_op.h"
 
-REGISTER_LITE_KERNEL(dropout,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::DropoutCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+class MaxPoolWithIndexCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::PoolParam;
+
+  void Run() override;
+
+  virtual ~MaxPoolWithIndexCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

@@ -99,11 +99,13 @@ class TestGridSamplerOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            return True
+            if predictor_config.target() == TargetType.OpenCL:
+                return True
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff. We need to fix it as soon as possible.")
+            "The op output has diff on OpenCL. We need to fix it as soon as possible."
+        )
 
         def teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.OpenCL:

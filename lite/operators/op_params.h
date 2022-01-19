@@ -437,6 +437,7 @@ struct BatchNormParam : ParamBase {
 struct PoolParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* mask{};
   std::string pooling_type{""};
   std::vector<int> ksize{};
   bool global_pooling{
@@ -464,6 +465,7 @@ struct PoolParam : ParamBase {
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
+  const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
   float dropout_prob{.5f};
