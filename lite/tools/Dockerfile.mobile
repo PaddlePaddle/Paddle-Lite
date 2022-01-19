@@ -15,7 +15,7 @@ deb <mirror> <version> main restricted universe multiverse\n\
 deb <mirror> <version>-updates main restricted universe multiverse\n\
 deb <mirror> <version>-backports main restricted universe multiverse\n\
 deb <mirror> <version>-security main restricted universe multiverse\n\
-deb https://debian.opennms.org/ stable main\n'\
+deb http://debian.opennms.org/ opennms-23 main\n'\
 > /etc/apt/sources.list
 RUN sed -ie 's|<mirror>|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|' /etc/apt/sources.list
 RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
