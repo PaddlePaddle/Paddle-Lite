@@ -36,7 +36,7 @@ __kernel void mat_mul_naive(__global const CL_DTYPE* a,
   const int n = get_global_id(1);
 
   CL_DTYPE res = 0.f;
-  for (short k = 0; k < K; ++k) {
+  for (int k = 0; k < K; ++k) {
     res += A(m, k, lda) * B(k, n, ldb);
   }
   C(m, n, ldc) = res * alpha;
@@ -60,19 +60,19 @@ __kernel void gemv_1x4(__global const CL_DTYPE* a,
                   << 2;  // gws[0]: [0, N >> 2) height of B == N
 
   if (col + 3 < N) {
-    half4 a1x4 = 0.0f, b0_1x4 = 0.0f, b1_1x4 = 0.0f, b2_1x4 = 0.0f,
-          b3_1x4 = 0.0f, c1x4 = 0.0f;
+    float4 a1x4 = 0.0f, b0_1x4 = 0.0f, b1_1x4 = 0.0f, b2_1x4 = 0.0f,
+           b3_1x4 = 0.0f, c1x4 = 0.0f;
 
     // main loop of K
     short p = 0;
     __global CL_DTYPE* base_b = (__global CL_DTYPE*)&B(p, col, ldb);
     for (; p < K - 3; p += 4) {
-      a1x4 = convert_half4(vload4(0, &A(0, p, lda)));
+      a1x4 = convert_float4(vload4(0, &A(0, p, lda)));
 
-      b0_1x4 = convert_half4(vload4(0, base_b));
-      b1_1x4 = convert_half4(vload4(0, base_b + ldb));
-      b2_1x4 = convert_half4(vload4(0, base_b + ldb * 2));
-      b3_1x4 = convert_half4(vload4(0, base_b + ldb * 3));
+      b0_1x4 = convert_float4(vload4(0, base_b));
+      b1_1x4 = convert_float4(vload4(0, base_b + ldb));
+      b2_1x4 = convert_float4(vload4(0, base_b + ldb * 2));
+      b3_1x4 = convert_float4(vload4(0, base_b + ldb * 3));
 
       c1x4 = mad(a1x4.x, b0_1x4, c1x4);
       c1x4 = mad(a1x4.y, b1_1x4, c1x4);
@@ -90,22 +90,22 @@ __kernel void gemv_1x4(__global const CL_DTYPE* a,
 
     switch (K - p) {
       case 3: {
-        b2_1x4 = convert_half4(vload4(0, &B(p + 2, col, ldb)));
+        b2_1x4 = convert_float4(vload4(0, &B(p + 2, col, ldb)));
         a1x4.z = a[p + 2];
       }
       case 2: {
-        b1_1x4 = convert_half4(vload4(0, &B(p + 1, col, ldb)));
+        b1_1x4 = convert_float4(vload4(0, &B(p + 1, col, ldb)));
         a1x4.y = a[p + 1];
       }
       case 1: {
-        b0_1x4 = convert_half4(vload4(0, &B(p, col, ldb)));
+        b0_1x4 = convert_float4(vload4(0, &B(p, col, ldb)));
         a1x4.x = a[p];
       }
     }
     c1x4 = mad(a1x4.x, b0_1x4, c1x4);
     c1x4 = mad(a1x4.y, b1_1x4, c1x4);
     c1x4 = mad(a1x4.z, b2_1x4, c1x4);
-    c1x4 = c1x4 * (half4)alpha;
+    c1x4 = c1x4 * (float4)alpha;
 
     if (col % 4 == 0) {
       float4 c_res = convert_float4(c1x4);
@@ -122,7 +122,7 @@ __kernel void gemv_1x4(__global const CL_DTYPE* a,
     }
   } else {
     for (short col_idx = col; col_idx < N; ++col_idx) {
-      half c0 = 0, a0 = 0, b0 = 0;
+      float c0 = 0, a0 = 0, b0 = 0;
       for (short p = 0; p < K; ++p) {
         b0 = B(p, col_idx, ldb);
         a0 = A(0, p, lda);

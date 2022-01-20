@@ -55,9 +55,13 @@ class MatMulV2Compute
 
     Tensor y_trans_cpu_t;
     auto y_t = matmul_v2_param_->Y;
-    if (y_t->persistable() && transpose_y_) {
+    auto y_dims = y_t->dims();
+    auto y_ext_dims = y_dims;
+    if (transpose_y_) {
       LOG(INFO) << "y_t->persistable()";
-      y_trans_cpu_t.Resize(y_t->dims());
+      y_ext_dims[0] = y_dims[1];
+      y_ext_dims[1] = y_dims[0];
+      y_trans_cpu_t.Resize(y_ext_dims);
       transpose_cpu(y_t->data<float>(),
                     y_trans_cpu_t.mutable_data<float>(),
                     y_t->dims()[0],
