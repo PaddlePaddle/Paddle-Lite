@@ -182,7 +182,7 @@ class TestSliceOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=150)
 
 
 if __name__ == "__main__":
