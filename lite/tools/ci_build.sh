@@ -377,10 +377,6 @@ function test_xpu {
 
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_xpu {
-    local with_xtcl=$1
-    if [[ "${with_xtcl}x" == "x" ]]; then
-        with_xtcl=OFF
-    fi
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
@@ -393,7 +389,6 @@ function build_test_xpu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DLITE_WITH_XTCL=$with_xtcl\
         -DXPU_SDK_ROOT="./output"
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -1549,10 +1544,6 @@ function main {
                 ;;
             build_test_xpu)
                 build_test_xpu OFF
-                shift
-                ;;
-            build_test_xpu_with_xtcl)
-                build_test_xpu ON
                 shift
                 ;;
             huawei_kirin_npu_build_and_test)

@@ -638,10 +638,6 @@ function rockchip_npu_build_and_test() {
 }
 
 function baidu_xpu_build_and_test() {
-    local with_xtcl=$1
-    if [[ -z "$with_xtcl" ]]; then
-        with_xtcl=OFF
-    fi
     local unit_test_check_list=$2
     local unit_test_filter_type=$3
     local sdk_url=$4
@@ -669,8 +665,7 @@ function baidu_xpu_build_and_test() {
         -DLITE_WITH_LTO=OFF \
         -DXPU_SDK_URL=$sdk_url \
         -DXPU_SDK_ENV=$sdk_env \
-        -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-        -DLITE_WITH_XTCL=$with_xtcl
+        -DXPU_SDK_ROOT=$XPU_SDK_ROOT
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 

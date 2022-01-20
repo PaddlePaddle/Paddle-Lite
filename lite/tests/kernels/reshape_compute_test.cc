@@ -217,11 +217,6 @@ TEST(Reshape, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use fp16 in xpu
-  // TODO(shentanyue): enable later
-  return;
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else

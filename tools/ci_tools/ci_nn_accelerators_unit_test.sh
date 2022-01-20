@@ -1216,8 +1216,7 @@ function kunlunxin_xpu_build_and_test() {
         -DLITE_WITH_LTO=OFF \
         -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
-        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
-        -DLITE_WITH_XTCL=OFF
+        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
