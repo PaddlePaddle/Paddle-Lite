@@ -83,6 +83,7 @@ void UnfoldCompute<T, PType>::Run() {
   lite::Tensor* output = param.Y;
   auto input_dims = input->dims();
   const int batch_size = static_cast<int>(input_dims[0]);
+  output->template mutable_data<T>();
 
   std::vector<int> kernel_sizes = param.kernel_sizes;
   std::vector<int> strides = param.strides;
@@ -100,13 +101,6 @@ void UnfoldCompute<T, PType>::Run() {
                                     paddings[1],
                                     paddings[3],
                                     strides[1]);
-
-  std::vector<int64_t> output_shape(
-      {input_dims[0],
-       input_dims[1] * kernel_sizes[0] * kernel_sizes[1],
-       output_height * output_width});
-  output->Resize(output_shape);
-  output->template mutable_data<T>();
 
   DDim input_shape({input_dims[1], input_dims[2], input_dims[3]});
   DDim output_matrix_shape({input_dims[1],
@@ -136,15 +130,15 @@ REGISTER_LITE_KERNEL(unfold, kHost, kFloat, kNCHW, unfold_float, def)
     .Finalize();
 
 using unfold_int32 =
-    paddle::lite::kernels::host::UnfoldCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(unfold, kHost, kInt32, kNCHW, unfold_int32, def_int32)
+    paddle::lite::kernels::host::UnfoldCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(unfold, kHost, kFloat, kNCHW, unfold_int32, def_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 
 using unfold_int64 =
-    paddle::lite::kernels::host::UnfoldCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(unfold, kHost, kInt64, kNCHW, unfold_int64, def_int64)
+    paddle::lite::kernels::host::UnfoldCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(unfold, kHost, kFloat, kNCHW, unfold_int64, def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();

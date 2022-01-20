@@ -20,11 +20,11 @@ namespace lite {
 namespace operators {
 
 bool UnfoldOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Y);
+  CHECK(param_.X);
+  CHECK(param_.Y);
 
   const auto x_dims = param_.X->dims();
-  CHECK_OR_FALSE(x_dims.size() == 4);
+  CHECK_EQ(x_dims.size(), 4);
   return true;
 }
 

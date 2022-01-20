@@ -48,7 +48,7 @@ class TestUnfoldOp(AutoScanTest):
         H = draw(st.integers(min_value=2, max_value=64))
         W = draw(st.integers(min_value=2, max_value=64))
         in_shape = draw(st.sampled_from([[N, C, H, W]]))
-        in_dtype = draw(st.sampled_from([np.float32]))
+        in_dtype = draw(st.sampled_from([np.float32, ]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
