@@ -177,9 +177,7 @@ class AutoScanBaseTest(unittest.TestCase):
         max_diff = max(diff)
         check = False
         print("+++fp16 check")
-        # skip nan
-        if max_diff == np.nan:
-            return False1
+
         if max_diff > atol:
             size = len(arr)
             count = 0
