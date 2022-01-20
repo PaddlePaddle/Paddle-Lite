@@ -117,23 +117,28 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         in_shape = [input_n, input_c, input_h, input_w]
         weight_shape = [filter_m, filter_c, filter_h, filter_w]
 
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        def generate_filter(*args, **kwargs):
+            return np.random.random(weight_shape).astype(np.float32)
+
         def generate_bias(*args, **kwargs):
             return np.random.random([filter_m]).astype(np.float32)
-            if use_mkldnn:
-                return np.random.randint(
-                    -10, 10, size=kwargs['shape']).astype(kwargs['dtype'])
-            else:
-                return np.zeros(shape=kwargs['shape']).astype(kwargs['dtype'])
 
         inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
-        inputs_data = {"input_data": TensorConfig(shape=in_shape)}
-        weights_data = {"filter_data": TensorConfig(shape=weight_shape)}
+        inputs_data = {
+            "input_data": TensorConfig(data_gen=partial(generate_input))
+        }
+        weights_data = {
+            "filter_data": TensorConfig(data_gen=partial(generate_filter))
+        }
         if use_mkldnn:
             has_bias = draw(st.booleans())
             if has_bias:
                 inputs_type["Bias"] = ["bias_data"]
-                weights_data['bias_data'] = TensorConfig(data_gen=partial(
-                    generate_bias, shape=[filter_m], dtype=np.float32))
+                weights_data['bias_data'] = TensorConfig(
+                    data_gen=partial(generate_bias))
 
         depthwise_conv2d_op = OpConfig(
             type="depthwise_conv2d",

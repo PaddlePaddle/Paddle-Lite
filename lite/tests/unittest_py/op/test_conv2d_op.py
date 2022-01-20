@@ -75,9 +75,8 @@ class TestConv2dOp(AutoScanTest):
         cout = draw(st.integers(min_value=1, max_value=128))
         height = draw(st.integers(min_value=1, max_value=128))
         width = draw(st.integers(min_value=1, max_value=128))
-        cout = draw(st.integers(min_value=1, max_value=128))
-        kw = np.random.randint(1, 5)
-        kh = np.random.randint(1, 5)
+        kw = draw(st.integers(min_value=1, max_value=5))
+        kh = draw(st.integers(min_value=1, max_value=5))
         groups = draw(st.integers(min_value=1, max_value=128))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
@@ -161,9 +160,9 @@ class TestConv2dOp(AutoScanTest):
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             if target_type == TargetType.ARM and (
-                    predictor_config.precision() == PrecisionType.FP16 or
                     predictor_config.precision() == PrecisionType.INT8):
                 return True
+            return False
 
         def _teller3(program_config, predictor_config):
             target_type = predictor_config.target()
@@ -183,7 +182,7 @@ class TestConv2dOp(AutoScanTest):
         )
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+            "The int8 op output doesn't support on arm. We need to fix it as soon as possible."
         )
         self.add_ignore_check_case(
             _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
