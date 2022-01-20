@@ -162,6 +162,9 @@ class LITE_API ConfigBase {
   std::string nnadapter_context_properties_{};
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
+  // Dynamic shapes of the NNAdapter model
+  std::map<std::string, std::vector<std::vector<int64_t>>>
+      nnadapter_dynamic_shape_info_;
   // The buffers for loading the compiled NNAdapter models from memory.
   std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
   int device_id_{0};
@@ -245,6 +248,16 @@ class LITE_API ConfigBase {
   }
   const std::string& nnadapter_model_cache_dir() const {
     return nnadapter_model_cache_dir_;
+  }
+  // Set dynamic shapes for building models
+  void set_nnadapter_dynamic_shape_info(
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    nnadapter_dynamic_shape_info_ = nnadapter_dynamic_shape_info;
+  }
+  const std::map<std::string, std::vector<std::vector<int64_t>>>&
+  nnadapter_dynamic_shape_info() const {
+    return nnadapter_dynamic_shape_info_;
   }
   // Set the buffers for loading the compiled NNAdapter models from memory.
   void set_nnadapter_model_cache_buffers(

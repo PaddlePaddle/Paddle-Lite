@@ -62,25 +62,6 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
-void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  if (!GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
 void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
@@ -225,8 +206,6 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
     .BindTargets({TARGET(kNPU)});
-REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)
-    .BindTargets({TARGET(kXPU)});
 REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
     .BindTargets({TARGET(kBM)});
 REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)

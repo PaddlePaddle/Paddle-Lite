@@ -230,7 +230,7 @@ TEST(Compare, precision) {
       place, abs_error, "less_than", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
   TestCompare<float>(place, abs_error, "less_than", {2, 3, 4}, {2, 3, 4}, 0);
   return;
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   TestCompare<float>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
   TestCompare<int32_t>(

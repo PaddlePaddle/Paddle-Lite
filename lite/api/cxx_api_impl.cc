@@ -109,6 +109,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
             raw_predictor_->scope(),
             config.nnadapter_mixed_precision_quantization_config_buffer());
+    Context<TargetType::kNNAdapter>::SetNNAdapterDynamicShapeInfo(
+        raw_predictor_->scope(), config.nnadapter_dynamic_shape_info());
 #endif
 
     auto use_layout_preprocess_pass =

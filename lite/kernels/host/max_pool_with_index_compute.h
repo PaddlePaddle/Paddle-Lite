@@ -13,15 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#pragma GCC system_header
-#include <xpu/runtime.h>
-#include <xpu/xdnn.h>
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/max_pool_with_index_op.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace host {
 
-namespace xdnn = baidu::xpu::api;
+class MaxPoolWithIndexCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::PoolParam;
 
+  void Run() override;
+
+  virtual ~MaxPoolWithIndexCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

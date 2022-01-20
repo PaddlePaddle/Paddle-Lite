@@ -114,9 +114,6 @@ class TestMulticlassNms3Op(AutoScanTest):
                 "input_data_roisnum": TensorConfig(data_gen=generate_input)
             },
             outputs={"output_data"})
-        x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
-        y_shape = list(program_config.inputs["input_data_Scores"].shape)
-        assume(x_shape[0] > y_shape[0])
         return program_config
 
     def sample_predictor_configs(self):

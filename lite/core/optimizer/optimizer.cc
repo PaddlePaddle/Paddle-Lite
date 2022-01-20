@@ -215,7 +215,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "quantization_parameters_removal_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
-       "xpu_subgraph_pass",
        "bm_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",

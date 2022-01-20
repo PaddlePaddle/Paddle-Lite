@@ -150,6 +150,18 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
   return 0;
 }
 
+NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
+    const NNAdapterOperandType& type) {
+  uint32_t count = type.dimensions.count;
+  auto dimensions = type.dimensions.data;
+  for (uint32_t i = 0; i < count; i++) {
+    if (dimensions[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
+}
+
 NNADAPTER_EXPORT int64_t
 GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
   auto production =
