@@ -45,6 +45,11 @@ enum class L3CacheSetMethod {
 // return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
+// return current opencl device type,
+// if opencl not enabled or IsOpenCLBackendValid return false, it will return -1
+// UNKNOWN:0, QUALCOMM_ADRENO:1, ARM_MALI:2, IMAGINATION_POWERVR:3, OTHERS:4,
+LITE_API int GetOpenCLDeviceType();
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
