@@ -36,14 +36,14 @@ class TestConv2dOp(AutoScanTest):
             thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -163,13 +163,6 @@ class TestConv2dOp(AutoScanTest):
 
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
-            if target_type == TargetType.ARM and (
-                    predictor_config.precision() == PrecisionType.INT8):
-                return True
-            return False
-
-        def _teller3(program_config, predictor_config):
-            target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data"].shape
             filter_data = program_config.weights["filter_data"].shape
             groups = program_config.ops[0].attrs["groups"]
@@ -184,12 +177,9 @@ class TestConv2dOp(AutoScanTest):
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
         )
+
         self.add_ignore_check_case(
-            _teller2, IgnoreReasons.ACCURACY_ERROR,
-            "The int8 op output doesn't support on arm. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 

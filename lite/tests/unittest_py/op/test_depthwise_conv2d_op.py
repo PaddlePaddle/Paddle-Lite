@@ -29,12 +29,16 @@ from functools import partial
 class TestDepthwiseConv2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        arm_valid_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         x86_valid_places = [
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.X86, PrecisionType.INT8, DataLayoutType.NCHW)
