@@ -37,11 +37,6 @@ class BMSubgraphPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-class RKNPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
 class MLUSubgraphPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
