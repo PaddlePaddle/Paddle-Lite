@@ -206,12 +206,13 @@ class TestSplitOp(AutoScanTest):
         max_examples = 50
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
-            max_examples = 500
+            max_examples = 100
         if target_str == "Metal":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 500
 
-        self.run_and_statis(quant=False, min_success_num=25, max_examples=100)
+        self.run_and_statis(
+            quant=False, min_success_num=25, max_examples=max_examples)
 
 
 if __name__ == "__main__":
