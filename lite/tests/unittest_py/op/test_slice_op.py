@@ -1,4 +1,4 @@
-# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,6 +50,18 @@ class TestSliceOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        '''
+        #All of metal inputs error.
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -75,11 +87,10 @@ class TestSliceOp(AutoScanTest):
         input_num = draw(st.sampled_from([0, 1, 2]))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
+        assume(input_num != 0)
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
         assume(len(axes) <= len(in_shape))
-        use_tensorlists_input = draw(st.booleans())
-        assume(use_tensorlists_input == False)
         if input_num == 0:
             assume(len(axes) == 2)
 
@@ -109,26 +120,19 @@ class TestSliceOp(AutoScanTest):
         def generate_endlist2(*args, **kwargs):
             return np.array([2], dtype="int32")
 
-        input = {}
-        if use_tensorlists_input:
-            dics_input = [{
-                "Input": ["input_data"],
-                "StartsTensorList":
-                ["StartsTensorList1", "StartsTensorList2"],
-                "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-            }, {
-                "Input": ["input_data"],
-                "StartsTensor": ["starts_data"],
-                "EndsTensor": ["ends_data"],
-                "StartsTensorList":
-                ["StartsTensorList1", "StartsTensorList2"],
-                "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
-            }, {
-                "Input": ["input_data"]
-            }, {}]
-            input = dics_input[input_num]
-        else:
-            input = {"Input": ["input_data"]}
+        dics_intput = [{
+            "Input": ["input_data"],
+            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
+            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+        }, {
+            "Input": ["input_data"],
+            "StartsTensor": ["starts_data"],
+            "EndsTensor": ["ends_data"],
+            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
+            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+        }, {
+            "Input": ["input_data"]
+        }, {}]
 
         dics_weight = [{
             "StartsTensorList1":
@@ -154,7 +158,7 @@ class TestSliceOp(AutoScanTest):
 
         ops_config = OpConfig(
             type="slice",
-            inputs=input,
+            inputs=dics_intput[input_num],
             outputs={"Out": ["output_data"]},
             attrs={
                 "axes": axes,
