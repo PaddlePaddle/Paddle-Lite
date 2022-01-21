@@ -96,7 +96,7 @@ class PixelShuffleComputeTester : public arena::TestCase {
 TEST(PixelShuffle, precision) {
   Place place;
   LOG(INFO) << "test pixel_shuffle op";
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   LOG(INFO) << "test pixel_shuffle arm";

@@ -52,6 +52,10 @@ class Program {
 
  private:
   void Clear();
+  int CheckInputsAndOutputs(uint32_t input_count,
+                            hal::Argument* input_arguments,
+                            uint32_t output_count,
+                            hal::Argument* output_arguments);
   // Build from model or cache
   int BuildFromModel(hal::Model* model);
   int BuildFromCache(hal::Cache* cache);
