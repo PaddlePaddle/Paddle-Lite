@@ -28,11 +28,7 @@ add_kernel(stack_compute_x86 X86 basic SRCS stack_compute.cc)
 add_kernel(dropout_compute_x86 X86 basic SRCS dropout_compute.cc)
 add_kernel(transpose_compute_x86 X86 basic SRCS transpose_compute.cc)
 add_kernel(layer_norm_compute_x86 X86 basic SRCS layer_norm_compute.cc)
-# todo: fc x86 kernel can not compile successfully on mac because openmp is not supported on mac clang,
-# this problem should be fixed later to support fc x86 kernel on mac. @DannyIsFunny
-if(NOT APPLE)
-    add_kernel(fc_compute_x86 X86 basic SRCS fc_compute.cc)
-endif()
+add_kernel(fc_compute_x86 X86 basic SRCS fc_compute.cc)
 add_kernel(gru_compute_x86 X86 basic SRCS gru_compute.cc)
 add_kernel(gru_unit_compute_x86 X86 basic SRCS gru_unit_compute.cc)
 add_kernel(sequence_expand_as_compute_x86 X86 basic SRCS sequence_expand_as_compute.cc)
