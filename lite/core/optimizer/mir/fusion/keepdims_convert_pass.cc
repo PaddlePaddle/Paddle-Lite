@@ -24,8 +24,14 @@ namespace lite {
 namespace mir {
 
 void KeepdimsConvertPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  const std::vector<std::string> op_type_cases{
-      "arg_max", "reduce_max", "reduce_mean"};
+  const std::vector<std::string> op_type_cases{"arg_max",
+                                               "reduce_max",
+                                               "reduce_min",
+                                               "reduce_mean",
+                                               "reduce_sum",
+                                               "reduce_prob",
+                                               "reduce_all",
+                                               "reduce_any"};
   for (auto op_type : op_type_cases) {
     fusion::KeepdimsConvertFuser fuser(op_type);
     fuser(graph.get());
