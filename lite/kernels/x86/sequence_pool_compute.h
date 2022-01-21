@@ -38,7 +38,7 @@ class SequencePoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     CHECK_EQ(lod.size(), 1UL);
     CHECK_GE(dims[0], static_cast<int64_t>(lod[0].size() - 1));
 
-    dims[0] = lod[0].size() - 1;
+    dims[0] = lod[lod().size()-1].size() - 1;
     out->Resize({dims});
     out->template mutable_data<T>();
     lite::Tensor* index = nullptr;

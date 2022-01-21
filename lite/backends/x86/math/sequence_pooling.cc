@@ -53,7 +53,7 @@ class MaxSeqPoolFunctor {
     }
     CHECK_EQ(idx_dims, out_dims);
 
-    auto starts = input.lod()[0];
+    auto starts = input.lod()[input.lod().size()-1];
     const T* in_data = input.data<T>();
     T* out_data = output->template mutable_data<T>();
     int* max_index = index->mutable_data<int>();
@@ -101,7 +101,7 @@ class MaxSeqPoolFunctor<T, true> {
       CHECK_EQ(in_dims[i], out_dims[i]);
     }
 
-    auto starts = input.lod()[0];
+    auto starts = input.lod()[input.lod().size()-1];
     const T* in_data = input.data<T>();
     T* out_data = output->template mutable_data<T>();
 
