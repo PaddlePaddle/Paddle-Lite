@@ -110,10 +110,7 @@ class TestSplitOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
-                input = np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-                print("input = ", input)
-                return input
-                # return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
             elif input_type == "int32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int32)
             elif input_type == "int64":
@@ -214,12 +211,7 @@ class TestSplitOp(AutoScanTest):
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 500
 
-        self.run_and_statis(
-            quant=False,
-            min_success_num=25,
-            max_examples=100,
-            # reproduce=reproduce_failure('6.27.0', b'AAIEAAABAgAA')
-        )
+        self.run_and_statis(quant=False, min_success_num=25, max_examples=100)
 
 
 if __name__ == "__main__":
