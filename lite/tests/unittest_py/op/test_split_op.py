@@ -1,4 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 from functools import partial
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy as np
 
@@ -110,7 +110,10 @@ class TestSplitOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+                input = np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+                print("input = ", input)
+                return input
+                # return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
             elif input_type == "int32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int32)
             elif input_type == "int64":
@@ -175,8 +178,6 @@ class TestSplitOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 if len(x_shape) != 4:
                     return True
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
@@ -188,10 +189,9 @@ class TestSplitOp(AutoScanTest):
             x_shape = list(program_config.inputs["input_data"].shape)
             out_shape = list(program_config.outputs)
             axis = program_config.ops[0].attrs["axis"]
+            num = program_config.ops[0].attrs["num"]
             if predictor_config.target() == TargetType.OpenCL:
-                if len(x_shape) != 4 \
-                    or len(out_shape) != 2 \
-                    or x_dtype != np.float32 :
+                if num != 2 or x_dtype != np.float32:
                     return True
             if predictor_config.target() == TargetType.Metal:
                 if len(x_shape) == 2 or axis == 0 or axis == 1:
@@ -215,7 +215,11 @@ class TestSplitOp(AutoScanTest):
             max_examples = 500
 
         self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+            quant=False,
+            min_success_num=25,
+            max_examples=100,
+            # reproduce=reproduce_failure('6.27.0', b'AAIEAAABAgAA')
+        )
 
 
 if __name__ == "__main__":
