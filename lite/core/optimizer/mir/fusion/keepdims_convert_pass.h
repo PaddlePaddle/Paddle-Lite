@@ -17,6 +17,35 @@
 #include <memory>
 #include "lite/core/optimizer/mir/pass.h"
 
+/*
+ * KeepdimsConvertPass splits some ops whose attribute `keepdims` or `keep_dim`
+ * is false to two ops.
+ * The reason for adding this pass is that it is hard for gpu to do reshape
+ * opterations in arg_max/reduce_mean, etc,. So we split this problem.
+ *
+ * For example:
+ *        |
+ *       var1
+ *        v
+ *   OP: arg_max(keepdims=false)
+ *        |
+ *       var2
+ *        v
+ *
+ * After this pass is applied:
+ *        |
+ *       var1
+ *        v
+ *   OP: arg_max(keepdims=true)
+ *        |
+ *    var2/trans
+ *        v
+ *   OP: reshape(shape = original arg_max's output dims)
+ *        |
+ *       var2
+ *        v
+ */
+
 namespace paddle {
 namespace lite {
 namespace mir {
