@@ -128,7 +128,7 @@ class FCFunctor {
         parallel_memcpy_y(0, M);
         return;
       }
-      parallel_compute(0 ,M);
+      parallel_compute(0, M);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
       if (!B) {
