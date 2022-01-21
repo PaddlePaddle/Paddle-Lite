@@ -47,6 +47,10 @@ bool InterpolateOp::InferShapeImpl() const {
   auto SizeTensor = param_.SizeTensor;
   auto OutSize = param_.OutSize;
   auto Scale = param_.Scale;
+  if (param_.out_h > 0 && param_.out_w > 0) {
+    out_h = param_.out_h;
+    out_w = param_.out_w;
+  }
   if (!SizeTensor.empty()) {
     CHECK_EQ(SizeTensor.size(), 2u)
         << "Input(SizeTensor)'size of Op(interpolate) must be 2. "
@@ -60,9 +64,6 @@ bool InterpolateOp::InferShapeImpl() const {
     auto OutSize_data = OutSize->data<int>();
     out_h = OutSize_data[0];
     out_w = OutSize_data[1];
-  } else if (param_.out_h > 0 && param_.out_w > 0) {
-    out_h = param_.out_h;
-    out_w = param_.out_w;
   } else {
     float scale = -1.f;
     if (Scale) {
