@@ -91,9 +91,9 @@ class MatMulV2Compute
       CHECK_EQ(matmul_v2_param_->Out->dims().size(), 2UL);
 
       if (transpose_x_) {
-        m_ = x_dims[1];
-        k_ = x_dims[0];
-        lda_ = m_;
+        LOG(FATAL)
+            << "Unsupported transpose_x_ is true for current lite OpenCL "
+               "kernel! ";
       } else {
         m_ = x_dims[0];
         k_ = x_dims[1];

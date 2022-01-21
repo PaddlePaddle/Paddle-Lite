@@ -104,14 +104,17 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
   }
 }
 
-void test(const lite_api::CLPrecisionType p) {
+void test(const lite_api::CLPrecisionType p,
+          int m,
+          int k_x,
+          int k_y,
+          int n,
+          bool x_transpose,
+          bool y_transpose) {
   CLRuntime::Global()->set_precision(p);
   const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
   const size_t dtype_size = fp16_flag ? sizeof(half_t) : sizeof(float);
-  int m = 1;
-  int k_x = 1000;
-  int n = 1000;
-  int k_y = 375;
+
   LOG(INFO) << "\n\t[  START  ] Test Precision="
             << lite_api::CLPrecisionTypeToStr(p) << " m=" << m << " n=" << n
             << " k_x=" << k_x << " k_y=" << k_y;
@@ -121,15 +124,13 @@ void test(const lite_api::CLPrecisionType p) {
   param.X = &x;
   param.Y = &y;
   param.Out = &out;
-  param.transpose_X = false;
-  param.transpose_Y = true;
-
-  bool x_transpose = false;
-  bool y_transpose = true;
+  param.transpose_X = x_transpose;
+  param.transpose_Y = y_transpose;
 
   const DDim x_dim = DDim(std::vector<DDim::value_type>{m, k_x});
   const DDim y_dim = DDim(std::vector<DDim::value_type>{k_y, n});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{m, k_y});
+  const DDim out_dim = y_transpose ? DDim(std::vector<DDim::value_type>{m, k_y})
+                                   : DDim(std::vector<DDim::value_type>{m, n});
 
   x.Resize(x_dim);
   y.Resize(y_dim);
@@ -229,12 +230,24 @@ void test(const lite_api::CLPrecisionType p) {
 }
 
 TEST(matmul, compute_basic) {
-  const auto precision_type = lite_api::CLPrecisionType::CL_PRECISION_FP16;
-
-  test(precision_type);
-
-  // Special case, such as large n or k
-  // test(precision_type, 1, 1000, 1024);
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    for (int m : {1, 2, 5}) {
+      for (int k : {1024, 3, 7, 10}) {
+        for (int n : {357, 3, 9, 12}) {
+          for (bool x_transpose : {false}) {
+            for (bool y_transpose : {true, false}) {
+              if (y_transpose)
+                test(precision_type, m, k, n, k, x_transpose, y_transpose);
+              else
+                test(precision_type, m, k, k, n, x_transpose, y_transpose);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 }  // namespace lite

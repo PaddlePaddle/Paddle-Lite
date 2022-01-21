@@ -64,22 +64,22 @@ __kernel void gemv_1x4(__global const CL_DTYPE* a,
            b3_1x4 = 0.0f, c1x4 = 0.0f;
 
     // main loop of K
-    short p = 0;
-    __global CL_DTYPE* base_b = (__global CL_DTYPE*)&B(p, col, ldb);
+    int p = 0;
+    int ldb_double = ldb * 2;
+    int ldb_triple = ldb * 3;
     for (; p < K - 3; p += 4) {
       a1x4 = convert_float4(vload4(0, &A(0, p, lda)));
 
-      b0_1x4 = convert_float4(vload4(0, base_b));
-      b1_1x4 = convert_float4(vload4(0, base_b + ldb));
-      b2_1x4 = convert_float4(vload4(0, base_b + ldb * 2));
-      b3_1x4 = convert_float4(vload4(0, base_b + ldb * 3));
+      int base_addr = p * ldb + col;
+      b0_1x4 = convert_float4(vload4(0, b + base_addr));
+      b1_1x4 = convert_float4(vload4(0, b + base_addr + ldb));
+      b2_1x4 = convert_float4(vload4(0, b + base_addr + ldb_double));
+      b3_1x4 = convert_float4(vload4(0, b + base_addr + ldb_triple));
 
       c1x4 = mad(a1x4.x, b0_1x4, c1x4);
       c1x4 = mad(a1x4.y, b1_1x4, c1x4);
       c1x4 = mad(a1x4.z, b2_1x4, c1x4);
       c1x4 = mad(a1x4.w, b3_1x4, c1x4);
-
-      base_b += 4 * ldb;
     }
 
     // compute left K with b3_1x4 unused
