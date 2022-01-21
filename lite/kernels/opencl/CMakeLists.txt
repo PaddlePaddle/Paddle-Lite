@@ -172,6 +172,9 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS 
 lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
              DEPS fc_opencl_buffer op_registry program context)
 
+lite_cc_test(test_matmul_buffer_opencl SRCS matmul_buffer_compute_test.cc
+             DEPS matmul_opencl_buffer op_registry program context)
+
 #lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
 #             DEPS mul_opencl op_registry program context)
 

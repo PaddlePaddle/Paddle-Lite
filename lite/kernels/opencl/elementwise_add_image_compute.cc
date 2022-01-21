@@ -46,6 +46,8 @@ void ElementwiseAddImageCompute::PrepareForRun() {
   auto* y = ele_param_->Y;
   auto* out = ele_param_->Out;
   auto axis = ele_param_->axis;
+  int x_dim_size = x->dims().size();
+  int y_dim_size = y->dims().size();
 
   if (y->dims().size() == 4) {
     kernel_func_name_ = "elementwise_add";  // y: ImageDefault
@@ -78,7 +80,8 @@ void ElementwiseAddImageCompute::PrepareForRun() {
       kernel_func_name_ = "channel_add";
     }
   } else if (y->dims().size() == 1) {
-    if (axis == x->dims().size() - 1) {
+    if ((axis == x->dims().size() - 1) ||
+        (axis == -1 && (x->dims()[x_dim_size - 1] == y->dims()[0]))) {
       kernel_func_name_ = "width_add";  // y: ImageDefault
       if (y->persistable()) {
         y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
