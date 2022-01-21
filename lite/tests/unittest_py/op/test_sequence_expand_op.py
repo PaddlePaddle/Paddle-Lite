@@ -84,9 +84,6 @@ class TestSequenceExpandOp(AutoScanTest):
         assume((np.array(lod_x)).shape[0] == 1 and
                x_lod_len == (len(lod_y[ref_level_data])))
 
-        # ! The input data type defined in Paddle can be float32, int32, int64.
-        # There is only Host implementention which only support float32.
-
         sequence_expand_op = OpConfig(
             type="sequence_expand",
             inputs={"X": ["x_data"],

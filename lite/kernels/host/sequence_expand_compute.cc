@@ -20,7 +20,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, PrecisionType PType>
+template <typename T>
 void SequenceExpandFunc(const Tensor& x,
                         const std::vector<uint64_t>& x_lod,
                         const std::vector<uint64_t>& ref_lod,
@@ -97,7 +97,7 @@ void SequenceExpandCompute<T, PType>::Run() {
     std::iota(ref_x_lod.begin(), ref_x_lod.end(), 0);
   }
 
-  SequenceExpandFunc<T, PType>(*x, ref_x_lod, y_lod[ref_level], out);
+  SequenceExpandFunc<T>(*x, ref_x_lod, y_lod[ref_level], out);
 }
 
 }  // namespace host
