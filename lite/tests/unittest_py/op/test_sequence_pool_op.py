@@ -80,7 +80,9 @@ class TestSequenceReshapeOp(AutoScanTest):
                     min_size=2,
                     max_size=4))
             in_shape = [4] + in_shape
-            lod_tensor = draw(st.sampled_from([[[0,2,3],[0,1,2,4]], [[0,3,4],[0,2,2,3,4]]]))
+            lod_tensor = draw(
+                st.sampled_from([[[0, 2, 3], [0, 1, 2, 4]],
+                                 [[0, 3, 4], [0, 2, 2, 3, 4]]]))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)

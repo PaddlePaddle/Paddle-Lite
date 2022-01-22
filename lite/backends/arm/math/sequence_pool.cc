@@ -160,21 +160,22 @@ void seq_pool_max(const T* din,
         int64_t max_index = lod[i];
         for (int h = 0; h < height; ++h) {
           max_index = max < din_ptr[h] ? h + lod[i] : max_index;
-          max = std::max(max, din_ptr[h]);    
+          max = std::max(max, din_ptr[h]);
         }
-        *dout_ptr = max; 
+        *dout_ptr = max;
         *index_ptr = max_index;
       } else {
         memcpy(dout_ptr, din_ptr, width * sizeof(T));
         din_ptr += width;
         int remain_h = height - 1;
         for (int w = 0; w < width; w++) {
-          index_ptr[w] = lod[i];       
-        } 
+          index_ptr[w] = lod[i];
+        }
         for (int h = 0; h < remain_h; h++) {
           for (int w = 0; w < width; w++) {
             dout_ptr[w] = std::max(dout_ptr[w], din_ptr[w]);
-            index_ptr[w] = dout_ptr[w] > din_ptr[w] ? index_ptr[w] : h + lod[i] + 1;
+            index_ptr[w] =
+                dout_ptr[w] > din_ptr[w] ? index_ptr[w] : h + lod[i] + 1;
           }
           din_ptr += width;
         }
@@ -206,7 +207,7 @@ void seq_pool_min(const T* din,
         int64_t min_index = lod[i];
         for (int h = 0; h < height; ++h) {
           min_index = min > din_ptr[h] ? h + lod[i] : min_index;
-          min = std::min(min, din_ptr[h]);          
+          min = std::min(min, din_ptr[h]);
         }
         *dout_ptr = min;
         *index_ptr = min_index;
@@ -220,14 +221,15 @@ void seq_pool_min(const T* din,
         for (int h = 0; h < remain_h; h++) {
           for (int w = 0; w < width; w++) {
             dout_ptr[w] = std::min(dout_ptr[w], din_ptr[w]);
-            index_ptr[w] = dout_ptr[w] < din_ptr[w] ? index_ptr[w] : h + lod[i] + 1;
+            index_ptr[w] =
+                dout_ptr[w] < din_ptr[w] ? index_ptr[w] : h + lod[i] + 1;
           }
           din_ptr += width;
         }
       }
     } else {
       for (int64_t k = 0; k < width; ++k) {
-        index_ptr[k] = -1;        
+        index_ptr[k] = -1;
         dout_ptr[k] = pad_value;
       }
     }
