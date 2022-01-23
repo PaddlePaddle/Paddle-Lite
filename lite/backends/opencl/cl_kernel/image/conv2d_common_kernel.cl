@@ -264,11 +264,6 @@ __kernel void conv2d_common(__private const int global_size_dim0,
   out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
 #endif
 
-  // if (out_channel_block_idx == 0 && out_width_block_idx == 0 && output_bh_idx
-  // == 0){
-  //   printf("~~~%f %f %f %f\n", out0.s0, out0.s1, out0.s2, out0.s3);
-  // }
-
   if (remain >= 4) {
     WRITE_IMG_TYPE(
         CL_DTYPE_CHAR, output, (int2)(output_w_idx, output_bh_idx), out0);

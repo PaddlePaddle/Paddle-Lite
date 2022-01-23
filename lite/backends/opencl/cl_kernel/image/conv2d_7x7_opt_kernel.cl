@@ -291,7 +291,8 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   }
 
   // out_width_id_per_blk and out_batch_id
-  int out_batch_id = item_h_id / in_h;
+  int out_batch_id = item_h_id / out_h;
+
   int out_w_base_id = item_ch_id * out_w;
   int out_w_id0 = item_w_id;
   int out_w_id1 = out_w_id0 + item_w;
@@ -410,11 +411,11 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
           output[4] = mad(input[4].z, filter[2], output[4]);
         }
         if (ch_surplus < 1) {
-          output[0] = mad(input[0].w, filter_trans[3], output[0]);
-          output[1] = mad(input[1].w, filter_trans[3], output[1]);
-          output[2] = mad(input[2].w, filter_trans[3], output[2]);
-          output[3] = mad(input[3].w, filter_trans[3], output[3]);
-          output[4] = mad(input[4].w, filter_trans[3], output[4]);
+          output[0] = mad(input[0].w, filter[3], output[0]);
+          output[1] = mad(input[1].w, filter[3], output[1]);
+          output[2] = mad(input[2].w, filter[3], output[2]);
+          output[3] = mad(input[3].w, filter[3], output[3]);
+          output[4] = mad(input[4].w, filter[3], output[4]);
         }
       }
     }

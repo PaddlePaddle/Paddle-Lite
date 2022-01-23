@@ -73,11 +73,11 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         result = True
         if predictor_config.target() == TargetType.OpenCL:
             filter_shape = list(program_config.weights["filter_data"].shape)
+            dilations = program_config.ops[0].attrs["dilations"]
             if program_config.ops[0].attrs[
                     "groups"] != 1 or program_config.ops[
-                        0].type == "conv2d_transpose" or (
-                            filter_shape[2] == 3 and filter_shape[3] == 3) or (
-                                filter_shape[2] == 7 and filter_shape[3] == 7):
+                        0].type == "conv2d_transpose" or dilations[0] == 2 or (
+                            filter_shape[2] == 3 and filter_shape[3] == 3):
                 result = False
         if program_config.ops[0].type == "conv2d_transpose":  #TODO
             result = result and program_config.ops[
@@ -121,7 +121,10 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=2), min_size=2, max_size=2))
-        dilations = draw(st.sampled_from([[1, 1], [2, 2]]))
+        dilations = draw(st.sampled_from([
+            [1, 1], [2, 2]
+        ]))  #opencl input 1,2,9,9 filter 1,2,5,5 dilations 2 has diff
+
         groups = draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
@@ -294,7 +297,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=250,
+            max_examples=300,
             passes=["lite_conv_active_fuse_pass"])
 
 
