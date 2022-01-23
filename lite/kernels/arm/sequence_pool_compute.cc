@@ -65,7 +65,7 @@ void SequencePoolCompute<Ptype, Dtype>::Run() {
   int batch_size = lod.size() - 1;
   std::vector<uint64_t> offset_new;
   if (param.X->lod().size() == 2) {
-    offset_new = offset_new.resize(param.X->lod()[0].size());
+    offset_new.resize(param.X->lod()[0].size());
     offset_new = param.X->lod()[0];
   } else {
     offset_new.resize(batch_size + 1);
