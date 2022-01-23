@@ -36,7 +36,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
-            thread=[4])
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
