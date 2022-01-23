@@ -211,7 +211,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
     (A311D)
     warmup: 1 repeat: 15, average: 81.678067 ms, max: 81.945999 ms, min: 81.591003 ms
     results: 3
@@ -223,7 +223,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Postprocess time: 0.407000 ms
   
   For S905D3(Android版)
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 280.465997 ms, max: 358.815002 ms, min: 268.549812 ms
     results: 3
@@ -240,7 +240,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx
     ( A311D)
     warmup: 1 repeat: 15, average: 5.112500 ms, max: 5.223000 ms, min: 5.009130 ms
     results: 3
@@ -271,10 +271,10 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
   
-  # 对于A311D
+  # 对于 A311D
   ./build.sh linux arm64
   
-  # 对于S905D3(Android版)
+  # 对于 S905D3(Android版)
   ./build.sh android armeabi-v7a
   ```
 
