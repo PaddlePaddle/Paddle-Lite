@@ -56,7 +56,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=6), min_size=2, max_size=8))
+                    min_value=1, max_value=4), min_size=2, max_size=8))
         pad_value = draw(st.sampled_from([0.0, 0.2, 0.5, 1.0]))
         pooltype = draw(
             st.sampled_from(
@@ -70,7 +70,7 @@ class TestSequenceReshapeOp(AutoScanTest):
                 max_value=lod_tensor[0][len(lod_tensor[0]) - 1] + 8))
         in_shape.insert(0, in_shape0)
 
-        lod_level = draw(st.sampled_from([2]))
+        lod_level = draw(st.sampled_from([1, 2]))
 
         if lod_level == 2:
             in_shape = draw(
@@ -123,7 +123,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=1000)
+        self.run_and_statis(quant=False, max_examples=500)
 
 
 if __name__ == "__main__":
