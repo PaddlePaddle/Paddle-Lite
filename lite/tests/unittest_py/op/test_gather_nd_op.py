@@ -89,6 +89,12 @@ class TestGatherNdOp(AutoScanTest):
             inputs=op_inputs,
             outputs={"Out": ["output_data"]},
             attrs={"axis": 1})
+
+        if input_type == "int64":
+            gather_nd_op.outputs_dtype = {"output_data": np.int64}
+        elif input_type == "int32":
+            gather_nd_op.outputs_dtype = {"output_data": np.int32}
+
         program_config = ProgramConfig(
             ops=[gather_nd_op],
             weights={},
@@ -100,17 +106,7 @@ class TestGatherNdOp(AutoScanTest):
         return self.get_predictor_configs(), ["gather_nd"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Host:
-                in_dtype = program_config.inputs["input_data"].dtype
-                #wait for atuo_scan_base bug fix 
-                if "float32" != in_dtype:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on host. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
