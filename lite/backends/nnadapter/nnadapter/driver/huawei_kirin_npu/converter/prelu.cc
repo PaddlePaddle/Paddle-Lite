@@ -12,29 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/leaky_relu.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/operation/prelu.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace huawei_kirin_npu {
 
-int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
-  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertPRelu(Converter* converter, hal::Operation* operation) {
+  PRELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto leaky_relu_op =
-      converter->AddOperator<ge::op::LeakyRelu>(output_operand);
-  leaky_relu_op->set_attr_negative_slope(alpha);
-  SET_INPUT(leaky_relu_op, x, input_operator);
-  MAP_OUTPUT(leaky_relu_op, y, output_operand);
+  auto slope_operator = converter->GetMappedOperator(slope_operand);
+  if (!slope_operator) {
+    slope_operator = converter->ConvertOperand(slope_operand);
+  }
+  auto prelu_op = converter->AddOperator<hiai::op::PRelu>(output_operand);
+  SET_INPUT(prelu_op, x, input_operator);
+  SET_INPUT(prelu_op, weight, slope_operator);
+  MAP_OUTPUT(prelu_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace huawei_kirin_npu
 }  // namespace nnadapter

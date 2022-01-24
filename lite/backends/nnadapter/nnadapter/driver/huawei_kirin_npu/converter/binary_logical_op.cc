@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "core/operation/binary_logical_op.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace huawei_kirin_npu {
 
 int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
   BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -33,16 +33,17 @@ int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
     input1_operator = converter->ConvertOperand(input1_operand);
   }
   switch (operation->type) {
-#define CONVERT_BINARY_LOGICAL_OP(type, class_name)                 \
-  case NNADAPTER_##type: {                                          \
-    auto binary_logical_op =                                        \
-        converter->AddOperator<ge::op::class_name>(output_operand); \
-    SET_INPUT(binary_logical_op, x1, input0_operator);              \
-    SET_INPUT(binary_logical_op, x2, input1_operator);              \
-    MAP_OUTPUT(binary_logical_op, y, output_operand);               \
+#define CONVERT_BINARY_LOGICAL_OP(type, class_name)                   \
+  case NNADAPTER_##type: {                                            \
+    auto binary_logical_op =                                          \
+        converter->AddOperator<hiai::op::class_name>(output_operand); \
+    SET_INPUT(binary_logical_op, x1, input0_operator);                \
+    SET_INPUT(binary_logical_op, x2, input1_operator);                \
+    MAP_OUTPUT(binary_logical_op, y, output_operand);                 \
   } break;
     CONVERT_BINARY_LOGICAL_OP(AND, LogicalAnd);
     CONVERT_BINARY_LOGICAL_OP(OR, LogicalOr);
+    CONVERT_BINARY_LOGICAL_OP(XOR, LogicalXor);
 #undef CONVERT_BINARY_LOGICAL_OP
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported binary logical operation type "
@@ -53,5 +54,5 @@ int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace huawei_kirin_npu
 }  // namespace nnadapter
