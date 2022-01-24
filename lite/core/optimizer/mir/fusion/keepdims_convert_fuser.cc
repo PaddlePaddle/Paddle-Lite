@@ -128,7 +128,6 @@ std::vector<int> KeepdimsConvertFuser::GetTensorDims(const Node::Stmt* inst) {
   // Out dims may be empty. For example, argmax's in dims{3}, keepdims=false,
   // axis=0.
   // Set out dims manually.
-
   if (tensor.dims().empty()) {
     dims.push_back(1);
   } else {

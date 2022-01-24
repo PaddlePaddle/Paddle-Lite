@@ -99,7 +99,7 @@ class TestArgMaxOp(AutoScanTest):
             if predictor_config.target() == TargetType.OpenCL:
                 keep_dims = program_config.ops[0].attrs["keepdims"]
                 in_shape = list(program_config.inputs["input_data"].shape)
-                if keep_dims == False and in_shape[0] != 0:
+                if keep_dims == False and in_shape[0] != 1:
                     return True
 
         def _teller2(program_config, predictor_config):
