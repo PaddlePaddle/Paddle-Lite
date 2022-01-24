@@ -31,8 +31,6 @@ class TestExpandOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_places = [
-            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.INT64, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(thread=[1, 4], places=host_places)
@@ -138,6 +136,7 @@ class TestExpandOp(AutoScanTest):
             inputs=inputs[0],
             outputs={"Out": ["output_data"]},
             attrs={"expand_times": attr_shape})
+        expand_op.outputs_dtype = {"output_data": input_type}
 
         program_config = ProgramConfig(
             ops=[expand_op],
@@ -160,18 +159,6 @@ class TestExpandOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on OpenCL. We need to fix it as soon as possible."
-        )
-
-        def _teller2(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_dtype = program_config.inputs["input_data"].dtype
-            if target_type == TargetType.Host:
-                if "float32" != in_dtype:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on Host. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

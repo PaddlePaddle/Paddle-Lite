@@ -65,6 +65,10 @@ class TestFcOp(AutoScanTest):
             else:
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
+        padding_weights = draw(st.booleans())
+        if (padding_weights):
+            weights_shape = [weights_0 + 4, weights_1 + 4]
+
         bias_shape = [weights_1]
         with_bias = draw(st.sampled_from([True, False]))
 
@@ -114,7 +118,7 @@ class TestFcOp(AutoScanTest):
                 "in_num_col_dims": in_num_col_dims,
                 "activation_type": act_type,
                 "use_mkldnn": False,
-                "padding_weights": False,
+                "padding_weights": padding_weights,
                 "use_quantizer": False,
                 "Scale_in": float(1),
                 "Scale_weights": [float(1)],
@@ -131,17 +135,7 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data"].shape)
-            if predictor_config.target() == TargetType.OpenCL:
-                if program_config.ops[0].attrs["in_num_col_dims"] != 1 or len(
-                        in_shape) != 2:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

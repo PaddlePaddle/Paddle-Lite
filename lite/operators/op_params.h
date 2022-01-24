@@ -1297,6 +1297,7 @@ struct GenerateProposalsV2Param : ParamBase {
   float nms_thresh{0.5f};
   float min_size{0.1f};
   float eta{1.0f};
+  bool pixel_offset{true};
 
   // outputs
   lite::Tensor* RpnRois{};
@@ -1371,6 +1372,7 @@ struct GatherParam : ParamBase {
   const lite::Tensor* Index{};
   const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
+  int axis{-1};
 };
 
 struct GatherTreeParam : ParamBase {
