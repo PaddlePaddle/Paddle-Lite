@@ -85,7 +85,7 @@ else
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
                   $(LIBUNWIND)
-    INCLUDES = $(SYSTEM_INCLUDES) $ANDROIDABI
+    INCLUDES = $(SYSTEM_INCLUDES) $(ANDROIDABI)
 endif
 
 ifeq ($(shell expr $(NDK_VERSION) \>= 21), 1)
