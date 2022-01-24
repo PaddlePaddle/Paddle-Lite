@@ -96,10 +96,9 @@ class TestArgMaxOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data"].shape)
-            keep_dims = program_config.ops[0].attrs["keepdims"]
             if predictor_config.target() == TargetType.OpenCL:
-                if len(in_shape) != 4 or keep_dims == False:
+                keep_dims = program_config.ops[0].attrs["keepdims"]
+                if keep_dims == False:
                     return True
 
         def _teller2(program_config, predictor_config):
