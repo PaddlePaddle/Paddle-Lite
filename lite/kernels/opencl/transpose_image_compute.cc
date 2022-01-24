@@ -50,6 +50,7 @@ class TransposeComputeFloatImage
     output_image_h_ = output_image_shape.at("height");
     output_image_w_ = output_image_shape.at("width");
     VLOG(4) << "x_tensor_dims_: " << x_tensor_dims_;
+
     if (axis_.size() == 3) {
       VLOG(4) << "Extend CHW to 1CHW";
       axis_.insert(axis_.begin(), 0);  // extend batch dim is 1
@@ -58,58 +59,31 @@ class TransposeComputeFloatImage
       }
     }
     if (axis_.size() == 4) {
-      if (axis_ == std::vector<int>({0, 1, 3, 2})) {
-        kernel_func_name_ = "transpose_4d_perm0132";
-      } else if (axis_ == std::vector<int>({0, 2, 1, 3})) {
-        kernel_func_name_ = "transpose_4d_perm0213";
-      } else if (axis_ == std::vector<int>({0, 2, 3, 1})) {  // for NHWC
-        kernel_func_name_ = "transpose_4d_perm0231";
-      } else if (axis_ == std::vector<int>({0, 3, 1, 2})) {
-        kernel_func_name_ = "transpose_4d_perm0312";
-      } else if (axis_ == std::vector<int>({0, 3, 2, 1})) {
-        kernel_func_name_ = "transpose_4d_perm0321";
-      } else if (axis_ == std::vector<int>({1, 0, 2, 3})) {
-        kernel_func_name_ = "transpose_4d_perm1023";
-      } else if (axis_ == std::vector<int>({1, 0, 3, 2})) {
-        kernel_func_name_ = "transpose_4d_perm1032";
-      } else if (axis_ == std::vector<int>({1, 2, 0, 3})) {
-        kernel_func_name_ = "transpose_4d_perm1203";
-      } else if (axis_ == std::vector<int>({1, 2, 3, 0})) {
-        kernel_func_name_ = "transpose_4d_perm1230";
-      } else if (axis_ == std::vector<int>({1, 3, 0, 2})) {
-        kernel_func_name_ = "transpose_4d_perm1302";
-      } else if (axis_ == std::vector<int>({1, 3, 2, 0})) {
-        kernel_func_name_ = "transpose_4d_perm1320";
-      } else if (axis_ == std::vector<int>({2, 0, 1, 3})) {
-        kernel_func_name_ = "transpose_4d_perm2013";
-      } else if (axis_ == std::vector<int>({2, 0, 3, 1})) {
-        kernel_func_name_ = "transpose_4d_perm2031";
-      } else if (axis_ == std::vector<int>({2, 1, 0, 3})) {
-        kernel_func_name_ = "transpose_4d_perm2103";
-      } else if (axis_ == std::vector<int>({2, 1, 3, 0})) {
-        kernel_func_name_ = "transpose_4d_perm2130";
-      } else if (axis_ == std::vector<int>({2, 3, 0, 1})) {
-        kernel_func_name_ = "transpose_4d_perm2301";
-      } else if (axis_ == std::vector<int>({2, 3, 1, 0})) {
-        kernel_func_name_ = "transpose_4d_perm2310";
-      } else if (axis_ == std::vector<int>({3, 0, 1, 2})) {
-        kernel_func_name_ = "transpose_4d_perm3012";
-      } else if (axis_ == std::vector<int>({3, 0, 2, 1})) {
-        kernel_func_name_ = "transpose_4d_perm3021";
-      } else if (axis_ == std::vector<int>({3, 1, 0, 2})) {
-        kernel_func_name_ = "transpose_4d_perm3102";
-      } else if (axis_ == std::vector<int>({3, 1, 2, 0})) {
-        kernel_func_name_ = "transpose_4d_perm3120";
-      } else if (axis_ == std::vector<int>({3, 2, 0, 1})) {
-        kernel_func_name_ = "transpose_4d_perm3201";
-      } else if (axis_ == std::vector<int>({3, 2, 1, 0})) {
-        kernel_func_name_ = "transpose_4d_perm3210";
+      std::vector<int> tmp = axis_;
+      sort(tmp.begin(), tmp.end());
+      if (tmp == std::vector<int>({0, 1, 2, 3}) &&
+          axis_ != std::vector<int>({0, 1, 2, 3})) {
+        kernel_func_name_ = "transpose_4d_perm";
+        for (int i = 0; i < axis_.size(); ++i) {
+          kernel_func_name_ += to_string(axis_[i]);
+        }
+        kernel_path =
+            "image/transpose_fixb" + to_string(axis_[0] + 1) + "_kernel.cl";
       } else {
         LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
                       "kernel! ";
       }
     } else if (axis_.size() == 2) {
-      kernel_func_name_ = "transpose_2d";
+      std::vector<int> tmp = axis_;
+      sort(tmp.begin(), tmp.end());
+      if (tmp == std::vector<int>({0, 1}) &&
+          axis_ != std::vector<int>({0, 1})) {
+        kernel_func_name_ = "transpose_2d";
+        kernel_path_ = "image/transpose_fixb1_kernel.cl";
+      } else {
+        LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
+                      "kernel! ";
+      }
     } else {
       LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
                     "kernel! ";
@@ -136,10 +110,8 @@ class TransposeComputeFloatImage
 
     auto& context = ctx_->As<OpenCLContext>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/transpose_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    context.cl_context()->AddKernel(
+        kernel_func_name_, kernel_path_, build_options_, time_stamp_);
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
@@ -154,42 +126,14 @@ class TransposeComputeFloatImage
 #endif
 
   void GetGlobalWorkSize() {
-    if (kernel_func_name_ == "transpose_4d_perm0132" ||
-        kernel_func_name_ == "transpose_4d_perm0213" ||
-        kernel_func_name_ == "transpose_4d_perm0231" ||
-        kernel_func_name_ == "transpose_4d_perm0312" ||
-        kernel_func_name_ == "transpose_4d_perm0321" ||
-        kernel_func_name_ == "transpose_4d_perm1023" ||
-        kernel_func_name_ == "transpose_4d_perm1032" ||
-        kernel_func_name_ == "transpose_4d_perm1203" ||
-        kernel_func_name_ == "transpose_4d_perm1230" ||
-        kernel_func_name_ == "transpose_4d_perm1302" ||
-        kernel_func_name_ == "transpose_4d_perm1320" ||
-        kernel_func_name_ == "transpose_4d_perm2013" ||
-        kernel_func_name_ == "transpose_4d_perm2031" ||
-        kernel_func_name_ == "transpose_4d_perm2103" ||
-        kernel_func_name_ == "transpose_4d_perm2130" ||
-        kernel_func_name_ == "transpose_4d_perm2301" ||
-        kernel_func_name_ == "transpose_4d_perm2310" ||
-        kernel_func_name_ == "transpose_4d_perm3012" ||
-        kernel_func_name_ == "transpose_4d_perm3021" ||
-        kernel_func_name_ == "transpose_4d_perm3102" ||
-        kernel_func_name_ == "transpose_4d_perm3120" ||
-        kernel_func_name_ == "transpose_4d_perm3201" ||
-        kernel_func_name_ == "transpose_4d_perm3210" ||
-        kernel_func_name_ == "transpose_2d") {
-      const std::vector<size_t>& ws =
-          DefaultGlobalWorkSize(output_tensor_dims_,
-                                DDim(std::vector<DDim::value_type>{
-                                    static_cast<int64_t>(output_image_w_),
-                                    static_cast<int64_t>(output_image_h_)}));
-      global_work_size_ = cl::NDRange{static_cast<cl::size_type>(ws[0]),
-                                      static_cast<cl::size_type>(ws[1]),
-                                      static_cast<cl::size_type>(ws[2])};
-    } else {
-      LOG(FATAL) << "Unsupported get global work size for kernel function: "
-                 << kernel_func_name_;
-    }
+    const std::vector<size_t>& ws =
+        DefaultGlobalWorkSize(output_tensor_dims_,
+                              DDim(std::vector<DDim::value_type>{
+                                  static_cast<int64_t>(output_image_w_),
+                                  static_cast<int64_t>(output_image_h_)}));
+    global_work_size_ = cl::NDRange{static_cast<cl::size_type>(ws[0]),
+                                    static_cast<cl::size_type>(ws[1]),
+                                    static_cast<cl::size_type>(ws[2])};
   }
 
   void Run() override {
@@ -200,62 +144,35 @@ class TransposeComputeFloatImage
     auto& context = ctx_->As<OpenCLContext>();
     auto kernel = kernel_;
     cl_int status;
-    if (kernel_func_name_ == "transpose_4d_perm0132" ||
-        kernel_func_name_ == "transpose_4d_perm0213" ||
-        kernel_func_name_ == "transpose_4d_perm0231" ||
-        kernel_func_name_ == "transpose_4d_perm0312" ||
-        kernel_func_name_ == "transpose_4d_perm0321" ||
-        kernel_func_name_ == "transpose_4d_perm1023" ||
-        kernel_func_name_ == "transpose_4d_perm1032" ||
-        kernel_func_name_ == "transpose_4d_perm1203" ||
-        kernel_func_name_ == "transpose_4d_perm1230" ||
-        kernel_func_name_ == "transpose_4d_perm1302" ||
-        kernel_func_name_ == "transpose_4d_perm1320" ||
-        kernel_func_name_ == "transpose_4d_perm2013" ||
-        kernel_func_name_ == "transpose_4d_perm2031" ||
-        kernel_func_name_ == "transpose_4d_perm2103" ||
-        kernel_func_name_ == "transpose_4d_perm2130" ||
-        kernel_func_name_ == "transpose_4d_perm2301" ||
-        kernel_func_name_ == "transpose_4d_perm2310" ||
-        kernel_func_name_ == "transpose_4d_perm3012" ||
-        kernel_func_name_ == "transpose_4d_perm3021" ||
-        kernel_func_name_ == "transpose_4d_perm3102" ||
-        kernel_func_name_ == "transpose_4d_perm3120" ||
-        kernel_func_name_ == "transpose_4d_perm3201" ||
-        kernel_func_name_ == "transpose_4d_perm3210" ||
-        kernel_func_name_ == "transpose_2d") {
-      status = kernel.setArg(0, *x_image);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *output_image);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(2, output_tensor_c_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, output_tensor_h_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(4, output_tensor_w_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(5, x_tensor_w_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(6, x_tensor_h_);
-      CL_CHECK_FATAL(status);
+    status = kernel.setArg(0, *x_image);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *output_image);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, output_tensor_c_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, output_tensor_h_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, output_tensor_w_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(5, x_tensor_w_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(6, x_tensor_h_);
+    CL_CHECK_FATAL(status);
 
-      GetGlobalWorkSize();
-      status = EnqueueNDRangeKernel(context,
-                                    kernel,
-                                    cl::NullRange,
-                                    global_work_size_,
-                                    cl::NullRange,
-                                    nullptr,
-                                    event_);
-      CL_CHECK_FATAL(status);
-
-    } else {
-      LOG(FATAL) << "Unsupported kernel function: " << kernel_func_name_;
-    }
+    GetGlobalWorkSize();
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size_,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
+    CL_CHECK_FATAL(status);
   }
 
  private:
-  std::string kernel_func_name_{"transpose"};
+  std::string kernel_func_name_{""};
+  std::string kernel_path_{""};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
