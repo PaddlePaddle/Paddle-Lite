@@ -206,12 +206,13 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
   4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
   
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For A311D
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.100.30 22 khadas khadas
     (A311D)
     warmup: 1 repeat: 15, average: 81.678067 ms, max: 81.945999 ms, min: 81.591003 ms
     results: 3
@@ -223,7 +224,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Postprocess time: 0.407000 ms
   
   For S905D3(Android版)
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 280.465997 ms, max: 358.815002 ms, min: 268.549812 ms
     results: 3
@@ -240,8 +241,8 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For A311D
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx
-    ( A311D)
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx 192.168.100.30 22 khadas khadas
+    (A311D)
     warmup: 1 repeat: 15, average: 5.112500 ms, max: 5.223000 ms, min: 5.009130 ms
     results: 3
     Top0  Egyptian cat - 0.508929
@@ -252,7 +253,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Postprocess time: 0.411000 ms
   
   For S905D3(Android版)
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a verisilicon_timvx
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a verisilicon_timvx c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 13.4116 ms, max: 14.7615 ms, min: 12.80810 ms
     results: 3
