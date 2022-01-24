@@ -65,10 +65,10 @@ class TransposeComputeFloatImage
           axis_ != std::vector<int>({0, 1, 2, 3})) {
         kernel_func_name_ = "transpose_4d_perm";
         for (int i = 0; i < axis_.size(); ++i) {
-          kernel_func_name_ += to_string(axis_[i]);
+          kernel_func_name_ += std::to_string(axis_[i]);
         }
-        kernel_path_ =
-            "image/transpose_fixb" + to_string(axis_[0] + 1) + "_kernel.cl";
+        kernel_path_ = "image/transpose_fixb" + std::to_string(axis_[0] + 1) +
+                       "_kernel.cl";
       } else {
         LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
                       "kernel! ";
@@ -194,10 +194,6 @@ class TransposeComputeFloatImage
 
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
-
-  // transpose_general_buffer
-  std::unique_ptr<KernelBase> im2buf_kernel_;
-  std::unique_ptr<KernelBase> buf2im_kernel_;
 };
 
 }  // namespace opencl
