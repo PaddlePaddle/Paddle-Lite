@@ -34,12 +34,12 @@ void ScatterCompute<Dtype>::Run() {
     num *= in_dims[i];
   }
   lite::arm::math::scatter<Dtype>(indexs_data,
-                                         updates_data,
-                                         output_data,
-                                         index_size,
-                                         in_dims[0],
-                                         num,
-                                         overwrite);
+                                  updates_data,
+                                  output_data,
+                                  index_size,
+                                  in_dims[0],
+                                  num,
+                                  overwrite);
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }
