@@ -65,6 +65,8 @@ bool MaxPoolWithIndexOpLite::InferShapeImpl() const {
     }
   }
   param_.output->Resize(lite::DDim(output_shape));
+  param_.mask->Resize(lite::DDim(output_shape));
+
   return true;
 }
 

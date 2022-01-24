@@ -53,6 +53,7 @@ REGISTER_LITE_KERNEL(dropout,
                      paddle::lite::kernels::xpu::DropoutCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

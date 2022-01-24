@@ -152,10 +152,41 @@ int Program::BuildFromModel(hal::Model* model) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_VLOG(3) << "Execute begining.";
   std::vector<magicmind::IRTTensor*> inputs = {};
   std::vector<magicmind::IRTTensor*> outputs = {};
@@ -167,10 +198,10 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
     MLU_CNRT_CHECK(
         cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
@@ -178,7 +209,7 @@ int Program::Execute(uint32_t input_count,
     auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
     input_tensor->SetData(ptr);
     input_tensor->SetDimensions(
-        ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
+        ConvertToMagicMindDims(type.dimensions.data, type.dimensions.count));
   }
 
   mm_context_->Enqueue(inputs, &outputs, queue_);

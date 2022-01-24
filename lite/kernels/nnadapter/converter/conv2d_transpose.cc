@@ -207,7 +207,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (!act_type.empty()) {
     LOG(FATAL) << "Unsupported activation type: " << act_type;
   }
-  LOG(INFO) << "--- with_act: " << with_act << ", act_type: " << act_type;
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
 
   // Output operand

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@ limitations under the License. */
 __kernel void SplitBatch(__read_only image2d_t input,
                          __write_only image2d_t output0,
                          __write_only image2d_t output1,
-                         __private const int axis,
                          __private const int out0_dims_axis,
-                         __private const int in_dims_second,
-                         __private const int in_dims_last,
-                         __private const int width) {
+                         __private const int height,
+                         __private const int in_dims_last) {
   const int channel_blk_idx = get_global_id(0);
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
@@ -30,14 +28,14 @@ __kernel void SplitBatch(__read_only image2d_t input,
       (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   const CL_DTYPE4 in_data =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
-  const int n = hb_idx / width;
+  const int h_idx = hb_idx % height;
+  const int n_idx = hb_idx / height;
 
-  int2 out_pos;
-  if (n < out0_dims_axis) {
-    out_pos = in_pos;
+  int2 out_pos = in_pos;
+  if (n_idx < out0_dims_axis) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
   } else {
-    out_pos.y = hb_idx - out0_dims_axis;
+    out_pos.y = (n_idx - out0_dims_axis) * height + h_idx;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
   }
 }
@@ -45,11 +43,8 @@ __kernel void SplitBatch(__read_only image2d_t input,
 __kernel void SplitChannel(__read_only image2d_t input,
                            __write_only image2d_t output0,
                            __write_only image2d_t output1,
-                           __private const int axis,
                            __private const int out0_dims_axis,
-                           __private const int in_dims_second,
-                           __private const int in_dims_last,
-                           __private const int width) {
+                           __private const int in_dims_last) {
   const int channel_blk_idx = get_global_id(0);
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
@@ -111,11 +106,9 @@ __kernel void SplitChannel(__read_only image2d_t input,
 __kernel void SplitHeight(__read_only image2d_t input,
                           __write_only image2d_t output0,
                           __write_only image2d_t output1,
-                          __private const int axis,
                           __private const int out0_dims_axis,
-                          __private const int in_dims_second,
-                          __private const int in_dims_last,
-                          __private const int width) {
+                          __private const int height,
+                          __private const int in_dims_last) {
   const int channel_blk_idx = get_global_id(0);
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
@@ -124,14 +117,15 @@ __kernel void SplitHeight(__read_only image2d_t input,
       (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   const CL_DTYPE4 in_data =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
-  const int h = hb_idx % width;
+  const int h_idx = hb_idx % height;
+  const int n_idx = hb_idx / height;
 
-  int2 out_pos;
-  if (h < out0_dims_axis) {
-    out_pos = in_pos;
+  int2 out_pos = in_pos;
+  if (h_idx < out0_dims_axis) {
+    out_pos.y = n_idx * height / 2 + h_idx;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
   } else {
-    out_pos.y = hb_idx - out0_dims_axis;
+    out_pos.y = n_idx * height / 2 + (h_idx - out0_dims_axis);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
   }
 }
@@ -139,11 +133,8 @@ __kernel void SplitHeight(__read_only image2d_t input,
 __kernel void SplitWidth(__read_only image2d_t input,
                          __write_only image2d_t output0,
                          __write_only image2d_t output1,
-                         __private const int axis,
                          __private const int out0_dims_axis,
-                         __private const int in_dims_second,
-                         __private const int in_dims_last,
-                         __private const int width) {
+                         __private const int in_dims_last) {
   const int channel_blk_idx = get_global_id(0);
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
@@ -153,12 +144,13 @@ __kernel void SplitWidth(__read_only image2d_t input,
   const CL_DTYPE4 in_data =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
 
-  int2 out_pos;
+  int2 out_pos = in_pos;
   if (width_idx < out0_dims_axis) {
-    out_pos = in_pos;
+    out_pos.x = channel_blk_idx * in_dims_last / 2 + width_idx;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
   } else {
-    out_pos.x = width_idx - out0_dims_axis;
+    out_pos.x =
+        channel_blk_idx * in_dims_last / 2 + (width_idx - out0_dims_axis);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
   }
 }

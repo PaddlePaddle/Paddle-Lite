@@ -30,17 +30,11 @@ import hypothesis.strategies as st
 class TestLstmOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # paddle crash bugs will be fixed in the future
-        #self.enable_testing_on_place(
-        #    TargetType.ARM,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
-        #self.enable_testing_on_place(
-        #    TargetType.X86,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -48,47 +42,44 @@ class TestLstmOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        shape0 = draw(st.integers(min_value=1, max_value=32))
-        shape1 = draw(st.integers(min_value=1, max_value=32))
-        shape2 = draw(st.integers(min_value=1, max_value=32))
-        # lstm run have bugs, for debug
-        #shape0 = 2
-        #shape1 = 3
-        #shape2 = 2
-        input_lod_ = draw(st.sampled_from([[[shape0, shape1, shape2]]]))
-        N = len(input_lod_[0])
-        D = 16
-        T = sum(input_lod_[0])
+        shape0 = draw(st.integers(min_value=1, max_value=3))
+        shape1 = draw(st.integers(min_value=1, max_value=3))
+        shape2 = draw(st.integers(min_value=1, max_value=3))
+        input_lod_ = [[0, shape0, shape0 + shape1, shape0 + shape1 + shape2]
+                      ]  #must be increasing array
+
+        N = len(input_lod_[0]) - 1  #batch
+        D = draw(st.sampled_from([4, 8, 16]))  #hidden_size, output_width
+        T = input_lod_[0][3]  #time_step, output_height
         in_shape = draw(st.sampled_from([[T, 4 * D]]))
         input_weight_shape = draw(st.sampled_from([[D, D * 4]]))
         input_h0_data_shape = draw(st.sampled_from([[N, D]]))
         input_c0_data_shape = draw(st.sampled_from([[N, D]]))
-        input_bias_shape = draw(st.sampled_from([[1, D * 4]]))
-
-        def generate_input_data_in_shape(*args, **kwargs):
-            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-
-        def generate_input_data_input_weight_shape(*args, **kwargs):
-            return np.random.normal(0.0, 1.0,
-                                    input_weight_shape).astype(np.float32)
-
-        def generate_input_data_input_h0_data_shape(*args, **kwargs):
-            return np.random.normal(0.0, 1.0,
-                                    input_h0_data_shape).astype(np.float32)
-
-        def generate_input_data_input_c0_data_shape(*args, **kwargs):
-            return np.random.normal(0.0, 1.0,
-                                    input_c0_data_shape).astype(np.float32)
-
-        def generate_input_data_input_bias_shape(*args, **kwargs):
-            return np.random.normal(0.0, 1.0,
-                                    input_bias_shape).astype(np.float32)
-
-        use_p_ = draw(st.sampled_from([0]))
-        is_r_ = draw(st.sampled_from([0]))
+        use_p_ = draw(st.sampled_from([False, True]))
+        is_r_ = draw(st.sampled_from([False, True]))
         gate_activation_ = draw(st.sampled_from(["sigmoid"]))
         cell_activation_ = draw(st.sampled_from(["tanh"]))
         candidate_activation_ = draw(st.sampled_from(["tanh"]))
+
+        input_bias_shape = draw(st.sampled_from([[1, D * 4]]))
+        if use_p_ == True:
+            input_bias_shape = draw(st.sampled_from([[1, D * 7]]))
+
+        def generate_input_data_in_shape(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        def generate_input_data_input_weight_shape(*args, **kwargs):
+            return np.random.random(input_weight_shape).astype(np.float32)
+
+        def generate_input_data_input_h0_data_shape(*args, **kwargs):
+            return np.random.random(input_h0_data_shape).astype(np.float32)
+
+        def generate_input_data_input_c0_data_shape(*args, **kwargs):
+            return np.random.random(input_c0_data_shape).astype(np.float32)
+
+        def generate_input_data_input_bias_shape(*args, **kwargs):
+            return np.random.random(input_bias_shape).astype(np.float32)
+
         lstm_op = OpConfig(
             type="lstm",
             inputs={
@@ -128,10 +119,7 @@ class TestLstmOp(AutoScanTest):
                 "input_bias_data": TensorConfig(
                     data_gen=partial(generate_input_data_input_bias_shape))
             },
-            outputs={
-                "output_data_hidden", "output_data_cell", "BatchCellPreAct",
-                "BatchGate"
-            })
+            outputs={"output_data_hidden"})
         return program_config
 
     def sample_predictor_configs(self):
@@ -141,7 +129,7 @@ class TestLstmOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

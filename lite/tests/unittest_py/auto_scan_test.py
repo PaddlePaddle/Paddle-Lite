@@ -16,6 +16,31 @@ from auto_scan_base import IgnoreReasonsBase
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 args = parser.parse_args()
 
 if args.target == "ARM" or args.target == "OpenCL" or args.target == "Metal":
