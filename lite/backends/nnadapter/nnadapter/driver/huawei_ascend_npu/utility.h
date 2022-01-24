@@ -83,7 +83,10 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer);
+    std::vector<uint8_t>* model_buffer,
+    const std::vector<std::string>& dynamic_shape_info,
+    const std::string& optional_shape_str,
+    const DynamicShapeMode dynamic_shape_mode);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
@@ -136,6 +139,16 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch);
 
 // Get Ascend soc name
 ge::AscendString GetAscendSocName();
+
+// Generate shape strings for CANN
+std::string ShapeToString(const std::vector<int32_t>& shape);
+std::string MergeOptionalShapInfo(
+    const std::vector<std::string>& optional_shape_info,
+    const DynamicShapeMode dynamic_shape_mode);
+void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
+                         std::vector<std::string>* dynamic_shape_info,
+                         std::string* optional_shape_str,
+                         DynamicShapeMode* dynamic_shape_mode);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

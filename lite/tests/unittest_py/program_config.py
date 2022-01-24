@@ -506,3 +506,23 @@ class CxxConfig:
             return DataLayoutType.NCHW
         else:
             return eval("DataLayoutType." + first_place[2])
+
+    def set_nnadapter_device_names(self, nnadapter_device_names):
+        self.config['nnadapter_device_names'] = nnadapter_device_names
+
+    def set_nnadapter_context_properties(self, nadapter_context_properties):
+        self.config[
+            'nadapter_context_properties'] = nadapter_context_properties
+
+    def set_nnadapter_model_cache_dir(self, nnadapter_model_cache_dir):
+        self.config['nnadapter_model_cache_dir'] = nnadapter_model_cache_dir
+
+    def set_nnadapter_subgraph_partition_config_path(
+            self, nnadapter_subgraph_partition_config_path):
+        self.config[
+            'nnadapter_subgraph_partition_config_path'] = nnadapter_subgraph_partition_config_path
+
+    def set_nnadapter_mixed_precision_quantization_config_path(
+            self, nnadapter_mixed_precision_quantization_config_path):
+        self.config[
+            'nnadapter_mixed_precision_quantization_config_path'] = nnadapter_mixed_precision_quantization_config_path

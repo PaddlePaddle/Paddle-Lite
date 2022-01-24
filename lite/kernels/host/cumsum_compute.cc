@@ -31,15 +31,29 @@ void CumsumCompute<T, PType>::Run() {
 
   if (param.flatten || x_dims.size() == 1) {
     int64_t x_size = x->numel();
-    if (param.exclusive) {
-      out_data[0] = 0;
-      for (int64_t i = 0; i < x_size - 1; i++) {
-        out_data[i + 1] = x_data[i] + out_data[i];
+    if (param.reverse) {
+      if (param.exclusive) {
+        out_data[x_size - 1] = 0;
+        for (int64_t i = x_size - 1; i > 0; i--) {
+          out_data[i - 1] = x_data[i] + out_data[i];
+        }
+      } else {
+        out_data[x_size - 1] = x_data[x_size - 1];
+        for (int64_t i = x_size - 2; i >= 0; i--) {
+          out_data[i] = x_data[i] + out_data[i + 1];
+        }
       }
     } else {
-      out_data[0] = x_data[0];
-      for (int64_t i = 1; i < x_size; i++) {
-        out_data[i] = x_data[i] + out_data[i - 1];
+      if (param.exclusive) {
+        out_data[0] = 0;
+        for (int64_t i = 0; i < x_size - 1; i++) {
+          out_data[i + 1] = x_data[i] + out_data[i];
+        }
+      } else {
+        out_data[0] = x_data[0];
+        for (int64_t i = 1; i < x_size; i++) {
+          out_data[i] = x_data[i] + out_data[i - 1];
+        }
       }
     }
   } else {
@@ -47,33 +61,62 @@ void CumsumCompute<T, PType>::Run() {
     int64_t pre = x_dims.count(0, axis);
     int64_t count = x_dims[axis];
     int64_t post = x_dims.count(axis + 1, x_dims.size());
-    if (param.exclusive) {
-      for (int64_t i = 0; i < pre; i++) {
-        for (int64_t j = 0; j < post; j++) {
-          int64_t step = i * count * post + j;
-          const T* src = x_data + step;
-          T* dst = out_data + step;
-          dst[0] = 0;
-          for (int64_t k = 0; k < count - 1; k++) {
-            dst[(k + 1) * post] = src[k * post] + dst[k * post];
+    if (param.reverse) {
+      if (param.exclusive) {
+        for (int64_t i = 0; i < pre; i++) {
+          for (int64_t j = 0; j < post; j++) {
+            int64_t step = i * count * post + j;
+            const T* src = x_data + step;
+            T* dst = out_data + step;
+            dst[(count - 1) * post] = 0;
+            int p = 1;
+            for (int64_t k = count - 1; k > 0; k--, p++) {
+              dst[(k - 1) * post] = src[k * post] + dst[k * post];
+            }
+          }
+        }
+      } else {
+        for (int64_t i = 0; i < pre; i++) {
+          for (int64_t j = 0; j < post; j++) {
+            int64_t step = i * count * post + j;
+            const T* src = x_data + step;
+            T* dst = out_data + step;
+            dst[(count - 1) * post] = src[(count - 1) * post];
+            int p = 1;
+            for (int64_t k = count - 2; k >= 0; k--, p++) {
+              dst[k * post] = src[k * post] + dst[(k + 1) * post];
+            }
           }
         }
       }
     } else {
-      for (int64_t i = 0; i < pre; i++) {
-        for (int64_t j = 0; j < post; j++) {
-          int64_t step = i * count * post + j;
-          const T* src = x_data + step;
-          T* dst = out_data + step;
-          dst[0] = src[0];
-          for (int64_t k = 1; k < count; k++) {
-            dst[k * post] = src[k * post] + dst[(k - 1) * post];
+      if (param.exclusive) {
+        for (int64_t i = 0; i < pre; i++) {
+          for (int64_t j = 0; j < post; j++) {
+            int64_t step = i * count * post + j;
+            const T* src = x_data + step;
+            T* dst = out_data + step;
+            dst[0] = 0;
+            for (int64_t k = 0; k < count - 1; k++) {
+              dst[(k + 1) * post] = src[k * post] + dst[k * post];
+            }
+          }
+        }
+      } else {
+        for (int64_t i = 0; i < pre; i++) {
+          for (int64_t j = 0; j < post; j++) {
+            int64_t step = i * count * post + j;
+            const T* src = x_data + step;
+            T* dst = out_data + step;
+            dst[0] = src[0];
+            for (int64_t k = 1; k < count; k++) {
+              dst[k * post] = src[k * post] + dst[(k - 1) * post];
+            }
           }
         }
       }
     }
   }
-
   return;
 }
 

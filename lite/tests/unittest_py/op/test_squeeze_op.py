@@ -29,7 +29,8 @@ class TestSqueezeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host, [PrecisionType.Any],
+            TargetType.Host,
+            PrecisionType.Any,
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_places = [
@@ -52,8 +53,9 @@ class TestSqueezeOp(AutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         #check config
         x_dtype = program_config.inputs["input_data"].dtype
-        if x_dtype == np.int32 or x_dtype == np.int64:
-            return False
+        if predictor_config.target() == TargetType.OpenCL:
+            if x_dtype == np.int32 or x_dtype == np.int64:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -82,6 +84,8 @@ class TestSqueezeOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={"axes": input_axis})
+
+        ops_config.outputs_dtype = {"output_data": input_type}
 
         program_config = ProgramConfig(
             ops=[ops_config],

@@ -61,8 +61,7 @@ ops_lines = []
 # valid targets and valid_ops
 valid_targets = [
     "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA",
-    "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kIntelFPGA", "kMetal",
-    "kNNAdapter"
+    "kNPU", "kXPU", "kBM", "kMLU", "kIntelFPGA", "kMetal", "kNNAdapter"
 ]
 valid_ops = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
              [], [], []]

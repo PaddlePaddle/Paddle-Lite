@@ -175,7 +175,7 @@ TEST(Pad2d, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   pad_mode_list = {"constant",
                    "reflect"};  // XPU support constant and reflect now

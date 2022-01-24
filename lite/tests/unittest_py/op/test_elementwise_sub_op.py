@@ -144,17 +144,6 @@ class TestElementwiseSubOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_sub"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            if target_type in [TargetType.ARM]:
-                return True
-            return False
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The elementwise_sub op's result is different from paddle in some case, we should fix it as soon as possible!"
-        )
-
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data_x"].shape)

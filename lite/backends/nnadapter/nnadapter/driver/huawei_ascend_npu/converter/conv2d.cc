@@ -22,8 +22,6 @@ namespace huawei_ascend_npu {
 
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
   operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
                                         filter_height,
                                         auto_pad,
