@@ -50,7 +50,6 @@ class TestScatterOp(AutoScanTest):
             len(update_shape) == len(in_shape) and
             update_shape[1:] == in_shape[1:])
 
-        # index'dims shape is 1 or 2 and index.dims[1] is 1
         index_shape = draw(
             st.lists(
                 st.integers(
@@ -127,21 +126,7 @@ class TestScatterOp(AutoScanTest):
         return self.get_predictor_configs(), ["scatter"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            index_dtype = program_config.inputs["index"].dtype
-            index_shape = program_config.inputs["index"].shape
-            if target_type == TargetType.ARM:
-                if index_dtype != "int64":
-                    print(
-                        'Index only support int64 on ARM impl, but got data type is {}, skip!'.
-                        format(index_dtype))
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

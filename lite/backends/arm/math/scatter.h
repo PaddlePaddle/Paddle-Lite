@@ -22,10 +22,10 @@ namespace lite {
 namespace arm {
 namespace math {
 
-template <typename T, typename Dtype>
+template <typename Dtype>
 void scatter(const Dtype* indexs,
-             const T* updates,
-             T* dst,
+             const float* updates,
+             float* dst,
              int index_size,
              int num,
              int size,
