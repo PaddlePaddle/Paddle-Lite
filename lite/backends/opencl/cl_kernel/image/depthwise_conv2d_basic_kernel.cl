@@ -128,10 +128,14 @@ __kernel void depth_conv2d_common(
     }
   }
 
+  const int out_w_blk4 = out_w_blk << 2;  // [0, W)
+  const int remain = output_width - out_w_blk4;
+  const int out_pos_x = mad24(out_c_blk, output_width, out_w_blk4);
+
   CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
 #ifdef PRELU_CH  //{
-  alpha0 = READ_IMG_TYPE(
-      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_channel_block_idx, 0));
+  alpha0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c_blk, 0));
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
@@ -140,24 +144,24 @@ __kernel void depth_conv2d_common(
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                          prelu_alpha,
                          SAMPLER,
-                         (int2)(out_w_base_id + out_w_id0, output_bh_idx));
-  if (out_w_id1 < output_width) {
+                         (int2)(out_pos_x, out_nh % output_height));
+  if (out_w_blk4 + 1 < output_width) {
     alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                            prelu_alpha,
                            SAMPLER,
-                           (int2)(out_w_base_id + out_w_id1, output_bh_idx));
+                           (int2)(out_pos_x + 1, out_nh % output_height));
   }
-  if (out_w_id2 < output_width) {
+  if (out_w_blk4 + 2 < output_width) {
     alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                            prelu_alpha,
                            SAMPLER,
-                           (int2)(out_w_base_id + out_w_id2, output_bh_idx));
+                           (int2)(out_pos_x + 2, out_nh % output_height));
   }
-  if (out_w_id3 < output_width) {
+  if (out_w_blk4 + 3 < output_width) {
     alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                            prelu_alpha,
                            SAMPLER,
-                           (int2)(out_w_base_id + out_w_id3, output_bh_idx));
+                           (int2)(out_pos_x + 3, out_nh % output_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{
@@ -182,9 +186,6 @@ __kernel void depth_conv2d_common(
   out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
 #endif
 
-  const int out_w_blk4 = out_w_blk << 2;  // [0, W)
-  const int remain = output_width - out_w_blk4;
-  const int out_pos_x = mad24(out_c_blk, output_width, out_w_blk4);
   if (remain >= 4) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_pos_x, out_nh), out0);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_pos_x + 1, out_nh), out1);

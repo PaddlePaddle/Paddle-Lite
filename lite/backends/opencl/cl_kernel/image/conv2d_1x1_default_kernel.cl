@@ -360,21 +360,27 @@ __kernel void conv2d_1x1_h1w4c1(
 
   int2 stride_xy = (int2)(stride, stride);
 
-  int2 ouput_pos_in_one_block0 = (int2)(out_w0, out_nh);
-  int2 in_pos_in_one_block0 =
-      ouput_pos_in_one_block0 * stride_xy + (int2)(offset, offset);
+  int h_id = out_nh % output_height;
+  int n_id = out_nh / output_height;
+  int2 ouput_pos_in_one_block0 = (int2)(out_w0, h_id);
+  int2 in_pos_in_one_block0 = ouput_pos_in_one_block0 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block1 = (int2)(out_w1, out_nh);
-  int2 in_pos_in_one_block1 =
-      ouput_pos_in_one_block1 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block1 = (int2)(out_w1, h_id);
+  int2 in_pos_in_one_block1 = ouput_pos_in_one_block1 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block2 = (int2)(out_w2, out_nh);
-  int2 in_pos_in_one_block2 =
-      ouput_pos_in_one_block2 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block2 = (int2)(out_w2, h_id);
+  int2 in_pos_in_one_block2 = ouput_pos_in_one_block2 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block3 = (int2)(out_w3, out_nh);
-  int2 in_pos_in_one_block3 =
-      ouput_pos_in_one_block3 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block3 = (int2)(out_w3, h_id);
+  int2 in_pos_in_one_block3 = ouput_pos_in_one_block3 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
 #ifdef BIASE_CH
   CL_DTYPE4 output0 =
