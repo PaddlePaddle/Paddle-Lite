@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include "driver/verisilicon_timvx/converter/converter.h"
+#include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/symm2asymm.h"
@@ -95,6 +96,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FuseMatMulAddIntoFullyConnected(model);
+    ConvertFillLikeIntoMulAdd(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
@@ -157,10 +159,41 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
   NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
   NNADAPTER_CHECK_EQ(input_tensors_.size(), input_count);
@@ -171,14 +204,14 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
-    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
+    auto length = GetOperandTypeBufferLength(type);
+    if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
       Symm2AsymmData(reinterpret_cast<const int8_t*>(buffer),
                      length,
-                     type->asymm_per_layer_params.zero_point,
+                     type.asymm_per_layer_params.zero_point,
                      reinterpret_cast<uint8_t*>(buffer));
     }
     if (!input_tensors_[arg.index]->CopyDataToTensor(buffer, length)) {

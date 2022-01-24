@@ -136,8 +136,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto y_ext_dims = y_dims;
     if (x_dims.size() == 2 && y_dims.size() == 2) {
-      y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
-      y_ext_dims[1] = ROUND_UP(y_dims[1], 4);
+      y_ext_dims[0] = ROUND_UP(k_y, 4);
+      y_ext_dims[1] = ROUND_UP(n_, 4);
     } else if (x_dims.size() == 1 && y_dims.size() == 1) {
       y_ext_dims = DDim(std::vector<DDim::value_type>{1, 1});
       if (transpose_y_) {
@@ -174,6 +174,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
               : DDim(std::vector<DDim::value_type>{1, 1, k_y, n_});
       convert(y_cpu, y_buffer_data, tmp_dim);
     } else {
+      VLOG(4) << "y_ext_dims: " << y_ext_dims;
       RearrangeByBlk4x4(y_cpu, y_buffer_data, k_y, n_);
     }
 

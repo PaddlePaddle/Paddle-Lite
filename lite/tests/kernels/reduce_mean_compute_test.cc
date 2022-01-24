@@ -382,7 +382,7 @@ TEST(ReduceMean, precision) {
   // get the padded dims of output tensor in framework.cc
   keep_dim_vec = std::vector<bool>{true};
 #endif
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   place = Place(TARGET(kXPU));
 #endif
 #if defined(LITE_WITH_NNADAPTER)

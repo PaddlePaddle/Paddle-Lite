@@ -63,16 +63,6 @@ class TestReduceMaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        in_shape = list(program_config.inputs["input_data"].shape)
-        axis = program_config.ops[0].attrs["dim"]
-        keep_dim = program_config.ops[0].attrs["keep_dim"]
-        if target_type == TargetType.OpenCL:
-            if keep_dim == False:
-                return False
-        if target_type == TargetType.Metal:
-            if keep_dim == False or axis[0] != 1 or in_shape[0] != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -118,7 +108,32 @@ class TestReduceMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_max"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["dim"]
+            keep_dim = program_config.ops[0].attrs["keep_dim"]
+            if target_type == TargetType.OpenCL:
+                if keep_dim == False:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["dim"]
+            keep_dim = program_config.ops[0].attrs["keep_dim"]
+            if target_type == TargetType.Metal:
+                if keep_dim == False or axis[0] != 1 or in_shape[0] != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

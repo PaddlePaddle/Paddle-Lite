@@ -51,9 +51,6 @@ class TestReduceMeanOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs["keep_dim"] == False:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -94,7 +91,15 @@ class TestReduceMeanOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_mean"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                if program_config.ops[0].attrs["keep_dim"] == False:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

@@ -48,6 +48,31 @@ parser.add_argument(
         'INTEL_FPGA', 'Metal', 'NNAdapter'
     ],
     required=True)
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
@@ -70,12 +95,15 @@ settings.register_profile(
 
 
 class IgnoreReasonsBase(enum.Enum):
-    # Paddle not support, but paddlelite support, we need to add the feature.
-    PADDLE_NOT_IMPLEMENTED = 0
-    # paddlelite not support.
+    # Paddle cannot predict normally (an error is reported in the prediction process) -- Both paddle and Lite do not predict
+    PADDLE_NOT_SUPPORT = 0
+    # Lite does not have a corresponding operator or Lite predicts an error -- Paddle predicts but Lite does not.
     PADDLELITE_NOT_SUPPORT = 1
-    # Accuracy is abnormal after enabling pass.
+    # When diff exists in the calculation results of Paddle and Lite -- Both Paddle and Lite predict,
+    # but do not compare the results.
     ACCURACY_ERROR = 2
+    #For ignore op fusion
+    OP_FUSION_ERROR = 3
 
 
 class AutoScanBaseTest(unittest.TestCase):
@@ -250,7 +278,6 @@ class AutoScanBaseTest(unittest.TestCase):
                 # judge validity of program
                 if not self.is_program_valid(prog_config, paddlelite_config):
                     self.num_invalid_programs_list[predictor_idx] += 1
-                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
@@ -266,27 +293,23 @@ class AutoScanBaseTest(unittest.TestCase):
                         'lod': tensor_config.lod
                     }
                 results: List[Dict[str, np.ndarray]] = []
-
-                # baseline: cpu no ir_optim run
-                base_config = self.create_inference_config(ir_optim=False)
-                logging.info('[ProgramConfig]: ' + str(prog_config))
-                results.append(
-                    self.run_test_config(model, params, prog_config,
-                                         base_config, feed_data))
-
                 # ignore info
-                ignore_flag = False
+                accuracy_error_flag = False
+                paddle_not_support_flag = False
                 paddle_lite_not_support_flag = False
+                op_fusion_error_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
-                        ignore_flag = True
                         self.num_ignore_tests_list[predictor_idx] += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
+                            accuracy_error_flag = True
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
                                     pred_config))
-                            gl.set_out_diff_ops(self.get_target(), sys.argv[0])
+                            gl.set_out_diff_ops(
+                                self.get_target(),
+                                self.get_nnadapter_device_name(), sys.argv[0])
                         elif ignore_info[
                                 1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
                             paddle_lite_not_support_flag = True
@@ -294,12 +317,38 @@ class AutoScanBaseTest(unittest.TestCase):
                                             ignore_info[2] + ' ' + ' vs ' +
                                             self.paddlelite_config_str(
                                                 pred_config))
-                            break
+                        elif ignore_info[
+                                1] == IgnoreReasonsBase.PADDLE_NOT_SUPPORT:
+                            paddle_not_support_flag = True
+                            self.ignore_log("[PADDLE_NOT_SUPPORT ERROR] " +
+                                            ignore_info[2] + ' ' + ' vs ' +
+                                            self.paddlelite_config_str(
+                                                pred_config))
+                        elif ignore_info[
+                                1] == IgnoreReasonsBase.OP_FUSION_ERROR:
+                            op_fusion_error_flag = True
+                            self.ignore_log("[OP_FUSION ERROR] " + ignore_info[
+                                2] + ' ' + ' vs ' + self.paddlelite_config_str(
+                                    pred_config))
                         else:
                             raise NotImplementedError
-                        break
+
+                if paddle_not_support_flag:
+                    gl.set_paddle_not_supported_ops(
+                        self.get_target(),
+                        self.get_nnadapter_device_name(), sys.argv[0])
+                    continue
+
+                # baseline: cpu no ir_optim run
+                base_config = self.create_inference_config(ir_optim=False)
+                logging.info('[ProgramConfig]: ' + str(prog_config))
+                results.append(
+                    self.run_test_config(model, params, prog_config,
+                                         base_config, feed_data))
                 if paddle_lite_not_support_flag:
-                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
+                    gl.set_lite_not_supported_ops(
+                        self.get_target(),
+                        self.get_nnadapter_device_name(), sys.argv[0])
                     continue
 
                 if os.path.exists(self.cache_dir):
@@ -311,30 +360,29 @@ class AutoScanBaseTest(unittest.TestCase):
                         model, params, feed_data, pred_config)
                     results.append(result)
                     # add ignore methods
-                    if self.passes is not None:
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
-                        # op unit test: we will not check precision in ignore case
-                        if not ignore_flag:
-                            # pass unit test: we will not check fusion in ignore case
+                    if self.passes is not None:  # pass check
+                        if not accuracy_error_flag:
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                     results[0])
+                        if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
-                    else:
+                    else:  # op check
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
-                        if not ignore_flag:
+                        if not accuracy_error_flag:
                             self.assert_tensors_near(atol_, rtol_, results[-1],
                                                      results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
                         '\033[1;31m \nERROR INFO: {}\033[0m'.format(str(e)))
-                    if not ignore_flag:
-                        status = False
-                    continue
+                    status = False
+                    break
                 self.success_log('PredictorConfig: ' +
                                  self.paddlelite_config_str(pred_config))
         self.assertTrue(status)
-        gl.set_success_ops(self.get_target(), sys.argv[0])
+        gl.set_success_ops(self.get_target(),
+                           self.get_nnadapter_device_name(), sys.argv[0])
 
     def inference_config_str(self, config) -> bool:
         dic = {}
@@ -435,11 +483,18 @@ class AutoScanBaseTest(unittest.TestCase):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
-        gl.set_all_test_ops(self.get_target(), sys.argv[0])
+        gl.set_all_test_ops(self.get_target(),
+                            self.get_nnadapter_device_name(), sys.argv[0])
         if not self.is_actived():
             logging.info("Error: This test is not actived on " +
                          self.get_target())
             return
+
+        if self.get_target().upper() == "NNADAPTER":
+            self.assertTrue(
+                self.args.nnadapter_device_names != "",
+                "Args Error: Please set nnadapter_device_names when target=nnadapter!"
+            )
 
         generator = st.composite(program_generator)
         loop_func = given(generator())(run_test)
@@ -510,6 +565,7 @@ class AutoScanBaseTest(unittest.TestCase):
         self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
+
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
             if (tar_ == TargetType.ARM):
                 self.valid_places.append([Place(tar_, pre_, lay_)] +
@@ -526,6 +582,11 @@ class AutoScanBaseTest(unittest.TestCase):
                 return True
         return False
 
+    def get_nnadapter_device_name(self) -> str:
+        nnadapter_device_name_list = self.args.nnadapter_device_names.split(
+            ",")
+        return nnadapter_device_name_list[0]
+
     def get_predictor_configs(self) -> List[CxxConfig]:
         return self.target_to_predictor_configs(self, self.get_target())
 
@@ -534,6 +595,19 @@ class AutoScanBaseTest(unittest.TestCase):
         self.num_invalid_programs_list = [0] * self.num_predictor_kinds
         self.num_ran_programs_list = [0] * self.num_predictor_kinds
         self.num_ignore_tests_list = [0] * self.num_predictor_kinds
+
+    @staticmethod
+    def nnadapter_config_set(self, config: CxxConfig):
+        config.set_nnadapter_device_names(
+            self.args.nnadapter_device_names.split(","))
+        config.set_nnadapter_context_properties(
+            self.args.nnadapter_context_properties)
+        config.set_nnadapter_model_cache_dir(
+            self.args.nnadapter_model_cache_dir)
+        config.set_nnadapter_subgraph_partition_config_path(
+            self.args.nnadapter_subgraph_partition_config_path)
+        config.set_nnadapter_mixed_precision_quantization_config_path(
+            self.args.nnadapter_mixed_precision_quantization_config_path)
 
     # get valid test configs
     @staticmethod
@@ -545,5 +619,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     config_ = CxxConfig()
                     config_.set_valid_places(elem_)
                     config_.set_threads(thread_)
+                    if target.upper() == "NNADAPTER":
+                        self.nnadapter_config_set(self, config_)
                     configs_.append(config_)
         return configs_

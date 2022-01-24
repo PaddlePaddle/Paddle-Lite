@@ -68,16 +68,7 @@ class TestEluOp(AutoScanTest):
         return self.get_predictor_configs(), ["elu"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                return True
-            else:
-                return False
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "This operator's definition is different from Paddle. So the output has diff with Paddle. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

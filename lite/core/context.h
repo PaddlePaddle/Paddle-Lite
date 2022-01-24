@@ -68,7 +68,6 @@ using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
-using RKNPUContext = Context<TargetType::kRKNPU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -124,70 +123,6 @@ class Context<TargetType::kBM> {
 };
 #endif
 
-#ifdef LITE_WITH_RKNPU
-template <>
-class Context<TargetType::kRKNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(RKNPUContext* ctx) {}
-
-  RKNPUContext& operator=(const RKNPUContext& ctx) {}
-  std::string name() const { return "RKNPUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-
-  static void SetSubgraphModelCacheBuffers(
-      Scope* scope,
-      const std::map<std::string,
-                     std::pair<std::vector<char>, std::vector<char>>>&
-          subgraph_model_cache_buffers) {
-    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
-      auto& key = subgraph_model_cache_buffer.first;
-      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
-      CHECK(var);
-      auto data =
-          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
-      CHECK(data);
-      *data = subgraph_model_cache_buffer.second;
-    }
-  }
-
-  static bool SubgraphModelCacheBuffers(Scope* scope,
-                                        const std::string& key,
-                                        std::vector<char>* cfg,
-                                        std::vector<char>* bin) {
-    CHECK(cfg);
-    CHECK(bin);
-    cfg->clear();
-    bin->clear();
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
-    if (!var) return false;
-    auto data =
-        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
-    *cfg = data->first;
-    *bin = data->second;
-    // Reset to reduce memory consumption
-    std::vector<char>().swap(data->first);
-    std::vector<char>().swap(data->second);
-    return true;
-  }
-};
-#endif
-
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
 template <>
@@ -212,6 +147,25 @@ class Context<TargetType::kNNAdapter> {
     auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_DIR");
     if (!var) return "";
     return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterDynamicShapeInfo(
+      Scope* scope,
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    auto var = scope->Var("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    CHECK(var);
+    auto data = var->GetMutable<
+        std::map<std::string, std::vector<std::vector<int64_t>>>>();
+    CHECK(data);
+    *data = nnadapter_dynamic_shape_info;
+  }
+
+  static std::map<std::string, std::vector<std::vector<int64_t>>>
+  NNAdapterDynamicShapeInfo(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    if (!var) return std::map<std::string, std::vector<std::vector<int64_t>>>();
+    return var->Get<std::map<std::string, std::vector<std::vector<int64_t>>>>();
   }
 
   static void SetNNAdapterModelCacheBuffers(
@@ -649,12 +603,6 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
-#ifdef LITE_WITH_RKNPU
-      case TARGET(kRKNPU):
-        kernel_contexts_[TargetType::kRKNPU].As<RKNPUContext>().CopySharedTo(
-            &ctx->As<RKNPUContext>());
-        break;
-#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -750,9 +698,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
-#endif
-#ifdef LITE_WITH_RKNPU
-    InitContext<TargetType::kRKNPU, RKNPUContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

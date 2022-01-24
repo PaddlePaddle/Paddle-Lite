@@ -49,6 +49,7 @@ REGISTER_LITE_KERNEL(dropout,
                      paddle::lite::kernels::cuda::DropoutCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

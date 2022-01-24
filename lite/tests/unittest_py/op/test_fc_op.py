@@ -47,11 +47,6 @@ class TestFcOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs["in_num_col_dims"] != 1 or len(
-                    in_shape) != 2:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -136,7 +131,17 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if predictor_config.target() == TargetType.OpenCL:
+                if program_config.ops[0].attrs["in_num_col_dims"] != 1 or len(
+                        in_shape) != 2:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

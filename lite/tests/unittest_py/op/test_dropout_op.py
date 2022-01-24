@@ -87,7 +87,8 @@ class TestDropoutOp(AutoScanTest):
         seed = draw(st.integers(min_value=0, max_value=1024))
         dropout_implementation = draw(
             st.sampled_from(['downgrade_in_infer', 'upscale_in_train']))
-        is_test = draw(st.booleans())
+        # is_test = False only used in training
+        is_test = True
         fix_seed = draw(st.booleans())
 
         def gen_input_data_seed():
@@ -137,28 +138,21 @@ class TestDropoutOp(AutoScanTest):
         return self.get_predictor_configs(), ["dropout"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def skip_seed_input_case(program_config, predictor_config):
-            if "Seed" in program_config.ops[0].inputs.keys():
-                return True
-            else:
-                return False
+        pass
+
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            dropout_implementation = program_config.ops[0].attrs[
+                "dropout_implementation"]
+            if target_type == TargetType.Metal:
+                if in_x_shape[0] != 1 or len(in_x_shape) != 4 \
+                    or dropout_implementation != 'downgrade_in_infer':
+                    return False
 
         self.add_ignore_check_case(
-            skip_seed_input_case, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Paddle-Lite not support 'Seed' as the input of dropout!")
-
-        def skip_is_test_with_false_case(program_config, predictor_config):
-            if predictor_config.target() in [
-                    TargetType.X86, TargetType.ARM, TargetType.OpenCL,
-                    TargetType.Metal
-            ]:
-                if program_config.ops[0].attrs['is_test'] == False:
-                    return True
-            return False
-
-        self.add_ignore_check_case(
-            skip_is_test_with_false_case, IgnoreReasons.ACCURACY_ERROR,
-            "The dropout op's output has diff with paddle when the attr['is_test'] == false."
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

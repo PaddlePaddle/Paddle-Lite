@@ -54,13 +54,13 @@ class TestPixelShuffleOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_valid_places)
 
         # metal not support now
-        # metal_places = [
-        #     Place(TargetType.Metal, PrecisionType.FP32,
-        #           DataLayoutType.MetalTexture2DArray),
-        #     Place(TargetType.Metal, PrecisionType.FP16,
-        #           DataLayoutType.MetalTexture2DArray)
-        # ]
-        # self.enable_testing_on_place(places=metal_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -108,7 +108,14 @@ class TestPixelShuffleOp(AutoScanTest):
         return self.get_predictor_configs(), ["pixel_shuffle"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

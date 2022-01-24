@@ -39,11 +39,6 @@ class TestGatherNdOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["input_data"].dtype
-
-        #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -94,6 +89,12 @@ class TestGatherNdOp(AutoScanTest):
             inputs=op_inputs,
             outputs={"Out": ["output_data"]},
             attrs={"axis": 1})
+
+        if input_type == "int64":
+            gather_nd_op.outputs_dtype = {"output_data": np.int64}
+        elif input_type == "int32":
+            gather_nd_op.outputs_dtype = {"output_data": np.int32}
+
         program_config = ProgramConfig(
             ops=[gather_nd_op],
             weights={},

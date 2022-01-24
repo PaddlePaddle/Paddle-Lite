@@ -19,8 +19,13 @@ namespace arm {
 namespace math {
 namespace fp16 {
 void fp16_to_fp32(const float16_t* in, float* out, int size) {
+#ifdef __aarch64__
   int cnt = size >> 6;
   int remain = size & 63;
+#else
+  int cnt = size >> 5;
+  int remain = size & 31;
+#endif
   int remain_cnt = remain >> 3;
   int remain_remain = remain & 7;
 #ifdef __aarch64__
@@ -124,8 +129,10 @@ void fp16_to_fp32(const float16_t* in, float* out, int size) {
       "subs %[cnt], #1\n"
       "vst1.32 {d12-d15}, [%[out]]!\n"
       "vcvt.f32.f16 q10, d6\n"
-      "vcvt.f32.f16 q11, d7\n"
       "vst1.32 {d16-d19}, [%[out]]!\n"
+      "vcvt.f32.f16 q11, d7\n"
+      "vst1.32 {d20-d23}, [%[out]]!\n"
+      "bne 0b\n"
       "1: \n"
       "cmp %[remain_cnt], #1\n"
       "blt 2f\n"
@@ -284,6 +291,7 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
       "vcvt.f16.f32 d22, q6\n"
       "vcvt.f16.f32 d23, q7\n"
       "vst1.32 {d20-d23}, [%[out]]!\n"
+      "bne 0b\n"
       "1: \n"
       "cmp %[remain_cnt], #1\n"
       "blt 2f\n"

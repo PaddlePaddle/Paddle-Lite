@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
@@ -92,6 +93,7 @@ class QuantDequantOpFuser : public FuseBase {
 
  private:
   std::string quant_dequant_op_type_{};
+  std::vector<std::string> input_activation_quant_op = {"matmul"};
 };
 
 /* DynamicQuantOpFuser is applied for LSTM and GRU for now.
