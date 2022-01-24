@@ -67,7 +67,7 @@ class TransposeComputeFloatImage
         for (int i = 0; i < axis_.size(); ++i) {
           kernel_func_name_ += to_string(axis_[i]);
         }
-        kernel_path =
+        kernel_path_ =
             "image/transpose_fixb" + to_string(axis_[0] + 1) + "_kernel.cl";
       } else {
         LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
