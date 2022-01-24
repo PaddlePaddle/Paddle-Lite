@@ -17,6 +17,7 @@
 //
 
 #include "lite/core/optimizer/mir/fusion/unsqueeze2_pad3d_squeeze2_fuse.h"
+
 #include <memory>
 #include <vector>
 
@@ -26,6 +27,12 @@ namespace mir {
 namespace fusion {
 
 void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
+  auto paddings_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    return paddings.size() == 6 && paddings[4] == 0 && paddings[5] == 0;
+  };
+
   // create input nodes.
   auto* unsqu_input = VarNode("unsqu_input")
                           ->assert_is_op_input(unsqueeze2_type_, "X")
@@ -35,8 +42,10 @@ void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
   auto* unsque = OpNode("unsqueeze2", unsqueeze2_type_)
                      ->assert_is_op(unsqueeze2_type_)
                      ->AsIntermediate();
-  auto* p3d =
-      OpNode("pad3d", pad3d_type_)->assert_is_op(pad3d_type_)->AsIntermediate();
+  auto* p3d = OpNode("pad3d", pad3d_type_)
+                  ->assert_is_op(pad3d_type_)
+                  ->assert_node_satisfied(paddings_teller)
+                  ->AsIntermediate();
   auto* sque = OpNode("squeeze2", squeeze2_type_)
                    ->assert_is_op(squeeze2_type_)
                    ->AsIntermediate();

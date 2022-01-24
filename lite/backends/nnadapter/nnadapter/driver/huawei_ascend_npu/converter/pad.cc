@@ -16,7 +16,7 @@
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-
+#include "utility/modeling.h"
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
@@ -39,6 +39,46 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
+  }
+  if ((mode == NNADAPTER_PAD_MODE_REFLECT || mode == NNADAPTER_PAD_MODE_EDGE) &&
+      input_operand->type.dimensions.count == 5 &&
+      IsConstantOperand(pads_operand) &&
+      !IsOperandWithDynamicShape(input_operand)) {
+    uint32_t pads_size =
+        pads_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+    auto pads_buffer = reinterpret_cast<int32_t*>(pads_operand->buffer);
+    if (pads_size == 10 && pads_buffer[6] == 0 && pads_buffer[7] == 0 &&
+        pads_buffer[8] == 0 && pads_buffer[9] == 0) {
+      // Reshape to 4-dimensions
+      std::vector<int32_t> shape_data(input_operand->type.dimensions.data,
+                                      input_operand->type.dimensions.data + 3);
+      shape_data.push_back(input_operand->type.dimensions.data[3] *
+                           input_operand->type.dimensions.data[4]);
+      auto shape_operator = converter->AddInt32ConstantOperator(shape_data);
+      auto reshape_op = converter->AddOperator<ge::op::Reshape>(output_operand);
+      SET_INPUT(reshape_op, x, input_operator);
+      SET_INPUT(reshape_op, shape, shape_operator);
+      auto reshape_output_operator = MAP_OUTPUT(reshape_op, y, output_operand);
+      // Use NCHW data format
+      std::vector<int32_t> pad_data(pads_buffer, pads_buffer + 8);
+      auto pads_operator = converter->AddInt32ConstantOperator(pad_data);
+      auto pad_op = converter->AddOperator<ge::op::PadV3>(output_operand);
+      pad_op->set_attr_mode(pad_mode);
+      SET_INPUT(pad_op, x, reshape_output_operator);
+      SET_INPUT(pad_op, paddings, pads_operator);
+      auto pad2d_output_operator = MAP_OUTPUT(pad_op, y, output_operand);
+      // Reshape to 5-dimensions
+      auto shape_operator2 = converter->AddInt32ConstantOperator(
+          std::vector<int32_t>(output_operand->type.dimensions.data,
+                               output_operand->type.dimensions.data +
+                                   output_operand->type.dimensions.count));
+      auto reshape_op2 =
+          converter->AddOperator<ge::op::Reshape>(output_operand);
+      SET_INPUT(reshape_op2, x, pad2d_output_operator);
+      SET_INPUT(reshape_op2, shape, shape_operator2);
+      MAP_OUTPUT(reshape_op2, y, output_operand);
+      return NNADAPTER_NO_ERROR;
+    }
   }
   auto pads_operator = converter->GetMappedOperator(pads_operand);
   if (!pads_operator) {

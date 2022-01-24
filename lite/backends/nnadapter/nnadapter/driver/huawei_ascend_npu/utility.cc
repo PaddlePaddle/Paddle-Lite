@@ -221,6 +221,9 @@ bool BuildOMModelToBuffer(
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
   options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
+  ATC_CALL(aclgrphSaveModel(
+      "ir_graph_model",
+      om_buffer));  // For debug: save ascend offline model to local.
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
   memcpy(reinterpret_cast<void*>(model_buffer->data()),

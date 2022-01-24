@@ -133,8 +133,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
     int align_mode =
         op->HasAttr("align_mode") ? op->GetAttr<int>("align_mode") : 1;
     if (align_mode == 0 && align_corners) {
-      auto align_corners_operand = converter->AddConstantOperand(false);
-      input_operands[3] = align_corners_operand;
+      align_mode = 1;
     }
     auto align_mode_operand = converter->AddConstantOperand(align_mode);
     input_operands.push_back(align_mode_operand);

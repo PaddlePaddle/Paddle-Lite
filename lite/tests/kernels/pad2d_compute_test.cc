@@ -200,7 +200,7 @@ TEST(Pad2d, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
               // Ascend does not support the following scenarios.
               if (std::abs(pad_value - 1) < 1e-6 ||
-                  (pad_top == 0 && pad_bottom == 1 && pad_left == 0 &&
+                  ((pad_top == 1 || pad_bottom == 1) && pad_left == 0 &&
                    pad_right == 0))
                 continue;
 #endif
