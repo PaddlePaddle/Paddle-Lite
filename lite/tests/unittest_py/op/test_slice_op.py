@@ -87,7 +87,6 @@ class TestSliceOp(AutoScanTest):
         input_num = draw(st.sampled_from([0, 1, 2]))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
-        assume(input_num != 0)
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
         assume(len(axes) <= len(in_shape))
