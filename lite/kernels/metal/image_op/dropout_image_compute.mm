@@ -91,6 +91,10 @@ REGISTER_LITE_KERNEL(dropout,
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Seed",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -105,6 +109,8 @@ REGISTER_LITE_KERNEL(dropout,
     paddle::lite::kernels::metal::DropoutImageCompute,
     def)
     .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Seed",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

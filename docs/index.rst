@@ -57,22 +57,9 @@ Welcome to Paddle-Lite's documentation!
   user_guides/python_demo
   user_guides/development_overview
   user_guides/model_optimize_tool
-  #user_guides/opt/opt_bin
-  #user_guides/opt/opt_python
-  #user_guides/opt/x2paddle&opt
   user_guides/quant_aware
-  user_guides/quant/quant_post_dynamic
-  user_guides/quant/quant_post_static
-  user_guides/quant/quant_post_dynamic_demo
   user_guides/model_visualization
   user_guides/profiler
-  .. toctree::
-    :maxdepth: 1
-    :caption: OPT 工具
-    :name: OPT opt-tools
-    opt/opt_bin
-    opt/opt_python
-    opt/x2paddle&opt
 
 .. toctree::
   :maxdepth: 1

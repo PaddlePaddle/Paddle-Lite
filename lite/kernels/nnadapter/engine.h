@@ -56,7 +56,7 @@ class Program {
   // functions to access them
   bool SetInputsAndOutputs(std::vector<Variable>* input_vars,
                            std::vector<Variable>* output_vars);
-  bool Execute();
+  int Execute();
   bool IsValid() { return context_ && compilation_; }
   bool IsReady() { return IsValid() && execution_; }
 
@@ -89,8 +89,7 @@ class Engine {
   std::vector<Variable> output_vars_;
   std::vector<NNAdapterDevice*> devices_;
   ::NNAdapterContext* context_{nullptr};
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<Program>>
-      programs_;
+  std::vector<std::shared_ptr<Program>> programs_;
   std::string model_cache_dir_{""};
 };
 

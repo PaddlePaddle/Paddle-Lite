@@ -16,10 +16,6 @@ if(LITE_WITH_OPENCL)
   include(backends/opencl)
 endif()
 
-if(LITE_WITH_RKNPU)
-  include(backends/rknpu)
-endif()
-
 if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()

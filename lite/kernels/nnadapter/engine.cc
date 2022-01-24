@@ -17,7 +17,6 @@
 #include <time.h>
 #include <utility>
 #include "lite/core/op_registry.h"
-#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include "lite/utils/env.h"
 #include "lite/utils/md5.h"
@@ -39,8 +38,16 @@ std::string GenerateModelCacheToken(
   }
   for (size_t i = 0; i < input_vars.size(); i++) {
     os << input_vars[i].name;
-    for (auto input_shape : input_vars[i].value->dims().Vectorize()) {
-      os << input_shape;
+    if (input_vars[i].dynamic_dimensions.empty()) {
+      for (auto shape_value : input_vars[i].value->dims().Vectorize()) {
+        os << shape_value;
+      }
+    } else {
+      for (auto dynamic_shape : input_vars[i].dynamic_dimensions) {
+        for (auto shape_value : dynamic_shape) {
+          os << shape_value;
+        }
+      }
     }
   }
   return MD5(os.str());
@@ -216,7 +223,7 @@ bool Program::SetInputsAndOutputs(std::vector<Variable>* input_vars,
   return true;
 }
 
-bool Program::Execute() {
+int Program::Execute() {
   CHECK(IsReady());
   auto GetCurrentUS = []() -> double {
     struct timeval time;
@@ -227,10 +234,10 @@ bool Program::Execute() {
   int result = NNAdapterExecution_compute_invoke(execution_);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Failed to run the execution(" << result << ")!";
-    return false;
+    return result;
   }
   VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
-  return true;
+  return NNADAPTER_NO_ERROR;
 }
 
 Engine::Engine(KernelContext* ctx,
@@ -255,12 +262,14 @@ Engine::Engine(KernelContext* ctx,
   CHECK_EQ(output_count, output_scales.size());
   input_vars_.resize(input_count);
   output_vars_.resize(output_count);
+  auto dynamic_shape_info =
+      ctx->As<NNAdapterContext>().NNAdapterDynamicShapeInfo(exec_scope);
   for (size_t i = 0; i < input_count; i++) {
     const auto& name = input_names[i];
     input_vars_[i].name = name;
-    // input_vars_[i].dynamic_dimensions =
-    // ctx->As<NNAdapterContext>().NNAdapterDynamicDimensions(exec_scope_,
-    // name);
+    if (dynamic_shape_info.count(name) > 0) {
+      input_vars_[i].dynamic_dimensions = dynamic_shape_info[name];
+    }
     input_vars_[i].value = exec_scope_->FindMutableTensor(input_names[i]);
     input_vars_[i].quant_scale = input_scales[i];
   }
@@ -329,49 +338,57 @@ bool Engine::Run() {
   for (size_t i = 0; i < input_count; i++) {
     input_dims[i] = input_vars_[i].value->dims().Vectorize();
   }
-  // Find the compiled device program according to the input dimensions
-  std::shared_ptr<Program> program = nullptr;
-  if (!programs_.count(input_dims)) {
-    // Rebuild the device program corresponding to the input dimensions if not
-    // found
-    std::vector<std::string> device_names;
-    for (auto* device : devices_) {
-      const char* name = nullptr;
-      NNAdapterDevice_getName_invoke(device, &name);
-      device_names.push_back(name);
+  // try to execute all programs.
+  for (auto program : programs_) {
+    int ret = program->Execute();
+    if (ret == NNADAPTER_INVALID_DIMENSIONS) {
+      VLOG(1) << "Input shapes are not supported by the program, try the next "
+                 "program.";
+      continue;
     }
-    program = std::make_shared<Program>(context_);
-    // Take the model cache buffer from the scope
-    std::vector<char> model_cache_buffer;
-    // Generate a cache token based on the input names and shapes
-    auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
-    VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
-    ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
-        exec_scope_, model_cache_token, &model_cache_buffer);
-    VLOG(3) << "NNAdapter model_cache_buffer size: "
-            << model_cache_buffer.size();
-    // Load the compiled device program from the model cache buffer or file
-    if (!program->LoadFromCache(
-            model_cache_token, &model_cache_buffer, model_cache_dir_)) {
-      // Compile the model online to generate the device program and cache it to
-      // the file
-      CHECK(program->BuildAndCacheToFile(block_idx_,
-                                         program_desc_,
-                                         exec_scope_,
-                                         input_vars_,
-                                         &output_vars_,
-                                         model_cache_token,
-                                         model_cache_dir_));
-    }
-    CHECK(program->IsValid());
-    CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
-    programs_[input_dims] = program;
-  } else {
-    program = programs_[input_dims];
-    CHECK(program);
-    CHECK(program->IsValid());
+    CHECK_EQ(ret, static_cast<int>(NNADAPTER_NO_ERROR))
+        << "Program execute failed.";
+    return true;
   }
-  return program->Execute();
+  // Rebuild the device program corresponding to the input dimensions if not
+  // find valid program.
+  VLOG(1) << "No suitable program found for current input shapes, try "
+             "generating a new program online.";
+  std::vector<std::string> device_names;
+  for (auto* device : devices_) {
+    const char* name = nullptr;
+    NNAdapterDevice_getName_invoke(device, &name);
+    device_names.push_back(name);
+  }
+  auto program = std::make_shared<Program>(context_);
+  // Take the model cache buffer from the scope
+  std::vector<char> model_cache_buffer;
+  // Generate a cache token based on the input names and shapes
+  auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
+  VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
+  ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
+      exec_scope_, model_cache_token, &model_cache_buffer);
+  VLOG(3) << "NNAdapter model_cache_buffer size: " << model_cache_buffer.size();
+  // Load the compiled device program from the model cache buffer or file
+  if (!program->LoadFromCache(
+          model_cache_token, &model_cache_buffer, model_cache_dir_)) {
+    // Compile the model online to generate the device program and cache it to
+    // the file
+    CHECK(program->BuildAndCacheToFile(block_idx_,
+                                       program_desc_,
+                                       exec_scope_,
+                                       input_vars_,
+                                       &output_vars_,
+                                       model_cache_token,
+                                       model_cache_dir_));
+  }
+  CHECK(program->IsValid());
+  CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
+  programs_.push_back(program);
+  int ret = program->Execute();
+  CHECK_EQ(ret, static_cast<int>(NNADAPTER_NO_ERROR))
+      << "Program execute failed.";
+  return true;
 }
 
 }  // namespace nnadapter

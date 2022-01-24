@@ -465,6 +465,7 @@ struct PoolParam : ParamBase {
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
+  const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
   float dropout_prob{.5f};
@@ -668,6 +669,15 @@ struct UniformRandomParam : ParamBase {
   int seed{0};
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
+};
+/// ----------------------- unfold operators ----------------------
+struct UnfoldParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<int> kernel_sizes{};
+  std::vector<int> strides{};
+  std::vector<int> paddings{};
+  std::vector<int> dilations{};
+  lite::Tensor* Y{nullptr};
 };
 /// ----------------------- negative operators --------------
 struct NegativeParam : ParamBase {

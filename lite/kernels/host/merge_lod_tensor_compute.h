@@ -13,15 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#pragma GCC system_header
-#include <xpu/runtime.h>
-#include <xpu/xdnn.h>
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/merge_lod_tensor_op.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace host {
 
-namespace xdnn = baidu::xpu::api;
+class MergeLodTensorCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MergeLodTensorParam;
 
+  void Run() override;
+
+  virtual ~MergeLodTensorCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -49,9 +49,12 @@ void LSTMComputeRun(const operators::LstmParam& param,
     bit_length = param.bit_length;
   }
 
-  batch_gate->mutable_data<float>();
-  hidden_out->mutable_data<float>();
-  cell_out->mutable_data<float>();
+  auto bg_ptr = batch_gate->mutable_data<float>();
+  auto hidden_ptr = hidden_out->mutable_data<float>();
+  auto cell_ptr = cell_out->mutable_data<float>();
+  memset(hidden_ptr, 0, hidden_out->numel() * sizeof(float));
+  memset(bg_ptr, 0, batch_gate->numel() * sizeof(float));
+  memset(cell_ptr, 0, cell_out->numel() * sizeof(float));
 
   bool is_reverse = param.is_reverse;
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
@@ -96,9 +99,12 @@ void LSTMComputeRun(const operators::LstmParam& param,
   batch_hidden.Resize(dims);
   batch_cell.Resize(dims);
   batch_cell_pre_act->Resize(dims);
-  batch_hidden.mutable_data<float>();
-  batch_cell.mutable_data<float>();
-  batch_cell_pre_act->mutable_data<float>();
+
+  auto bh_ptr = batch_hidden.mutable_data<float>();
+  auto bc_ptr = batch_cell.mutable_data<float>();
+  auto bcpa_ptr = batch_cell_pre_act->mutable_data<float>();
+  memset(bh_ptr, 0, batch_hidden.numel() * sizeof(float));
+  memset(bc_ptr, 0, batch_cell.numel() * sizeof(float));
 
   auto batch_starts = batch_gate->lod()[0];
   size_t num_batch = batch_starts.size() - 1;
@@ -200,7 +206,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
       Tensor ordered_h0;
       lite::arm::math::ReorderInitState<float>(
           *hidden_t0, order, &ordered_h0, true);
-      int M = ordered_h0.dims()[0];
+      int M = bend - bstart;
       int N = matrix_width;
       int K = frame_size;
       lite::arm::math::sgemm(false,
