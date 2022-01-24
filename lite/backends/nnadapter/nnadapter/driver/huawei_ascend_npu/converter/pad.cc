@@ -54,12 +54,15 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
                                       input_operand->type.dimensions.data + 3);
       shape_data.push_back(input_operand->type.dimensions.data[3] *
                            input_operand->type.dimensions.data[4]);
-      auto shape_operator = converter->AddInt32ConstantOperator(shape_data);
-      auto reshape_op = converter->AddOperator<ge::op::Reshape>(output_operand);
-      SET_INPUT(reshape_op, x, input_operator);
-      SET_INPUT(reshape_op, shape, shape_operator);
-      auto reshape_output_operator = MAP_OUTPUT(reshape_op, y, output_operand);
-      // Use NCHW data format
+      auto start_shape_operator =
+          converter->AddInt32ConstantOperator(shape_data);
+      auto start_reshape_op =
+          converter->AddOperator<ge::op::Reshape>(output_operand);
+      SET_INPUT(start_reshape_op, x, input_operator);
+      SET_INPUT(start_reshape_op, shape, start_shape_operator);
+      auto reshape_output_operator =
+          MAP_OUTPUT(start_reshape_op, y, output_operand);
+      // Use pad2d op to compute
       std::vector<int32_t> pad_data(pads_buffer, pads_buffer + 8);
       auto pads_operator = converter->AddInt32ConstantOperator(pad_data);
       auto pad_op = converter->AddOperator<ge::op::PadV3>(output_operand);
@@ -68,15 +71,15 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
       SET_INPUT(pad_op, paddings, pads_operator);
       auto pad2d_output_operator = MAP_OUTPUT(pad_op, y, output_operand);
       // Reshape to 5-dimensions
-      auto shape_operator2 = converter->AddInt32ConstantOperator(
+      auto end_shape_operator = converter->AddInt32ConstantOperator(
           std::vector<int32_t>(output_operand->type.dimensions.data,
                                output_operand->type.dimensions.data +
                                    output_operand->type.dimensions.count));
-      auto reshape_op2 =
+      auto end_reshape_op =
           converter->AddOperator<ge::op::Reshape>(output_operand);
-      SET_INPUT(reshape_op2, x, pad2d_output_operator);
-      SET_INPUT(reshape_op2, shape, shape_operator2);
-      MAP_OUTPUT(reshape_op2, y, output_operand);
+      SET_INPUT(end_reshape_op, x, pad2d_output_operator);
+      SET_INPUT(end_reshape_op, shape, end_shape_operator);
+      MAP_OUTPUT(end_reshape_op, y, output_operand);
       return NNADAPTER_NO_ERROR;
     }
   }
