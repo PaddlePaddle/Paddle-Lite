@@ -33,7 +33,7 @@ void ScatterCompute<Dtype>::Run() {
   for (int i = 1; i < in_dims.size(); i++) {
     num *= in_dims[i];
   }
-  lite::arm::math::scatter<float, Dtype>(indexs_data,
+  lite::arm::math::scatter<Dtype>(indexs_data,
                                          updates_data,
                                          output_data,
                                          index_size,
