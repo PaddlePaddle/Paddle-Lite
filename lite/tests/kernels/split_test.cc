@@ -264,6 +264,11 @@ TEST(Split_test, precision) {
   TestSplitSections(place, abs_error);
   TestSplitAxisTensor(place, abs_error);
   TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  return;
 #else
   return;
 #endif

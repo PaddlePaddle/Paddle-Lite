@@ -44,6 +44,7 @@ bool IsUInt32AsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
+bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
 
 // Copy operand type under certain conditions

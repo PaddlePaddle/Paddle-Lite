@@ -355,7 +355,7 @@ TEST(ReduceSum, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);

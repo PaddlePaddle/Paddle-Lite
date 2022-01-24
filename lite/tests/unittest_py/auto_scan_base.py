@@ -48,6 +48,31 @@ parser.add_argument(
         'INTEL_FPGA', 'Metal', 'NNAdapter'
     ],
     required=True)
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
@@ -282,7 +307,9 @@ class AutoScanBaseTest(unittest.TestCase):
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
                                     pred_config))
-                            gl.set_out_diff_ops(self.get_target(), sys.argv[0])
+                            gl.set_out_diff_ops(
+                                self.get_target(),
+                                self.get_nnadapter_device_name(), sys.argv[0])
                         elif ignore_info[
                                 1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
                             paddle_lite_not_support_flag = True
@@ -307,8 +334,9 @@ class AutoScanBaseTest(unittest.TestCase):
                             raise NotImplementedError
 
                 if paddle_not_support_flag:
-                    gl.set_paddle_not_supported_ops(self.get_target(),
-                                                    sys.argv[0])
+                    gl.set_paddle_not_supported_ops(
+                        self.get_target(),
+                        self.get_nnadapter_device_name(), sys.argv[0])
                     continue
 
                 # baseline: cpu no ir_optim run
@@ -318,8 +346,9 @@ class AutoScanBaseTest(unittest.TestCase):
                     self.run_test_config(model, params, prog_config,
                                          base_config, feed_data))
                 if paddle_lite_not_support_flag:
-                    gl.set_lite_not_supported_ops(self.get_target(),
-                                                  sys.argv[0])
+                    gl.set_lite_not_supported_ops(
+                        self.get_target(),
+                        self.get_nnadapter_device_name(), sys.argv[0])
                     continue
 
                 if os.path.exists(self.cache_dir):
@@ -352,7 +381,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.success_log('PredictorConfig: ' +
                                  self.paddlelite_config_str(pred_config))
         self.assertTrue(status)
-        gl.set_success_ops(self.get_target(), sys.argv[0])
+        gl.set_success_ops(self.get_target(),
+                           self.get_nnadapter_device_name(), sys.argv[0])
 
     def inference_config_str(self, config) -> bool:
         dic = {}
@@ -453,11 +483,18 @@ class AutoScanBaseTest(unittest.TestCase):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
-        gl.set_all_test_ops(self.get_target(), sys.argv[0])
+        gl.set_all_test_ops(self.get_target(),
+                            self.get_nnadapter_device_name(), sys.argv[0])
         if not self.is_actived():
             logging.info("Error: This test is not actived on " +
                          self.get_target())
             return
+
+        if self.get_target().upper() == "NNADAPTER":
+            self.assertTrue(
+                self.args.nnadapter_device_names != "",
+                "Args Error: Please set nnadapter_device_names when target=nnadapter!"
+            )
 
         generator = st.composite(program_generator)
         loop_func = given(generator())(run_test)
@@ -528,6 +565,7 @@ class AutoScanBaseTest(unittest.TestCase):
         self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
+
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
             if (tar_ == TargetType.ARM):
                 self.valid_places.append([Place(tar_, pre_, lay_)] +
@@ -544,6 +582,11 @@ class AutoScanBaseTest(unittest.TestCase):
                 return True
         return False
 
+    def get_nnadapter_device_name(self) -> str:
+        nnadapter_device_name_list = self.args.nnadapter_device_names.split(
+            ",")
+        return nnadapter_device_name_list[0]
+
     def get_predictor_configs(self) -> List[CxxConfig]:
         return self.target_to_predictor_configs(self, self.get_target())
 
@@ -552,6 +595,19 @@ class AutoScanBaseTest(unittest.TestCase):
         self.num_invalid_programs_list = [0] * self.num_predictor_kinds
         self.num_ran_programs_list = [0] * self.num_predictor_kinds
         self.num_ignore_tests_list = [0] * self.num_predictor_kinds
+
+    @staticmethod
+    def nnadapter_config_set(self, config: CxxConfig):
+        config.set_nnadapter_device_names(
+            self.args.nnadapter_device_names.split(","))
+        config.set_nnadapter_context_properties(
+            self.args.nnadapter_context_properties)
+        config.set_nnadapter_model_cache_dir(
+            self.args.nnadapter_model_cache_dir)
+        config.set_nnadapter_subgraph_partition_config_path(
+            self.args.nnadapter_subgraph_partition_config_path)
+        config.set_nnadapter_mixed_precision_quantization_config_path(
+            self.args.nnadapter_mixed_precision_quantization_config_path)
 
     # get valid test configs
     @staticmethod
@@ -563,5 +619,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     config_ = CxxConfig()
                     config_.set_valid_places(elem_)
                     config_.set_threads(thread_)
+                    if target.upper() == "NNADAPTER":
+                        self.nnadapter_config_set(self, config_)
                     configs_.append(config_)
         return configs_

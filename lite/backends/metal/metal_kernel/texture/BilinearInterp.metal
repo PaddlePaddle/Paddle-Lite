@@ -32,8 +32,17 @@ kernel void bilinear_interp(texture2d_array<ftype, access::read> input[[texture(
     } else {
         ftype w = (gid.x + pm.align_delta) * pm.ratio_w - pm.align_delta;
         ftype h = (gid.y + pm.align_delta) * pm.ratio_h - pm.align_delta;
-        uint w0 = w, h0 = h;
-        uint w1 = w0 + 1, h1 = h0 + 1;
+        h = (h > 0) ? h : 0;
+        w = (w > 0) ? w : 0;
+        int w0 = (int)w;
+        int h0 = (int)h;
+        int w1 = w0 + 1, h1 = h0 + 1;
+        if (w0 < 0) {
+            w0 = 0;
+        }
+        if (h0 < 0) {
+            h0 = 0;
+        }
 
         ftype w1lambda = w - w0, h1lambda = h - h0;
         ftype w2lambda = 1.0 - w1lambda, h2lambda = 1.0 - h1lambda;

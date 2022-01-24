@@ -93,7 +93,9 @@ class TestTransposeOp(AutoScanTest):
                 st.integers(
                     min_value=0, max_value=3), min_size=4, max_size=4))
 
-        assume(sorted(axis_int32_data) == [0, 1, 2, 3])
+        assume(
+            sorted(axis_int32_data) == [0, 1, 2, 3] and
+            axis_int32_data != [0, 1, 2, 3])
         if (target == "Metal"):
             for i in range(4):
                 for j in range(4):
@@ -135,13 +137,21 @@ class TestTransposeOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 if x_shape[0] != 1:
                     return True
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
+
+        def _teller2(program_config, predictor_config):
+            axis = program_config.ops[0].attrs["axis"]
+            if predictor_config.target() == TargetType.OpenCL:
+                if sorted(axis) == [0, 1, 2, 3] and axis[0] != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Unsupported axis permutation for current lite OpenCL.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

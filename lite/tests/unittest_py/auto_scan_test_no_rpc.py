@@ -63,6 +63,17 @@ def ParsePaddleLiteConfig(self, config):
         lite_config.set_valid_places(valid_places)
     if "thread" in config:
         lite_config.set_threads(config["thread"])
+    if self.get_target().upper() == "NNADAPTER":
+        lite_config.set_nnadapter_device_names(
+            self.args.nnadapter_device_names.split(","))
+        lite_config.set_nnadapter_context_properties(
+            self.args.nnadapter_context_properties)
+        lite_config.set_nnadapter_model_cache_dir(
+            self.args.nnadapter_model_cache_dir)
+        lite_config.set_nnadapter_subgraph_partition_config_path(
+            self.args.nnadapter_subgraph_partition_config_path)
+        lite_config.set_nnadapter_mixed_precision_quantization_config_path(
+            self.args.nnadapter_mixed_precision_quantization_config_path)
     return lite_config
 
 
