@@ -98,7 +98,11 @@ struct PoolMetalParam {
     int exclusive;
 };
 
-struct MulMetalParam {};
+struct MulMetalParam {
+    bool transposeX;
+    bool transposeY;
+    bool broadcast;
+};
 
 struct FCMetalParam {
     int N;
@@ -258,6 +262,13 @@ struct Pad2dParam {
     uint16_t paddingRight;
     float padValue;
     uint16_t mode;
+};
+
+struct RankMetalParam {
+    int irank;
+    int idim[4];
+    int orank;
+    int odim[4];
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

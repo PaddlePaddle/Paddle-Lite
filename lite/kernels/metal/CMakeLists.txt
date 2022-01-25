@@ -51,6 +51,7 @@ add_kernel(matmul_metal_compute METAL basic SRCS image_op/matmul_image_compute.m
 add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(shuffle_channel_metal_image METAL basic SRCS image_op/shuffle_channel_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(reduce_metal_image METAL basic SRCS image_op/reduce_image_compute.mm DEPS metal_target_wrapper)
 
 add_library(METAL_BASE STATIC IMPORTED )
 set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})

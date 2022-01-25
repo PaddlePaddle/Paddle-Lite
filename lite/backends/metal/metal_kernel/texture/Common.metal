@@ -181,6 +181,13 @@ struct ShuffleChannelParam {
   uint32_t channel_per_group;
 };
 
+struct RankParam {
+    int32_t irank;
+    int32_t idim[4];
+    int32_t orank;
+    int32_t odim[4];
+};
+
 #pragma mark -
 
 inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {
