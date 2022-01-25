@@ -176,19 +176,24 @@ class AutoScanBaseTest(unittest.TestCase):
         diff = abs(arr - base)
         max_diff = max(diff)
         check = False
-        print("+++fp16 check")
-
+        max_val = 0.0
+        max_index = 0
         if max_diff > atol:
+            print('max_diff: ', max_diff)
             size = len(arr)
             count = 0
             check = False
             for i in range(size):
                 rel_val = diff[i] / max(arr[i], base[i])
                 if (diff[i] > 1e-1 and abs(rel_val > rtol)):
+                    if max_val < rel_val:
+                        max_val = rel_val
+                        max_index = i
                     check = True
             if check:
-                print("rel_val: ", rel_val)
-                print("value: ", base[i], arr[i], diff[i])
+                print("max_val and max_index: ", max_val, max_index)
+                print("value: ", base[max_index], arr[max_index],
+                      diff[max_index])
                 print("FP16 Output has diff. ")
             return check
         return False
