@@ -903,6 +903,15 @@ struct UniformRandomParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
 };
+/// ----------------------- unfold operators ----------------------
+struct UnfoldParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<int> kernel_sizes{};
+  std::vector<int> strides{};
+  std::vector<int> paddings{};
+  std::vector<int> dilations{};
+  lite::Tensor* Y{nullptr};
+};
 /// ----------------------- negative operators --------------
 struct NegativeParam : ParamBase {
   const lite::Tensor* X{};
@@ -2544,6 +2553,18 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
+
+struct GaussRandomParam : ParamBase {
+  const lite::Tensor* ShapeTensor{nullptr};
+  std::vector<const lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  lite::Tensor* Out{};
+  int seed{0};
+  int dtype{5};
+  float mean{0.f};
+  float gauss_std{0.f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
