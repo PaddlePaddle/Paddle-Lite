@@ -56,10 +56,26 @@ void FlattenFcFuser::BuildPattern() {
 
 void FlattenFcFuser::InsertNewNode(SSAGraph* graph,
                                    const key2nodes_t& matched) {
+  auto flatten = matched.at("flatten_contiguous_range")->stmt()->op();
+  auto* scope = flatten->scope();
+  auto flatten_input = scope->FindVar(matched.at("x")->arg()->name);
+  auto flatten_input_dims = flatten_input->Get<lite::Tensor>().dims();
+  auto flatten_desc = matched.at("flatten_contiguous_range")->stmt()->op_info();
+  auto start_axis = flatten_desc->GetAttr<int>("start_axis");
+  auto fc_desc = matched.at("fc")->stmt()->op_info();
+  auto in_mum_col_dims = fc_desc->GetAttr<int>("in_num_col_dims");
+  int real_start_axis = start_axis;
+  if (start_axis < 0) {
+    real_start_axis = start_axis + flatten_input_dims.size();
+  }
+  if (in_mum_col_dims >= real_start_axis + 1) {
+    nodes_.erase(nodes_.begin(), nodes_.end());
+    LOG(WARNING) << "in_mum_col_dims_old >= real_start_axis + 1, fuse failed";
+    return;
+  }
   auto op_desc = GenOpDesc(matched);
   auto fc_op = LiteOpRegistry::Global().Create("fc");
   auto fc_old = matched.at("fc")->stmt()->op();
-  auto* scope = fc_old->scope();
   auto& valid_places = fc_old->valid_places();
   fc_op->Attach(op_desc, scope);
 
@@ -75,7 +91,7 @@ cpp::OpDesc FlattenFcFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("fc")->stmt()->op_info();
   op_desc.SetInput("Input", {matched.at("x")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("fc_out")->arg()->name});
-  int in_num_col_dim = 1;
+  auto in_num_col_dim = op_desc.GetAttr<int>("in_num_col_dims");
   op_desc.SetAttr("in_num_col_dims", in_num_col_dim);
   return op_desc;
 }

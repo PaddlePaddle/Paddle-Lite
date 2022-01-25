@@ -47,6 +47,10 @@ NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_MEDIATEK_APU=OFF
 NNADAPTER_MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
+NNADAPTER_WITH_VERISILICON_TIMVX=OFF
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="main"
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_android_9_armeabi_v7a_6_4_4_3_generic.tgz"
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of adding training ops
@@ -67,8 +71,9 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
-# url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
@@ -141,13 +146,13 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -246,6 +251,10 @@ function make_tiny_publish_so {
       -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
+      -DNNADAPTER_WITH_VERISILICON_TIMVX=$NNADAPTER_WITH_VERISILICON_TIMVX \
+      -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+      -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+      -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -327,6 +336,10 @@ function make_full_publish_so {
       -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
+      -DNNADAPTER_WITH_VERISILICON_TIMVX=$NNADAPTER_WITH_VERISILICON_TIMVX \
+      -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+      -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+      -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -544,6 +557,22 @@ function main {
                 ;;
             --nnadapter_mediatek_apu_sdk_root=*)
                 NNADAPTER_MEDIATEK_APU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_verisilicon_timvx=*)
+                NNADAPTER_WITH_VERISILICON_TIMVX="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_src_git_tag=*)
+                NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.

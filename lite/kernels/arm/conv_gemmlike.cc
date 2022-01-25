@@ -53,7 +53,6 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
   auto& param = this->Param<param_t>();
   /// update scale
-  /// update scale
   w_scale_ = param.weight_scale;
   if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
     LOG(FATAL) << "weights scale size must equal to filter size";
@@ -84,11 +83,13 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
-  //! update leakyRelu parameter
+  //! update hardswish parameter
   if (param.activation_param.active_type ==
-      lite_api::ActivationType::kLeakyRelu) {
-    param.activation_param.Leaky_relu_alpha =
-        param.activation_param.Leaky_relu_alpha / param.output_scale;
+      lite_api::ActivationType::kHardSwish) {
+    param.activation_param.hard_swish_offset =
+        param.activation_param.hard_swish_offset / param.output_scale;
+    param.activation_param.hard_swish_threshold =
+        param.activation_param.hard_swish_threshold / param.output_scale;
   }
 }
 

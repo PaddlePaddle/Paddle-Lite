@@ -162,16 +162,11 @@ class LITE_API ConfigBase {
   std::string nnadapter_context_properties_{};
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
+  // Dynamic shapes of the NNAdapter model
+  std::map<std::string, std::vector<std::vector<int64_t>>>
+      nnadapter_dynamic_shape_info_;
   // The buffers for loading the compiled NNAdapter models from memory.
   std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
-  // The custom configuration file or buffer for the NNAdapter subgraph
-  // partition, here is an example:
-  // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
-  // op_type::out_var_name_0
-  // op_type:in_var_name_0
-  // op_type
-  std::string nnadapter_subgraph_partition_config_path_{};
-  std::string nnadapter_subgraph_partition_config_buffer_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -180,6 +175,8 @@ class LITE_API ConfigBase {
   bool metal_use_aggressive_{false};
   void* metal_device_{nullptr};
   bool metal_use_memory_reuse_{false};
+
+  std::vector<std::string> discarded_passes_{};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -252,6 +249,16 @@ class LITE_API ConfigBase {
   const std::string& nnadapter_model_cache_dir() const {
     return nnadapter_model_cache_dir_;
   }
+  // Set dynamic shapes for building models
+  void set_nnadapter_dynamic_shape_info(
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    nnadapter_dynamic_shape_info_ = nnadapter_dynamic_shape_info;
+  }
+  const std::map<std::string, std::vector<std::vector<int64_t>>>&
+  nnadapter_dynamic_shape_info() const {
+    return nnadapter_dynamic_shape_info_;
+  }
   // Set the buffers for loading the compiled NNAdapter models from memory.
   void set_nnadapter_model_cache_buffers(
       const std::string& model_cache_token,
@@ -259,23 +266,6 @@ class LITE_API ConfigBase {
   const std::map<std::string, std::vector<char>>&
   nnadapter_model_cache_buffers() const {
     return nnadapter_model_cache_buffers_;
-  }
-  // Enable the custom subgraph partition for NNAdapter by providing the
-  // configuration file or buffer
-  void set_nnadapter_subgraph_partition_config_path(
-      const std::string& subgraph_partition_config_path) {
-    nnadapter_subgraph_partition_config_path_ = subgraph_partition_config_path;
-  }
-  const std::string& nnadapter_subgraph_partition_config_path() const {
-    return nnadapter_subgraph_partition_config_path_;
-  }
-  void set_nnadapter_subgraph_partition_config_buffer(
-      const std::string& subgraph_partition_config_buffer) {
-    nnadapter_subgraph_partition_config_buffer_ =
-        subgraph_partition_config_buffer;
-  }
-  const std::string& nnadapter_subgraph_partition_config_buffer() const {
-    return nnadapter_subgraph_partition_config_buffer_;
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
@@ -295,6 +285,11 @@ class LITE_API ConfigBase {
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
   void* metal_device() const { return metal_device_; }
   bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
+
+  void add_discarded_pass(const std::string pass);
+  const std::vector<std::string> get_discarded_passes() const {
+    return discarded_passes_;
+  }
 };
 
 class LITE_API CxxModelBuffer {
@@ -339,6 +334,16 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<float> mlu_first_conv_mean_{};
   std::vector<float> mlu_first_conv_std_{};
 #endif
+  // The custom configuration file or buffer for the NNAdapter subgraph
+  // partition, here is an example:
+  // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+  // op_type::out_var_name_0
+  // op_type:in_var_name_0
+  // op_type
+  std::string nnadapter_subgraph_partition_config_path_;
+  std::string nnadapter_subgraph_partition_config_buffer_;
+  std::string mixed_precision_quantization_config_path_;
+  std::string mixed_precision_quantization_config_buffer_;
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -449,6 +454,44 @@ class LITE_API CxxConfig : public ConfigBase {
     sparse_threshold_ = sparse_threshold;
   }
   float sparse_threshold() const { return sparse_threshold_; }
+
+  // Enable the custom subgraph partition for NNAdapter by providing the
+  // configuration file or buffer
+  void set_nnadapter_subgraph_partition_config_path(
+      const std::string& subgraph_partition_config_path) {
+    nnadapter_subgraph_partition_config_path_ = subgraph_partition_config_path;
+  }
+  const std::string& nnadapter_subgraph_partition_config_path() const {
+    return nnadapter_subgraph_partition_config_path_;
+  }
+  void set_nnadapter_subgraph_partition_config_buffer(
+      const std::string& subgraph_partition_config_buffer) {
+    nnadapter_subgraph_partition_config_buffer_ =
+        subgraph_partition_config_buffer;
+  }
+  const std::string& nnadapter_subgraph_partition_config_buffer() const {
+    return nnadapter_subgraph_partition_config_buffer_;
+  }
+  // Clear some ops' quant information to support mixed precision compute by
+  // configuration file or buffer
+  void set_nnadapter_mixed_precision_quantization_config_path(
+      const std::string& mixed_precision_quantization_config_path) {
+    mixed_precision_quantization_config_path_ =
+        mixed_precision_quantization_config_path;
+  }
+  const std::string& nnadapter_mixed_precision_quantization_config_path()
+      const {
+    return mixed_precision_quantization_config_path_;
+  }
+  void set_nnadapter_mixed_precision_quantization_config_buffer(
+      const std::string& mixed_precision_quantization_config_buffer) {
+    mixed_precision_quantization_config_buffer_ =
+        mixed_precision_quantization_config_buffer;
+  }
+  const std::string& nnadapter_mixed_precision_quantization_config_buffer()
+      const {
+    return mixed_precision_quantization_config_buffer_;
+  }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

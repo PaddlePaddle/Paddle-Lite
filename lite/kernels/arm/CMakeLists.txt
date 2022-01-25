@@ -1,4 +1,4 @@
-# NOTE we leave the add_kernel not protected by LITE_WITH_LIGHT_WEIGHT_FRAMEWORK so that all the kernels will be registered
+# NOTE we leave the add_kernel not protected by LITE_WITH_ARM so that all the kernels will be registered
 # to the model_optimize_tool.
 
 if(LITE_WITH_ARM AND NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -70,8 +70,6 @@ add_kernel(layer_norm_compute_arm ARM extra SRCS layer_norm_compute.cc)
 add_kernel(reduce_prod_compute_arm ARM extra SRCS reduce_prod_compute.cc)
 add_kernel(reduce_sum_compute_arm ARM extra SRCS reduce_sum_compute.cc)
 add_kernel(split_lod_tensor_compute_arm ARM extra SRCS split_lod_tensor_compute.cc)
-add_kernel(merge_lod_tensor_compute_arm ARM extra SRCS merge_lod_tensor_compute.cc)
-add_kernel(generate_proposals_v2_compute_arm ARM extra SRCS generate_proposals_v2_compute.cc)
 add_kernel(clip_compute_arm ARM extra SRCS clip_compute.cc)
 add_kernel(pixel_shuffle_compute_arm ARM extra SRCS pixel_shuffle_compute.cc)
 add_kernel(scatter_compute_arm ARM extra SRCS scatter_compute.cc)
@@ -109,7 +107,6 @@ lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc)
 lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc)
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_split_lod_tensor_compute_arm SRCS split_lod_tensor_compute_test.cc)
-    lite_cc_test(test_merge_lod_tensor_compute_arm SRCS merge_lod_tensor_compute_test.cc)
     lite_cc_test(test_lrn_compute_arm SRCS lrn_compute_test.cc)
     lite_cc_test(test_decode_bboxes_compute_arm SRCS decode_bboxes_compute_test.cc)
     lite_cc_test(test_axpy_compute_arm SRCS axpy_compute_test.cc)

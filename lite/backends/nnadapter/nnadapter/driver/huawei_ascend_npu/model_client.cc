@@ -16,6 +16,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include "driver/huawei_ascend_npu/engine.h"
 #include "driver/huawei_ascend_npu/utility.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
@@ -23,7 +24,8 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-AclModelClient::AclModelClient(int device_id) {
+AclModelClient::AclModelClient(int device_id,
+                               const std::string& profiling_file_path) {
   NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
                     << ")";
   uint32_t device_count = 0;
@@ -32,11 +34,13 @@ AclModelClient::AclModelClient(int device_id) {
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
   InitAclClientEnv(device_id);
+  InitAclProfilingEnv(profiling_file_path);
 }
 
 AclModelClient::~AclModelClient() {
   UnloadModel();
   FinalizeAclClientEnv();
+  FinalizeAclProfilingEnv();
 }
 
 void AclModelClient::InitAclClientEnv(int device_id) {
@@ -57,7 +61,30 @@ void AclModelClient::FinalizeAclClientEnv() {
   ACL_CALL(aclrtResetDevice(device_id_));
 }
 
-bool AclModelClient::LoadModel(const void* data, uint32_t size) {
+void AclModelClient::InitAclProfilingEnv(
+    const std::string& profiling_file_path) {
+  if (!profiling_file_path.empty()) {
+    const char* aclProfPath = profiling_file_path.c_str();
+    ACL_CALL(aclprofInit(aclProfPath, strlen(aclProfPath)));
+    config_ = aclprofCreateConfig(reinterpret_cast<uint32_t*>(&device_id_),
+                                  1,
+                                  ACL_AICORE_ARITHMETIC_UTILIZATION,
+                                  nullptr,
+                                  ACL_PROF_ACL_API | ACL_PROF_TASK_TIME |
+                                      ACL_PROF_AICORE_METRICS | ACL_PROF_AICPU);
+  }
+}
+
+void AclModelClient::FinalizeAclProfilingEnv() {
+  NNADAPTER_VLOG(5) << "Destroy ACL profiling config";
+  if (config_) {
+    ACL_CALL(aclprofDestroyConfig(config_));
+    config_ = nullptr;
+    ACL_CALL(aclprofFinalize());
+  }
+}
+
+bool AclModelClient::LoadModel(const void* data, size_t size) {
   if (model_desc_) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;
@@ -225,12 +252,25 @@ void AclModelClient::DestroyDataset(aclmdlDataset** dataset) {
   NNADAPTER_VLOG(5) << "Destroy a ACL dataset success.";
 }
 
+void AclModelClient::ProfilingStart() {
+  if (config_) {
+    aclprofStart(config_);
+  }
+}
+
+void AclModelClient::ProfilingEnd() {
+  if (config_) {
+    aclprofStop(config_);
+  }
+}
+
 bool AclModelClient::Process(uint32_t input_count,
                              std::vector<NNAdapterOperandType>* input_types,
                              hal::Argument* input_arguments,
                              uint32_t output_count,
                              std::vector<NNAdapterOperandType>* output_types,
-                             hal::Argument* output_arguments) {
+                             hal::Argument* output_arguments,
+                             DynamicShapeMode dynamic_shape_mode) {
   if (!model_desc_) {
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
@@ -253,7 +293,11 @@ bool AclModelClient::Process(uint32_t input_count,
   NNADAPTER_CHECK_EQ(output_types->size(), output_count);
   NNADAPTER_CHECK(input_dataset_);
   NNADAPTER_CHECK(output_dataset_);
-  NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_NONE) {
+    NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  } else {
+    NNADAPTER_CHECK_LT(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  }
   NNADAPTER_CHECK_EQ(output_count, aclmdlGetDatasetNumBuffers(output_dataset_));
   // Copy the input data from host to device
   for (uint32_t i = 0; i < input_count; i++) {
@@ -261,29 +305,51 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(arg) << "Input argument " << i << " does not exist!";
     NNADAPTER_CHECK(arg->memory);
     NNADAPTER_CHECK(arg->access);
-    auto type = &input_types->at(i);
-    auto host_ptr = arg->access(arg->memory, type);
+    auto type = input_types->at(i);
+    auto host_ptr = arg->access(arg->memory, &type);
     NNADAPTER_CHECK(host_ptr);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     // Query and verify the input dimensions from ACL runtime
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dimensions));
-    NNADAPTER_CHECK_GE(dimensions.dimCount, type->dimensions.count);
-    bool dynamic_shape = false;
+    NNADAPTER_CHECK_GE(dimensions.dimCount, type.dimensions.count);
+    bool is_dynamic_shape = false;
     for (size_t j = 0; j < dimensions.dimCount; j++) {
       auto& dimension = dimensions.dims[j];
       if (dimension == -1) {
-        dimension = type->dimensions.data[j];
-        dynamic_shape = true;
+        dimension = type.dimensions.data[j];
+        is_dynamic_shape = true;
       } else {
-        NNADAPTER_CHECK_EQ(dimension, type->dimensions.data[j])
+        NNADAPTER_CHECK_EQ(dimension, type.dimensions.data[j])
             << "The " << j << "th dimension of the " << i
             << "th input does not match, expect " << dimension
-            << " but recevied " << type->dimensions.data[j];
+            << " but recevied " << type.dimensions.data[j];
       }
+      NNADAPTER_VLOG(3) << "The " << j << "th dimension of the " << i
+                        << "th input is " << dimension;
     }
-    if (dynamic_shape) {
-      aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
+    // Set true dynamic shapes
+    if (is_dynamic_shape) {
+      switch (dynamic_shape_mode) {
+        case DYNAMIC_SHAPE_MODE_BTACH_SIZE:
+          aclmdlSetDynamicBatchSize(
+              model_id_, input_dataset_, i, type.dimensions.data[0]);
+          break;
+        case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
+          aclmdlSetDynamicHWSize(model_id_,
+                                 input_dataset_,
+                                 i,
+                                 type.dimensions.data[2],
+                                 type.dimensions.data[3]);
+          break;
+        case DYNAMIC_SHAPE_MODE_N_DIMS:
+          aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
+          break;
+        default:
+          NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
+                               << dynamic_shape_mode;
+          break;
+      }
     }
     auto data_buffer = aclmdlGetDatasetBuffer(input_dataset_, i);
     auto data_size = aclGetDataBufferSizeV2(data_buffer);
@@ -298,7 +364,9 @@ bool AclModelClient::Process(uint32_t input_count,
   }
   // Model execution
   auto start_time = GetCurrentUS();
+  ProfilingStart();
   ACL_CALL(aclmdlExecute(model_id_, input_dataset_, output_dataset_));
+  ProfilingEnd();
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   // Copy the output data from device to host
   for (uint32_t i = 0; i < output_count; i++) {

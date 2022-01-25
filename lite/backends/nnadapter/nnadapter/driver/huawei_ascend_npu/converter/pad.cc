@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,15 +25,15 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
 
   // Convert to GE operators
   std::string pad_mode = ConvertPadModeCodeToGEPadMode(mode);
-  auto value = *reinterpret_cast<float*>(value_operand->buffer);
+  int32_t value =
+      static_cast<int32_t>(*reinterpret_cast<float*>(value_operand->buffer));
   NNADAPTER_CHECK_EQ(pad_mode, "constant")
-      << "HuaewiAscendNPU only support mode=constant right now, "
+      << "Only support mode=constant right now, "
          "but received mode is "
       << pad_mode;
-  NNADAPTER_CHECK_LT(std::abs(value), 1e-6)
-      << "HuaewiAscendNPU only support constant_values=0 right now, "
-         "but received constant_value is "
-      << value;
+  NNADAPTER_CHECK_EQ(value, 0) << "Only support constant_values=0 right now, "
+                                  "but received constant_value is "
+                               << value;
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
@@ -42,7 +42,8 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
   if (!pads_operator) {
     pads_operator = converter->ConvertOperand(pads_operand);
   }
-  auto value_operator = converter->ConvertOperand(value_operand);
+  auto value_operator = converter->AddInt32ConstantOperator(value);
+
   auto pad_op = converter->AddOperator<ge::op::PadV3>(output_operand);
   pad_op->set_attr_mode(pad_mode);
   SET_INPUT(pad_op, x, input_operator);

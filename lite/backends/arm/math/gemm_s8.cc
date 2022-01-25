@@ -39,8 +39,13 @@ void gemm_s8(bool is_transA,
     return;
   }
   if (M == 1) {
+#ifdef TARGET_IOS
+    float* bias_ptr = new float[N];
+    float* scale_ptr = new float[N];
+#else
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT
+#endif
     if (is_bias) {
       for (int i = 0; i < N; i++) {
         bias_ptr[i] = bias[0];
@@ -49,8 +54,21 @@ void gemm_s8(bool is_transA,
     for (int i = 0; i < N; i++) {
       scale_ptr[i] = scale[0];
     }
-    gemv_int8(
-        B, A, C, true, N, K, scale_ptr, is_bias, bias_ptr, act_param, ctx);
+    gemv_int8(B,
+              A,
+              C,
+              !is_transB,
+              N,
+              K,
+              scale_ptr,
+              is_bias,
+              bias_ptr,
+              act_param,
+              ctx);
+#ifdef TARGET_IOS
+    delete[] bias_ptr;
+    delete[] scale_ptr;
+#endif
     return;
   }
 

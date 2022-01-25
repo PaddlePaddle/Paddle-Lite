@@ -150,6 +150,18 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
   return 0;
 }
 
+NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
+    const NNAdapterOperandType& type) {
+  uint32_t count = type.dimensions.count;
+  auto dimensions = type.dimensions.data;
+  for (uint32_t i = 0; i < count; i++) {
+    if (dimensions[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
+}
+
 NNADAPTER_EXPORT int64_t
 GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
   auto production =
@@ -502,6 +514,65 @@ NNADAPTER_EXPORT bool WriteFile(const std::string& path,
   }
   fclose(fp);
   return true;
+}
+
+NNADAPTER_EXPORT std::string GetStringFromEnv(const std::string& str,
+                                              const std::string& def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return std::string(variable);
+}
+
+NNADAPTER_EXPORT bool GetBoolFromEnv(const std::string& str, bool def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  if (strcmp(variable, "false") == 0 || strcmp(variable, "0") == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+NNADAPTER_EXPORT int GetIntFromEnv(const std::string& str, int def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atoi(variable);
+}
+
+NNADAPTER_EXPORT double GetDoubleFromEnv(const std::string& str, double def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atof(variable);
+}
+
+NNADAPTER_EXPORT uint64_t GetUInt64FromEnv(const std::string& str,
+                                           uint64_t def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return static_cast<uint64_t>(atol(variable));
+}
+
+NNADAPTER_EXPORT std::string GetRealPath(const char* path) {
+  if (path == nullptr) {
+    NNADAPTER_LOG(FATAL) << "path should not be nullptr!";
+    return "";
+  }
+  char real_path[PATH_MAX] = {0};
+  if (strlen(path) >= PATH_MAX || realpath(path, real_path) == nullptr) {
+    NNADAPTER_LOG(WARNING) << "Get real path failed, path=" << path;
+    return "";
+  }
+  return std::string(real_path);
 }
 
 }  // namespace nnadapter

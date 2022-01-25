@@ -65,7 +65,7 @@ class LITE_API LightPredictor {
   void Run() {
     CheckInputValid();
     program_->Run();
-    ClearTensorArray(program_desc_);
+    if (bool_clear_tensor_) ClearTensorArray(program_desc_);
   }
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
@@ -79,6 +79,8 @@ class LITE_API LightPredictor {
   Tensor* GetInput(size_t offset);
   // get input by name.
   Tensor* GetInputByName(const std::string& name);
+  // get output by name.
+  const Tensor* GetOutputByName(const std::string& name);
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
 
@@ -141,6 +143,7 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
+  bool bool_clear_tensor_ = false;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {
@@ -148,9 +151,10 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   LightPredictorImpl() = default;
   virtual ~LightPredictorImpl();
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
-
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
-
+  std::unique_ptr<lite_api::Tensor> GetInputByName(const std::string& name);
+  std::unique_ptr<const lite_api::Tensor> GetOutputByName(
+      const std::string& name) const;
   void Run() override;
 
   std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
@@ -162,9 +166,6 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
 
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string& name) const override;
-  // Get InputTebsor by name
-  std::unique_ptr<lite_api::Tensor> GetInputByName(
-      const std::string& name) override;
 
   void Init(const lite_api::MobileConfig& config);
 

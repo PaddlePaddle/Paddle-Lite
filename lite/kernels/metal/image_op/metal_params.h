@@ -26,6 +26,10 @@ struct ElementwiseAddMetalParam {
     int xtrans[4];
     int ydim[4];
     int ytrans[4];
+    int ByNum;
+    int ByHW;
+    int ByW;
+    int arithmetic_type;
 };
 
 struct ActivationMetalParam {
@@ -33,7 +37,8 @@ struct ActivationMetalParam {
     float threshold;  // RELU6
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
-    float slope;
+    float slope;      // HARD_SIGMOID
+    float scale;      // HARD_SWISH
 };
 
 struct MetalConvParam {
@@ -99,6 +104,12 @@ struct PoolMetalParam {
 };
 
 struct MulMetalParam {};
+
+struct MatmulMetalParam {
+    bool transposeX;
+    bool transposeY;
+    bool broadcast;
+};
 
 struct FCMetalParam {
     int N;
@@ -174,6 +185,10 @@ struct HardSigmoidMetalParam {
     float offset;
 };
 
+struct SwishMetalParam {
+    float beta;
+};
+
 struct HardSwishMetalParam {
     float offset;
     float threshold;
@@ -218,6 +233,8 @@ struct SplitMetalParam {
     int idim[4];
     int axis;
     int offset;
+    int num;
+    int v_;
     int trans[4];
     int vdim[4];
 };
@@ -237,6 +254,7 @@ struct ConvTransposeAddMetalParam {
     uint16_t oC;
     uint16_t hasAddOp;
     ElementwiseAddMetalParam addParam;
+    ActivationMetalParam activationParam;
 };
 
 struct SliceMetalParam {

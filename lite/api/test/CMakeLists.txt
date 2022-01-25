@@ -10,7 +10,7 @@ if(WITH_TESTING)
                 --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
         add_dependencies(test_cxx_api extern_lite_download_lite_naive_model_tar_gz)
     endif()
-    if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    if(NOT LITE_WITH_ARM)
         if(LITE_WITH_X86)
             lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
                ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
@@ -44,7 +44,7 @@ if(WITH_TESTING)
     endif()
 endif()
 
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
+if(LITE_WITH_ARM AND WITH_TESTING)
     set(lite_model_test_DEPS cxx_api ops kernels)
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc

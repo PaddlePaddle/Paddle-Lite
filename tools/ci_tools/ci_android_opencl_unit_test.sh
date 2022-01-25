@@ -1,154 +1,270 @@
 #!/bin/bash
-set +x
-set -e
+shopt -s expand_aliases
+set -ex
 
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+
+# Global variables
 # Absolute path of Paddle-Lite source code.
-SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
+SHELL_FOLDER=$(
+  cd "$(dirname "$0")"
+  pwd
+)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
-TESTS_FILE="./lite_tests.txt"
-NUM_PROC=4
 
-skip_list=("test_model_parser" "test_light_api" "test_apis" \
-            "test_paddle_api" "test_cxx_api" "test_gen_code" \
-            "test_mobilenetv1_int8" "test_subgraph_pass" \
-            "test_grid_sampler_image_opencl" "test_lrn_image_opencl" \
-            "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm" \
-            "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" \
-            "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" \
-            "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" \
-            "test_mobilenet_v3_large_x1_0_fp32_arm" "test_resnet50_fp32_arm" \
-            "test_squeezenet_fp32_arm" "test_mobilenet_v1_int8_arm" \
-            "test_mobilenet_v2_int8_arm" "test_resnet50_int8_arm" \
-            "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
-            "get_conv_latency" "get_batchnorm_latency" "get_pooling_latency" \
-            "get_fc_latency" "get_activation_latency" \
-            "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm" \
-            "test_transformer_nlp2_fp32_arm")
+readonly OPENCL_UTEST_MASK="opencl"
+readonly TESTS_FILE="./lite_tests.txt"
+# The list of arch abi for building(armv8,armv7,armv7hf), such as "armv8,armv7"
+# for android devices, "armv8" for RK3399, "armv7hf" for Raspberry pi 3B
+ARCH_LIST="armv8"
+# The list of toolchains for building(gcc,clang), such as "clang"
+# for android, "gcc" for armlinx
+TOOLCHAIN_LIST="clang"
+# The list of the device names for the real android devices, use commas to separate them, such as "bcd71650,8MY0220C22019318,A49BEMHY79"
+REMOTE_DEVICE_LIST="bcd71650"
+# Work directory of the remote devices for running
+REMOTE_DEVICE_WORK_DIR="/data/local/tmp/ci_opencl_utest/"
+# Skip utests whose name has specific keys
+SKIP_UTEST_KEYS="_arm,_x86,lrn,grid,conv"
+# The Logging level of GLOG for unit tests
+UTEST_LOG_LEVEL=5
+
+# Helper functions
+source ${SHELL_FOLDER}/utils.sh
 
 # if operating in mac env, we should expand the maximum file num
-os_name=`uname -s`
+os_name=$(uname -s)
 if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 4096 
+  ulimit -n 1024
 fi
 
-####################################################################################################
-# 1. functions of prepare workspace before compiling
-####################################################################################################
-
-# 1.1 generate `__generated_code__.cc`, which is dependended by some targets in cmake.
-# here we fake an empty file to make cmake works.
-function prepare_workspace {
-    local root_dir=$1
-    local build_dir=$2
-    # 1. Prepare gen_code file
-    GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
-    mkdir -p ${GEN_CODE_PATH_PREFIX}
-    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-    # 2.Prepare debug tool
-    DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
-    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
-    cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
-}
-
-
-# 1.2 prepare source code of opencl lib
-# here we bundle all cl files into a cc file to bundle all opencl kernels into a single lib
-function prepare_opencl_source_code {
-    local root_dir=$1
-    local build_dir=$2
-    # in build directory
-    # Prepare opencl_kernels_source.cc file
-    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
-    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
-    mkdir -p ${GEN_CODE_PATH_OPENCL}
-    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-}
-
-####################################################################################################
-
-
-# 2 function of opencl compiling
-# here we compile android lib and unit test.
-function build_opencl {
-  os=$1
-  arch=$2
-  toolchain=$3
+# Build target function
+# here we compile android lib and unit test for opencl.
+function build_target {
+  arch=$1
+  toolchain=$2
 
   build_directory=$WORKSPACE/ci.android.opencl.$arch.$toolchain
   rm -rf $build_directory && mkdir -p $build_directory
 
-
-  git submodule update --init --recursive
   prepare_workspace $WORKSPACE $build_directory
-  prepare_opencl_source_code $WORKSPACE $build_dir
+  prepare_opencl_source_code $WORKSPACE
 
   cd $build_directory
   cmake .. \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_LOG=ON \
       -DLITE_WITH_CV=OFF \
-      -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+      -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
 
-  make lite_compile_deps -j$NUM_PROC
-  cd - > /dev/null
+  make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+  cd -
 }
 
-function test_arm_android {
-  unit_test=$1
-  adb_devices=$2
-  adb_work_dir=$3
-  unit_test_path=$(find ./lite -name $unit_test)
-  adb -s $adb_devices push $unit_test_path /data/local/tmp/$adb_work_dir
-  adb -s $adb_devices shell "cd /data/local/tmp/$adb_work_dir && ./$unit_test"
-}
+function run_on_remote_device() {
+  local remote_device_name=""
+  local remote_device_work_dir=""
+  local target_name=""
+  local model_dir=""
+  local data_dir=""
 
-function build_test_android_opencl {
-  arch=$1
-  toolchain=$2
-  adb_device=$3
-  adb_workdir=$4
-
-  build_opencl android $arch $toolchain
-
-  # opencl test should be marked with `opencl`
-  opencl_test_mark="opencl"
-  adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
-
-  build_directory=$WORKSPACE/ci.android.opencl.$arch.$toolchain
-  cd $build_directory
-
-
-  adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
-  for _test in $(cat $TESTS_FILE); do
-      local to_skip=0
-      for skip_name in ${skip_list[@]}; do
-          if [ $skip_name = $_test ]; then
-              echo "to skip " $skip_name
-              to_skip=1
-          fi
-      done
-
-      # tell if this test is marked with `opencl`
-      if [[ $_test == *$opencl_test_mark* ]] && [[ $to_skip -eq 0 ]]; then
-          test_arm_android $_test ${adb_devices[0]} $adb_workdir
-      fi
+  # Extract arguments from command line
+  for i in "$@"; do
+    case $i in
+    --remote_device_name=*)
+      remote_device_name="${i#*=}"
+      shift
+      ;;
+    --remote_device_work_dir=*)
+      remote_device_work_dir="${i#*=}"
+      shift
+      ;;
+    --target_name=*)
+      target_name="${i#*=}"
+      shift
+      ;;
+    --model_dir=*)
+      model_dir="${i#*=}"
+      shift
+      ;;
+    --data_dir=*)
+      data_dir="${i#*=}"
+      shift
+      ;;
+    *)
+      shift
+      ;;
+    esac
   done
-  adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
+
+  # Copy the executable to the remote device
+  local target_path=$(find $WORKSPACE/ci.android.opencl.* -name $target_name)
+  if [[ -z "$target_path" ]]; then
+    echo -e "$target_name not found!"
+    exit 1
+  fi
+  adb -s $remote_device_name shell "rm -f $remote_device_work_dir/$target_name"
+  adb -s $remote_device_name push "$target_path" "$remote_device_work_dir"
+
+  local command_line="./$target_name"
+  # Copy the model files to the remote device
+  if [[ -n "$model_dir" ]]; then
+    local model_name=$(basename $model_dir)
+    adb -s $remote_device_name shell "rm -rf $remote_device_work_dir/$model_name"
+    adb -s $remote_device_name push "$model_dir" "$remote_device_work_dir"
+    command_line="$command_line --model_dir ./$model_name"
+  fi
+
+  # Copy the test data files to the remote device
+  if [[ -n "$data_dir" ]]; then
+    local data_name=$(basename $data_dir)
+    adb -s $remote_device_name shell "rm -rf $remote_device_work_dir/$data_name"
+    adb -s $remote_device_name push "$data_dir" "$remote_device_work_dir"
+    command_line="$command_line --data_dir ./$data_name"
+  fi
+
+  # Run
+  adb -s $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UTEST_LOG_LEVEL; $command_line"
 }
 
-# $1 adb_device index. eg. 1
-# $2 workspace name on adb.  eg. work_tmp1
-build_test_android_opencl armv7 gcc $1 $2
-build_test_android_opencl armv8 gcc $1 $2
+function build_and_test_on_remote_device() {
+  local arch_list=$1
+  local toolchain_list=$2
+  local build_target_func=$3
+  local prepare_device_func=$4
+  local remote_device_list=$5
+  local remote_device_work_dir=$6
+
+  echo "remote_device_work_dir: " $remote_device_work_dir
+
+  # 1. Check remote devices are available or not
+  local remote_device_names=$($adb_device_pick $remote_device_list)
+  if [[ -z $remote_device_names ]]; then
+    echo "No remote device available! Try pick one remote device..."
+    local adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
+    remote_device_names=${adb_devices[0]}
+    if [ -n $device_serial ]; then
+      echo "Found one device $remote_device_names."
+    else
+      echo "No available device!"
+      exit 1
+    fi
+  else
+    echo "Found device(s) $remote_device_names."
+  fi
+
+  cd $PWD
+
+  # 2. Prepare device environment for running, such as device check, only once for one device
+  for remote_device_name in $remote_device_names; do
+    $prepare_device_func $remote_device_name $remote_device_work_dir adb_device_check adb_device_run
+  done
+
+  # 3. Build & Run
+  local archs=(${arch_list//,/ })
+  local toolchains=(${toolchain_list//,/ })
+  for arch in ${archs[@]}; do
+    for toolchain in ${toolchains[@]}; do
+      # Build
+      echo "Build with $arch+$toolchain ..."
+      $build_target_func $arch $toolchain
+      cd ${PWD}/ci.android.opencl*
+
+      # Loop all test_name
+      for test_name in $(cat $TESTS_FILE); do
+        # Skip some utests
+        local skip_keys=(${SKIP_UTEST_KEYS//,/ })
+        local to_skip=0
+        for skip_key in ${skip_keys[@]}; do
+          if [[ $test_name == *${skip_key}* ]]; then
+            echo "Skip utest " $test_name
+            to_skip=1
+            break;
+          fi
+        done
+
+        # Extract the arguments from ctest command line
+        test_cmds=$(ctest -V -N -R ^$test_name$)
+        reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
+        test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
+        echo "test_cmds: " $test_cmds
+        echo "test_args 1 : " $test_args
+        if [[ -n "$test_args" ]]; then
+          # Matched, extract and remove the quotes
+          test_args=$(echo $test_cmds | sed "s/$reg_expr/\1/g")
+          test_args=$(echo $test_args | sed "s/\"//g")
+        fi
+
+        echo "test_args 2 : " $test_args
+
+        # Tell if this test is marked with `opencl`
+        if [[ $test_name == *$OPENCL_UTEST_MASK* ]] && [[ $to_skip -eq 0 ]]; then
+          # Loop all remote devices
+          for remote_device_name in $remote_device_names; do
+            # Run
+            run_on_remote_device \
+                --remote_device_name=$remote_device_name \
+                --remote_device_work_dir=$remote_device_work_dir \
+                --target_name=$test_name \
+                $test_args
+          done
+        fi
+      done
+    done
+  done
+  cd - >/dev/null
+}
+
+function android_build_and_test() {
+  build_and_test_on_remote_device $ARCH_LIST $TOOLCHAIN_LIST \
+      build_target android_prepare_device \
+      $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
+function main() {
+  # Parse command line.
+  for i in "$@"; do
+    case $i in
+    --arch_list=*)
+      ARCH_LIST="${i#*=}"
+      shift
+      ;;
+    --toolchain_list=*)
+      TOOLCHAIN_LIST="${i#*=}"
+      shift
+      ;;
+    --remote_device_list=*)
+      REMOTE_DEVICE_LIST="${i#*=}"
+      shift
+      ;;
+    --remote_device_work_dir=*)
+      REMOTE_DEVICE_WORK_DIR="${i#*=}"
+      shift
+      ;;
+    android_build_and_test)
+      android_build_and_test
+      shift
+      ;;
+    *)
+      echo "Unknown option, exit"
+      exit 1
+      ;;
+    esac
+  done
+}
+
+start_time=`date +%Y%m%d-%H:%M:%S`
+start_time_s=`date +%s`
+main android_build_and_test
+end_time=`date +%Y%m%d-%H:%M:%S`
+end_time_s=`date +%s`
+cost_ime_m=`echo "($end_time_s - $start_time_s) / 60" | bc`
+echo "Start time: $start_time ---> End time: $end_time" "  This CI costs: $cost_ime_m minutes."

@@ -39,12 +39,14 @@ class Context {
   int GetFirstDeviceID() {
     return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
+  std::string GetProfilingFilePath() { return profiling_file_path_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
   std::vector<int> selected_device_ids_;
+  std::string profiling_file_path_ = "";
 };
 
 class Program {
@@ -60,6 +62,10 @@ class Program {
 
  private:
   void Clear();
+  int CheckInputsAndOutputs(uint32_t input_count,
+                            hal::Argument* input_arguments,
+                            uint32_t output_count,
+                            hal::Argument* output_arguments);
 
  private:
   Context* context_{nullptr};
@@ -68,6 +74,7 @@ class Program {
   std::shared_ptr<AclModelClient> model_client_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  DynamicShapeMode dynamic_shape_mode_{DYNAMIC_SHAPE_MODE_NONE};
 };
 
 }  // namespace huawei_ascend_npu

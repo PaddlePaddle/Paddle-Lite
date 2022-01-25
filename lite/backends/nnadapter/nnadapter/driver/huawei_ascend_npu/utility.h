@@ -24,9 +24,36 @@
 #include "graph/ge_error_codes.h"
 #include "graph/graph.h"
 #include "utility/logging.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
+
+// The following environment variables can be used at runtime:
+// Specify the list of device IDs, such as
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3 or
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0
+#define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
+  "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
+
+// Specify the file path of the profiling results
+#define HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH \
+  "HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"
+
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION >=      \
+      major * 1000 + minor * 100 + patch
+
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(      \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <=      \
+      major * 1000 + minor * 100 + patch
 
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
@@ -50,11 +77,16 @@ const std::string ATCErrorToString(uint32_t error);
 
 // Build and load OM model to/from memory
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<uint8_t>& model_buffer, int device_id = 0);
+    const std::vector<uint8_t>& model_buffer,
+    int device_id,
+    const std::string& profiling_file_path);
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer);
+    std::vector<uint8_t>* model_buffer,
+    const std::vector<std::string>& dynamic_shape_info,
+    const std::string& optional_shape_str,
+    const DynamicShapeMode dynamic_shape_mode);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
@@ -99,6 +131,24 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code);
+
+// Get Ascend CANN version
+bool GetAscendCANNVersion(int* major, int* minor, int* patch);
+
+// Get Ascend soc name
+ge::AscendString GetAscendSocName();
+
+// Generate shape strings for CANN
+std::string ShapeToString(const std::vector<int32_t>& shape);
+std::string MergeOptionalShapInfo(
+    const std::vector<std::string>& optional_shape_info,
+    const DynamicShapeMode dynamic_shape_mode);
+void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
+                         std::vector<std::string>* dynamic_shape_info,
+                         std::string* optional_shape_str,
+                         DynamicShapeMode* dynamic_shape_mode);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

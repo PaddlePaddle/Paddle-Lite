@@ -33,6 +33,42 @@ NNADAPTER_EXPORT hal::Operation* AddOperation(hal::Model* model) {
   return &model->operations.back();
 }
 
+NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
+  for (auto it = model->operands.begin(); it != model->operands.end();) {
+    if (&(*it) == operand) {
+      if ((operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
+           operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
+          operand->buffer) {
+        free(operand->buffer);
+      }
+      if ((operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+           operand->type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) &&
+          operand->type.symm_per_channel_params.scales) {
+        free(operand->type.symm_per_channel_params.scales);
+      }
+      for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+        if (operand->hints[i].handler) {
+          operand->hints[i].deleter(&operand->hints[i].handler);
+        }
+      }
+      it = model->operands.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+NNADAPTER_EXPORT void RemoveOperation(hal::Model* model,
+                                      hal::Operation* operation) {
+  for (auto it = model->operations.begin(); it != model->operations.end();) {
+    if (&(*it) == operation) {
+      it = model->operations.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 static hal::Operand* AddOperand(hal::Model* model,
                                 const std::vector<int32_t>& dimensions,
                                 NNAdapterOperandPrecisionCode precision,
@@ -360,14 +396,22 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
   }
 }
 
-NNADAPTER_EXPORT bool InsertOperand(hal::Model* model,
-                                    hal::Operand* reference_operand,
-                                    hal::Operand* target_operand,
-                                    bool after) {
+NNADAPTER_EXPORT bool InsertOperand(
+    hal::Model* model,
+    hal::Operand* reference_operand,
+    hal::Operand* target_operand,
+    bool after,
+    const std::vector<hal::Operation*> specified_affected_operations) {
   bool found = false;
   if (after) {
     // Update if any operation use the 'reference_operand' as input
     for (auto& operation : model->operations) {
+      if (!specified_affected_operations.empty() &&
+          std::find(specified_affected_operations.begin(),
+                    specified_affected_operations.end(),
+                    &operation) == specified_affected_operations.end()) {
+        continue;
+      }
       for (auto& operand : operation.input_operands) {
         if (operand == reference_operand) {
           operand = target_operand;
@@ -387,6 +431,12 @@ NNADAPTER_EXPORT bool InsertOperand(hal::Model* model,
   } else {
     // Replace if any operation use the 'reference_operand' as output
     for (auto& operation : model->operations) {
+      if (!specified_affected_operations.empty() &&
+          std::find(specified_affected_operations.begin(),
+                    specified_affected_operations.end(),
+                    &operation) == specified_affected_operations.end()) {
+        continue;
+      }
       for (auto& operand : operation.output_operands) {
         if (operand == reference_operand) {
           operand = target_operand;
@@ -412,12 +462,25 @@ NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsTemporaryShapeOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE;
+}
+
 NNADAPTER_EXPORT bool IsModelInputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_INPUT;
 }
 
 NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_OUTPUT;
+}
+
+NNADAPTER_EXPORT bool IsOperandWithDynamicShape(hal::Operand* operand) {
+  for (size_t i = 0; i < operand->type.dimensions.count; i++) {
+    if (operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
 }
 
 NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(

@@ -254,6 +254,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* output{};
   int axis{-1};
   bool use_cudnn{true};
+  bool eleminate_success{false};
 };
 
 // For Reshape and Reshape2 Op
@@ -307,6 +308,9 @@ struct ActivationParam : ParamBase {
   float threshold{6.0f};
   // gelu
   bool gelu_approximate{false};
+  // softplus
+  float softplus_beta{1.0f};
+  float softplus_threshold{20.f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -332,6 +336,7 @@ struct SparseConvParam : ParamBase {
   const lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
   int first_ic{0};
+  int flag_semi{0};
   std::vector<int> strides{1, 1};
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
@@ -432,6 +437,7 @@ struct BatchNormParam : ParamBase {
 struct PoolParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* mask{};
   std::string pooling_type{""};
   std::vector<int> ksize{};
   bool global_pooling{
@@ -447,6 +453,7 @@ struct PoolParam : ParamBase {
   bool adaptive{false};
   bool ceil_mode{false};
   bool use_quantizer{false};
+  std::string padding_algorithm{"EXPLICIT"};
   std::string data_format{"AnyLayout"};
   // for int8
   WITH_INT8_CONFIG
@@ -458,6 +465,7 @@ struct PoolParam : ParamBase {
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
+  const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
   float dropout_prob{.5f};
@@ -662,6 +670,15 @@ struct UniformRandomParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
 };
+/// ----------------------- unfold operators ----------------------
+struct UnfoldParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<int> kernel_sizes{};
+  std::vector<int> strides{};
+  std::vector<int> paddings{};
+  std::vector<int> dilations{};
+  lite::Tensor* Y{nullptr};
+};
 /// ----------------------- negative operators --------------
 struct NegativeParam : ParamBase {
   const lite::Tensor* X{};
@@ -845,6 +862,7 @@ struct PriorBoxParam : ParamBase {
   float step_h{0.f};
   float offset{0.5f};
   int prior_num{0};
+  bool flatten_to_2d{false};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
   bool min_max_aspect_ratios_order{false};
@@ -1536,6 +1554,7 @@ struct DistributeFpnProposalsParam : ParamBase {
   int max_level{};
   int refer_level{};
   int refer_scale{};
+  bool pixel_offset{true};
 };
 
 /// --------------------- instance_norm operators --------------------
@@ -1681,6 +1700,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int n_layers{};
   int head_num{};
   int size_per_head{};
+  int hidden_dim{};
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
@@ -1994,6 +2014,10 @@ struct TrigonometricParam : ParamBase {
 
 using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
+using TanParam = TrigonometricParam;
+using AsinParam = TrigonometricParam;
+using AcosParam = TrigonometricParam;
+using AtanParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   const lite::Tensor* x{nullptr};
@@ -2082,6 +2106,15 @@ struct CumsumParam : ParamBase {
   bool flatten{false};
   bool exclusive{false};
   bool reverse{false};
+};
+
+struct SamplingIdParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+
+  float min{0.f};
+  float max{1.f};
+  int seed{0};
 };
 
 struct PolygonBoxTransformParam : ParamBase {
@@ -2178,6 +2211,18 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
+
+struct GaussRandomParam : ParamBase {
+  const lite::Tensor* ShapeTensor{nullptr};
+  std::vector<const lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  lite::Tensor* Out{};
+  int seed{0};
+  int dtype{5};
+  float mean{0.f};
+  float gauss_std{0.f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

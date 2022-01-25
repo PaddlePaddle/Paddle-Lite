@@ -16,7 +16,9 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
-#include "driver/huawei_ascend_npu/optimizer/fix_op_constraints.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -33,25 +35,41 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-  if (key_values.count("HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS")) {
-    auto selected_device_ids = string_split<int>(
-        key_values["HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"], ",");
-    NNADAPTER_CHECK_GE(selected_device_ids.size(), 1);
-    // Only supports specifying one device
-    if (selected_device_ids.size() > 1) {
-      NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
-                                "first one is selected and others will be "
-                                "ignored.";
-    }
-    selected_device_ids_.push_back(selected_device_ids[0]);
+  // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS
+  std::string selected_device_ids;
+  if (key_values.count(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS)) {
+    selected_device_ids = key_values[HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS];
+  } else {
+    selected_device_ids =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
   }
-  if (selected_device_ids_.empty()) {
-    selected_device_ids_.push_back(0);
+  if (!selected_device_ids.empty()) {
+    selected_device_ids_ = string_split<int>(selected_device_ids, ",");
+  } else {
+    selected_device_ids_ = std::vector<int>({0});
+  }
+  NNADAPTER_CHECK_GE(selected_device_ids_.size(), 1);
+  // Only supports specifying one device
+  if (selected_device_ids_.size() > 1) {
+    NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
+                              "first one is selected and others will be "
+                              "ignored.";
+    auto first_device_id = selected_device_ids_[0];
+    selected_device_ids_.clear();
+    selected_device_ids_.push_back(first_device_id);
   }
   NNADAPTER_LOG(INFO) << "selected device ids: ";
   for (auto& selected_device_id : selected_device_ids_) {
     NNADAPTER_LOG(INFO) << selected_device_id;
   }
+  // HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH)) {
+    profiling_file_path_ = key_values[HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH];
+  } else {
+    profiling_file_path_ =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
+  }
+  NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
 }
 
 Context::~Context() {}
@@ -67,6 +85,27 @@ void Program::Clear() {
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
+
+  // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
+  if (!cache->buffer.empty()) {
+    input_types_ = cache->input_types;
+  } else {
+    for (auto input_operand : model->input_operands) {
+      input_types_.push_back(input_operand->type);
+    }
+  }
+  std::vector<std::string> dynamic_shape_info;
+  std::string optional_shape_str;
+  GetDynamicShapeInfo(input_types_,
+                      &dynamic_shape_info,
+                      &optional_shape_str,
+                      &dynamic_shape_mode_);
+  for (auto dynamic_shape : dynamic_shape_info) {
+    NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
+  }
+  NNADAPTER_VLOG(3) << "optional_shape_str: " << optional_shape_str;
+  NNADAPTER_VLOG(3) << "dynamic_shape_mode_: " << dynamic_shape_mode_;
+
   std::vector<uint8_t> model_content;
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
@@ -74,7 +113,6 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
@@ -84,7 +122,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
-    NNADAPTER_CHECK_EQ(FixOpConstraints(model), NNADAPTER_NO_ERROR);
+    FixReduceOpsScalarOutput(model);
+    FuseMatMulAddIntoFullyConnected(model);
+    FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);
@@ -95,12 +135,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
-      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
-        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
@@ -120,8 +158,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       model_buffer = &model_content;
     }
     // Build a GE graph to a CANN OM model, and serialize it into a buffer
-    if (!BuildOMModelToBuffer(
-            input_operators, output_operators, model_buffer)) {
+    if (!BuildOMModelToBuffer(input_operators,
+                              output_operators,
+                              model_buffer,
+                              dynamic_shape_info,
+                              optional_shape_str,
+                              dynamic_shape_mode_)) {
       NNADAPTER_LOG(FATAL)
           << "Failed to build a CANN OM model and serialize it into a buffer!";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;
@@ -133,8 +175,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_CHECK(model_buffer);
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
-  model_client_ =
-      LoadOMModelFromBuffer(*model_buffer, context_->GetFirstDeviceID());
+  model_client_ = LoadOMModelFromBuffer(*model_buffer,
+                                        context_->GetFirstDeviceID(),
+                                        context_->GetProfilingFilePath());
   if (!model_client_) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
@@ -148,7 +191,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   auto input_count = input_types_.size();
-  NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
+  if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
+    NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
+  } else {
+    NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);
+  }
   for (size_t i = 0; i < input_count; i++) {
     auto type = &input_types_[i];
     auto dimensions = input_tensor_descs[i].GetShape();
@@ -159,9 +206,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
     for (size_t j = 0; j < type->dimensions.count; j++) {
       auto dimension = type->dimensions.data[j];
-      if (dimension != -1) {
-        // Check if the dimension of the model inputs is not dynamic
-        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+      if (dimension == NNADAPTER_UNKNOWN) {
+        // Check if the dimension of the model inputs is dynamic
+        NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
             << "The " << j << "th dimension of the " << i
             << "th input does not match, expect " << dimension
             << " but recevied " << dimensions.GetDim(j);
@@ -180,7 +227,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
     for (size_t j = 0; j < type->dimensions.count; j++) {
       auto dimension = type->dimensions.data[j];
-      if (dimension != -1) {
+      if (dimension > 0) {
         // Check if the dimension of the model outputs is not dynamic
         NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
             << "The " << j << "th dimension of the " << i
@@ -193,16 +240,65 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    bool is_matched = true;
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        is_matched = false;
+        break;
+      }
+    }
+    if (is_matched) continue;
+    // Chech dynamic dymensions data
+    for (uint32_t k = 0; k < src_dimensions.dynamic_count; k++) {
+      is_matched = true;
+      for (uint32_t j = 0; j < count; j++) {
+        if (data[j] != src_dimensions.dynamic_data[k][j]) {
+          is_matched = false;
+          break;
+        }
+      }
+      if (is_matched) break;
+    }
+    if (!is_matched) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK(model_client_->Process(input_count,
                                          &input_types_,
                                          input_arguments,
                                          output_count,
                                          &output_types_,
-                                         output_arguments));
+                                         output_arguments,
+                                         dynamic_shape_mode_));
   return NNADAPTER_NO_ERROR;
 }
 

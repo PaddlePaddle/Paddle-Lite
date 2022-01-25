@@ -25,7 +25,7 @@ macOS 环境下编译适用于 macOS 的库
      - x86/ARM 架构 :raw-html-m2r:`<br>`
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
+[1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
 
    **说明：**
 
@@ -172,7 +172,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
    │   └── xxhash
    │
    └── demo                                              C++ 示例代码
-       └── cxx                                           C++ 预测库demo
+       └── cxx                                           C++ 预测库 demo
 
 如果执行\ ``./lite/tools/build_macos.sh arm64``\ ，成功后会在 ``Paddle-Lite/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/`` 生成 Paddle Lite 编译包，文件目录如下：
 

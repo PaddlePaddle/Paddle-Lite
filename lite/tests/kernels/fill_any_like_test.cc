@@ -112,6 +112,12 @@ TEST(fill_any_like, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestFillAnyLike(place, abs_error, 1.f, -1);
+  return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
 #else
   return;
 #endif

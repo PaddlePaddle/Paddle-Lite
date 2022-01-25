@@ -1,6 +1,6 @@
-# CV图像预处理API
+# CV 图像预处理 API
 
-请把编译脚本 `Paddle-Lite/lite/tool/build_linux.sh` 中 `BUILD_CV` 变量设置为 `ON`， 其他编译参数设置请参考[Linux源码编译](../source_compile/compile_linux)， 以确保 Paddle Lite 可以正确编译。这样`CV` 图像的加速库就会编译进去，且会生成 `paddle_image_preprocess.h` 的API文件
+请把编译脚本 `Paddle-Lite/lite/tool/build_linux.sh` 中 `BUILD_CV` 变量设置为 `ON`， 其他编译参数设置请参考 [源码编译](../source_compile/compile_env)， 以确保 Paddle Lite 可以正确编译。这样`CV` 图像的加速库就会编译进去，且会生成 `paddle_image_preprocess.h` 的API文件
 
 - 硬件平台： `ARM`
 - 操作系统：`MAC` 和 `LINUX`
@@ -22,7 +22,7 @@ enum ImageFormat {
   BGR,
   GRAY,
   NV21 = 11,
-  NV12,
+  NV12
 };
 ```
 - 翻转参数
@@ -64,7 +64,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 
 ### 颜色空间转换 Convert
 
-`Convert` 函数支持颜色空间：GRAY、NV12(NV21)、RGB(BGR)和 RGBA(BGRA)
+`Convert` 函数支持颜色空间：GRAY、NV12(NV21)、RGB(BGR) 和 RGBA(BGRA)
 
 + 目前支持以下颜色空间的相互转换：
     - GRAY2BGR
@@ -86,7 +86,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     - NV12—RGBA
     - NV21—RGBA
 
-+ `Convert` 功能的API接口
++ `Convert` 功能的 API 接口
     ```c++
     // 方法一
     void ImagePreprocess::image_convert(const uint8_t* src, uint8_t* dst);
@@ -113,7 +113,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
 ### 缩放 Resize
 
-`Resize` 功能支持颜色空间：GRAY、、NV12(NV21)、RGB(BGR)和 RGBA(BGRA)
+`Resize` 功能支持颜色空间：GRAY、NV12(NV21)、RGB(BGR) 和 RGBA(BGRA)
 `Resize` 功能目前支持的方法：`bilinear`
 
 + `Resize` 功能的 API 接口
@@ -156,7 +156,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 
 ### 翻转 Flip
 
-`Flip` 功能支持颜色空间：GRAY、RGB(BGR) 和RGBA(BGRA)
+`Flip` 功能支持颜色空间：GRAY、RGB(BGR) 和 RGBA(BGRA)
 `Flip` 功能目前支持的功能：沿 X 轴翻转、沿 Y 轴翻转和沿 XY 轴翻转
 
 + `Flip` 功能的 API 接口
@@ -177,7 +177,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 
 ### 裁剪 Crop
 
-`Crop` 功能支持颜色空间：GRAY、RGB(BGR) 和RGBA(BGRA)
+`Crop` 功能支持颜色空间：GRAY、RGB(BGR) 和 RGBA(BGRA)
 
 + `Crop` 功能的 API 接口
     ```c++
@@ -186,21 +186,21 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     ```
 
     + `image_crop` 接口可以直接使用, 各参数含义如下：
-        - param src： 输入图像数组
-        - param dst 输出图像数组
+        - param src：输入图像数组
+        - param dst：输出图像数组
         - param srcFormat：输入图像颜色格式
         - param srcw：输入图像的宽度
         - param srch：输入图像的高度
-        - param left_x：裁剪坐标的X轴数值
-        - param left_y：裁剪坐标的Y轴数值
+        - param left_x：裁剪坐标的 X 轴数值
+        - param left_y：裁剪坐标的 Y 轴数值
         - param dstw：输出图像的宽度
         - param dsth：输出图像的高度
 
 ### Image2Tensor
 
-`Image2Tensor` 功能支持颜色空间：RGB(BGR) 和 RGBA(BGRA)
-`Image2Tensor` 功能目前支持的 Layout：`NCHW` 和 `NHWC`
-`Image2Tensor` 不仅完成图像转换为 `Tensor` 数据处理，而且还完成了图像数据的归一化处理
+- `Image2Tensor` 功能支持颜色空间：RGB(BGR) 和 RGBA(BGRA)
+- `Image2Tensor` 功能目前支持的 Layout：`NCHW` 和 `NHWC`
+- `Image2Tensor` 不仅完成图像转换为 `Tensor` 数据处理，而且还完成了图像数据的归一化处理
 
 + `Image2Tensor` 功能的 API 接口
     ```c++
@@ -222,9 +222,9 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 ## CV 图像预处理 Demo 示例
 
 例子：
-    输入 `1920x1080` 大小的 `NV12` 图像src，输出 `960x540` 大小 `RGB` 格式的图像dst；
+    输入 `1920x1080` 大小的 `NV12` 图像 src，输出 `960x540` 大小 `RGB` 格式的图像 dst；
     然后，完成 `90` 度旋转和沿 `X` 轴翻转功能；
-    最后，用 `NHWC` 格式存储在Tensor里。
+    最后，用 `NHWC` 格式存储在 Tensor 里。
 
 定义 `ImagePreprocess` 类的对象，初始化成员变量
 
@@ -238,9 +238,9 @@ dsth = 960;
 dstw = 540;
 flip_param = FlipParam::X;
 degree = 90;
-layout = LayoutType::NHWC
-left_x = 1
-left_y = 1
+layout = LayoutType::NHWC;
+left_x = 1;
+left_y = 1;
 // 方法一: 
 TransParam tparam;
 tparam.ih = srch;

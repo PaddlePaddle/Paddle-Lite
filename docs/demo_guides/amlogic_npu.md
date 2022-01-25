@@ -16,6 +16,8 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 #### 模型
 
 - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
+- [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
 
 #### 性能
 
@@ -45,7 +47,9 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   |模型 |C308X||A311D||S905D3(Android 版本)||
   |---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
-  |mobilenet_v1_int8_224_per_layer| 167.6996 |  6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
+  |mobilenet_v1_int8_224_per_layer| 167.6996 | 6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
+  |resnet50_int8_224_per_layer| 695.527405| 20.288600| 390.498300| 18.002560| 787.532340 | 42.858800|
+  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer| 281.442310| 18.015800| 134.991560| 15.978300| 295.48919| 41.035610|
 
 ### 已支持（或部分支持）NNAdapter 的 Paddle 算子
 
@@ -65,6 +69,12 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
    <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/A311D.jpg" alt="A311D" style="zoom: 33%;" />
 
+  
+
+- S905D3开发板
+
+   <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/S905D3.jpg" alt="A311D" style="zoom: 35%;" />
+
 ### 准备设备环境
 
 - C308X
@@ -73,10 +83,10 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   - 注意是 64 位系统。
   - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
+    - 可通过 `dmesg | grep Galcore` 查询系统版本：
 
   ```shell
-    $ dmesg | grep -rsn Galcore
+    $ dmesg | grep  Galcore
     [   23.599566] Galcore version 6.4.4.3.310723AAA
   ```
 
@@ -88,10 +98,10 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
   - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
+    - 可通过 `dmesg | grep Galcore` 查询系统版本：
 
     ```shell
-    $ dmesg | grep -rsn Galcore
+    $ dmesg | grep Galcore
     [   24.140820] Galcore version 6.4.4.3.310723AAA
     ```
 
@@ -101,8 +111,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
    - `adb root + adb remount` 以获得修改系统库的权限。
    
     ```shell
-    # dmesg | grep version
-    [    9.020108] <4>[    9.020108@0] npu_version: 3
+    $ dmesg | grep Galcore
     [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
     ```
    
@@ -214,12 +223,13 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
   4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
   
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.100.244 22 root 123456
     (C308X)
     warmup: 1 repeat: 5, average: 167.6916 ms, max: 207.458000 ms, min: 159.823239 ms
     results: 3
@@ -231,7 +241,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.542000 ms
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 0123456789ABCDEF
     (A311D)
     warmup: 1 repeat: 15, average: 81.678067 ms, max: 81.945999 ms, min: 81.591003 ms
     results: 3
@@ -243,7 +253,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.407000 ms
   
   For S905D3(Android版)
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 280.465997 ms, max: 358.815002 ms, min: 268.549812 ms
     results: 3
@@ -260,7 +270,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu 192.168.100.244 22 root 123456
     (C308X)
     warmup: 1 repeat: 5, average: 6.982800 ms, max: 7.045000 ms, min: 6.951000 ms
     results: 3
@@ -272,7 +282,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.509000 ms
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu 0123456789ABCDEF
     ( A311D)
     warmup: 1 repeat: 15, average: 5.567867 ms, max: 5.723000 ms, min: 5.461000 ms
     results: 3
@@ -284,7 +294,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.411000 ms
   
   For S905D3(Android版)
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a amlogic_npu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a amlogic_npu c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 13.4116 ms, max: 15.751210 ms, min: 12.433400 ms
     results: 3

@@ -51,7 +51,8 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -69,6 +70,13 @@ void conv_3x3s2_direct_int8(const int8_t* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = 1.f / act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int pad_h = paddings[0];
@@ -166,18 +174,6 @@ void conv_3x3s2_direct_int8(const int8_t* din,
         const int8_t* block_inr4 = cblock_inr4;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-          bias_local[4] = bias[c + 4];
-          bias_local[5] = bias[c + 5];
-          bias_local[6] = bias[c + 6];
-          bias_local[7] = bias[c + 7];
-        }
-
         memset(pre_out, 0, pre_out_size * sizeof(int32_t));
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           const int8_t* wc0 = weight_c;
@@ -468,7 +464,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
                                    wout,
                                    flag_act,
                                    alpha,
-                                   bias_local,
+                                   bias + c,
                                    flag_bias,
                                    ptr_write,
                                    scale + c);
@@ -503,7 +499,8 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -521,6 +518,13 @@ void conv_3x3s2_direct_int8(const int8_t* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = 1.f / act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int pad_h = paddings[0];
@@ -613,13 +617,6 @@ void conv_3x3s2_direct_int8(const int8_t* din,
         const int8_t* block_inr1 = cblock_inr1;
         const int8_t* block_inr2 = cblock_inr2;
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[4] = {0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-        }
         memset(pre_out, 0, pre_out_size * sizeof(int32_t));
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           const int8_t* wc0 = weight_c;
@@ -750,7 +747,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
                                    wout,
                                    flag_act,
                                    alpha,
-                                   bias_local,
+                                   bias + c,
                                    flag_bias,
                                    ptr_write,
                                    scale + c);

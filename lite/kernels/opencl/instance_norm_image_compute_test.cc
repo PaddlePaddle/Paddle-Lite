@@ -82,156 +82,178 @@ void instance_norm_ref(Tensor* x,
 // #define INSTANCE_NORM_FP16_LOOP_TEST
 // #define INSTANCE_NORM_FP16_PRINT_RESULT
 TEST(instance_norm_image2d, compute) {
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
 #ifdef INSTANCE_NORM_FP16_LOOP_TEST
-  for (auto n : {1, 3}) {
-    for (auto c : {1, 3, 8, 32, 65}) {
-      for (auto h : {4, 20, 64, 112, 224}) {
-        for (auto w : {2, 20, 64, 112, 224}) {
+    for (auto n : {1, 3}) {
+      for (auto c : {1, 3, 8, 32}) {
+        for (auto h : {4, 20, 64, 112}) {
+          for (auto w : {
+                   2, 20, 64, 112,
+               }) {
 #else
-  const int n = 1;
-  const int c = 32;
-  const int h = 224;
-  const int w = 224;
+    const int n = 2;
+    const int c = 7;
+    const int h = 71;
+    const int w = 11;
 #endif  // INSTANCE_NORM_FP16_LOOP_TEST
 
-          LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
-                    << h << " " << w << " ========";
+            LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c
+                      << " " << h << " " << w << " ========";
+            std::unique_ptr<KernelContext> context(new KernelContext);
+            context->As<OpenCLContext>().InitOnce();
+            CLRuntime::Global()->set_precision(precision_type);
+            const bool fp16_flag =
+                (precision_type ==
+                 lite_api::CLPrecisionType::CL_PRECISION_FP16);
+            LOG(INFO) << "\n\t[  START  ] Test Precision="
+                      << lite_api::CLPrecisionTypeToStr(precision_type);
+            auto kernels =
+                KernelRegistry::Global().Create("instance_norm",
+                                                TARGET(kOpenCL),
+                                                PRECISION(kFP16),
+                                                DATALAYOUT(kImageDefault));
+            ASSERT_FALSE(kernels.empty());
+            auto kernel = std::move(kernels.front());
+            LOG(INFO) << "get kernel:" << kernel->doc();
 
-          auto kernels =
-              KernelRegistry::Global().Create("instance_norm",
-                                              TARGET(kOpenCL),
-                                              PRECISION(kFP16),
-                                              DATALAYOUT(kImageDefault));
-          ASSERT_FALSE(kernels.empty());
-          auto kernel = std::move(kernels.front());
-          LOG(INFO) << "get kernel:" << kernel->doc();
+            lite::Tensor x, out, out_ref, scale, bias, saved_mean,
+                saved_variance;
+            operators::InstanceNormParam param;
+            param.x = &x;
+            param.out = &out;
+            param.scale = &scale;
+            param.bias = &bias;
+            param.saved_mean = &saved_mean;
+            param.saved_variance = &saved_variance;
+            param.epsilon = 1e-5;
 
-          lite::Tensor x, out, out_ref, scale, bias, saved_mean, saved_variance;
-          operators::InstanceNormParam param;
-          param.x = &x;
-          param.out = &out;
-          param.scale = &scale;
-          param.bias = &bias;
-          param.saved_mean = &saved_mean;
-          param.saved_variance = &saved_variance;
-          param.epsilon = 1e-5;
-          std::unique_ptr<KernelContext> context(new KernelContext);
-          context->As<OpenCLContext>().InitOnce();
+            kernel->SetParam(param);
+            kernel->SetContext(std::move(context));
 
-          kernel->SetParam(param);
-          std::unique_ptr<KernelContext> instance_context(new KernelContext);
-          context->As<OpenCLContext>().CopySharedTo(
-              &(instance_context->As<OpenCLContext>()));
-          kernel->SetContext(std::move(instance_context));
-
-          const DDim in_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
-          x.Resize(in_dim);
-          out.Resize(in_dim);
-          out_ref.Resize(in_dim);
-          scale.Resize({c});
-          bias.Resize({c});
-          saved_mean.Resize({n * c});
-          saved_variance.Resize({n * c});
-          auto* x_data = x.mutable_data<float>();
-          auto* scale_data = scale.mutable_data<float>();
-          auto* bias_data = bias.mutable_data<float>();
-          auto* saved_mean_data = saved_mean.mutable_data<float>();
-          auto* saved_variance_data = saved_variance.mutable_data<float>();
-          std::default_random_engine engine;
-          std::uniform_real_distribution<float> dist(-1, 1);
-          int sum = n * c * h * w;
-          for (int i = 0; i < sum; ++i) {
-            x_data[i] = dist(engine);
-          }
-          for (int i = 0; i < c; ++i) {
-            scale_data[i] = dist(engine);
-            bias_data[i] = dist(engine);
-          }
-          //! run reference instance norm
-          instance_norm_ref(
-              &x, &out_ref, &scale, &bias, &saved_mean, &saved_variance, 1e-5);
-          LOG(INFO) << "prepare input";
-          CLImageConverterDefault* default_converter =
-              new CLImageConverterDefault();
-          DDim x_image_shape = default_converter->InitImageDimInfoWith(in_dim);
-          LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
-                    << x_image_shape[1];
-          std::vector<half_t> x_image_data(x_image_shape.production() *
-                                           4);  // 4 : RGBA
-          default_converter->NCHWToImage(x_data, x_image_data.data(), in_dim);
-          auto* x_image = x.mutable_data<half_t, cl::Image2D>(
-              x_image_shape[0], x_image_shape[1], x_image_data.data());
-
-          auto* out_image = out.mutable_data<half_t, cl::Image2D>(
-              x_image_shape[0], x_image_shape[1]);
-
-          //! warm up
-          for (int i = 0; i < FLAGS_warmup; ++i) {
-            kernel->Launch();
-          }
-          context->As<OpenCLContext>().cl_context()->GetCommandQueue().finish();
-          //! compute
-          Timer t0;
-          t0.Start();
-          for (int i = 0; i < FLAGS_repeats; ++i) {
-            kernel->Launch();
-          }
-          context->As<OpenCLContext>().cl_context()->GetCommandQueue().finish();
-          t0.Stop();
-          double gops = 6 * sum;
-          LOG(INFO) << "avg time: " << t0.LapTimes().Avg() / FLAGS_repeats
-                    << " ms, "
-                    << "avg GOPs: "
-                    << 1e-6 * gops * FLAGS_repeats / t0.LapTimes().Avg()
-                    << " GOPs";
-          const size_t cl_image2d_row_pitch{0};
-          const size_t cl_image2d_slice_pitch{0};
-          half_t* out_image_data = new half_t[x_image_shape.production() * 4];
-          TargetWrapperCL::ImgcpySync(out_image_data,
-                                      out_image,
-                                      x_image_shape[0],
-                                      x_image_shape[1],
-                                      cl_image2d_row_pitch,
-                                      cl_image2d_slice_pitch,
-                                      IoDirection::DtoH);
-          float* out_data = new float[x_image_shape.production() * 4];
-          default_converter->ImageToNCHW(
-              out_image_data, out_data, x_image_shape, in_dim);
-// result
-#ifdef INSTANCE_NORM_FP16_PRINT_RESULT
-          LOG(INFO) << "---- print kernel result (input -> output) ----";
-          for (int eidx = 0; eidx < in_dim.production(); ++eidx) {
-            std::cout << x_data[eidx] << " -> " << out_data[eidx] << std::endl;
-          }
-#endif  // INSTANCE_NORM_FP16_PRINT_RESULT
-          auto* out_ref_data = out_ref.data<float>();
-          for (int i = 0; i < in_dim.production(); i++) {
-            auto abs_diff = abs(out_data[i] - out_ref_data[i]);
-            auto relative_diff =
-                COMPUTE_RELATIVE_DIFF(out_data[i], out_ref_data[i]);
-            EXPECT_EQ(
-                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
-                true);
-            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
-              LOG(ERROR) << "error idx:" << i << ", in_data[" << i
-                         << "]: " << x_data[i] << ", out_data[" << i
-                         << "]: " << out_data[i] << ", out_ref[" << i
-                         << "]: " << out_ref_data[i]
-                         << ", abs_diff: " << abs_diff
-                         << ", relative_diff: " << relative_diff
-                         << ", FP16_MAX_DIFF: " << FP16_MAX_DIFF;
+            const DDim in_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
+            x.Resize(in_dim);
+            out.Resize(in_dim);
+            out_ref.Resize(in_dim);
+            scale.Resize({c});
+            bias.Resize({c});
+            saved_mean.Resize({n * c});
+            saved_variance.Resize({n * c});
+            auto* x_data = x.mutable_data<float>();
+            auto* scale_data = scale.mutable_data<float>();
+            auto* bias_data = bias.mutable_data<float>();
+            auto* saved_mean_data = saved_mean.mutable_data<float>();
+            auto* saved_variance_data = saved_variance.mutable_data<float>();
+            std::default_random_engine engine;
+            std::uniform_real_distribution<float> dist(-1, 1);
+            int sum = n * c * h * w;
+            for (int i = 0; i < sum; ++i) {
+              x_data[i] = dist(engine);
             }
-          }
-          delete[] out_data;
-          delete[] out_image_data;
+            for (int i = 0; i < c; ++i) {
+              scale_data[i] = dist(engine);
+              bias_data[i] = dist(engine);
+            }
+            //! run reference instance norm
+            instance_norm_ref(&x,
+                              &out_ref,
+                              &scale,
+                              &bias,
+                              &saved_mean,
+                              &saved_variance,
+                              1e-5);
+            LOG(INFO) << "prepare input";
+            CLImageConverterDefault* default_converter =
+                new CLImageConverterDefault();
+            DDim x_image_shape =
+                default_converter->InitImageDimInfoWith(in_dim);
+            LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
+                      << x_image_shape[1];
+
+            const size_t dtype_size =
+                fp16_flag ? sizeof(half_t) : sizeof(float);
+            std::vector<char> x_image_data(x_image_shape.production() * 4 *
+                                           dtype_size);  // 4 : RGBA
+            default_converter->NCHWToImage(x_data, x_image_data.data(), in_dim);
+            MUTABLE_DATA_GPU(
+                &x, x_image_shape[0], x_image_shape[1], x_image_data.data());
+
+            auto* out_image = MUTABLE_DATA_GPU(
+                &out, x_image_shape[0], x_image_shape[1], nullptr);
+
+            //! warm up
+            for (int i = 0; i < FLAGS_warmup; ++i) {
+              kernel->Launch();
+            }
+            CLRuntime::Global()->command_queue().finish();
+            //! compute
+            Timer t0;
+            t0.Start();
+            for (int i = 0; i < FLAGS_repeats; ++i) {
+              kernel->Launch();
+            }
+            CLRuntime::Global()->command_queue().finish();
+            t0.Stop();
+            double gops = 6 * sum;
+            LOG(INFO) << "avg time: " << t0.LapTimes().Avg() / FLAGS_repeats
+                      << " ms, "
+                      << "avg GOPs: "
+                      << 1e-6 * gops * FLAGS_repeats / t0.LapTimes().Avg()
+                      << " GOPs";
+            const size_t cl_image2d_row_pitch{0};
+            const size_t cl_image2d_slice_pitch{0};
+            std::vector<char> out_image_data(x_image_shape.production() * 4 *
+                                             dtype_size);  // 4 : RGBA
+            TargetWrapperCL::ImgcpySync(out_image_data.data(),
+                                        out_image,
+                                        x_image_shape[0],
+                                        x_image_shape[1],
+                                        cl_image2d_row_pitch,
+                                        cl_image2d_slice_pitch,
+                                        IoDirection::DtoH);
+            float* out_data = new float[x_image_shape.production() * 4];
+            default_converter->ImageToNCHW(
+                out_image_data.data(), out_data, x_image_shape, in_dim);
+            auto* out_ref_data = out_ref.data<float>();
+
+#ifdef INSTANCE_NORM_FP16_PRINT_RESULT
+            LOG(INFO) << "---- print kernel result (input -> output) ----";
+            for (int eidx = 0; eidx < in_dim.production(); ++eidx) {
+              std::cout << x_data[eidx] << " -> " << out_data[eidx]
+                        << " out_ref_data: " << out_ref_data[eidx] << std::endl;
+            }
+#endif  // INSTANCE_NORM_FP16_PRINT_RESULT
+
+            for (int i = 0; i < in_dim.production(); i++) {
+              auto abs_diff = abs(out_data[i] - out_ref_data[i]);
+              auto relative_diff =
+                  COMPUTE_RELATIVE_DIFF(out_data[i], out_ref_data[i]);
+              EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) ||
+                            (abs_diff <= FP16_MAX_DIFF),
+                        true);
+              if ((relative_diff > FP16_MAX_DIFF) &&
+                  (abs_diff > FP16_MAX_DIFF)) {
+                LOG(ERROR) << "error idx:" << i << ", in_data[" << i
+                           << "]: " << x_data[i] << ", out_data[" << i
+                           << "]: " << out_data[i] << ", out_ref[" << i
+                           << "]: " << out_ref_data[i]
+                           << ", abs_diff: " << abs_diff
+                           << ", relative_diff: " << relative_diff
+                           << ", FP16_MAX_DIFF: " << FP16_MAX_DIFF;
+              }
+            }
+            delete[] out_data;
+// delete[] out_image_data;
 #ifdef INSTANCE_NORM_FP16_LOOP_TEST
-        }  // w
-      }    // h
-    }      // c
-  }        // n
+          }  // w
+        }    // h
+      }      // c
+    }        // n
 #else
 // nothing to do.
 #endif
+  }
 }
 
 }  // namespace lite

@@ -69,11 +69,11 @@ static void PropagateAsymmZeroPoint(hal::Operand* reference_operand,
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
   } else {
-    NNADAPTER_LOG(FATAL) << "Unhandled case: reference_precision="
-                         << OperandPrecisionCodeToString(
-                                reference_type.precision)
-                         << ", target_precision="
-                         << OperandPrecisionCodeToString(target_precision);
+    NNADAPTER_LOG(WARNING) << "Unhandled case: reference_precision="
+                           << OperandPrecisionCodeToString(
+                                  reference_type.precision)
+                           << ", target_precision="
+                           << OperandPrecisionCodeToString(target_precision);
   }
 }
 
@@ -91,6 +91,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_MAT_MUL:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
@@ -98,15 +99,24 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
+      case NNADAPTER_RESIZE_NEAREST:
+      case NNADAPTER_RESIZE_LINEAR:
       case NNADAPTER_TANH:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_HARD_SWISH: {
+      case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_LEAKY_RELU:
+      case NNADAPTER_SQUEEZE:
+      case NNADAPTER_CLIP:
+      case NNADAPTER_CHANNEL_SHUFFLE:
+      case NNADAPTER_SLICE:
+      case NNADAPTER_FILL_LIKE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);

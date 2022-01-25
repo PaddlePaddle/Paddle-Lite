@@ -21,30 +21,6 @@ struct ArgParam {
     int orank;
 };
 
-kernel void reduce_max_c(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-
-#if LITE_WITH_METAL_FULL
-    float omax = FLT_MIN;
-#else
-    half omax = HALF_MIN;
-#endif
-    uint iAL = inTexture.get_array_size();
-    for (uint i = 0; i < iAL; ++i) {
-        ftype4 in = inTexture.read(uint2(gid.x, gid.y), gid.z);
-        omax = max(omax, in.r);
-        omax = max(omax, in.g);
-        omax = max(omax, in.b);
-        omax = max(omax, in.a);
-    }
-
-    outTexture.write(ftype4(omax, 0.0, 0.0, 0.0), gid.xy, gid.z);
-}
-
 inline int max_index(texture2d_array<ftype, access::read> inTexture[[texture(0)]], uint2 gid) {
     int index = 0;
 #if LITE_WITH_METAL_FULL

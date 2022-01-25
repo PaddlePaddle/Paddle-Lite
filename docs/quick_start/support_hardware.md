@@ -5,7 +5,7 @@
 
 Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
 
-### 32bit(ARMv7a)
+### 32bit (ARMv7a)
 
 - Cortex-A5
 - Cortex-A7
@@ -16,7 +16,7 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 - Cortex-A17 (RK3288)
 - Cortex-A32
 
-### 64bit(ARMv7a, ARMv8a)
+### 64bit (ARMv7a, ARMv8a)
 
 - Cortex-A35
 - Cortex-A53 (树莓派 3)
@@ -32,7 +32,7 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 ### ARM CPU 环境准备及示例程序
 
 - Android: [Android 工程示例](../demo_guides/android_app_demo)
-- iOS: [iOS 工程示例](../demo_guides/ios_app_demo)
+- IOS: [IOS 工程示例](../demo_guides/ios_app_demo)
 - Linux(ARM): [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
 
 ## X86 CPU
@@ -75,15 +75,15 @@ Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
 - 英特尔 (Intel) FPGA: [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
 
 
-## 百度 (Baidu) XPU
+## 昆仑芯 (kunlunxin) XPU
 
-Paddle Lite 支持百度 XPU，支持列表如下：
-- 百度昆仑 818-100 芯片
-- 百度昆仑 818-300 芯片
+Paddle Lite 支持昆仑芯 XPU，支持列表如下：
+- 昆仑芯 818-100 芯片
+- 昆仑芯 818-300 芯片
 
-### 百度 (Baidu) XPU 环境准备及示例程序
+### 昆仑芯 (kunlunxin) XPU 环境准备及示例程序
 
-- [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
 
 ## 华为 (Huawei) 麒麟 NPU
 

@@ -134,6 +134,11 @@ void RunModel(std::string model_dir,
   MobileConfig config;
   config.set_model_from_file(model_dir);
 
+#ifdef METAL
+  std::string metal_lib_path = "../../../metal/lite.metallib";
+  config.set_metal_lib_path(metal_lib_path);
+  config.set_metal_use_mps(true);
+#else
   // NOTE: Use android gpu with opencl, you should ensure:
   //  first, [compile **cpu+opencl** paddlelite
   //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
@@ -182,6 +187,7 @@ void RunModel(std::string model_dir,
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
+#endif
 
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.

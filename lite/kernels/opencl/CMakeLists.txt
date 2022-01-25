@@ -53,6 +53,7 @@ add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_comput
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
+add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 # extra
 # wait to add ...
 
@@ -62,8 +63,8 @@ add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
 ######################
 # image kernel test  #
 ######################
-lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
-             DEPS kernels core)
+#lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
+#             DEPS kernels core)
 
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
              DEPS kernels core)
@@ -104,8 +105,8 @@ lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
 lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
-             DEPS kernels core)
+#lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
+#             DEPS kernels core)
 
 #lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
 #             DEPS kernels core)
@@ -126,8 +127,8 @@ lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_comput
 #lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
 #             DEPS kernels core)
 
-#lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
-#             DEPS kernels core)
+lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
+             DEPS kernels core)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
              DEPS kernels core)
@@ -150,9 +151,11 @@ lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
 lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
              DEPS kernels core)
 
- lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
              DEPS kernels core)
 
+lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
+             DEPS kernels core)
 ######################
 # buffer kernel      #
 ######################

@@ -194,7 +194,8 @@ const std::string& CLPrecisionTypeToStr(CLPrecisionType type) {
 }
 
 std::set<TargetType> ExpandValidTargets(TargetType target) {
-  static const std::set<TargetType> valid_set({TARGET(kX86),
+  static const std::set<TargetType> valid_set({TARGET(kHost),
+                                               TARGET(kX86),
                                                TARGET(kCUDA),
                                                TARGET(kARM),
                                                TARGET(kOpenCL),

@@ -25,12 +25,32 @@ void InstanceNormCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   auto x_dims = param.x->dims();
-  CHECK_EQ(x_dims.size(), 4);
+  CHECK(x_dims.size() == 4 || x_dims.size() == 5)
+      << "Not support x_dims_rank = " << x_dims.size();
+
   int n = x_dims[0];
   int c = x_dims[1];
   int h = x_dims[2];
   int w = x_dims[3];
+  if (x_dims.size() == 5) {
+    h = x_dims[2] * x_dims[3];
+    w = x_dims[4];
+  }
 
+  float* xpu_scale = nullptr;
+  if (param.scale == nullptr) {
+    XPU_CALL(
+        xpu_malloc(reinterpret_cast<void**>(&xpu_scale), c * sizeof(float)));
+    int ret = xdnn::constant<float>(ctx.GetRawContext(), xpu_scale, c, 1.0f);
+    CHECK_EQ(ret, 0);
+  }
+  float* xpu_bias = nullptr;
+  if (param.bias == nullptr) {
+    XPU_CALL(
+        xpu_malloc(reinterpret_cast<void**>(&xpu_bias), c * sizeof(float)));
+    int ret = xdnn::constant<float>(ctx.GetRawContext(), xpu_bias, c, 0.0f);
+    CHECK_EQ(ret, 0);
+  }
   int ret = xdnn::instance_norm<float>(
       ctx.GetRawContext(),
       param.x->data<float>(),
@@ -40,13 +60,18 @@ void InstanceNormCompute::Run() {
       h,
       w,
       param.epsilon,
-      param.scale->data<float>(),
-      param.bias->data<float>(),
+      (param.scale == nullptr) ? xpu_scale : param.scale->data<float>(),
+      (param.bias == nullptr) ? xpu_bias : param.bias->data<float>(),
       param.saved_mean->mutable_data<float>(TARGET(kXPU)),
       param.saved_variance->mutable_data<float>(TARGET(kXPU)),
       true);
-
   CHECK_EQ(ret, 0);
+  if (xpu_scale != nullptr) {
+    XPU_CALL(xpu_free(xpu_scale));
+  }
+  if (xpu_bias != nullptr) {
+    XPU_CALL(xpu_free(xpu_bias));
+  }
 }
 
 }  // namespace xpu

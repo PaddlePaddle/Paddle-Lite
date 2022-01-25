@@ -276,6 +276,10 @@ TEST(unsqueeze, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  // TODO(shentanyue): support later
+  return;
 #else
   return;
 #endif
@@ -284,7 +288,7 @@ TEST(unsqueeze, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = TARGET(kOpenCL);
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
@@ -301,6 +305,10 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  // TODO(shentanyue): support later
+  return;
 #else
   return;
 #endif
@@ -309,7 +317,7 @@ TEST(unsqueeze2, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = TARGET(kOpenCL);
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ NNADAPTER_EXPORT void UpdateConv2DPadAndDilation(
     int32_t* pad_bottom_or_right,
     int32_t stride_height_or_width,
     int32_t* dilation_height_or_width) {
-  NNADAPTER_CHECK_NE(input_size, NNADAPTER_UNKNOWN);
   if (auto_pad == NNADAPTER_AUTO_PAD_SAME) {
+    NNADAPTER_CHECK_NE(input_size, NNADAPTER_UNKNOWN);
     auto output_size =
         (input_size + stride_height_or_width - 1) / stride_height_or_width;
     auto pad_size = (output_size - 1) * stride_height_or_width +

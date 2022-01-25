@@ -168,10 +168,14 @@ TEST(Pad2d, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   pad_mode_list = {"constant"};
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  // TODO(shentanyue): support later
+  return;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   pad_mode_list = {"constant",
                    "reflect"};  // XPU support constant and reflect now
@@ -195,7 +199,7 @@ TEST(Pad2d, precision) {
             for (float pad_value : {0.f, 1.f}) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
               // Ascend does not support the following scenarios.
-              if ((std::abs(pad_value - 1) < 1e-6) ||
+              if (std::abs(pad_value - 1) < 1e-6 ||
                   (pad_top == 0 && pad_bottom == 1 && pad_left == 0 &&
                    pad_right == 0))
                 continue;

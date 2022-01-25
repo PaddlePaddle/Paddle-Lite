@@ -50,12 +50,16 @@ void sgemm_fp16(bool is_transA,
               is_bias,
               bias,
               act_param.has_active,
-              act_param.active_type,
+              act_param,
               ctx);
     return;
   }
   if (M == 1 && !has_alpha) {
+#ifdef TARGET_IOS
+    float16_t* bias_ptr = new float16_t[N];
+#else
     float16_t bias_ptr[N];  // NOLINT
+#endif
     if (is_bias) {
       for (int i = 0; i < N; i++) {
         bias_ptr[i] = bias[0];
@@ -71,8 +75,11 @@ void sgemm_fp16(bool is_transA,
               is_bias,
               bias_ptr,
               act_param.has_active,
-              act_param.active_type,
+              act_param,
               ctx);
+#ifdef TARGET_IOS
+    delete[] bias_ptr;
+#endif
     return;
   }
   int hblock = get_hblock_fp16(ctx);

@@ -113,7 +113,6 @@ function(find_fluid_modules TARGET_NAME)
   endif()
 endfunction(find_fluid_modules)
 
-
 function(common_link TARGET_NAME)
   if (WITH_PROFILER)
     target_link_libraries(${TARGET_NAME} gperftools::profiler)
@@ -123,21 +122,6 @@ function(common_link TARGET_NAME)
     target_link_libraries(${TARGET_NAME} jemalloc::jemalloc)
   endif()
 endfunction()
-
-
-# find all third_party modules is used for paddle static library
-# for reduce the dependency when building the inference libs.
-set_property(GLOBAL PROPERTY FLUID_THIRD_PARTY)
-function(find_fluid_thirdparties TARGET_NAME)
-  get_filename_component(__target_path ${TARGET_NAME} ABSOLUTE)
-  string(REGEX REPLACE "^${PADDLE_SOURCE_DIR}/" "" __target_path ${__target_path})
-  string(FIND "${__target_path}" "third_party" pos)
-  if(pos GREATER 1)
-    get_property(fluid_ GLOBAL PROPERTY FLUID_THIRD_PARTY)
-    set(fluid_third_partys ${fluid_third_partys} ${TARGET_NAME})
-    set_property(GLOBAL PROPERTY FLUID_THIRD_PARTY "${fluid_third_partys}")
-  endif()
-endfunction(find_fluid_thirdparties)
 
 function(merge_static_libs TARGET_NAME)
   set(libs ${ARGN})
@@ -338,45 +322,6 @@ function(cc_library TARGET_NAME)
   endif(cc_library_SRCS)
 endfunction(cc_library)
 
-# The link operation under windows may exceeds the maximum characters limit, simply break the link command
-# into multiple link opeartion can fix that, say
-# original:
-#     lib /out:target.lib a.lib b.lib c.lib d.lib
-# after:
-#    1. lib /out:dummy_lib_1.lib a.lib b.lib
-#    2. lib /out:dummy_lib_2.lib c.lib d.lib
-#    1. lib /out:target.lib dummy_lib_1.lib dummy_lib_2.lib
-function(sep_library TARGET_NAME)
-  set(options STATIC static SHARED shared)
-  set(oneValueArgs "")
-  set(multiValueArgs SRCS DEPS)
-  cmake_parse_arguments(sep_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  set(dummy_index 1)
-  set(dummy_offset 1)
-  # the dummy target would be consisted of limit size libraries
-  set(dummy_limit 50)
-  list(LENGTH sep_library_DEPS sep_all_len)
-  foreach(v ${sep_library_DEPS})
-    list(APPEND dummy_list ${v})
-    list(LENGTH dummy_list listlen )
-    if ((${listlen} GREATER ${dummy_limit}) OR (${dummy_offset} EQUAL ${sep_all_len}))
-      message("create dummy library ${TARGET_NAME}_dummy_lib_${dummy_index} for ${TARGET_NAME}")
-      cc_library(${TARGET_NAME}_dummy_lib_${dummy_index} STATIC DEPS ${dummy_list})
-      foreach(i ${dummy_list})
-        list(REMOVE_AT dummy_list 0)
-      endforeach()
-      list(APPEND ${TARGET_NAME}_dummy_list ${TARGET_NAME}_dummy_lib_${dummy_index})
-      MATH(EXPR dummy_index "${dummy_index}+1")
-    endif()
-    MATH(EXPR dummy_offset "${dummy_offset}+1")
-  endforeach()
-  if(${sep_library_SHARED})
-    cc_library(${TARGET_NAME} SHARED SRCS ${sep_library_SRCS} DEPS ${${TARGET_NAME}_dummy_list})
-  else(${sep_library_SHARED})
-    cc_library(${TARGET_NAME} STATIC SRCS ${sep_library_SRCS} DEPS ${${TARGET_NAME}_dummy_list})
-  endif(${sep_library_SHARED})
-endfunction(sep_library)
-
 function(cc_binary TARGET_NAME)
   set(options "")
   set(oneValueArgs "")
@@ -424,47 +369,6 @@ function(cc_test TARGET_NAME)
     set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 600)
   endif()
 endfunction(cc_test)
-
-# cc_test without default dependencies
-function(raw_cc_test TARGET_NAME)
-  if(WITH_TESTING)
-    set(options SERIAL)
-    set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS ARGS)
-    cmake_parse_arguments(cc_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    add_executable(${TARGET_NAME} ${cc_test_SRCS})
-    if(WIN32)
-      if("${cc_test_DEPS};" MATCHES "python;")
-        list(REMOVE_ITEM cc_test_DEPS python)
-        target_link_libraries(${TARGET_NAME} ${PYTHON_LIBRARIES})
-      endif()
-    endif(WIN32)
-    get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-
-    if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-      target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} core_tester gtest gflags utils)
-      add_dependencies(${TARGET_NAME} ${cc_test_DEPS} core_tester gtest gflags utils)
-    else()
-      target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} core_tester gtest gflags glog)
-      add_dependencies(${TARGET_NAME} ${cc_test_DEPS} core_tester gtest gflags glog)
-    endif(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-
-    common_link(${TARGET_NAME})
-    add_test(NAME ${TARGET_NAME}
-            COMMAND ${TARGET_NAME} ${cc_test_ARGS}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    if (${cc_test_SERIAL})
-      set_property(TEST ${TARGET_NAME} PROPERTY RUN_SERIAL 1)
-    endif()
-    # No unit test should exceed 10 minutes.
-    set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 600)
-  endif()
-endfunction(raw_cc_test)
-
-function(_lite_cc_test args)
-  message(STATUS "building lite raw test: ${args}")
-  raw_cc_test(${args} ${ARGN})
-endfunction()
 
 function(nv_library TARGET_NAME)
   if (LITE_WITH_CUDA)

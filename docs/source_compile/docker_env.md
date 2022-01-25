@@ -24,7 +24,7 @@ cp Dockerfile.mobile mobile_image/Dockerfile
 cd mobile_image
 docker build -t paddlepaddle/paddle-lite .
 
-# 镜像编译成功后，可用`docker images`命令，看到`paddlepaddle/paddle-lite`镜像。
+# 镜像编译成功后，可用 docker images 命令，看到 paddlepaddle/paddle-lite 镜像。
 ```
 
 ### 启动 Docker 容器
@@ -49,15 +49,15 @@ Docker 初学者可以参考[ Docker 使用方法](https://thenewstack.io/docker
 # 启动停止的容器
 docker start <container-name>
 
-# 从shell进入已启动的容器
+# 从 shell 进入已启动的容器
 docker attach <container-name>
 
-# 停止正在运行的Docker容器
+# 停止正在运行的 Docker 容器
 docker stop <container-name>
 
-# 重新启动正在运行的Docker容器
+# 重新启动正在运行的 Docker 容器
 docker restart <container-name>
 
-# 删除Docker容器
+# 删除 Docker 容器
 docker rm <container-name>
 ```

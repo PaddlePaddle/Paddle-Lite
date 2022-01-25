@@ -548,7 +548,7 @@ void conv1x1s1_gemm(const float* i_data,
 
   auto act_param = param.activation_param;
 
-  int hblock = get_hblock(ctx);
+  int hblock = get_hblock(ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
   if (n > 1 && m > 1) {
@@ -579,7 +579,11 @@ void conv1x1s1_gemm(const float* i_data,
               act_param,
               ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float* bias_ptr = new float[n];
+#else
         float bias_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -597,6 +601,9 @@ void conv1x1s1_gemm(const float* i_data,
               bias_ptr,
               act_param,
               ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         sgemm_prepack(false,
                       m,
@@ -670,8 +677,13 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float* bias_ptr = new float[n];
+        float* scale_ptr = new float[n];
+#else
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -691,6 +703,10 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+        delete[] scale_ptr;
+#endif
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -768,7 +784,7 @@ void conv_im2col_gemm(const float* i_data,
   int channel_size_in = win * ih;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  int hblock = get_hblock(ctx);
+  int hblock = get_hblock(ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
 
@@ -820,7 +836,11 @@ void conv_im2col_gemm(const float* i_data,
               act_param,
               ctx);
       } else if (m == 1) {
-        float bias_ptr[n];  // NOLINT
+#ifdef TARGET_IOS
+        float* bias_ptr = new float[n];
+#else
+        float bias_ptr[n];   // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -837,6 +857,9 @@ void conv_im2col_gemm(const float* i_data,
               bias_ptr,
               act_param,
               ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         int ldb = n;
         sgemm_prepack(false,
@@ -947,8 +970,13 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float* bias_ptr = new float[n];
+        float* scale_ptr = new float[n];
+#else
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -968,6 +996,10 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+        delete[] scale_ptr;
+#endif
       } else {
         gemm_prepack_int8(weights_group,
                           dB,
@@ -1228,7 +1260,8 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1246,6 +1279,13 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   bool support_act_type = flag_act <= 2;
@@ -1339,7 +1379,8 @@ void conv_depthwise_3x3_int8_int8(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1357,6 +1398,13 @@ void conv_depthwise_3x3_int8_int8(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   bool support_act_type = flag_act <= 2;
@@ -1450,7 +1498,8 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1468,6 +1517,13 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   if (stride == 1) {
@@ -1533,7 +1589,8 @@ void conv_depthwise_5x5_int8_int8(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1551,6 +1608,13 @@ void conv_depthwise_5x5_int8_int8(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   if (stride == 1) {

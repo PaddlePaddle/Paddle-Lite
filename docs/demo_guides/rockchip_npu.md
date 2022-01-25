@@ -55,7 +55,7 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 ### 已支持（或部分支持）NNAdapter 的 Paddle 算子
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
->> **不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Rockchip NPU IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
+**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Rockchip NPU IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
 
 ## 参考示例演示
 
@@ -83,20 +83,29 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
   - 由于 RK1808 EVB 在刷 firmware 后，只是一个纯净的 Linux 系统，无法像 Ubuntu 那样使用 `apt-get` 命令方便的安装软件，因此，示例程序和 Paddle Lite 库的编译均采用交叉编译方式；
   - 将 `MicroUSB` 线插入到设备的 `MicroUSB OTG` 口，就可以使用 Android 的 `adb` 命令进行设备的交互，再也不用配置网络使用 `ssh` 或者通过串口的方式访问设备了，这个设计非常赞！
   - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [   15.978465] Galcore version 6.4.0.227915
+    ```
 
 - TB-RK1808S0 AI 计算棒
 
-  - 参考[ TB-RK1808S0 wiki 教程的](http://t.rock-chips.com/wiki.php?mod=view&pid=28)将计算棒配置为主动模式，完成网络设置和 firmware 的升级，具体步骤如下：
-    - 将计算棒插入 Window7/10 主机，参考[主动模式开发](http://t.rock-chips.com/wiki.php?mod=view&id=66)配主机的虚拟网卡 IP 地址，通过 `ssh toybrick@192.168.180.8` 验证是否能登录计算棒；
-    - 参考[ Window7/10 系统配置计算棒网络共享](http://t.rock-chips.com/wiki.php?mod=view&id=77)，`SSH` 登录计算棒后通过 `wget www.baidu.com` 验证是否能够访问外网；
-    - 参考[固件在线升级](http://t.rock-chips.com/wiki.php?mod=view&id=148)，建议通过 `ssh` 登录计算棒，在 `shell` 下执行 `sudo dnf update -y` 命令快速升级到最新版本系统（要求系统版本 >= 1.4.1-2），可通过 `rpm -qa | grep toybrick-server` 查询系统版本：
+  - 参考[ TB-RK1808S0 wiki 教程的](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0)将计算棒配置为主动模式，完成网络设置和 firmware 的升级，具体步骤如下：
+    - 将计算棒插入 Window7/10 主机，参考[主动模式开发](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0#hash_6)配主机的虚拟网卡 IP 地址，通过 `ssh toybrick@192.168.180.8` 验证是否能登录计算棒；
+    - 参考[ Window7/10 系统配置计算棒网络共享](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0#hash_7)，`SSH` 登录计算棒后通过 `wget www.baidu.com` 验证是否能够访问外网；
+    - 参考[固件在线升级](https://t.rock-chips.com/wiki.php?filename=%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/%E7%83%A7%E5%86%99%E5%9B%BA%E4%BB%B6)，建议通过 `ssh` 登录计算棒，在 `shell` 下执行 `sudo dnf update -y` 命令快速升级到最新版本系统（要求系统版本 >= 1.4.1-2），可通过 `rpm -qa | grep toybrick-server` 查询系统版本：
 
     ```shell
     $ rpm -qa | grep toybrick-server
     toybrick-server-1.4.1-2.rk1808.fc28.aarch64
     ```
     - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-
+    - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    7.919345] Galcore version 6.4.0.227915
+    ```
 - RV1126 EVB
 
    - 需要升级 1.51 的 firmware（下载和烧录方法请联系RK相关同学），可通过以下命令确认 librknn_runtime.so 的版本：
@@ -108,11 +117,15 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 
    - 示例程序和 Paddle Lite 库的编译需要采用交叉编译方式，通过 `adb` 进行设备的交互和示例程序的运行。
    - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-   
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    5.809874] Galcore version 6.4.0.227915
+    ```
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_enviroment)中的 Docker 开发环境进行配置；
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的 Docker 开发环境进行配置；
 - 由于有些设备只提供网络访问方式（例如：TB-RK1808S0 AI 计算棒），需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
@@ -195,6 +208,7 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
   3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
   4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip 地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
 
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell

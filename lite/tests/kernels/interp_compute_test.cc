@@ -448,11 +448,6 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
         if (place == TARGET(kARM) && align_mode == 1 && !align_corners) {
           continue;
         }
-        // Ascend NPU DDK
-        if (place == TARGET(kHuaweiAscendNPU) && align_mode == 0 &&
-            !align_corners) {
-          continue;
-        }
 #if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (align_mode == 0 && align_corners) continue;
 #endif
@@ -516,15 +511,25 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  // TestInterpAlignMode(place, abs_error);
+  return;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #ifdef ENABLE_ARM_FP16

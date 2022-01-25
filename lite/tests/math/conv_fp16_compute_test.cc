@@ -221,17 +221,13 @@ void test_conv_fp16(const DDim dim_in,
           int count = 0;
           bool check = false;
           for (int i = 0; i < size; i++) {
-            if (abs(ptr[i]) > 1) {
+            if (fabs(basic_ptr[i] - saber_ptr[i]) > 1e-1f &&
+                fabs(basic_ptr[i] - saber_ptr[i]) /
+                        (fmax(fabs(basic_ptr[i]), fabs(saber_ptr[i]))) >
+                    0.05) {
               check = true;
-              break;
-            }
-            if (abs(ptr[i]) > 0.01) {
-              count += 1;
             }
           }
-          VLOG(4) << "check: " << check << ", count: " << count;
-          check =
-              (check || count >= std::max(10, static_cast<int>(0.01 * size)));
           if (check) {
             int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
             print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
@@ -293,11 +289,11 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
       for (auto& pad : {0, 1}) {
         for (auto& pad1 : {0, 1}) {
           for (auto& flag_bias : {false, true}) {
-            for (auto& flag_act : {0, 1}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
               for (auto& c : {4, 7, 8, 10, 11, 16}) {
                 DDim weights_dim({c, 1, 3, 3});
                 for (auto& batch : {1}) {
-                  for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
+                  for (auto& h : {4, 7, 12, 13, 14, 15, 16, 17, 18, 33}) {
                     DDim dim_in({batch, c, h, h});
                     const float leakey_relu_scale = 1.0f;
                     test_conv_fp16(dim_in,
@@ -541,3 +537,41 @@ TEST(TestConvCustom, test_conv_fp16_custom_size) {
       FLAGS_leakey_relu_alpha);
 }
 #endif  // custom
+
+#if 1  /// conv3x3s2
+TEST(TestDWConv3x3s2, test_dwconv_3x3s2) {
+  if (FLAGS_basic_test) {
+    for (auto& cin : {2, 6, 32}) {
+      for (auto& cout : {cin}) {
+        for (auto& pad : {0, 1}) {
+          for (auto& flag_bias : {false, true}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
+              if (cin == 1 && cout == 1) {
+                continue;
+              }
+              DDim weights_dim({cout, 1, 3, 3});
+              for (auto& batch : {1, 4}) {
+                for (auto& h : {4, 10, 16, 32, 48, 96, 100, 112, 224}) {
+                  DDim dim_in({batch, cin, h, h});
+                  const float leakey_relu_scale = 1.0f;
+                  test_conv_fp16(dim_in,
+                                 weights_dim,
+                                 cin,
+                                 {2, 2},
+                                 {pad, pad, pad, pad},
+                                 {1, 1},
+                                 flag_bias,
+                                 flag_act,
+                                 {4},
+                                 {FLAGS_power_mode},
+                                 leakey_relu_scale);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif  /// dwconv3x3s2

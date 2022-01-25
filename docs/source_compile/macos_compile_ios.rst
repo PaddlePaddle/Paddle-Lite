@@ -44,9 +44,9 @@ macOS 环境下编译适用于 iOS 的库
 ^^^^^^^^
 
 
-* Xcode IDE(10.1 或以上版本)
+* Xcode IDE (10.1 或以上版本)
 * git、make、wget、python
-* CMake（3.15 或以上版本）
+* CMake (3.15 或以上版本)
 
 环境安装命令
 ^^^^^^^^^^^^
@@ -54,7 +54,7 @@ macOS 环境下编译适用于 iOS 的库
 
 .. code-block:: shell
 
-   # 1. 安装 curl gcc git make unzip wget python cmake 等基础软件
+   # 1. 安装 curl gcc git make unzip wget python cmake 等基础软件。
    brew install curl gcc git make unzip wget python cmake
 
    # 2. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
@@ -63,7 +63,7 @@ macOS 环境下编译适用于 iOS 的库
 了解基础编译参数
 ----------------
 
-Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 ios 版本的编译包，通过修改\ ``build_ios.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
+Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 iOS 版本的编译包，通过修改\ ``build_ios.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
 有特殊硬件需求的编译参数见后文。
 
 .. list-table::
@@ -106,7 +106,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
 ..
 
    **说明：**
-   执行`./lite/tools/build_ios.sh help`可输出各选项的使用说明信息。
+   执行\ ``./lite/tools/build_ios.sh help``\ 可输出各选项的使用说明信息。
 
 
 编译步骤
@@ -122,7 +122,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle-Lite iOS 预测库
+   # 2. 编译 Paddle Lite iOS 预测库
    ./lite/tools/build_ios.sh
 
 ..
@@ -138,7 +138,7 @@ iOS CPU 预测库 (armv8)
 ^^^^^^^^^^^^^^^^^^^^^^
 
 
-如果执行\ ``./lite/tools/build_ios.sh``\ ，成功后会在 ``Paddle-Lite/build.ios.ios64.armv8/inference_lite_lib.android.armv8`` 生成 Paddle Lite 编译包，文件目录如下：
+如果执行\ ``./lite/tools/build_ios.sh``\ ，成功后会在 ``Paddle-Lite/build.ios.ios64.armv8/inference_lite_lib.ios64.armv8`` 生成 Paddle Lite 编译包，文件目录如下：
 
 .. code-block:: shell
 
@@ -163,7 +163,7 @@ iOS GPU 预测库 (armv8)
 
 .. code-block:: shell
 
-   inference_lite_lib.ios64.armv8
+   inference_lite_lib.ios64.armv8.metal
    ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h

@@ -16,6 +16,8 @@
 
 #include <sys/time.h>
 #include <algorithm>
+#include <climits>
+#include <cmath>
 #include <map>
 #include <string>
 #include <vector>
@@ -42,6 +44,7 @@ bool IsUInt32AsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
+bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
 
 // Copy operand type under certain conditions
@@ -217,5 +220,31 @@ inline int64_t GetCurrentUS() {
   gettimeofday(&time, NULL);
   return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
 }
+
+template <typename T>
+int64_t GetSpanCount(T start, T end, T step) {
+  return std::is_integral<T>::value
+             ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
+             : std::ceil(std::abs((end - start) / step));
+}
+
+// Read environment variables of string type
+std::string GetStringFromEnv(const std::string& str,
+                             const std::string& def = "");
+
+// Read environment variables of bool type
+bool GetBoolFromEnv(const std::string& str, bool def = false);
+
+// Read environment variables of int type
+int GetIntFromEnv(const std::string& str, int def = 0);
+
+// Read environment variables of double type
+double GetDoubleFromEnv(const std::string& str, double def = 0.0);
+
+// Read environment variables of int64 type
+uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
+
+// Get the real path of the path argument
+std::string GetRealPath(const char* path);
 
 }  // namespace nnadapter

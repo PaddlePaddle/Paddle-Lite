@@ -1,10 +1,10 @@
-# IOS 工程示例
+# iOS 工程示例
 
 ## 多种应用场景
 
 我们提供 Paddle Lite 示例工程[ Paddle-Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)，其中包含[ Android ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo)、[ IOS ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo)和[ Armlinux ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo)平台的示例工程。
 
-IOS demo涵盖[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/object_detection_demo)2个应用场景。
+IOS demo涵盖[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo/ios-classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo/ios-detection_demo) 2 个应用场景。
 
 ### 1. 图像分类
 
@@ -71,7 +71,7 @@ IOS 示例的代码结构如下图所示：
 ios-detection_demo/detection_demo/models/mobilenetv1-ssd
 ```
 
-  2、`libpaddle_api_light_bundled.a`、`paddle_api.h`：Paddle-Lite C++ 预测库和头文件
+  2、`libpaddle_api_light_bundled.a`、`paddle_api.h`：Paddle Lite C++ 预测库和头文件
 
 ```shell
 # 位置：
@@ -92,7 +92,7 @@ ios-detection_demo/detection_demo/ViewController.mm
 
 ## 代码讲解 （如何使用 Paddle Lite `C++ API` 执行预测）
 
-IOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle-Lite C++ API ](../api_reference/cxx_api_doc)。
+IOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle Lite C++ API ](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>

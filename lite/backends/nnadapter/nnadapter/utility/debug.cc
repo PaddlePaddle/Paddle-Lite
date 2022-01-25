@@ -241,6 +241,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args[input_count - 1] = "axis";
         output_args = {"output"};
         break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
+        input_args = {"input", "group"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_CONV_2D:
         input_args = {"input",
                       "filter",
@@ -279,6 +283,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"shape", "value"};
         output_args = {"output"};
         break;
+      case NNADAPTER_FILL_LIKE:
+        input_args = {"input", "value"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FLATTEN:
         input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
@@ -291,6 +299,9 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
       case NNADAPTER_SWISH:
+      case NNADAPTER_FLOOR:
+      case NNADAPTER_SQUARE:
+      case NNADAPTER_NOT:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -307,6 +318,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "slope"};
         output_args = {"output"};
         break;
+      case NNADAPTER_SOFTPLUS:
+        input_args = {"input", "beta", "threshold"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SLICE:
         input_args = {"input", "axes", "start", "ends"};
         output_args = {"output"};
@@ -316,6 +331,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_SUM:
         input_args = {"input", "axes", "keep_dim"};
         output_args = {"output"};
         break;
@@ -338,6 +354,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_QUANTIZE:
+        input_args = {"input", "axis", "scale", "zero_point"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEQUANTIZE:
+        input_args = {"input"};
         output_args = {"output"};
         break;
       case NNADAPTER_CUM_SUM:
@@ -399,16 +423,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_INSTANCE_NORMALIZATION:
-        input_args = {"input", "scale", "bias", "episilon", "fuse_code"};
+        input_args = {"input", "scale", "bias", "episilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_LAYER_NORMALIZATION:
-        input_args = {"input",
-                      "scale",
-                      "bias",
-                      "begin_norm_axis",
-                      "episilon",
-                      "fuse_code"};
+        input_args = {"input", "scale", "bias", "begin_norm_axis", "episilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GROUP_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "episilon", "groups"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
@@ -439,7 +462,48 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_GREATER_EQUAL:
       case NNADAPTER_LESS:
       case NNADAPTER_LESS_EQUAL:
+      case NNADAPTER_AND:
         input_args = {"input0", "input1"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_MESHGRID:
+        input_args.resize(input_count);
+        for (size_t i = 0; i < input_count; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        output_args.resize(output_count);
+        for (size_t i = 0; i < output_count; i++) {
+          output_args[i] = string_format("output%d", i);
+        }
+        break;
+      case NNADAPTER_TILE:
+        input_args = {"input", "repeats"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SUM:
+        input_args.resize(input_count);
+        for (size_t i = 0; i < input_count; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GRID_SAMPLE:
+        input_args = {"input", "grid", "aligned_corners", "mode", "pad_pad"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ROI_ALIGN:
+        input_args = {"input",
+                      "rois",
+                      "batch_indices",
+                      "output_height",
+                      "output_width",
+                      "sampling_ratio",
+                      "spatial_scale",
+                      "aligned"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_WHERE:
+        input_args = {"condition", "input0", "input1"};
         output_args = {"output"};
         break;
       default:
@@ -552,6 +616,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(AND);
     NNADAPTER_TYPE_TO_STRING(ARG_MAX);
     NNADAPTER_TYPE_TO_STRING(ARG_MIN);
     NNADAPTER_TYPE_TO_STRING(ASSIGN);
@@ -559,22 +624,28 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(CAST);
     NNADAPTER_TYPE_TO_STRING(CLIP);
+    NNADAPTER_TYPE_TO_STRING(CHANNEL_SHUFFLE);
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(CUM_SUM);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
+    NNADAPTER_TYPE_TO_STRING(DEQUANTIZE);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EQUAL);
     NNADAPTER_TYPE_TO_STRING(EXP);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
+    NNADAPTER_TYPE_TO_STRING(FILL_LIKE);
     NNADAPTER_TYPE_TO_STRING(FLATTEN);
+    NNADAPTER_TYPE_TO_STRING(FLOOR);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(GATHER);
     NNADAPTER_TYPE_TO_STRING(GELU);
     NNADAPTER_TYPE_TO_STRING(GREATER);
     NNADAPTER_TYPE_TO_STRING(GREATER_EQUAL);
+    NNADAPTER_TYPE_TO_STRING(GRID_SAMPLE);
+    NNADAPTER_TYPE_TO_STRING(GROUP_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
     NNADAPTER_TYPE_TO_STRING(INSTANCE_NORMALIZATION);
@@ -587,32 +658,42 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(MESHGRID);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(PRELU);
+    NNADAPTER_TYPE_TO_STRING(QUANTIZE);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RANGE);
     NNADAPTER_TYPE_TO_STRING(REDUCE_MEAN);
+    NNADAPTER_TYPE_TO_STRING(REDUCE_SUM);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
+    NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(SOFTPLUS);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
+    NNADAPTER_TYPE_TO_STRING(SQUARE);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
+    NNADAPTER_TYPE_TO_STRING(SUM);
     NNADAPTER_TYPE_TO_STRING(SWISH);
     NNADAPTER_TYPE_TO_STRING(TANH);
+    NNADAPTER_TYPE_TO_STRING(TILE);
     NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
       name = "UNKNOWN";
       break;

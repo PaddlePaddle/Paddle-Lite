@@ -15,6 +15,7 @@
 #include "core/operation/fill.h"
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -53,15 +54,18 @@ int PrepareFill(hal::Operation* operation) {
                              << OperandPrecisionCodeToString(shape_precision);
         break;
     }
-  } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    output_type.dimensions = *reinterpret_cast<NNAdapterOperandDimensionType*>(
-        shape_operand->buffer);
+  } else if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    memcpy(&output_type.dimensions,
+           &temporary_shape,
+           sizeof(NNAdapterOperandDimensionType));
   } else {
     NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
                          << static_cast<int32_t>(shape_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
   output_type.precision = value_operand->type.precision;
+  output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

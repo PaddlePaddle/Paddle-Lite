@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(LOG, Log);
     CONVERT_UNARY_ACTIVATION(ABS, Abs);
     CONVERT_UNARY_ACTIVATION(EXP, Exp);
+    CONVERT_UNARY_ACTIVATION(FLOOR, Floor);
+    CONVERT_UNARY_ACTIVATION(SQUARE, Square);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

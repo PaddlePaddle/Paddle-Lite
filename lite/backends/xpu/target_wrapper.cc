@@ -20,36 +20,9 @@
 namespace paddle {
 namespace lite {
 
-void XPUScratchPad::Reserve(size_t new_size) {
-  if (new_size <= size_) {
-    return;
-  }
-  TargetWrapperXPU::Free(addr_);
-  addr_ = TargetWrapperXPU::Malloc(new_size);
-  size_ = new_size;
-}
-
-void XPUScratchPadDeleter::operator()(XPUScratchPad* sp) const {
-  TargetWrapperXPU::Free(sp->addr_);
-  delete sp;
-}
-
 XPUL3CacheBlock* TargetWrapperXPU::CreateL3CacheBlock() {
   l3_block_dict.push_back(new XPUL3CacheBlock());
   return l3_block_dict.back();
-}
-
-void* TargetWrapperXPU::Malloc(size_t size) {
-  void* ptr{nullptr};
-  if (size > 0) {
-    XPU_CALL(xpu_malloc(&ptr, size));
-  }
-  return ptr;
-}
-
-void TargetWrapperXPU::Free(void* ptr) {
-  XPU_CALL(xpu_wait());
-  XPU_CALL(xpu_free(ptr));
 }
 
 void TargetWrapperXPU::MemcpySync(void* dst,
@@ -58,22 +31,21 @@ void TargetWrapperXPU::MemcpySync(void* dst,
                                   IoDirection dir) {
   switch (dir) {
     case IoDirection::HtoD:
-      XPU_CALL(xpu_wait());
-      XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
+      XPUMemory::MemcpyHtoDSync(dst, src, size);
       break;
     case IoDirection::DtoH:
-      XPU_CALL(xpu_wait());
-      XPU_CALL(xpu_memcpy(dst, src, size, XPU_DEVICE_TO_HOST));
+      XPUMemory::MemcpyDtoHSync(dst, src, size);
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
   }
 }
 
-XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size) {
-  void* ptr = TargetWrapperXPU::Malloc(size);
-  CHECK(ptr) << "XPU Malloc Fail, Malloc Size is: " << size;
-  return XPUScratchPadGuard(new XPUScratchPad(ptr, size));
+template <typename Tcpu, typename Txpu>
+XPUQuantData TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight(
+    const Tcpu* cpu_data, const DDimLite& dims, bool data_transpose) {
+  CHECK(quantizer_.get());
+  return quantizer_->quant<Tcpu, Txpu>(cpu_data, dims, data_transpose);
 }
 
 void TargetWrapperXPU::ScatterL3Cache(
@@ -167,8 +139,22 @@ void TargetWrapperXPU::FreeL3Cache() {
   }
 }
 
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float>(
+    const float*, const DDimLite&, bool);
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
+    const float*, const DDimLite&, bool);
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
+    const float*, const DDimLite&, bool);
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
+    const int8_t*, const DDimLite&, bool);
+
 // xpu context
-LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
+    nullptr};
 // multi encoder config
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
@@ -190,6 +176,9 @@ LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*> TargetWrapperXPU::l3_block_dict;
 std::mutex TargetWrapperXPU::mutex_l3_;
 // l3 planner
 LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
+// xpu quantizer
+LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> TargetWrapperXPU::quantizer_{
+    nullptr};
 
 }  // namespace lite
 }  // namespace paddle

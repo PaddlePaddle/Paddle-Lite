@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+
+#include "nnadapter.h"  // NOLINT
 
 namespace nnadapter {
 namespace operation {
@@ -29,11 +31,16 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
   /* Shape */                                                               \
   auto shape_operand = input_operands[1];                                   \
-  NNADAPTER_VLOG(5) << "shape operand: "                                    \
-                    << OperandValueToString(shape_operand);                 \
+  NNADAPTER_VLOG(5) << "shape operand: " << OperandToString(shape_operand); \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+
+void UpdateExpandInferOutputShape(int32_t* input_dimensions_data,
+                                  uint32_t input_dimensions_count,
+                                  int32_t* output_dimensions_data,
+                                  uint32_t shape_count,
+                                  int32_t* shape_data);
 
 }  // namespace operation
 }  // namespace nnadapter

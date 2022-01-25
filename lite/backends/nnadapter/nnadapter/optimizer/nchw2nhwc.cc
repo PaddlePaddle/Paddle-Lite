@@ -26,43 +26,37 @@ namespace nnadapter {
 static const std::vector<int32_t> kNCHW2NHWC = {0, 2, 3, 1};
 static const std::vector<int32_t> kNHWC2NCHW = {0, 3, 1, 2};
 
-class NCHW2NHWCDataLayoutConverter {
- public:
-  void Apply(hal::Model* model);
-
- private:
-  void SetPermutation(hal::Operand* operand,
-                      const std::vector<int32_t>& permutation) {
-    NNADAPTER_CHECK(!permutation.empty());
-    if (permutations_.find(operand) != permutations_.end()) {
-      NNADAPTER_LOG(FATAL) << "Operand" << OperandIdToString(operand)
-                           << " had been already set.";
-    } else {
-      permutations_[operand] = permutation;
-    }
+void NCHW2NHWCDataLayoutConverter::SetPermutation(
+    hal::Operand* operand, const std::vector<int32_t>& permutation) {
+  NNADAPTER_CHECK(!permutation.empty());
+  if (permutations_.find(operand) != permutations_.end()) {
+    NNADAPTER_LOG(FATAL) << "Operand" << OperandIdToString(operand)
+                         << " had been already set.";
+  } else {
+    permutations_[operand] = permutation;
   }
-  std::vector<int32_t> GetPermutation(hal::Operand* operand) {
-    NNADAPTER_CHECK(permutations_.find(operand) != permutations_.end());
-    return permutations_[operand];
+}
+
+std::vector<int32_t> NCHW2NHWCDataLayoutConverter::GetPermutation(
+    hal::Operand* operand) {
+  NNADAPTER_CHECK(permutations_.find(operand) != permutations_.end());
+  return permutations_[operand];
+}
+
+void NCHW2NHWCDataLayoutConverter::SetOperationLayout(hal::Operation* operation,
+                                                      const int input_num,
+                                                      const int output_num) {
+  for (int in_index = 0; in_index < input_num; ++in_index) {
+    operation->input_operands[in_index]->type.layout =
+        NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
   }
+  for (int out_index = 0; out_index < output_num; ++out_index) {
+    operation->output_operands[out_index]->type.layout =
+        NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+  }
+}
 
-  // Operation converters
-  void ConvertElementwise(hal::Operation* operation);
-  void ConvertPool2D(hal::Operation* operation);
-  void ConvertConcat(hal::Operation* operation);
-  void ConvertConv2D(hal::Operation* operation);
-  void ConvertFlatten(hal::Operation* operation);
-  void ConvertFullyConnected(hal::Operation* operation);
-  void ConvertActivation(hal::Operation* operation);
-  void ConvertReshape(hal::Operation* operation);
-  void ConvertSoftmax(hal::Operation* operation);
-  void ConvertSplit(hal::Operation* operation);
-  void ConvertTranspose(hal::Operation* operation);
-
- private:
-  hal::Model* model_{nullptr};
-  std::map<hal::Operand*, std::vector<int32_t>> permutations_;
-};
+hal::Model* NCHW2NHWCDataLayoutConverter::GetModel() { return model_; }
 
 void NCHW2NHWCDataLayoutConverter::ConvertElementwise(
     hal::Operation* operation) {
@@ -137,6 +131,42 @@ void NCHW2NHWCDataLayoutConverter::ConvertElementwise(
   }
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertAdaptivePool2D(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  auto operation_type = operation->type;
+  if (operation_type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {
+    NNADAPTER_CHECK_EQ(input_count, 2);
+    NNADAPTER_CHECK_EQ(output_count, 1);
+  } else if (operation_type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {
+    NNADAPTER_CHECK_EQ(input_count, 4);
+    NNADAPTER_CHECK_EQ(output_count, 2);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
+  NNADAPTER_CHECK_EQ(input_dimensions_count, 4);
+  auto output_operand = output_operands[0];
+  // Force to apply the dimorder vector of NCHW2NHWC conversion
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation =
+      MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AddTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    SetPermutation(transpose_input_operand, kNCHW2NHWC);
+  }
+  TransposeOperand(output_operand, kNCHW2NHWC);
+  SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -169,6 +199,37 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   }
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertCast(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertClip(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertConcat(hal::Operation* operation) {
@@ -281,10 +342,62 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation, 3);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 11);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
+  NNADAPTER_CHECK_EQ(input_dimensions_count, 4);
+  auto filter_operand = input_operands[1];
+  bool is_per_channel =
+      filter_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
+  NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
+  // Force to apply the dimorder vector of NCHW2NHWC conversion
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation =
+      MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AddTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    SetPermutation(transpose_input_operand, kNCHW2NHWC);
+  }
+  std::vector<int32_t> filter_permutation = {};
+  if (is_per_channel) {
+    filter_operand->type.symm_per_channel_params.channel_dim = 0;
+  }
+  // [C_out, C_in, filter_height, filter_width]->[C_out, filter_height,
+  // filter_width, C_in]
+  TransposeOperand(filter_operand, kNCHW2NHWC);
+  SetPermutation(filter_operand, kNCHW2NHWC);
+  auto output_operand = output_operands[0];
+  TransposeOperand(output_operand, kNCHW2NHWC);
+  SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation, 3);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
     hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertMatMul(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -313,6 +426,109 @@ void NCHW2NHWCDataLayoutConverter::ConvertActivation(
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertLeakyRelu(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertGather(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertLpNormalization(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  int input_dimensions_count = input_operand->type.dimensions.count;
+  auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (*axis < 0) {
+    *axis += input_dimensions_count;
+  }
+  auto output_operand = output_operands[0];
+  // Recalculate the axis according to the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  *axis = TransposeAxis(*axis, input_permutation);
+  // The input and output operands share the same dimorder vector
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertPow(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertQuantize(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertReduce(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  int input_dimensions_count = input_operand->type.dimensions.count;
+  auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (*axis < 0) {
+    *axis += input_dimensions_count;
+  }
+  auto output_operand = output_operands[0];
+  // Recalculate the axis according to the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  *axis = TransposeAxis(*axis, input_permutation);
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertReshape(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -333,6 +549,95 @@ void NCHW2NHWCDataLayoutConverter::ConvertReshape(hal::Operation* operation) {
     SetPermutation(transpose_input_operand,
                    IdentityPermutation(input_dimensions_count));
   }
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertResizeLinear(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 5);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // Force to apply the dimorder vector of NCHW2NHWC conversion
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation =
+      MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AddTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    SetPermutation(transpose_input_operand, kNCHW2NHWC);
+  }
+
+  TransposeOperand(output_operand, kNCHW2NHWC);
+  SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertResizeNearest(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // Force to apply the dimorder vector of NCHW2NHWC conversion
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation =
+      MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AddTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    SetPermutation(transpose_input_operand, kNCHW2NHWC);
+  }
+
+  TransposeOperand(output_operand, kNCHW2NHWC);
+  SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertShape(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertFill(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertFillLike(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
@@ -446,9 +751,18 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_SUB:
         ConvertElementwise(operation);
         break;
+      case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
+        ConvertAdaptivePool2D(operation);
+        break;
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_MAX_POOL_2D:
         ConvertPool2D(operation);
+        break;
+      case NNADAPTER_CAST:
+        ConvertCast(operation);
+        break;
+      case NNADAPTER_CLIP:
+        ConvertClip(operation);
         break;
       case NNADAPTER_CONCAT:
         ConvertConcat(operation);
@@ -456,11 +770,48 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_CONV_2D:
         ConvertConv2D(operation);
         break;
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        ConvertConv2DTranspose(operation);
+        break;
+      case NNADAPTER_FILL:
+        ConvertFill(operation);
+        break;
+      case NNADAPTER_FILL_LIKE:
+        ConvertFillLike(operation);
+        break;
       case NNADAPTER_FLATTEN:
         ConvertFlatten(operation);
         break;
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);
+        break;
+      case NNADAPTER_GATHER:
+        ConvertGather(operation);
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        ConvertLpNormalization(operation);
+        break;
+      case NNADAPTER_LEAKY_RELU:
+        ConvertLeakyRelu(operation);
+        break;
+      case NNADAPTER_MAT_MUL:
+        ConvertMatMul(operation);
+        break;
+      case NNADAPTER_POW:
+        ConvertPow(operation);
+        break;
+      case NNADAPTER_QUANTIZE:
+        ConvertQuantize(operation);
+        break;
+      case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_SUM:
+        ConvertReduce(operation);
+        break;
+      case NNADAPTER_RESIZE_NEAREST:
+        ConvertResizeNearest(operation);
+        break;
+      case NNADAPTER_RESIZE_LINEAR:
+        ConvertResizeLinear(operation);
         break;
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
@@ -470,10 +821,14 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_SIGMOID:
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
+      case NNADAPTER_LOG:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
+        break;
+      case NNADAPTER_SHAPE:
+        ConvertShape(operation);
         break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
