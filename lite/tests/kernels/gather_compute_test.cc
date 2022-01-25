@@ -125,6 +125,8 @@ class GatherComputeTest : public arena::TestCase {
     op_desc->SetInput("Index", {index_});
     if (axis_dims_.production() == 1) {
       op_desc->SetInput("Axis", {axis_});
+    } else {
+      op_desc->SetAttr("axis", 0);
     }
     op_desc->SetOutput("Out", {out_});
   }
