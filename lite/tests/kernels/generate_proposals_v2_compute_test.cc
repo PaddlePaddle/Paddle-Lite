@@ -607,6 +607,7 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
     op_desc->SetAttr("nms_thresh", nms_thresh_);
     op_desc->SetAttr("min_size", min_size_);
     op_desc->SetAttr("eta", eta_);
+    op_desc->SetAttr("pixel_offset", false);
 
     op_desc->SetOutput("RpnRois", {RpnRois_});
     op_desc->SetOutput("RpnRoiProbs", {RpnRoiProbs_});
