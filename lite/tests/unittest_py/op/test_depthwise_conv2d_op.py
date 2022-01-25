@@ -176,7 +176,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             return False
 
         self.add_ignore_check_case(
-            skip_bias_teller, IgnoreReasons.ACCURACY_ERROR,
+            skip_bias_teller, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "When paddle is opening the use_mkldnn flag, the kernel implementation of depthwise_conv2d is not registered, so depthwise_conv2d will execute on cpu, the kernel of cpu doesn't support bias, need paddle fix!"
         )
 
