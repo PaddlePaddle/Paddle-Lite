@@ -37,6 +37,7 @@ ExternalProject_Add(
     DEPENDS             ""
     GIT_TAG             "v5.99"  # 2020 Oct 20th
     URL                 http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.99.zip
+    URL_HASH            MD5=192edccfa1bff59d3efc1f85616d51dd
     DOWNLOAD_DIR        ${XBYAK_SOURCECODE_DIR}
     DOWNLOAD_NAME   "xbyak-5.99.zip"
     DOWNLOAD_NO_PROGRESS 1
