@@ -69,7 +69,7 @@ class TestRsqrtOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=6))
+                    min_value=1, max_value=8), min_size=1, max_size=4))
 
         def generate_input(*args, **kwargs):
             # Make sure input data is greater than 0
@@ -93,17 +93,7 @@ class TestRsqrtOp(AutoScanTest):
         return self.get_predictor_configs(), ["rsqrt"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data"].shape)
-            target = predictor_config.target()
-            if target == TargetType.OpenCL:
-                if len(in_shape) != 4:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
