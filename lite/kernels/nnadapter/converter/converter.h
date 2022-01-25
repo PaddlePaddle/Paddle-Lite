@@ -171,25 +171,46 @@ class Converter {
       NNAdapterOperand* input_operand,
       const std::string& output_name = "",
       NNAdapterOperandPrecisionCode output_precision = NNADAPTER_INT32);
-  // Add unsqueeze operation with input operand, axes, out_name, quant_scales
-  NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
-                                          const std::vector<int32_t>& axes,
-                                          const std::string& out_name = "");
-  // Add squeeze operation with input operand, axes, out_name, quant_scales
-  NNAdapterOperand* AddSqueezeOperation(NNAdapterOperand* input_operand,
-                                        const std::vector<int32_t>& axes,
-                                        const std::string& out_name = "");
-  NNAdapterOperand* AddSliceOperation(NNAdapterOperand* input_operand,
-                                      const std::vector<int32_t>& axes,
-                                      const std::vector<int32_t>& starts,
-                                      const std::vector<int32_t>& ends,
-                                      const std::vector<int32_t>& steps,
-                                      const std::string& out_name = "");
-  // Add flatten operation with input operand, start, end, out_name
-  NNAdapterOperand* AddFlattenOperation(NNAdapterOperand* input_operand,
-                                        const int32_t start_axis,
-                                        const int32_t end_axis,
-                                        const std::string& out_name = "");
+  // Add unsqueeze operation with input operand, axes, output_name, quant_scales
+  NNAdapterOperand* AddUnsqueezeOperation(
+      NNAdapterOperand* input_operand,
+      const std::vector<int32_t>& axes,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
+  // Add squeeze operation with input operand, axes, output_name, quant_scales
+  NNAdapterOperand* AddSqueezeOperation(
+      NNAdapterOperand* input_operand,
+      const std::vector<int32_t>& axes,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
+  NNAdapterOperand* AddSliceOperation(
+      NNAdapterOperand* input_operand,
+      const std::vector<int32_t>& axes,
+      const std::vector<int32_t>& starts,
+      const std::vector<int32_t>& ends,
+      const std::vector<int32_t>& steps,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
+  // Add flatten operation with input operand, start, end, output_name
+  NNAdapterOperand* AddFlattenOperation(
+      NNAdapterOperand* input_operand,
+      const int32_t start_axis,
+      const int32_t end_axis,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
+  // Unpack the fused activations
+  NNAdapterOperand* UnpackFusedActivations(
+      NNAdapterOperand* input_operand,
+      const std::string& act_type,
+      OpInfo* op,
+      Scope* scope,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
 
  private:
   // Add a operand from a NNAdapter type, only for internal use

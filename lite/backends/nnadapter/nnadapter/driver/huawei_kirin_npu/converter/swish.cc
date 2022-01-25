@@ -12,29 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/leaky_relu.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/operation/unary_activations.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace huawei_kirin_npu {
 
-int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
-  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSwish(Converter* converter, hal::Operation* operation) {
+  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
+  // output = input * sigmoid(input)
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto leaky_relu_op =
-      converter->AddOperator<ge::op::LeakyRelu>(output_operand);
-  leaky_relu_op->set_attr_negative_slope(alpha);
-  SET_INPUT(leaky_relu_op, x, input_operator);
-  MAP_OUTPUT(leaky_relu_op, y, output_operand);
+  auto sigmoid_op =
+      converter->AddOperator<hiai::op::Activation>(output_operand);
+  sigmoid_op->set_attr_mode(0);
+  SET_INPUT(sigmoid_op, x, input_operator);
+  auto sigmoid_operator = MAP_OUTPUT(sigmoid_op, y, output_operand);
+  auto eltwise_op = converter->AddOperator<hiai::op::Mul>(output_operand);
+  SET_INPUT(eltwise_op, x1, input_operator);
+  SET_INPUT(eltwise_op, x2, sigmoid_operator);
+  MAP_OUTPUT(eltwise_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace huawei_kirin_npu
 }  // namespace nnadapter

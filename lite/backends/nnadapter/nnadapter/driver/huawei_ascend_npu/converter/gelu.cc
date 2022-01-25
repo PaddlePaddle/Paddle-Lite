@@ -22,8 +22,7 @@ namespace huawei_ascend_npu {
 
 int ConvertGelu(Converter* converter, hal::Operation* operation) {
   GELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(approximate, false)
-      << "CANN only supports approximate=false.";
+  NNADAPTER_CHECK_EQ(approximate, false) << "Only supports approximate=false.";
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);

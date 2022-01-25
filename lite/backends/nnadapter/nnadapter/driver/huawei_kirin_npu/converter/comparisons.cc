@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/binary_logical_op.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/operation/comparisons.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace huawei_kirin_npu {
 
-int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
-  BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertComparisons(Converter* converter, hal::Operation* operation) {
+  COMPARISONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input0_operator = converter->GetMappedOperator(input0_operand);
@@ -33,19 +33,23 @@ int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
     input1_operator = converter->ConvertOperand(input1_operand);
   }
   switch (operation->type) {
-#define CONVERT_BINARY_LOGICAL_OP(type, class_name)                 \
-  case NNADAPTER_##type: {                                          \
-    auto binary_logical_op =                                        \
-        converter->AddOperator<ge::op::class_name>(output_operand); \
-    SET_INPUT(binary_logical_op, x1, input0_operator);              \
-    SET_INPUT(binary_logical_op, x2, input1_operator);              \
-    MAP_OUTPUT(binary_logical_op, y, output_operand);               \
+#define CONVERT_COMPARISON(type, class_name)                          \
+  case NNADAPTER_##type: {                                            \
+    auto comp_op =                                                    \
+        converter->AddOperator<hiai::op::class_name>(output_operand); \
+    SET_INPUT(comp_op, x1, input0_operator);                          \
+    SET_INPUT(comp_op, x2, input1_operator);                          \
+    MAP_OUTPUT(comp_op, y, output_operand);                           \
   } break;
-    CONVERT_BINARY_LOGICAL_OP(AND, LogicalAnd);
-    CONVERT_BINARY_LOGICAL_OP(OR, LogicalOr);
-#undef CONVERT_BINARY_LOGICAL_OP
+    CONVERT_COMPARISON(EQUAL, Equal);
+    CONVERT_COMPARISON(NOT_EQUAL, NotEqual);
+    CONVERT_COMPARISON(GREATER, Greater);
+    CONVERT_COMPARISON(GREATER_EQUAL, GreaterEqual);
+    CONVERT_COMPARISON(LESS, Less);
+    CONVERT_COMPARISON(LESS_EQUAL, LessEqual);
+#undef CONVERT_COMPARISON
     default:
-      NNADAPTER_LOG(FATAL) << "Unsupported binary logical operation type "
+      NNADAPTER_LOG(FATAL) << "Unsupported comparison operation type "
                            << OperationTypeToString(operation->type)
                            << " is found.";
       break;
@@ -53,5 +57,5 @@ int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace huawei_kirin_npu
 }  // namespace nnadapter
