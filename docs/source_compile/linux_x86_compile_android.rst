@@ -66,7 +66,7 @@ Linux x86 环境下编译适用于 Android 的库
      gcc g++ git make wget python unzip adb curl
 
    # 2. 安装 jdk
-   apt-get install -y default-jdk
+   apt-get install -y openjdk-8-jdk
 
    # 3. 安装 CMake，以下命令以 3.10.3 版本为例，其他版本步骤类似。
    wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
