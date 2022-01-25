@@ -200,6 +200,9 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
 lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
              DEPS kernels core)
 
+lite_cc_test(test_matmul_buffer_opencl SRCS matmul_buffer_compute_test.cc
+             DEPS kernels core)
+
 #lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
 #             DEPS kernels core)
 
