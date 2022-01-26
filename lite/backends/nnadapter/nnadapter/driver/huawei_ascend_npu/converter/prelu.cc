@@ -25,11 +25,11 @@ int ConvertPRelu(Converter* converter, hal::Operation* operation) {
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (input_operator == nullptr) {
+  if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto slope_operator = converter->GetMappedOperator(slope_operand);
-  if (slope_operator == nullptr) {
+  if (!slope_operator) {
     slope_operator = converter->ConvertOperand(slope_operand);
   }
   auto prelu_op = converter->AddOperator<ge::op::PRelu>(output_operand);

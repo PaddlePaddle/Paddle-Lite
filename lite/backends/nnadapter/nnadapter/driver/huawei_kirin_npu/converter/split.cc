@@ -39,6 +39,7 @@ int ConvertSplit(Converter* converter, hal::Operation* operation) {
   SET_INPUT(split_op, x, input_operator);
   SET_INPUT(split_op, size_splits, split_operator);
   SET_INPUT(split_op, split_dim, axis_operator);
+  split_op->create_dynamic_output_y(split_count);
   for (int i = 0; i < split_count; i++) {
     // Start from 1 for dynamic output in HiAI
     MAP_DYNAMIC_OUTPUT(split_op, y, i + 1, output_operands[i]);

@@ -287,7 +287,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 # creat model and prepare feed data
                 model, params = create_fake_model(prog_config)
                 if quant:
-                    model, params = create_quant_model(model, params)
+                    model, params = create_quant_model(
+                        model, params, self.cache_dir, prog_config)
 
                 feed_data = {}
                 for name, tensor_config in prog_config.inputs.items():

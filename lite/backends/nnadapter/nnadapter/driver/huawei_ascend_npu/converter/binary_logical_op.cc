@@ -42,6 +42,7 @@ int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
     MAP_OUTPUT(binary_logical_op, y, output_operand);               \
   } break;
     CONVERT_BINARY_LOGICAL_OP(AND, LogicalAnd);
+    CONVERT_BINARY_LOGICAL_OP(OR, LogicalOr);
 #undef CONVERT_BINARY_LOGICAL_OP
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported binary logical operation type "

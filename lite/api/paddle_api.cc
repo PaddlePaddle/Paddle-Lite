@@ -73,6 +73,15 @@ bool IsOpenCLBackendValid(bool check_fp16_valid) {
   return opencl_valid;
 }
 
+int GetOpenCLDeviceType() {
+#ifdef LITE_WITH_OPENCL
+  if (IsOpenCLBackendValid()) {
+    return paddle::lite::CLRuntime::Global()->GetGpuType();
+  }
+#endif
+  return -1;
+}
+
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
 // TODO(Superjomn) refine this by using another `const void* const_raw`;

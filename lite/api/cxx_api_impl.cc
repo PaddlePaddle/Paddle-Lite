@@ -159,15 +159,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
-#ifdef LITE_WITH_RKNPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
-      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
-#endif
-
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_num_threads();

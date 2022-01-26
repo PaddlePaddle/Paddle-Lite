@@ -20,8 +20,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void SequenceExpandAsCompute::Run() {
-  auto& param = Param<operators::SequenceExpandAsParam>();
+template <typename T, PrecisionType PType>
+void SequenceExpandAsCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::SequenceExpandAsParam>();
   auto* x = param.x;
   auto* y = param.y;
   auto* out = param.out;
@@ -30,8 +31,8 @@ void SequenceExpandAsCompute::Run() {
   CHECK_GT(y_lod[0].size(), 1u);
 
   auto dims = x->dims();
-  auto out_data = out->mutable_data<float>();
-  auto x_data = x->data<float>();
+  auto out_data = out->template mutable_data<T>();
+  auto x_data = x->template data<T>();
   int seq_size = x->numel() / dims[0];
 
   std::vector<uint64_t> out_lod;
@@ -43,7 +44,7 @@ void SequenceExpandAsCompute::Run() {
       continue;
     } else {
       for (int j = 0; j < repeat_num; j++) {
-        memcpy(out_data, x_data, sizeof(float) * seq_size);
+        memcpy(out_data, x_data, sizeof(T) * seq_size);
         out_data += seq_size;
       }
       x_data += seq_size;
@@ -61,13 +62,32 @@ void SequenceExpandAsCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(sequence_expand_as,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SequenceExpandAsCompute,
-                     def)
+using sequence_expand_as_float32 =
+    paddle::lite::kernels::arm::SequenceExpandAsCompute<float,
+                                                        PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand_as, kARM, kFloat, kNCHW, sequence_expand_as_float32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using sequence_expand_as_int32 =
+    paddle::lite::kernels::arm::SequenceExpandAsCompute<int32_t,
+                                                        PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand_as, kARM, kFloat, kNCHW, sequence_expand_as_int32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using sequence_expand_as_int64 =
+    paddle::lite::kernels::arm::SequenceExpandAsCompute<int64_t,
+                                                        PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand_as, kARM, kFloat, kNCHW, sequence_expand_as_int64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
