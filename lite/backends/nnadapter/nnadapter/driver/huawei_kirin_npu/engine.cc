@@ -169,10 +169,41 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
   NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
   for (uint32_t i = 0; i < input_count; i++) {
@@ -181,10 +212,10 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, input_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = &input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto type = input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     // TODO(hong19860320) Re-initialize the input tensors when the dimensions of
     // inputs are changed if dynamic shape is supported
     NNADAPTER_CHECK_EQ(length, input_tensors_[arg.index]->GetSize());

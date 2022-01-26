@@ -29,21 +29,14 @@ import argparse
 class TestSequenceExpandOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.Host,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        host_places = [
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=host_places, thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        dtype = program_config.inputs["x_data"].dtype
-        if "float32" != dtype:
-            print(
-                "The input data type defined in Paddle can be float32, int32, int64. But input data type only support float32 on Host target in Paddle Lite, while got data type",
-                dtype)
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -67,7 +60,7 @@ class TestSequenceExpandOp(AutoScanTest):
                 seq_offset.append(sum)
             return [seq_offset]
 
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+        input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
         max_len = draw(st.integers(min_value=1, max_value=5))
         ref_level_data = draw(st.integers(min_value=-1, max_value=4))
         seq_num = draw(st.integers(min_value=1, max_value=7))
@@ -90,10 +83,6 @@ class TestSequenceExpandOp(AutoScanTest):
                 ref_level_data < (np.array(lod_y)).shape[0]))
         assume((np.array(lod_x)).shape[0] == 1 and
                x_lod_len == (len(lod_y[ref_level_data])))
-
-        # ! The input data type defined in Paddle can be float32, int32, int64.
-        # There is only Host implementention which only support float32.
-        assume(input_type == "float32")
 
         sequence_expand_op = OpConfig(
             type="sequence_expand",

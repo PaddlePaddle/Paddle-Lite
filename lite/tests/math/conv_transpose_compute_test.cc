@@ -40,7 +40,7 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 
-#if defined(LITE_WITH_ARM) && !defined(ENABLE_ARM_FP16)
+#if defined(LITE_WITH_ARM)
 DEFINE_bool(basic_test, true, "do all tests");
 #else
 DEFINE_bool(basic_test, false, "do all tests");
@@ -541,8 +541,8 @@ TEST(TestConvRand, test_conv_transpose_rand) {
 #ifdef ENABLE_ARM_FP16
 TEST(TestConvRand, test_conv_transpose_fp16_rand) {
   if (FLAGS_basic_test) {
-    for (auto& cin : {1, 3, 8, 16}) {
-      for (auto& cout : {1, 5, 8, 16}) {
+    for (auto& cin : {1, 3, 8}) {
+      for (auto& cout : {1, 5, 8}) {
         for (auto& g : {1, 2}) {
           for (auto& kw : {1, 2, 3}) {
             for (auto& kh : {1, 2, 3}) {
@@ -559,7 +559,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cin, cout / g, kh, kw});
-                              for (auto& batch : {1, 2}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32, 28}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
@@ -573,7 +573,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
-                                  {1, 4},
+                                  {4},
                                   {FLAGS_power_mode});
                             }
                           }

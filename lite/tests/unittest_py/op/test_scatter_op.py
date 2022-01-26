@@ -38,20 +38,10 @@ class TestScatterOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        if target_type == TargetType.ARM:
-            index_dtype = program_config.inputs["index"].dtype
-            index_shape = program_config.inputs["index"].shape
-            if index_dtype != "int64":
-                print(
-                    'Index only support int64 on ARM impl, but got data type is {}, skip!'.
-                    format(index_dtype))
-                return False
-            if len(index_shape) == 2:
-                print(
-                    'Index only support 1-dim on ARM impl, but got dims is {}, skip!'.
-                    format(index_shape))
-                return False
+        # check config
+        index_shape = program_config.inputs["index"].shape
+        if len(index_shape) == 2:
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -141,7 +131,21 @@ class TestScatterOp(AutoScanTest):
         return self.get_predictor_configs(), ["scatter"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            index_dtype = program_config.inputs["index"].dtype
+            index_shape = program_config.inputs["index"].shape
+            if target_type == TargetType.ARM:
+                if index_dtype != "int64":
+                    print(
+                        'Index only support int64 on ARM impl, but got data type is {}, skip!'.
+                        format(index_dtype))
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

@@ -26,8 +26,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
       {TARGET(kNPU), TARGET(kXPU), TARGET(kNNAdapter)});
   bool create_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  create_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
+#if defined(LITE_WITH_XPU)
+  create_subgraph_op = false;  // Use XPU kernel directly
 #endif
   if (!create_subgraph_op) return nullptr;
   auto scope = inst_scope_.get();

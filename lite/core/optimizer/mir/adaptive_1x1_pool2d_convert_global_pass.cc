@@ -48,7 +48,7 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
   };
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
-    if (op_node->AsStmt().picked_kernel().op_type() == "pool2d") {
+    if (op_node->AsStmt().op_type() == "pool2d") {
       Node* pool = op_node;
       bool is_adaptive_1x1 = check_adaptive_1x1(pool);
       if (is_adaptive_1x1) {

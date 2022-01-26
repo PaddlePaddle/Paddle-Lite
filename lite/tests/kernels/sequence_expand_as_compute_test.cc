@@ -32,7 +32,8 @@ TEST(sequence_expand_as, retrive_op) {
 }
 
 TEST(sequence_expand_as, init) {
-  paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
+  paddle::lite::kernels::arm::SequenceExpandAsCompute<float, PRECISION(kFloat)>
+      sequence_expand_as;
   ASSERT_EQ(sequence_expand_as.precision(), PRECISION(kFloat));
   ASSERT_EQ(sequence_expand_as.target(), TARGET(kARM));
 }
@@ -58,7 +59,8 @@ TEST(sequence_expand_as, run_test) {
 
   std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
-  paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
+  paddle::lite::kernels::arm::SequenceExpandAsCompute<float, PRECISION(kFloat)>
+      sequence_expand_as;
 
   operators::SequenceExpandAsParam param;
 

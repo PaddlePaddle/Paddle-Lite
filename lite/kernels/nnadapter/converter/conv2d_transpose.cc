@@ -29,39 +29,119 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
           : std::vector<float>();
   auto input_operand =
       converter->AddInputOperand(scope, input_name, {}, input_scales);
-
+  auto input_type = converter->GetOperandType(input_operand);
   // Filter operand
   auto filter_name = op->Input("Filter").front();
   auto filter_scale_name = "Filter0_scale";
-  std::vector<float> filter_scales =
-      op->HasInputScale(filter_scale_name, true)
-          ? op->GetInputScale(filter_scale_name, true)
-          : std::vector<float>();
-  auto filter_operand =
-      converter->AddInputOperand(scope, filter_name, {}, filter_scales);
-
-  // Bias operand
-  NNAdapterOperand* bias_operand = nullptr;
-  std::vector<float> bias_scales(filter_scales.size());
-  if (!input_scales.empty()) {
+  auto filter_tensor = scope->FindMutableTensor(filter_name);
+  CHECK(filter_tensor->persistable());
+  std::vector<float> filter_scales;
+  if (op->HasInputScale(filter_scale_name, true)) {
+    filter_scales = op->GetInputScale(filter_scale_name, true);
+  }
+  auto filter_precison = filter_tensor->precision();
+  auto filter_dims = filter_tensor->dims();
+  int groups = op->GetAttr<int>("groups");
+  int output_channel_size = scope->FindTensor(filter_name)->dims()[1] * groups;
+  auto output_name = op->Output("Output").front();
+  auto output_scale_name = "Output0_scale";
+  std::vector<float> output_scales;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    output_scales = op->GetOutputScale(output_scale_name, true);
+  }
+  NNAdapterOperand* filter_operand = nullptr;
+  bool is_quant_mode = false;
+  if (filter_precison == PRECISION(kInt8)) {
+    CHECK(IsValidSymmQuantParams(filter_scales))
+        << "Missing the quant params '" << filter_scale_name
+        << "' for the input '" << filter_name << "'";
+    CHECK(IsValidSymmPerLayerQuantParams(input_scales))
+        << "Missing the quant params '" << input_scale_name
+        << "' for the input '" << input_name << "'";
+    CHECK(IsValidSymmPerLayerQuantParams(output_scales))
+        << "Missing the quant params '" << output_scale_name
+        << "' for the output '" << output_name << "'";
+    is_quant_mode = true;
+  }
+  std::vector<float> bias_scales;
+  if (is_quant_mode) {
+    CHECK(IsNNInt8SymmPerLayerQuantType(*input_type));
+    std::vector<float> quant_scales;
+    CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
+    CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
+    CHECK_EQ(filter_scales.size(), output_channel_size);
+    if (!IsValidSymmPerChannelQuantParams(filter_scales)) {
+      filter_scales = {filter_scales[0]};
+    }
+    filter_operand =
+        converter->AddConstantOperand(*filter_tensor, {}, false, filter_scales);
+    bias_scales.resize(filter_scales.size());
     for (size_t i = 0; i < filter_scales.size(); i++) {
       bias_scales[i] = input_scales[0] * filter_scales[i];
     }
+  } else {
+    CHECK(input_type->precision ==
+          ConvertPrecisionTypeToNNPrecisionCode(filter_precison));
+    filter_operand = converter->AddConstantOperand(*filter_tensor);
   }
+  // Bias operand
+  NNAdapterOperand* bias_operand = nullptr;
   if (HasInput(op, scope, "Bias")) {
     auto bias_name = op->Input("Bias").front();
-    bias_operand =
-        converter->AddInputOperand(scope, bias_name, {}, bias_scales);
+    bias_operand = converter->GetMappedOperand(bias_name);
+    if (!bias_operand) {
+      auto bias_tensor = scope->FindMutableTensor(bias_name);
+      CHECK(bias_tensor->persistable());
+      auto bias_precison = bias_tensor->precision();
+      auto bias_dims = bias_tensor->dims();
+      if (bias_dims.production() != output_channel_size) {
+        LOG(FATAL)
+            << "Only supports bias_dims.production() == output_channel_size !";
+        return UNSUPPORTED_FEATURE;
+      }
+      if (is_quant_mode) {
+        CHECK(bias_tensor->precision() == PRECISION(kFloat));
+        auto bias_data = bias_tensor->mutable_data<float>();
+        std::vector<int32_t> quantized_bias_data(output_channel_size, 0);
+        SymmQuantizeData(bias_data,
+                         output_channel_size,
+                         bias_scales,
+                         &quantized_bias_data[0]);
+        bias_operand = converter->AddConstantOperand(
+            quantized_bias_data, DDim({output_channel_size}), bias_scales);
+      } else {
+        CHECK(input_type->precision ==
+              ConvertPrecisionTypeToNNPrecisionCode(bias_precison));
+        bias_operand = converter->AddConstantOperand(
+            *bias_tensor, DDim({output_channel_size}));
+      }
+    } else {
+      auto bias_type = converter->GetOperandType(bias_operand);
+      // Check if we can use the bias_operand directly
+      if (is_quant_mode) {
+        CHECK(IsNNInt32SymmQuantType(*bias_type));
+        std::vector<float> quant_scales;
+        CHECK(GetNNSymmQuantParams(*bias_type, &quant_scales));
+        CHECK(IsSameSymmQuantParams(bias_scales, quant_scales));
+      } else {
+        CHECK(bias_type->precision == input_type->precision);
+      }
+    }
   } else {
-    // Dummy bias
-    int groups = op->GetAttr<int>("groups");
-    int output_channel_size =
-        scope->FindTensor(filter_name)->dims()[1] * groups;
-    std::vector<float> bias(output_channel_size, 0.f);
+    // Add dummy zero bias operand
+    // Use int32 as the data type of bias if it is a quantized type
+    std::vector<int8_t> zeros(
+        output_channel_size *
+            (is_quant_mode ? sizeof(int32_t)
+                           : GetNNOperandPrecisionDataLength(*input_type)),
+        0);
     bias_operand = converter->AddConstantOperand(
-        bias, DDim({output_channel_size}), bias_scales);
+        reinterpret_cast<void*>(zeros.data()),
+        DDim({output_channel_size}),
+        is_quant_mode ? NNADAPTER_INT32 : input_type->precision,
+        true,
+        bias_scales);
   }
-
   // Auto_pad operand
   std::string padding_algorithm =
       op->HasAttr("padding_algorithm")
@@ -69,7 +149,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
           : "";
   auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
       ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
-
   // Pads operand(optional)
   std::vector<int> paddings = op->GetAttr<std::vector<int>>("paddings");
   if (paddings.size() == 2UL) {
@@ -77,19 +156,14 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     paddings.insert(paddings.begin() + 2, paddings[2]);
   }
   auto pads_operand = converter->AddConstantOperand(paddings);
-
   // Strides operand
   std::vector<int> strides = op->GetAttr<std::vector<int>>("strides");
   auto strides_operand = converter->AddConstantOperand(strides);
-
   // Group operand
-  int groups = op->GetAttr<int>("groups");
   auto group_operand = converter->AddConstantOperand(groups);
-
   // Dilations operand
   std::vector<int> dilations = op->GetAttr<std::vector<int>>("dilations");
   auto dilations_operand = converter->AddConstantOperand(dilations);
-
   // Output_padding operand
   std::vector<int> output_padding =
       op->HasAttr("output_padding")
@@ -99,7 +173,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     output_padding = std::vector<int>(2, 0);
   }
   auto output_padding_operand = converter->AddConstantOperand(output_padding);
-
   // Output_shape operand
   NNAdapterOperand* output_shape_operand = nullptr;
   if (op->HasAttr("output_size")) {
@@ -108,7 +181,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
       output_shape_operand = converter->AddConstantOperand(output_size);
     }
   }
-
   // Fuse code operand
   bool with_act =
       op->HasAttr("with_act") ? op->GetAttr<bool>("with_act") : false;
@@ -123,21 +195,10 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
     act_type = "";
-  } else if (!act_type.empty()) {
-    LOG(FATAL) << "Unsupported activation type: " << act_type;
   }
-  LOG(INFO) << "--- with_act: " << with_act << ", act_type: " << act_type;
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
-
   // Output operand
-  auto output_name = op->Output("Output").front();
-  auto output_scale_name = "Output0_scale";
-  std::vector<float> output_scales =
-      op->HasOutputScale(output_scale_name, true)
-          ? op->GetOutputScale(output_scale_name, true)
-          : std::vector<float>();
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
-
   // Conv2d_transpose operation
   converter->AddOperation(NNADAPTER_CONV_2D_TRANSPOSE,
                           {input_operand,
@@ -152,6 +213,9 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
                            output_shape_operand,
                            fuse_code_operand},
                           {output_operand});
+  // Unpack the fused activations
+  converter->UnpackFusedActivations(
+      output_operand, act_type, op, scope, output_name, output_scales);
   return NO_ERROR;
 }
 

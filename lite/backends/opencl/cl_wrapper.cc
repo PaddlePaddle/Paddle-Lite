@@ -61,6 +61,7 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib64/egl/libGLES_mali.so",
     "/system/lib64/egl/libGLES_mali.so",
+    "/system/vendor/lib64/libPVROCL.so",
 #else
     // Qualcomm Adreno with Android
     "/system/vendor/lib/libOpenCL.so",

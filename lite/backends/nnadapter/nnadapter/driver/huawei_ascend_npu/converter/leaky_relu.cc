@@ -28,10 +28,11 @@ int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto act_op = converter->AddOperator<ge::op::LeakyRelu>(output_operand);
-  act_op->set_attr_negative_slope(alpha);
-  SET_INPUT(act_op, x, input_operator);
-  MAP_OUTPUT(act_op, y, output_operand);
+  auto leaky_relu_op =
+      converter->AddOperator<ge::op::LeakyRelu>(output_operand);
+  leaky_relu_op->set_attr_negative_slope(alpha);
+  SET_INPUT(leaky_relu_op, x, input_operator);
+  MAP_OUTPUT(leaky_relu_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

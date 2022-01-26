@@ -1,4 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 from functools import partial
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy as np
 
@@ -60,21 +60,9 @@ class TestSplitOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
-        x_shape = list(program_config.inputs["input_data"].shape)
-        out_shape = list(program_config.outputs)
-        axis = program_config.ops[0].attrs["axis"]
+        #check config
         if predictor_config.precision() == PrecisionType.INT64:
             if x_dtype != np.int64:
-                return False
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(x_shape) != 4 \
-                or len(out_shape) != 2 \
-                or x_dtype != np.float32 :
-                return False
-        if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) == 2 or axis == 0 or axis == 1:
-                return False
-            if x_dtype != np.float32:
                 return False
         return True
 
@@ -187,12 +175,30 @@ class TestSplitOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 if len(x_shape) != 4:
                     return True
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
+
+        def teller2(program_config, predictor_config):
+            x_dtype = program_config.inputs["input_data"].dtype
+            x_shape = list(program_config.inputs["input_data"].shape)
+            out_shape = list(program_config.outputs)
+            axis = program_config.ops[0].attrs["axis"]
+            num = program_config.ops[0].attrs["num"]
+            if predictor_config.target() == TargetType.OpenCL:
+                if num != 2 or x_dtype != np.float32:
+                    return True
+            if predictor_config.target() == TargetType.Metal:
+                if len(x_shape) == 2 or axis == 0 or axis == 1:
+                    return True
+                if x_dtype != np.float32:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
@@ -200,7 +206,7 @@ class TestSplitOp(AutoScanTest):
         max_examples = 50
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
-            max_examples = 500
+            max_examples = 100
         if target_str == "Metal":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 500

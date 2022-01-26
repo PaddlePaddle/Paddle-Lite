@@ -65,7 +65,7 @@ class LITE_API LightPredictor {
   void Run() {
     CheckInputValid();
     program_->Run();
-    ClearTensorArray(program_desc_);
+    if (bool_clear_tensor_) ClearTensorArray(program_desc_);
   }
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
@@ -143,6 +143,7 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
+  bool bool_clear_tensor_ = false;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {

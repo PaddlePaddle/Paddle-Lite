@@ -15,7 +15,7 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
             "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" \
             "test_paddle_api" "test_cxx_api" "test_gen_code" \
             "test_mobilenetv1_int8" "test_subgraph_pass" \
-            "test_transformer_with_mask_fp32_arm" \
+            "test_transformer_with_mask_fp32_arm" "test_mobilenet_v1_int8_per_layer_arm" \
             "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" \
             "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" \
             "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" \
@@ -31,7 +31,7 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 1024
+   ulimit -n 10240
 fi
 
 ####################################################################################################

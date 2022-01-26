@@ -6,7 +6,7 @@
 
 | 类别 | 类别细分 | 模型 | 支持平台 |
 |-|-|:-|:-|
-| CV | 分类 | [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, MediatekAPU, KunlunxinXPU, HuaweiAscendNPU |
+| CV | 分类 | [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, MediatekAPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX |
 | CV | 分类 | [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, KunlunxinXPU, HuaweiAscendNPU |
 | CV | 分类 | [MobileNetV3_large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_large_x1_0.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiAscendNPU |
 | CV | 分类 | [MobileNetV3_small](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_small_x1_0.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiAscendNPU |
@@ -19,8 +19,8 @@
 | CV | 分类 | HRNet_W18_C | ARM, X86 |
 | CV | 分类 | RegNetX_4GF | ARM, X86 |
 | CV | 分类 | Xception41 | ARM, X86 |
-| CV | 分类 | [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU |
-| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU |
+| CV | 分类 | [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX |
+| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX |
 | CV | 分类 | [ResNet101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz) | ARM, X86, HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU |
 | CV | 分类 | [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz) | ARM, X86, HuaweiAscendNPU |
 | CV | 分类 | [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz)| ARM, HuaweiKirinNPU, HuaweiAscendNPU |
@@ -32,7 +32,7 @@
 | CV | 分类 | VGG16 | ARM, X86, GPU(OPENCL), KunlunxinXPU, HuaweiAscendNPU |
 | CV | 分类 | VGG19 | ARM, X86, GPU(OPENCL,METAL), KunlunxinXPU, HuaweiAscendNPU|
 | CV | 分类 | GoogleNet | ARM, X86, KunlunxinXPU, HuaweiAscendNPU |
-| CV | 检测 | [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU* |
+| CV | 检测 | [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU*, VerisiliconTIMVX* |
 | CV | 检测 | [SSD-MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
 | CV | 检测 | [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz) | ARM, X86, HuaweiAscendNPU* |
 | CV | 检测 | [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz) | ARM, X86, HuaweiAscendNPU* |

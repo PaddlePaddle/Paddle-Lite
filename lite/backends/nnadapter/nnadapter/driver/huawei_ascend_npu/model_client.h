@@ -26,13 +26,20 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
+typedef enum {
+  DYNAMIC_SHAPE_MODE_NONE = -1,
+  DYNAMIC_SHAPE_MODE_BTACH_SIZE = 0,
+  DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH = 1,
+  DYNAMIC_SHAPE_MODE_N_DIMS = 2,
+} DynamicShapeMode;
+
 class AclModelClient {
  public:
   explicit AclModelClient(int device_id,
                           const std::string& profiling_file_path);
   ~AclModelClient();
 
-  bool LoadModel(const void* data, uint32_t size);
+  bool LoadModel(const void* data, size_t size);
   void UnloadModel();
   bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
                            std::vector<ge::TensorDesc>* output_tensor_descs);
@@ -41,7 +48,8 @@ class AclModelClient {
                hal::Argument* input_arguments,
                uint32_t output_count,
                std::vector<NNAdapterOperandType>* output_types,
-               hal::Argument* output_arguments);
+               hal::Argument* output_arguments,
+               DynamicShapeMode dynamic_shape_mode);
 
  private:
   void InitAclClientEnv(int device_id);

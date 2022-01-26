@@ -37,7 +37,7 @@ Linux x86 环境下编译适用于 Android 的库
      - arm64-v8a / armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/support_hardware.html>`_\ 章节。
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
+[1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
 
 准备编译环境
 ------------
@@ -242,3 +242,5 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_mediatek_apu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst

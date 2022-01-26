@@ -39,12 +39,9 @@ class TestPNormOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # error when pick kernel
+        # check config
         x_shape = list(program_config.inputs["input_data"].shape)
         if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
-            return False
-        # if True Paddle-lite run crash so omit it
-        if program_config.ops[0].attrs["asvector"]:
             return False
         return True
 
@@ -95,7 +92,15 @@ class TestPNormOp(AutoScanTest):
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
-        #pass
+
+        def _teller2(program_config, predictor_config):
+            if program_config.ops[0].attrs["asvector"]:
+                return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

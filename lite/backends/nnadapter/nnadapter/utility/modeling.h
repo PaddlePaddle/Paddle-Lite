@@ -143,8 +143,11 @@ bool InsertOperand(
     const std::vector<hal::Operation*> specified_affected_operations = {});
 // Check if it is a constant operand
 bool IsConstantOperand(hal::Operand* operand);
+// Check if it is a temporary shape operand
+bool IsTemporaryShapeOperand(hal::Operand* operand);
 bool IsModelInputOperand(hal::Operand* operand);
 bool IsModelOutputOperand(hal::Operand* operand);
+bool IsOperandWithDynamicShape(hal::Operand* operand);
 bool IsOperationWithAllInputConstantOperands(hal::Operation* operation);
 // Find the operations that consumes the operand
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,

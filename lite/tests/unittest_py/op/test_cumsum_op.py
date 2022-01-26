@@ -38,8 +38,6 @@ class TestCumsumOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if program_config.ops[0].attrs['reverse'] == True:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -78,15 +76,7 @@ class TestCumsumOp(AutoScanTest):
         return self.get_predictor_configs(), ["cumsum"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def reverse_attr_not_support_teller(program_config, predictor_config):
-            if program_config.ops[0].attrs['reverse'] == True:
-                return False
-            return True
-
-        self.add_ignore_check_case(
-            reverse_attr_not_support_teller,
-            IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Cumsum op current isn't support the attr['reverse'] == True!")
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

@@ -21,6 +21,7 @@ REGISTER_LITE_KERNEL(dropout,
                      paddle::lite::kernels::x86::DropoutCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

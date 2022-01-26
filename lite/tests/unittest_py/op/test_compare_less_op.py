@@ -53,11 +53,6 @@ class TestCompareLessOp(AutoScanTest):
         process_type = draw(
             st.sampled_from(["type_int64", "type_float", "type_int32"]))
 
-        ############### ToDo ####################
-        if op_type_str == "less_equal":
-            assume(process_type != "type_int32")
-        #########################################
-
         if axis == -1:
             in_shape_y = in_shape
         else:

@@ -80,6 +80,15 @@ void DensityPriorBoxCompute::Run() {
                                     is_clip,
                                     order,
                                     false);
+  if (param.flatten_to_2d) {
+    auto out_dims = param.boxes->dims();
+    int64_t sum = 1;
+    for (int i = 0; i < out_dims.size() - 1; i++) {
+      sum *= out_dims[i];
+    }
+    param.boxes->Resize({sum, 4});
+    param.variances->Resize({sum, 4});
+  }
 }
 
 }  // namespace host

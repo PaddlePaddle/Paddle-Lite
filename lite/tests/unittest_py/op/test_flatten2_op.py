@@ -46,6 +46,15 @@ class TestFlatten2Op(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -76,6 +85,10 @@ class TestFlatten2Op(AutoScanTest):
 
         axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
 
+        outputs = ["output_data", "xshape_data"]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
+
         flatten2_op = OpConfig(
             type="flatten2",
             inputs={"X": ["input_data"]},
@@ -94,18 +107,41 @@ class TestFlatten2Op(AutoScanTest):
                     high=10,
                     shape=in_shape))
             },
-            outputs=["output_data", "xshape_data"])
+            outputs=outputs)
 
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["flatten2"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+
+        return self.get_predictor_configs(), ["flatten2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["axis"]
+            if target_type == TargetType.Metal:
+                if len(in_shape) != 4 \
+                    or in_shape[0] != 1 \
+                    or axis != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        target_str = self.get_target()
+        max_examples = 100
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 3000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

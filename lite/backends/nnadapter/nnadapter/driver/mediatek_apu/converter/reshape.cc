@@ -29,7 +29,8 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
     input_index = converter->ConvertOperand(input_operand);
   }
   auto shape_index =
-      converter->AddInt32ConstantOperand(shape_data, shape_count);
+      converter->AddInt32ConstantOperand(output_operand->type.dimensions.data,
+                                         output_operand->type.dimensions.count);
   auto output_index = converter->ConvertOperand(output_operand);
   NNADAPTER_CHECK_EQ(
       converter->AddOperation(

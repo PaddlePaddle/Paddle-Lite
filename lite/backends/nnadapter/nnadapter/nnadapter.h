@@ -23,7 +23,7 @@
 #include <sys/cdefs.h>
 
 enum { NNADAPTER_VERSION = 1 };
-enum { NNADAPTER_UNKNOWN = -1 };
+enum { NNADAPTER_UNKNOWN = -65535 };
 
 /**
  * Result codes.
@@ -33,9 +33,10 @@ enum { NNADAPTER_UNKNOWN = -1 };
 typedef enum {
   NNADAPTER_NO_ERROR = 0,
   NNADAPTER_OUT_OF_MEMORY = 1,
-  NNADAPTER_INVALID_PARAMETER = 2,
-  NNADAPTER_DEVICE_NOT_FOUND = 3,
-  NNADAPTER_DEVICE_INTERNAL_ERROR = 4,
+  NNADAPTER_INVALID_DIMENSIONS = 2,
+  NNADAPTER_INVALID_PARAMETER = 3,
+  NNADAPTER_DEVICE_NOT_FOUND = 4,
+  NNADAPTER_DEVICE_INTERNAL_ERROR = 5,
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
@@ -1305,6 +1306,22 @@ typedef enum {
   NNADAPTER_NOT_EQUAL,
 
   /**
+   * Performs element-wise binary and logical operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula: output = input0 || input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_OR,
+
+  /**
    * Pad input by "pads", "mode", "constant_value"
    *
    * Inputs:
@@ -1921,6 +1938,22 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_WHERE,
+
+  /**
+   * Performs element-wise binary and logical operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula: output = input0 ^ input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_XOR,
 } NNAdapterOperationCode;
 
 /**
