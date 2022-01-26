@@ -27,7 +27,7 @@ bool GatherOp::CheckShape() const {
 }
 
 bool GatherOp::InferShapeImpl() const {
-  if (param_.Axis != nullptr || 1) {
+  if (param_.Axis != nullptr || param_.axis != -1) {
     int axis_index = param_.axis;
     if (param_.Axis != nullptr) {
       if (param_.Axis->precision() == PRECISION(kInt32)) {
