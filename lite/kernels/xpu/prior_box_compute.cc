@@ -76,13 +76,16 @@ void PriorBoxCompute::PrepareForRun() {
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   min_size_num = min_size.size();
 
-  CHECK_LE(max_size.size(), 8);
-  xpu_max_sizes_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
-  XPU_CALL(xpu_memcpy(xpu_max_sizes_guard_->addr_,
-                      max_size.data(),
-                      max_size.size() * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   max_size_num = max_size.size();
+  if (max_size_num > 0) {
+    CHECK_LE(max_size.size(), 8);
+    xpu_max_sizes_guard_ =
+        TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
+    XPU_CALL(xpu_memcpy(xpu_max_sizes_guard_->addr_,
+                        max_size.data(),
+                        max_size.size() * sizeof(float),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  }
 
   CHECK_EQ(variance.size(), 4);
   variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
@@ -125,7 +128,10 @@ void PriorBoxCompute::Run() {
   float* xpu_aspect_ratios =
       reinterpret_cast<float*>(xpu_aspect_ratios_guard_->addr_);
   float* xpu_min_sizes = reinterpret_cast<float*>(xpu_min_sizes_guard_->addr_);
-  float* xpu_max_sizes = reinterpret_cast<float*>(xpu_max_sizes_guard_->addr_);
+  float* xpu_max_sizes =
+      (max_size_num > 0)
+          ? (reinterpret_cast<float*>(xpu_max_sizes_guard_->addr_))
+          : nullptr;
 
   int r = xdnn::prior_box_gen(ctx.GetRawContext(),
                               param.boxes->mutable_data<float>(TARGET(kXPU)),
