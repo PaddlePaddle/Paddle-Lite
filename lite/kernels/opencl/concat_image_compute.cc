@@ -66,13 +66,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
-
-    std::vector<size_t> new_dims = {1, 1, 1, 1};
-    size_t offset = 4 - output_tensor_dims.size();
-    for (auto i = 0; i < output_tensor_dims.size(); ++i) {
-      new_dims[offset + i] = output_tensor_dims[i];
-    }
-    flag_ = offset + axis_;
+    auto new_dims = Broadcast2GpuShape(output_tensor_dims);
+    flag_ = 4 - output_tensor_dims.size() + axis_;
     switch (flag_) {
       case 0:
         width_ = new_dims[2];
@@ -170,8 +165,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     const auto& output_tensor_dims = concat_param_->output->dims();
-    int output_tensor_w = output_tensor_dims[output_tensor_dims.size() - 1];
-    int output_tensor_c = output_tensor_dims[1];
+    auto new_dim = Broadcast2GpuShape(output_tensor_dims);
+    int output_tensor_w = new_dim[3];
+    int output_tensor_c = new_dim[1];
     auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
     auto* output_image_p = MUTABLE_DATA_GPU(concat_param_->output,
                                             output_image_shape["width"],
@@ -264,7 +260,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     } else if (kernel_func_name_ == "concat2") {
       auto* input0_image_p = GET_DATA_GPU(inputs[0]);
       auto* input1_image_p = GET_DATA_GPU(inputs[1]);
-      int input0_axis_dims = inputs[0]->dims()[axis_];
+      int input0_axis_dims = Broadcast2GpuShape(inputs[0]->dims())[axis_];
       cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(1, *input1_image_p);
@@ -356,7 +352,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
-    } else if (kernel_func_name_ == "concat_mul_buffer") {  // inputs.size() > 4
+    } else if (kernel_func_name_ == "concat_mul_buffer") {
       // note: do image layout transform: image to buffer
       size_t inputs_num = inputs.size();
       std::vector<const cl::Image2D*> inputs_image_pointers(inputs_num);
@@ -403,7 +399,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       buf_to_img_kernel_->SetContext(std::move(buf_to_img_context));
 
       int cur_axis_start_idx = 0;
-      int total = output_tensor_dims[axis_] * post_size_;
+      auto new_dims = Broadcast2GpuShape(output_tensor_dims);
+      int total = new_dims[axis_] * post_size_;
       for (size_t i = 0; i < inputs_num; ++i) {
         auto* x_buf = outputs_buffer_pointers[i];
         int axis_dim_size = inputs[i]->dims()[axis_];

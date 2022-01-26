@@ -58,16 +58,78 @@ limitations under the License. */
 // axis = 1
 CONCAT2(2Input, Axis1)
 
+__kernel void Concat2InputAxis1Unalign(__read_only image2d_t input0,
+                                       __read_only image2d_t input1,
+                                       __write_only image2d_t output,
+                                       __private const int in0_dims_axis,
+                                       __private const int out_dims_last) {
+  const int channel_blk_idx = get_global_id(0);
+  const int width_idx = get_global_id(1);
+  const int hb_idx = get_global_id(2);
+  const int c = channel_blk_idx * 4;
+
+  // write all input0 data to output directly
+  if (c < in0_dims_axis) {
+    const int2 in_pos =
+        (int2)(channel_blk_idx * out_dims_last + width_idx, hb_idx);
+    const CL_DTYPE4 in_data =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, in_pos);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, in_data);
+  }
+
+  // deal with the gap
+  int channel_offset = in0_dims_axis % 4;
+  if (channel_blk_idx ==
+      in0_dims_axis / 4) {  // only the last channel_blk of input0 hits this
+    if (channel_offset != 0) {
+      CL_DTYPE4 out0_last_val;
+      if (channel_offset == 1) {
+        out0_last_val = (CL_DTYPE4)(in_data.x, 0, 0, 0);
+      } else if (channel_offset == 2) {
+        out0_last_val = (CL_DTYPE4)(in_data.x, in_data.y, 0, 0);
+      } else if (channel_offset == 3) {
+        out0_last_val = (CL_DTYPE4)(in_data.x, in_data.y, in_data.z, 0);
+      }
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, in_pos, out0_last_val);
+    }
+  }
+
+  // deal with output1
+  if (c + 4 >= in0_dims_axis) {  // only theads for output1 hit this
+    const int2 out_pos = (int2)(
+        (channel_blk_idx - out0_dims_axis / 4) * in_dims_last + width_idx,
+        hb_idx);
+    if (channel_offset == 0) {  // write all data to output1 directly
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
+    } else {
+      CL_DTYPE4 combined_val;
+      CL_DTYPE4 latter =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        input,
+                        SAMPLER,
+                        (int2)(in_pos.x + in_dims_last, in_pos.y));
+      if (channel_offset == 1) {
+        combined_val = (CL_DTYPE4)(in_data.y, in_data.z, in_data.w, latter.x);
+      } else if (channel_offset == 2) {
+        combined_val = (CL_DTYPE4)(in_data.z, in_data.w, latter.x, latter.y);
+      } else if (channel_offset == 3) {
+        combined_val = (CL_DTYPE4)(in_data.w, latter.x, latter.y, latter.z);
+      }
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, combined_val);
+    }
+  }
+}
+
 __kernel void concat2(__read_only image2d_t input0,
                       __read_only image2d_t input1,
                       __write_only image2d_t output,
                       int flag,
-                      int C_0,
-                      int out_C,
-                      int out_W,
+                      int C_0,    // input0_axis_dims
+                      int out_C,  // output_tensor_c
+                      int out_W,  // output_tensor_w
                       int width) {
-  const int out_w = get_global_id(0);   // image_width cxw/4
-  const int out_c = get_global_id(1);   // image_width cxw/4
+  const int out_w = get_global_id(0);   // image_width w
+  const int out_c = get_global_id(1);   // image_width (c+3)/4
   const int out_nh = get_global_id(2);  // image_height nxh
 
   if (flag == 1) {  // by channel
