@@ -344,12 +344,12 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_fp32.Launch();
           t0.Stop();
         }
-        // LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
-        //          << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
-        //          << ", min time: " << t0.LapTimes().Min() << " ms"
-        //          << ", total GOPS: " << 1e-9 * gops
-        //          << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-        //          << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+        LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
+                  << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
+                  << ", min time: " << t0.LapTimes().Min() << " ms"
+                  << ", total GOPS: " << 1e-9 * gops
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         // compute int8 output
         t0.Reset();
@@ -358,12 +358,12 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_int8.Launch();
           t0.Stop();
         }
-        // LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
-        //          << ",running time, avg: " << t0.LapTimes().Avg()
-        //          << ", min time: " << t0.LapTimes().Min()
-        //          << ", total GOPS: " << 1e-9 * gops
-        //          << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-        //          << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+        LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
+                  << ", total GOPS: " << 1e-9 * gops
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
         /// compare result fp32 output
         if (FLAGS_check_result) {
@@ -371,8 +371,8 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           double max_diff = 0;
           tensor_cmp_host(
               tout_basic_fp32, *param_fp32_out.output, max_ratio, max_diff);
-          // LOG(INFO) << "FP32 compare result, max diff: " << max_diff
-          //          << ", max ratio: " << max_ratio;
+          LOG(INFO) << "FP32 compare result, max diff: " << max_diff
+                    << ", max ratio: " << max_ratio;
           if (std::abs(max_ratio) > 1e-5f) {
             if (max_diff > 5e-5f) {
               LOG(WARNING) << "basic result";
@@ -458,15 +458,14 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
             }
           }
         }
-        // LOG(INFO) << "test int8 conv: input: " << dim_in
-        //          << ", output: " << dim_out << ", weight dim: " << weight_dim
-        //          << ", pad: " << pads[0] << ", " << pads[1] << ", " <<
-        //          pads[2]
-        //          << ", " << pads[3] << ", stride: " << strides[0] << ", "
-        //          << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
-        //          << ", bias: " << (flag_bias ? "true" : "false")
-        //          << ", act: " << flag_act << ", threads: " << th
-        //          << ", power_mode: " << cls << " successed!!\n";
+        LOG(INFO) << "test int8 conv: input: " << dim_in
+                  << ", output: " << dim_out << ", weight dim: " << weight_dim
+                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
+                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
+                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", bias: " << (flag_bias ? "true" : "false")
+                  << ", act: " << flag_act << ", threads: " << th
+                  << ", power_mode: " << cls << " successed!!\n";
       }
     }
   }
