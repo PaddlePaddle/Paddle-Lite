@@ -56,10 +56,11 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        fill_constant_shape = program_config.ops[1].attrs["shape"]
-        input_shape = list(program_config.inputs["input_data"].shape)
-        if len(fill_constant_shape) > 4 or len(input_shape) > 4:
-            return False
+        if predictor_config.target() == TargetType.OpenCL:
+            fill_constant_shape = program_config.ops[1].attrs["shape"]
+            input_shape = list(program_config.inputs["input_data"].shape)
+            if len(fill_constant_shape) > 4 or len(input_shape) > 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
