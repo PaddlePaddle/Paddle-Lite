@@ -367,7 +367,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {33, 1, 128, 3, 17, 56}) {
+                      for (auto& h : {33, 1, 28, 3, 17, 56}) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
@@ -399,7 +399,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
 }
 #endif  /// conv3x3s1
 
-#if 1  /// conv3x3s2
+#if 0   /// conv3x3s2
 TEST(TestConv3x3s2, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
@@ -413,7 +413,7 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {32, 3, 128, 7, 56, 15}) {
+                      for (auto& h : {32, 3, 28, 7, 56, 15}) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
@@ -444,7 +444,7 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
 }
 #endif  /// conv3x3s2
 
-#if 1  /// random param conv
+#if 0   /// random param conv
 TEST(TestConvRand, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
