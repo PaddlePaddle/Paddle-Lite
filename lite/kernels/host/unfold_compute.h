@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,22 @@
 #pragma once
 #include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/merge_lod_tensor_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class MergeLodTensorCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class UnfoldCompute : public KernelLite<TARGET(kHost), PType> {
  public:
-  using param_t = operators::MergeLodTensorParam;
-
   void Run() override;
 
-  virtual ~MergeLodTensorCompute() = default;
+  virtual ~UnfoldCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

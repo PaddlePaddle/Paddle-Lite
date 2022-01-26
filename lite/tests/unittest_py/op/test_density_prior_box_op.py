@@ -124,14 +124,15 @@ class TestDensityPriorBoxOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def flatten2d_attr_not_support_teller(program_config,
                                               predictor_config):
-            if program_config.ops[0].attrs['flatten_to_2d'] == True:
-                return True
+            if predictor_config.target() == TargetType.X86 and \
+               program_config.ops[0].attrs['flatten_to_2d'] == True:
+                return True  # output shape is not equal on x86
             return False
 
         self.add_ignore_check_case(
             flatten2d_attr_not_support_teller,
             IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The density_prior_box op doesn't support flatten2d attr in lite.")
+            "The density_prior_box op doesn't support flatten2d attr on x86.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

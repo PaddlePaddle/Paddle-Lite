@@ -37,7 +37,7 @@ int ConvertUnaryLogicalOp(Converter* converter, hal::Operation* operation) {
     MAP_OUTPUT(unary_logical_op, y, output_operand);                \
   } break;
     CONVERT_UNARY_LOGICAL_OP(NOT, LogicalNot);
-#undef CONVERT_unary_LOGICAL_OP
+#undef CONVERT_UNARY_LOGICAL_OP
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported unary logical operation type "
                            << OperationTypeToString(operation->type)

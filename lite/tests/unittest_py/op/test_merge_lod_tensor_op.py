@@ -30,12 +30,11 @@ import hypothesis.strategies as st
 class TestMergeLodTensorOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        #crash bugs will be fixed in the future
-        #self.enable_testing_on_place(
-        #    TargetType.ARM,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -44,43 +43,47 @@ class TestMergeLodTensorOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         n = draw(st.integers(min_value=1, max_value=32))
-        p = draw(st.integers(min_value=1, max_value=32))
-        q = draw(st.integers(min_value=1, max_value=32))
 
         def generate_input_data_in_shape(*args, **kwargs):
-            return np.arange(n).reshape(n, 1).astype('int32')
+            return np.random.random([n, 1]).astype('float32')
 
         def generate_mask_data_in_shape(*args, **kwargs):
-            return np.expand_dims(np.random.rand(n).astype('bool'), axis=1)
+            return np.expand_dims(
+                np.random.randint(
+                    low=0, high=1, size=[n]).astype('int32'),
+                axis=1)
 
         def generate_in_true_data_in_shape(*args, **kwargs):
-            return np.expand_dims(np.random.rand(p).astype('int32'), axis=1)
+            return np.expand_dims(np.random.rand(n).astype('float32'), axis=1)
 
         def generate_in_false_data_in_shape(*args, **kwargs):
-            return np.expand_dims(np.random.rand(q).astype('int32'), axis=1)
+            return np.expand_dims(np.random.rand(n).astype('float32'), axis=1)
 
-        use_merge_lod_infer = draw(st.booleans())
+        cast_x = OpConfig(
+            type="cast",
+            inputs={"X": ["input_data_mask"], },
+            outputs={"Out": ["cast_data_mask"], },
+            attrs={"in_dtype": int(2),
+                   "out_dtype": int(0)})
+        cast_x.outputs_dtype = {"cast_data_mask": np.bool_}
         match_matrix_tensor_op = OpConfig(
             type="merge_lod_tensor",
             inputs={
                 "X": ["input_data_x"],
-                "Mask": ["Mask"],
+                "Mask": ["cast_data_mask"],
                 "InTrue": ["InTrue"],
                 "InFalse": ["InFalse"]
             },
             outputs={"Out": ["output_data"]},
-            attrs={
-                "level": 0,
-                "use_merge_lod_infer": ["use_merge_lod_infer"]
-            })
+            attrs={"level": 0})
         program_config = ProgramConfig(
-            ops=[match_matrix_tensor_op],
+            ops=[cast_x, match_matrix_tensor_op],
             weights={},
             inputs={
                 "input_data_x":
-                TensorConfig(data_gen=partial(generate_input_data_in_shape)),
-                "Mask":
-                TensorConfig(data_gen=partial(generate_mask_data_in_shape)),
+                TensorConfig(data_gen=generate_input_data_in_shape),
+                "input_data_mask":
+                TensorConfig(data_gen=generate_mask_data_in_shape),
                 "InTrue":
                 TensorConfig(data_gen=generate_in_true_data_in_shape),
                 "InFalse":

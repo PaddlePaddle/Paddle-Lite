@@ -191,12 +191,12 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
     std::vector<std::string> input_args, output_args;
     switch (operation->type) {
       case NNADAPTER_ADD:
-      case NNADAPTER_SUB:
-      case NNADAPTER_MUL:
       case NNADAPTER_DIV:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
+      case NNADAPTER_MUL:
       case NNADAPTER_POW:
+      case NNADAPTER_SUB:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
@@ -291,17 +291,17 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
         break;
+      case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
+      case NNADAPTER_FLOOR:
+      case NNADAPTER_LOG:
+      case NNADAPTER_NOT:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
-      case NNADAPTER_TANH:
-      case NNADAPTER_LOG:
-      case NNADAPTER_ABS:
-      case NNADAPTER_EXP:
-      case NNADAPTER_SWISH:
-      case NNADAPTER_FLOOR:
       case NNADAPTER_SQUARE:
-      case NNADAPTER_NOT:
+      case NNADAPTER_SWISH:
+      case NNADAPTER_TANH:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -456,13 +456,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "approximate"};
         output_args = {"output"};
         break;
+      case NNADAPTER_AND:
       case NNADAPTER_EQUAL:
-      case NNADAPTER_NOT_EQUAL:
       case NNADAPTER_GREATER:
       case NNADAPTER_GREATER_EQUAL:
       case NNADAPTER_LESS:
       case NNADAPTER_LESS_EQUAL:
-      case NNADAPTER_AND:
+      case NNADAPTER_NOT_EQUAL:
+      case NNADAPTER_OR:
+      case NNADAPTER_XOR:
         input_args = {"input0", "input1"};
         output_args = {"output"};
         break;
