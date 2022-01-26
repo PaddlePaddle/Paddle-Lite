@@ -162,15 +162,19 @@ REGISTER_LITE_KERNEL(unique_with_counts,
                      paddle::lite::kernels::host::UniqueWithCountsCompute,
                      def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .BindOutput("Index",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
     .BindOutput("Count",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
     .Finalize();
