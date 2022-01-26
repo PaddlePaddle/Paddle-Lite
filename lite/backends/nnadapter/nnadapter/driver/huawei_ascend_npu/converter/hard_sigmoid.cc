@@ -28,11 +28,12 @@ int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto act_op = converter->AddOperator<ge::op::HardSigmoid>(output_operand);
-  act_op->set_attr_alpha(alpha);
-  act_op->set_attr_beta(beta);
-  SET_INPUT(act_op, input_x, input_operator);
-  MAP_OUTPUT(act_op, output_y, output_operand);
+  auto hard_sigmoid_op =
+      converter->AddOperator<ge::op::HardSigmoid>(output_operand);
+  hard_sigmoid_op->set_attr_alpha(alpha);
+  hard_sigmoid_op->set_attr_beta(beta);
+  SET_INPUT(hard_sigmoid_op, input_x, input_operator);
+  MAP_OUTPUT(hard_sigmoid_op, output_y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

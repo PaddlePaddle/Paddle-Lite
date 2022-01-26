@@ -137,7 +137,10 @@
 请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
 
 ## 晶晨 NPU 的性能数据
-请参考 [Paddle Lite 使用晶晨NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
+请参考 [Paddle Lite 使用晶晨 NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
+
+## 芯原 TIM-VX 的性能数据
+请参考 [Paddle Lite 使用芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)的最新性能数据
 
 ## 联发科 APU 的性能数据
 请参考 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)的最新性能数据

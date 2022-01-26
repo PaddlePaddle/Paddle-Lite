@@ -353,10 +353,13 @@ NNAdapterOperand* Converter::AddShapeOperation(
 NNAdapterOperand* Converter::AddUnsqueezeOperation(
     NNAdapterOperand* input_operand,
     const std::vector<int32_t>& axes,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   auto axes_operand = AddConstantOperand(axes);
   // Copy scales from input in PrepareUnsqueeze
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(
       NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
   return output_operand;
@@ -365,13 +368,16 @@ NNAdapterOperand* Converter::AddUnsqueezeOperation(
 NNAdapterOperand* Converter::AddSqueezeOperation(
     NNAdapterOperand* input_operand,
     const std::vector<int32_t>& axes,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   NNAdapterOperand* axes_operand = nullptr;
   if (!axes.empty()) {
     axes_operand = AddConstantOperand(axes);
   }
   // Copy scales from input in PrepareSqueeze
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(
       NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
   return output_operand;
@@ -383,12 +389,15 @@ NNAdapterOperand* Converter::AddSliceOperation(
     const std::vector<int32_t>& starts,
     const std::vector<int32_t>& ends,
     const std::vector<int32_t>& steps,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   auto axes_operand = AddConstantOperand(axes);
   auto starts_operand = AddConstantOperand(starts);
   auto ends_operand = AddConstantOperand(ends);
   auto steps_operand = AddConstantOperand(steps);
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(NNADAPTER_SLICE,
                {input_operand,
                 axes_operand,
@@ -403,17 +412,76 @@ NNAdapterOperand* Converter::AddFlattenOperation(
     NNAdapterOperand* input_operand,
     const int32_t start_axis,
     const int32_t end_axis,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   if (start_axis == end_axis) {
     return input_operand;
   }
   auto start_axis_operand =
       AddConstantOperand(static_cast<int32_t>(start_axis));
   auto end_axis_operand = AddConstantOperand(static_cast<int32_t>(end_axis));
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(NNADAPTER_FLATTEN,
                {input_operand, start_axis_operand, end_axis_operand},
                {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::UnpackFusedActivations(
+    NNAdapterOperand* input_operand,
+    const std::string& act_type,
+    OpInfo* op,
+    Scope* scope,
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
+  CHECK(input_operand);
+  auto output_operand = input_operand;
+  if (act_type.empty()) return output_operand;
+  output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
+  if (act_type == "leaky_relu") {
+    auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+    auto alpha_operand = AddConstantOperand(alpha);
+    AddOperation(
+        NNADAPTER_LEAKY_RELU, {input_operand, alpha_operand}, {output_operand});
+  } else if (act_type == "hard_swish") {
+    auto threshold = op->GetAttr<float>("hard_swish_threshold");
+    auto scale = op->GetAttr<float>("hard_swish_scale");
+    auto offset = op->GetAttr<float>("hard_swish_offset");
+    float mul_factor = threshold / scale;
+    // Alpha operand
+    auto alpha_operand = AddConstantOperand(1.0f / threshold);
+    // Beta operand
+    auto beta_operand = AddConstantOperand(offset / threshold);
+    AddOperation(NNADAPTER_HARD_SWISH,
+                 {input_operand, alpha_operand, beta_operand},
+                 {output_operand});
+    // Add MUL operation if mul_factor != 1.0
+    if (fabs(mul_factor - 1.0f) >= 1e-5f) {
+      auto mul_factor_operand = AddConstantOperand(mul_factor);
+      auto fuse_code_operand =
+          AddConstantOperand(static_cast<int32_t>(NNADAPTER_FUSED_NONE));
+      auto mul_output_operand = AddOutputOperand(
+          output_name, output_quant_scales, output_quant_channel_dim);
+      AddOperation(NNADAPTER_MUL,
+                   {output_operand, mul_factor_operand, fuse_code_operand},
+                   {mul_output_operand});
+      output_operand = mul_output_operand;
+    }
+  } else if (act_type == "sigmoid") {
+    AddOperation(NNADAPTER_SIGMOID, {input_operand}, {output_operand});
+  } else if (act_type == "tanh") {
+    AddOperation(NNADAPTER_TANH, {input_operand}, {output_operand});
+  } else if (act_type == "log") {
+    AddOperation(NNADAPTER_LOG, {input_operand}, {output_operand});
+  } else if (act_type == "abs") {
+    AddOperation(NNADAPTER_ABS, {input_operand}, {output_operand});
+  } else {
+    LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
+  }
   return output_operand;
 }
 

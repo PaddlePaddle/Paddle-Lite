@@ -862,6 +862,7 @@ struct PriorBoxParam : ParamBase {
   float step_h{0.f};
   float offset{0.5f};
   int prior_num{0};
+  bool flatten_to_2d{false};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
   bool min_max_aspect_ratios_order{false};

@@ -46,6 +46,9 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
     CONVERT_ELEMENTWISE(SUB, Sub);
     CONVERT_ELEMENTWISE(MUL, Mul);
     CONVERT_ELEMENTWISE(DIV, RealDiv);
+    CONVERT_ELEMENTWISE(MAX, Maximum);
+    CONVERT_ELEMENTWISE(MIN, Minimum);
+    CONVERT_ELEMENTWISE(POW, Pow);
 #undef CONVERT_ELEMENTWISE
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "

@@ -38,32 +38,42 @@ void SequencePoolCompute<Ptype, Dtype>::Run() {
   Dtype* dout = output->template mutable_data<Dtype>();
   int64_t* max_index = param.MaxIndex->template mutable_data<int64_t>();
   const auto pool_type = param.pool_type;
-  const auto lod = param.X->lod()[0];
+  const auto lod = param.X->lod()[param.X->lod().size() - 1];
+  const auto pad_value = param.pad_value;
 
   int64_t width = param.X->numel() / param.X->dims()[0];
 
   if (pool_type == "SUM") {
-    lite::arm::math::seq_pool_sum<Dtype>(din, dout, lod, width);
+    lite::arm::math::seq_pool_sum<Dtype>(din, dout, lod, width, pad_value);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average<Dtype>(din, dout, lod, width);
+    lite::arm::math::seq_pool_average<Dtype>(din, dout, lod, width, pad_value);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt<Dtype>(din, dout, lod, width);
+    lite::arm::math::seq_pool_sqrt<Dtype>(din, dout, lod, width, pad_value);
   } else if (pool_type == "MAX") {
-    lite::arm::math::seq_pool_max<Dtype>(din, dout, max_index, lod, width);
+    lite::arm::math::seq_pool_max<Dtype>(
+        din, dout, max_index, lod, width, pad_value);
   } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min<Dtype>(din, dout, max_index, lod, width);
+    lite::arm::math::seq_pool_min<Dtype>(
+        din, dout, max_index, lod, width, pad_value);
   } else if (pool_type == "FIRST") {
-    lite::arm::math::seq_pool_first<Dtype>(din, dout, lod, width);
+    lite::arm::math::seq_pool_first<Dtype>(din, dout, lod, width, pad_value);
   } else if (pool_type == "LAST") {
-    lite::arm::math::seq_pool_last<Dtype>(din, dout, lod, width);
+    lite::arm::math::seq_pool_last<Dtype>(din, dout, lod, width, pad_value);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type" << pool_type;
   }
   int batch_size = lod.size() - 1;
-  std::vector<uint64_t> offset_new(static_cast<uint64_t>(batch_size + 1));
-  for (int i = 0; i <= batch_size; i++) {
-    offset_new[i] = i;
+  std::vector<uint64_t> offset_new;
+  if (param.X->lod().size() == 2) {
+    offset_new.resize(param.X->lod()[0].size());
+    offset_new = param.X->lod()[0];
+  } else {
+    offset_new.resize(batch_size + 1);
+    for (int i = 0; i <= batch_size; i++) {
+      offset_new[i] = i;
+    }
   }
+
   output->mutable_lod()->clear();
   output->mutable_lod()->push_back(offset_new);
 }
