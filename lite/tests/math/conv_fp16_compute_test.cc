@@ -501,19 +501,21 @@ TEST(TestConvRand, test_conv_rand) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
                               }
-                              const float leakey_relu_scale = 1.0f;
-                              test_conv_fp16(
-                                  dims,
-                                  weights_dim,
-                                  g,
-                                  {stride, stride},
-                                  {pad_top, pad_bottom, pad_left, pad_right},
-                                  {dila, dila},
-                                  flag_bias,
-                                  flag_act,
-                                  {4},
-                                  {FLAGS_power_mode},
-                                  leakey_relu_scale);
+                              if (dims.size() != 0) {
+                                const float leakey_relu_scale = 1.0f;
+                                test_conv_fp16(
+                                    dims,
+                                    weights_dim,
+                                    g,
+                                    {stride, stride},
+                                    {pad_top, pad_bottom, pad_left, pad_right},
+                                    {dila, dila},
+                                    flag_bias,
+                                    flag_act,
+                                    {4},
+                                    {FLAGS_power_mode},
+                                    leakey_relu_scale);
+                              }
                             }
                           }
                         }

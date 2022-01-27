@@ -620,18 +620,20 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
-                    test_conv_int8(dims,
-                                   weights_dim,
-                                   1,
-                                   {1, 1},
-                                   {pad_top, pad_bottom, pad_left, pad_right},
-                                   {1, 1},
-                                   flag_bias,
-                                   flag_act,
-                                   {4},
-                                   {FLAGS_power_mode},
-                                   FLAGS_clipped_coef,
-                                   FLAGS_leakey_relu_alpha);
+                    if (dims.size() == 0) {
+                      test_conv_int8(dims,
+                                     weights_dim,
+                                     1,
+                                     {1, 1},
+                                     {pad_top, pad_bottom, pad_left, pad_right},
+                                     {1, 1},
+                                     flag_bias,
+                                     flag_act,
+                                     {4},
+                                     {FLAGS_power_mode},
+                                     FLAGS_clipped_coef,
+                                     FLAGS_leakey_relu_alpha);
+                    }
                   }
                 }
               }

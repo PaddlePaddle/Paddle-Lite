@@ -353,7 +353,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 0   /// conv3x3s1
+#if 1  /// conv3x3s1
 TEST(TestConv3x3s1, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 8}) {
@@ -374,19 +374,20 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
-                        const float leakey_relu_scale = 0.88;
-                        test_conv_fp32(
-                            dims,
-                            weights_dim,
-                            1,
-                            {1, 1},
-                            {pad_top, pad_bottom, pad_left, pad_right},
-                            {1, 1},
-                            flag_bias,
-                            flag_act,
-                            {4},
-                            {FLAGS_power_mode},
-                            leakey_relu_scale);
+                    if (dims.size() != 0) {
+                      const float leakey_relu_scale = 0.88;
+                      test_conv_fp32(dims,
+                                     weights_dim,
+                                     1,
+                                     {1, 1},
+                                     {pad_top, pad_bottom, pad_left, pad_right},
+                                     {1, 1},
+                                     flag_bias,
+                                     flag_act,
+                                     {4},
+                                     {FLAGS_power_mode},
+                                     leakey_relu_scale);
+                    }
                   }
                 }
               }
@@ -399,7 +400,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
 }
 #endif  /// conv3x3s1
 
-#if 0   /// conv3x3s2
+#if 1  /// conv3x3s2
 TEST(TestConv3x3s2, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
@@ -420,18 +421,20 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
-                    const float leakey_relu_scale = 8.88;
-                    test_conv_fp32(dims,
-                                   weights_dim,
-                                   1,
-                                   {2, 2},
-                                   {pad_top, pad_bottom, pad_left, pad_right},
-                                   {1, 1},
-                                   flag_bias,
-                                   flag_act,
-                                   {4},
-                                   {FLAGS_power_mode},
-                                   leakey_relu_scale);
+                    if (dims.size() != 0) {
+                      const float leakey_relu_scale = 8.88;
+                      test_conv_fp32(dims,
+                                     weights_dim,
+                                     1,
+                                     {2, 2},
+                                     {pad_top, pad_bottom, pad_left, pad_right},
+                                     {1, 1},
+                                     flag_bias,
+                                     flag_act,
+                                     {4},
+                                     {FLAGS_power_mode},
+                                     leakey_relu_scale);
+                    }
                   }
                 }
               }
@@ -444,7 +447,7 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
 }
 #endif  /// conv3x3s2
 
-#if 0   /// random param conv
+#if 1  /// random param conv
 TEST(TestConvRand, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
@@ -480,19 +483,21 @@ TEST(TestConvRand, test_conv_rand) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
                               }
-                              const float leakey_relu_scale = 8.88;
-                              test_conv_fp32(
-                                  dims,
-                                  weights_dim,
-                                  g,
-                                  {stride, stride},
-                                  {pad_top, pad_bottom, pad_left, pad_right},
-                                  {dila, dila},
-                                  flag_bias,
-                                  flag_act,
-                                  {4},
-                                  {FLAGS_power_mode},
-                                  leakey_relu_scale);
+                              if (dims.size() != 0) {
+                                const float leakey_relu_scale = 8.88;
+                                test_conv_fp32(
+                                    dims,
+                                    weights_dim,
+                                    g,
+                                    {stride, stride},
+                                    {pad_top, pad_bottom, pad_left, pad_right},
+                                    {dila, dila},
+                                    flag_bias,
+                                    flag_act,
+                                    {4},
+                                    {FLAGS_power_mode},
+                                    leakey_relu_scale);
+                              }
                             }
                           }
                         }
