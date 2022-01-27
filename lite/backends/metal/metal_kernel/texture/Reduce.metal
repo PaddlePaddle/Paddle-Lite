@@ -134,11 +134,9 @@ kernel void reduce_mean_hw(texture2d_array<ftype, access::read> inTexture[[textu
 #else
     half4 omean = 0;
 #endif
-
     uint iC = inTexture.get_array_size();
     uint iH = inTexture.get_height();
     uint iW = inTexture.get_width();
-
     for (uint i = 0; i < iW; ++i) {
         for (uint j = 0; j < iH; ++j) {
             ftype4 in = inTexture.read(uint2(i, j), gid.z);
@@ -161,11 +159,9 @@ kernel void reduce_max_hw(texture2d_array<ftype, access::read> inTexture[[textur
 #else
     half4 omax = HALF_MIN;
 #endif
-
     uint iC = inTexture.get_array_size();
     uint iH = inTexture.get_height();
     uint iW = inTexture.get_width();
-
     for (uint i = 0; i < iW; ++i) {
         for (uint j = 0; j < iH; ++j) {
             ftype4 in = inTexture.read(uint2(i, j), gid.z);
@@ -187,11 +183,9 @@ kernel void reduce_min_hw(texture2d_array<ftype, access::read> inTexture[[textur
 #else
     half4 omin = HALF_MAX;
 #endif
-
     uint iC = inTexture.get_array_size();
     uint iH = inTexture.get_height();
     uint iW = inTexture.get_width();
-
     for (uint i = 0; i < iW; ++i) {
         for (uint j = 0; j < iH; ++j) {
             ftype4 in = inTexture.read(uint2(i, j), gid.z);
@@ -213,11 +207,9 @@ kernel void reduce_sum_hw(texture2d_array<ftype, access::read> inTexture[[textur
 #else
     half4 osum = 0;
 #endif
-
     uint iC = inTexture.get_array_size();
     uint iH = inTexture.get_height();
     uint iW = inTexture.get_width();
-
     for (uint i = 0; i < iW; ++i) {
         for (uint j = 0; j < iH; ++j) {
             ftype4 in = inTexture.read(uint2(i, j), gid.z);
