@@ -49,8 +49,17 @@ void OneHotKernelFunctor(const Tensor* in,
 }
 
 template <>
-void OneHotCompute<PRECISION(kInt32)>::Run() {
+void OneHotV2Compute<PRECISION(kInt32)>::Run() {
   auto& param = this->template Param<param_t>();
+
+  if (param.depth_tensor) {
+    param.depth = param.depth_tensor->data<int32_t>()[0];
+    auto out_dims = param.Out->dims();
+    CHECK_GE(out_dims.size(), 2);
+    out_dims[out_dims.size() - 1] = param.depth;
+    param.Out->Resize(out_dims);
+    param.Out->set_lod(param.X->lod());
+  }
   switch (param.dtype) {
     case static_cast<int>(lite::core::FluidType::INT64):
       OneHotKernelFunctor<int32_t, int64_t>(
@@ -72,6 +81,43 @@ void OneHotCompute<PRECISION(kInt32)>::Run() {
 template <>
 void OneHotCompute<PRECISION(kInt64)>::Run() {
   auto& param = this->template Param<param_t>();
+  if (param.depth_tensor) {
+    param.depth = param.depth_tensor->data<int32_t>()[0];
+    auto out_dims = param.X->dims();
+    CHECK_GE(out_dims.size(), 2);
+    out_dims[out_dims.size() - 1] = param.depth;
+    param.Out->Resize(out_dims);
+    param.Out->set_lod(param.X->lod());
+  }
+  switch (param.dtype) {
+    case static_cast<int>(lite::core::FluidType::INT64):
+      OneHotKernelFunctor<int64_t, int64_t>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    case static_cast<int>(lite::core::FluidType::INT32):
+      OneHotKernelFunctor<int64_t, int32_t>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    case static_cast<int>(lite::core::FluidType::FP32):
+      OneHotKernelFunctor<int64_t, float>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    default:
+      LOG(ERROR) << "Unsupported data type for one_hot op:" << param.dtype;
+  }
+}
+
+template <>
+void OneHotV2Compute<PRECISION(kInt64)>::Run() {
+  auto& param = this->template Param<param_t>();
+  if (param.depth_tensor) {
+    param.depth = param.depth_tensor->data<int32_t>()[0];
+    auto out_dims = param.Out->dims();
+    CHECK_GE(out_dims.size(), 2);
+    out_dims[out_dims.size() - 1] = param.depth;
+    param.Out->Resize(out_dims);
+    param.Out->set_lod(param.X->lod());
+  }
   switch (param.dtype) {
     case static_cast<int>(lite::core::FluidType::INT64):
       OneHotKernelFunctor<int64_t, int64_t>(
@@ -97,8 +143,10 @@ void OneHotCompute<PRECISION(kInt64)>::Run() {
 
 typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt64)>
     one_hot_64;
-typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt32)>
-    one_hot_32;
+typedef paddle::lite::kernels::host::OneHotV2Compute<PRECISION(kInt64)>
+    one_hot_v2_64;
+typedef paddle::lite::kernels::host::OneHotV2Compute<PRECISION(kInt32)>
+    one_hot_v2_32;
 
 REGISTER_LITE_KERNEL(one_hot, kHost, kAny, kAny, one_hot_64, def)
     .BindInput("X",
@@ -114,7 +162,7 @@ REGISTER_LITE_KERNEL(one_hot, kHost, kAny, kAny, one_hot_64, def)
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();
-REGISTER_LITE_KERNEL(one_hot_v2, kHost, kAny, kAny, one_hot_64, def)
+REGISTER_LITE_KERNEL(one_hot_v2, kHost, kAny, kAny, one_hot_v2_64, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),
@@ -130,7 +178,7 @@ REGISTER_LITE_KERNEL(one_hot_v2, kHost, kAny, kAny, one_hot_64, def)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    one_hot_v2, kHost, kAny, kAny, one_hot_32, one_hot_v2_int32)
+    one_hot_v2, kHost, kAny, kAny, one_hot_v2_32, one_hot_v2_int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),

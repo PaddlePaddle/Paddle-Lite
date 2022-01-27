@@ -291,7 +291,8 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   }
 
   // out_width_id_per_blk and out_batch_id
-  int out_batch_id = item_h_id / in_h;
+  int out_batch_id = item_h_id / out_h;
+
   int out_w_base_id = item_ch_id * out_w;
   int out_w_id0 = item_w_id;
   int out_w_id1 = out_w_id0 + item_w;
@@ -410,11 +411,11 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
           output[4] = mad(input[4].z, filter[2], output[4]);
         }
         if (ch_surplus < 1) {
-          output[0] = mad(input[0].w, filter_trans[3], output[0]);
-          output[1] = mad(input[1].w, filter_trans[3], output[1]);
-          output[2] = mad(input[2].w, filter_trans[3], output[2]);
-          output[3] = mad(input[3].w, filter_trans[3], output[3]);
-          output[4] = mad(input[4].w, filter_trans[3], output[4]);
+          output[0] = mad(input[0].w, filter[3], output[0]);
+          output[1] = mad(input[1].w, filter[3], output[1]);
+          output[2] = mad(input[2].w, filter[3], output[2]);
+          output[3] = mad(input[3].w, filter[3], output[3]);
+          output[4] = mad(input[4].w, filter[3], output[4]);
         }
       }
     }
@@ -430,33 +431,38 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   alpha[4] = alpha[0];
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                           prelu_alpha,
-                           SAMPLER,
-                           (int2)(out_w_base_id + out_w_id0, item_h_id));
+  alpha[0] =
+      READ_IMG_TYPE(CL_DTYPE_CHAR,
+                    prelu_alpha,
+                    SAMPLER,
+                    (int2)(out_w_base_id + out_w_id0, item_h_id % out_h));
   if (out_w_id1 < out_w) {
-    alpha[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                             prelu_alpha,
-                             SAMPLER,
-                             (int2)(out_w_base_id + out_w_id1, item_h_id));
+    alpha[1] =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(out_w_base_id + out_w_id1, item_h_id % out_h));
   }
   if (out_w_id2 < out_w) {
-    alpha[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                             prelu_alpha,
-                             SAMPLER,
-                             (int2)(out_w_base_id + out_w_id2, item_h_id));
+    alpha[2] =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(out_w_base_id + out_w_id2, item_h_id % out_h));
   }
   if (out_w_id3 < out_w) {
-    alpha[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                             prelu_alpha,
-                             SAMPLER,
-                             (int2)(out_w_base_id + out_w_id3, item_h_id));
+    alpha[3] =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(out_w_base_id + out_w_id3, item_h_id % out_h));
   }
   if (out_w_id4 < out_w) {
-    alpha[4] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                             prelu_alpha,
-                             SAMPLER,
-                             (int2)(out_w_base_id + out_w_id4, item_h_id));
+    alpha[4] =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(out_w_base_id + out_w_id4, item_h_id % out_h));
   }
 //}
 #elif defined(PRELU_ALL)  //{

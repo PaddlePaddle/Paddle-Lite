@@ -28,28 +28,39 @@ int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto act_op = converter->AddOperator<hiai::op::Activation>(output_operand);
-  SET_INPUT(act_op, x, input_operator);
   switch (operation->type) {
-    case NNADAPTER_SIGMOID:
-      act_op->set_attr_mode(0);
-      break;
-    case NNADAPTER_RELU:
-      act_op->set_attr_mode(1);
-      break;
-    case NNADAPTER_RELU6:
-      act_op->set_attr_mode(14);
-      break;
-    case NNADAPTER_TANH:
-      act_op->set_attr_mode(2);
-      break;
+#define CONVERT_UNARY_ACTIVATION(type, act_mode)                      \
+  case NNADAPTER_##type: {                                            \
+    auto act_op =                                                     \
+        converter->AddOperator<hiai::op::Activation>(output_operand); \
+    act_op->set_attr_mode(act_mode);                                  \
+    SET_INPUT(act_op, x, input_operator);                             \
+    MAP_OUTPUT(act_op, y, output_operand);                            \
+  } break;
+    CONVERT_UNARY_ACTIVATION(SIGMOID, 0);
+    CONVERT_UNARY_ACTIVATION(RELU, 1);
+    CONVERT_UNARY_ACTIVATION(RELU6, 14);
+    CONVERT_UNARY_ACTIVATION(TANH, 2);
+    CONVERT_UNARY_ACTIVATION(ABS, 6);
+#undef CONVERT_UNARY_ACTIVATION
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                    \
+  case NNADAPTER_##type: {                                            \
+    auto act_op =                                                     \
+        converter->AddOperator<hiai::op::class_name>(output_operand); \
+    SET_INPUT(act_op, x, input_operator);                             \
+    MAP_OUTPUT(act_op, y, output_operand);                            \
+  } break;
+    CONVERT_UNARY_ACTIVATION(LOG, Log);
+    CONVERT_UNARY_ACTIVATION(EXP, Exp);
+    CONVERT_UNARY_ACTIVATION(FLOOR, Floor);
+    CONVERT_UNARY_ACTIVATION(SQUARE, Square);
+#undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
                            << OperationTypeToString(operation->type)
                            << " is found.";
       break;
   }
-  MAP_OUTPUT(act_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
