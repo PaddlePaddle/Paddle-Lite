@@ -66,6 +66,9 @@ class TestFcOp(AutoScanTest):
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
         padding_weights = draw(st.booleans())
+        # OpenCL dose not support this attribute
+        if (self.get_target() == 'OpenCL'):
+            padding_weights = False
         if (padding_weights):
             weights_shape = [weights_0 + 4, weights_1 + 4]
 
