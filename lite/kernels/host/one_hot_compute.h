@@ -33,6 +33,17 @@ class OneHotCompute
   virtual ~OneHotCompute() = default;
 };
 
+template <PrecisionType Ptype>
+class OneHotV2Compute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::OneHotParam;
+
+  void Run() override;
+
+  virtual ~OneHotV2Compute() = default;
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

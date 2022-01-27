@@ -113,7 +113,7 @@ TEST(Norm, precision) {
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+  place = TARGET(kHost);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else

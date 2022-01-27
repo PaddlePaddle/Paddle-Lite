@@ -184,10 +184,14 @@ class AutoScanBaseTest(unittest.TestCase):
             arr = np.array(tensor[tensor_key[0]])
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
-            self.assertTrue(
-                base.shape == arr.shape,
-                "The output shapes are not equal, the baseline shape is " +
-                str(base.shape) + ', but got ' + str(arr.shape))
+
+            if not base.shape and arr.shape == (1, ):
+                pass
+            else:
+                self.assertTrue(
+                    base.shape == arr.shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(base.shape) + ', but got ' + str(arr.shape))
             self.assertTrue(
                 np.allclose(
                     base, arr, atol=atol, rtol=rtol),
