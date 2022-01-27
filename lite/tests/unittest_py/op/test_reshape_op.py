@@ -26,6 +26,7 @@ import argparse
 
 import numpy as np
 from functools import partial
+from functools import reduce
 
 
 class TestReshapeOp(AutoScanTest):
@@ -66,11 +67,17 @@ class TestReshapeOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
+
         attr_shape = draw(
-            st.sampled_from([[
-                in_shape[0], in_shape[1] * in_shape[2], in_shape[3]
-            ], [in_shape[0], in_shape[1], in_shape[2] * in_shape[3]
-                ], [in_shape[0] * in_shape[1], in_shape[2] * in_shape[3]]]))
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=max(in_shape)),
+                min_size=1,
+                max_size=len(in_shape)))
+        assume(
+            reduce(lambda x, y: x * y, attr_shape) == reduce(
+                lambda x, y: x * y, in_shape))
+
         with_shape = draw(st.sampled_from([True, False]))
 
         def generate_input(*args, **kwargs):
