@@ -486,7 +486,7 @@ TEST(TestConvRand, test_conv_rand) {
                               std::vector<DDim> dims;
                               DDim weights_dim({cout, cin / g, kh, kw});
                               for (auto& batch : {1, 2}) {
-                                for (auto& h : {32, 1, 19, 3}) {
+                                for (auto& h : {1, 19, 3, 32}) {
                                   DDim dim_in({batch, cin, h, h});
                                   // skip 3x3 depthwise conv
                                   if (g == cin && cin == cout && kw == 3 &&
