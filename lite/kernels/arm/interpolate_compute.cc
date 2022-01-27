@@ -61,7 +61,7 @@ void NearestInterpCompute<PRECISION(kFloat)>::Run() {
 template <>
 void NearestInterpComputeV2<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Nearest")
-  lite::arm::math::interpolate_v2(INTERP_PARAM);
+  lite::arm::math::nearest_interp_v2<float>(INTERP_PARAM);
 }
 
 #ifdef ENABLE_ARM_FP16
@@ -80,7 +80,7 @@ void NearestInterpCompute<PRECISION(kFP16)>::Run() {
 template <>
 void NearestInterpComputeV2<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Nearest")
-  lite::arm::math::fp16::interpolate_v2(INTERP_PARAM);
+  lite::arm::math::fp16::nearest_interp_v2<float16_t>(INTERP_PARAM);
 }
 #endif
 
