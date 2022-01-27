@@ -94,7 +94,6 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   FixQuantizedOps(model);
-  ConvertDataLayoutNCHWToNHWC(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);

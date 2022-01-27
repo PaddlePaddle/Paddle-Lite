@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/pow.h"
+#include "core/operation/elementwise.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,22 +21,23 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertPow(Converter* converter, hal::Operation* operation) {
-  POW_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertDiv(Converter* converter, hal::Operation* operation) {
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
-  auto input_tensor = converter->GetMappedTensor(input_operand);
-  if (!input_tensor) {
-    input_tensor = converter->ConvertOperand(input_operand);
+  auto input0_tensor = converter->GetMappedTensor(input0_operand);
+  if (!input0_tensor) {
+    input0_tensor = converter->ConvertOperand(input0_operand);
   }
-  auto factor_tensor = converter->GetMappedTensor(factor_operand);
-  if (!factor_tensor) {
-    factor_tensor = converter->ConvertOperand(factor_operand);
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
+  if (!input1_tensor) {
+    input1_tensor = converter->ConvertOperand(input1_operand);
   }
-  auto pow_node =
-      converter->network()->AddIPowNode(input_tensor, factor_tensor);
-  NNADAPTER_CHECK(pow_node) << "Failed to add pow node.";
-  auto output_tensor = pow_node->GetOutput(0);
+
+  auto div_node =
+      converter->network()->AddIDivNode(input0_tensor, input1_tensor);
+  NNADAPTER_CHECK(div_node) << "Failed to add div node.";
+  auto output_tensor = div_node->GetOutput(0);
   // fuse activations ?
   switch (fuse_code) {
 #define CONVERT_ACTIVATION(type, mm_type)                                 \

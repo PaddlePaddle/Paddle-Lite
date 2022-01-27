@@ -291,7 +291,6 @@ void TestElt(Place place,
 #endif
 #if defined(NNADAPTER_WITH_CAMBRICON_MLU)
   if (elt_type == std::string("max") || elt_type == std::string("min") ||
-      elt_type == std::string("pow") || elt_type == std::string("div") ||
       x_shape.size() != y_shape.size()) {
     return;
   }

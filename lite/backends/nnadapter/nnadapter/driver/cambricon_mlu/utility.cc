@@ -45,6 +45,9 @@ magicmind::DataType ConvertToMagicMindDtype(
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       output_precision = magicmind::DataType::INT32;
       break;
+    case NNADAPTER_INT64:
+      output_precision = magicmind::DataType::INT64;
+      break;
     case NNADAPTER_UINT8:
       output_precision = magicmind::DataType::UINT8;
       break;
