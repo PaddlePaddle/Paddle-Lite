@@ -402,10 +402,10 @@ void nearest_interp(const float16_t* src,
   }
 }
 
-void nearest_interp_v2(const float* src,
+void nearest_interp_v2(const float16_t* src,
                        int w_in,
                        int h_in,
-                       float* dst,
+                       float16_t* dst,
                        int w_out,
                        int h_out,
                        float scale_x,
@@ -621,8 +621,8 @@ void interpolate_v2(lite::Tensor* X,
   int c_cout = X->dims()[1];
   Out->Resize({num_cout, c_cout, out_height, out_width});
 
-  float* dout = Out->mutable_data<float>();
-  const float* din = X->data<float>();
+  float16_t* dout = Out->mutable_data<float16_t>();
+  const float16_t* din = X->data<float16_t>();
   int out_num = Out->dims()[0];
   int out_c = Out->dims()[1];
   int count = out_num * out_c;
