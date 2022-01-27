@@ -35,7 +35,7 @@ TEST(sequence_expand_as_x86, retrive_op) {
 }
 
 TEST(sequence_expand_as_x86, init) {
-  SequenceExpandAsCompute<float> sequence_expand_as;
+  SequenceExpandAsCompute<float, PRECISION(kFloat)> sequence_expand_as;
   ASSERT_EQ(sequence_expand_as.precision(), PRECISION(kFloat));
   ASSERT_EQ(sequence_expand_as.target(), TARGET(kX86));
 }
@@ -62,7 +62,7 @@ TEST(sequence_expand_as_x86, run_test) {
   std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
   // MulCompute mul;
-  SequenceExpandAsCompute<float> sequence_expand_as;
+  SequenceExpandAsCompute<float, PRECISION(kFloat)> sequence_expand_as;
   operators::SequenceExpandAsParam param;
 
   param.x = &x;

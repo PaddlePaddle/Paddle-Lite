@@ -39,7 +39,6 @@ class TestNormOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # error when pick kernel
         x_shape = list(program_config.inputs["input_data"].shape)
         if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
             return False

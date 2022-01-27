@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +13,32 @@
 // limitations under the License.
 
 #pragma once
-
-#include <limits>
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
-#include "lite/core/optimizer/mir/pass.h"
-#include "lite/core/types.h"
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace operators {
 
-class QuantizedOpAttributesInferencePass : public mir::StmtPass {
+class UnfoldOpLite : public OpLite {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  UnfoldOpLite() {}
+  explicit UnfoldOpLite(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "Unfold"; }
+
+ private:
+  mutable UnfoldParam param_;
 };
 
-}  // namespace mir
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

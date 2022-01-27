@@ -32,6 +32,10 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     argmax_param_ = param_.get_mutable<param_t>();
     auto& x_dims = argmax_param_->X->dims();
+    bool keepdims = argmax_param_->keepdims;
+    CHECK(keepdims) << "OpenCL argmax kernel only support keepdims=true. "
+                       "keepdims=false case will be converted by "
+                       "keepdims_convert_pass.";
 
     // padding to 4-dims
     in_nchw_ = x_dims.Vectorize();

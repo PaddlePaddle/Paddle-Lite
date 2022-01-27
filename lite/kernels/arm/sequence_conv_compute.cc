@@ -116,10 +116,12 @@ void SequenceConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,
   // kernel_num]
   // = [sequence_len, kernel_num]
+  auto m =
+      static_cast<int>(lod_level_0[static_cast<int>(lod_level_0.size()) - 1]);
   paddle::lite::operators::ActivationParam act_param;
   paddle::lite::arm::math::sgemm(false,
                                  false,                     // is_transB,
-                                 sequence_len,              // M
+                                 m,                         // M
                                  kernel_num,                // N
                                  kernel_size * hidden_dim,  // K
                                  1.0f,                      // alpha

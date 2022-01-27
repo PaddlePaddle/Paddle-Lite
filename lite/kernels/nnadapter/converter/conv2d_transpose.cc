@@ -30,7 +30,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand =
       converter->AddInputOperand(scope, input_name, {}, input_scales);
   auto input_type = converter->GetOperandType(input_operand);
-
   // Filter operand
   auto filter_name = op->Input("Filter").front();
   auto filter_scale_name = "Filter0_scale";
@@ -143,7 +142,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
         true,
         bias_scales);
   }
-
   // Auto_pad operand
   std::string padding_algorithm =
       op->HasAttr("padding_algorithm")
@@ -151,7 +149,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
           : "";
   auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
       ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
-
   // Pads operand(optional)
   std::vector<int> paddings = op->GetAttr<std::vector<int>>("paddings");
   if (paddings.size() == 2UL) {
@@ -159,18 +156,14 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     paddings.insert(paddings.begin() + 2, paddings[2]);
   }
   auto pads_operand = converter->AddConstantOperand(paddings);
-
   // Strides operand
   std::vector<int> strides = op->GetAttr<std::vector<int>>("strides");
   auto strides_operand = converter->AddConstantOperand(strides);
-
   // Group operand
   auto group_operand = converter->AddConstantOperand(groups);
-
   // Dilations operand
   std::vector<int> dilations = op->GetAttr<std::vector<int>>("dilations");
   auto dilations_operand = converter->AddConstantOperand(dilations);
-
   // Output_padding operand
   std::vector<int> output_padding =
       op->HasAttr("output_padding")
@@ -180,7 +173,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     output_padding = std::vector<int>(2, 0);
   }
   auto output_padding_operand = converter->AddConstantOperand(output_padding);
-
   // Output_shape operand
   NNAdapterOperand* output_shape_operand = nullptr;
   if (op->HasAttr("output_size")) {
@@ -189,7 +181,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
       output_shape_operand = converter->AddConstantOperand(output_size);
     }
   }
-
   // Fuse code operand
   bool with_act =
       op->HasAttr("with_act") ? op->GetAttr<bool>("with_act") : false;
@@ -204,14 +195,10 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
     act_type = "";
-  } else if (!act_type.empty()) {
-    LOG(FATAL) << "Unsupported activation type: " << act_type;
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
-
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
-
   // Conv2d_transpose operation
   converter->AddOperation(NNADAPTER_CONV_2D_TRANSPOSE,
                           {input_operand,
@@ -226,6 +213,9 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
                            output_shape_operand,
                            fuse_code_operand},
                           {output_operand});
+  // Unpack the fused activations
+  converter->UnpackFusedActivations(
+      output_operand, act_type, op, scope, output_name, output_scales);
   return NO_ERROR;
 }
 

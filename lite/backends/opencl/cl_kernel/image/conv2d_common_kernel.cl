@@ -201,6 +201,12 @@ __kernel void conv2d_common(__private const int global_size_dim0,
       }
     }
   }
+  const int out_x_base = mul24(out_channel_block_idx, output_width);
+  int out_x_idx = out_width_block_idx << 2;
+
+  const int remain = output_width - out_x_idx;
+  int output_w_idx = out_x_base + out_x_idx;
+
   CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
 #ifdef PRELU_CH  //{
   alpha0 = READ_IMG_TYPE(
@@ -213,24 +219,27 @@ __kernel void conv2d_common(__private const int global_size_dim0,
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                          prelu_alpha,
                          SAMPLER,
-                         (int2)(out_w_base_id + out_w_id0, output_bh_idx));
-  if (out_w_id1 < output_width) {
-    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                           prelu_alpha,
-                           SAMPLER,
-                           (int2)(out_w_base_id + out_w_id1, output_bh_idx));
+                         (int2)(output_w_idx, output_bh_idx % output_height));
+  if (out_x_idx + 1 < output_width) {
+    alpha1 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(output_w_idx + 1, output_bh_idx % output_height));
   }
-  if (out_w_id2 < output_width) {
-    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                           prelu_alpha,
-                           SAMPLER,
-                           (int2)(out_w_base_id + out_w_id2, output_bh_idx));
+  if (out_x_idx + 2 < output_width) {
+    alpha2 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(output_w_idx + 2, output_bh_idx % output_height));
   }
-  if (out_w_id3 < output_width) {
-    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                           prelu_alpha,
-                           SAMPLER,
-                           (int2)(out_w_base_id + out_w_id3, output_bh_idx));
+  if (out_x_idx + 3 < output_width) {
+    alpha3 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(output_w_idx + 3, output_bh_idx % output_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{
@@ -254,12 +263,6 @@ __kernel void conv2d_common(__private const int global_size_dim0,
   out2 = fuse_scale(out2, 1.f, 0.f, 0.f);
   out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
 #endif
-
-  const int out_x_base = mul24(out_channel_block_idx, output_width);
-  int out_x_idx = out_width_block_idx << 2;
-
-  const int remain = output_width - out_x_idx;
-  int output_w_idx = out_x_base + out_x_idx;
 
   if (remain >= 4) {
     WRITE_IMG_TYPE(

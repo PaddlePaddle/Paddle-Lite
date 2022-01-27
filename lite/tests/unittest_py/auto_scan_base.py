@@ -216,10 +216,14 @@ class AutoScanBaseTest(unittest.TestCase):
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
 
-            self.assertTrue(
-                base.shape == arr.shape,
-                "The output shapes are not equal, the baseline shape is " +
-                str(base.shape) + ', but got ' + str(arr.shape))
+
+            if not base.shape and arr.shape == (1, ):
+                pass
+            else:
+                self.assertTrue(
+                    base.shape == arr.shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(base.shape) + ', but got ' + str(arr.shape))
             if flag_precision_fp16:
                 # count diff
                 arr_value = arr.flatten()
@@ -236,6 +240,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     np.allclose(
                         base, arr, atol=atol, rtol=rtol),
                     "Output has diff. ")
+
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
@@ -344,7 +349,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 # creat model and prepare feed data
                 model, params = create_fake_model(prog_config)
                 if quant:
-                    model, params = create_quant_model(model, params)
+                    model, params = create_quant_model(
+                        model, params, self.cache_dir, prog_config)
 
                 feed_data = {}
                 for name, tensor_config in prog_config.inputs.items():

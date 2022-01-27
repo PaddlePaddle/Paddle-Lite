@@ -192,41 +192,15 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     act_type = "";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
-  // Eltwise_add out operand
-  auto eltwise_add_out_operand =
+  // Add operation to add bias to the result of Matmul operation
+  auto eltwise_add_output_operand =
       converter->AddOutputOperand(out_name, out_scales);
-  // Eltwise_add operation for adding bias to matmul operation
   converter->AddOperation(NNADAPTER_ADD,
                           {output_operand, bias_operand, fuse_code_operand},
-                          {eltwise_add_out_operand});
+                          {eltwise_add_output_operand});
   // Unpack the fused activations
-  if (!act_type.empty()) {
-    auto fused_act_output_operand =
-        converter->AddOutputOperand(out_name, out_scales);
-    if (act_type == "leaky_relu") {
-      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
-      auto alpha_operand = converter->AddConstantOperand(alpha);
-      converter->AddOperation(NNADAPTER_LEAKY_RELU,
-                              {eltwise_add_out_operand, alpha_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "sigmoid") {
-      converter->AddOperation(NNADAPTER_SIGMOID,
-                              {eltwise_add_out_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "tanh") {
-      converter->AddOperation(NNADAPTER_TANH,
-                              {eltwise_add_out_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "log") {
-      converter->AddOperation(
-          NNADAPTER_LOG, {eltwise_add_out_operand}, {fused_act_output_operand});
-    } else if (act_type == "abs") {
-      converter->AddOperation(
-          NNADAPTER_ABS, {eltwise_add_out_operand}, {fused_act_output_operand});
-    } else {
-      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
-    }
-  }
+  converter->UnpackFusedActivations(
+      eltwise_add_output_operand, act_type, op, scope, out_name, out_scales);
   return NO_ERROR;
 }
 

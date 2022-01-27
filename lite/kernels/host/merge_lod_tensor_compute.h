@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/norm_compute.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/merge_lod_tensor_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {}  // namespace arm
+namespace host {
+
+class MergeLodTensorCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MergeLodTensorParam;
+
+  void Run() override;
+
+  virtual ~MergeLodTensorCompute() = default;
+};
+
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::NormCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    p_norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::PNormCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .Finalize();

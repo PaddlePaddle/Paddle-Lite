@@ -180,6 +180,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "unsqueeze_calc_offline_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
+       "keepdims_convert_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
@@ -207,7 +208,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "assign_value_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
-       "quantized_op_attributes_inference_pass",
        "quantization_parameters_propagation_pass",
        // Apply the constraints for the quantized ops(such as concat) that the
        // inputs and outputs must have the same scale.
@@ -216,7 +216,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "bm_subgraph_pass",
-       "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
