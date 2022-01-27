@@ -620,7 +620,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
-                    if (dims.size() == 0) {
+                    if (dims.size() != 0) {
                       test_conv_int8(dims,
                                      weights_dim,
                                      1,
