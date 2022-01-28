@@ -44,9 +44,6 @@ endif()
 if(LITE_WITH_BM)
     set(external_libs_DEPS ${external_libs_DEPS} ${bm_deps})
 endif()
-if(LITE_WITH_RKNPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${rknpu_deps})
-endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
 endif()
@@ -164,10 +161,6 @@ else()
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
-        endif()
-        if (LITE_WITH_RKNPU)
-            # Need to add RKNPU runtime libs dependency
-            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
         endif()
 
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON

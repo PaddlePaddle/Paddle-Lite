@@ -60,7 +60,7 @@ void RemoveScale1Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   };
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
-    if (op_node->AsStmt().picked_kernel().op_type() == "scale") {
+    if (op_node->AsStmt().op_type() == "scale") {
       Node* scale_node = op_node;
       bool is_scale1 = check_scale1(scale_node);
       VLOG(2) << "is_scale1:" << is_scale1;

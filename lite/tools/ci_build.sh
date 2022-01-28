@@ -377,10 +377,6 @@ function test_xpu {
 
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_xpu {
-    local with_xtcl=$1
-    if [[ "${with_xtcl}x" == "x" ]]; then
-        with_xtcl=OFF
-    fi
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
@@ -393,7 +389,6 @@ function build_test_xpu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DLITE_WITH_XTCL=$with_xtcl\
         -DXPU_SDK_ROOT="./output"
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -783,40 +778,6 @@ function rockchip_npu_prepare_device {
         exit 1
     fi
     $remote_device_run $remote_device_name push "$sdk_lib_dir/librknpu_ddk.so" "$remote_device_work_dir"
-}
-
-function rockchip_npu_build_target {
-    local arch=$1
-    local toolchain=$2
-    local sdk_root_dir=$3
-
-    # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_RKNPU=ON \
-        -DRKNPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS="armlinux" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function rockchip_npu_build_and_test_adb {
-    run_all_tests_on_remote_device $1 "/userdata/bin/ci" adb_device_pick adb_device_check adb_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
-}
-
-function rockchip_npu_build_and_test_ssh {
-    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
 }
 
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
@@ -1549,10 +1510,6 @@ function main {
                 ;;
             build_test_xpu)
                 build_test_xpu OFF
-                shift
-                ;;
-            build_test_xpu_with_xtcl)
-                build_test_xpu ON
                 shift
                 ;;
             huawei_kirin_npu_build_and_test)

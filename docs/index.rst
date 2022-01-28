@@ -48,7 +48,7 @@ Welcome to Paddle-Lite's documentation!
   source_compile/library_tailoring
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: 程序开发
   :name: program-development
 
@@ -57,13 +57,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/python_demo
   user_guides/development_overview
   user_guides/model_optimize_tool
-  user_guides/opt/opt_bin
-  user_guides/opt/opt_python
-  user_guides/opt/x2paddle&opt
   user_guides/quant_aware
-  user_guides/quant/quant_post_dynamic
-  user_guides/quant/quant_post_static
-  user_guides/quant/quant_post_dynamic_demo
   user_guides/model_visualization
   user_guides/profiler
 
@@ -84,6 +78,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/baidu_xpu
   demo_guides/rockchip_npu
   demo_guides/amlogic_npu
+  demo_guides/verisilicon_timvx
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
   demo_guides/bitmain

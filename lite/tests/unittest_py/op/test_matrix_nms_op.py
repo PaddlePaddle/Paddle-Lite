@@ -43,11 +43,12 @@ class TestMatrixNMSOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         shape0 = draw(st.integers(min_value=1, max_value=64))
-        shape1 = draw(st.sampled_from([4]))
+        shape1 = draw(st.sampled_from(
+            [4]))  #PADDLE_ENFORCE_EQ(box_dims[2] == 4)
         shape2 = draw(st.integers(min_value=1, max_value=64))
         shape3 = draw(st.integers(min_value=1, max_value=64))
-        X_shape = [shape0, shape2, shape1]
-        Y_shape = [shape1, shape3, shape2]
+        X_shape = [shape0, shape2, shape1]  #[N, M, 4]
+        Y_shape = [shape0, shape3, shape2]  #[N, C, M]
 
         keep_top_k = draw(st.sampled_from([1]))
         normalized = draw(st.booleans())
@@ -89,26 +90,13 @@ class TestMatrixNMSOp(AutoScanTest):
                 "input_data_Scores": TensorConfig(shape=Y_shape)
             },
             outputs={"output_data"})
-        x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
-        y_shape = list(program_config.inputs["input_data_Scores"].shape)
-        assume(x_shape[0] > y_shape[0])
         return program_config
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["matrix_nms"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
-            y_shape = list(program_config.inputs["input_data_Scores"].shape)
-            if x_shape[1] == 1:
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        #pass
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)

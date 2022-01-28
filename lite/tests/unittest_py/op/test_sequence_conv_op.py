@@ -58,6 +58,7 @@ class TestSequenceConvOp(AutoScanTest):
                 max_size=2))
         filter_dims = [context_length * in_dims[1], kernel_num]
         lod_info = draw(st.sampled_from([[[0, 4]], [[0, 2, 4]]]))
+
         padding_trainable = draw(st.booleans())
 
         assume(context_stride == 1)
@@ -122,7 +123,7 @@ class TestSequenceConvOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

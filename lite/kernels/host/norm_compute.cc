@@ -49,6 +49,11 @@ void PNormCompute::Run() {
   int pre = xdims.count(0, axis);
   int post = xdims.count(axis + 1, xdims.size());
   int n = xdims[axis];
+  if (param.asvector) {
+    pre = 1;
+    post = 1;
+    n = xdims.count(0, xdims.size());
+  }
   lite::host::math::p_norm(
       x_data, pre, n, post, param.epsilon, out_data, porder);
 }

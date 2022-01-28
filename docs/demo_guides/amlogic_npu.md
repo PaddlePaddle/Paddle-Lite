@@ -223,12 +223,13 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
   4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
   
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.100.244 22 root 123456
     (C308X)
     warmup: 1 repeat: 5, average: 167.6916 ms, max: 207.458000 ms, min: 159.823239 ms
     results: 3
@@ -240,7 +241,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.542000 ms
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 0123456789ABCDEF
     (A311D)
     warmup: 1 repeat: 15, average: 81.678067 ms, max: 81.945999 ms, min: 81.591003 ms
     results: 3
@@ -252,7 +253,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.407000 ms
   
   For S905D3(Android版)
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 280.465997 ms, max: 358.815002 ms, min: 268.549812 ms
     results: 3
@@ -269,7 +270,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu 192.168.100.244 22 root 123456
     (C308X)
     warmup: 1 repeat: 5, average: 6.982800 ms, max: 7.045000 ms, min: 6.951000 ms
     results: 3
@@ -281,7 +282,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.509000 ms
   
   For A311D
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 amlogic_npu 0123456789ABCDEF
     ( A311D)
     warmup: 1 repeat: 15, average: 5.567867 ms, max: 5.723000 ms, min: 5.461000 ms
     results: 3
@@ -293,7 +294,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.411000 ms
   
   For S905D3(Android版)
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a amlogic_npu
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a amlogic_npu c8631471d5cd
     (S905D3(Android版))
     warmup: 1 repeat: 5, average: 13.4116 ms, max: 15.751210 ms, min: 12.433400 ms
     results: 3

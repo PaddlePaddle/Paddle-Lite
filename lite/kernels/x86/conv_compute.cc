@@ -113,8 +113,10 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       (kernel_h == 3 || kernel_h == 5 || kernel_h == 7) &&
       (stride_h == 2 || stride_h == 1) && nodilations && kps_equal &&
       pad_all_equal && flag_p) {
+#ifdef XBYAK64
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
     VLOG(3) << "invoking directConv";
+#endif
   }
 
   if (impl_) {

@@ -3,3 +3,4 @@ hypothesis
 paddlepaddle
 rpyc
 wheel
+paddleslim==2.0.0

@@ -94,19 +94,10 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   NNAdapterOperand* weight_operand = nullptr;
   std::vector<float> bias_scales;
   if (is_quant_mode) {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      std::vector<float> quant_scales;
-      CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
-      CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
-      // TODO(shentanyue) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT operation to
-      // make the quant params obtained from a operand consistent with those
-      // obtained from op_desc
-    } else {
-      // TODO(shentanyue) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT operation to
-      // convert any type to int8 symm per-layer quant operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
+    CHECK(IsNNInt8SymmPerLayerQuantType(*input_type));
+    std::vector<float> quant_scales;
+    CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
+    CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
     if (!IsValidSymmPerChannelQuantParams(w_scales)) {
       w_scales = {w_scales[0]};
     }
@@ -117,12 +108,6 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       bias_scales[i] = input_scales[0] * w_scales[i];
     }
   } else {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      // TODO(shentanyue) Add a NNADAPTER_DEQUANT to dequantize the input
-      // operand to the same type of operand as the weight operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
     CHECK(input_type->precision ==
           ConvertPrecisionTypeToNNPrecisionCode(w_precison));
     weight_operand = converter->AddConstantOperand(*w_tensor);
@@ -172,20 +157,10 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       auto bias_type = converter->GetOperandType(bias_operand);
       // Check if we can use the bias_operand directly
       if (is_quant_mode) {
-        if (IsNNInt32SymmQuantType(*bias_type)) {
-          std::vector<float> quant_scales;
-          CHECK(GetNNSymmQuantParams(*bias_type, &quant_scales));
-          CHECK(IsSameSymmQuantParams(bias_scales, quant_scales));
-          // TODO(shentanyue) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT
-          // operation to make the quant params obtained from a operand
-          // consistent with those obtained from op_desc
-        } else {
-          // TODO(shentanyue) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT
-          // operation to convert any type to int32 symm per-layer/per-channel
-          // quant operand
-          LOG(FATAL) << "Mixed precision will be supported in future!";
-          return UNSUPPORTED_FEATURE;
-        }
+        CHECK(IsNNInt32SymmQuantType(*bias_type));
+        std::vector<float> quant_scales;
+        CHECK(GetNNSymmQuantParams(*bias_type, &quant_scales));
+        CHECK(IsSameSymmQuantParams(bias_scales, quant_scales));
       } else {
         CHECK(bias_type->precision == input_type->precision);
       }
@@ -217,41 +192,15 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     act_type = "";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
-  // Eltwise_add out operand
-  auto eltwise_add_out_operand =
+  // Add operation to add bias to the result of Matmul operation
+  auto eltwise_add_output_operand =
       converter->AddOutputOperand(out_name, out_scales);
-  // Eltwise_add operation for adding bias to matmul operation
   converter->AddOperation(NNADAPTER_ADD,
                           {output_operand, bias_operand, fuse_code_operand},
-                          {eltwise_add_out_operand});
+                          {eltwise_add_output_operand});
   // Unpack the fused activations
-  if (!act_type.empty()) {
-    auto fused_act_output_operand =
-        converter->AddOutputOperand(out_name, out_scales);
-    if (act_type == "leaky_relu") {
-      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
-      auto alpha_operand = converter->AddConstantOperand(alpha);
-      converter->AddOperation(NNADAPTER_LEAKY_RELU,
-                              {eltwise_add_out_operand, alpha_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "sigmoid") {
-      converter->AddOperation(NNADAPTER_SIGMOID,
-                              {eltwise_add_out_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "tanh") {
-      converter->AddOperation(NNADAPTER_TANH,
-                              {eltwise_add_out_operand},
-                              {fused_act_output_operand});
-    } else if (act_type == "log") {
-      converter->AddOperation(
-          NNADAPTER_LOG, {eltwise_add_out_operand}, {fused_act_output_operand});
-    } else if (act_type == "abs") {
-      converter->AddOperation(
-          NNADAPTER_ABS, {eltwise_add_out_operand}, {fused_act_output_operand});
-    } else {
-      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
-    }
-  }
+  converter->UnpackFusedActivations(
+      eltwise_add_output_operand, act_type, op, scope, out_name, out_scales);
   return NO_ERROR;
 }
 
