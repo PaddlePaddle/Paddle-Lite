@@ -224,7 +224,7 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
-    if (IsDeviceMemory(output_mlu_ptr)) {
+    if (IsDeviceMemory(outputs[i])) {
       MLU_CNRT_CHECK(cnrtMemcpy(buffer,
                                 output_mlu_ptr,
                                 outputs[i]->GetSize(),

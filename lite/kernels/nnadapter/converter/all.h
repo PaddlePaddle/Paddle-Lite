@@ -18,7 +18,7 @@
 REGISTER_CONVERTER(batch_norm,
                    ConvertBatchNorm,
                    "huawei_ascend_npu,verisilicon_"
-                   "timvx");
+                   "timvx,cambricon_mlu");
 REGISTER_CONVERTER(cast, ConvertCast, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(clip,
                    ConvertClip,
