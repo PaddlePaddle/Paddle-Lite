@@ -14,20 +14,53 @@ limitations under the License. */
 
 #pragma once
 #include <stdint.h>
+#include "lite/backends/arm/math/funcs.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-template <typename T>
-void scatter(const int64_t* indexs,
-             const T* updates,
-             T* dst,
+template <typename Dtype>
+void scatter(const Dtype* indexs,
+             const float* updates,
+             float* dst,
              int index_size,
              int num,
              int size,
-             bool overwrite);
+             bool overwrite) {
+  memset(reinterpret_cast<char*>(dst), 0, sizeof(float) * size * num);
+  if (overwrite) {
+    for (int i = 0; i < index_size; i++) {
+      const float* din = updates + i * size;
+      memcpy(dst + indexs[i] * size, din, sizeof(float) * size);
+    }
+  } else {
+    int cnt = size >> 3;
+    int rem = size & 7;
+    for (int i = 0; i < index_size; i++) {
+      const float* din = updates + i * size;
+      float* dout = dst + indexs[i] * size;
+      for (int j = 0; j < cnt; j++) {
+        float32x4_t va0 = vld1q_f32(din);
+        float32x4_t vb0 = vld1q_f32(dout);
+        float32x4_t va1 = vld1q_f32(din + 4);
+        float32x4_t vb1 = vld1q_f32(dout + 4);
+        vb0 = vaddq_f32(va0, vb0);
+        vb1 = vaddq_f32(va1, vb1);
+        din += 8;
+        vst1q_f32(dout, vb0);
+        vst1q_f32(dout + 4, vb1);
+        dout += 8;
+      }
+      for (int j = 0; j < rem; j++) {
+        dout[0] += *din++;
+        dout++;
+      }
+    }
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

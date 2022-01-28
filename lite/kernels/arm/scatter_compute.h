@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <typename Dtype>
 class ScatterCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;
