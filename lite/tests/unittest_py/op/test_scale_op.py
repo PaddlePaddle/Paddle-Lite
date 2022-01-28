@@ -67,16 +67,6 @@ class TestScaleOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # target_type = predictor_config.target()
-        # in_shape = list(program_config.inputs["input_data"].shape)
-        # in_data_type = program_config.inputs["input_data"].dtype
-        # if "int8" == in_data_type:
-        #     print("int8 as Input data type is not supported.")
-        #     return False
-
-        # if "ScaleTensor" in program_config.inputs:
-        #     print("ScaleTensor as Input is not supported on Paddle Lite.")
-        #     return False
         return True
 
     def sample_program_configs(self, draw):
@@ -179,7 +169,7 @@ class TestScaleOp(AutoScanTest):
             # Make sure to generate enough valid cases for specific targets
             max_examples = 2000
         self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+            quant=False, min_success_num=100, max_examples=max_examples)
 
 
 if __name__ == "__main__":

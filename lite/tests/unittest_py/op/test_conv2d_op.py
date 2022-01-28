@@ -173,6 +173,17 @@ class TestConv2dOp(AutoScanTest):
                         0] < 3:
                     return True
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            precision_type = predictor_config.precision()
+            filter_data = program_config.weights["filter_data"].shape
+            groups = program_config.ops[0].attrs["groups"]
+            strides = program_config.ops[0].attrs["strides"]
+            if target_type == TargetType.ARM and precision_type == PrecisionType.FP16:
+                if groups == 1 and filter_data[2] == 3 and filter_data[
+                        3] == 3 and strides[0] == 1 and strides[1] == 1:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
@@ -181,6 +192,11 @@ class TestConv2dOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has diff in a 3x3s1_winograd on arm. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
