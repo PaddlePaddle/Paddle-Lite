@@ -21,6 +21,7 @@ if(WIN32)
           ${EXTERNAL_PROJECT_LOG_ARGS}
           GIT_TAG         "v0.6.5"
           URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2FxxHash-0.6.5.zip
+          URL_HASH        MD5=133762ac7d0f00a30a7590f3e884a025
           DOWNLOAD_DIR          ${XXHASH_SOURCECODE_DIR}
           DOWNLOAD_NAME   "xxHash-0.6.5.zip"
           DOWNLOAD_NO_PROGRESS  1
@@ -47,6 +48,7 @@ else()
       ${EXTERNAL_PROJECT_LOG_ARGS}
       GIT_TAG         "v0.6.5"
       URL             http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2FxxHash-0.6.5.zip
+      URL_HASH        MD5=133762ac7d0f00a30a7590f3e884a025
       DOWNLOAD_DIR          ${XXHASH_SOURCECODE_DIR}
       DOWNLOAD_NO_PROGRESS  1
       PREFIX          ${XXHASH_SOURCE_DIR}

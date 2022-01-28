@@ -46,6 +46,7 @@ else()
         #         git diffs : (1) unsupported/Eigen/CXX11/src/Tensor/TensorBlockV2.h
         ######################################################################################################
         URL             http://paddlelite-data.bj.bcebos.com/third_party_libs/eigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103.zip
+        URL_HASH        MD5=71b7ea65f0f61456554247ff3815c8a1
         DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
         DOWNLOAD_NO_PROGRESS  1
         PREFIX          ${EIGEN_SOURCE_DIR}
