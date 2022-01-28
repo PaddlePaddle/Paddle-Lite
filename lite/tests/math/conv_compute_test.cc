@@ -367,7 +367,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                     std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {33, 1, 28, 3, 17, 56}) {
+                      for (auto& h : {33, 1, 28, 3, 17, 60}) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
