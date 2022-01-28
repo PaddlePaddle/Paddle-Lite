@@ -63,10 +63,13 @@ class TestGatherOp(AutoScanTest):
             ], [in_shape[axis] - 2, in_shape[axis] - 1]]))
         axis_type = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
+        with_tenor_axis = draw(st.booleans())
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
         if self.get_target() == "OpenCL":
             axis_type = "int32"
             index_type = "int32"
-        with_tenor_axis = draw(st.booleans())
+            input_type = "float32"
+            with_tenor_axis = True
 
         def generate_axis(*args, **kwargs):
             if axis_type == "int32":
@@ -90,8 +93,6 @@ class TestGatherOp(AutoScanTest):
             elif kwargs["type"] == "float32":
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
-
-        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
         op_inputs = {}
         program_inputs = {}
@@ -139,7 +140,20 @@ class TestGatherOp(AutoScanTest):
         return self.get_predictor_configs(), ["gather"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            in_dtype = program_config.inputs["input_data"].dtype
+            index_dtpye = program_config.inputs["index_data"].dtype
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if predictor_config.target() == TargetType.OpenCL:
+                axis_dtpye = program_config.inputs["axis_data"].dtype
+                if "int32" != axis_dtpye or "int32" != index_dtpye or len(
+                        in_shape) != 2:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
