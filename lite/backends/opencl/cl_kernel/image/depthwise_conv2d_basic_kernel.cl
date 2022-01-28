@@ -250,17 +250,18 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
 
   int2 pos_in_input_block =
       (int2)(out_c * input_width, batch_index * input_height);
-  int2 pos_in_filter_block =
-      (int2)(out_c * filter_width, batch_index * filter_height);
+  int2 pos_in_filter_block = (int2)(out_c * filter_width, 0);
   int filter_x = pos_in_filter_block.x;
   int filter_y = pos_in_filter_block.y;
   int input_x_base = pos_in_input_block.x + in_pos_in_one_block.x;
   int input_y_base = pos_in_input_block.y + in_pos_in_one_block.y;
+
   int2 align = {filter_width / 2, filter_height / 2};
   for (int fy = 0; fy < filter_height; ++fy) {
     int y_off = fy * dilation_h - align.y;
     for (int fx = 0; fx < filter_width; ++fx) {
       int x_off = fx * dilation_w - align.x;
+
       CL_DTYPE4 in = SELECT(
           READ_IMG_TYPE(CL_DTYPE_CHAR,
                         input,
@@ -271,6 +272,7 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
             in_pos_in_one_block.y + y_off < 0 ||
             in_pos_in_one_block.x + x_off >= input_width ||
             in_pos_in_one_block.y + y_off >= input_height)));
+
       CL_DTYPE4 f = READ_IMG_TYPE(
           CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + fx, filter_y + fy));
       output += in * f;
@@ -282,7 +284,11 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      prelu_alpha,
+      SAMPLER,
+      (int2)(out_c * global_size_dim1 + out_w, out_nh % output_height));
 //}
 #else                     //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));

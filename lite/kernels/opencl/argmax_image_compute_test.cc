@@ -62,7 +62,7 @@ void argmax_baseline(const indtype* x_data,
 }
 
 void test(const lite_api::CLPrecisionType p,
-          bool keepdims,
+          const bool keepdims,
           const int axis,
           DDim x_dim) {
   std::unique_ptr<KernelContext> context(new KernelContext);
@@ -82,6 +82,7 @@ void test(const lite_api::CLPrecisionType p,
   param.X = &x;
   param.Out = &out;
   param.Axis = axis;
+  param.keepdims = keepdims;
 
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));

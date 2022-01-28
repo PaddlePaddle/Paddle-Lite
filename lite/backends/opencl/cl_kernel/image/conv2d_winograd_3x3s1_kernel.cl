@@ -433,19 +433,19 @@ __kernel void transform_to_output(__read_only image2d_t matrix_m,
   alpha3 = alpha0;
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s0));
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s0 % out_height));
   if (ow.s1 < out_width && oh.s0 < out_height) {
     alpha1 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s0));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s0 % out_height));
   }
   if (ow.s0 < out_width && oh.s1 < out_height) {
     alpha2 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s1));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s1 % out_height));
   }
   if (ow.s1 < out_width && oh.s1 < out_height) {
     alpha3 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s1));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s1 % out_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{
@@ -721,19 +721,19 @@ __kernel void transform_to_output_mali(__read_only image2d_t matrix_m,
   alpha3 = alpha0;
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s0));
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s0 % out_height));
   if (ow.s1 < out_width && oh.s0 < out_height) {
     alpha1 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s0));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s0 % out_height));
   }
   if (ow.s0 < out_width && oh.s1 < out_height) {
     alpha2 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s1));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s1 % out_height));
   }
   if (ow.s1 < out_width && oh.s1 < out_height) {
     alpha3 = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s1));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s1 % out_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{
