@@ -248,7 +248,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       auto* input0_image_p = GET_DATA_GPU(inputs[0]);
       auto* input1_image_p = GET_DATA_GPU(inputs[1]);
       int input0_dims_axis = inputs[0]->dims()[axis_];
-      VLOG(4) << "input0_dims_axis: " << input0_dims_axis;
       cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(1, *input1_image_p);
