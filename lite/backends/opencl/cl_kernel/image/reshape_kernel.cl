@@ -50,8 +50,8 @@ __kernel void reshape(__read_only image2d_t input_image,
 
   int in_n0 = count0 / in_Stride2;
   int in_n1 = count1 / in_Stride2;
-  int in_n2 = count1 / in_Stride2;
-  int in_n3 = count2 / in_Stride2;
+  int in_n2 = count2 / in_Stride2;
+  int in_n3 = count3 / in_Stride2;
 
   count0 = count0 % in_Stride2;
   count1 = count1 % in_Stride2;
@@ -132,7 +132,7 @@ __kernel void reshape(__read_only image2d_t input_image,
     if (in_c2 % 4 == 0) {
       output.z = input2.x;
     } else if (in_c2 % 4 == 1) {
-      output.z = input1.y;
+      output.z = input2.y;
     } else if (in_c2 % 4 == 2) {
       output.z = input2.z;
     } else {
