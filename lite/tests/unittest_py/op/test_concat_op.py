@@ -160,18 +160,6 @@ class TestConcatOp(AutoScanTest):
         return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            input_shape = program_config.inputs["input_data0"].shape
-            if target_type == TargetType.OpenCL:
-                if "AxisTensor" in program_config.ops[0].inputs:
-                    return True
-                if len(input_shape) == 3 and program_config.ops[0].attrs[
-                        "axis"] == 0:
-                    for v in program_config.inputs.values():
-                        if v.shape[0] % 4 != 0:
-                            return True
-
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data0"].shape
@@ -182,10 +170,6 @@ class TestConcatOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite is not supported on metal. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
@@ -195,7 +179,7 @@ class TestConcatOp(AutoScanTest):
         max_examples = 50
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
+            max_examples = 500
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 400
