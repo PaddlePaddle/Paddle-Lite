@@ -115,11 +115,11 @@ void GRUComputeRun(const operators::GRUParam& param,
 
   Tensor ordered_h0;
   std::vector<uint64_t> order(batch_gate->lod()[2]);
-  lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
+    lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
   } else {
     gru_value.prev_out_value = nullptr;
