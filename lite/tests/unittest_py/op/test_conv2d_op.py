@@ -42,8 +42,8 @@ class TestConv2dOp(AutoScanTest):
             thread=[1, 4])
 
         arm_places = [
-            Place(TargetType.X86, PrecisionType.INT8, DataLayoutType.NCHW),
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places, thread=[1, 4])
         opencl_places = [

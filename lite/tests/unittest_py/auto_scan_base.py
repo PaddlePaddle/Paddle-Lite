@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cgi import print_directory
-from xmlrpc.client import boolean
 import numpy as np
 import unittest
 import abc
