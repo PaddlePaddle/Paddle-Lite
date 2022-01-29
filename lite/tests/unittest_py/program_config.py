@@ -50,7 +50,6 @@ class TensorConfig:
         else:
             assert shape is not None, "While data_gen is not defined, shape must not be None"
             self.data = np.random.normal(0.0, 1.0, shape).astype(np.float32)
-            print(self.data)
             self.shape = shape
             self.dtype = self.data.dtype
 
