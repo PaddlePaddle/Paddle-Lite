@@ -76,12 +76,16 @@ class TestPool2dOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=4, max_value=4), min_size=3, max_size=3))
+                    min_value=4, max_value=128),
+                min_size=3,
+                max_size=3))
         in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         ksize = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=2), min_size=2, max_size=2))
+                    min_value=2, max_value=128),
+                min_size=2,
+                max_size=2))
         strides = draw(
             st.lists(
                 st.integers(
