@@ -142,6 +142,7 @@ class TestGenerateProposalsOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         pass
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=400)
 
