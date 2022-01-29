@@ -32,9 +32,8 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   bool use_depthwise_conv = false;
   auto filter_tensor = converter->ConvertOperand(filter_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0], filter_width);
-  // NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
-  // output_channel_size);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
+                     output_channel_size);
   magicmind::ITensor* bias_tensor = nullptr;
   auto bias_tmp_tensor = converter->ConvertOperand(bias_operand);
   if (input_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
@@ -72,7 +71,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     conv_node->SetGroup(static_cast<int64_t>(group));
     magicmind::Layout input_layout =
         ConvertToMagicMindDataLayout(input_operand->type.layout);
-    conv_node->SetLayout(input_layout, magicmind::Layout::HWCN, input_layout);
+    conv_node->SetLayout(input_layout, input_layout, input_layout);
     if (input_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
       float input_scale = input_operand->type.symm_per_layer_params.scale;
       auto input_tensor_range = magicmind::UniformQuantParamToRangeWithQuantAlg(
