@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/x86/math/avx/instance_norm.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #include <immintrin.h>
 #include <cmath>
 

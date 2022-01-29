@@ -35,7 +35,7 @@ if (WITH_AVX AND AVX_FOUND)
   if (WIN32)
     set_source_files_properties (${X86_MATH_SRC} PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
   else ()
-    set_source_files_properties (${X86_MATH_SRC} PROPERTIES COMPILE_FLAGS "-mfma -mf16c -mavx2")
+    set_source_files_properties (${X86_MATH_SRC} PROPERTIES COMPILE_FLAGS "-mf16c -mavx2")
   endif ()
 endif()
 #  2.2 xbyak

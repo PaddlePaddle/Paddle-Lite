@@ -15,6 +15,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
 #include <vector>
 #include "lite/backends/x86/math/avx/conv_utils.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 
 namespace paddle {
 namespace lite {

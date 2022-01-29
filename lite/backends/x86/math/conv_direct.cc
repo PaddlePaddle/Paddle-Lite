@@ -17,6 +17,7 @@ limitations under the License. */
 #include <iostream>
 #include <vector>
 #include "lite/backends/x86/math/avx/conv_utils.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #include "lite/core/context.h"
 #ifdef __AVX__
 #include <immintrin.h>
