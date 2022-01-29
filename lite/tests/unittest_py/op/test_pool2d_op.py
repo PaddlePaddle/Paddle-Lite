@@ -94,7 +94,7 @@ class TestPool2dOp(AutoScanTest):
         global_pooling = draw(st.booleans())
         exclusive = draw(st.booleans())
         ceil_mode = draw(st.booleans())
-        adaptive = True  #draw(st.booleans())
+        adaptive = draw(st.booleans())
         use_cudnn = False
         use_mkldnn = False
         use_quantizer = False

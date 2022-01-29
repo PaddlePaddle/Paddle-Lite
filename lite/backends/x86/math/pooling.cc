@@ -62,12 +62,9 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {
         for (int ph = 0; ph < output_height; ++ph) {
-          std::cout << "adaptive:" << adaptive << std::endl;
           if (adaptive) {
             hstart = AdaptStartIndex(ph, input_height, output_height);
             hend = AdaptEndIndex(ph, input_height, output_height);
-            std::cout << "hstart:" << hstart << std::endl;
-            std::cout << "hend:" << hend << std::endl;
           } else {
             hstart = ph * stride_height - padding_height;
             hend = (std::min)(hstart + ksize_height, input_height);
@@ -77,8 +74,6 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
             if (adaptive) {
               wstart = AdaptStartIndex(pw, input_width, output_width);
               wend = AdaptEndIndex(pw, input_width, output_width);
-              std::cout << "wstart:" << hstart << std::endl;
-              std::cout << "wend:" << hend << std::endl;
             } else {
               wstart = pw * stride_width - padding_width;
               wend = (std::min)(wstart + ksize_width, input_width);

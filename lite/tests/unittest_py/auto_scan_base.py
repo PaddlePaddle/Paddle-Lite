@@ -177,10 +177,6 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        print("paddle lite tensor")
-        print(tensor)
-        print("paddle tensor")
-        print(baseline)
         if len(tensor) == 0 and len(baseline) == 0:
             return
         if len(tensor) == 1 and len(baseline) == 1:
