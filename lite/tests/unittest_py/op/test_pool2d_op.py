@@ -175,6 +175,10 @@ class TestPool2dOp(AutoScanTest):
                     and strides[0] != strides[1]:
                     return True
             if predictor_config.target() == TargetType.OpenCL:
+                strides = program_config.ops[0].attrs["strides"]
+                if program_config.ops[0].attrs["ceil_mode"] == True \
+                    and strides[0] != strides[1]:
+                    return True
                 if program_config.ops[0].attrs[
                         "adaptive"] == True or program_config.ops[0].attrs[
                             "padding_algorithm"] == "SAME":
