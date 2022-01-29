@@ -164,12 +164,12 @@ class TestScaleOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str in ["OpenCL", "Metal"]:
             # Make sure to generate enough valid cases for specific targets
             max_examples = 2000
         self.run_and_statis(
-            quant=False, min_success_num=100, max_examples=max_examples)
+            quant=False, min_success_num=25, max_examples=max_examples)
 
 
 if __name__ == "__main__":
