@@ -105,6 +105,16 @@ class TestPool2dOp(AutoScanTest):
         if paddings[0] == 1:
             assume((ksize[0] != 1 and ksize[1] != 1))
 
+        #This is the correct input when adaptive
+        if adaptive:
+            assume(in_shape[2] / ksize[0] == strides[0])
+            assume(in_shape[3] / ksize[1] == strides[1])
+
+        #if both paddle and lite have invalid output, so it is an invalid input.
+        #also it is unreasonable when ceil_mode == true with paddings = [0, 0]
+        if paddings == [0, 0]:
+            assume(ceil_mode == False)
+
         build_ops = OpConfig(
             type="pool2d",
             inputs={"X": ["input_data"]},
@@ -145,15 +155,20 @@ class TestPool2dOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
-                if program_config.ops[0].attrs["ceil_mode"] == True \
-                    or program_config.ops[0].attrs["adaptive"] == True :
+                if predictor_config.precision() == PrecisionType.FP16:
                     return True
-                if program_config.ops[0].attrs["padding_algorithm"] == "SAME":
-                    if program_config.ops[0].attrs["pooling_type"] == "avg":
-                        return True
+                # This is an paddle error, when padding_algorithm == "SAME" with exclusive is True
+                if program_config.ops[0].attrs[
+                        "padding_algorithm"] == "VALID" and program_config.ops[
+                            0].attrs["exclusive"] == False:
+                    return True
             if predictor_config.target() == TargetType.Metal:
                 if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
                     or program_config.ops[0].attrs["pooling_type"] == "avg" :
+                    return True
+                strides = program_config.ops[0].attrs["strides"]
+                if program_config.ops[0].attrs["ceil_mode"] == True \
+                    and strides[0] != strides[1]:
                     return True
             if predictor_config.target() == TargetType.OpenCL:
                 if program_config.ops[0].attrs[
@@ -161,19 +176,9 @@ class TestPool2dOp(AutoScanTest):
                             "padding_algorithm"] == "SAME":
                     return True
 
-        def teller2(program_config, predictor_config):
-            strides = program_config.ops[0].attrs["strides"]
-            if program_config.ops[0].attrs["ceil_mode"] == True \
-                and strides[0] != strides[1]:
-                return True
-
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            teller2, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff when ceil_model==True and strides[0] is not equal to strides[1] because the output of paddle is abnormal. We need to wait paddle's bugfix."
         )
 
         def teller2(program_config, predictor_config):
