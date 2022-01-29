@@ -84,4 +84,4 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
 
 REGISTER_MIR_PASS(scale_calc_offline_pass,
                   paddle::lite::mir::ScaleCalcOfflinePass)
-    .BindTargets({TARGET(kNNAdapter), TARGET(kARM), TARGET(kX86)});
+    .BindTargets({TARGET(kNNAdapter)});
