@@ -95,13 +95,6 @@ class TestArgMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                keep_dims = program_config.ops[0].attrs["keepdims"]
-                in_shape = list(program_config.inputs["input_data"].shape)
-                if keep_dims == False and in_shape[0] != 1:
-                    return True
-
         def _teller2(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data"].shape)
             axis = program_config.ops[0].attrs["axis"]
@@ -115,10 +108,6 @@ class TestArgMaxOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
-        )
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
