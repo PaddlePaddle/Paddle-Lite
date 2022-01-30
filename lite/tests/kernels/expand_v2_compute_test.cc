@@ -166,14 +166,25 @@ void TestExpandV2(Place place,
 TEST(ExpandV2, precision) {
   Place place;
   float abs_error = 3e-2;
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   TestExpandV2<float>(place, abs_error);
   TestExpandV2<float>(place, abs_error, {1, 1, 1}, {2, 3, 4});
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
   return;
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+  TestExpandV2<float>(place, abs_error);
+  TestExpandV2<float>(place, abs_error, {1, 1, 1}, {2, 3, 4});
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
   return;

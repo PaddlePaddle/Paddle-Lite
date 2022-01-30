@@ -469,9 +469,6 @@ TEST(Matmul2x2, precision) {
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #else
   return;
 #endif
@@ -492,9 +489,6 @@ TEST(Matmul2x2_x_transpose, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -517,9 +511,6 @@ TEST(Matmul2x2_y_transpose, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -542,9 +533,6 @@ TEST(Matmul2x2_transpose, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

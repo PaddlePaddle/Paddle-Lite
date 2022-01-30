@@ -203,12 +203,13 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = NNADAPTER_FUSED_RELU;
+    act_type = "";
   } else if (act_type == "relu1") {
     fuse_code_value = NNADAPTER_FUSED_RELU1;
+    act_type = "";
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
-  } else {
-    CHECK(act_type.empty()) << "Unsupport fused act type: " << act_type;
+    act_type = "";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
   // Output operand
@@ -225,6 +226,9 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
                            dilations_operand,
                            fuse_code_operand},
                           {output_operand});
+  // Unpack the fused activations
+  converter->UnpackFusedActivations(
+      output_operand, act_type, op, scope, output_name, output_scales);
   return NO_ERROR;
 }
 

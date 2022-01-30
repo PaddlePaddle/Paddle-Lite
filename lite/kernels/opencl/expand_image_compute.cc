@@ -40,13 +40,29 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     expand_param_ = param_.get_mutable<param_t>();
-    auto expand_times = expand_param_->expand_times;
+
+    std::vector<int> expand_times;
+    if (expand_param_->ExpandTimes != nullptr) {
+      auto expand_times_data = expand_param_->ExpandTimes->template data<int>();
+      for (int64_t i = 0; i < expand_param_->ExpandTimes->numel(); i++) {
+        expand_times.push_back(expand_times_data[i]);
+      }
+    } else {
+      expand_times = expand_param_->expand_times;
+    }
     auto in_dims = expand_param_->X->dims();
     CHECK(in_dims.size() == 4) << "expand image now only support indims size 4";
     CHECK(expand_times.size() == 4)
         << "expand image now only support in_expand_timesdims size 4";
-    CHECK(expand_times[1] == 1) << "expand image do not support expend c now";
-    kernel_func_name_ = "expend_cn";
+    kernel_func_name_ = "expend_cn0";
+
+    // if in_c divide 4 exactly we use expand_cn0
+    if (in_dims[1] % 4 == 0 || expand_times[1] == 1) {
+      kernel_func_name_ = "expand_cn0";
+    } else {
+      kernel_func_name_ = "expand_cn1";
+    }
+
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -148,6 +164,10 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(11, *out_img);
     CL_CHECK_FATAL(status);
+    status = kernel.setArg(12, x_dims[1]);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(13, out_dims[1]);
+    CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,
@@ -196,6 +216,10 @@ REGISTER_LITE_KERNEL(expand,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

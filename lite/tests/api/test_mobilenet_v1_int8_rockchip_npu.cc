@@ -36,8 +36,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_rockchip_apu) {
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(
       {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kARM), PRECISION(kInt8)},
-       lite_api::Place{TARGET(kRKNPU), PRECISION(kInt8)}});
+       lite_api::Place{TARGET(kARM), PRECISION(kInt8)}});
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);

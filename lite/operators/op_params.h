@@ -670,6 +670,15 @@ struct UniformRandomParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
 };
+/// ----------------------- unfold operators ----------------------
+struct UnfoldParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<int> kernel_sizes{};
+  std::vector<int> strides{};
+  std::vector<int> paddings{};
+  std::vector<int> dilations{};
+  lite::Tensor* Y{nullptr};
+};
 /// ----------------------- negative operators --------------
 struct NegativeParam : ParamBase {
   const lite::Tensor* X{};
@@ -853,6 +862,7 @@ struct PriorBoxParam : ParamBase {
   float step_h{0.f};
   float offset{0.5f};
   int prior_num{0};
+  bool flatten_to_2d{false};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
   bool min_max_aspect_ratios_order{false};

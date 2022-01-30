@@ -97,10 +97,6 @@ void MetalImage::InitTexture() {
                 desc_.width = static_cast<NSUInteger>(dim[2]);
                 desc_.height = static_cast<NSUInteger>(dim[1]);
                 desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
-                // baidu app: width===1 attention width!=1
-                if (dim[2] != 1) {
-                    LOG(FATAL) << "metal_image: Attention this dim";
-                }
                 break;
             default:
                 LOG(FATAL) << "metal_image: Dim size is error";

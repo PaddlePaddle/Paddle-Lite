@@ -29,16 +29,14 @@ import argparse
 class TestSequenceExpandAsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        x86_places = [
+            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=x86_places, thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

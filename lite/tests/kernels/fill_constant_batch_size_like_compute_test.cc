@@ -146,7 +146,7 @@ TEST(fill_constant_batch_size_like, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

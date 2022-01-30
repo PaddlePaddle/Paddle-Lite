@@ -167,13 +167,7 @@ class TestPool2dOp(AutoScanTest):
                     and strides[0] != strides[1]:
                     return True
             if predictor_config.target() == TargetType.OpenCL:
-                strides = program_config.ops[0].attrs["strides"]
-                if program_config.ops[0].attrs["ceil_mode"] == True \
-                    and strides[0] != strides[1]:
-                    return True
-                if program_config.ops[0].attrs[
-                        "adaptive"] == True or program_config.ops[0].attrs[
-                            "padding_algorithm"] == "SAME":
+                if program_config.ops[0].attrs["adaptive"] == True:
                     return True
 
         self.add_ignore_check_case(
@@ -192,7 +186,7 @@ class TestPool2dOp(AutoScanTest):
 
         self.add_ignore_check_case(
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 
         def teller3(program_config, predictor_config):

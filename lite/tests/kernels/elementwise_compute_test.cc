@@ -291,7 +291,6 @@ void TestElt(Place place,
 #endif
 #if defined(NNADAPTER_WITH_CAMBRICON_MLU)
   if (elt_type == std::string("max") || elt_type == std::string("min") ||
-      elt_type == std::string("pow") || elt_type == std::string("div") ||
       x_shape.size() != y_shape.size()) {
     return;
   }
@@ -467,8 +466,6 @@ TEST(Elementwise, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)

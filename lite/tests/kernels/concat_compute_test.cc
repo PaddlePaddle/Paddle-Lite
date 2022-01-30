@@ -156,7 +156,7 @@ TEST(Concat, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   use_axis_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_NPU)

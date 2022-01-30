@@ -26,6 +26,7 @@ import argparse
 
 import numpy as np
 from functools import partial
+from functools import reduce
 
 
 class TestReshape2Op(AutoScanTest):
@@ -77,12 +78,17 @@ class TestReshape2Op(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
+
         attr_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=4),
-                min_size=len(in_shape),
+                    min_value=1, max_value=max(in_shape)),
+                min_size=1,
                 max_size=len(in_shape)))
+        assume(
+            reduce(lambda x, y: x * y, attr_shape) == reduce(
+                lambda x, y: x * y, in_shape))
+
         with_shape = draw(st.sampled_from([True, False]))
 
         def generate_input(*args, **kwargs):
@@ -95,7 +101,7 @@ class TestReshape2Op(AutoScanTest):
                 "Out": ["output_data"],
                 "XShape": ["x_shape"],
             },
-            attrs={"shape": in_shape, })
+            attrs={"shape": attr_shape, })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
@@ -125,7 +131,7 @@ class TestReshape2Op(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

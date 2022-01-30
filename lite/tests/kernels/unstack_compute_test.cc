@@ -135,7 +135,7 @@ void TestUnstack(Place place,
 TEST(unstack, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU) && (not defined(LITE_WITH_XTCL))
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
