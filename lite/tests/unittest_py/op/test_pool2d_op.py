@@ -158,14 +158,6 @@ class TestPool2dOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
-                # This is an paddle error, when padding_algorithm == "SAME" with exclusive is True
-                if program_config.ops[0].attrs[
-                        "padding_algorithm"] == "VALID" and program_config.ops[
-                            0].attrs["exclusive"] == False:
-                    return True
             if predictor_config.target() == TargetType.Metal:
                 if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
                     or program_config.ops[0].attrs["pooling_type"] == "avg" :
@@ -201,6 +193,29 @@ class TestPool2dOp(AutoScanTest):
         self.add_ignore_check_case(
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
+
+        def teller3(program_config, predictor_config):
+            if predictor_config.target() == TargetType.ARM:
+                # This is an paddle error, when padding_algorithm == "SAME" with exclusive is True
+                if program_config.ops[0].attrs[
+                        "padding_algorithm"] == "VALID" and program_config.ops[
+                            0].attrs["exclusive"] == False:
+                    return True
+
+        self.add_ignore_check_case(
+            teller3, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Paddle does not support this op in a specific case. We have fedback to the Paddle developer."
+        )
+
+        def teller4(program_config, predictor_config):
+            if predictor_config.target() == TargetType.ARM:
+                if predictor_config.precision() == PrecisionType.FP16:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.ACCURACY_ERROR,
+            "Paddle-Lite has diff in a specific case when fp16, but we do not know the reason is whether fp16 diff or bugs, we will figure out this in the future."
         )
 
     def test(self, *args, **kwargs):
