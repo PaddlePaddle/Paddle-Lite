@@ -38,8 +38,6 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #out diff
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -54,11 +52,15 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() == TargetType.OpenCL:
+            input_shape_x = list(program_config.inputs["input_data_x"].shape)
+            input_shape_y = list(program_config.inputs["input_data_y"].shape)
+            if len(input_shape_x) > 4 or len(input_shape_y) > 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):

@@ -38,7 +38,6 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -53,11 +52,15 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() == TargetType.OpenCL:
+            fill_constant_shape = program_config.ops[1].attrs["shape"]
+            input_shape = list(program_config.inputs["input_data"].shape)
+            if len(fill_constant_shape) > 4 or len(input_shape) > 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -145,9 +148,13 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 500
+        if target_str == "OpenCL":
+            max_examples = 2000
         self.run_and_statis(
             quant=False,
-            max_examples=500,
+            max_examples=max_examples,
             passes=["lite_elementwise_mul_constant_eliminate_pass"])
 
 
