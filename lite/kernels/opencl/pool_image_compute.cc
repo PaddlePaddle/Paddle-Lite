@@ -230,9 +230,9 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, strides[1]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, paddings_[2]);
-      CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, paddings_[0]);
+      CL_CHECK_FATAL(status);
+      status = kernel_.setArg(arg_idx++, paddings_[2]);
       CL_CHECK_FATAL(status);
       if (kernel_func_name_ == "pool") {
         int ad = param.adaptive;

@@ -94,7 +94,6 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   FixQuantizedOps(model);
-  ConvertDataLayoutNCHWToNHWC(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
@@ -225,7 +224,7 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
-    if (IsDeviceMemory(output_mlu_ptr)) {
+    if (IsDeviceMemory(outputs[i])) {
       MLU_CNRT_CHECK(cnrtMemcpy(buffer,
                                 output_mlu_ptr,
                                 outputs[i]->GetSize(),

@@ -14,16 +14,15 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/im2sequence_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class Im2SequenceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class Im2SequenceCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::Im2SequenceParam;
 
@@ -36,7 +35,7 @@ class Im2SequenceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  private:
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

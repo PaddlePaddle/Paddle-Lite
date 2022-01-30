@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/lp_normalization.h"
+#include "core/operation/expand.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
-  LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertExpand(Converter* converter, hal::Operation* operation) {
+  EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
+      << "Shape input only support const tensor.";
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto lp_normalization_node = converter->network()->AddINormalizeNode(
-      input_tensor, axis_tensor, nullptr);
-  NNADAPTER_CHECK(lp_normalization_node)
-      << "Failed to add lp_normalization node.";
-  lp_normalization_node->SetP(static_cast<float>(p));
-  lp_normalization_node->SetEpsilon(epsilon);
-  auto output_tensor = lp_normalization_node->GetOutput(0);
+  auto shape_tensor = converter->GetMappedTensor(shape_operand);
+  if (!shape_tensor) {
+    shape_tensor = converter->ConvertOperand(shape_operand);
+  }
+
+  auto expand_node =
+      converter->network()->AddIExpandNode(input_tensor, shape_tensor);
+  NNADAPTER_CHECK(expand_node) << "Failed to add expand node.";
+  auto output_tensor = expand_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
