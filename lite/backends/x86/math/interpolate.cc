@@ -131,7 +131,7 @@ void bilinear_interp(const float* input_data,
 
       int dx = 0;
 // w_bound loop
-#ifdef __AVX__
+#ifdef __AVX2__
       for (; dx + 3 < w_bound; dx += 4) {
         int x0 = xofs[dx];
         int x1 = xofs[dx + 1];
@@ -200,7 +200,7 @@ void bilinear_interp(const float* input_data,
       float param1 = *(src + (sy + 1) * w_in + w_in - 1);
       const float buffer0[2] = {param0, param0};
       const float buffer1[2] = {param1, param1};
-#ifdef __AVX__
+#ifdef __AVX2__
       __m256 _s0p0p3 = _mm256_set1_ps(param0);
       __m256 _s1p0p3 = _mm256_set1_ps(param1);
       for (; dx + 3 < w_out; dx += 4) {
@@ -295,7 +295,7 @@ void bilinear_interp(const float* input_data,
       float* rows1p = rows1;
 
       int dx = 0;
-#ifdef __AVX__
+#ifdef __AVX2__
       const float* s1 = s0;
 
       // w_bound loop
@@ -363,7 +363,7 @@ void bilinear_interp(const float* input_data,
       float param = *(src + sy * w_in + w_in - 1);
       const float buffer1[2] = {param, param};
 
-#ifdef __AVX__
+#ifdef __AVX2__
       __m256 _s0p0p3 = _mm256_set1_ps(param);
       __m256 _s1p0p3 = _mm256_set1_ps(param);
 

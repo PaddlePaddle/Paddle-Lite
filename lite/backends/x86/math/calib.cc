@@ -28,6 +28,7 @@ void fp32_to_int8(const float* din,
                   int axis_size,
                   int64_t outer_size,
                   int64_t inner_size) {
+/*
 #ifdef __AVX__
   int cnt = inner_size >> 5;
   int remain = inner_size & 31;
@@ -140,6 +141,7 @@ void fp32_to_int8(const float* din,
       dout_c[i] = dout_c[i] < -127 ? -127 : dout_c[i];
     }
   }
+*/
 }
 
 void int8_to_fp32(const int8_t* in,
@@ -148,6 +150,7 @@ void int8_to_fp32(const int8_t* in,
                   int axis_size,
                   int64_t outer_size,
                   int64_t inner_size) {
+/*
 #ifdef __AVX__
   int cnt = inner_size >> 5;
   int remain = inner_size & 31;
@@ -228,6 +231,7 @@ void int8_to_fp32(const int8_t* in,
       dout_c[i] = in_scale * din_c[i];
     }
   }
+*/
 }
 
 }  // namespace math
