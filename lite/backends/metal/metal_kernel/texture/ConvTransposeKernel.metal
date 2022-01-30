@@ -36,6 +36,7 @@ kernel void conv_transpose2x2_stride2(
       gid.z * input_array_size * 4 * 4 + (kernel_index * input_array_size);
   int input_x = gid.x / 2;
   int input_y = gid.y / 2;
+  int weights_len = param.kernelW * param.kernelH * input_array_size * param.oC;
 
   constexpr sampler sample(
       coord::pixel, filter::nearest, address::clamp_to_zero);
@@ -43,10 +44,17 @@ kernel void conv_transpose2x2_stride2(
   for (int i = 0; i < input_array_size; ++i) {
     ftype4 input = inTexture.sample(sample, float2(input_x, input_y), i);
 
-    ftype4 kernel_slice0 = weights[kernel_to + input_array_size * 4 * 0 + i];
-    ftype4 kernel_slice1 = weights[kernel_to + input_array_size * 4 * 1 + i];
-    ftype4 kernel_slice2 = weights[kernel_to + input_array_size * 4 * 2 + i];
-    ftype4 kernel_slice3 = weights[kernel_to + input_array_size * 4 * 3 + i];
+    int x = kernel_to + input_array_size * 4 * 0 + i;
+    ftype4 kernel_slice0 = (x < weights_len) ? weights[x] : ftype4(0.0);
+
+    int y = kernel_to + input_array_size * 4 * 1 + i;
+    ftype4 kernel_slice1 = (y < weights_len) ? weights[y] : ftype4(0.0);
+
+    int z = kernel_to + input_array_size * 4 * 2 + i;
+    ftype4 kernel_slice2 = (z < weights_len) ? weights[z] : ftype4(0.0);
+
+    int w = kernel_to + input_array_size * 4 * 3 + i;
+    ftype4 kernel_slice3 = (w < weights_len) ? weights[w] : ftype4(0.0);
 
     output.x += dot(input, kernel_slice0);
 
