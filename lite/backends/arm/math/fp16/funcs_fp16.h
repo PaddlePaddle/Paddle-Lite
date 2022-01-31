@@ -32,7 +32,6 @@
 #include "lite/backends/arm/math/fp16/pad2d_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
 #include "lite/backends/arm/math/fp16/sgemm_fp16.h"
-#include "lite/backends/arm/math/fp16/shuffle_channel_fp16.h"
 #include "lite/backends/arm/math/fp16/softmax_fp16.h"
 #include "lite/backends/arm/math/fp16/type_trans_fp16.h"
 #include "lite/backends/arm/math/funcs.h"
