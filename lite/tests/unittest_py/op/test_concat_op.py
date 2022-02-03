@@ -164,8 +164,6 @@ class TestConcatOp(AutoScanTest):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data0"].shape
             if target_type == TargetType.Metal:
-                if "AxisTensor" in program_config.ops[0].inputs:
-                    return True
                 if len(input_shape) != 4:
                     return True
 
