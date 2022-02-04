@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/kunlunxin_xtcl/converter/converter.h"
-#include "driver/kunlunxin_xtcl/utility.h"
-#include "utility/string.h"
+#include "driver/android_nnapi/utility.h"
 
 namespace nnadapter {
-namespace kunlunxin_xtcl {
+namespace android_nnapi {
 
 class Device {
  public:
@@ -34,17 +32,21 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
-  int first_device_id() {
-    return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
-  }
-  std::string device_target() { return device_target_; }
   ~Context();
+  bool relax_fp32_to_fp16() { return relax_fp32_to_fp16_; }
+  bool only_use_acc_device() { return only_use_acc_device_; }
+  bool disable_cpu_device() { return disable_cpu_device_; }
+  std::vector<ANeuralNetworksDevice*>* selected_devices() {
+    return &selected_devices_;
+  }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  std::vector<int> selected_device_ids_;
-  std::string device_target_{""};
+  bool relax_fp32_to_fp16_{true};
+  bool only_use_acc_device_{false};
+  bool disable_cpu_device_{false};
+  std::vector<ANeuralNetworksDevice*> selected_devices_;
 };
 
 class Program {
@@ -67,16 +69,15 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to XTCL expr
-  std::map<hal::Operand*, std::vector<xtcl::xExpr>> exprs_;
-  xtcl::network::xTensorCompiler::ParamNDArrayMap params_;
-  xtcl::network::xNetworkBuilder builder_;
-  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
-  std::vector<DLTensor> input_tensors_{};
-  std::vector<DLTensor> output_tensors_{};
+  // Map NNAdapter operand to NNAPI operand index
+  std::map<hal::Operand*, std::vector<uint32_t>> operand_indexes_;
+  std::vector<void*> operand_buffers_;
+  ANeuralNetworksModel* model_{nullptr};
+  ANeuralNetworksCompilation* compilation_{nullptr};
+  ANeuralNetworksExecution* execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
 };
 
-}  // namespace kunlunxin_xtcl
+}  // namespace android_nnapi
 }  // namespace nnadapter

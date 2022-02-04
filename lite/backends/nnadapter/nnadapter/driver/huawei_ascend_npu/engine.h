@@ -36,10 +36,10 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
-  int GetFirstDeviceID() {
+  int first_device_id() {
     return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
-  std::string GetProfilingFilePath() { return profiling_file_path_; }
+  std::string profiling_file_path() { return profiling_file_path_; }
   ~Context();
 
  private:
