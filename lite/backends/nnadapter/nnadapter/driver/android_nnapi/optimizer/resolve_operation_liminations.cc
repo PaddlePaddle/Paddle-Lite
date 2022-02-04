@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/android_nnapi/optimizer/resolve_op_liminations.h"
+#include "driver/android_nnapi/optimizer/resolve_operation_liminations.h"
 #include <cmath>
 #include <vector>
+#include "driver/android_nnapi/utility.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -39,7 +40,9 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
     *axis += input_operand->type.dimensions.count;
   }
   auto output_operand = output_operands[0];
-  // MediaTek APU only supports 2D or 4D input
+  if (nnapi()->android_sdk_version >= ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12)
+    return;
+  // NNAPI only supports 2D or 4D input before Android 29
   if (input_dimensions_count != 2 && input_dimensions_count != 4) {
     bool is_ends_with_1 = true;
     for (uint32_t i = *axis + 1; i < input_dimensions_count; i++) {
@@ -98,7 +101,7 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
   }
 }
 
-void ResolveOpLiminations(hal::Model* model) {
+void ResolveOperationLiminations(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {

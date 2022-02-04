@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-void ResolveOpLiminations(hal::Model* model);
+void ResolveOperationLiminations(hal::Model* model);
 
 }  // namespace android_nnapi
 }  // namespace nnadapter

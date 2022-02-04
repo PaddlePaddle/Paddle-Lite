@@ -23,8 +23,9 @@ namespace android_nnapi {
 
 // The following environment variables can be used at runtime:
 // Specify the list of device names, such as
-// ANDROID_NNAPI_SELECTED_DEVICE_NAMES=nnapi-reference,apu or
-// ANDROID_NNAPI_SELECTED_DEVICE_NAMES=apu, ANDROID_NNAPI_SELECTED_DEVICE_NAMES
+// ANDROID_NNAPI_SELECTED_DEVICE_NAMES=nnapi-reference,armnn or
+// ANDROID_NNAPI_SELECTED_DEVICE_NAMES=armnn,
+// ANDROID_NNAPI_SELECTED_DEVICE_NAMES
 // have higher priority than ANDROID_NNAPI_SELECTED_DEVICE_IDS
 #define ANDROID_NNAPI_SELECTED_DEVICE_NAMES \
   "ANDROID_NNAPI_SELECTED_DEVICE_NAMES"

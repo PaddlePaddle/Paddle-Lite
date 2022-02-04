@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <utility>
 #include "driver/android_nnapi/converter/converter.h"
-#include "driver/android_nnapi/optimizer/resolve_op_liminations.h"
-#include "driver/android_nnapi/optimizer/restrict_same_input_output_quant_params.h"
+#include "driver/android_nnapi/optimizer/resolve_operation_liminations.h"
+#include "driver/android_nnapi/optimizer/restrict_input_output_quant_params.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
@@ -35,12 +35,13 @@ Context::Context(void* device, const char* properties) : device_(device) {
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string key_value;
   auto key_values = GetKeyValues(properties);
-  NNADAPTER_LOG(INFO) << "Runtime: " << std::endl
-                      << "  Has NNAPI: " << nnapi()->nnapi_exists << std::endl
+  NNADAPTER_LOG(INFO) << "Runtime information: " << std::endl
+                      << "  Found NNAPI: " << nnapi()->nnapi_exists << std::endl
                       << "  NNAPI runtime feature level: "
                       << nnapi()->nnapi_runtime_feature_level << std::endl
                       << "  Android sdk version: "
                       << nnapi()->android_sdk_version;
+  NNADAPTER_CHECK(nnapi()->nnapi_exists) << "NNAPI is not found!";
   // Get the available device list
   if (nnapi()->android_sdk_version >=
       ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12) {
@@ -272,9 +273,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   ConvertQuantizationSymmToAsymm(model);
-  RestrictSameInputOutputQuantParams(model);
+  RestrictInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);
-  ResolveOpLiminations(model);
+  ResolveOperationLiminations(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert the NNAdapter model to NNAPI model
   operand_indexes_.clear();
