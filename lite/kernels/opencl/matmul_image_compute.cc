@@ -181,10 +181,11 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     is_mali_ = context.cl_context()->IsArmMali();
+    is_apple_m1_ = context.cl_context()->IsAppleM1();
     device_version = CLRuntime::Global()->device().getInfo<CL_DEVICE_VERSION>();
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
-        !transpose_x_) {
+    if (!is_mali_ && !is_apple_m1_ && x_dims.size() == 2 &&
+        y_dims.size() == 2 && !transpose_x_) {
       build_options_ += " -DUSE_IMAGE_Y ";
       if (device_version.find("Adreno(TM) 506") == std::string::npos) {
         build_options_ += " -DADRENO_HIGH ";
@@ -345,6 +346,13 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   void SetGlobalLocalWorkSize() {
     const auto x_dims = matmul_v2_param_->X->dims();
     const auto y_dims = matmul_v2_param_->Y->dims();
+    // compute global/local work size
+    auto device_info = CLRuntime::Global()->GetDeviceInfo();
+    int max_work_group_size = device_info["CL_DEVICE_MAX_WORK_GROUP_SIZE"];
+    CLImageConverterFolder* folder_converter = new CLImageConverterFolder();
+    const auto out_dims = matmul_v2_param_->Out->dims();
+    out_img_shape = folder_converter->InitImageDimInfoWith(out_dims);
+
     if (x_dims.size() <= 2 && y_dims.size() <= 2) {
       if (transpose_x_) {
         local_work_size_ = cl::NDRange(32, 4, 1);
@@ -358,7 +366,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
           local_work_size_ = cl::NDRange(4, 4, 16);
         }
         global_work_size_ = cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
-        if (is_mali_) {
+        if (is_mali_ || is_apple_m1_) {
           local_work_size_ = cl::NDRange(4, 4, 16);
           global_work_size_ =
               cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
@@ -367,26 +375,29 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         }
       }
     } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
-      CLImageConverterFolder* folder_converter = new CLImageConverterFolder();
-      const auto out_dims = matmul_v2_param_->Out->dims();
-      out_img_shape = folder_converter->InitImageDimInfoWith(out_dims);
-      local_work_size_ = cl::NDRange(32, c_blks_, 1);
+      local_work_size_ =
+          cl::NDRange(32, std::min(c_blks_, max_work_group_size / 32), 1);
       global_work_size_ = cl::NDRange(ROUND_UP(n_, local_work_size_[0]),
-                                      local_work_size_[1],
+                                      ROUND_UP(c_blks_, local_work_size_[1]),
                                       out_img_shape[1]);
     } else if (x_dims.size() > 2 && y_dims.size() == 1) {
-      local_work_size_ = cl::NDRange(32, c_blks_, 1);
-      global_work_size_ = cl::NDRange(
-          ROUND_UP(H, local_work_size_[0]), local_work_size_[1], UP_DIV(N, 4));
+      local_work_size_ =
+          cl::NDRange(32, std::min(c_blks_, max_work_group_size / 32), 1);
+      global_work_size_ = cl::NDRange(ROUND_UP(H, local_work_size_[0]),
+                                      ROUND_UP(c_blks_, local_work_size_[1]),
+                                      UP_DIV(N, 4));
     }
+    VLOG(4) << "local_work_size[3D]: " << local_work_size_[0] << " "
+            << local_work_size_[1] << " " << local_work_size_[2];
     VLOG(4) << "global_work_size[3D]: " << global_work_size_[0] << " "
             << global_work_size_[1] << " " << global_work_size_[2];
   }
 
   void Run() override {
     auto* x_img_ = GET_DATA_GPU(matmul_v2_param_->X);
-    auto* out_img_ =
-        MUTABLE_DATA_GPU(matmul_v2_param_->Out, UP_DIV(n_, 4), m_, nullptr);
+    auto* out_img_ = MUTABLE_DATA_GPU(
+        matmul_v2_param_->Out, out_img_shape[0], out_img_shape[1], nullptr);
+
     auto x_dims = matmul_v2_param_->X->dims();
     auto y_dims = matmul_v2_param_->Y->dims();
 
@@ -510,6 +521,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int k_blks_;
   int n_blks_;
   bool is_mali_;
+  bool is_apple_m1_;
   std::string device_version;
   bool use_image_y_{false};
   bool transpose_x_{false};
