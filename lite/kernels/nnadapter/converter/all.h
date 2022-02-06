@@ -57,10 +57,10 @@ REGISTER_CONVERTER(softmax,
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi");
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
-REGISTER_CONVERTER(
-    conv2d_transpose,
-    ConvertConv2dTranspose,
-    "huawei_ascend_npu,amlogic_npu,verisilicon_timvx,cambricon_mlu");
+REGISTER_CONVERTER(conv2d_transpose,
+                   ConvertConv2dTranspose,
+                   "huawei_ascend_npu,amlogic_npu,verisilicon_timvx,cambricon_"
+                   "mlu,android_nnapi");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
