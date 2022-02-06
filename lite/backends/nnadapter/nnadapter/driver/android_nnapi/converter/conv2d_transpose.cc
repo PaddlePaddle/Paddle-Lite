@@ -72,7 +72,7 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   auto stride_height_index = converter->AddInt32ConstantOperand(stride_height);
   auto fuse_code_index = converter->AddInt32ConstantOperand(
       ConvertFuseCodeToNNFuseCode(fuse_code));
-  auto is_nchw_index = converter->AddBool8ConstantOperand(true);
+  auto is_nchw_index = converter->AddBool8ConstantOperand(false);
   auto output_index = converter->ConvertOperand(output_operand);
   NNADAPTER_CHECK_EQ(converter->AddOperation(ANEURALNETWORKS_TRANSPOSE_CONV_2D,
                                              {input_index,
