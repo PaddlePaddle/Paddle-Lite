@@ -150,8 +150,22 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+
+      for (auto& dim_in : input_dims) {
+        param.x->Resize(dim_in);
+        DDim dim_out = compute_out_dim(dim_in, param);
+        if (dim_out[2] < 1 || dim_out[3] < 1) {
+          continue;
+        }
+        param.output->Resize(dim_out);
+        break;
+      }
+
       conv_t.SetParam(param);
       conv_t.SetContext(std::move(ctx1));
+      // prepare for run
+      conv_t.PrepareForRun();
+
       for (auto& dim_in : input_dims) {
         CHECK_EQ(weight_dim[0], dim_in[1])
             << "input channel must equal to weights channel";
@@ -162,8 +176,6 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
         param.filter->CopyDataFrom(tmp_weights);
-        // prepare for run
-        conv_t.PrepareForRun();
         paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
         // paddle::lite::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
