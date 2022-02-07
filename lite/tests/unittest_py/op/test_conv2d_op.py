@@ -34,10 +34,16 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+
         arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places, thread=[1, 4])
         opencl_places = [
@@ -76,8 +82,8 @@ class TestConv2dOp(AutoScanTest):
         height = draw(st.integers(min_value=1, max_value=128))
         width = draw(st.integers(min_value=1, max_value=128))
         cout = draw(st.integers(min_value=1, max_value=128))
-        kw = np.random.randint(1, 5)
-        kh = np.random.randint(1, 5)
+        kw = draw(st.integers(min_value=1, max_value=5))
+        kh = draw(st.integers(min_value=1, max_value=5))
         groups = draw(st.integers(min_value=1, max_value=128))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))

@@ -268,6 +268,18 @@ class AutoScanBaseTest(unittest.TestCase):
             config.pass_builder().set_passes(passes)
         return config
 
+    @abc.abstractmethod
+    def insert_leaky_relu_op(self, prog_configs=None):
+        alpha_data = 0.01
+        leaky_relu_op = OpConfig(
+            type="leaky_relu",
+            inputs={"X": []},
+            outputs={"Out": ["output_act_data"]},
+            attrs={"alpha": alpha_data})
+        leaky_relu_op.inputs["X"].append(prog_configs.outputs[0])
+        prog_configs.ops.append(leaky_relu_op)
+        prog_configs.outputs[0] = "output_act_data"
+
     def run_test(self, quant=False, prog_configs=None):
         status = True
 
@@ -276,7 +288,12 @@ class AutoScanBaseTest(unittest.TestCase):
         for prog_config in prog_configs:
 
             predictor_idx = -1
+            cnt = 0
             for paddlelite_config in paddlelite_configs:
+                if paddlelite_config.precision() == PrecisionType.INT8:
+                    quant = True
+                else:
+                    quant = False
                 predictor_idx += 1
                 # judge validity of program
                 if not self.is_program_valid(prog_config, paddlelite_config):
@@ -285,10 +302,17 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.num_ran_programs_list[predictor_idx] += 1
 
                 # creat model and prepare feed data
-                model, params = create_fake_model(prog_config)
                 if quant:
+                    atol_ = 1e-3
+                    rtol_ = 1e-3
+                    if cnt == 0:
+                        self.insert_leaky_relu_op(prog_config)
+                    cnt = cnt + 1
+                    model, params = create_fake_model(prog_config)
                     model, params = create_quant_model(
                         model, params, self.cache_dir, prog_config)
+                else:
+                    model, params = create_fake_model(prog_config)
 
                 feed_data = {}
                 for name, tensor_config in prog_config.inputs.items():
