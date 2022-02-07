@@ -1423,6 +1423,8 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2_fp32(
   // size_right_remain: When we process the last cnt_remain([1,4]) outputs, the
   // number of valid data
   // Obviously, it should be within (0, 8]!
+  // attention : size_right_remain's meaning is different in
+  // right_mask_3x3s1_fp32
   int cnt_remain;
   if (left_padding > 0) {
     cnt_col = tile_w - 2;

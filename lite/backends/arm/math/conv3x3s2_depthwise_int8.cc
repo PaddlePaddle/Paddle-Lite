@@ -1235,7 +1235,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vld2.8    {d14-d15}, [%[din_ptr1]]!              \n" \
   "vld2.8    {d16-d17}, [%[din_ptr2]]!             \n" \
   \
-  /* below generating d18,d19,d20 according to [vmask] */
+  /* below generating d18,d19,d20 according to [vmask] */\
   "vld1.8 {d18}, [%[vmask]]                     \n" \
   "vld1.8    {d19}, [%[din_ptr0]]               \n" \
   "vld1.8    {d28}, [%[din_ptr1]]               \n" \
@@ -1246,8 +1246,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vext.8    d18, d12, d19, #1                      \n" \
   "vext.8    d19, d14, d28, #1                      \n" \
   "vext.8    d20, d16, d29, #1                      \n" \
-  /* generating d18,d19,d20 ends */
-\
+  /* generating d18,d19,d20 ends */\
   "vmov.u32  q14, #0                                \n" \
   "vmov.u32  q15, #0                                \n" \
   /* line 0 */                                          \
