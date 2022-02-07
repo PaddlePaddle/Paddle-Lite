@@ -19,6 +19,26 @@ function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
     )
 endfunction()
 
+function(lite_download_and_uncompress_for_nnadapter INSTALL_DIR DOWNLOAD_URL MODEL_TYPE MODEL_VERSION MODEL_NAME FILENAME)
+    set(MODEL_PATH "${MODEL_TYPE}/${MODEL_VERSION}/${MODEL_NAME}/${FILENAME}")
+    message(STATUS "Download inference test stuff: ${MODEL_PATH}")
+    string(REGEX REPLACE "[-%.]" "_" FILENAME_EX ${MODEL_PATH})
+    set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
+    set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
+    ExternalProject_Add(
+            ${EXTERNAL_PROJECT_NAME}
+            ${EXTERNAL_PROJECT_LOG_ARGS}
+            PREFIX                ${INSTALL_DIR}
+            DOWNLOAD_COMMAND      wget --no-check-certificate -q -O ${INSTALL_DIR}/${MODEL_PATH} ${DOWNLOAD_URL}/${MODEL_PATH} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${MODEL_PATH} && rm -f ${INSTALL_DIR}/${MODEL_PATH}
+            DOWNLOAD_DIR          ${INSTALL_DIR}
+            DOWNLOAD_NO_PROGRESS  1
+            CONFIGURE_COMMAND     ""
+            BUILD_COMMAND         ""
+            UPDATE_COMMAND        ""
+            INSTALL_COMMAND       ""
+    )
+endfunction()
+
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
