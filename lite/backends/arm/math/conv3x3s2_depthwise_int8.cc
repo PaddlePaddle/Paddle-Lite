@@ -1363,19 +1363,7 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
 
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
-  std::cout << "col" << cnt_col << std::endl;
   cnt_col = (cnt_col << 4 | cnt_remain);
-
-  std::cout << hin << win << std::endl;
-  std::cout << hout << wout << std::endl;
-  std::cout << cnt_remain << std::endl;
-  std::cout << cnt_col << std::endl;
-  for (int i = 0; i < 24; i++) {
-    int a = vmask[i];
-    // vmask[i] = 0;
-    // vmask[i] = 0xffffffff;
-    std::cout << a << "erfger ";
-  }
 
   uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
   uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
