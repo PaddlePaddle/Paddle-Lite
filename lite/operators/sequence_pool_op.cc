@@ -46,7 +46,9 @@ bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.MaxIndex = scope->FindVar(opdesc.Output("MaxIndex").front())
                         ->GetMutable<lite::Tensor>();
   param_.pool_type = opdesc.GetAttr<std::string>("pooltype");
-  param_.pad_value = opdesc.GetAttr<float>("pad_value");
+  if (opdesc.HasAttr("pad_value")) {
+    param_.pad_value = opdesc.GetAttr<float>("pad_value");
+  }
   CHECK(param_.X);
   CHECK(param_.Out);
   return true;
