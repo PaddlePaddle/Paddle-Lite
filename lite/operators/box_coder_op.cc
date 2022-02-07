@@ -96,6 +96,9 @@ bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   if (opdesc.HasAttr("variance")) {
     param_.variance = opdesc.GetAttr<std::vector<float>>("variance");
   }
+  input_tensor_ptrs_cache_.push_back(param_.prior_box);
+  input_tensor_ptrs_cache_.push_back(param_.target_box);
+  output_tensor_ptrs_cache_.push_back(param_.proposals);
   return true;
 }
 
