@@ -102,7 +102,7 @@ class TestTransposeOp(AutoScanTest):
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        if (target == "Metal"):
+        if (target == "Metal" and len(axis_int32_data) == 4):
             for i in range(4):
                 for j in range(4):
                     if i != j:
