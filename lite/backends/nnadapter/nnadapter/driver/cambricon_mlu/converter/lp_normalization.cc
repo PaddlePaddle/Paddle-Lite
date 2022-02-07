@@ -29,8 +29,8 @@ int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto lp_normalization_node =
-      converter->network()->AddINormalizeNode(input_tensor, axis_tensor);
+  auto lp_normalization_node = converter->network()->AddINormalizeNode(
+      input_tensor, axis_tensor, nullptr);
   NNADAPTER_CHECK(lp_normalization_node)
       << "Failed to add lp_normalization node.";
   lp_normalization_node->SetP(static_cast<float>(p));

@@ -37,14 +37,14 @@ class TestMulOp(AutoScanTest):
         #                             DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageFolder),
+            # Place(TargetType.OpenCL, PrecisionType.FP16,
+            #       DataLayoutType.ImageDefault), 
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
@@ -61,8 +61,8 @@ class TestMulOp(AutoScanTest):
             shape0 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape1 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
-            batch0 = draw(st.integers(min_value=1, max_value=4)) * 4
-            batch1 = draw(st.integers(min_value=1, max_value=4)) * 4
+            batch0 = draw(st.integers(min_value=1, max_value=4))
+            batch1 = draw(st.integers(min_value=1, max_value=4))
         if target_str == "ARM" or target_str == "X86":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
@@ -136,12 +136,14 @@ class TestMulOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
+            input_x_shape = list(program_config.inputs["input_data_x"].shape)
+            input_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if input_x_shape[0] > 1 or input_y_shape[0] > 1:
                 return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case. We need to fix it as soon as possible."
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

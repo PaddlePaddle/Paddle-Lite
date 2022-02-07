@@ -19,7 +19,6 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernels.h"
 #include "lite/backends/x86/math/blas.h"
-#include "lite/backends/x86/parallel.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"

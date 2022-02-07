@@ -584,10 +584,6 @@ inline void prepack_input_nxwc4_dw(const float* din,
       float32x4_t vc1 = vld1q_f32(tmp1);
       float32x4_t vc2 = vld1q_f32(tmp2);
       float32x4_t vc3 = vld1q_f32(tmp3);
-      vc0 = vbslq_f32(vmask_valid, vc0, vzero);
-      vc1 = vbslq_f32(vmask_valid, vc1, vzero);
-      vc2 = vbslq_f32(vmask_valid, vc2, vzero);
-      vc3 = vbslq_f32(vmask_valid, vc3, vzero);
       transpose_4x4(vc0, vc1, vc2, vc3, dout);
       dout += 16;
     }

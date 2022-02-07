@@ -7,7 +7,15 @@ LDFLAGS = -latomic -pthread -ldl -llog -lz -static-libstdc++
 
 SYSROOT_COMPLILE = --sysroot=$(NDK_ROOT)/sysroot
 
-SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
+ifeq ($(SYSTEM), Linux)
+    HOST_NAME = linux
+    HOST_TARGET = linux-x86_64
+else
+    HOST_NAME = darwin
+    HOST_TARGET = darwin-x86_64
+endif
+
+SYSTEM_INCLUDES_PRE = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++abi/include \
                   -I$(NDK_ROOT)/sources/android/support/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
@@ -17,12 +25,9 @@ NDK_VERSION=$(shell echo $(NDK_NAME) | grep -Eo "[0-9]{2}")
 $(info NDK_NAME: $(NDK_NAME))
 $(info NDK_VERSION: $(NDK_VERSION))
 
-ifeq ($(SYSTEM), Linux)
-    HOST_NAME = linux
-    HOST_TARGET = linux-x86_64
-else
-    HOST_NAME = darwin
-    HOST_TARGET = darwin-x86_64
+SYSTEM_INCLUDES = $(SYSTEM_INCLUDES_PRE)
+ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
+    SYSTEM_INCLUDES = $(SYSTEM_INCLUDES_PRE) -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include 
 endif
 
 $(info HOST_NAME: $(HOST_NAME))
@@ -55,19 +60,32 @@ endif
 ifeq ($(ARM_ABI), arm8)
     CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=21 -fexceptions -frtti -std=c++11 -O3 -DNDEBUG -fPIE
     CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
+    AARCH64_LINUX_ANDROID = -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
+    LIBSTDC = $(NDK_ROOT)/platforms/android-21/arch-arm64/usr/lib/libstdc++.so
+    ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
+        AARCH64_LINUX_ANDROID = -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include/aarch64-linux-android
+        LIBSTDC = $(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/lib/aarch64-linux-android/21/libstdc++.so
+    endif        
     SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a \
-                  $(NDK_ROOT)/platforms/android-21/arch-arm64/usr/lib/libstdc++.so
-    INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
+                  $(LIBSTDC)
+                 
+    INCLUDES = $(SYSTEM_INCLUDES) $(AARCH64_LINUX_ANDROID)
 else
     CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
                    -D__ANDROID_API__=16 -fexceptions -frtti  -std=c++11 -O3 -DNDEBUG -fPIE
     CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
+    LIBUNWIND = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libunwind.a
+    ANDROIDABI = -I$(NDK_ROOT)/sysroot/usr/include/arm-linux-androideabi
+    ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
+        LIBUNWIND = $(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/lib64/clang/12.0.8/lib/linux/arm/libunwind.a
+        ANDROIDABI = -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include/arm-linux-androideabi
+    endif    
     SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
-                  $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libunwind.a
-    INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/arm-linux-androideabi
+                  $(LIBUNWIND)
+    INCLUDES = $(SYSTEM_INCLUDES) $(ANDROIDABI)
 endif
 
 ifeq ($(shell expr $(NDK_VERSION) \>= 21), 1)

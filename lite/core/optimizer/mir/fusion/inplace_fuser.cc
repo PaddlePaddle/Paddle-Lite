@@ -33,6 +33,7 @@ void InplaceFuser::BuildPattern() {
   auto* output = VarNode("output")
                      ->assert_is_op_output(type_, "Out")
                      ->assert_only_one_output()
+                     ->assert_var_not_persistable()
                      ->AsOutput();
 
   *input >> *op_node >> *output;
