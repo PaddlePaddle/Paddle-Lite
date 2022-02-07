@@ -41,7 +41,6 @@ void GatherFunc(const operators::GatherParam& param) {
 
 template <typename IndexType, typename AxisType, typename DataType>
 void GatherV2Func(const operators::GatherParam& param) {
-  auto* axis_data = param.Axis->data<AxisType>();
   auto* index_data = param.Index->data<IndexType>();
   auto* input_data = param.X->data<DataType>();
   auto* out_data = param.Out->mutable_data<DataType>();
@@ -49,7 +48,7 @@ void GatherV2Func(const operators::GatherParam& param) {
   int index_size = param.Index->numel();
   int input_size = param.X->numel();
   auto input_dim = param.X->dims();
-  int axis_index = axis_data[0];
+  int axis_index = param.Axis ? param.Axis->data<AxisType>()[0] : param.axis;
   int inner_dim_size = 1;
   int outer_dim_size = 1;
   int input_index_dim_size = input_dim[axis_index];
@@ -81,7 +80,7 @@ void GatherV2Func(const operators::GatherParam& param) {
 template <typename IndexType, typename AxisType>
 void GatherCompute<IndexType, AxisType>::Run() {
   auto& param = this->template Param<operators::GatherParam>();
-  if (param.Axis != nullptr) {
+  if (param.Axis != nullptr || param.axis != -1) {
     switch (param.X->precision()) {
       case PRECISION(kFloat):
         GatherV2Func<IndexType, AxisType, float>(param);
