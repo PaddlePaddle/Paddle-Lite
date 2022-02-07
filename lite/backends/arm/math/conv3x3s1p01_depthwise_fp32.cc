@@ -2171,7 +2171,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s1_fp32(
     int w_in, int w_out, int left_padding, unsigned int *vmask) {
   //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {1, 0, 0, 0};
+  const unsigned int right_pad_idx[4] = {1, 0, 0, 0};
 
   int tile_w = w_out >> 2;
   int remain = w_out % 4;
