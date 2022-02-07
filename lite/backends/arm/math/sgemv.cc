@@ -32,7 +32,7 @@ void sgemv(const int M,
            float beta,
            bool flag_bias,
            const float *bias,
-           const ARMContext *ctx);
+           ARMContext *ctx);
 
 void sgemv_relu(const int M,
                 const int N,
@@ -42,7 +42,7 @@ void sgemv_relu(const int M,
                 float beta,
                 bool flag_bias,
                 const float *bias,
-                const ARMContext *ctx);
+                ARMContext *ctx);
 
 void sgemv_relu6(const int M,
                  const int N,
@@ -53,7 +53,7 @@ void sgemv_relu6(const int M,
                  bool flag_bias,
                  const float *bias,
                  const float six,
-                 const ARMContext *ctx);
+                 ARMContext *ctx);
 
 void sgemv_leakey_relu(const int M,
                        const int N,
@@ -64,7 +64,7 @@ void sgemv_leakey_relu(const int M,
                        bool flag_bias,
                        const float *bias,
                        const float alpha,
-                       const ARMContext *ctx);
+                       ARMContext *ctx);
 
 void sgemv_hard_swish(const int M,
                       const int N,
@@ -77,7 +77,7 @@ void sgemv_hard_swish(const int M,
                       const float scale,
                       const float offset,
                       const float threshold,
-                      const ARMContext *ctx);
+                      ARMContext *ctx);
 
 void sgemv_trans(const int M,
                  const int N,
@@ -89,7 +89,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  const operators::ActivationParam act_param,
-                 const ARMContext *ctx);
+                 ARMContext *ctx);
 
 bool sgemv(const float *A,
            const float *x,
@@ -101,7 +101,7 @@ bool sgemv(const float *A,
            bool is_bias,
            const float *bias,
            const operators::ActivationParam act_param,
-           const ARMContext *ctx) {
+           ARMContext *ctx) {
   bool flag_act = act_param.has_active;
   auto act = act_param.active_type;
   if (transA) {
@@ -168,7 +168,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  const operators::ActivationParam act_param,
-                 const ARMContext *ctx) {
+                 ARMContext *ctx) {
   int m_cnt16 = M >> 4;
   int m_cnt8 = (M & 15) >> 3;
   int m_cnt4 = (M & 15 & 7) >> 2;
@@ -181,19 +181,9 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-
-#ifdef TARGET_IOS
-  float *y_buf = new float[valid_ths * M];
-  float *zero_buf = new float[M];
-  float *x_buf = new float[valid_block * valid_ths];
-  std::shared_ptr<float> y_buf_shared(y_buf);
-  std::shared_ptr<float> zero_buf_shared(zero_buf);
-  std::shared_ptr<float> x_buf_shared(x_buf);
-#else
-  float y_buf[valid_ths * M];            // NOLINT
-  float zero_buf[M];                     // NOLINT
-  float x_buf[valid_block * valid_ths];  // NOLINT
-#endif
+  float *zero_buf = ctx->workspace_data<float>();
+  float *y_buf = zero_buf + M;
+  float *x_buf = y_buf + valid_ths * M;
 
   memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
   memcpy(x_buf, x, N * sizeof(float));
@@ -609,7 +599,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  const operators::ActivationParam act_param,
-                 const ARMContext *ctx) {
+                 ARMContext *ctx) {
   int m_cnt8 = M >> 3;
   int m_cnt4 = (M & 7) >> 2;
   int m_remain = M & 7 & 3;
@@ -621,8 +611,8 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-  float zero_buf[M];           // NOLINT
-  float y_buf[valid_ths * M];  // NOLINT
+  float *zero_buf = ctx->workspace_data<float>();
+  float *y_buf = zero_buf + M;
   memset(zero_buf, 0, M * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   if (flag_bias) {
@@ -2076,7 +2066,7 @@ void sgemv(const int M,
            float beta,
            bool flag_bias,
            const float *bias,
-           const ARMContext *ctx) {
+           ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2287,7 +2277,7 @@ void sgemv_relu(const int M,
                 float beta,
                 bool flag_bias,
                 const float *bias,
-                const ARMContext *ctx) {
+                ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2506,7 +2496,7 @@ void sgemv_relu6(const int M,
                  bool flag_bias,
                  const float *bias,
                  const float six,
-                 const ARMContext *ctx) {
+                 ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2802,7 +2792,7 @@ void sgemv_leakey_relu(const int M,
                        bool flag_bias,
                        const float *bias,
                        const float alpha,
-                       const ARMContext *ctx) {
+                       ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -3098,7 +3088,7 @@ void sgemv_hard_swish(const int M,
                       const float scale,
                       const float offset,
                       const float threshold,
-                      const ARMContext *ctx) {
+                      ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;

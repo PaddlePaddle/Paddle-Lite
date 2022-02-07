@@ -1933,8 +1933,6 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
   uint16_t rmask[8];
   right_mask_3x3_s2_small_fp16(w_in, w_out, vmask, rmask);
 
-  std::cout << "\n\n conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16\n\n";
-
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;

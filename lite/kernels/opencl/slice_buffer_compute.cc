@@ -83,6 +83,38 @@ void SliceCompute<T, PType>::ReInitWhenNeeded() {
     std::vector<int32_t> starts = slice_param_->starts;
     std::vector<int32_t> ends = slice_param_->ends;
     auto out_dims = in_dims;
+
+    auto list_new_starts_tensor = slice_param_->StartsTensorList;
+    auto list_new_ends_tensor = slice_param_->EndsTensorList;
+    bool need_infer = false;
+    if (slice_param_->StartsTensor || slice_param_->EndsTensor) {
+      need_infer = true;
+    }
+    if (list_new_starts_tensor.size() > 0 || list_new_ends_tensor.size() > 0) {
+      need_infer = true;
+    }
+
+    if (need_infer) {
+      VLOG(4) << "need_infer.";
+      if (slice_param_->StartsTensor) {
+        VLOG(4) << "read from tensor.";
+        starts = get_new_data_from_tensor(slice_param_->StartsTensor);
+      } else if (list_new_starts_tensor.size() > 0) {
+        VLOG(4) << "read from tensor list.";
+        starts = get_new_data_from_tensorlist(list_new_starts_tensor);
+      }
+      CHECK_EQ(starts.size(), axes.size())
+          << "The size of starts must be equal to the size of axes.";
+
+      if (slice_param_->EndsTensor) {
+        ends = get_new_data_from_tensor(slice_param_->EndsTensor);
+      } else if (list_new_ends_tensor.size() > 0) {
+        ends = get_new_data_from_tensorlist(list_new_ends_tensor);
+      }
+      CHECK_EQ(ends.size(), axes.size())
+          << "The size of ends must be equal to the size of axes.";
+    }
+
     std::vector<int> real_starts(in_dims.size(), 0);
     for (int i = 0; i < axes.size(); i++) {
       int dim_value = in_dims[axes[i]];
@@ -110,6 +142,7 @@ void SliceCompute<T, PType>::ReInitWhenNeeded() {
       src_step[i] = in_dims[i + 1] * src_step[i + 1];
       out_num_ *= out_dims[i];
     }
+    VLOG(4) << "out_num = " << out_num_;
 
     // malloc temporary GPU data
     src_step_buf_ = static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
@@ -145,7 +178,8 @@ void SliceCompute<T, PType>::Run() {
   for (auto i = 0; i < in->dims().size(); i++) {
     in_dims[i] = in->dims()[i];
   }
-
+  VLOG(4) << "in_dims[] = " << in->dims();
+  VLOG(4) << "out_dims[] = " << slice_param_->Out->dims();
   cl_int status;
   int arg_idx = 0;
   auto kernel = kernel_;

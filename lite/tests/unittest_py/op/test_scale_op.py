@@ -73,7 +73,7 @@ class TestScaleOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=6))
+                    min_value=1, max_value=8), min_size=1, max_size=4))
         bias = draw(st.floats(min_value=-5, max_value=5))
         bias_after_scale = draw(st.booleans())
         scale = draw(st.floats(min_value=-5, max_value=5))
@@ -144,7 +144,7 @@ class TestScaleOp(AutoScanTest):
             target_type = predictor_config.target()
             in_shape = list(program_config.inputs["input_data"].shape)
             in_data_type = program_config.inputs["input_data"].dtype
-            if target_type in [TargetType.OpenCL, TargetType.Metal]:
+            if target_type == TargetType.Metal:
                 if len(in_shape) != 4 or in_data_type != "float32":
                     return True
 

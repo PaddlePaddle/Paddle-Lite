@@ -120,40 +120,30 @@ void SplitImageCompute::setup_without_mps() {
         vdim[i] = int(param.output[i]->dims()[param.axis]);
     }
     std::string v_ = "normal";
-    if (irank == 4) {
-        if (axis == 1) {
-            v_ = "y";
-        } else if (axis == 2) {
-            v_ = "x";
-        } else if (axis == 3 && input_buffer_->tensor_dim_[0] == 1) {
-            auto vz = true;
-            for (int i = 0; i < num; i++) {
-                if (vdim[i] % 4 != 0) {
-                    vz = false;
-                    break;
-                }
-            }
-            if (vz) {
-                v_ = "z";
-                vdim[0] = vdim[0] / 4;
-                vdim[1] = vdim[1] / 4;
-                vdim[2] = vdim[2] / 4;
-                vdim[3] = vdim[3] / 4;
-            } else {
-                v_ = "zz";
+
+    if (axis == 1) {
+        v_ = "y";
+    } else if (axis == 2) {
+        v_ = "x";
+    } else if (axis == 3) {
+        auto vz = true;
+        for (int i = 0; i < num; i++) {
+            if (vdim[i] % 4 != 0) {
+                vz = false;
+                break;
             }
         }
-    } else if (irank == 3) {
-        if (axis == 2) {
-            v_ = "y";
-        } else if (axis == 3) {
-            v_ = "x";
-        }
-    } else if (irank == 2) {
-        if (axis == 2) {
-            v_ = "y";
+        if (vz) {
+            v_ = "z";
+            vdim[0] = vdim[0] / 4;
+            vdim[1] = vdim[1] / 4;
+            vdim[2] = vdim[2] / 4;
+            vdim[3] = vdim[3] / 4;
+        } else {
+            v_ = "zz";
         }
     }
+
     if (v_ == "normal") {
         throw std::logic_error("ERROR: unsupported split type");
     }
