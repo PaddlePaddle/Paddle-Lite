@@ -75,6 +75,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             attrs={"start_axis": start_axis,
                    "stop_axis": stop_axis})
         flatten_contiguous_range_op.outputs_dtype = {"output_data": input_type}
+
         program_config = ProgramConfig(
             ops=[flatten_contiguous_range_op],
             weights={"xshape_data": TensorConfig(shape=in_shape)},
