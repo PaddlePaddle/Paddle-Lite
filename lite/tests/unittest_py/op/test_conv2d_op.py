@@ -34,16 +34,25 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -176,7 +185,9 @@ class TestConv2dOp(AutoScanTest):
         def _teller3(program_config, predictor_config):
             target_type = predictor_config.target()
             precision_type = predictor_config.precision()
-            if target_type == TargetType.ARM and precision_type == PrecisionType.FP16:
+            if target_type == TargetType.ARM and (
+                    predictor_config.precision() == PrecisionType.FP16 or
+                    predictor_config.precision() == PrecisionType.INT8):
                 return True
 
         self.add_ignore_check_case(
