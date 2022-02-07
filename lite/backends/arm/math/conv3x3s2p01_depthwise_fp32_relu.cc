@@ -576,7 +576,6 @@ namespace math {
   \
   "vdup.32  q3, %[bias]                           @ and \n"                 \
   \
-\
   /* generate q6, i.e. [2,4,6,8] */                                           \
   "vld1.f32   {d8-d9}, [%[mask_ptr]]           @ load mask\n"              \
   "vld1.32  {d16-d17}, [%[din0_ptr]]                  @ load din r0\n"       \
