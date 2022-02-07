@@ -568,14 +568,22 @@ inline void prepack_input_nxwc4_dw(const float* din,
       ptr_c3 += 4;
     }
     if (flag_mask_valid) {
-      float32x4_t vc0 = vld1q_f32(ptr_c0);
-      float32x4_t vc1 = vld1q_f32(ptr_c1);
-      float32x4_t vc2 = vld1q_f32(ptr_c2);
-      float32x4_t vc3 = vld1q_f32(ptr_c3);
-      vc0 = vbslq_f32(vmask_valid, vc0, vzero);
-      vc1 = vbslq_f32(vmask_valid, vc1, vzero);
-      vc2 = vbslq_f32(vmask_valid, vc2, vzero);
-      vc3 = vbslq_f32(vmask_valid, vc3, vzero);
+      float tmp0[4] = {0};
+      float tmp1[4] = {0};
+      float tmp2[4] = {0};
+      float tmp3[4] = {0};
+      for (int i = 0; i < 4; i++) {
+        if (vmask_valid[i] > 0) {
+          tmp0[i] = *(ptr_c0 + i);
+          tmp1[i] = *(ptr_c1 + i);
+          tmp2[i] = *(ptr_c2 + i);
+          tmp3[i] = *(ptr_c3 + i);
+        }
+      }
+      float32x4_t vc0 = vld1q_f32(tmp0);
+      float32x4_t vc1 = vld1q_f32(tmp1);
+      float32x4_t vc2 = vld1q_f32(tmp2);
+      float32x4_t vc3 = vld1q_f32(tmp3);
       transpose_4x4(vc0, vc1, vc2, vc3, dout);
       dout += 16;
     }

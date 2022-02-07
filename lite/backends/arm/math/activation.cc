@@ -882,18 +882,16 @@ void sign(const T* din, T* dout, int size, int threads) {
 template void sign<float>(const float* din, float* dout, int size, int threads);
 
 template <typename T>
-void softplus(const T* din, T* dout, int size, int threads) {
+void softplus(const T* din, T* dout, int size, float beta, int threads) {
   for (int i = 0; i < size; ++i) {
-    dout[0] = log((T)1. + exp(din[0]));
+    dout[0] = 1. / beta * log((T)1. + exp(din[0] * beta));
     din++;
     dout++;
   }
 }
 
-template void softplus<float>(const float* din,
-                              float* dout,
-                              int size,
-                              int threads);
+template void softplus<float>(
+    const float* din, float* dout, int size, float beta, int threads);
 
 template <>
 void act_thresholded_relu<float>(

@@ -39,10 +39,6 @@ class TestPNormOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # check config
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -58,7 +54,8 @@ class TestPNormOp(AutoScanTest):
                 max_size=3))
         in_shape = in_num + in_c_h_w
         axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0, 1e-6]))
+        assume(len(in_shape) >= axis + 1)
+        epsilon = draw(st.sampled_from([1.0e-12, 1.0e-13]))
         keepdim = draw(st.booleans())
         asvector = draw(st.booleans())
         p_norm_op = OpConfig(
@@ -83,27 +80,19 @@ class TestPNormOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            epsilon = program_config.ops[0].attrs["epsilon"]
-            asvector = program_config.ops[0].attrs["asvector"]
-            if epsilon:
+            if program_config.ops[0].attrs[
+                    "asvector"] == True and program_config.ops[0].attrs[
+                        "axis"] != 0:
                 return True
+            return False
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-
-        def _teller2(program_config, predictor_config):
-            if program_config.ops[0].attrs["asvector"]:
-                return True
-
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op when asvector is True(the input is TensorList). We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":

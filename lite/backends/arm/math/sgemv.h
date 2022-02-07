@@ -34,7 +34,7 @@ bool sgemv(const float *A,
            bool is_bias,
            const float *bias,
            const operators::ActivationParam act_param,
-           const ARMContext *ctx);
+           ARMContext *ctx);
 
 }  // namespace math
 }  // namespace arm

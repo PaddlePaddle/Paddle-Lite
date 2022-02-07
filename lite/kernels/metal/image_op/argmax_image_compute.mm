@@ -44,10 +44,9 @@ void ArgmaxImageCompute::PrepareForRun() {
     bool should_use_mps = false;
     if (@available(iOS 12.0, *)) {
         if (metal_context_->use_mps()) {
-            should_use_mps = true;
+            if (param.Axis == 1) should_use_mps = true;
         }
     }
-
     use_mps_ = should_use_mps;
     if (use_mps_) {
         setup_with_mps();
@@ -85,17 +84,22 @@ void ArgmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
     auto orank = output_buffer_->tensor_dim_.size();
+
     // axis
-    if (param.Axis == 1 && irank == 4) {
+    if (irank == 4 && param.Axis == 1) {
+        function_name_ = "arg_max_c";
+    } else if (irank == 4 && param.Axis == 2) {
+        function_name_ = "arg_max_h";
+    } else if (irank == 4 && param.Axis == 3) {
+        function_name_ = "arg_max_w";
     } else {
-        LOG(FATAL) << "arg_max: max only support by channel";
+        LOG(FATAL) << "This input is not supported by arg_max";
     }
 
     ArgMetalParam metal_params{(int)orank};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
 
-    function_name_ = "arg_max_c";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
@@ -147,7 +151,7 @@ void ArgmaxImageCompute::setup_with_mps() {
         mps_op_ = (__bridge_retained void*)[[MPSNNReduceFeatureChannelsArgumentMax alloc]
             initWithDevice:backend.device];
         // MPS input and output
-        auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+        auto input_c = fmax(4, static_cast<int>(input_buffer_->tensor_dim_[1]));
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];

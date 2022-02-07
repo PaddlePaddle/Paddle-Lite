@@ -242,3 +242,5 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_mediatek_apu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst

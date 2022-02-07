@@ -150,7 +150,7 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
       ((flag_dw_5x5 && ks_equal) || (flag_dw_3x3 && kps_equal && pads_less))) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
-             ks_equal) {
+             chin * chout < 4 * hin * win && ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
              ks_equal) {

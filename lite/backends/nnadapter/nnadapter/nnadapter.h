@@ -1306,6 +1306,22 @@ typedef enum {
   NNADAPTER_NOT_EQUAL,
 
   /**
+   * Performs element-wise binary and logical operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula: output = input0 || input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_OR,
+
+  /**
    * Pad input by "pads", "mode", "constant_value"
    *
    * Inputs:
@@ -1922,6 +1938,22 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_WHERE,
+
+  /**
+   * Performs element-wise binary and logical operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula: output = input0 ^ input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_XOR,
 } NNAdapterOperationCode;
 
 /**

@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class SequenceExpandCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class SequenceExpandCompute : public KernelLite<TARGET(kHost), PType> {
  public:
   void Run() override;
 
