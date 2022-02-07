@@ -106,16 +106,7 @@ class TestAssignOp(AutoScanTest):
                                                                           1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Host:
-                in_dtype = program_config.inputs["data_x"].dtype
-                if "int32" == in_dtype:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on host. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

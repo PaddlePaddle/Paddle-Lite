@@ -65,6 +65,13 @@ class TestFcOp(AutoScanTest):
             else:
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
+        padding_weights = draw(st.booleans())
+        # OpenCL dose not support this attribute
+        if (self.get_target() == 'OpenCL'):
+            padding_weights = False
+        if (padding_weights):
+            weights_shape = [weights_0 + 4, weights_1 + 4]
+
         bias_shape = [weights_1]
         with_bias = draw(st.sampled_from([True, False]))
 
@@ -114,7 +121,7 @@ class TestFcOp(AutoScanTest):
                 "in_num_col_dims": in_num_col_dims,
                 "activation_type": act_type,
                 "use_mkldnn": False,
-                "padding_weights": False,
+                "padding_weights": padding_weights,
                 "use_quantizer": False,
                 "Scale_in": float(1),
                 "Scale_weights": [float(1)],

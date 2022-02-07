@@ -106,7 +106,6 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc)
 
     lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc)
-    lite_cc_test(test_kernel_generate_proposals_v2_compute SRCS generate_proposals_v2_compute_test.cc)
     lite_cc_test(test_kernel_roi_align_compute SRCS roi_align_compute_test.cc)
     lite_cc_test(test_kernel_search_aligned_mat_mul_compute SRCS search_aligned_mat_mul_compute_test.cc)
     lite_cc_test(test_kernel_search_seq_fc_compute SRCS search_seq_fc_compute_test.cc)

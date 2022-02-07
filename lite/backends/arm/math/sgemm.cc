@@ -38,11 +38,11 @@ void sgemm(bool is_transA,
            ARMContext* ctx) {
   // alpha default is 1;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
-  if (N == 1 && !has_alpha) {
+  if (N == 1 && !has_alpha && ldc == N) {
     sgemv(A, B, C, is_transA, M, K, beta, is_bias, bias, act_param, ctx);
     return;
   }
-  if (M == 1 && !has_alpha) {
+  if (M == 1 && !has_alpha && ldc == N) {
     float bias_ptr[N];  // NOLINT
     if (is_bias) {
       for (int i = 0; i < N; i++) {

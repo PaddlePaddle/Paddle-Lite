@@ -119,8 +119,8 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_float, def)
     .Finalize();
 
 using expand_v2_int32 =
-    paddle::lite::kernels::host::ExpandV2Compute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(expand_v2, kHost, kInt32, kAny, expand_v2_int32, def)
+    paddle::lite::kernels::host::ExpandV2Compute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_int32, def_int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
