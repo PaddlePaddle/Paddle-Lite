@@ -24,8 +24,10 @@ namespace verisilicon_timvx {
 
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
+  NNADAPTER_CHECK_EQ(output_shape_height, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
+  NNADAPTER_CHECK_EQ(output_shape_width, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],

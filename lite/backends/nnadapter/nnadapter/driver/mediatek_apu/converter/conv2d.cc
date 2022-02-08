@@ -22,30 +22,27 @@ namespace mediatek_apu {
 
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[1],
-                                        filter_height,
-                                        auto_pad,
-                                        &pad_height_top,
-                                        &pad_height_bottom,
-                                        stride_height,
-                                        &dilation_height);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
-                                        filter_width,
-                                        auto_pad,
-                                        &pad_width_left,
-                                        &pad_width_right,
-                                        stride_width,
-                                        &dilation_width);
-  // NHWC
-  input_channel_size = input_operand->type.dimensions.data[3];
-  is_depthwise_mode = group != 1 && input_channel_size == group;
-  NNADAPTER_VLOG(5) << "Update depthwise mode(" << is_depthwise_mode << ").";
-  NNADAPTER_CHECK_EQ(dilation_height, 1)
-      << "MediaTek APU only supports dilations = [1,1]";
-  NNADAPTER_CHECK_EQ(dilation_width, 1)
-      << "MediaTek APU only supports dilations = [1,1]";
+  if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
+    // NHWC
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[1],
+        filter_height,
+        auto_pad,
+        &pad_height_top,
+        &pad_height_bottom,
+        stride_height,
+        &dilation_height);
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[2],
+        filter_width,
+        auto_pad,
+        &pad_width_left,
+        &pad_width_right,
+        stride_width,
+        &dilation_width);
+  }
+  NNADAPTER_CHECK_EQ(dilation_height, 1) << "Only supports dilations = [1,1]";
+  NNADAPTER_CHECK_EQ(dilation_width, 1) << "Only supports dilations = [1,1]";
 
   // Convert to Neuron operands and operations
   auto input_index = converter->GetMappedIndex(input_operand);
@@ -86,11 +83,10 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                                          stride_height_index};
   std::vector<uint32_t> output_indexes = {output_index};
   if (is_depthwise_mode) {
-    int32_t multiplier = filter_operand->type.dimensions.data[3] / group;
+    int32_t multiplier = output_channel_size / group;
     NNADAPTER_CHECK_EQ(multiplier, 1)
         << "MediaTek APU only supports multiplier=1, but recieved multiplier="
-        << multiplier
-        << " which C_out=" << filter_operand->type.dimensions.data[3]
+        << multiplier << " which C_out=" << output_channel_size
         << " and group=" << group;
     auto multiplier_index = converter->AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);

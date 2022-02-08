@@ -24,6 +24,12 @@ namespace huawei_ascend_npu {
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto output_dimensions = output_operand->type.dimensions.data;
+  NNADAPTER_CHECK_NE(output_dimensions[0], NNADAPTER_UNKNOWN)
+      << "output_dimensions[0] is unknown, dynamic shape is still not "
+         "supported.";
+  NNADAPTER_CHECK_NE(output_dimensions[1], NNADAPTER_UNKNOWN)
+      << "output_dimensions[1] is unknown, dynamic shape is still not "
+         "supported.";
   NNADAPTER_CHECK_NE(output_dimensions[2], NNADAPTER_UNKNOWN)
       << "output_dimensions[2] is unknown, dynamic shape is still not "
          "supported.";
