@@ -14,6 +14,7 @@
 
 from auto_scan_base import IgnoreReasonsBase
 import argparse
+import platform
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 parser.add_argument(
@@ -43,7 +44,8 @@ parser.add_argument(
     help="Set nnadapter mixed precision quantization config path")
 args = parser.parse_args()
 
-if args.target == "ARM" or args.target == "OpenCL" or args.target == "Metal":
+if (args.target == "ARM" and platform.system() == 'Darwin') or (
+        args.target == "OpenCL") or (args.target == "Metal"):
     from auto_scan_test_rpc import AutoScanTest
     from auto_scan_test_rpc import FusePassAutoScanTest
 else:
