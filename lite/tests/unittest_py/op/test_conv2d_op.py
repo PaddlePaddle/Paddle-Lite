@@ -76,15 +76,15 @@ class TestConv2dOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        num = draw(st.integers(min_value=1, max_value=4))
-        cin = draw(st.integers(min_value=1, max_value=128))
-        cout = draw(st.integers(min_value=1, max_value=128))
-        height = draw(st.integers(min_value=1, max_value=128))
-        width = draw(st.integers(min_value=1, max_value=128))
-        cout = draw(st.integers(min_value=1, max_value=128))
+        num = draw(st.integers(min_value=1, max_value=2))
+        cin = draw(st.integers(min_value=1, max_value=16))
+        cout = draw(st.integers(min_value=1, max_value=16))
+        height = draw(st.integers(min_value=1, max_value=64))
+        width = draw(st.integers(min_value=1, max_value=64))
+        cout = draw(st.integers(min_value=1, max_value=16))
         kw = draw(st.integers(min_value=1, max_value=5))
         kh = draw(st.integers(min_value=1, max_value=5))
-        groups = draw(st.integers(min_value=1, max_value=128))
+        groups = draw(st.integers(min_value=1, max_value=16))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
         assume(cin % groups == 0)
@@ -164,12 +164,14 @@ class TestConv2dOp(AutoScanTest):
                 if groups != 1:
                     return True
 
+        '''
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             if target_type == TargetType.ARM and (
                     predictor_config.precision() == PrecisionType.FP16 or
                     predictor_config.precision() == PrecisionType.INT8):
                 return True
+        '''
 
         def _teller3(program_config, predictor_config):
             target_type = predictor_config.target()
@@ -187,17 +189,19 @@ class TestConv2dOp(AutoScanTest):
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
         )
+        '''
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
         )
+        '''
         self.add_ignore_check_case(
             _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":

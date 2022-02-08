@@ -67,11 +67,11 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking dw conv";
-  } else if (param.groups == 1 && kw == 3 && stride == 1 && ks_equal &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && stride == 1 && ks_equal &&
              no_dilation) {
     impl_ = new WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking winograd conv";
-  } else if (param.groups == 1 && kw == 3 && stride == 2 &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && stride == 2 &&
              chin * chout < 4 * hin * win && ks_equal && no_dilation) {
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>;
     // VLOG(3) << "invoking direct conv";
@@ -92,11 +92,11 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
-  } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 2 && sh == 2 &&
              no_dilation && pads_equal && !ctx.has_dot()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
-  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 1 && no_dilation &&
              pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
@@ -117,11 +117,11 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
-  } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 2 && sh == 2 &&
              no_dilation && pads_equal && !ctx.has_dot()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
-  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 1 && no_dilation &&
              pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run WinogradConv Int8";
@@ -149,10 +149,10 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && no_dilation && stride_less &&
       ((flag_dw_5x5 && ks_equal) || (flag_dw_3x3 && kps_equal && pads_less))) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
-  } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 2 && no_dilation &&
              chin * chout < 4 * hin * win && ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
-  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+  } else if (param.groups == 1 && kw == 3 && kh == 3 && sw == 1 && no_dilation &&
              ks_equal) {
     if (conv_3x3_wino) {
       impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
