@@ -17,9 +17,11 @@
 #include "core/hal/types.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace android_nnapi {
 
-void ResolveOpLiminations(hal::Model* model);
+// Make the restriction that for int8 quantized concat, reshape, and transpose,
+// etc. the inputs and outputs must have the same quantization parameters.
+void RestrictInputOutputQuantParams(hal::Model* model);
 
-}  // namespace mediatek_apu
+}  // namespace android_nnapi
 }  // namespace nnadapter

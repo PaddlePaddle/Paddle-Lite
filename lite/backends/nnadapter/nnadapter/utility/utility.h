@@ -73,6 +73,11 @@ void ReshapeDimensions(int32_t* input_dimensions_data,
                        const std::vector<int32_t>& dimensions,
                        int32_t* output_dimensions_data_ptr = nullptr,
                        uint32_t* output_dimensions_count_ptr = nullptr);
+// Check whether the rank or the data of dimensions has been changed
+bool MatchDimensions(const int32_t* target_dimensions_data,
+                     uint32_t target_dimensions_count,
+                     const int32_t* reference_dimensions_data,
+                     uint32_t reference_dimensions_count);
 
 // Initialize an identity dimorder vector from the given rank, such as (0, 1, 2,
 // 3) for rank=4

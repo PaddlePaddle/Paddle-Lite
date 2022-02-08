@@ -139,12 +139,12 @@ int Program::BuildFromModel(hal::Model* model) {
 
   magicmind::IBuilderConfig* config = mm_builder_config_.get();
   magicmind::INetwork* network = mm_network_.get();
-  if (context_->GetBuildConfigFilePath().empty()) {
+  if (context_->build_config_file_path().empty()) {
     config->ParseFromString(R"({"graph_shape_mutable": true})");
     config->ParseFromString(
         R"({"precision_config": {"precision_mode": "force_float32"}})");
   } else {
-    config->ParseFromFile(context_->GetBuildConfigFilePath());
+    config->ParseFromFile(context_->build_config_file_path());
   }
   mm_model_.reset(mm_builder_->BuildModel("camb_model", network, config));
   NNADAPTER_VLOG(3) << "Build success.";

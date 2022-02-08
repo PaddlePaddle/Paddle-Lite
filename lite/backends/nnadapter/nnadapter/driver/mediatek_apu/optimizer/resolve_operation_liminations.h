@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,12 @@
 
 #pragma once
 
-#include <vector>
 #include "core/hal/types.h"
-#include "driver/mediatek_apu/neuron_adapter_wrapper.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int NeuronOperandDataTypeLength(int data_type);
-
-// Convert NNAdapter types to Neuron types
-int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code);
-int ConvertToNeuronDataLayout(NNAdapterOperandLayoutCode layout_code);
-std::vector<uint32_t> ConvertToNeuronDimensions(
-    int32_t* input_dimensions, uint32_t input_dimensions_count);
-int32_t ConvertFuseCodeToNeuronFuseCode(int32_t fuse_code);
+void ResolveOperationLiminations(hal::Model* model);
 
 }  // namespace mediatek_apu
 }  // namespace nnadapter
