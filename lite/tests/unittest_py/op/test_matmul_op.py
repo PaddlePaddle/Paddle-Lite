@@ -61,7 +61,7 @@ class TestMulOp(AutoScanTest):
             shape0 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape1 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
-            channels = draw(st.integers(min_value=33, max_value=64))
+            channels = draw(st.integers(min_value=1, max_value=64))
             batch = draw(st.integers(min_value=1, max_value=4))
         if target_str == "ARM" or target_str == "X86":
             shape0 = draw(st.integers(min_value=1, max_value=64))
