@@ -50,7 +50,7 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz")
     if (LITE_WITH_NNADAPTER)
-        set(LITE_URL_FOR_NNADAPTER_UNITTESTS "https://paddlelite-demo.bj.bcebos.com/NNAdapter/models")
+        set(LITE_URL_FOR_NNADAPTER_UNITTESTS "http://paddlelite-demo.bj.bcebos.com/NNAdapter/models")
         # PaddleClas
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "AlexNet_v2_0.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "DenseNet121_v2_0.tar.gz")
