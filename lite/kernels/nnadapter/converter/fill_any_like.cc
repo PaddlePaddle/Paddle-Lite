@@ -45,6 +45,9 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
       case NNADAPTER_INT64:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
         break;
+      case NNADAPTER_INT8:
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
+        break;
       default:
         LOG(FATAL) << "Not supported x dtype: "
                    << static_cast<int>(NNADAPTER_FLOAT32);
@@ -63,6 +66,10 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
       value_operand =
           converter->AddConstantOperand(static_cast<int64_t>(value));
       break;
+    case static_cast<int32_t>(lite::core::FluidType::INT8):
+      value_operand =
+          converter->AddConstantOperand(static_cast<int8_t>(value), x_scales);
+      break;
     default:
       LOG(FATAL) << "Not supported dtype: " << dtype;
       break;
@@ -70,7 +77,13 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  NNAdapterOperand* output_operand =
+      converter->AddOutputOperand(out_name, out_scales);
 
   // Fill operation
   converter->AddOperation(
