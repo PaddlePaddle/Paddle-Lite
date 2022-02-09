@@ -179,7 +179,7 @@ class AutoScanBaseTest(unittest.TestCase):
         max_val = 0.0
         max_index = 0
         if max_diff > atol:
-            print('max_diff: ', max_diff)
+            print("max_diff: ", max_diff)
             size = len(arr)
             count = 0
             check = False
@@ -195,8 +195,98 @@ class AutoScanBaseTest(unittest.TestCase):
                 print("value: ", base[max_index], arr[max_index],
                       diff[max_index])
                 print("FP16 Output has diff. ")
-            return check
-        return False
+                return False
+            else:
+                return True
+        return True
+
+    # count shape diff and data diff
+    def count_shape_and_diff(self, base, arr, atol, rtol, flag_precision_fp16):
+        base_shape = base.shape
+        arr_shape = arr.shape
+        base_len = len(base_shape)
+        arr_len = len(arr_shape)
+        diff_len = abs(base_len - arr_len)
+        if diff_len == 1:
+            # base=[1, K], arr=[k]
+            if base_len > arr_len and (base_shape[0] == 1 or
+                                       base_shape[-1] == 1):
+                new_shape = base_shape[0:base_len - 1]
+                if base_shape[0] == 1:
+                    for i in range(1, base_len):
+                        if i != 0:
+                            new_shape[i - 1] = base_shape[i]
+
+                self.assertTrue(
+                    new_shape == arr_shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(new_shape) + ', but got ' + str(arr.shape))
+                if flag_precision_fp16:
+                    # count diff
+                    arr_value = arr.flatten()
+                    base_value = base.flatten()
+                    # return true: has diff
+                    res = self.count_fp16_diff(arr_value, base_value, atol,
+                                               rtol)
+                    self.assertTrue(res, "Output has diff. ")
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            base.flatten(),
+                            arr.flatten(),
+                            atol=atol,
+                            rtol=rtol),
+                        "Output has diff. ")
+            # arr=[1, K], base=[k]
+            elif base_len < arr_len and (arr_shape[0] == 1 or
+                                         arr_shape[-1] == 1):
+                new_shape = arr_shape[0:arr_len - 1]
+                if arr_shape[0] == 1:
+                    for i in range(1, arr_len):
+                        new_shape[i - 1] = arr_shape[i]
+                self.assertTrue(
+                    new_shape == base_shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(base.shape) + ', but got ' + str(new_shape))
+
+                if flag_precision_fp16:
+                    # count diff
+                    arr_value = arr.flatten()
+                    base_value = base.flatten()
+                    # return true: has diff
+                    res = self.count_fp16_diff(arr_value, base_value, atol,
+                                               rtol)
+                    self.assertTrue(res, "Output has diff. ")
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            base.flatten(),
+                            arr.flatten(),
+                            atol=atol,
+                            rtol=rtol),
+                        "Output has diff. ")
+            else:
+                self.assertTrue(
+                    base.shape == arr.shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(base.shape) + ', but got ' + str(arr.shape))
+        else:
+            self.assertTrue(
+                base.shape == arr.shape,
+                "The output shapes are not equal, the baseline shape is " +
+                str(base.shape) + ', but got ' + str(arr.shape))
+            if flag_precision_fp16:
+                # count diff
+                arr_value = arr.flatten()
+                base_value = base.flatten()
+                # return False: has diff
+                res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
+                self.assertTrue(res, "Output has diff. ")
+            else:
+                self.assertTrue(
+                    np.allclose(
+                        base, arr, atol=atol, rtol=rtol),
+                    "Output has diff. ")
 
     @abc.abstractmethod
     def assert_tensors_near(self,
@@ -219,28 +309,8 @@ class AutoScanBaseTest(unittest.TestCase):
             if not base.shape and arr.shape == (1, ):
                 pass
             else:
-                self.assertTrue(
-                    base.shape == arr.shape,
-                    "The output shapes are not equal, the baseline shape is " +
-                    str(base.shape) + ', but got ' + str(arr.shape))
-
-            if flag_precision_fp16:
-                # count diff
-                arr_value = arr.flatten()
-                base_value = base.flatten()
-                # return true: has diff
-                res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
-                if res:
-                    self.assertTrue(
-                        np.allclose(
-                            base, arr, atol=atol, rtol=rtol),
-                        "Output has diff. ")
-            else:
-                self.assertTrue(
-                    np.allclose(
-                        base, arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
-
+                self.count_shape_and_diff(base, arr, atol, rtol,
+                                          flag_precision_fp16)
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
@@ -259,29 +329,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     # training using data
                     continue
                 arr = np.array(tensor[key])
-                self.assertTrue(
-                    baseline[paddlekey].shape == arr.shape,
-                    "The output shapes are not equal, the baseline shape is " +
-                    str(baseline[paddlekey].shape) + ', but got ' +
-                    str(arr.shape))
-                if flag_precision_fp16:
-                    # count diff
-                    arr_value = arr.flatten()
-                    base_value = baseline[paddlekey].flatten()
-                    # return true: has diff
-                    res = self.count_fp16_diff(arr_value, base_value, atol,
-                                               rtol)
-                    if res:
-                        self.assertTrue(
-                            np.allclose(
-                                baseline[paddlekey], arr, atol=atol,
-                                rtol=rtol),
-                            "Output has diff. ")
-                else:
-                    self.assertTrue(
-                        np.allclose(
-                            baseline[paddlekey], arr, atol=atol, rtol=rtol),
-                        "Output has diff. ")
+                self.count_shape_and_diff(baseline[paddlekey], arr, atol, rtol,
+                                          flag_precision_fp16)
 
     def generate_op_config(self,
                            ops_config: List[Dict[str, Any]]) -> List[OpConfig]:

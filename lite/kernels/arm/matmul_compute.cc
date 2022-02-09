@@ -25,95 +25,98 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-#define INIT_PARAM                                                            \
-  auto& ctx = this->ctx_->template As<ARMContext>();                          \
-  auto& param = Param<param_t>();                                             \
-  auto x_dims = param.X->dims();                                              \
-  auto y_dims = param.Y->dims();                                              \
-  bool x_transpose = param.transpose_X;                                       \
-  bool y_transpose = param.transpose_Y;                                       \
-  if (last_x_shape_ == x_dims && last_y_shape_ == y_dims) {                   \
-    return;                                                                   \
-  }                                                                           \
-  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&                           \
-      (x_dims.size() != 2 || y_dims.size() != 2)) {                           \
-    if (!x_transpose) {                                                       \
-      m_ = x_dims[x_dims.size() - 2];                                         \
-      k_ = x_dims[x_dims.size() - 1];                                         \
-      lda_ = k_;                                                              \
-    } else {                                                                  \
-      m_ = x_dims[x_dims.size() - 1];                                         \
-      k_ = x_dims[x_dims.size() - 2];                                         \
-      lda = m_;                                                               \
-    }                                                                         \
-    if (!y_transpose) {                                                       \
-      n_ = y_dims[y_dims.size() - 1];                                         \
-      ldb = n_;                                                               \
-      CHECK_EQ(k_, y_dims[y_dims.size() - 2])                                 \
-          << "k_ must be equal y_dims[y_dims.size() - 2]";                    \
-    } else {                                                                  \
-      n_ = y_dims[y_dims.size() - 2];                                         \
-      ldb = k_;                                                               \
-      CHECK_EQ(k_, y_dims[y_dims.size() - 1])                                 \
-          << "k_ must be equal y_dims[y_dims.size() - 1]";                    \
-    }                                                                         \
-    ldc = n_;                                                                 \
-    auto sum_x = x_dims.count(0, x_dims.size() - 2);                          \
-    auto sum_y = y_dims.count(0, y_dims.size() - 2) CHECK_EQ(sum_x, sum_y)    \
-                 << "sum_x(x_dims[0]+..x_dims[size()-2]) must be equal with " \
-                    "sum_y(y_dims[0]+..y_dims[size()-2])";                    \
-  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||                    \
-             (x_dims.size() == 2 && y_dims.size() == 1)) {                    \
-    if (!x_transpose) {                                                       \
-      m_ = x_dims[0];                                                         \
-      k_ = x_dims[1];                                                         \
-      lda_ = k_;                                                              \
-    } else {                                                                  \
-      m_ = x_dims[1];                                                         \
-      k_ = x_dims[0];                                                         \
-      lda_ = m_;                                                              \
-    }                                                                         \
-    if (!y_transpose) {                                                       \
-      if (y_dims.size() > 1) {                                                \
-        n_ = y_dims[1];                                                       \
-      } else {                                                                \
-        n_ = 1;                                                               \
-      }                                                                       \
-      ldb = n_;                                                               \
-      CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";                \
-    } else {                                                                  \
-      if (y_dims.size() > 1) {                                                \
-        n_ = y_dims[0];                                                       \
-        CHECK_EQ(k_, y_dims[1]) << "k_ must be equal y_dims[1]";              \
-      } else {                                                                \
-        n_ = 1;                                                               \
-        CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";              \
-      }                                                                       \
-      ldb = k_;                                                               \
-    }                                                                         \
-    ldc = n_;                                                                 \
-  } else if (x_dims.size() > 2 && y_dims.size() == 1) {                       \
-    m_ = x_dims.count(0, x_dims.size() - 1);                                  \
-    n_ = 1;                                                                   \
-    k_ = x_dims[0];                                                           \
-    lda_ = k_;                                                                \
-    ldb_ = n_;                                                                \
-    ldc_ = n_;                                                                \
-    CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";                  \
-  } else if (x_dims.size() == 1 && y_dims.size() == 1) {                      \
-    m_ = 1;                                                                   \
-    n_ = 1;                                                                   \
-    k_ = x_dims[0];                                                           \
-    if (x_transpose == true && y_transpose == true) {                         \
-      m_ = x_dims[0];                                                         \
-      k_ = 1;                                                                 \
-      n_ = y_dims[0];                                                         \
-    } else {                                                                  \
-      CHECK_EQ(x_dims[0], y_dims[0]) << "x_dims[0] must be equal y_dims[0]";  \
-    }                                                                         \
-    lda_ = k_;                                                                \
-    ldb_ = n_;                                                                \
-    ldc_ = n_;                                                                \
+#define INIT_PARAM                                                           \
+  auto& ctx = this->ctx_->template As<ARMContext>();                         \
+  auto& param = Param<param_t>();                                            \
+  auto x_dims = param.X->dims();                                             \
+  auto y_dims = param.Y->dims();                                             \
+  bool x_transpose = param.transpose_X;                                      \
+  bool y_transpose = param.transpose_Y;                                      \
+  if (last_x_shape_ == x_dims && last_y_shape_ == y_dims) {                  \
+    return;                                                                  \
+  }                                                                          \
+  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&                          \
+      (x_dims.size() != 2 || y_dims.size() != 2)) {                          \
+    if (!x_transpose) {                                                      \
+      m_ = x_dims[x_dims.size() - 2];                                        \
+      k_ = x_dims[x_dims.size() - 1];                                        \
+      lda_ = k_;                                                             \
+    } else {                                                                 \
+      m_ = x_dims[x_dims.size() - 1];                                        \
+      k_ = x_dims[x_dims.size() - 2];                                        \
+      lda_ = m_;                                                             \
+    }                                                                        \
+    if (!y_transpose) {                                                      \
+      n_ = y_dims[y_dims.size() - 1];                                        \
+      ldb_ = n_;                                                             \
+      CHECK_EQ(k_, y_dims[y_dims.size() - 2])                                \
+          << "k_ must be equal y_dims[y_dims.size() - 2]";                   \
+    } else {                                                                 \
+      n_ = y_dims[y_dims.size() - 2];                                        \
+      ldb_ = k_;                                                             \
+      CHECK_EQ(k_, y_dims[y_dims.size() - 1])                                \
+          << "k_ must be equal y_dims[y_dims.size() - 1]";                   \
+    }                                                                        \
+    ldc_ = n_;                                                               \
+    if (x_dims.size() > 2 && y_dims.size() > 2) {                            \
+      auto sum_x = x_dims.count(0, x_dims.size() - 2);                       \
+      auto sum_y = y_dims.count(0, y_dims.size() - 2);                       \
+      CHECK_EQ(sum_x, sum_y)                                                 \
+          << "sum_x(x_dims[0]+..x_dims[size()-2]) must be equal with "       \
+             "sum_y(y_dims[0]+..y_dims[size()-2])";                          \
+    }                                                                        \
+  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||                   \
+             (x_dims.size() == 2 && y_dims.size() == 1)) {                   \
+    if (!x_transpose) {                                                      \
+      m_ = x_dims[0];                                                        \
+      k_ = x_dims[1];                                                        \
+      lda_ = k_;                                                             \
+    } else {                                                                 \
+      m_ = x_dims[1];                                                        \
+      k_ = x_dims[0];                                                        \
+      lda_ = m_;                                                             \
+    }                                                                        \
+    if (!y_transpose) {                                                      \
+      if (y_dims.size() > 1) {                                               \
+        n_ = y_dims[1];                                                      \
+      } else {                                                               \
+        n_ = 1;                                                              \
+      }                                                                      \
+      ldb_ = n_;                                                             \
+      CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";               \
+    } else {                                                                 \
+      if (y_dims.size() > 1) {                                               \
+        n_ = y_dims[0];                                                      \
+        CHECK_EQ(k_, y_dims[1]) << "k_ must be equal y_dims[1]";             \
+      } else {                                                               \
+        n_ = 1;                                                              \
+        CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";             \
+      }                                                                      \
+      ldb_ = k_;                                                             \
+    }                                                                        \
+    ldc_ = n_;                                                               \
+  } else if (x_dims.size() > 2 && y_dims.size() == 1) {                      \
+    m_ = x_dims.count(0, x_dims.size() - 1);                                 \
+    n_ = 1;                                                                  \
+    k_ = x_dims[x_dims.size() - 1];                                          \
+    lda_ = k_;                                                               \
+    ldb_ = n_;                                                               \
+    ldc_ = n_;                                                               \
+    CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";                 \
+  } else if (x_dims.size() == 1 && y_dims.size() == 1) {                     \
+    m_ = 1;                                                                  \
+    n_ = 1;                                                                  \
+    k_ = x_dims[0];                                                          \
+    if (x_transpose == true && y_transpose == true) {                        \
+      m_ = x_dims[0];                                                        \
+      k_ = 1;                                                                \
+      n_ = y_dims[0];                                                        \
+    } else {                                                                 \
+      CHECK_EQ(x_dims[0], y_dims[0]) << "x_dims[0] must be equal y_dims[0]"; \
+    }                                                                        \
+    lda_ = k_;                                                               \
+    ldb_ = n_;                                                               \
+    ldc_ = n_;                                                               \
   }
 
 template <>
@@ -163,7 +166,6 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   bool y_transpose = param.transpose_Y;
   float alpha = param.alpha;
   auto& ctx = this->ctx_->template As<ARMContext>();
-
   operators::ActivationParam act_param;
   act_param.has_active = false;
 
@@ -293,12 +295,12 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                              k_,
                              alpha,
                              x_data,
-                             lda,
+                             lda_,
                              y_data,
-                             ldb,
+                             ldb_,
                              0.f,
                              o_data,
-                             ldc,
+                             ldc_,
                              nullptr,
                              false,
                              act_param,
@@ -316,9 +318,9 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 }
 
 void matmul_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
-  int n_tail = n_ % 4;
-  int n_inner = n_ - n_tail;
-  for (int i = 0; i < m_; i++) {
+  int n_tail = n % 4;
+  int n_inner = n - n_tail;
+  for (int i = 0; i < m; i++) {
     float* o_m_data = o_data + i * n;
     for (int j = 0; j < n_inner; j += 4) {
       float32x4_t vdin = vld1q_f32(o_m_data);
@@ -634,12 +636,12 @@ void MatMulCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                         k_,
                                         alpha,
                                         x_data,
-                                        lda,
+                                        lda_,
                                         y_data,
-                                        ldb,
+                                        ldb_,
                                         0.f,
                                         o_data,
-                                        ldc,
+                                        ldc_,
                                         nullptr,
                                         false,
                                         act_param,
