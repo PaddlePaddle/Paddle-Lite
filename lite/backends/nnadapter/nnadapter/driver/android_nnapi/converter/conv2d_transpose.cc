@@ -59,6 +59,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
+  std::vector<int32_t> filter_permutation = {3, 1, 2, 0};
+  TransposeOperand(filter_operand, filter_permutation);
   auto filter_index = converter->ConvertOperand(filter_operand);
   NNADAPTER_VLOG(5) << "filter_index:" << filter_index;
   auto bias_index = converter->ConvertOperand(bias_operand);
