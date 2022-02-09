@@ -1408,8 +1408,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
 "q7", "q8", "q9", "q10", \
 "q11", "q12", "q13", "q14", "q15"
 
-
-
 #endif
 // clang-format on
 
