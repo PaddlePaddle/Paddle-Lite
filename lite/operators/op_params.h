@@ -1395,15 +1395,16 @@ struct AssignParam : ParamBase {
 
 /// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* ROIs{};
-  lite::Tensor* RoisLod{};
-  lite::Tensor* RoisNum{};
-  lite::Tensor* Out{};
+  lite::Tensor* X{nullptr};
+  lite::Tensor* ROIs{nullptr};
+  lite::Tensor* RoisLod{nullptr};
+  lite::Tensor* RoisNum{nullptr};
+  lite::Tensor* Out{nullptr};
   float spatial_scale{1.0f};
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
+  bool align{false};
 };
 
 /// ----------------------- box_clip operators -----------------------

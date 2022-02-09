@@ -29,11 +29,11 @@ import argparse
 class TestRoiAlignOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(
-        #     TargetType.Host,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -44,21 +44,44 @@ class TestRoiAlignOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=32), min_size=4, max_size=4))
+                    min_value=4, max_value=64), min_size=4, max_size=4))
         spatial_scale = draw(st.floats(min_value=0.1, max_value=1.0))
-        pooled_height = draw(st.integers(min_value=1, max_value=2))
-        pooled_width = draw(st.integers(min_value=1, max_value=2))
+        pooled_height = draw(st.integers(min_value=1, max_value=4))
+        pooled_width = draw(st.integers(min_value=1, max_value=4))
         sampling_ratio = draw(st.sampled_from([-1, 4, 8]))
         aligned = draw(st.booleans())
+        roi_num_data = np.random.randint(
+            low=0, high=4, size=[in_shape[0]]).astype(np.int32)
+        num_rois = np.sum(roi_num_data)
+
+        def generate_roisnum(*args, **kwargs):
+            return roi_num_data
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
-        def generate_rois(*args, **kwargs):
-            return np.random.random([3, 4]).astype(np.float32)
+        height = in_shape[2]
+        width = in_shape[3]
+        x1 = draw(
+            st.integers(
+                min_value=0, max_value=width // spatial_scale - pooled_width))
+        y1 = draw(
+            st.integers(
+                min_value=0, max_value=height // spatial_scale -
+                pooled_height))
+        x2 = draw(
+            st.integers(
+                min_value=x1 + pooled_width, max_value=width // spatial_scale))
+        y2 = draw(
+            st.integers(
+                min_value=y1 + pooled_height,
+                max_value=height // spatial_scale))
 
-        def generate_roisnum(*args, **kwargs):
-            return np.random.random([in_shape[0]]).astype(np.int32)
+        def generate_rois(*args, **kwargs):
+            a = np.array([x1, y1, x2, y2]).astype(np.float32).reshape([1, 4])
+            b = a.repeat(num_rois, axis=0)
+            b.reshape([num_rois, 4])
+            return b
 
         roi_align_op = OpConfig(
             type="roi_align",
@@ -94,7 +117,7 @@ class TestRoiAlignOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, min_success_num=25, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

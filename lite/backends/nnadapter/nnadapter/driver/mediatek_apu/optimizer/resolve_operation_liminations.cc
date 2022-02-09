@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
+#include "driver/mediatek_apu/optimizer/resolve_operation_liminations.h"
 #include <cmath>
 #include <vector>
 #include "utility/debug.h"
@@ -98,7 +98,7 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
   }
 }
 
-void ResolveOpLiminations(hal::Model* model) {
+void ResolveOperationLiminations(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
