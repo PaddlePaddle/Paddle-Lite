@@ -61,9 +61,11 @@ namespace operation {
                            .data[filter_layout == NNADAPTER_NCHW ? 2 : 1];     \
   auto filter_width = filter_operand->type.dimensions                          \
                           .data[filter_layout == NNADAPTER_NCHW ? 3 : 2];      \
-  NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
-                    << filter_channel_size << "," << filter_height << ","      \
-                    << filter_width << "]";                                    \
+  NNADAPTER_VLOG(5) << "input_channel_size: " << input_channel_size;           \
+  NNADAPTER_VLOG(5) << "output_channel_size: " << output_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_channel_size: " << filter_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_height: " << filter_height;                     \
+  NNADAPTER_VLOG(5) << "filter_width: " << filter_width;                       \
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
