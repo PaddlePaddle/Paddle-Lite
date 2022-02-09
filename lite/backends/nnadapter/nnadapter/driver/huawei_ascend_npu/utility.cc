@@ -85,6 +85,10 @@ void InitializeGraphBuilder() {
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 3)
+    global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
+    global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
+#endif
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination
@@ -250,6 +254,8 @@ bool BuildOMModelToBuffer(
     }
   }
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
+  // For debug: save ascend offline model to local.
+  // ATC_CALL(aclgrphSaveModel("ir_graph_model", om_buffer));
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
   memcpy(reinterpret_cast<void*>(model_buffer->data()),

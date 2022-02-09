@@ -23,8 +23,7 @@ namespace huawei_ascend_npu {
 int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
   RESIZE_LINEAR_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(!(align_mode == 0 && align_corners))
-      << "HuiweiAscendNPU does not support align_mode=0 and "
-         "align_corners=true.";
+      << "Unsupported align_mode=0 when align_corners=true.";
 
   // Convert to GE operators
   auto resize_linear_op =
