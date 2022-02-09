@@ -267,7 +267,9 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
         param_int8_out.output->set_precision(PRECISION(kInt8));
 
         param_int8_out.x->Resize(dim_in);
+        param_int8_out.output->Resize(dim_out);
         param_fp32_out.x->Resize(dim_in);
+        param_fp32_out.output->Resize(dim_out);
 
         Tensor tin_fp32;
         tin_fp32.Resize(dim_in);
