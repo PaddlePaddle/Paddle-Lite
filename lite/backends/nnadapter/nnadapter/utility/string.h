@@ -46,6 +46,18 @@ double string_parse<double>(const std::string& v) {
   return std::stod(v);
 }
 
+template <>
+bool string_parse<bool>(const std::string& v) {
+  std::string upper;
+  for (size_t i = 0; i < v.length(); i++) {
+    char ch = v[i];
+    if (ch >= 'a' && ch <= 'z') {
+      upper.push_back(ch - 'a' + 'A');
+    }
+  }
+  return upper == "TRUE" || upper == "1";
+}
+
 template <class T = std::string>
 static std::vector<T> string_split(const std::string& original,
                                    const std::string& separator) {

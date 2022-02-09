@@ -337,7 +337,7 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
     } break;
     default:
       NNADAPTER_LOG(FATAL) << "Missing the processing "
-                           << OperationTypeToString(type.precision)
+                           << OperandPrecisionCodeToString(type.precision)
                            << " for the conversion of Neuron operands.";
       break;
   }

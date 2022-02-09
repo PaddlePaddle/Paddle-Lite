@@ -56,6 +56,9 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
   } else {
     resize_linear_node->SetHalfPixelCenters(false);
   }
+  magicmind::Layout input_layout =
+      ConvertToMagicMindDataLayout(input_operand->type.layout);
+  resize_linear_node->SetLayout(input_layout, input_layout);
   auto output_tensor = resize_linear_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

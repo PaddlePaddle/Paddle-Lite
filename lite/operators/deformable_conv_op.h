@@ -88,6 +88,8 @@ class DeformableConvOpLite : public OpLite {
     param_.conv_param.dilations = std::make_shared<std::vector<int>>(dilations);
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.conv_param.paddings = std::make_shared<std::vector<int>>(paddings);
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    output_tensor_ptrs_cache_.push_back(param_.output);
 
     // optional params
     std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();

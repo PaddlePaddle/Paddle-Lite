@@ -49,3 +49,7 @@ endif()
 if(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   add_subdirectory(kunlunxin_xtcl)
 endif()
+
+if(NNADAPTER_WITH_ANDROID_NNAPI)
+  add_subdirectory(android_nnapi)
+endif()

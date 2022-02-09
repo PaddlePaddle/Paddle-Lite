@@ -555,6 +555,7 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   const std::string kMALI_PATTERN_STR = "Mali";
   const std::string kADRENO_PATTERN_STR = "QUALCOMM Adreno(TM)";
   const std::string kPOWERVR_PATTERN_STR = "PowerVR";
+  const std::string kAPPLE_M1_PATTERN_STR = "Apple M1";
   std::string gpu_type_str = "";
 
   if (device_name == kADRENO_PATTERN_STR) {
@@ -566,6 +567,9 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   } else if (device_name.find(kPOWERVR_PATTERN_STR) != std::string::npos) {
     gpu_type_str = "powerVR gpu";
     return GpuType::IMAGINATION_POWERVR;
+  } else if (device_name.find(kAPPLE_M1_PATTERN_STR) != std::string::npos) {
+    gpu_type_str = "appleM1 gpu";
+    return GpuType::APPLE_M1;
   } else {
     gpu_type_str = "others gpu";
     return GpuType::UNKNOWN;

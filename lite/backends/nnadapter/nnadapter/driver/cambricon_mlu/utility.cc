@@ -45,6 +45,9 @@ magicmind::DataType ConvertToMagicMindDtype(
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       output_precision = magicmind::DataType::INT32;
       break;
+    case NNADAPTER_INT64:
+      output_precision = magicmind::DataType::INT64;
+      break;
     case NNADAPTER_UINT8:
       output_precision = magicmind::DataType::UINT8;
       break;
@@ -118,23 +121,17 @@ magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
   return magicmind::Dims(output_dimensions);
 }
 
-bool IsDeviceMemory(void* pointer) {
-  unsigned int value;
-  auto result = cnGetMemAttribute(
-      &value, CN_MEM_ATTRIBUTE_TYPE, reinterpret_cast<CNaddr>(pointer));
-  if (result == CN_SUCCESS) {
-    switch (value) {
-      case CN_MEMORYTYPE_DEVICE:
-        return true;
-      case CN_MEMORYTYPE_HOST:
-        return false;
-      default:
-        NNADAPTER_LOG(WARNING) << "Unknown memory space.";
-        return false;
-    }
+bool IsDeviceMemory(magicmind::IRTTensor* pointer) {
+  auto location = pointer->GetMemoryLocation();
+  switch (location) {
+    case magicmind::TensorLocation::kMLU:
+      return true;
+    case magicmind::TensorLocation::kHost:
+      return false;
+    default:
+      NNADAPTER_LOG(WARNING) << "Unknown memory space.";
+      return false;
   }
-  NNADAPTER_LOG(FATAL) << "Failed to query device pointer for memory space.";
-  return false;
 }
 
 }  // namespace cambricon_mlu

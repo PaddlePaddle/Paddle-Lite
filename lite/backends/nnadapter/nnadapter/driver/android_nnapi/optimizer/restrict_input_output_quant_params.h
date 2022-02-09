@@ -13,30 +13,15 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/operators/im2sequence_op.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+#include "core/hal/types.h"
 
-class Im2SequenceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::Im2SequenceParam;
+namespace nnadapter {
+namespace android_nnapi {
 
-  void PrepareForRun() override;
+// Make the restriction that for int8 quantized concat, reshape, and transpose,
+// etc. the inputs and outputs must have the same quantization parameters.
+void RestrictInputOutputQuantParams(hal::Model* model);
 
-  void Run() override;
-
-  ~Im2SequenceCompute() {}
-
- private:
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+}  // namespace android_nnapi
+}  // namespace nnadapter

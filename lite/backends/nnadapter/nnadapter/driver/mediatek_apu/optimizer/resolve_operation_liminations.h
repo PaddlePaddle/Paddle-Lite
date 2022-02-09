@@ -14,22 +14,12 @@
 
 #pragma once
 
-namespace paddle {
-namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
-typedef __fp16 float16_t;
-void shuffle_channel(const float16_t* inputs,
-                     float16_t* outputs,
-                     int group,
-                     int num,
-                     int channel,
-                     int height,
-                     int width);
+#include "core/hal/types.h"
 
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+namespace nnadapter {
+namespace mediatek_apu {
+
+void ResolveOperationLiminations(hal::Model* model);
+
+}  // namespace mediatek_apu
+}  // namespace nnadapter

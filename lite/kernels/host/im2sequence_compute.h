@@ -13,32 +13,29 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/operators/im2sequence_op.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-void im2sequence(const float* input,
-                 const int input_c,
-                 const int input_h,
-                 const int input_w,
-                 const int kernel_h,
-                 const int kernel_w,
-                 const int pad_top,
-                 const int pad_bottom,
-                 const int pad_left,
-                 const int pad_right,
-                 const int stride_h,
-                 const int stride_w,
-                 const int out_h,
-                 const int out_w,
-                 float* out,
-                 Context<TARGET(kARM)>* ctx);
+namespace kernels {
+namespace host {
 
-}  // namespace math
-}  // namespace arm
+class Im2SequenceCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::Im2SequenceParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~Im2SequenceCompute() {}
+
+ private:
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

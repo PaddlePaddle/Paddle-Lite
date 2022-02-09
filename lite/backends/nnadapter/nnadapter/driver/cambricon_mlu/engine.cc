@@ -94,7 +94,6 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   FixQuantizedOps(model);
-  ConvertDataLayoutNCHWToNHWC(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
@@ -140,12 +139,12 @@ int Program::BuildFromModel(hal::Model* model) {
 
   magicmind::IBuilderConfig* config = mm_builder_config_.get();
   magicmind::INetwork* network = mm_network_.get();
-  if (context_->GetBuildConfigFilePath().empty()) {
+  if (context_->build_config_file_path().empty()) {
     config->ParseFromString(R"({"graph_shape_mutable": true})");
     config->ParseFromString(
         R"({"precision_config": {"precision_mode": "force_float32"}})");
   } else {
-    config->ParseFromFile(context_->GetBuildConfigFilePath());
+    config->ParseFromFile(context_->build_config_file_path());
   }
   mm_model_.reset(mm_builder_->BuildModel("camb_model", network, config));
   NNADAPTER_VLOG(3) << "Build success.";
@@ -225,7 +224,7 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
-    if (IsDeviceMemory(output_mlu_ptr)) {
+    if (IsDeviceMemory(outputs[i])) {
       MLU_CNRT_CHECK(cnrtMemcpy(buffer,
                                 output_mlu_ptr,
                                 outputs[i]->GetSize(),

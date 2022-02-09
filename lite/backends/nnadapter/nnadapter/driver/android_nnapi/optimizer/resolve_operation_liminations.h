@@ -17,9 +17,9 @@
 #include "core/hal/types.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace android_nnapi {
 
-void ResolveOpLiminations(hal::Model* model);
+void ResolveOperationLiminations(hal::Model* model);
 
-}  // namespace mediatek_apu
+}  // namespace android_nnapi
 }  // namespace nnadapter

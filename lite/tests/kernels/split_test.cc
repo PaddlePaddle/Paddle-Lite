@@ -269,6 +269,14 @@ TEST(Split_test, precision) {
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
 #else
   return;
 #endif
