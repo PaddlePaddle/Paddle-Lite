@@ -62,6 +62,11 @@ class TestElementwiseSubOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -79,12 +84,11 @@ class TestElementwiseSubOp(AutoScanTest):
             ) == PrecisionType.FP32 and input_data_type != np.float32:
                 return False
             if predictor_config.precision(
-            ) == PrecisionType.FP16 and input_data_type != np.float16:
+            ) == PrecisionType.FP16 and input_data_type != np.float32:
                 return False
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -163,7 +167,7 @@ class TestElementwiseSubOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 150
+        max_examples = 300
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 300
