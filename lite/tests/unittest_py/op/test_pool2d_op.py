@@ -116,7 +116,7 @@ class TestPool2dOp(AutoScanTest):
 
         #if both paddle and lite have invalid output, so it is an invalid input.
         #also it is unreasonable when ceil_mode == true with paddings = [0, 0]
-        if paddings == [0, 0]:
+        if paddings == [0, 0] or paddings == [0, 0, 0, 0]:
             assume(ceil_mode == False)
 
         build_ops = OpConfig(
