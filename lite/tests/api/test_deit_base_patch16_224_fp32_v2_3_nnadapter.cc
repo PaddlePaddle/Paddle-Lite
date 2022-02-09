@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(DarkNet, test_darknet53_fp32_v2_3_nnadapter) {
+TEST(DeiT, test_deit_base_patch16_224_fp32_v2_3_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
