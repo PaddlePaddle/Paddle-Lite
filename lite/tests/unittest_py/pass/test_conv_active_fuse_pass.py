@@ -72,12 +72,9 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         result = True
         if predictor_config.target() == TargetType.OpenCL:
-            filter_shape = list(program_config.weights["filter_data"].shape)
-            dilations = program_config.ops[0].attrs["dilations"]
             if program_config.ops[0].attrs[
                     "groups"] != 1 or program_config.ops[
-                        0].type == "conv2d_transpose" or dilations[0] == 2 or (
-                            filter_shape[2] == 3 and filter_shape[3] == 3):
+                        0].type == "conv2d_transpose":
                 result = False
         if program_config.ops[1].type == "sigmoid" and predictor_config.target(
         ) != TargetType.OpenCL:

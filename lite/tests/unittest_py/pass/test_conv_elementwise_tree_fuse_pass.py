@@ -31,8 +31,6 @@ import hypothesis.strategies as st
 class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        #some case OpenCL not support         
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -47,12 +45,17 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        return True
+        result = True
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs[
+                    "groups"] != 1 or program_config.ops[
+                        0].type == "conv2d_transpose":
+                result = False
+        return result
 
     def sample_program_configs(self, draw):
 
