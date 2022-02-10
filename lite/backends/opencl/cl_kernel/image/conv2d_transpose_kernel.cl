@@ -28,6 +28,8 @@ __kernel void conv2d_transpose(
     __private const int2 align_shape,
     __private const int2 padding_shape,
     __private const int2 kernel_shape,
+    __private const int2 dilation_shape,
+    __private const int2 kernel_prev_shape,
     __private const int kernel_size,
     __private const int input_c_blks) {
   const int out_c_blk_idx = get_global_id(0);
@@ -67,7 +69,8 @@ __kernel void conv2d_transpose(
   CL_DTYPE4 weights0, weights1, weights2, weights3;
 #ifndef IS_DEPTHWISE
   for (int ic = 0; ic < input_c_blks; ic++) {
-    int kernel_y_base = mul24(ic, kernel_size);
+    // int kernel_y_base = mul24(ic, kernel_size);
+    int kernel_y_base = mul24(ic, kernel_prev_shape.x * kernel_prev_shape.y);
     int in_idx = mul24(ic, input_shape.x);
     kernel_x_0 = out_c_blk_idx << 2;
     kernel_x_1 = kernel_x_0 + 1;
@@ -85,19 +88,24 @@ __kernel void conv2d_transpose(
       int in_width0 = kernel_start_x;
       for (int k_x = valid_kernel_width; k_x >= 0; k_x -= stride_shape.x) {
 #ifndef IS_DEPTHWISE
-        kernel_y = mad24(k_y,
-                         kernel_shape.x,
-                         k_x + kernel_y_base);  // (k_y * k_w + k_x) + k_y_base
-#endif
-#ifndef IS_DEPTHWISE
-        weights0 = READ_IMG_TYPE(
-            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
-        weights1 = READ_IMG_TYPE(
-            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_1, kernel_y));
-        weights2 = READ_IMG_TYPE(
-            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
-        weights3 = READ_IMG_TYPE(
-            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
+        if (k_x % dilation_shape.x == 0 && k_y % dilation_shape.y == 0) {
+          kernel_y = mad24(k_y / dilation_shape.y,
+                           kernel_prev_shape.x,
+                           k_x / dilation_shape.x + kernel_y_base);
+          weights0 = READ_IMG_TYPE(
+              CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
+          weights1 = READ_IMG_TYPE(
+              CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_1, kernel_y));
+          weights2 = READ_IMG_TYPE(
+              CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
+          weights3 = READ_IMG_TYPE(
+              CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
+        } else {
+          weights0 = (CL_DTYPE4)(0.0f);
+          weights1 = (CL_DTYPE4)(0.0f);
+          weights2 = (CL_DTYPE4)(0.0f);
+          weights3 = (CL_DTYPE4)(0.0f);
+        }
 #else
       int kernel_x = mad24(out_c_blk_idx, kernel_shape.x, k_x);
       weights0 =
