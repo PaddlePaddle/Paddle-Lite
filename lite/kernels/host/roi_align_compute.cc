@@ -137,12 +137,16 @@ void RoiAlignCompute::Run() {
   int rois_batch_size = 0;
   auto* input_data = in->data<float>();
   auto* rois_num_t = param.RoisNum;
-  auto* rois_num_data = rois_num_t->data<int>();
-  int sum_roi_num = 0;
-  for (int i = 0; i < rois_num_t->numel(); i++) {
-    sum_roi_num += rois_num_data[i];
+  const int* rois_num_data = nullptr;
+
+  if (param.RoisNum != nullptr) {
+    rois_num_data = rois_num_t->data<int>();
+    int sum_roi_num = 0;
+    for (int i = 0; i < rois_num_t->numel(); i++) {
+      sum_roi_num += rois_num_data[i];
+    }
+    CHECK_EQ(sum_roi_num, rois_num);
   }
-  CHECK_EQ(sum_roi_num, rois_num);
 
   Tensor roi_batch_id_list;
   roi_batch_id_list.Resize({rois_num});
