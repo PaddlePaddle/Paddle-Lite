@@ -140,7 +140,7 @@ class TestSoftmaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 100
+        max_examples = 25
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 100

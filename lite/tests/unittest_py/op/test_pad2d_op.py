@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume, reproduce_failure
+from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
