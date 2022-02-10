@@ -238,9 +238,6 @@ void ConvImageCompute::PrepareForRun() {
 #endif
   } else if (is_mali_ && filter_tensor_h_ == 1 &&
              filter_tensor_w_ == 1) {  // mali conv1x1
-    filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
-    tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
-    tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
     if (task_size <= threshold_2) {
       CLImageConverterNBlock converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c1");
@@ -471,7 +468,7 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_data);
     }
   } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5 && pad_equal &&
-             stride_equal && dilation_equal) {
+             stride_equal && dilation_equal && dilation_h_ == 1) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
     // conv2d_5x5
@@ -513,7 +510,7 @@ void ConvImageCompute::PrepareForRun() {
 #endif
 #undef CONV_5x5_OPT
   } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7 && pad_equal &&
-             stride_equal && dilation_equal) {
+             stride_equal && dilation_equal && dilation_h_ == 1) {
 #define CONV_7x7_OPT
 #ifndef CONV_7x7_OPT
     // conv2d_7x7
