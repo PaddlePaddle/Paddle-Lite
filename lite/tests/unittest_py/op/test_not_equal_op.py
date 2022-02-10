@@ -41,6 +41,8 @@ import hypothesis.strategies as st
 class TestNotEqualOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
         #output bool bugs will be fixed in the future
         # self.enable_testing_on_place(
         #     TargetType.Host,

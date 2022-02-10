@@ -17,6 +17,21 @@ SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 # Skip op or pass, use | to separate them, such as "expand_op" or "expand_op|abc_pass", etc.
 SKIP_LIST="abc_op|abc_pass"
+# white list
+cambricon_mlu_unittests_white_list="test_softmax_op.py | test_batch_norm_op.py | test_reshape2_op.py |
+  test_reshape_op.py | test_elementwise_add_op.py |test_elementwise_sub_op.py | test_elementwise_mul_op.py |
+  test_pow_op.py | test_sigmoid_op.py | test_relu_op.py | test_relu6_op.py | test_leaky_relu_op.py |
+  test_tanh_op.py | test_log_op.py | test_equal_op.py | test_scale_op.py"
+
+cambricon_mlu_unittests_black_list="test_cast_op.py | test_clip_op.py |  test_conv2d_op.py | test_conv2d_transpose_op |
+  test_deformable_conv_op.py | test_pool2d_op.py | test_unsqueeze2_op.py | test_unsqueeze_op.py |
+  test_expand_v2_op.py | test_compare_less_op | test_greater_op.py | test_reduce_mean_op.py |
+  test_shape_op.py | test_slice_op.py test_squeeze_op.py | test_squeeze2_op.py |
+  test_fill_constant_op.py | test_fill_any_like_op.py | test_concat_op.py |
+  test_nearest_interp_op.py | test_nearest_interp_v2_op.py | test_bilinear_interp_op.py |test_bilinear_interp_v2_op.py |
+  test_flatten_contiguous_range_op.py | test_flatten_op.py | test_flatten_v2_op.py |
+  test_fc_op.py | test_norm_op.py | test_gather_op.py | test_elementwise_div_op.py"
+
 # Models URL
 MODELS_URL="https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz"
 
@@ -27,6 +42,10 @@ function auto_scan_test {
   rm -rf $(find $WORKSPACE/lite/tests/unittest_py/ -name statics_data)
   cd $WORKSPACE/lite/tests/unittest_py/op/
   unittests=$(ls | egrep -v $SKIP_LIST)
+  
+  if [[ $NNADAPTER_DEVICE_NAMES == "cambricon_mlu" ]]; then
+    unittests=$cambricon_mlu_unittests_white_list
+  fi
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=NNAdapter --nnadapter_device_names=$NNADAPTER_DEVICE_NAMES
@@ -98,7 +117,7 @@ function build_and_test {
           exit 1
   esac  
   
-  $cmd_line
+  # $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
   local whl_path=$(find ./build.lite.linux.$ARCH.$TOOLCHAIN/* -name *whl)

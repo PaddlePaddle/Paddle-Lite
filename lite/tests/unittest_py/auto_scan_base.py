@@ -121,6 +121,7 @@ class AutoScanBaseTest(unittest.TestCase):
         self.available_passes_in_framework = set()
         args = parser.parse_args()
         self.args = args
+        self.vaild_nnadapter_device_names = []
 
     @abc.abstractmethod
     def sample_program_configs(self, draw):
@@ -518,6 +519,11 @@ class AutoScanBaseTest(unittest.TestCase):
                          self.get_target())
             return
 
+        if not self.is_nnadapter_device_actived():
+            logging.info("Error: This test is not actived on " +
+                         self.get_nnadapter_device_name())
+            return
+
         if self.get_target().upper() == "NNADAPTER":
             self.assertTrue(
                 self.args.nnadapter_device_names != "",
@@ -601,6 +607,9 @@ class AutoScanBaseTest(unittest.TestCase):
             else:
                 self.valid_places.append([Place(tar_, pre_, lay_)])
 
+    def enable_devices_on_nnadapter(self, device_names=list) -> None:
+        self.vaild_nnadapter_device_names = device_names
+
     def get_target(self) -> str:
         return self.args.target
 
@@ -608,6 +617,14 @@ class AutoScanBaseTest(unittest.TestCase):
         for valid_place_ in self.valid_places:
             if self.get_target() in valid_place_[0]:
                 return True
+        return False
+
+    def is_nnadapter_device_actived(self) -> bool:
+        if self.get_target().upper() != "NNADAPTER":
+            return True
+        if self.get_nnadapter_device_name(
+        ) in self.vaild_nnadapter_device_names:
+            return True
         return False
 
     def get_nnadapter_device_name(self) -> str:
