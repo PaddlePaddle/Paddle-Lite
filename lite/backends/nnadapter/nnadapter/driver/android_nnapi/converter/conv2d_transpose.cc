@@ -53,6 +53,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
+  NNADAPTER_CHECK_EQ(dilation_height, 1) << "Only supports dilations = [1,1]";
+  NNADAPTER_CHECK_EQ(dilation_width, 1) << "Only supports dilations = [1,1]";
 
   // Convert to NNAPI operands and operations
   auto input_index = converter->GetMappedIndex(input_operand);
