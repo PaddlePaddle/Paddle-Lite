@@ -9,6 +9,7 @@ OS="android"
 ARCH="armv8"
 TOOLCHAIN="gcc"
 NNADAPTER_DEVICE_NAMES=""
+NNADAPTER_CAMBRICON_MLU_SDK_ROOT="/usr/local/neuware"
 # Python version
 PYTHON_VERSION=3.7
 # Absolute path of Paddle-Lite source code.
@@ -85,12 +86,18 @@ function build_and_test {
   cd $WORKSPACE
   # Step1. Compiling python installer
   local cmd_line=""
-  if [ "$NNADAPTER_DEVICE_NAMES" = "kunlunxin_xtcl" ]; then 
-      cmd_line="./lite/tools/build_linux.sh --arch=$ARCH --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON  --nnadapter_kunlunxin_xtcl_sdk_url=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL --with_python=ON --python_version=$PYTHON_VERSION"
-  else
-      echo "NNADAPTER_DEVICE_NAMES=$NNADAPTER_DEVICE_NAMES is not support!"
-      exit 1
-  fi
+  case $NNADAPTER_DEVICE_NAMES in
+      "kunlunxin_xtcl")
+          cmd_line="./lite/tools/build_linux.sh --arch=$ARCH --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON  --nnadapter_kunlunxin_xtcl_sdk_url=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL --with_python=ON --python_version=$PYTHON_VERSION"
+          ;;
+      "cambricon_mlu")
+          cmd_line="./lite/tools/build_linux.sh --arch=$ARCH --with_nnadapter=ON --nnadapter_with_cambricon_mlu=ON  --nnadapter_cambricon_mlu_sdk_root=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT --with_python=ON --python_version=$PYTHON_VERSION --with_extra=ON --with_log=ON --with_exception=ON full_publish"
+          ;;
+      *)
+          echo "NNADAPTER_DEVICE_NAMES=$NNADAPTER_DEVICE_NAMES is not support!"
+          exit 1
+  esac  
+  
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
@@ -147,6 +154,11 @@ function main() {
               NNADAPTER_DEVICE_NAMES="kunlunxin_xtcl"
               shift
               ;;
+          --nnadapter_with_cambricon_mlu=*)
+              NNADAPTER_WITH_CAMBRICON_MLU="${i#*=}"
+              NNADAPTER_DEVICE_NAMES="cambricon_mlu"
+              shift
+              ;;
           --nnadapter_kunlunxin_xtcl_sdk_root=*)
               NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT="${i#*=}"
               shift
@@ -157,6 +169,10 @@ function main() {
               ;;
           --nnadapter_kunlunxin_xtcl_sdk_env=*)
               NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV="${i#*=}"
+              shift
+              ;;
+          --nnadapter_cambricon_mlu_sdk_root=*)
+              NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
               shift
               ;;
           *)
