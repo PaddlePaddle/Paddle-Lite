@@ -95,8 +95,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertElementwise(
         auto transpose_input_permutation = MultiplyPermutation(
             InversePermutation(input_permutation), reference_permutation);
         if (!IsIdentityPermutation(transpose_input_permutation)) {
-          auto transpose_input_operand = AddTransposeOperation(
+          auto transpose_input_operand = AppendTransposeOperation(
               model_, input_operand, transpose_input_permutation);
+          UpdateOperationInputOperands(
+              {operation}, input_operand, transpose_input_operand);
           SetPermutation(transpose_input_operand, reference_permutation);
         }
       } else {
@@ -158,8 +160,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertAdaptivePool2D(
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
   TransposeOperand(output_operand, kNCHW2NHWC);
@@ -193,8 +197,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
   TransposeOperand(output_operand, kNCHW2NHWC);
@@ -271,8 +277,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertConcat(hal::Operation* operation) {
         auto transpose_input_permutation = MultiplyPermutation(
             InversePermutation(input_permutation), reference_permutation);
         if (!IsIdentityPermutation(transpose_input_permutation)) {
-          auto transpose_input_operand = AddTransposeOperation(
+          auto transpose_input_operand = AppendTransposeOperation(
               model_, input_operand, transpose_input_permutation);
+          UpdateOperationInputOperands(
+              {operation}, input_operand, transpose_input_operand);
           SetPermutation(transpose_input_operand, reference_permutation);
         }
       } else {
@@ -319,8 +327,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
   std::vector<int32_t> filter_permutation = {};
@@ -365,8 +375,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
   std::vector<int32_t> filter_permutation = {};
@@ -544,8 +556,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertReshape(hal::Operation* operation) {
   auto input_permutation = GetPermutation(input_operand);
   auto transpose_input_permutation = InversePermutation(input_permutation);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand,
                    IdentityPermutation(input_dimensions_count));
   }
@@ -567,11 +581,12 @@ void NCHW2NHWCDataLayoutConverter::ConvertResizeLinear(
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
-
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
   SetOperationLayout(operation);
@@ -592,11 +607,12 @@ void NCHW2NHWCDataLayoutConverter::ConvertResizeNearest(
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
-
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
   SetOperationLayout(operation);
@@ -656,8 +672,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertFlatten(hal::Operation* operation) {
   auto input_permutation = GetPermutation(input_operand);
   auto transpose_input_permutation = InversePermutation(input_permutation);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand,
                    IdentityPermutation(input_dimensions_count));
   }
@@ -848,14 +866,19 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
   }
   // Restore all of the model output operands if they have non-identity
   // permutation
-  for (auto& operand : model_->output_operands) {
-    auto permutation = GetPermutation(operand);
-    auto transpose_permutation = InversePermutation(permutation);
-    if (!IsIdentityPermutation(transpose_permutation)) {
-      auto transpose_operand =
-          AddTransposeOperation(model_, operand, transpose_permutation);
-      SetPermutation(transpose_operand,
-                     IdentityPermutation(operand->type.dimensions.count));
+  for (auto& output_operand : model_->output_operands) {
+    auto output_permutation = GetPermutation(output_operand);
+    auto transpose_output_permutation = InversePermutation(output_permutation);
+    if (!IsIdentityPermutation(transpose_output_permutation)) {
+      auto transpose_output_operand = AppendTransposeOperation(
+          model_, output_operand, transpose_output_permutation);
+      SetPermutation(
+          transpose_output_operand,
+          IdentityPermutation(output_operand->type.dimensions.count));
+      // Update the current model output operand to the new operand
+      output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+      transpose_output_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
+      output_operand = transpose_output_operand;
     }
   }
 }
