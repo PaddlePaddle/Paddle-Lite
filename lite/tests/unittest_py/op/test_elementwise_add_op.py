@@ -205,7 +205,7 @@ class TestElementwiseAddOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 300
+        max_examples = 150
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 300
