@@ -153,6 +153,13 @@ class TestScaleOp(AutoScanTest):
             if target_type == TargetType.Metal:
                 return True
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            x_dtype = program_config.inputs["input_data"].dtype
+            if target_type == TargetType.OpenCL:
+                if x_dtype == np.int32 or x_dtype == np.int64:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case. We need to fix it as soon as possible."
@@ -160,6 +167,10 @@ class TestScaleOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op when dtype is int32 or int64 on Opencl. "
         )
 
     def test(self, *args, **kwargs):
