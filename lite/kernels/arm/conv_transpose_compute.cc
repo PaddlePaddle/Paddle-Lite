@@ -276,7 +276,7 @@ PROFILE_INFO(kInt8, kFloat)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
+  ctx.ExtendWorkspace((workspace_size_ * 4 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -374,7 +374,7 @@ PROFILE_INFO(kInt8, kInt8)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
+  ctx.ExtendWorkspace((workspace_size_ * 4 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
