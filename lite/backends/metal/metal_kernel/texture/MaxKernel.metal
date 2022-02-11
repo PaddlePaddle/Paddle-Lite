@@ -77,34 +77,3 @@ kernel void arg_max_c(texture2d_array<ftype, access::read> inTexture[[texture(0)
         outTexture.write(ftype4(index_r, index_g, index_b, index_a), gid.xy, gid.z);
     }
 }
-
-kernel void arg_max_h(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
-    constant ArgParam& param[[buffer(0)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-
-    // dimensions = 4, CPU is NCHW, GPU is NHWC
-    if (param.orank == 4) {
-        int index = 0;
-#if LITE_WITH_METAL_FULL
-        float omax = -FLT_MAX;
-#else
-        float omax = -FLT_MAX;
-#endif
-        uint iAL = inTexture.get_height();
-        auto flag = bool4(false);
-        ftype4 guard_value = inTexture.read(uint2(gid.x, 0), gid.z);
-        int4 guard_index = int4(0);
-        for (uint i = 1; i < iAL; i++) {
-            ftype4 in = inTexture.read(uint2(gid.x, i), gid.z);
-            int4 idx = int4(i);
-            flag = bool4(guard_value >= in);
-            guard_value = select(in, guard_value, flag);
-            guard_index = select(idx, guard_index, flag);
-        }
-        outTexture.write(ftype4(guard_index), gid.xy, gid.z);
-    }
-}
