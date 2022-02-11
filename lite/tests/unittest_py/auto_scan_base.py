@@ -174,6 +174,8 @@ class AutoScanBaseTest(unittest.TestCase):
     # count FP16 precision diff
     def count_fp16_diff(self, arr, base, atol, rtol) -> bool:
         diff = abs(arr - base)
+        if len(diff) <= 0:
+            pass
         max_diff = max(diff)
         check = False
         max_val = 0.0
@@ -259,11 +261,14 @@ class AutoScanBaseTest(unittest.TestCase):
                     # training using data
                     continue
                 arr = np.array(tensor[key])
-                self.assertTrue(
-                    baseline[paddlekey].shape == arr.shape,
-                    "The output shapes are not equal, the baseline shape is " +
-                    str(baseline[paddlekey].shape) + ', but got ' +
-                    str(arr.shape))
+                if not baseline[paddlekey].shape and arr.shape == (1, ):
+                    pass
+                else:
+                    self.assertTrue(
+                        baseline[paddlekey].shape == arr.shape,
+                        "The output shapes are not equal, the baseline shape is "
+                        + str(baseline[paddlekey].shape) + ', but got ' +
+                        str(arr.shape))
                 if flag_precision_fp16:
                     # count diff
                     arr_value = arr.flatten()
@@ -350,9 +355,13 @@ class AutoScanBaseTest(unittest.TestCase):
             cnt = 0
             for paddlelite_config in paddlelite_configs:
                 flag_precision_fp16 = False
-                if paddlelite_config.precision() == PrecisionType.FP16:
+                if paddlelite_config.precision(
+                ) == PrecisionType.FP16 and paddlelite_config.target(
+                ) == TargetType.ARM:
                     flag_precision_fp16 = True
-                if paddlelite_config.precision() == PrecisionType.INT8:
+                if paddlelite_config.precision(
+                ) == PrecisionType.INT8 and paddlelite_config.target(
+                ) == TargetType.ARM:
                     quant = True
                 else:
                     quant = False
