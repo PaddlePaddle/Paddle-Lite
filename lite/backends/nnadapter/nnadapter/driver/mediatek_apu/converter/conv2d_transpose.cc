@@ -14,13 +14,13 @@
 
 #include "core/operation/conv2d_transpose.h"
 #include "core/operation/conv2d.h"
-#include "driver/android_nnapi/converter/converter.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 
 namespace nnadapter {
-namespace android_nnapi {
+namespace mediatek_apu {
 
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -76,10 +76,10 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   auto stride_width_index = converter->AddInt32ConstantOperand(stride_width);
   auto stride_height_index = converter->AddInt32ConstantOperand(stride_height);
   auto fuse_code_index = converter->AddInt32ConstantOperand(
-      ConvertFuseCodeToNNFuseCode(fuse_code));
+      ConvertFuseCodeToNeuronFuseCode(fuse_code));
   auto is_nchw_index = converter->AddBool8ConstantOperand(false);
   auto output_index = converter->ConvertOperand(output_operand);
-  NNADAPTER_CHECK_EQ(converter->AddOperation(ANEURALNETWORKS_TRANSPOSE_CONV_2D,
+  NNADAPTER_CHECK_EQ(converter->AddOperation(NEURON_TRANSPOSE_CONV_2D,
                                              {input_index,
                                               filter_index,
                                               bias_index,
@@ -92,9 +92,9 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
                                               fuse_code_index,
                                               is_nchw_index},
                                              {output_index}),
-                     ANEURALNETWORKS_NO_ERROR);
+                     NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace android_nnapi
+}  // namespace mediatek_apu
 }  // namespace nnadapter

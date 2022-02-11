@@ -52,6 +52,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  // [C_in, C_out, filter_height, filter_width]->[C_out, C_in, filter_height,
+  // filter_width]
   std::vector<int32_t> filter_permutation = {1, 0, 2, 3};
   TransposeOperand(filter_operand, filter_permutation);
   int32_t multiplier = 0;

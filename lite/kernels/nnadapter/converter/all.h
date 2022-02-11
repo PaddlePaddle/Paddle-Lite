@@ -61,8 +61,8 @@ REGISTER_CONVERTER(softmax,
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d_transpose,
                    ConvertConv2dTranspose,
-                   "huawei_ascend_npu,amlogic_npu,verisilicon_timvx,cambricon_"
-                   "mlu,android_nnapi");
+                   "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
+                   "timvx,cambricon_mlu,android_nnapi");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"

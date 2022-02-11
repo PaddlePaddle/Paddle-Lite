@@ -41,20 +41,12 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
-  NNADAPTER_CHECK_EQ(dilation_height, 1) << "Only supports dilations = [1,1]";
-  NNADAPTER_CHECK_EQ(dilation_width, 1) << "Only supports dilations = [1,1]";
 
   // Convert to Neuron operands and operations
   auto input_index = converter->GetMappedIndex(input_operand);
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
-  bool is_per_channel =
-      filter_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
-  NNADAPTER_CHECK(filter_operand->type.precision ==
-                      NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
-                  is_per_channel);
-  NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
   auto filter_index = converter->ConvertOperand(filter_operand);
   NNADAPTER_VLOG(5) << "filter_index:" << filter_index;
   auto bias_index = converter->ConvertOperand(bias_operand);
@@ -82,25 +74,30 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                                          stride_width_index,
                                          stride_height_index};
   std::vector<uint32_t> output_indexes = {output_index};
+  NeuronOperationType operation_code = NEURON_CONV_2D;
   if (is_depthwise_mode) {
     int32_t multiplier = output_channel_size / group;
     NNADAPTER_CHECK_EQ(multiplier, 1)
-        << "MediaTek APU only supports multiplier=1, but recieved multiplier="
-        << multiplier << " which C_out=" << output_channel_size
-        << " and group=" << group;
+        << "Only supports multiplier=1, but recieved multiplier=" << multiplier
+        << " which C_out=" << output_channel_size << " and group=" << group;
     auto multiplier_index = converter->AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);
-    input_indexes.push_back(fuse_code_index);
-    NNADAPTER_CHECK_EQ(
-        converter->AddOperation(
-            NEURON_DEPTHWISE_CONV_2D, input_indexes, output_indexes),
-        NEURON_NO_ERROR);
-  } else {
-    input_indexes.push_back(fuse_code_index);
-    NNADAPTER_CHECK_EQ(
-        converter->AddOperation(NEURON_CONV_2D, input_indexes, output_indexes),
-        NEURON_NO_ERROR);
+    operation_code = NEURON_DEPTHWISE_CONV_2D;
   }
+  input_indexes.push_back(fuse_code_index);
+  if (dilation_height != 1 || dilation_width != 1) {
+    auto is_nchw_index = converter->AddBool8ConstantOperand(false);
+    input_indexes.push_back(is_nchw_index);
+    auto dilation_width_index =
+        converter->AddInt32ConstantOperand(dilation_width);
+    input_indexes.push_back(dilation_width_index);
+    auto dilation_height_index =
+        converter->AddInt32ConstantOperand(dilation_height);
+    input_indexes.push_back(dilation_height_index);
+  }
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(operation_code, input_indexes, output_indexes),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -25,6 +25,7 @@ namespace nnadapter {
 
 static const std::vector<int32_t> kNCHW2NHWC = {0, 2, 3, 1};
 static const std::vector<int32_t> kNHWC2NCHW = {0, 3, 1, 2};
+static const std::vector<int32_t> kNCHW2CHWN = {1, 2, 3, 0};
 
 void NCHW2NHWCDataLayoutConverter::SetPermutation(
     hal::Operand* operand, const std::vector<int32_t>& permutation) {
@@ -385,10 +386,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
   if (is_per_channel) {
     filter_operand->type.symm_per_channel_params.channel_dim = 0;
   }
-  // [C_out, C_in, filter_height, filter_width]->[C_out, filter_height,
+  // [C_in, C_out, filter_height, filter_width]->[C_out, filter_height,
   // filter_width, C_in]
-  TransposeOperand(filter_operand, kNCHW2NHWC);
-  SetPermutation(filter_operand, kNCHW2NHWC);
+  TransposeOperand(filter_operand, kNCHW2CHWN);
+  SetPermutation(filter_operand, kNCHW2CHWN);
   auto output_operand = output_operands[0];
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
