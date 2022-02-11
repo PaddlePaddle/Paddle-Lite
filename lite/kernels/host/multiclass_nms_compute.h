@@ -1,3 +1,17 @@
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -211,14 +225,13 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
     *num_nmsed_out = keep_top_k;
   }
 }
-
-template <typename T>
+template <typename T, typename index_t>
 void MultiClassOutput(const Tensor& scores,
                       const Tensor& bboxes,
                       const std::map<int, std::vector<int>>& selected_indices,
                       const int scores_size,
                       Tensor* outs,
-                      int* oindices = nullptr,
+                      index_t* oindices = nullptr,
                       const int offset = 0) {
   int64_t class_num = scores.dims()[1];
   int64_t predict_dim = scores.dims()[1];
@@ -250,13 +263,14 @@ void MultiClassOutput(const Tensor& scores,
         bdata = bboxes_data + idx * box_size;
         odata[count * out_dim + 1] = sdata[idx];  // score
         if (oindices != nullptr) {
-          oindices[count] = offset + idx;
+          oindices[count] = static_cast<index_t>(offset + idx);
         }
       } else {
         bdata = bbox.data<T>() + idx * box_size;
         odata[count * out_dim + 1] = *(scores_data + idx * class_num + label);
         if (oindices != nullptr) {
-          oindices[count] = offset + idx * class_num + label;
+          oindices[count] =
+              static_cast<index_t>(offset + idx * class_num + label);
         }
       }
       // xmin, ymin, xmax, ymax or multi-points coordinates
@@ -265,8 +279,10 @@ void MultiClassOutput(const Tensor& scores,
     }
   }
 }
-
-template <typename T, TargetType TType, PrecisionType PType>
+template <typename T,
+          typename index_type,
+          TargetType TType,
+          PrecisionType PType>
 class MulticlassNmsCompute : public KernelLite<TType, PType> {
  public:
   void Run() {
@@ -338,7 +354,7 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
       outs->Resize({static_cast<int64_t>(num_kept), out_dim});
       outs->template mutable_data<T>();
       int offset = 0;
-      int* oindices = nullptr;
+      index_type* oindices = nullptr;
       for (int i = 0; i < n; ++i) {
         if (score_size == 3) {
           scores_slice = scores->template Slice<T>(i, i + 1);
@@ -369,16 +385,16 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
           Tensor out = outs->template Slice<T>(s, e);
           if (return_index) {
             index->Resize({static_cast<int64_t>(num_kept), 1});
-            int* output_idx = index->template mutable_data<int>();
+            index_type* output_idx = index->template mutable_data<index_type>();
             oindices = output_idx + s;
           }
-          MultiClassOutput<T>(scores_slice,
-                              boxes_slice,
-                              all_indices[i],
-                              score_dims.size(),
-                              &out,
-                              oindices,
-                              offset);
+          MultiClassOutput<T, index_type>(scores_slice,
+                                          boxes_slice,
+                                          all_indices[i],
+                                          score_dims.size(),
+                                          &out,
+                                          oindices,
+                                          offset);
         }
       }
     }

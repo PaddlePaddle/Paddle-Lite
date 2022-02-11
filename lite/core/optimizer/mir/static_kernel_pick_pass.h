@@ -135,6 +135,18 @@ class StaticKernelPickPass : public mir::StmtPass {
               type_match = false;
             }
           }
+
+          if (instruct.op_type() == "multiclass_nms2") {
+            for (size_t i = 0; i < out_names.size(); ++i) {
+              std::string tmp;
+              CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+              if (out_types.count(out_names[i]) &&
+                  out_types.at(out_names[i]) !=
+                      kernel.GetOutputDeclType(tmp)->precision()) {
+                type_match = false;
+              }
+            }
+          }
         }
         if (type_match) {
           score *= 2;
