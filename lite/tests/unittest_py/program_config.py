@@ -240,7 +240,7 @@ def create_quant_model(model, params, prefix, program_config):
     input_shape = program_config.inputs["input_data"].shape
 
     def _reader():
-        for _ in range(200):
+        for _ in range(1):
             yield np.random.random(input_shape).astype(np.float32)
 
     # 3. quant_post_static
