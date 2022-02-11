@@ -114,12 +114,9 @@ class TestPool2dOp(AutoScanTest):
             assume(in_shape[2] / ksize[0] == strides[0])
             assume(in_shape[3] / ksize[1] == strides[1])
 
-        if padding_algorithm == "SAME":
-            assume(paddings == [0, 0])
-
-        if ceil_mode == True:
-            assume(paddings != [0, 0])
-            assume(paddings != [0, 0, 0, 0])
+        #both paddle and lite have invalid output, so it is an invalid input.
+        if paddings == [0, 0] or paddings == [0, 0, 0, 0]:
+            assume(ceil_mode == False)
 
         build_ops = OpConfig(
             type="pool2d",
@@ -194,10 +191,6 @@ class TestPool2dOp(AutoScanTest):
         def teller3(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
                 # This is an paddle error, when padding_algorithm == "Valid" with exclusive is False
-                if program_config.ops[0].attrs[
-                        "ceil_mode"] == True and program_config.ops[0].attrs[
-                            "exclusive"] == False:
-                    return True
                 if program_config.ops[0].attrs[
                         "padding_algorithm"] == "VALID" and program_config.ops[
                             0].attrs["exclusive"] == False:
