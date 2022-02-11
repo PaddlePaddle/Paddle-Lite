@@ -55,6 +55,8 @@ TEST(ssd_mobilentert_v1,
   nnadapter_device_names.emplace_back("mediatek_apu");
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   nnadapter_device_names.emplace_back("verisilicon_timvx");
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  nnadapter_device_names.emplace_back("android_nnapi");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

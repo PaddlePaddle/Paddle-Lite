@@ -55,6 +55,9 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   nnadapter_device_names.emplace_back("verisilicon_timvx");
   out_accuracy_threshold = 0.76f;
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  nnadapter_device_names.emplace_back("android_nnapi");
+  out_accuracy_threshold = 0.99f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

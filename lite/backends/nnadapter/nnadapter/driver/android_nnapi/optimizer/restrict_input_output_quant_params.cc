@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/optimizer/restrict_same_input_output_quant_params.h"
+#include "driver/android_nnapi/optimizer/restrict_input_output_quant_params.h"
 #include <cmath>
 #include <vector>
 #include "utility/debug.h"
@@ -21,7 +21,7 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace android_nnapi {
 
 static void RestrictSameInputOutputScale(hal::Model* model,
                                          hal::Operation* operation,
@@ -45,14 +45,14 @@ static void RestrictSameInputOutputScale(hal::Model* model,
       AddRequantOperation(model, operation, target_operand, reference_operand);
     }
   } else {
-    NNADAPTER_LOG(FATAL) << "Unhandled case: target_precision="
-                         << OperandPrecisionCodeToString(target_precision)
-                         << ", reference_precision="
-                         << OperandPrecisionCodeToString(reference_precision);
+    NNADAPTER_LOG(WARNING) << "Unhandled case: target_precision="
+                           << OperandPrecisionCodeToString(target_precision)
+                           << ", reference_precision="
+                           << OperandPrecisionCodeToString(reference_precision);
   }
 }
 
-void RestrictSameInputOutputQuantParams(hal::Model* model) {
+void RestrictInputOutputQuantParams(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   auto operation_count = operations.size();
@@ -113,5 +113,5 @@ void RestrictSameInputOutputQuantParams(hal::Model* model) {
   }
 }
 
-}  // namespace mediatek_apu
+}  // namespace android_nnapi
 }  // namespace nnadapter

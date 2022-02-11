@@ -24,9 +24,9 @@ struct ArgParam {
 inline int max_index(texture2d_array<ftype, access::read> inTexture[[texture(0)]], uint2 gid) {
     int index = 0;
 #if LITE_WITH_METAL_FULL
-    float omax = FLT_MIN;
+    float omax = -FLT_MAX;
 #else
-    half omax = HALF_MIN;
+    half omax = -HALF_MAX;
 #endif
     uint iAL = inTexture.get_array_size();
     for (uint i = 0; i < iAL; i++) {
@@ -86,25 +86,60 @@ kernel void arg_max_h(texture2d_array<ftype, access::read> inTexture[[texture(0)
         gid.z >= outTexture.get_array_size())
         return;
 
-    // dimensions = 4, CPU is NCHW, GPU is NHWC
-    if (param.orank == 4) {
-        int index = 0;
 #if LITE_WITH_METAL_FULL
-        float omax = -FLT_MAX;
+    float omax = -FLT_MAX;
 #else
-        float omax = -FLT_MAX;
+    half omax = -HALF_MAX;
 #endif
+
+    if (param.orank == 4) {
         uint iAL = inTexture.get_height();
-        auto flag = bool4(false);
-        ftype4 guard_value = inTexture.read(uint2(gid.x, 0), gid.z);
-        int4 guard_index = int4(0);
-        for (uint i = 1; i < iAL; i++) {
-            ftype4 in = inTexture.read(uint2(gid.x, i), gid.z);
-            int4 idx = int4(i);
-            flag = bool4(guard_value >= in);
-            guard_value = select(in, guard_value, flag);
-            guard_index = select(idx, guard_index, flag);
+        ftype4 cur_data = omax;
+        ftype4 max_data = omax;
+        uint4 cur_idx = 0;
+        uint4 max_idx = 0;
+        bool4 flag_v = false;
+
+        for (uint i = 0; i < iAL; i++) {
+            cur_data = inTexture.read(uint2(gid.x, i), gid.z);
+            cur_idx = uint4(i);
+            flag_v = bool4(max_data >= cur_data);
+            max_data = select(cur_data, max_data, flag_v);
+            max_idx = select(cur_idx, max_idx, flag_v);
         }
-        outTexture.write(ftype4(guard_index), gid.xy, gid.z);
+        outTexture.write(ftype4(max_idx), gid.xy, gid.z);
+    }
+}
+
+kernel void arg_max_w(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant ArgParam& param[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+#if LITE_WITH_METAL_FULL
+    float omax = -FLT_MAX;
+#else
+    half omax = -HALF_MAX;
+#endif
+
+    if (param.orank == 4) {
+        uint iAL = inTexture.get_width();
+        ftype4 cur_data = omax;
+        ftype4 max_data = omax;
+        uint4 cur_idx = 0;
+        uint4 max_idx = 0;
+        bool4 flag_v = false;
+
+        for (uint i = 0; i < iAL; i++) {
+            cur_data = inTexture.read(uint2(i, gid.y), gid.z);
+            cur_idx = uint4(i);
+            flag_v = bool4(max_data >= cur_data);
+            max_data = select(cur_data, max_data, flag_v);
+            max_idx = select(cur_idx, max_idx, flag_v);
+        }
+        outTexture.write(ftype4(max_idx), gid.xy, gid.z);
     }
 }

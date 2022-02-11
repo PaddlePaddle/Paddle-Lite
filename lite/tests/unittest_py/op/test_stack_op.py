@@ -28,13 +28,6 @@ import numpy as np
 class TestStackOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        '''
-        # The selection of TargetType errors.
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        '''
         self.enable_testing_on_place(
             TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
@@ -103,16 +96,7 @@ class TestStackOp(AutoScanTest):
         return self.get_predictor_configs(), ["stack"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            x_dtype = program_config.inputs["stack_input1"].dtype
-            if predictor_config.target() == TargetType.X86:
-                if x_dtype != np.float32:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on x86. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

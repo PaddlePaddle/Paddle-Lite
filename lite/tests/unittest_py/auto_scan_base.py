@@ -171,14 +171,45 @@ class AutoScanBaseTest(unittest.TestCase):
             )
         return result
 
+    # count FP16 precision diff
+    def count_fp16_diff(self, arr, base, atol, rtol) -> bool:
+        diff = abs(arr - base)
+        max_diff = max(diff)
+        check = False
+        max_val = 0.0
+        max_index = 0
+        if max_diff > atol:
+            print('max_diff: ', max_diff)
+            size = len(arr)
+            count = 0
+            check = False
+            for i in range(size):
+                rel_val = diff[i] / max(arr[i], base[i])
+                if (diff[i] > 1e-1 and abs(rel_val > rtol)):
+                    if max_val < rel_val:
+                        max_val = rel_val
+                        max_index = i
+                    check = True
+            if check:
+                print("max_val and max_index: ", max_val, max_index)
+                print("value: ", base[max_index], arr[max_index],
+                      diff[max_index])
+                print("FP16 Output has diff. ")
+            return check
+        return False
+
     @abc.abstractmethod
     def assert_tensors_near(self,
                             atol: float,
                             rtol: float,
                             tensor: Dict[str, np.array],
-                            baseline: Dict[str, np.array]):
+                            baseline: Dict[str, np.array],
+                            flag_precision_fp16: False):
         if len(tensor) == 0 and len(baseline) == 0:
             return
+        if flag_precision_fp16:
+            atol = 0.1
+            rtol = 0.05
         if len(tensor) == 1 and len(baseline) == 1:
             tensor_key = list(tensor.keys())
             arr = np.array(tensor[tensor_key[0]])
@@ -192,10 +223,24 @@ class AutoScanBaseTest(unittest.TestCase):
                     base.shape == arr.shape,
                     "The output shapes are not equal, the baseline shape is " +
                     str(base.shape) + ', but got ' + str(arr.shape))
-            self.assertTrue(
-                np.allclose(
-                    base, arr, atol=atol, rtol=rtol),
-                "Output has diff. ")
+
+            if flag_precision_fp16:
+                # count diff
+                arr_value = arr.flatten()
+                base_value = base.flatten()
+                # return true: has diff
+                res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
+                if res:
+                    self.assertTrue(
+                        np.allclose(
+                            base, arr, atol=atol, rtol=rtol),
+                        "Output has diff. ")
+            else:
+                self.assertTrue(
+                    np.allclose(
+                        base, arr, atol=atol, rtol=rtol),
+                    "Output has diff. ")
+
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
@@ -219,10 +264,24 @@ class AutoScanBaseTest(unittest.TestCase):
                     "The output shapes are not equal, the baseline shape is " +
                     str(baseline[paddlekey].shape) + ', but got ' +
                     str(arr.shape))
-                self.assertTrue(
-                    np.allclose(
-                        baseline[paddlekey], arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
+                if flag_precision_fp16:
+                    # count diff
+                    arr_value = arr.flatten()
+                    base_value = baseline[paddlekey].flatten()
+                    # return true: has diff
+                    res = self.count_fp16_diff(arr_value, base_value, atol,
+                                               rtol)
+                    if res:
+                        self.assertTrue(
+                            np.allclose(
+                                baseline[paddlekey], arr, atol=atol,
+                                rtol=rtol),
+                            "Output has diff. ")
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            baseline[paddlekey], arr, atol=atol, rtol=rtol),
+                        "Output has diff. ")
 
     def generate_op_config(self,
                            ops_config: List[Dict[str, Any]]) -> List[OpConfig]:
@@ -268,6 +327,18 @@ class AutoScanBaseTest(unittest.TestCase):
             config.pass_builder().set_passes(passes)
         return config
 
+    @abc.abstractmethod
+    def insert_leaky_relu_op(self, prog_configs=None):
+        alpha_data = 0.01
+        leaky_relu_op = OpConfig(
+            type="leaky_relu",
+            inputs={"X": []},
+            outputs={"Out": ["output_act_data"]},
+            attrs={"alpha": alpha_data})
+        leaky_relu_op.inputs["X"].append(prog_configs.outputs[0])
+        prog_configs.ops.append(leaky_relu_op)
+        prog_configs.outputs[0] = "output_act_data"
+
     def run_test(self, quant=False, prog_configs=None):
         status = True
 
@@ -276,7 +347,16 @@ class AutoScanBaseTest(unittest.TestCase):
         for prog_config in prog_configs:
 
             predictor_idx = -1
+            cnt = 0
             for paddlelite_config in paddlelite_configs:
+                flag_precision_fp16 = False
+                if paddlelite_config.precision() == PrecisionType.FP16:
+                    flag_precision_fp16 = True
+                if paddlelite_config.precision() == PrecisionType.INT8:
+                    quant = True
+                else:
+                    quant = False
+
                 predictor_idx += 1
                 # judge validity of program
                 if not self.is_program_valid(prog_config, paddlelite_config):
@@ -285,10 +365,17 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.num_ran_programs_list[predictor_idx] += 1
 
                 # creat model and prepare feed data
-                model, params = create_fake_model(prog_config)
                 if quant:
+                    atol_ = 1e-3
+                    rtol_ = 1e-3
+                    if cnt == 0:
+                        self.insert_leaky_relu_op(prog_config)
+                    cnt = cnt + 1
+                    model, params = create_fake_model(prog_config)
                     model, params = create_quant_model(
                         model, params, self.cache_dir, prog_config)
+                else:
+                    model, params = create_fake_model(prog_config)
 
                 feed_data = {}
                 for name, tensor_config in prog_config.inputs.items():
@@ -367,7 +454,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     if self.passes is not None:  # pass check
                         if not accuracy_error_flag:
                             self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                     results[0])
+                                                     results[0],
+                                                     flag_precision_fp16)
                         if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
                     else:  # op check
@@ -375,7 +463,8 @@ class AutoScanBaseTest(unittest.TestCase):
                                                 paddlelite_config)
                         if not accuracy_error_flag:
                             self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                     results[0])
+                                                     results[0],
+                                                     flag_precision_fp16)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +

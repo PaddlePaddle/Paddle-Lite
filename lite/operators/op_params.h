@@ -1298,6 +1298,7 @@ struct GenerateProposalsV2Param : ParamBase {
   float nms_thresh{0.5f};
   float min_size{0.1f};
   float eta{1.0f};
+  bool pixel_offset{true};
 
   // outputs
   lite::Tensor* RpnRois{};
@@ -1372,6 +1373,7 @@ struct GatherParam : ParamBase {
   const lite::Tensor* Index{};
   const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
+  int axis{-1};
 };
 
 struct GatherTreeParam : ParamBase {
@@ -1393,15 +1395,16 @@ struct AssignParam : ParamBase {
 
 /// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* ROIs{};
-  lite::Tensor* RoisLod{};
-  lite::Tensor* RoisNum{};
-  lite::Tensor* Out{};
+  lite::Tensor* X{nullptr};
+  lite::Tensor* ROIs{nullptr};
+  lite::Tensor* RoisLod{nullptr};
+  lite::Tensor* RoisNum{nullptr};
+  lite::Tensor* Out{nullptr};
   float spatial_scale{1.0f};
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
+  bool align{false};
 };
 
 /// ----------------------- box_clip operators -----------------------

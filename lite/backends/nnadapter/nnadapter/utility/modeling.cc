@@ -651,8 +651,10 @@ NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
   immediate_operand->type.dimensions = target_operand->type.dimensions;
   // Add a zero addend operand
   auto zero_operand = AddOperand(model);
-  memset(&zero_operand->type, 0, sizeof(NNAdapterOperandType));
-  zero_operand->type.precision = reference_operand->type.precision;
+  memcpy(&zero_operand->type,
+         &reference_operand->type,
+         sizeof(NNAdapterOperandType));
+  zero_operand->type.asymm_per_layer_params.zero_point = 0;
   zero_operand->type.dimensions.count = 1;
   zero_operand->type.dimensions.data[0] = 1;
   zero_operand->length =

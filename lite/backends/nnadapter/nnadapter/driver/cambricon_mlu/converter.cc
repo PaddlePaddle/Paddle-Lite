@@ -130,20 +130,39 @@ magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
 
 magicmind::ITensor* Converter::ConvertOperand(hal::Operand* operand,
                                               std::vector<int64_t> dimensions) {
+  magicmind::ITensor* rst = nullptr;
   if (IsConstantOperand(operand)) {
     auto constant_tensor =
         AddTensor(&operand->type, operand->buffer, dimensions);
     UpdateTensorMap(operand, constant_tensor);
-    return constant_tensor;
+    if (constant_tensor->GetDataType() == magicmind::DataType::INT64) {
+      auto cast_node =
+          network_->AddICastNode(constant_tensor, magicmind::DataType::INT32);
+      NNADAPTER_CHECK(cast_node) << "Failed to add cast node.";
+      auto cast_out_tensor = cast_node->GetOutput(0);
+      UpdateTensorMap(operand, cast_out_tensor);
+      rst = cast_out_tensor;
+    } else {
+      rst = constant_tensor;
+    }
   } else if (IsModelInputOperand(operand)) {
     auto input_tensor = AddTensor(&operand->type, dimensions);
     UpdateTensorMap(operand, input_tensor);
-    return input_tensor;
+    if (input_tensor->GetDataType() == magicmind::DataType::INT64) {
+      auto cast_node =
+          network_->AddICastNode(input_tensor, magicmind::DataType::INT32);
+      NNADAPTER_CHECK(cast_node) << "Failed to add cast node.";
+      auto cast_out_tensor = cast_node->GetOutput(0);
+      UpdateTensorMap(operand, cast_out_tensor);
+      rst = cast_out_tensor;
+    } else {
+      rst = input_tensor;
+    }
   } else {
     NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
                             "converted to camb_tensor!";
   }
-  return nullptr;
+  return rst;
 }
 
 }  // namespace cambricon_mlu

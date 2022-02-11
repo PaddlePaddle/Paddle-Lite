@@ -37,7 +37,9 @@ int ConvertAdaptivePool2D(Converter* converter, hal::Operation* operation) {
     NNADAPTER_CHECK(pool2d_node) << "Failed to add adaptive_avg_pool2d node.";
     pool2d_node->SetOutputSize(static_cast<int64_t>(output_height),
                                static_cast<int64_t>(output_width));
-    pool2d_node->SetLayout(magicmind::Layout::NHWC, magicmind::Layout::NHWC);
+    magicmind::Layout input_layout =
+        ConvertToMagicMindDataLayout(input_operand->type.layout);
+    pool2d_node->SetLayout(input_layout, input_layout);
     auto output_tensor = pool2d_node->GetOutput(0);
     converter->UpdateTensorMap(output_operand, output_tensor);
   }

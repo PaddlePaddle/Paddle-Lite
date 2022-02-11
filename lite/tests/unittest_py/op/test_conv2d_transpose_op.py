@@ -57,12 +57,16 @@ class TestConv2dTransposeOp(AutoScanTest):
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
-        arm_valid_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # opencl_valid_places = [
         #     Place(TargetType.OpenCL, PrecisionType.FP16,
         #           DataLayoutType.ImageDefault), Place(
@@ -204,20 +208,27 @@ class TestConv2dTransposeOp(AutoScanTest):
         weight_shape = [filter_c, filter_m // groups, filter_h,
                         filter_w]  # data_format = 'CMHW'
 
+        def generate_input(*args, **kwargs):
+            return np.random.random(input_shape).astype(np.float32)
+
+        def generate_filter(*args, **kwargs):
+            return np.random.random(weight_shape).astype(np.float32)
+
         def generate_bias(*args, **kwargs):
-            if use_mkldnn:
-                return np.random.randint(
-                    -10, 10, size=kwargs['shape']).astype(kwargs['dtype'])
-            else:
-                return np.zeros(shape=kwargs['shape']).astype(kwargs['dtype'])
+            return np.random.random([filter_m]).astype(np.float32)
+
+        inputs_data = {
+            "input_data": TensorConfig(data_gen=partial(generate_input))
+        }
+        inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
+        if use_mkldnn:
+            inputs_data["bias_data"] = TensorConfig(
+                data_gen=partial(generate_bias))
+            inputs_type["Bias"] = ["bias_data"]
 
         conv2d_transpose_op = OpConfig(
             type="conv2d_transpose",
-            inputs={
-                "Input": ["input_data"],
-                "Filter": ["filter_data"],
-                "Bias": ["bias_data"]
-            },
+            inputs=inputs_type,
             outputs={"Output": ["output_data"]},
             attrs={
                 "output_padding": output_padding,
@@ -235,11 +246,9 @@ class TestConv2dTransposeOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[conv2d_transpose_op],
             weights={
-                "filter_data": TensorConfig(shape=weight_shape),
-                "bias_data": TensorConfig(data_gen=partial(
-                    generate_bias, shape=[filter_m], dtype=np.float32))
+                "filter_data": TensorConfig(data_gen=partial(generate_filter)),
             },
-            inputs={"input_data": TensorConfig(shape=input_shape)},
+            inputs=inputs_data,
             outputs=["output_data"])
         return program_config
 

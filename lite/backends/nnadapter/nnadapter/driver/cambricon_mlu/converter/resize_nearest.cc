@@ -48,6 +48,9 @@ int ConvertResizeNearest(Converter* converter, hal::Operation* operation) {
 
   resize_nearest_node->SetMode(magicmind::IResizeMode::NEAREST_NEIGHBOR);
   resize_nearest_node->SetAlignCorners(align_corners);
+  magicmind::Layout input_layout =
+      ConvertToMagicMindDataLayout(input_operand->type.layout);
+  resize_nearest_node->SetLayout(input_layout, input_layout);
   auto output_tensor = resize_nearest_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

@@ -39,11 +39,11 @@ class TestSequenceToplAvgPoolingOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        topks = draw(st.sampled_from([[1, 3], [1, 3, 5]]))
-        channel_num = draw(st.sampled_from([1, 3, 5]))
-        dim = draw(st.sampled_from([10, 12]))
-        row = draw(st.sampled_from([[30], [40], [50]]))
-        col = draw(st.sampled_from([[25], [35], [45]]))
+        topks = draw(st.sampled_from([[1, 3], [1, 3, 5], [1, 3, 5, 7]]))
+        channel_num = draw(st.sampled_from([1, 3, 5, 7]))
+        dim = draw(st.sampled_from([10, 12, 64]))
+        row = draw(st.sampled_from([[0, 30], [0, 40], [0, 50]]))
+        col = draw(st.sampled_from([[0, 25], [0, 35], [0, 45]]))
         feature = [row[i] * col[i] for i in range(len(row))]
         lod_ = [[x * channel_num for x in feature]]
 
@@ -88,16 +88,10 @@ class TestSequenceToplAvgPoolingOp(AutoScanTest):
             1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

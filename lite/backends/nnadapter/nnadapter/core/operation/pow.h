@@ -17,21 +17,24 @@
 namespace nnadapter {
 namespace operation {
 
-#define POW_OPERATION_EXTRACT_INPUTS_OUTPUTS                          \
-  auto& input_operands = operation->input_operands;                   \
-  auto& output_operands = operation->output_operands;                 \
-  auto input_count = input_operands.size();                           \
-  auto output_count = output_operands.size();                         \
-  NNADAPTER_CHECK_EQ(input_count, 3);                                 \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                \
-  /* Input */                                                         \
-  auto input_operand = input_operands[0];                             \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);   \
-  /* Factor */                                                        \
-  auto factor_operand = input_operands[1];                            \
-  NNADAPTER_VLOG(5) << "factor: " << OperandToString(factor_operand); \
-  /* Output */                                                        \
-  auto output_operand = output_operands[0];                           \
+#define POW_OPERATION_EXTRACT_INPUTS_OUTPUTS                               \
+  auto& input_operands = operation->input_operands;                        \
+  auto& output_operands = operation->output_operands;                      \
+  auto input_count = input_operands.size();                                \
+  auto output_count = output_operands.size();                              \
+  NNADAPTER_CHECK_EQ(input_count, 3);                                      \
+  NNADAPTER_CHECK_EQ(output_count, 1);                                     \
+  /* Input */                                                              \
+  auto input_operand = input_operands[0];                                  \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);        \
+  /* Factor */                                                             \
+  auto factor_operand = input_operands[1];                                 \
+  NNADAPTER_VLOG(5) << "factor: " << OperandToString(factor_operand);      \
+  /* Fuse code */                                                          \
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer); \
+  NNADAPTER_VLOG(5) << "fuse_code = " << fuse_code;                        \
+  /* Output */                                                             \
+  auto output_operand = output_operands[0];                                \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation

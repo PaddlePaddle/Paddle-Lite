@@ -21,7 +21,7 @@ namespace mediatek_apu {
 
 // Make the restriction that for int8 quantized concat, reshape, and transpose,
 // etc. the inputs and outputs must have the same quantization parameters.
-void RestrictSameInputOutputQuantParams(hal::Model* model);
+void RestrictInputOutputQuantParams(hal::Model* model);
 
 }  // namespace mediatek_apu
 }  // namespace nnadapter

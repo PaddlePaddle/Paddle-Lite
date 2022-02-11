@@ -72,6 +72,9 @@ class MulOpLite : public OpLite {
       if (op_info->HasOutputScale(out_scale_name, true))
         param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
     }
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    input_tensor_ptrs_cache_.push_back(param_.y);
+    output_tensor_ptrs_cache_.push_back(param_.output);
 
     return true;
   }
