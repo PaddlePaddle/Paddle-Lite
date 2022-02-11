@@ -117,6 +117,10 @@ class TestPool2dOp(AutoScanTest):
         if padding_algorithm == "SAME":
             assume(paddings == [0, 0])
 
+        if ceil_mode == True:
+            assume(paddings != [0, 0])
+            assume(paddings != [0, 0, 0, 0])
+
         build_ops = OpConfig(
             type="pool2d",
             inputs={"X": ["input_data"]},
