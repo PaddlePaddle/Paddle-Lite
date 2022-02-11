@@ -81,7 +81,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                                          stride_width_index,
                                          stride_height_index};
   std::vector<uint32_t> output_indexes = {output_index};
-  int32_t operation_code = ANEURALNETWORKS_CONV_2D;
+  ANeuralNetworksOperationType op_type = ANEURALNETWORKS_CONV_2D;
   if (is_depthwise_mode) {
     int32_t multiplier = output_channel_size / group;
     NNADAPTER_CHECK_EQ(multiplier, 1)
@@ -89,7 +89,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
         << " which C_out=" << output_channel_size << " and group=" << group;
     auto multiplier_index = converter->AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);
-    operation_code = ANEURALNETWORKS_DEPTHWISE_CONV_2D;
+    op_type = ANEURALNETWORKS_DEPTHWISE_CONV_2D;
   }
   input_indexes.push_back(fuse_code_index);
   if (dilation_height != 1 || dilation_width != 1) {
@@ -103,7 +103,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     input_indexes.push_back(dilation_height_index);
   }
   NNADAPTER_CHECK_EQ(
-      converter->AddOperation(operation_code, input_indexes, output_indexes),
+      converter->AddOperation(op_type, input_indexes, output_indexes),
       ANEURALNETWORKS_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }

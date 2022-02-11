@@ -39,7 +39,7 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
     *axis += input_operand->type.dimensions.count;
   }
   auto output_operand = output_operands[0];
-  // MediaTek APU only supports 2D or 4D input
+  // Only supports 2D or 4D input
   if (input_dimensions_count != 2 && input_dimensions_count != 4) {
     bool is_ends_with_1 = true;
     for (uint32_t i = *axis + 1; i < input_dimensions_count; i++) {

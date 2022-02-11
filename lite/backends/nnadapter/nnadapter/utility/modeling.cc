@@ -643,7 +643,7 @@ NNADAPTER_EXPORT hal::Operand* InsertReshapeOperation(
   reshape_operation->type = NNADAPTER_RESHAPE;
   reshape_operation->input_operands = {input_operand, shape_operand};
   reshape_operation->output_operands = {output_operand};
-  return output_operand;
+  return input_operand;
 }
 
 hal::Operand* AddDummyOperation(hal::Model* model,
