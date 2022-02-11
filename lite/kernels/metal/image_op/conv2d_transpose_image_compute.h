@@ -27,6 +27,8 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/mps_conv_datasource.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -39,6 +41,7 @@ class Conv2dTransposeImageCompute
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
         MetalDebug::SaveOutput(
@@ -48,6 +51,7 @@ class Conv2dTransposeImageCompute
 
    private:
     bool use_mps_{false};
+    void* mps_conv_trans_op_{nullptr};
     void* mps_conv_op_{nullptr};
     void* mps_input_image_{nullptr};
     void* mps_output_image_{nullptr};
