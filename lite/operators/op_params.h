@@ -2246,6 +2246,11 @@ struct GaussRandomParam : ParamBase {
   float gauss_std{0.f};
 };
 
+struct CvmParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Y{nullptr};
+  bool use_cvm{true};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
