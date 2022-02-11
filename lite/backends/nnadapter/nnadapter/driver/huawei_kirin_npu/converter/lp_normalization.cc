@@ -22,12 +22,10 @@ namespace huawei_kirin_npu {
 
 int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
   LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(p, 2) << "HuaweiKirin NPU not support L1 norm";
-  NNADAPTER_CHECK_GE(epsilon, 1e-4f)
-      << "HuaweiKirin NPU just support epsilon >= 1e-4";
+  NNADAPTER_CHECK_EQ(p, 2) << "L1 norm is not supported.";
+  NNADAPTER_CHECK_GE(epsilon, 1e-4f) << "L2 norm only support epsilon >= 1e-4";
   if (axis_count > 1 && axis_data[0] != 1) {
-    NNADAPTER_LOG(FATAL)
-        << "HuaweiKirin NPU L2 norm only support normalize the 1th dimension.";
+    NNADAPTER_LOG(FATAL) << "L2 norm only support normalize the 1th dimension.";
   }
 
   // Convert to GE operators
