@@ -44,11 +44,8 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
         {2});
     auto reshape_node =
         converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
-    if (reshape_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to reshape input operator to 2-D tensor for "
-                           "fully_connected node.";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
+    NNADAPTER_CHECK(reshape_node) << "Failed to reshape input operator to 2-D "
+                                     "tensor for fully_connected node.";
     final_input_tensor = reshape_node->GetOutput(0);
   } else {
     final_input_tensor = input_tensor;

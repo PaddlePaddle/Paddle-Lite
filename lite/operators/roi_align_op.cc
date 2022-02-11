@@ -71,6 +71,8 @@ bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.pooled_height = op_desc.GetAttr<int>("pooled_height");
   param_.pooled_width = op_desc.GetAttr<int>("pooled_width");
   param_.sampling_ratio = op_desc.GetAttr<int>("sampling_ratio");
+  if (op_desc.HasAttr("aligned"))
+    param_.align = op_desc.GetAttr<bool>("aligned");
 
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<lite::Tensor>();

@@ -1285,7 +1285,6 @@ void conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(float16_t* dout,
                                                        int h_out,
                                                        int w_out,
                                                        ARMContext* ctx) {
-  std::cout << "conv_depthwise_3x3s1p1_bias_relu" << std::endl;
   float16_t* zero_ptr = ctx->workspace_data<float16_t>();
   memset(zero_ptr, 0, w_in * sizeof(float16_t));
   float16_t* write_ptr =
@@ -1951,7 +1950,6 @@ void conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(float16_t* dout,
                                                        int h_out,
                                                        int w_out,
                                                        ARMContext* ctx) {
-  std::cout << "aaa" << std::endl;
   float16_t* zero_ptr = ctx->workspace_data<float16_t>();
   memset(zero_ptr, 0, w_in * sizeof(float16_t));
   float16_t* write_ptr =

@@ -26,6 +26,7 @@ import argparse
 
 import numpy as np
 from functools import partial
+from functools import reduce
 
 
 class TestReshapeOp(AutoScanTest):
@@ -33,11 +34,6 @@ class TestReshapeOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.Host,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
-        self.enable_testing_on_place(
-            TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
@@ -66,12 +62,17 @@ class TestReshapeOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
+
         attr_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=4),
-                min_size=len(in_shape),
+                    min_value=1, max_value=max(in_shape)),
+                min_size=1,
                 max_size=len(in_shape)))
+        assume(
+            reduce(lambda x, y: x * y, attr_shape) == reduce(
+                lambda x, y: x * y, in_shape))
+
         with_shape = draw(st.sampled_from([True, False]))
 
         def generate_input(*args, **kwargs):
@@ -81,7 +82,7 @@ class TestReshapeOp(AutoScanTest):
             type="reshape",
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
-            attrs={"shape": in_shape, })
+            attrs={"shape": attr_shape, })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
@@ -95,17 +96,10 @@ class TestReshapeOp(AutoScanTest):
         return self.get_predictor_configs(), ["reshape"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.X86:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

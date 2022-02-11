@@ -24,9 +24,9 @@ struct ArgParam {
 inline int max_index(texture2d_array<ftype, access::read> inTexture[[texture(0)]], uint2 gid) {
     int index = 0;
 #if LITE_WITH_METAL_FULL
-    float omax = FLT_MIN;
+    float omax = -FLT_MAX;
 #else
-    half omax = HALF_MIN;
+    half omax = -HALF_MAX;
 #endif
     uint iAL = inTexture.get_array_size();
     for (uint i = 0; i < iAL; i++) {

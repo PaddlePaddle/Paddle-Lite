@@ -75,6 +75,16 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& tensor_dim,
   return {};
 }
 
+static DDim Broadcast2GpuShape(const DDim& src_dim) {
+  CHECK_LE(src_dim.size(), 4);
+  DDim dst_dim({1, 1, 1, 1});
+  size_t offset = 4 - src_dim.size();
+  for (auto i = 0; i < src_dim.size(); ++i) {
+    dst_dim[offset + i] = src_dim[i];
+  }
+  return dst_dim;
+}
+
 static const std::string GetTimeStamp() {
   uint64_t usec = lite::Timer::GetCurrentUS();
   return std::to_string(usec);

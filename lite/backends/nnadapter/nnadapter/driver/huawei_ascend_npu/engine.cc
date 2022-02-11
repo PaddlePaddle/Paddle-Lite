@@ -176,8 +176,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
   model_client_ = LoadOMModelFromBuffer(*model_buffer,
-                                        context_->GetFirstDeviceID(),
-                                        context_->GetProfilingFilePath());
+                                        context_->first_device_id(),
+                                        context_->profiling_file_path());
   if (!model_client_) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

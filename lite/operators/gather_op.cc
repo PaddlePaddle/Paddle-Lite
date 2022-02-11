@@ -27,18 +27,21 @@ bool GatherOp::CheckShape() const {
 }
 
 bool GatherOp::InferShapeImpl() const {
-  if (param_.Axis != nullptr) {
-    int axis_index = 0;
-    if (param_.Axis->precision() == PRECISION(kInt32)) {
-      auto *axis_data = param_.Axis->data<int32_t>();
-      axis_index = axis_data[0];
-    } else if (param_.Axis->precision() == PRECISION(kInt64)) {
-      auto *axis_data = param_.Axis->data<int64_t>();
-      axis_index = axis_data[0];
-    } else {
-      LOG(FATAL) << "Axis unsupport data type: "
-                 << lite_api::PrecisionToStr(param_.Axis->precision());
+  if (param_.Axis != nullptr || param_.axis != -1) {
+    int axis_index = param_.axis;
+    if (param_.Axis != nullptr) {
+      if (param_.Axis->precision() == PRECISION(kInt32)) {
+        auto *axis_data = param_.Axis->data<int32_t>();
+        axis_index = axis_data[0];
+      } else if (param_.Axis->precision() == PRECISION(kInt64)) {
+        auto *axis_data = param_.Axis->data<int64_t>();
+        axis_index = axis_data[0];
+      } else {
+        LOG(FATAL) << "Axis unsupport data type: "
+                   << lite_api::PrecisionToStr(param_.Axis->precision());
+      }
     }
+
     int index_size = param_.Index->numel();
     auto input_dim = param_.X->dims();
 
@@ -73,6 +76,9 @@ bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Index = scope->FindTensor(opdesc.Input("Index").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
+  if (opdesc.HasAttr("axis")) {
+    param_.axis = opdesc.GetAttr<int>("axis");
+  }
   if (opdesc.HasInput("Axis") && !opdesc.Input("Axis").empty()) {
     auto axis = opdesc.Input("Axis").front();
     param_.Axis = scope->FindTensor(axis);

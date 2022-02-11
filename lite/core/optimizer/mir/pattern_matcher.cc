@@ -402,7 +402,9 @@ PMNode *PMNode::assert_is_var() {
 
 PMNode *PMNode::assert_var_not_persistable() {
   assert_is_var();
-  asserts_.emplace_back([](const Node *x) { return !x->arg()->is_weight; });
+  asserts_.emplace_back([](const Node *x) {
+    return !x->arg()->is_weight && !x->arg()->is_persist;
+  });
   return this;
 }
 
