@@ -174,6 +174,8 @@ class AutoScanBaseTest(unittest.TestCase):
     # count FP16 precision diff
     def count_fp16_diff(self, arr, base, atol, rtol) -> bool:
         diff = abs(arr - base)
+        if len(diff) <= 0:
+            pass
         max_diff = max(diff)
         check = False
         max_val = 0.0
