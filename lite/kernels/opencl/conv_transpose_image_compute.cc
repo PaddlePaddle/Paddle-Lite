@@ -96,7 +96,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
 
     DDimLite filter_trans_dims{
         {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
-    LOG(INFO) << "filter_trans_dims: " << filter_trans_dims;
     CLImageConverterDefault converter;
     const DDim& filter_image_dims =
         converter.InitImageDimInfoWith(filter_trans_dims);
