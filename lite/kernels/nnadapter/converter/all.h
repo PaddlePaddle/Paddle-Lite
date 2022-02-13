@@ -177,7 +177,9 @@ REGISTER_CONVERTER(exp,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(instance_norm, ConvertInstanceNorm, "huawei_ascend_npu");
-REGISTER_CONVERTER(layer_norm, ConvertLayerNorm, "huawei_ascend_npu");
+REGISTER_CONVERTER(layer_norm,
+                   ConvertLayerNorm,
+                   "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(group_norm, ConvertGroupNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(log,
                    ConvertUnaryActivations,
@@ -186,9 +188,10 @@ REGISTER_CONVERTER(swish,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu,huawei_kirin_npu");
-REGISTER_CONVERTER(gelu,
-                   ConvertGelu,
-                   "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl");
+REGISTER_CONVERTER(
+    gelu,
+    ConvertGelu,
+    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,cambricon_mlu");
 REGISTER_CONVERTER(hard_sigmoid,
                    ConvertHardSigmoid,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
@@ -228,8 +231,8 @@ REGISTER_CONVERTER(reduce_mean,
 REGISTER_CONVERTER(reduce_sum,
                    ConvertReduce,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
-REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
-REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
+REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
+REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(scale,
                    ConvertScale,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
