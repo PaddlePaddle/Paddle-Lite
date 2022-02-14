@@ -1,4 +1,4 @@
-# 新增OP
+# 新增 OP
 
 以下以添加 Argmax 为例，详细说明新增 Op 的方法。
 
@@ -6,7 +6,7 @@
 
 - 这里命名为 `ArgmaxParam`
 
-- 在 `paddlelite/lite/operators/op_params.h` 中添加 `ArgmaxParam` 结构体，代码如下：
+- 在 `Paddle-Lite/lite/operators/op_params.h` 中添加 `ArgmaxParam` 结构体，代码如下：
     ```c++
     struct ArgmaxParam : ParamBase {
       lite::Tensor* X{};
@@ -18,7 +18,7 @@
     ```
 ## 2. 添加 Argmax Op 并注册
 
-- 在 paddlelite/lite/operators/ 目录下新建 argmax_op.h 文件，主要代码如下：
+- 在 Paddle-Lite/lite/operators/ 目录下新建 argmax_op.h 文件，主要代码如下：
     ```c++
     class ArgmaxOpLite : public OpLite {
     public:
@@ -57,7 +57,7 @@
     ```
     `ArgmaxOpLite` 继承 `OpLite` ，成员变量包括 `ArgmaxParam` 结构体，需要实现的接口包括 `CheckShape()` 、`InferShapeImpl()` 、`AttachImpl()` 、`AttachKernel()` 和 `DebugString()` 函数。`AttachKernel()` 和 `DebugString()` 函数较为简单，此处直接实现；
 
-- 在 `paddlelite/lite/operators/` 目录下新建 argmax_op.cc 文件，需要具体实现 `CheckShape()`、`InferShapeImpl()` 和 `AttachImpl()` 函数。`CheckShape()` 函数检查输入是否符合要求，`InferShape()` 函数基于输入推断得到输出的维度，`AttachImpl()` 函数绑定 Op 的输入输出。然后在 argmax_op.cc 文件中注册 Argmax，核心代码如下：
+- 在 `Paddle-Lite/lite/operators/` 目录下新建 argmax_op.cc 文件，需要具体实现 `CheckShape()`、`InferShapeImpl()` 和 `AttachImpl()` 函数。`CheckShape()` 函数检查输入是否符合要求，`InferShape()` 函数基于输入推断得到输出的维度，`AttachImpl()` 函数绑定 Op 的输入输出。然后在 argmax_op.cc 文件中注册 Argmax，核心代码如下：
     ```c++
     bool ArgmaxOpLite::CheckShape() const {
         CHECK_OR_FALSE(param_.X);
@@ -66,7 +66,7 @@
         CHECK_OR_FALSE(param_.Axis >= static_cast<int>(-(param_.X)->dims().size()));
         return true;
     }
-    
+
     bool ArgmaxOpLite::InferShapeImpl() const {
         auto x_dims = param_.X->dims();
         int x_rank = x_dims.size();
@@ -85,7 +85,7 @@
         param_.Out->Resize(lite::DDim(out_dims));
         return true;
     }
-    
+
     bool ArgmaxOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
         auto x = op_desc.Input("X").front();
         auto out = op_desc.Output("Out").front();
@@ -105,12 +105,13 @@
     }
     REGISTER_LITE_OP(arg_max, paddle::lite::operators::ArgmaxOpLite);
     ```
-- 在 paddlelite/lite/operators/CMakeLists.txt 中添加 ```add_operator(argmax_op basic SRCS argmax_op.cc)```
+- 在 Paddle-Lite/lite/operators/CMakeLists.txt 中添加 ```add_operator(argmax_op basic SRCS argmax_op.cc)```
 
 ## 3. 添加 Argmax Kernel 并绑定
-
-以下以 Arm 端 Argmax 实现为例说明
-- 在 paddlelite/lite/kernels/arm/ 目录下新建 argmax_compute.h 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
+Paddle Lite 有 Host, ARM, x86, OpenCL, Metal, NNAdapter 等多种后端，同一 Op 在不同后端的代码实现细节不同，因此需要具体讨论。
+### 3.1 ARM 端
+以 ARM 端 Argmax 实现为例说明：
+- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 argmax_compute.h 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
     ```c++
     template <typename T>
     class ArgmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
@@ -127,7 +128,7 @@
     #endif
     };
     ```
-- 在 paddlelite/lite/kernels/arm/ 目录下新建 argmax_compute.cc 文件，主要实现 Run 函数。`Run()` 函数调用 paddlelite/lite/bachends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
+- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 argmax_compute.cc 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/bachends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
     ```c++
     template <typename T>
     void ArgmaxCompute<T>::Run() {
@@ -180,19 +181,47 @@
         .Finalize();
     ```
 
-- 在 paddlelite/lite/kernels/arm/CMakeLists.txt 中添加
+- 在 Paddle-Lite/lite/kernels/arm/CMakeLists.txt 中添加
     ```add_kernel(argmax_compute_arm ARM basic SRCS argmax_compute.cc)```
 
-## 4. 添加 Argmax 实现
+### 3.2 OpenCL 端
+以 OpenCL 端 Argmax 实现为例说明：
+- 在 Paddle-Lite/lite/kernels/opencl/ 目录下新建 [argmax_image_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/opencl/argmax_image_compute.cc) 文件，定义 ArgmaxComputeImage2D 类，并继承 KernelLite，ArgmaxComputeImage2D 类主要代码如下：
+    ```c++
+    class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
+                                                   PRECISION(kFP16),
+                                                   DATALAYOUT(kImageDefault)> {
+     public:
+      using param_t = operators::ArgmaxParam;
+      void PrepareForRun() override;
+      void ReInitWhenNeeded() override;
+      void Run() override;
+    #ifdef LITE_WITH_PROFILE
+      void SetProfileRuntimeKernelInfo(
+          paddle::lite::profile::OpCharacter* ch) override;
+    #endif
+    };
+    ```
+    重点介绍如下 4 个功能函数：
+    - `PrepareForRun` 函数只在第一次运行时执行，主要功能为确定运行所需的参数、kernel 名字、编译 kernel 代码；
+    - `ReInitWhenNeeded` 函数只在第一次运行时和输入 shape 发生变化时执行，主要功能为根据 shape 信息确定线程分配；
+    - `Run` 函数在每次运行时均执行，主要功能为分配/获取 tensor 数据、执行 cl kernel 函数；
+    - `SetProfileRuntimeKernelInfo` 函数用于 profile。
 
-- 在 paddlelite/lite/backends/arm/math/ 目录下新建 argmax.h 文件，声明 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/kernels/opencl/CMakeLists.txt 中添加
+    ```add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)```
+
+
+## 4. 添加 Argmax 实现
+### 4.1 ARM 端
+- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 argmax.h 文件，声明 `argmax_func()` 函数，代码如下：
     ```c++
     template <typename InType, typename OutType>
     void argmax_func(const lite::Tensor* input,
                      const int axis,
                      lite::Tensor* output);
     ```
-- 在 paddlelite/lite/backends/arm/math/ 目录下新建 argmax.cc 文件，具体实现 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 argmax.cc 文件，具体实现 `argmax_func()` 函数，代码如下：
     ```c++
     template <typename InType, typename OutType>
     void argmax_func(const lite::Tensor *input,
@@ -227,11 +256,27 @@
         }
     }
     ```
-- 在 paddlelite/lite/backends/arm/math/CMakeFile.txt 中的 ```math_arm library``` 中添加 argmax.cc，在 paddlelite/lite/backends/arm/math/funcs.h 中添加 ```#include "lite/backends/arm/math/argmax.h"```
+- 在 Paddle-Lite/lite/backends/arm/math/CMakeFile.txt 中的 ```math_arm library``` 中添加 argmax.cc，在 Paddle-Lite/lite/backends/arm/math/funcs.h 中添加 ```#include "lite/backends/arm/math/argmax.h"```
+
+### 4.2 OpenCL 端
+- 在 Paddle-Lite/lite/backends/opencl/cl_kernel/image/ 目录下新建 [argmax_kernel.cl](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/opencl/cl_kernel/image/argmax_kernel.cl) 文件，定义具体的 cl kernel 函数。
 
 ## 5. 添加 Argmax 单测
+目前有如下 2 种方式，其中基于 Autoscan 框架实现的 Python 单测代码具有覆盖度高、代码量少、支持与 Paddle 原生精度对齐等优点，因此推荐使用该方式。
+- 基于 Autoscan 框架，实现 Python 单测代码
+- 基于 gtest，实现 C++ 单测单码
+### 5.1 Python 单测
+在 Paddle-Lite/lite/tests/unittest_py/op 目录下新建 [test_arg_max_op.py](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tests/unittest_py/op/test_arg_max_op.py) 文件，定义`TestArgMaxOp` 类，其继承自 `AutoScanTest`，重点介绍如下 4 个方法：
+- `__init__` 方法设置 Place 属性，通过调用 `self.enable_testing_on_place` 方法激活特定后端；
+- `is_program_valid` 方法用于 Op 属性和输入的合法性规则检查；
+- `sample_program_configs` 方法定义输入 shape、输入数据类型、参数信息等，生成 program_config；
+- `sample_predictor_configs` 方法返回 paddlelite_configs, op_list 和误差阈值；
+- `add_ignore_pass_case` 方法设置一些当前实现运行错误的情况需要跳过的情况;
+- `test` 方法为 unittest 的运行入口函数。
 
-- 在 paddlelite/lite/tests/kernels 目录下新建 argmax_compute_test.cc 文件，声明并实现 ArgmaxComputeTester 类；
+### 5.2 C++ 单测
+以 ARM CPU 为例：
+- 在 Paddle-Lite/lite/tests/kernels 目录下新建 argmax_compute_test.cc 文件，声明并实现 ArgmaxComputeTester 类；
 - ArgmaxComputeTester 类中主要包括 PrepareOpDesc、PrepareData 和 RunBaseline 函数。PrepareOpDesc 函数设定单测 Op 的类型和输入输出参数，PrepareData 函数对输入 Tensor 进行初始化，RunBaseline 是基于输入计算得到输出，用于和框架计算的输出进行对比；
 - 使用 gtest 添加单测，代码如下：
     ```c++
@@ -276,7 +321,48 @@
         TestArgmax(place);
     }
     ```
-- 在 paddlelite/lite/tests/kernels/CMakeLists.txt 中添加
+- 在 Paddle-Lite/lite/tests/kernels/CMakeLists.txt 中添加
     ```lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc))```
 ## 6. 编译运行
-- 在 paddlelite 目录中，执行 ```./lite/tools/ci_build.sh build_test_arm```，该脚本会创建手机模拟器，并编译运行所有单测（花费时间较久）。如果运行无误，则表明添加 Argmax 成功。
+## 6.1 Python 单测
+
+### 6.1.1 硬件环境
+- 配置苹果 M1 芯片的机器：适用于验证 ARM, OpenCL, Metal 后端的单测
+- 配置 Intel 芯片的 Linux 机器：适用于验证 Host, X86 后端的单测
+
+### 6.1.2 软件环境
+#### 6.1.2.1 针对 ARM, OpenCL, Metal 后端
+- M1 设备上需安装两种版本的 Python 环境
+    - `python3.8 Intel` （下载并安装）版本：[3.8.10 intel](https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg)
+    - `python3.9 ARM`（下载并安装） 版本：[3.9.8 universal](https://www.python.org/ftp/python/3.9.8/python-3.9.8-macos11.pkg)
+
+- 创建并激活 Python 虚拟环境
+	- ```python3.9 -m venv ${your custiom python path}```
+	- ```source ${your custom python path}/bin/activate```
+- 安装依赖项
+    - `cd Paddle-Lite/lite/tests/unittest_py/ && python3.8 -m pip install -r requirements.txt`
+    - `cd Paddle-Lite/lite/tests/unittest_py/rpc_service && python3.9 -m pip install -r requirements.txt`
+- 安装 `Paddle`
+    - `python3.8 -m pip install paddlepaddle`
+- 源码编译 whl 包并安装
+    - `./lite/tools/build_macos.sh --with_python=ON --with_opencl=ON --with_metal=ON --with_arm82_fp16=ON --python_version=3.9 arm64 && python3.9 -m pip install --force-reinstall $(find ./build.macos.armmacos.armv8.* -name *whl)`
+- 运行
+    - ARM CPU: `cd lite/tests/unittest_py/op && ./auto_scan.sh test_arg_max_op.py --target=ARM`
+    - OpenCL: `cd lite/tests/unittest_py/op && ./auto_scan.sh test_arg_max_op.py --target=OpenCL`
+    - Metal: `cd lite/tests/unittest_py/op && ./auto_scan.sh test_arg_max_op.py --target=Metal`
+
+#### 6.1.2.2 针对 Host, X86 后端
+- Linux 机器（推荐 Ubuntu 18.04）上安装 Python3.7
+    - `sudo apt-get install python==3.7`
+- 安装依赖项
+    - `cd Paddle-Lite/lite/tests/unittest_py/ && python3.7 -m pip install -r requirements.txt`
+- 安装 `Paddle`
+    - `python3.7 -m pip install paddlepaddle`
+- 源码编译 whl 包并安装
+    - `./lite/tools/build_linux.sh --with_python=ON --python_version=3.7 --with_extra=ON --arch=x86 && python3.7 -m pip install --force-reinstall $(find ./build.lite.linux.x86.* -name *whl)`
+- 运行
+    - Host: `cd lite/tests/unittest_py/op && ./auto_scan.sh test_arg_max_op.py --target=Host`
+    - X86: `cd lite/tests/unittest_py/op && ./auto_scan.sh test_arg_max_op.py --target=X86`
+
+## 6.2 C++ 单测
+- 在 Paddle-Lite 目录中，执行 ```./lite/tools/ci_build.sh build_test_arm```，该脚本会创建手机模拟器，并编译运行所有单测（花费时间较久）。如果运行无误，则表明添加 Argmax 成功。
