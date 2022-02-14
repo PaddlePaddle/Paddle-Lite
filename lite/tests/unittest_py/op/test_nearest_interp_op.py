@@ -32,7 +32,11 @@ class TestNearestInterpOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP16],
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
@@ -127,8 +131,7 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.ARM, TargetType.OpenCL]:
+            if predictor_config.target() in [TargetType.OpenCL]:
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
 
