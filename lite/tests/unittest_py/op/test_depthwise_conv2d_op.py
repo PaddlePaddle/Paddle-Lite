@@ -180,7 +180,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
