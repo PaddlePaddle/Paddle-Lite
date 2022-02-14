@@ -700,25 +700,19 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                           \
   /* conflicts ends */                                                    \
   "movi v20.4s, #0 \n"                                                    \
-  "ld1 {v18.4s, v19.4s}, [%[vmask]]         \n"                           \
+  "ld1 {v19.4s}, [%[vmask]]         \n"                                   \
                                                                           \
-  "bif v0.16b, v20.16b, v18.16b \n"                                       \
   "bif v1.16b, v20.16b, v19.16b \n"                                       \
-  "bif v2.16b, v20.16b, v18.16b \n"                                       \
   "bif v3.16b, v20.16b, v19.16b \n"                                       \
                                                                           \
-  "bif v4.16b, v20.16b, v18.16b \n"                                       \
   "bif v5.16b, v20.16b, v19.16b \n"                                       \
-  "bif v6.16b, v20.16b, v18.16b \n"                                       \
   "bif v7.16b, v20.16b, v19.16b \n"                                       \
                                                                           \
   "ext  v16.16b, v0.16b, v1.16b, #4 \n"                  /* v16 = 1234*/  \
   "ext  v17.16b, v0.16b, v1.16b, #8 \n" /* v16 = 2345 */ /* r0 */         \
   "fmla v12.4s,  v0.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
                                                                           \
-  "bif v8.16b, v20.16b, v18.16b \n"                                       \
   "bif v9.16b, v20.16b, v19.16b \n"                                       \
-  "bif v10.16b, v20.16b, v18.16b \n"                                      \
   "bif v11.16b, v20.16b, v19.16b \n"                                      \
                                                                           \
   "fmla v12.4s,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -1658,84 +1652,72 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                                          \
   "bne    1b                             @ jump to main loop start point\n"
 
-#define RIGHT_COMPUTE_S1                                                      \
-  "3:                                    @ right pad entry\n"                 \
-                                                                              \
-  /* Avoid thread write conflicts */                                          \
-  "subs %[din0_ptr], #16 \n"                                                  \
-  "subs %[din1_ptr], #16 \n"                                                  \
-  "subs %[din2_ptr], #16 \n"                                                  \
-  "subs %[din3_ptr], #16 \n"                                                  \
-  "subs %[din0_ptr], %[right_pad_num] \n"                                     \
-  "subs %[din1_ptr], %[right_pad_num] \n"                                     \
-  "subs %[din2_ptr], %[right_pad_num] \n"                                     \
-  "subs %[din3_ptr], %[right_pad_num] \n"                                     \
-  "subs %[dout_ptr1], %[right_pad_num] \n"                                    \
-  "subs %[dout_ptr2], %[right_pad_num] \n"                                    \
-                                                                              \
-  "vld1.32  {d16-d18}, [%[din0_ptr]]!    \n"                                  \
-  "vld1.32  {d20-d22}, [%[din1_ptr]]!   \n"                                   \
-  "vld1.32  {d24-d26}, [%[din2_ptr]]    \n"                                   \
-  "vld1.32  {d28-d30}, [%[din3_ptr]]  \n"                                     \
-                                                                              \
-  /* ends Avoid thread write conflicts */                                     \
-                                                                              \
-  "vld1.32  {d19}, [%[vmask]]!    @ load din r0\n"                            \
-  "vld1.32  {d23}, [%[vmask]]!    @ load din r0\n"                            \
-                                                                              \
-  "vld1.32  {d27}, [%[vmask]]!    @ load din r0\n"                            \
-  "vld1.32  {d31}, [%[vmask]]!    @ load din r0\n"                            \
-                                                                              \
-  "vbif d16, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d17, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d18, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vbif d20, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d21, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d22, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vext.32  q6, q8, q9, #1     @ 1234\n"                                      \
-  "vext.32  q7, q8, q9, #2     @ 2345\n" /* r0 */                             \
-  "vmla.f32 q4, q8, %e[wr0][0]  @ q4 += 0123 * wr0[0]\n"                      \
-                                                                              \
-  "vbif d24, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d25, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d26, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vmla.f32 q4, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vbif d28, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d29, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d30, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vmla.f32 q4, q7, %f[wr0][0]  @ q4 += 2345 * wr0[2]\n"                      \
-                                                                              \
-  "vext.32  q6, q10, q11, #1     @ 1234\n"                                    \
-  "vext.32  q7, q10, q11, #2     @ 2345\n" /* r1 */                           \
-  "vmla.f32 q5, q10, %e[wr0][0]  @ q4 += 1234 * wr0[0]\n"                     \
-  "vmla.f32 q4, q10, %e[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
-                                                                              \
-  "vmla.f32 q5, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vld1.32  {d16-d17}, [%[dout_ptr1]]    @ load din r0\n"                     \
-  "vld1.32  {d20-d21}, [%[dout_ptr2]]    @ load din r0\n"                     \
-                                                                              \
-  "vmla.f32 q5, q7, %f[wr0][0]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vext.32  q6, q12, q13, #1     @ 1234\n"                                    \
-  "vext.32  q7, q12, q13, #2     @ 2345\n" /* r2 */                           \
-  "vmla.f32 q5, q12, %e[wr1][0]  @ q4 += 1234 * wr0[0]\n"                     \
-  "vmla.f32 q4, q12, %e[wr2][0]  @ q4 += 1234 * wr0[1]\n"                     \
-                                                                              \
-  "vmla.f32 q5, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vmla.f32 q5, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q7, %f[wr2][0]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vext.32  q6, q14, q15, #1     @ 1234\n"                                    \
+#define RIGHT_COMPUTE_S1                                                     \
+  "3:                                    @ right pad entry\n"                \
+                                                                             \
+  /* Avoid thread write conflicts */                                         \
+  "subs %[din0_ptr], #16 \n"                                                 \
+  "subs %[din1_ptr], #16 \n"                                                 \
+  "subs %[din2_ptr], #16 \n"                                                 \
+  "subs %[din3_ptr], #16 \n"                                                 \
+  "subs %[din0_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din1_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din2_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din3_ptr], %[right_pad_num] \n"                                    \
+  "subs %[dout_ptr1], %[right_pad_num] \n"                                   \
+  "subs %[dout_ptr2], %[right_pad_num] \n"                                   \
+                                                                             \
+  "vld1.32  {d16-d18}, [%[din0_ptr]]!    \n"                                 \
+  "vld1.32  {d20-d22}, [%[din1_ptr]]!   \n"                                  \
+  "vld1.32  {d24-d26}, [%[din2_ptr]]    \n"                                  \
+  "vld1.32  {d28-d30}, [%[din3_ptr]]  \n"                                    \
+                                                                             \
+  /* ends Avoid thread write conflicts */                                    \
+                                                                             \
+  "vld1.32  {d27}, [%[vmask]]!    @ load din r0\n"                           \
+                                                                             \
+  "vbif d18, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vbif d22, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vext.32  q6, q8, q9, #1     @ 1234\n"                                     \
+  "vext.32  q7, q8, q9, #2     @ 2345\n" /* r0 */                            \
+  "vmla.f32 q4, q8, %e[wr0][0]  @ q4 += 0123 * wr0[0]\n"                     \
+                                                                             \
+  "vbif d26, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vmla.f32 q4, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vbif d30, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vmla.f32 q4, q7, %f[wr0][0]  @ q4 += 2345 * wr0[2]\n"                     \
+                                                                             \
+  "vext.32  q6, q10, q11, #1     @ 1234\n"                                   \
+  "vext.32  q7, q10, q11, #2     @ 2345\n" /* r1 */                          \
+  "vmla.f32 q5, q10, %e[wr0][0]  @ q4 += 1234 * wr0[0]\n"                    \
+  "vmla.f32 q4, q10, %e[wr1][0]  @ q4 += 1234 * wr0[1]\n"                    \
+                                                                             \
+  "vmla.f32 q5, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vld1.32  {d16-d17}, [%[dout_ptr1]]    @ load din r0\n"                    \
+  "vld1.32  {d20-d21}, [%[dout_ptr2]]    @ load din r0\n"                    \
+                                                                             \
+  "vmla.f32 q5, q7, %f[wr0][0]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vext.32  q6, q12, q13, #1     @ 1234\n"                                   \
+  "vext.32  q7, q12, q13, #2     @ 2345\n" /* r2 */                          \
+  "vmla.f32 q5, q12, %e[wr1][0]  @ q4 += 1234 * wr0[0]\n"                    \
+  "vmla.f32 q4, q12, %e[wr2][0]  @ q4 += 1234 * wr0[1]\n"                    \
+                                                                             \
+  "vmla.f32 q5, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vmla.f32 q5, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q7, %f[wr2][0]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vext.32  q6, q14, q15, #1     @ 1234\n"                                   \
   "vext.32  q7, q14, q15, #2     @ 2345\n"
 
 #define RIGHT_RESULT_S1                                                \
@@ -2189,7 +2171,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s1_fp32(
     int w_in, int w_out, int left_padding, unsigned int *vmask) {
   //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
+  const unsigned int right_pad_idx[4] = {1, 0};
 
   int tile_w = w_out >> 2;
   int remain = w_out % 4;
@@ -2210,14 +2192,12 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1_fp32(
 
   // at the beginning vmask[5,4,...,size_pad_right] = 0xffffffff！
   // Now the sliding window needs to move left 4-remain
-  // so :
+  // so the valid data grows! i.e. size_pad_right decrease!
   size_pad_right -= (4 - remain);
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+
   uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  vst1q_u32(vmask, vmask_rp1);
-  vst1q_u32(vmask + 4, vmask_rp2);
+      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+  vst1q_u32(vmask, vmask_rp2);
   return std::make_pair(cnt_col, remain);
 }
 
@@ -2245,7 +2225,7 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  unsigned int vmask[8];
+  unsigned int vmask[4];
   auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 1, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -2450,7 +2430,7 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  unsigned int vmask[8];
+  unsigned int vmask[4];
   auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 1, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -2983,7 +2963,7 @@ void conv_depthwise_3x3s1p0_bias_relu6(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  unsigned int vmask[8];
+  unsigned int vmask[4];
   auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 0, vmask);
   uint32_t cnt_col = res.first;
   uint32_t remain = res.second;
@@ -3341,7 +3321,7 @@ void conv_depthwise_3x3s1p0_bias_leakyRelu(float *dout,
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  unsigned int vmask[8];
+  unsigned int vmask[4];
   auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 0, vmask);
   uint32_t cnt_col = res.first;
   uint32_t remain = res.second;
