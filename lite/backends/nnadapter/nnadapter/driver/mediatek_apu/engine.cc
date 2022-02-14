@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <utility>
 #include "driver/mediatek_apu/converter/converter.h"
-#include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
-#include "driver/mediatek_apu/optimizer/restrict_same_input_output_quant_params.h"
+#include "driver/mediatek_apu/optimizer/resolve_operation_liminations.h"
+#include "driver/mediatek_apu/optimizer/restrict_input_output_quant_params.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
@@ -74,9 +74,9 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   ConvertQuantizationSymmToAsymm(model);
-  RestrictSameInputOutputQuantParams(model);
+  RestrictInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);
-  ResolveOpLiminations(model);
+  ResolveOperationLiminations(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert the NNAdapter model to Neuron model
   operand_indexes_.clear();

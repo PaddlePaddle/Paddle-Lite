@@ -78,18 +78,21 @@ class NormComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.1;
+      data[i] = i * 0.5;
     }
 
     SetCommonTensor(input_, dims_, data.data());
   }
 };
-void test_norm(Place place, float abs_error, const std::vector<int>& axis_vec) {
+void test_norm(Place place,
+               float abs_error,
+               const std::vector<int>& axis_vec,
+               const std::vector<float>& epsilon) {
   DDimLite dims{{3, 5, 4, 4}};
   for (int axis : axis_vec) {
-    for (float epsilon : {1e-9}) {
+    for (float e : epsilon) {
       std::unique_ptr<arena::TestCase> tester(
-          new NormComputeTester(place, "def", axis, epsilon, dims));
+          new NormComputeTester(place, "def", axis, e, dims));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
@@ -100,6 +103,7 @@ TEST(Norm, precision) {
   Place place;
   float abs_error = 2e-5;
   std::vector<int> axis_vec = {1, 2, 3};
+  std::vector<float> epsilon = {1e-9};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -107,6 +111,10 @@ TEST(Norm, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
   axis_vec = std::vector<int>{3};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  axis_vec = std::vector<int>{1};
+  epsilon = {1e-4};
 #else
   return;
 #endif
@@ -120,7 +128,7 @@ TEST(Norm, precision) {
   return;
 #endif
 
-  test_norm(place, abs_error, axis_vec);
+  test_norm(place, abs_error, axis_vec, epsilon);
 }
 
 }  // namespace lite

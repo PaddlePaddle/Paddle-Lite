@@ -360,10 +360,10 @@ void ConvImageCompute::PrepareForRun() {
     } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_
 #ifdef DEPTH_CONV_USE_SPL
                &&
-               filter_tensor_h_ != 3
+               (filter_tensor_h_ != 3 || filter_tensor_w_ != 3)
 #endif
 #undef DEPTH_CONV_USE_SPL
-               ) {
+                   ) {
       // common depth_conv2d
       kernel_func_names_.push_back("depth_conv2d");
       kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");

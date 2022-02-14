@@ -80,6 +80,8 @@ class ConvOpLite : public OpLite {
     CHECK(param_.x);
     CHECK(param_.filter);
     CHECK(param_.output);
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    output_tensor_ptrs_cache_.push_back(param_.output);
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");

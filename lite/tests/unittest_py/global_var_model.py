@@ -26,7 +26,8 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set(),
         "NNAdapter": {
-            "kunlunxin_xtcl": set()
+            "kunlunxin_xtcl": set(),
+            "cambricon_mlu": set()
         }
     },
     "success_ops": {
@@ -36,7 +37,8 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set(),
         "NNAdapter": {
-            "kunlunxin_xtcl": set()
+            "kunlunxin_xtcl": set(),
+            "cambricon_mlu": set()
         }
     },
     "out_diff_ops": {
@@ -46,7 +48,8 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set(),
         "NNAdapter": {
-            "kunlunxin_xtcl": set()
+            "kunlunxin_xtcl": set(),
+            "cambricon_mlu": set()
         }
     },
     "lite_not_supported_ops": {
@@ -56,7 +59,8 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set(),
         "NNAdapter": {
-            "kunlunxin_xtcl": set()
+            "kunlunxin_xtcl": set(),
+            "cambricon_mlu": set()
         }
     },
     "paddle_not_supported_ops": {
@@ -66,7 +70,8 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set(),
         "NNAdapter": {
-            "kunlunxin_xtcl": set()
+            "kunlunxin_xtcl": set(),
+            "cambricon_mlu": set()
         }
     },
 }

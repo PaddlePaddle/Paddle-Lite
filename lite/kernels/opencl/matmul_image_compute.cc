@@ -166,6 +166,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     if (x_dims.size() > 2 && y_dims.size() > 2) {
       batch_ = y_dims.count(0, y_dims.size() - 2);
       convert(y_cpu, y_buffer_data, y_ext_dims);
+      DDim tmp_dim = y_ext_dims;
+      tmp_dim[tmp_dim.size() - 3] = y_dims[y_dims.size() - 3];
+      convert(y_cpu, y_buffer_data, tmp_dim);
     } else if (x_dims.size() > 2 && y_dims.size() <= 2) {
       batch_ = x_dims.count(0, x_dims.size() - y_dims.size());
       DDim tmp_dim =
@@ -261,7 +264,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         C = x_dims.size() == 4 ? x_dims[1] : x_dims[0];
         H = x_dims[x_dims.size() - 2], W = x_dims[x_dims.size() - 1];
         c_blks_ = UP_DIV(x_dims[x_dims.size() - 3], 4);
-        kernel_func_name_ = "matmul_highdimx_ydim1";
+        kernel_func_name_ =
+            x_dims.size() == 4 ? "matmul_xdim4_ydim1" : "matmul_xdim3_ydim1";
         kernel_file_name_ = "image/matmul_kernel.cl";
       } else if (x_dims.size() > 2 && y_dims.size() == 2) {
         N = x_dims.size() == 4 ? x_dims[0] : 1;
@@ -382,10 +386,15 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                       out_img_shape[1]);
     } else if (x_dims.size() > 2 && y_dims.size() == 1) {
       local_work_size_ =
-          cl::NDRange(32, std::min(c_blks_, max_work_group_size / 32), 1);
-      global_work_size_ = cl::NDRange(ROUND_UP(H, local_work_size_[0]),
-                                      ROUND_UP(c_blks_, local_work_size_[1]),
-                                      UP_DIV(N, 4));
+          (x_dims.size() == 4)
+              ? cl::NDRange(32, std::min(c_blks_, max_work_group_size / 32), 1)
+              : cl::NDRange(1, 1);
+      global_work_size_ =
+          (x_dims.size() == 4)
+              ? cl::NDRange(ROUND_UP(H, local_work_size_[0]),
+                            ROUND_UP(c_blks_, local_work_size_[1]),
+                            UP_DIV(N, 4))
+              : cl::NDRange(UP_DIV(H, 4), c_blks_);
     }
     VLOG(4) << "local_work_size[3D]: " << local_work_size_[0] << " "
             << local_work_size_[1] << " " << local_work_size_[2];

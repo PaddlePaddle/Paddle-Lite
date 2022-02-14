@@ -50,6 +50,8 @@ class PoolOpLite : public OpLite {
     CHECK(scope->FindVar(out));
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
     param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    output_tensor_ptrs_cache_.push_back(param_.output);
 
     param_.pooling_type = op_desc.GetAttr<std::string>("pooling_type");
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
