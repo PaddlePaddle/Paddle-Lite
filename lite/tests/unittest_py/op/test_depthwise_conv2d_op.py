@@ -39,7 +39,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=arm_valid_places, thread=[1])
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
 
         x86_valid_places = [
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
