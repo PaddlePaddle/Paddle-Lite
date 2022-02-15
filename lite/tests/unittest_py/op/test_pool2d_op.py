@@ -83,9 +83,7 @@ class TestPool2dOp(AutoScanTest):
         ksize = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=128),
-                min_size=2,
-                max_size=2))
+                    min_value=1, max_value=32), min_size=2, max_size=2))
         strides = draw(
             st.lists(
                 st.integers(
