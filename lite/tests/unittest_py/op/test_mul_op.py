@@ -26,10 +26,21 @@ import numpy as np
 class TestMulOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -90,8 +101,11 @@ class TestMulOp(AutoScanTest):
 
         program_config = ProgramConfig(
             ops=[mul_op],
-            weights={"input_data_y": TensorConfig(shape=Y_shape)},
-            inputs={"input_data_x": TensorConfig(shape=X_shape)},
+            weights={},
+            inputs={
+                "input_data_x": TensorConfig(shape=X_shape),
+                "input_data_y": TensorConfig(shape=Y_shape)
+            },
             outputs=["output_data"])
 
         return program_config
@@ -103,7 +117,7 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=250)
 
 
 if __name__ == "__main__":
