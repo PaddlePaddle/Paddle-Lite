@@ -104,6 +104,8 @@ class TestSoftmaxOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-3, 1e-3
+        elif target_str == "OpenCL":
+            atol, rtol = 1e-4, 1e-4
         elif target_str == "NNAdapter":
             atol, rtol = 4e-5, 4e-5
         return self.get_predictor_configs(), ["softmax"], (atol, rtol)
