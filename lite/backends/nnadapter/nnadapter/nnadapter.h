@@ -511,7 +511,7 @@ typedef enum {
    * * 1: filter, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL 4-D tensor. The filter's shape
-   * is [C_out, C_in, filter_height, filter_width], where C_out and C_in is the
+   * is [C_in, C_out, filter_height, filter_width], where C_out and C_in is the
    * number of the channels of output and input, filter_height and filter_width
    * is the filter's kernel size in the 'H' and 'W' dimension.
    * * 2: bias, a 1-D tensor with shape [C_out].

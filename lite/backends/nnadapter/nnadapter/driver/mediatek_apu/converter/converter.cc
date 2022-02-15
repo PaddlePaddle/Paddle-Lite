@@ -267,6 +267,11 @@ uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
                     values);
 }
 
+uint32_t Converter::AddFloat32VariableOperand(int32_t* dimensions_data,
+                                              uint32_t dimensions_count) {
+  return AddOperand(dimensions_data, dimensions_count, NEURON_TENSOR_FLOAT32);
+}
+
 uint32_t Converter::AddQuant8VariableOperand(int32_t* dimensions_data,
                                              uint32_t dimensions_count,
                                              float quant_scale,
@@ -294,6 +299,15 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
   auto is_constant = is_constant_copy || is_constant_reference;
   uint32_t index = INVALID_INDEX;
   switch (type.precision) {
+    case NNADAPTER_FLOAT32: {
+      if (is_constant) {
+        index = AddFloat32ConstantOperand(reinterpret_cast<float*>(buffer),
+                                          &dimensions[0],
+                                          dimensions.size());
+      } else {
+        index = AddFloat32VariableOperand(&dimensions[0], dimensions.size());
+      }
+    } break;
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER: {
       if (is_constant) {
         index =
@@ -320,20 +334,20 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
                                    type.symm_per_channel_params.scale_count,
                                    type.symm_per_channel_params.channel_dim);
     } break;
-    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
+      // Only for bias
+      NNADAPTER_CHECK(is_constant);
+      index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
+                                        &dimensions[0],
+                                        dimensions.size(),
+                                        type.symm_per_layer_params.scale);
+    } break;
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       // Only for bias
       NNADAPTER_CHECK(is_constant);
-      if (type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER) {
-        index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                          &dimensions[0],
-                                          dimensions.size(),
-                                          type.symm_per_layer_params.scale);
-      } else {
-        index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                        &dimensions[0],
-                                        dimensions.size());
-      }
+      index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
+                                      &dimensions[0],
+                                      dimensions.size());
     } break;
     default:
       NNADAPTER_LOG(FATAL) << "Missing the processing "

@@ -592,4 +592,12 @@ NNADAPTER_EXPORT std::string GetRealPath(const char* path) {
   return std::string(real_path);
 }
 
+NNADAPTER_EXPORT bool IsAllZeros(void* buffer, size_t length) {
+  uint8_t* values = reinterpret_cast<uint8_t*>(buffer);
+  for (size_t i = 0; i < length; i++) {
+    if (values[i] != 0) return false;
+  }
+  return true;
+}
+
 }  // namespace nnadapter

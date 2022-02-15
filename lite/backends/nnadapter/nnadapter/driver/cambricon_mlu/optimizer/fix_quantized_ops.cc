@@ -51,11 +51,13 @@ static hal::Operand* AddQuantOperation(
     const std::vector<hal::Operation*>& reference_operations = {}) {
   // Insert a new operand after input_operand
   auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  InsertOperand(
-      model, input_operand, output_operand, true, reference_operations);
+  CopyOperandType(&output_operand->type, input_operand->type);
+  if (!IsTemporaryShapeOperand(input_operand)) {
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  UpdateOperationInputOperands(
+      reference_operations, input_operand, output_operand);
+  UpdateModelOutputOperands(model, input_operand, output_operand);
   output_operand->type.precision = NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
   // Insert a new quant operation between input_operand and output_operand
   auto quant_operation = AddOperation(model);
