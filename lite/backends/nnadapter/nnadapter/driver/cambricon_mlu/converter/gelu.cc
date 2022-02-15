@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/channel_shuffle.h"
-#include "driver/verisilicon_timvx/converter/converter.h"
+#include "core/operation/gelu.h"
+#include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace verisilicon_timvx {
+namespace cambricon_mlu {
 
-int ConvertChannelShuffle(Converter* converter, hal::Operation* operation) {
-  CHANNEL_SHUFFLE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertGelu(Converter* converter, hal::Operation* operation) {
+  GELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(approximate, false) << "Only supports approximate=false.";
 
-  // Convert to tim-vx tensors and operators
+  // Convert to magicmind tensors
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = converter->ConvertOperand(output_operand);
-  auto clip_op =
-      converter->graph()->CreateOperation<tim::vx::ops::ShuffleChannel>(
-          group, static_cast<int32_t>(2));
-  clip_op->BindInputs({input_tensor});
-  clip_op->BindOutputs({output_tensor});
+  auto gelu_node = converter->network()->AddIActivationNode(
+      input_tensor, magicmind::IActivation::GELU);
+  NNADAPTER_CHECK(gelu_node) << "Failed to add gelu node.";
+  auto output_tensor = gelu_node->GetOutput(0);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace verisilicon_timvx
+}  // namespace cambricon_mlu
 }  // namespace nnadapter

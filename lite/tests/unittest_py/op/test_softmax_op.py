@@ -66,9 +66,6 @@ class TestSoftmaxOp(AutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data"].shape)
         axis = program_config.ops[0].attrs["axis"]
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(x_shape) < 2 or (len(x_shape) == 4 and axis == 0):
-                return False
         if predictor_config.target() == TargetType.Metal:
             if len(x_shape) != 4 or axis != 1 or x_shape[0] != 1:
                 return False

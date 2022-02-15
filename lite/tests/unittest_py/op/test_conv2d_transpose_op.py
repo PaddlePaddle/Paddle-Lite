@@ -73,20 +73,20 @@ class TestConv2dTransposeOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
 
-        # opencl_valid_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_valid_places)
+        opencl_valid_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -95,10 +95,10 @@ class TestConv2dTransposeOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         input_n = draw(st.integers(min_value=1, max_value=4))
-        input_c = draw(st.integers(min_value=1, max_value=128))
-        input_h = draw(st.integers(min_value=1, max_value=128))
-        input_w = draw(st.integers(min_value=1, max_value=128))
-        filter_m = draw(st.integers(min_value=1, max_value=16))
+        input_c = draw(st.integers(min_value=1, max_value=64))
+        input_h = draw(st.integers(min_value=1, max_value=64))
+        input_w = draw(st.integers(min_value=1, max_value=64))
+        filter_m = draw(st.integers(min_value=1, max_value=64))
         filter_c = input_c
         filter_h = draw(st.integers(min_value=1, max_value=7))
         filter_w = draw(st.integers(min_value=1, max_value=7))
@@ -259,13 +259,25 @@ class TestConv2dTransposeOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["conv2d_transpose"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "OpenCL":
+            atol, rtol = 1e-4, 1e-4
+        return self.get_predictor_configs(), ["conv2d_transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+            if predictor_config.target() == TargetType.OpenCL and groups > 1:
+                return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

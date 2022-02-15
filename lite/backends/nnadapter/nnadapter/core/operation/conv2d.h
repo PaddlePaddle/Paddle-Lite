@@ -29,17 +29,43 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  auto input_channel_size = input_operand->type.dimensions.data[1];            \
+  auto input_layout = input_operand->type.layout;                              \
+  auto input_channel_size = input_operand->type.dimensions                     \
+                                .data[input_layout == NNADAPTER_NCHW ? 1 : 3]; \
+  /* Group */                                                                  \
+  auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);         \
+  NNADAPTER_VLOG(5) << "group = " << group;                                    \
+  /* Check depthwise mode */                                                   \
+  bool is_depthwise_mode = group != 1 && input_channel_size == group;          \
+  NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";         \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions.data[0];          \
-  auto filter_channel_size = filter_operand->type.dimensions.data[1];          \
-  auto filter_height = filter_operand->type.dimensions.data[2];                \
-  auto filter_width = filter_operand->type.dimensions.data[3];                 \
-  NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
-                    << filter_channel_size << "," << filter_height << ","      \
-                    << filter_width << "]";                                    \
+  /* (1) For NCHW, [C_out, 1, filter_height, filter_width] when */             \
+  /* depthwise_mode=TRUE, otherwise is [C_out, C_in, filter_height, */         \
+  /* filter_width] */                                                          \
+  /* (2) For NHWC, [1, filter_height, filter_width, C_out] when */             \
+  /* depthwise_mode=TRUE, otherwise is [C_out, filter_height, filter_width,*/  \
+  /* C_in] */                                                                  \
+  auto filter_layout = filter_operand->type.layout;                            \
+  auto output_channel_size =                                                   \
+      filter_operand->type.dimensions                                          \
+          .data[!is_depthwise_mode                                             \
+                    ? 0                                                        \
+                    : (filter_layout == NNADAPTER_NCHW ? 0 : 3)];              \
+  auto filter_channel_size =                                                   \
+      filter_operand->type.dimensions.data[filter_layout == NNADAPTER_NCHW     \
+                                               ? 1                             \
+                                               : (is_depthwise_mode ? 0 : 3)]; \
+  auto filter_height = filter_operand->type.dimensions                         \
+                           .data[filter_layout == NNADAPTER_NCHW ? 2 : 1];     \
+  auto filter_width = filter_operand->type.dimensions                          \
+                          .data[filter_layout == NNADAPTER_NCHW ? 3 : 2];      \
+  NNADAPTER_VLOG(5) << "input_channel_size: " << input_channel_size;           \
+  NNADAPTER_VLOG(5) << "output_channel_size: " << output_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_channel_size: " << filter_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_height: " << filter_height;                     \
+  NNADAPTER_VLOG(5) << "filter_width: " << filter_width;                       \
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
@@ -68,9 +94,6 @@ namespace operation {
   auto stride_width = strides_buffer[1];                                       \
   NNADAPTER_VLOG(5) << "strides = [" << stride_height << ", " << stride_width  \
                     << "]";                                                    \
-  /* Group */                                                                  \
-  auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);         \
-  NNADAPTER_VLOG(5) << "group = " << group;                                    \
   /* Dilations */                                                              \
   uint32_t dilations_size =                                                    \
       input_operands[7]->length / static_cast<uint32_t>(sizeof(int32_t));      \
@@ -86,11 +109,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "fuse_code = " << fuse_code;                            \
   /* Output */                                                                 \
   auto output_operand = output_operands[0];                                    \
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);          \
-  /* Check depthwise mode */                                                   \
-  bool is_depthwise_mode = group != 1 && input_channel_size == group &&        \
-                           output_channel_size % input_channel_size == 0;      \
-  NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 // Update the values of pad and dilation according to auto_pad and input_size
 void UpdateConv2DPadAndDilation(int32_t input_size,

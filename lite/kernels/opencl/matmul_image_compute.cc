@@ -89,6 +89,10 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     auto x_dims = matmul_v2_param_->X->dims();
     auto y_t = matmul_v2_param_->Y;
     auto y_dims = y_t->dims();
+    if (x_dims.size() == 1 && x_dims == y_dims) {  // for matmul_v2 dim_1x1 case
+      transpose_x_ = false;
+      transpose_y_ = false;
+    }
 
     const int thres_k = 1024;
     bool precision_forced_to_fp32 = false;
@@ -242,8 +246,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         }
       } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
                  x_dims[0] == y_dims[0]) {
-        CHECK_EQ(transpose_x_, false) << "unsupported when x_transpose is true";
-        CHECK_EQ(transpose_y_, false) << "unsupported when y_transpose is true";
+        CHECK(transpose_x_ == transpose_y_)
+            << "unsupported when x, y transpose is not equal";
         m_ = 1, n_ = 1;
         k_ = y_dims[0];
         kernel_func_name_ = "matmul";
