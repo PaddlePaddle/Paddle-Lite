@@ -32,21 +32,26 @@ def sample_program_configs(draw, interp_type):
     interpolate_type = draw(
         st.sampled_from(['interpolate_type_1', 'interpolate_type_2']))
 
+    #shape params
+    # shape_op_input_shape = draw(
+    #     st.lists(
+    #         st.integers(
+    #             min_value=1, max_value=32), min_size=4, max_size=4))
+    batch = draw(st.integers(min_value=1, max_value=4))
+    channel = draw(st.integers(min_value=1, max_value=32))
+    height = draw(st.integers(min_value=3, max_value=100))
+    width = draw(st.integers(min_value=3, max_value=100))
+    shape_op_input_shape = [batch, channel, height, width]
+    #slice params
+    axes = [0]
+    starts = [2]
+    ends = [4]
+    infer_flags = [1]
+    #cast params
+    cast_op_in_dtype = draw(st.sampled_from([2, 3]))
+    cast_op_out_dtype = draw(st.sampled_from([2]))
+
     if interpolate_type == "interpolate_type_1":
-        #shape params
-        shape_op_input_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=32), min_size=4,
-                max_size=4))  #2dim unsupport
-        #slice params
-        axes = [0]
-        starts = [2]
-        ends = [4]
-        infer_flags = [1]
-        #cast params
-        cast_op_in_dtype = draw(st.sampled_from([2, 3]))
-        cast_op_out_dtype = draw(st.sampled_from([2]))
         #fill_constant_op params
         fill_constant_in_shape = draw(
             st.lists(
@@ -140,19 +145,6 @@ def sample_program_configs(draw, interp_type):
             outputs=["output_data"])
         return program_config
     else:
-        #shape params
-        shape_op_input_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=32), min_size=4, max_size=4))
-        #slice params
-        axes = [0]
-        starts = [2]
-        ends = [4]
-        infer_flags = [1]
-        #cast params
-        cast_op_in_dtype = draw(st.sampled_from([2, 3]))
-        cast_op_out_dtype = draw(st.sampled_from([2]))
         #scale op params
         scale = draw(st.integers(
             min_value=1, max_value=10))  #floats output shapes are not equal
@@ -236,11 +228,11 @@ def sample_program_configs(draw, interp_type):
 class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -257,11 +249,11 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         #x86
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # metal
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
@@ -294,15 +286,18 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=25,
+            max_examples=100,
             passes=["lite_interpolate_fuse_pass"])
 
 
 class TestInterpolateNearestFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-        #                              DataLayoutType.NCHW)
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -352,7 +347,7 @@ class TestInterpolateNearestFusePass(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=25,
+            max_examples=100,
             passes=["lite_interpolate_fuse_pass"])
 
 
