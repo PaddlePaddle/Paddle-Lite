@@ -40,8 +40,7 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
     *axis += input_operand->type.dimensions.count;
   }
   auto output_operand = output_operands[0];
-  if (nnapi()->android_sdk_version >= ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12)
-    return;
+  if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_3) return;
   // NNAPI only supports 2D or 4D input before Android 29
   if (input_dimensions_count != 2 && input_dimensions_count != 4) {
     bool is_ends_with_1 = true;
