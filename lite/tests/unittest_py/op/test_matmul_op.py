@@ -85,7 +85,7 @@ class TestMulOp(AutoScanTest):
             X_shape = [shape0]
             if ((not transpose_X) and (not transpose_Y)):
                 Y_shape = [shape0]
-            if ((transpose_X) and (transpose_Y) and (shape0 != shape1)):
+            if ((transpose_X) and (transpose_Y)):
                 Y_shape = [shape1]
         if (len_X == 2 and len_Y == 2):
             if ((not transpose_X) and (not transpose_Y)):

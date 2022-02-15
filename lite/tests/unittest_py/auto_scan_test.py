@@ -17,6 +17,22 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 parser.add_argument(
+    "--url",
+    type=str,
+    help="Address of model download in model test", )
+parser.add_argument(
+    "--file_name",
+    type=str,
+    help="File name of the compressed model package downloaded in the model test",
+)
+parser.add_argument(
+    "--model_name",
+    type=str,
+    help="Model name(That is, the prefix of the compressed package) in model test",
+)
+parser.add_argument(
+    "--input_shapes", help="The tested model's input_shapes", action="append")
+parser.add_argument(
     "--nnadapter_device_names",
     default="",
     type=str,

@@ -35,19 +35,21 @@ static void FixRELUDepthwiseConv2D(hal::Model* model,
   // Because rknpu_ddk has a bug in the case of RELU+DepthwiseConv2D, Check if
   // the consumers has a depthwise conv2d operation and insert a dummy ADD
   // operation
-  auto operations = GetOperandConsumers(model, output_operand);
-  for (auto& operation_consumer : operations) {
-    if (operation_consumer->type != NNADAPTER_CONV_2D) continue;
+  auto consumer_operations = GetOperandConsumers(model, output_operand);
+  for (auto& consumer_operation : consumer_operations) {
+    if (consumer_operation->type != NNADAPTER_CONV_2D) continue;
     NNADAPTER_CHECK_GT(output_operand->type.dimensions.count, 1);
     auto group = *reinterpret_cast<int32_t*>(
-        operation_consumer->input_operands[6]->buffer);
+        consumer_operation->input_operands[6]->buffer);
     auto input_channel_size = output_operand->type.dimensions.data[1];
     auto output_channel_size =
-        operation_consumer->input_operands[1]->type.dimensions.data[0];
+        consumer_operation->input_operands[1]->type.dimensions.data[0];
     bool is_depthwise_mode = group != 1 && input_channel_size == group &&
                              output_channel_size % input_channel_size == 0;
     if (is_depthwise_mode) {
-      AddDummyOperation(model, output_operand);
+      auto dummy_output_operand = InsertDummyOperation(model, output_operand);
+      UpdateOperationOutputOperands(
+          operation, output_operand, dummy_output_operand);
       break;
     }
   }

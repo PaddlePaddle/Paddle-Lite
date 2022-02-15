@@ -91,11 +91,13 @@ static hal::Operand* AddQuantOperation(
   NNADAPTER_CHECK_GE(input_operand->type.symm_per_layer_params.scale, 0.f);
   // Insert a new operand after input_operand
   auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  InsertOperand(
-      model, input_operand, output_operand, true, reference_operations);
+  CopyOperandType(&output_operand->type, input_operand->type);
+  if (!IsTemporaryShapeOperand(input_operand)) {
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  UpdateOperationInputOperands(
+      reference_operations, input_operand, output_operand);
+  UpdateModelOutputOperands(model, input_operand, output_operand);
   output_operand->type.precision = NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
   // Insert a new quant operation between input_operand and output_operand
   auto quant_operation = AddOperation(model);
@@ -119,11 +121,10 @@ static hal::Operand* AddDequantOperation(
                      NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
   // Insert a new operand before output_operand
   auto input_operand = AddOperand(model);
-  memcpy(&input_operand->type,
-         &output_operand->type,
-         sizeof(NNAdapterOperandType));
-  NNADAPTER_CHECK(InsertOperand(
-      model, output_operand, input_operand, false, reference_operations));
+  CopyOperandType(&input_operand->type, output_operand->type);
+  if (!IsTemporaryShapeOperand(output_operand)) {
+    input_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   input_operand->type.precision = NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
   output_operand->type.precision = NNADAPTER_FLOAT32;
   // Insert a new dequant operation between input_operand and output_operand
@@ -131,6 +132,11 @@ static hal::Operand* AddDequantOperation(
   dequant_operation->type = NNADAPTER_DEQUANTIZE;
   dequant_operation->input_operands = {input_operand};
   dequant_operation->output_operands = {output_operand};
+  NNADAPTER_CHECK_LE(reference_operations.size(), 1);
+  UpdateOperationOutputOperands(
+      reference_operations.empty() ? nullptr : reference_operations[0],
+      output_operand,
+      input_operand);
   return input_operand;
 }
 

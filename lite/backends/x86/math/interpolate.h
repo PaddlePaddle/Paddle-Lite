@@ -60,6 +60,19 @@ void interpolate(lite::Tensor* input,
                  const bool align_corners,
                  const std::string interpolate_type);
 
+void interpolate_v2(lite::Tensor* input,
+                    lite::Tensor* out_size,
+                    std::vector<const lite::Tensor*> list_new_size_tensor,
+                    lite::Tensor* scale_tensor,
+                    lite::Tensor* output,
+                    float scale,
+                    std::vector<float> scale_v,
+                    int out_h,
+                    int out_w,
+                    const int align_mode,
+                    const bool align_corners,
+                    const std::string interpolate_type);
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
