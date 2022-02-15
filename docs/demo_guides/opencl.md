@@ -198,16 +198,16 @@ adb shell "export GLOG_v=1; \
   --repeats=100"
 ```
 
-### 2.3 运行示例3: test_layout_opencl 单元测试
+### 2.3 运行示例3: test_layout_image_opencl 单元测试
 
 编译脚本为前文**针对 Paddle Lite 开发者的编译命令(有单元测试,编译产物)**。
 
 ```bash
 adb shell mkdir -p /data/local/tmp/opencl
-adb push build.lite.android.armv8.gcc.opencl/lite/kernels/opencl/test_layout_opencl /data/local/tmp/opencl/
-adb shell chmod +x /data/local/tmp/opencl/test_layout_opencl
+adb push build.lite.android.armv8.gcc.opencl/lite/kernels/opencl/test_layout_image_opencl /data/local/tmp/opencl/
+adb shell chmod +x /data/local/tmp/opencl/test_layout_image_opencl
 adb shell "export GLOG_v=4; \
-  /data/local/tmp/opencl/test_layout_opencl"
+  /data/local/tmp/opencl/test_layout_image_opencl"
 ```
 
 ## 3. 如何在 Code 中使用
