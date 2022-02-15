@@ -336,15 +336,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                           flag_precision_fp16)
         else:
             for key in tensor:
-                opencl_str = "/target_trans"
-                other_str = "__Mangled_1"
-                index = key.rfind(opencl_str)
+                suffix_str = [
+                    "/target_trans", "__Mangled_1", "/precision_trans"
+                ]
                 paddlekey = key
-                if index > 0:
-                    paddlekey = key[0:index]
-                index = key.rfind(other_str)
-                if index > 0:
-                    paddlekey = key[0:index]
+                for s_str in suffix_str:
+                    index = key.rfind(s_str)
+                    if index > 0:
+                        paddlekey = key[0:index]
+
                 if (paddlekey == "saved_mean" or
                         paddlekey == "saved_variance" or
                         paddlekey == "mean_data" or
