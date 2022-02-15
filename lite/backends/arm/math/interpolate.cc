@@ -23,28 +23,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
-  // get tensor from
-  std::vector<int> vec_new_shape;
-  for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
-    auto tensor = list_new_shape_tensor[i];
-    vec_new_shape.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
-  }
-
-  return vec_new_shape;
-}
-
-template <typename T>
-inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
-  std::vector<T> vec_new_data;
-  auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
-  vec_new_data =
-      std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
-  return vec_new_data;
-}
-
 // The following function bilinear_interp is partially base on
 // https://github.com/Tencent/ncnn/blob/master/src/layer/arm/interp_arm.cpp
 // Tencent is pleased to support the open source community by making ncnn

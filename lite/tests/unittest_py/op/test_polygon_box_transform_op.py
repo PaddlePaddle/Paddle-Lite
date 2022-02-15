@@ -35,12 +35,7 @@ class TestPolygonBoxTransformOp(AutoScanTest):
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
+            thread=[1, 2, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -51,7 +46,7 @@ class TestPolygonBoxTransformOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=10), min_size=2, max_size=4))
+                    min_value=1, max_value=64), min_size=2, max_size=4))
         input_type = draw(st.sampled_from(["type_float"]))
         assume(len(in_shape) == 4)
         assume(in_shape[1] % 2 == 0)
@@ -78,16 +73,6 @@ class TestPolygonBoxTransformOp(AutoScanTest):
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["polygon_box_transform"], (1e-5,
                                                                          1e-5)
-
-    def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.X86:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
-        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
