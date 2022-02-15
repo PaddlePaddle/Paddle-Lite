@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/conv2d_transpose.h"
+#include "core/operation/conv2d.h"
 #include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -23,9 +24,33 @@ namespace amlogic_npu {
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK_EQ(output_padding_height, 0)
-      << "Only support output_padding_height/output_padding_width == 0.";
+      << "Only supports output_padding_height = 0 and output_padding_width = "
+         "0.";
   NNADAPTER_CHECK_EQ(output_padding_width, 0)
-      << "Only support output_padding_height/output_padding_width == 0.";
+      << "Only supports output_padding_height = 0 and output_padding_width = "
+         "0.";
+  NNADAPTER_CHECK_EQ(output_shape_height, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
+  NNADAPTER_CHECK_EQ(output_shape_width, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
+  if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[2],
+        filter_height,
+        auto_pad,
+        &pad_height_top,
+        &pad_height_bottom,
+        stride_height,
+        &dilation_height);
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[3],
+        filter_width,
+        auto_pad,
+        &pad_width_left,
+        &pad_width_right,
+        stride_width,
+        &dilation_width);
+  }
 
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);

@@ -45,10 +45,10 @@ static void RestrictSameInputOutputScale(hal::Model* model,
       AddRequantOperation(model, operation, target_operand, reference_operand);
     }
   } else {
-    NNADAPTER_LOG(FATAL) << "Unhandled case: target_precision="
-                         << OperandPrecisionCodeToString(target_precision)
-                         << ", reference_precision="
-                         << OperandPrecisionCodeToString(reference_precision);
+    NNADAPTER_LOG(WARNING) << "Unhandled case: target_precision="
+                           << OperandPrecisionCodeToString(target_precision)
+                           << ", reference_precision="
+                           << OperandPrecisionCodeToString(reference_precision);
   }
 }
 

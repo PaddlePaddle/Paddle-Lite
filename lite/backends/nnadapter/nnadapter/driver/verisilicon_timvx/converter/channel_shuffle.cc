@@ -31,7 +31,7 @@ int ConvertChannelShuffle(Converter* converter, hal::Operation* operation) {
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto clip_op =
       converter->graph()->CreateOperation<tim::vx::ops::ShuffleChannel>(
-          group, static_cast<int32_t>(-2));
+          group, static_cast<int32_t>(2));
   clip_op->BindInputs({input_tensor});
   clip_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
