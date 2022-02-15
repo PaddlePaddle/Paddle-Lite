@@ -139,8 +139,8 @@ class TestDeformableConvOp(AutoScanTest):
             return self.get_predictor_configs(), ["deformable_conv"], (3e-4,
                                                                        1e-5)
         elif self.get_target().lower() == "arm":
-            return self.get_predictor_configs(), ["deformable_conv"], (1e-4,
-                                                                       1e-5)
+            return self.get_predictor_configs(), ["deformable_conv"], (
+                5e-4, 1e-5)  #arm_linux
         else:
             return self.get_predictor_configs(), ["deformable_conv"], (1e-5,
                                                                        1e-5)
