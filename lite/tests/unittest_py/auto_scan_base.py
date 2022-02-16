@@ -49,6 +49,22 @@ parser.add_argument(
     ],
     required=True)
 parser.add_argument(
+    "--url",
+    type=str,
+    help="Address of model download in model test", )
+parser.add_argument(
+    "--file_name",
+    type=str,
+    help="File name of the compressed model package downloaded in the model test",
+)
+parser.add_argument(
+    "--model_name",
+    type=str,
+    help="Model name(That is, the prefix of the compressed package) in model test",
+)
+parser.add_argument(
+    "--input_shapes", help="The tested model's input_shapes", action="append")
+parser.add_argument(
     "--nnadapter_device_names",
     default="",
     type=str,
@@ -131,6 +147,10 @@ class AutoScanBaseTest(unittest.TestCase):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def prepare_input_data(self, draw):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def sample_predictor_configs(self):
         raise NotImplementedError
 
@@ -148,7 +168,7 @@ class AutoScanBaseTest(unittest.TestCase):
                          predictor_config: CxxConfig) -> bool:
         return True
 
-    def run_test_config(self, model, params, prog_config, pred_config,
+    def run_test_config(self, model, params, pred_config,
                         feed_data) -> Dict[str, np.ndarray]:
         '''
         Test a single case.
@@ -158,17 +178,15 @@ class AutoScanBaseTest(unittest.TestCase):
         self.available_passes_in_framework = self.available_passes_in_framework | set(
             pred_config.pass_builder().all_passes())
 
-        for name, _ in prog_config.inputs.items():
+        for name in feed_data:
             input_tensor = predictor.get_input_handle(name)
             input_tensor.copy_from_cpu(feed_data[name]['data'])
             if feed_data[name]['lod'] is not None:
                 input_tensor.set_lod(feed_data[name]['lod'])
         predictor.run()
         result = {}
-        for out_name, o_name in zip(prog_config.outputs,
-                                    predictor.get_output_names()):
-            result[out_name] = predictor.get_output_handle(o_name).copy_to_cpu(
-            )
+        for o_name in predictor.get_output_names():
+            result[o_name] = predictor.get_output_handle(o_name).copy_to_cpu()
         return result
 
     # count FP16 precision diff
@@ -314,6 +332,14 @@ class AutoScanBaseTest(unittest.TestCase):
         logging.info("SUCCESS: " + msg)
 
     @abc.abstractmethod
+    def is_model_test(self) -> bool:
+        return False
+
+    @abc.abstractmethod
+    def get_model(self, draw):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def create_inference_config(self,
                                 passes: Optional[List[str]]=None,
                                 use_gpu: bool=False,
@@ -443,8 +469,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 base_config = self.create_inference_config(ir_optim=False)
                 logging.info('[ProgramConfig]: ' + str(prog_config))
                 results.append(
-                    self.run_test_config(model, params, prog_config,
-                                         base_config, feed_data))
+                    self.run_test_config(model, params, base_config,
+                                         feed_data))
                 if paddle_lite_not_support_flag:
                     gl.set_lite_not_supported_ops(
                         self.get_target(),
@@ -485,6 +511,43 @@ class AutoScanBaseTest(unittest.TestCase):
         self.assertTrue(status)
         gl.set_success_ops(self.get_target(),
                            self.get_nnadapter_device_name(), sys.argv[0])
+
+    def run_model_test(self, inputs_configs=None, model=None, params=None):
+        status = True
+        paddlelite_configs, _, (atol_, rtol_) = self.sample_predictor_configs()
+        for inputs_config in inputs_configs:
+            feed_data = {}
+            for name, tensor_config in inputs_config.items():
+                feed_data[name] = {
+                    'data': tensor_config.data,
+                    'lod': tensor_config.lod
+                }
+
+            results: List[Dict[str, np.ndarray]] = []
+
+            # baseline: cpu no ir_optim run
+            base_config = self.create_inference_config(ir_optim=False)
+            results.append(
+                self.run_test_config(model, params, base_config, feed_data))
+
+            for paddlelite_config in paddlelite_configs:
+                pred_config = paddlelite_config.value()
+
+                try:
+                    result, opt_model_bytes = self.run_lite_config(
+                        model, params, feed_data, pred_config)
+                    results.append(result)
+                    self.assert_tensors_near(atol_, rtol_, results[-1],
+                                             results[0])
+                except Exception as e:
+                    self.fail_log(
+                        self.paddlelite_config_str(pred_config) +
+                        '\033[1;31m \nERROR INFO: {}\033[0m'.format(str(e)))
+                    status = False
+                    break
+                self.success_log('PredictorConfig: ' +
+                                 self.paddlelite_config_str(pred_config))
+            self.assertTrue(status)
 
     def inference_config_str(self, config) -> bool:
         dic = {}
@@ -551,12 +614,15 @@ class AutoScanBaseTest(unittest.TestCase):
                         main_block.op(i).type(), target_, precision_, layout_,
                         current_target_, current_precision_, current_layout_))
 
-    def run_and_statis(self,
-                       quant=False,
-                       max_examples=100,
-                       reproduce=None,
-                       min_success_num=25,
-                       passes=None):
+    def run_and_statis(
+            self,
+            quant=False,
+            max_examples=100,
+            reproduce=None,
+            min_success_num=25,
+            passes=None,
+            model=None,
+            params=None, ):
         self.init_statistical_parameters()
         settings.register_profile(
             "dev",
@@ -581,8 +647,15 @@ class AutoScanBaseTest(unittest.TestCase):
         def program_generator(draw):
             return self.sample_program_configs(draw)
 
+        def inputs_generator(draw):
+            return self.prepare_input_data(draw)
+
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
+
+        def run_model_test(inputs_configs):
+            return self.run_model_test(
+                inputs_configs=[inputs_configs], model=model, params=params)
 
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         gl.set_all_test_ops(self.get_target(),
@@ -598,37 +671,50 @@ class AutoScanBaseTest(unittest.TestCase):
                 "Args Error: Please set nnadapter_device_names when target=nnadapter!"
             )
 
-        generator = st.composite(program_generator)
-        loop_func = given(generator())(run_test)
+        if self.is_model_test():
+            generator = st.composite(inputs_generator)
+            loop_func = given(generator())(run_model_test)
+        else:
+            generator = st.composite(program_generator)
+            loop_func = given(generator())(run_test)
+
         if reproduce is not None:
             loop_func = reproduce(loop_func)
         logging.info("Start to running test of {}".format(type(self)))
         loop_func()
-        logging.info(
-            "===================Statistical Information===================")
-        logging.info("Number of Generated Programs: {}".format(max_examples))
-        logging.info("Number of Predictor Kinds: {}".format(
-            int(self.num_predictor_kinds)))
-        self.assertTrue(self.num_predictor_kinds > 0,
-                        "Number of Predictor Kinds must be greater than 0")
-        logging.info("Number of Ran Programs: {}".format(
-            self.num_ran_programs_list))
-        logging.info("Number of Invalid Programs: {}".format(
-            self.num_invalid_programs_list))
-        logging.info("Number of Ignored Tests: {}".format(
-            self.num_ignore_tests_list))
-        successful_ran_programs = int(
-            (sum(self.num_ran_programs_list) + sum(self.num_ignore_tests_list))
-            / self.num_predictor_kinds)
+        if self.is_model_test():
+            logging.info(
+                "===================Statistical Information===================")
+            logging.info("Number of Input Configs: {}".format(max_examples))
+            logging.info("Number of Predictor Kinds: {}".format(
+                int(self.num_predictor_kinds)))
+        else:
+            logging.info(
+                "===================Statistical Information===================")
+            logging.info("Number of Generated Programs: {}".format(
+                max_examples))
+            logging.info("Number of Predictor Kinds: {}".format(
+                int(self.num_predictor_kinds)))
+            self.assertTrue(self.num_predictor_kinds > 0,
+                            "Number of Predictor Kinds must be greater than 0")
+            logging.info("Number of Ran Programs: {}".format(
+                self.num_ran_programs_list))
+            logging.info("Number of Invalid Programs: {}".format(
+                self.num_invalid_programs_list))
+            logging.info("Number of Ignored Tests: {}".format(
+                self.num_ignore_tests_list))
+            successful_ran_programs = int(
+                (sum(self.num_ran_programs_list) +
+                 sum(self.num_ignore_tests_list)) / self.num_predictor_kinds)
 
-        logging.info(
-            "Number of successfully ran programs approximately equal to {}".
-            format(successful_ran_programs))
-        if successful_ran_programs < min_success_num:
-            logging.fatal(
-                "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
-                format(min_success_num, successful_ran_programs))
-            assert False
+            logging.info(
+                "Number of successfully ran programs approximately equal to {}".
+                format(successful_ran_programs))
+            if successful_ran_programs < min_success_num:
+                logging.fatal(
+                    "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
+                    format(min_success_num, successful_ran_programs))
+                assert False
 
     @abc.abstractmethod
     def run_lite_config(self, model, params, feed_data,

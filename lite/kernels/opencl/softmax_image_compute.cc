@@ -34,9 +34,15 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     softmax_param_ = param_.get_mutable<param_t>();
     auto x_dims = softmax_param_->x->dims();
     int axis = softmax_param_->axis;
-    axis = axis < 0 ? x_dims.size() + axis : axis;
-    axis_ = 4 - x_dims.size() + axis;
-
+    VLOG(4) << "x_dims: " << x_dims;
+    VLOG(4) << "axis: " << axis;
+    if (x_dims.size() > 1) {
+      axis = axis < 0 ? x_dims.size() + axis : axis;
+      axis_ = 4 - x_dims.size() + axis;
+    } else {      // for dim 1
+      axis_ = 1;  // process width as channel for folder format
+    }
+    VLOG(4) << "axis_: " << axis_;
     if (x_dims.size() == 2 && axis_ == 3) {
       onexone_flag_ = true;
       kernel_func_name_ = "softmax_1x1";
@@ -46,6 +52,8 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       kernel_func_name_ = "softmax_height";
     } else if (axis_ == 1) {
       kernel_func_name_ = "softmax_channel";
+    } else if (axis_ == 0) {
+      kernel_func_name_ = "softmax_batch";
     } else {
       LOG(FATAL) << "do not support this axis value!"
                  << "axis value is: " << axis_;
@@ -81,6 +89,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto* out_img = MUTABLE_DATA_GPU(
         softmax_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
 
+    VLOG(4) << "extend_in_dims: " << extend_in_dims;
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
@@ -97,7 +106,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(3, UP_DIV(static_cast<int>(extend_in_dims[1]), 4));
       CL_CHECK_FATAL(status);
-    } else if (axis_ == 3 || axis_ == 2) {
+    } else if (axis_ == 3 || axis_ == 2 || axis_ == 0) {
       status = kernel.setArg(2, static_cast<int>(extend_in_dims[0]));
       CL_CHECK_FATAL(status);
       status = kernel.setArg(3, static_cast<int>(extend_in_dims[1]));
@@ -143,7 +152,6 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   void SetGlobalLocal() {
     CLImageConverterFolder folder_convertor;
     out_img_shape_ = folder_convertor.InitImageDimInfoWith(last_x_dims_);
-
     if (onexone_flag_) {
       local_work_size_ = cl::NDRange(32, 1, 1);
       global_work_size_ =
@@ -160,21 +168,34 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       int c_blk = default_work_size.data()[0];
       int w = default_work_size.data()[1];
       int bh = default_work_size.data()[2];
-      if (axis_ == 3) {
+      if (axis_ == 3) {  // for width
         global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
                                         static_cast<cl::size_type>(bh),
                                         static_cast<cl::size_type>(1)};
-      } else if (axis_ == 2) {
+      } else if (axis_ == 2) {  // for height
         global_work_size_ =
             cl::NDRange{static_cast<cl::size_type>(c_blk * w),
                         static_cast<cl::size_type>(last_x_dims_[0]),
                         static_cast<cl::size_type>(1)};
+      } else if (axis_ == 0) {  // for batch
+        global_work_size_ = cl::NDRange{
+            static_cast<cl::size_type>(c_blk * w),
+            static_cast<cl::size_type>(last_x_dims_[last_x_dims_.size() - 2]),
+            static_cast<cl::size_type>(1)};
       } else {
         global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
                                         static_cast<cl::size_type>(w),
                                         static_cast<cl::size_type>(bh)};
+        if (last_x_dims_.size() == 1) {
+          global_work_size_ =
+              cl::NDRange{static_cast<cl::size_type>(UP_DIV(w, 4)),
+                          static_cast<cl::size_type>(1),
+                          static_cast<cl::size_type>(1)};
+        }
       }
     }
+    VLOG(4) << "gws: " << global_work_size_[0] << ", " << global_work_size_[1]
+            << ", " << global_work_size_[2];
   }
 
   const std::vector<float> GetChannelMask(int channels) {
@@ -194,6 +215,11 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     } else {
       for (int i = 0; i < in_dims.size(); i++) {
         extend_dims[4 - in_dims.size() + i] = in_dims[i];
+      }
+      if (in_dims.size() ==
+          1) {  // transform dim_w to dim_c for dim1 folder case
+        extend_dims[1] = in_dims[0];
+        extend_dims[3] = 1;
       }
     }
     return DDim(extend_dims);
