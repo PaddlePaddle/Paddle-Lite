@@ -656,6 +656,11 @@ void sgemv_trans(const int M,
         }
       }
       // clang-format off
+      bool no_compute0 = in0_ptr == zero_buf;
+      bool no_compute1 = in1_ptr == zero_buf;
+      bool no_compute2 = in2_ptr == zero_buf;
+      bool no_compute3 = in3_ptr == zero_buf;
+
       if (m_cnt8 > 0) {
         int cnt8 = m_cnt8;
         asm volatile(
@@ -666,20 +671,32 @@ void sgemv_trans(const int M,
             "vld1.32  {d18-d21},[%[in3]]! \n" /* load in3 to q9, q10*/
             "1:\n"
             "vld1.32  {d0-d3},  [%[y]]    \n" /*  load y to q0, q1  */
+            "cmp %[no0], #1 \n"
+            "beq 2f \n"
             "vmla.f32 q0, q3,   d4[0]     \n" /*  q0 += q3 * q2[0]  */
             "vmla.f32 q1, q4,   d4[0]     \n" /*  q1 += q4 * q2[0]  */
+            "2:\n"
             "pld  [%[in0]]                \n" /*    preload in0     */
             "vld1.32  {d6-d9},  [%[in0]]! \n" /* load in0 to q3, q4 */
+            "cmp %[no1], #1 \n"
+            "beq 3f \n"   
             "vmla.f32 q0, q5,   d4[1]     \n" /*  q0 += q5 * q2[1]  */
             "vmla.f32 q1, q6,   d4[1]     \n" /*  q1 += q6 * q2[1]  */
+            "3:\n"   
             "pld  [%[in1]]                \n" /*    preload in1     */
             "vld1.32  {d10-d13},[%[in1]]! \n" /* load in0 to q5, q6 */
+            "cmp %[no2], #1 \n"
+            "beq 4f \n"
             "vmla.f32 q0, q7,   d5[0]     \n" /*  q0 += q7 * q2[2]  */
             "vmla.f32 q1, q8,   d5[0]     \n" /*  q1 += q8 * q2[2]  */
+            "4:\n"
             "pld  [%[in2]]                \n" /*    preload in2     */
             "vld1.32  {d14-d17},[%[in2]]! \n" /* load in0 to q7, q8 */
+            "cmp %[no3], #1 \n"
+            "beq 5f \n"     
             "vmla.f32 q0, q9,   d5[1]     \n" /*  q0 += q9 * q2[3]  */
             "vmla.f32 q1, q10,  d5[1]     \n" /*  q1 += q10 * q2[3] */
+            "5:\n"
             "subs %[cnt], %[cnt], #1      \n" /*      sub cnt       */
             "pld  [%[in3]]                \n" /*    preload in3     */
             "vst1.32  {d0-d3},  [%[y]]!   \n" /*  store q0, q1 to y */
@@ -696,7 +713,7 @@ void sgemv_trans(const int M,
               [in2] "+r"(in2_ptr),
               [in3] "+r"(in3_ptr),
               [y] "+r"(y_ptr)
-            : [x] "r"(x_ptr)
+            : [x] "r"(x_ptr),[no0] "r"(no_compute0),[no1] "r"(no_compute1),[no2] "r"(no_compute2),[no3] "r"(no_compute3)
             : "q0", "q1", "q2", "q3", "q4", "q5", "q6", 
               "q7", "q8", "q9", "q10", "cc", "memory"
         );
@@ -711,16 +728,29 @@ void sgemv_trans(const int M,
             "vld1.32  {d10-d11},[%[x]]    \n" /* load x   to q5  */
             "1:\n"
             "vld1.32  {d0-d1},  [%[y]]    \n" /*   load y to q0    */
+            "cmp %[no0], #1 \n"
+            "beq 2f \n"
             "vmla.f32 q0, q1,   d10[0]    \n" /* q0 += q1 * q5[0]  */
+            "2:\n"     
             "pld  [%[in0]]                \n" /*    preload in0    */
             "vld1.32  {d2-d3},  [%[in0]]! \n" /*  load in0 to q1   */
+            "cmp %[no1], #1 \n"
+            "beq 3f \n"
             "vmla.f32 q0, q2,   d10[1]    \n" /* q0 += q2 * q5[1]  */
+            /* */
+            "3:\n" 
             "pld  [%[in1]]                \n" /*    preload in1    */
             "vld1.32  {d4-d5},  [%[in1]]! \n" /*  load in0 to q2   */
+            "cmp %[no2], #1 \n"
+            "beq 4f \n"
             "vmla.f32 q0, q3,   d11[0]    \n" /* q0 += q3 * q5[2]  */
+            "4:\n" 
             "pld  [%[in2]]                \n" /*    preload in2    */
             "vld1.32  {d6-d7},  [%[in2]]! \n" /*  load in0 to q3   */
+            "cmp %[no3], #1 \n"
+            "beq 5f \n" 
             "vmla.f32 q0, q4,   d11[1]    \n" /* q0 += q4 * q5[3]  */
+            "5:\n"
             "subs %[cnt], %[cnt], #1      \n" /*      sub cnt      */
             "pld  [%[in3]]                \n" /*    preload in3    */
             "vst1.32  {d0-d1},  [%[y]]!   \n" /*  store q0 to y    */
@@ -736,16 +766,16 @@ void sgemv_trans(const int M,
               [in2] "+r"(in2_ptr),
               [in3] "+r"(in3_ptr),
               [y] "+r"(y_ptr)
-            : [x] "r"(x_ptr)
+            : [x] "r"(x_ptr), [no0] "r"(no_compute0),[no1] "r"(no_compute1),[no2] "r"(no_compute2),[no3] "r"(no_compute3)
             : "q0", "q1", "q2", "q3", "q4", "q5", "cc", "memory"
         );
       }
       // clang-format on
       for (int r = 0; r < m_remain; ++r) {
-        float val0 = x_ptr[0] * in0_ptr[r];
-        float val1 = x_ptr[1] * in1_ptr[r];
-        float val2 = x_ptr[2] * in2_ptr[r];
-        float val3 = x_ptr[3] * in3_ptr[r];
+        float val0 = no_compute0 ? 0 : x_ptr[0] * in0_ptr[r];
+        float val1 = no_compute1 ? 0 : x_ptr[1] * in1_ptr[r];
+        float val2 = no_compute2 ? 0 : x_ptr[2] * in2_ptr[r];
+        float val3 = no_compute3 ? 0 : x_ptr[3] * in3_ptr[r];
         y_ptr[r] += val0 + val1 + val2 + val3;
       }
     }
