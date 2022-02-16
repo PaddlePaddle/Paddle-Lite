@@ -30,6 +30,8 @@ import hypothesis.strategies as st
 class TestNearestV2InterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
