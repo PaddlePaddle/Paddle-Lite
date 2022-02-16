@@ -207,7 +207,7 @@ __kernel void input_layout(__read_only image2d_t input_image,
     }
 
   } else {
-    output.y = 0.0f;
+    output.y = (CL_DTYPE)(0.0f);
   }
 
   if (out_Stride - out_w * 4 >= 3) {
@@ -223,7 +223,7 @@ __kernel void input_layout(__read_only image2d_t input_image,
       output.z = input2.w;
     }
   } else {
-    output.z = 0.0f;
+    output.z = (CL_DTYPE)(0.0f);
   }
 
   if (out_Stride - out_w * 4 >= 4) {
@@ -238,7 +238,7 @@ __kernel void input_layout(__read_only image2d_t input_image,
       output.w = input3.w;
     }
   } else {
-    output.w = 0.0f;
+    output.w = (CL_DTYPE)(0.0f);
   }
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }
@@ -335,7 +335,7 @@ __kernel void output_layout(__read_only image2d_t input_image,
     }
 
   } else {
-    output.y = 0.0f;
+    output.y = (CL_DTYPE)(0.0f);
   }
 
   if (out_C - out_c * 4 >= 3) {
@@ -351,7 +351,7 @@ __kernel void output_layout(__read_only image2d_t input_image,
       output.z = input2.w;
     }
   } else {
-    output.z = 0.0f;
+    output.z = (CL_DTYPE)(0.0f);
   }
 
   if (out_C - out_c * 4 >= 4) {
@@ -366,7 +366,7 @@ __kernel void output_layout(__read_only image2d_t input_image,
       output.w = input3.w;
     }
   } else {
-    output.w = 0.0f;
+    output.w = (CL_DTYPE)(0.0f);
   }
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }

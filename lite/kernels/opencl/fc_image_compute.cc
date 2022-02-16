@@ -27,6 +27,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& param = this->Param<operators::FcParam>();
     const auto x_dims = param.input->dims();
+    const auto out_dims = param.output->dims();
     const auto w_t = param.w;
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
@@ -53,8 +54,13 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     // convert weights from cpu to gpu
     auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    layout_input_image_ = std::unique_ptr<Tensor>(new Tensor);
-    layout_output_image_ = std::unique_ptr<Tensor>(new Tensor);
+    if (x_dims.size() > 2 && x_dims.size() <= 4) {
+      layout_input_image_ = std::unique_ptr<Tensor>(new Tensor);
+    }
+    if (out_dims.size() > 2) {
+      layout_output_image_ = std::unique_ptr<Tensor>(new Tensor);
+    }
+
     const auto w_dims = w_t->dims();
 
     auto w_ext_dims = w_dims;
@@ -136,6 +142,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   void ReInitWhenNeeded() override {
     auto& param = this->Param<operators::FcParam>();
     const auto x_dims = param.input->dims();
+    const auto out_dims = param.output->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
@@ -173,19 +180,23 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
-      context.cl_context()->AddKernel(
-          "input_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
-      STL::stringstream kernel_layout_key;
-      kernel_layout_key << "input_layout" << build_options_ << time_stamp_;
-      kernel_input_layout_ =
-          context.cl_context()->GetKernel(kernel_layout_key.str());
+      if (x_dims.size() > 2 && x_dims.size() <= 4) {
+        context.cl_context()->AddKernel(
+            "input_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
+        STL::stringstream kernel_layout_key;
+        kernel_layout_key << "input_layout" << build_options_ << time_stamp_;
+        kernel_input_layout_ =
+            context.cl_context()->GetKernel(kernel_layout_key.str());
+      }
 
-      context.cl_context()->AddKernel(
-          "output_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
-      STL::stringstream kernel_output_key;
-      kernel_output_key << "output_layout" << build_options_ << time_stamp_;
-      kernel_output_layout_ =
-          context.cl_context()->GetKernel(kernel_output_key.str());
+      if (out_dims.size() > 2) {
+        context.cl_context()->AddKernel(
+            "output_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
+        STL::stringstream kernel_output_key;
+        kernel_output_key << "output_layout" << build_options_ << time_stamp_;
+        kernel_output_layout_ =
+            context.cl_context()->GetKernel(kernel_output_key.str());
+      }
 
       SetGlobalLocalWorkSize();
     }
@@ -196,13 +207,11 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     auto x_dims = param.input->dims();
     auto out_dims = param.output->dims();
     cl::Image2D* x_img_src = DATA_GPU(param.input);
-    cl::NDRange layout_gws;
+
     if (x_dims.size() > 2 && x_dims.size() <= 4) {
+      cl::NDRange layout_gws;
       int in_num_col_dims = param.in_num_col_dims;
-      std::vector<size_t> new_dims = {1, 1, 1, 1};
-      for (int j = 0; j < x_dims.size(); ++j) {
-        new_dims[4 - x_dims.size() + j] = x_dims[j];
-      }
+      auto new_dims = Broadcast2GpuShape(x_dims);
 
       int N = new_dims[0];
       int C = new_dims[1];
