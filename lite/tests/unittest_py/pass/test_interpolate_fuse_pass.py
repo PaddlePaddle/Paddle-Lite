@@ -33,11 +33,7 @@ def sample_program_configs(draw, interp_type):
         st.sampled_from(['interpolate_type_1', 'interpolate_type_2']))
 
     #shape params
-    # shape_op_input_shape = draw(
-    #     st.lists(
-    #         st.integers(
-    #             min_value=1, max_value=32), min_size=4, max_size=4))
-    batch = draw(st.integers(min_value=1, max_value=4))
+    batch = draw(st.integers(min_value=1, max_value=2))
     channel = draw(st.integers(min_value=1, max_value=32))
     height = draw(st.integers(min_value=3, max_value=100))
     width = draw(st.integers(min_value=3, max_value=100))
