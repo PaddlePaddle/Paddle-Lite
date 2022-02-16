@@ -106,7 +106,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
     }
   } else {
     for (int i = 0; i < n_; i++) {
-      param.output_scale = param.input_scale * param.weight_scale[i];
+      param.output_scale =
+          param.input_scale * param.weight_scale[i] * param.alpha;
       scale_[i] = param.output_scale;
     }
   }
@@ -462,7 +463,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 1); ++i) {
       o_data[i] = 0;
       for (size_t j = 0; j < y_dims[0]; ++j) {
-        o_data[i] += x_data[i * y_dims[0] + j] * y_data[j] * alpha;
+        o_data[i] += x_data[i * y_dims[0] + j] * y_data[j];
       }
     }
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
@@ -472,7 +473,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
         y_transpose == false) {
       o_data[0] = 0.;
       for (size_t i = 0; i < x_dims[0]; ++i) {
-        o_data[0] += x_data[i] * y_data[i] * alpha;
+        o_data[0] += x_data[i] * y_data[i];
       }
     }
     // x: [M], y: [N], x_transpose: true, y_transpose: true, out: [M, N]
@@ -489,11 +490,6 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                    nullptr,
                                    act_param,
                                    &ctx);
-        if (fabsf(alpha - 1.f) > 1e-8f) {
-          for (size_t i = 0; i < param.Out->dims().production(); ++i) {
-            o_data[i] *= alpha;
-          }
-        }
       } else {
         lite::arm::math::gemm_s8(false,
                                  false,
