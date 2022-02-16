@@ -23,33 +23,54 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-static void RestrictSameInputOutputScale(hal::Model* model,
-                                         hal::Operation* operation,
-                                         hal::Operand* target_operand,
-                                         hal::Operand* reference_operand,
-                                         double threshold = 1e-5f) {
-  auto& target_type = target_operand->type;
-  auto& reference_type = reference_operand->type;
-  auto target_precision = target_type.precision;
-  auto reference_precision = reference_type.precision;
-  if (IsAsymmPerLayerQuantType(target_precision) &&
-      IsAsymmPerLayerQuantType(reference_precision)) {
-    if (fabs(target_type.asymm_per_layer_params.scale -
-             reference_type.asymm_per_layer_params.scale) > threshold) {
-      AddRequantOperation(model, operation, target_operand, reference_operand);
-    }
-  } else if (IsSymmPerLayerQuantType(target_precision) &&
-             IsSymmPerLayerQuantType(reference_precision)) {
-    if (fabs(target_type.symm_per_layer_params.scale -
-             reference_type.symm_per_layer_params.scale) > threshold) {
-      AddRequantOperation(model, operation, target_operand, reference_operand);
-    }
-  } else {
-    NNADAPTER_LOG(WARNING) << "Unhandled case: target_precision="
-                           << OperandPrecisionCodeToString(target_precision)
-                           << ", reference_precision="
-                           << OperandPrecisionCodeToString(reference_precision);
+static bool RestrictInputOutputScale(hal::Model* model,
+                                     hal::Operation* operation,
+                                     hal::Operand* target_operand,
+                                     float quant_scale,
+                                     int32_t zero_point,
+                                     bool is_output = false,
+                                     double threshold = 1e-5f) {
+  if (!IsAsymmPerLayerQuantType(target_operand->type.precision)) {
+    return false;
   }
+  if (fabs(target_operand->type.asymm_per_layer_params.scale - quant_scale) <=
+          threshold &&
+      target_operand->type.asymm_per_layer_params.zero_point == zero_point) {
+    return false;
+  }
+  NNAdapterAsymmPerLayerQuantParams asymm_per_layer_params{quant_scale,
+                                                           zero_point};
+  if (is_output) {
+    auto requantized_operand =
+        InsertRequantOperation(model, target_operand, &asymm_per_layer_params);
+    UpdateOperationOutputOperands(
+        operation, target_operand, requantized_operand);
+  } else {
+    auto requantized_operand =
+        AppendRequantOperation(model, target_operand, &asymm_per_layer_params);
+    UpdateOperationInputOperands(
+        {operation}, target_operand, requantized_operand);
+  }
+  return true;
+}
+
+static bool RestrictInputOutputScale(hal::Model* model,
+                                     hal::Operation* operation,
+                                     hal::Operand* target_operand,
+                                     hal::Operand* reference_operand,
+                                     bool is_output = false,
+                                     double threshold = 1e-5f) {
+  if (!IsAsymmPerLayerQuantType(reference_operand->type.precision)) {
+    return false;
+  }
+  return RestrictInputOutputScale(
+      model,
+      operation,
+      target_operand,
+      reference_operand->type.asymm_per_layer_params.scale,
+      reference_operand->type.asymm_per_layer_params.zero_point,
+      is_output,
+      threshold);
 }
 
 void RestrictInputOutputQuantParams(hal::Model* model) {
@@ -68,8 +89,8 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
     switch (operation->type) {
       case NNADAPTER_CONCAT:
         for (uint32_t i = 0; i < input_count - 1; i++) {
-          RestrictSameInputOutputScale(
-              model, operation, input_operands[i], output_operands[0]);
+          RestrictInputOutputScale(
+              model, operation, input_operands[i], output_operands[0], false);
         }
         break;
       case NNADAPTER_FLATTEN:
@@ -77,14 +98,18 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_UNSQUEEZE:
-        RestrictSameInputOutputScale(
-            model, operation, input_operands[0], output_operands[0]);
+        RestrictInputOutputScale(
+            model, operation, input_operands[0], output_operands[0], false);
         break;
       case NNADAPTER_SPLIT:
         for (uint32_t i = 0; i < output_count; i++) {
-          RestrictSameInputOutputScale(
-              model, operation, output_operands[i], input_operands[0]);
+          RestrictInputOutputScale(
+              model, operation, output_operands[i], input_operands[0], true);
         }
+        break;
+      case NNADAPTER_SOFTMAX:
+        RestrictInputOutputScale(
+            model, operation, output_operands[0], 1 / 256.0f, 0, true);
         break;
       case NNADAPTER_ADD:
       case NNADAPTER_AVERAGE_POOL_2D:
@@ -99,7 +124,6 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
       case NNADAPTER_MUL:
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
-      case NNADAPTER_SOFTMAX:
       case NNADAPTER_SUB:
       case NNADAPTER_TANH:
         break;
