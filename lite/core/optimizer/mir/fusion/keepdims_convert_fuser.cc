@@ -83,7 +83,6 @@ void KeepdimsConvertFuser::InsertNewNode(SSAGraph* graph,
   for (auto attr_name : attr_names_) {
     op_desc->SetAttr(attr_name, true);
     op_desc->SetOutput("Out", {new_input_name_});
-    break;
   }
 
   IR_NODE_LINK_TO(matched.at("op"), new_input_arg);
