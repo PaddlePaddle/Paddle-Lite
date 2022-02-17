@@ -164,9 +164,9 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(11, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(12, x_dims[1]);
+    status = kernel.setArg(12, static_cast<int>(x_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, out_dims[1]);
+    status = kernel.setArg(13, static_cast<int>(out_dims[1]));
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
