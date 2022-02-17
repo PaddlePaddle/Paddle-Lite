@@ -80,7 +80,7 @@ static bool RestrictInputOutputScale(hal::Model* model,
       threshold);
 }
 
-static void RestrictOutputBiasScale(hal::Model* model,
+static bool RestrictOutputBiasScale(hal::Model* model,
                                     hal::Operation* operation,
                                     hal::Operand* input_operand,
                                     hal::Operand* weight_operand,
