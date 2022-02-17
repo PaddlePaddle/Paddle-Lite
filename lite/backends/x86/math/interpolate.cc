@@ -637,6 +637,109 @@ void interpolate(lite::Tensor* input,
   }
 }
 
+void interpolate_v2(lite::Tensor* input,
+                    lite::Tensor* out_size,
+                    std::vector<const lite::Tensor*> list_new_size_tensor,
+                    lite::Tensor* scale_tensor,
+                    lite::Tensor* output,
+                    float scale,
+                    std::vector<float> scale_v,
+                    int out_h,
+                    int out_w,
+                    const int align_mode,
+                    const bool align_corners,
+                    const std::string interpolate_type) {
+  // format NCHW
+  int n = input->dims()[0];
+  int c = input->dims()[1];
+  int in_h = input->dims()[2];
+  int in_w = input->dims()[3];
+  float scale_h = -1;
+  float scale_w = -1;
+  if (list_new_size_tensor.size() > 0) {
+    // have size tensor
+    auto new_size = get_new_shape(list_new_size_tensor);
+    out_h = new_size[0];
+    out_w = new_size[1];
+  } else {
+    if (scale_tensor != nullptr) {
+      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+      if (scale_data.size() > 1) {
+        scale_h = scale_data[0];
+        scale_w = scale_data[1];
+      } else {
+        scale_h = scale_data[0];
+        scale_w = scale_data[0];
+      }
+    } else {
+      if (scale_v.size() > 1 && scale_v[0] > 0 && scale_v[1] > 0) {
+        scale_h = scale_v[0];
+        scale_w = scale_v[1];
+      }
+    }
+
+    if (scale_h > 0. && scale_w > 0.) {
+      out_h = static_cast<int>(in_h * scale_h);
+      out_w = static_cast<int>(in_w * scale_w);
+    }
+
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_h = out_size_data[0];
+      out_w = out_size_data[1];
+    }
+  }
+  output->Resize({n, c, out_h, out_w});
+
+  float ratio_h = 0.f;
+  float ratio_w = 0.f;
+  if (out_h > 1) {
+    float new_scale_h = 0.f;
+    new_scale_h = (scale_h > 0) ? static_cast<float>(1. / scale_h)
+                                : static_cast<float>(in_h) / out_h;
+    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_h - 1)
+                              : static_cast<float>(new_scale_h);
+  }
+  if (out_w > 1) {
+    float new_scale_w = 0.f;
+    new_scale_w = (scale_w > 0) ? static_cast<float>(1. / scale_w)
+                                : static_cast<float>(in_w) / out_w;
+    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
+                              : static_cast<float>(new_scale_w);
+  }
+
+  const float* input_data = input->data<float>();
+  float* output_data = output->mutable_data<float>();
+  if ("Bilinear" == interpolate_type) {
+    bilinear_interp(input_data,
+                    output_data,
+                    ratio_h,
+                    ratio_w,
+                    in_h,
+                    in_w,
+                    n,
+                    c,
+                    out_h,
+                    out_w,
+                    align_corners,
+                    align_mode);
+  } else if ("Nearest" == interpolate_type) {
+    nearest_interp(input_data,
+                   output_data,
+                   ratio_h,
+                   ratio_w,
+                   n,
+                   c,
+                   in_h,
+                   in_w,
+                   out_h,
+                   out_w,
+                   align_corners);
+  } else {
+    LOG(FATAL) << "Not supported interpolate_type: " << interpolate_type;
+  }
+}
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

@@ -74,6 +74,11 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
   int output_dim_idx =
       op->HasAttr("output_dim_idx") ? op->GetAttr<int>("output_dim_idx") : 0;
   auto out_name = op->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
   // Convert to NNAdapter operands and operation
   // Input Operand
   auto input_operand =
@@ -86,6 +91,10 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
   switch (dtype) {
     case static_cast<int32_t>(lite::core::FluidType::FP32):
       zero_value_operand = converter->AddConstantOperand(zero_value);
+      break;
+    case static_cast<int32_t>(lite::core::FluidType::INT8):
+      zero_value_operand = converter->AddConstantOperand(
+          static_cast<int8_t>(zero_value), out_scales);
       break;
     case static_cast<int32_t>(lite::core::FluidType::INT32):
       zero_value_operand =
@@ -104,7 +113,8 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
       break;
   }
   // Fill like out operand
-  auto fill_like_out_operand = converter->AddOutputOperand(out_name);
+  auto fill_like_out_operand =
+      converter->AddOutputOperand(out_name, out_scales);
   // Fill like operation
   converter->AddOperation(NNADAPTER_FILL_LIKE,
                           {input_operand, zero_value_operand},
@@ -118,13 +128,19 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
   auto starts = std::vector<int>(slice_axes.size(), 0);
   auto ends = std::vector<int>(slice_axes.size(), 1);
   auto steps = std::vector<int>(slice_axes.size(), 1);
-  auto slice_out_operand = converter->AddSliceOperation(
-      fill_like_out_operand, slice_axes, starts, ends, steps, out_name);
+  auto slice_out_operand = converter->AddSliceOperation(fill_like_out_operand,
+                                                        slice_axes,
+                                                        starts,
+                                                        ends,
+                                                        steps,
+                                                        out_name,
+                                                        out_scales);
   // Reshape operation
   std::vector<int> input_shape = std::vector<int>(shape_size, 1);
   input_shape[output_dim_idx] = -1;
   auto input_shape_operand = converter->AddConstantOperand(input_shape);
-  auto reshape_output_operand = converter->AddOutputOperand(out_name);
+  auto reshape_output_operand =
+      converter->AddOutputOperand(out_name, out_scales);
   converter->AddOperation(NNADAPTER_RESHAPE,
                           {slice_out_operand, input_shape_operand},
                           {reshape_output_operand});
@@ -139,8 +155,8 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
   auto fuse_code_operand =
       converter->AddConstantOperand(static_cast<int32_t>(NNADAPTER_FUSED_NONE));
   auto dummy_input_operand = converter->AddConstantOperand(
-      std::vector<float>(shape_count, value), DDim(out_shape));
-  auto dummy_output_operand = converter->AddOutputOperand(out_name);
+      std::vector<float>(shape_count, value), DDim(out_shape), out_scales);
+  auto dummy_output_operand = converter->AddOutputOperand(out_name, out_scales);
   converter->AddOperation(
       NNADAPTER_ADD,
       {reshape_output_operand, dummy_input_operand, fuse_code_operand},

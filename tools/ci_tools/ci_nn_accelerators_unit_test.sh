@@ -1275,6 +1275,7 @@ function android_nnapi_prepare_device() {
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
 
     # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
     local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libandroid_nnapi.so)
     $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
     $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"

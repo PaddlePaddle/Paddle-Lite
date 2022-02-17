@@ -78,6 +78,9 @@ class Converter {
                                      int32_t* dimensions_data,
                                      uint32_t dimensions_count,
                                      float quant_scale);
+  // Float32 variable operand
+  uint32_t AddFloat32VariableOperand(int32_t* dimensions_data,
+                                     uint32_t dimensions_count);
   // Quant8 variable operand with asymmetric per-layer quantizion
   uint32_t AddQuant8VariableOperand(int32_t* dimensions_data,
                                     uint32_t dimensions_count,

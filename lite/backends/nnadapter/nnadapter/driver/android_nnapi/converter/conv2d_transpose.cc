@@ -24,15 +24,18 @@ namespace android_nnapi {
 
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // NHWC
-  auto output_dimensions = output_operand->type.dimensions.data;
-  NNADAPTER_CHECK_NE(output_dimensions[1], NNADAPTER_UNKNOWN)
-      << "output_dimensions[1] is unknown, dynamic shape is still not "
-         "supported.";
-  NNADAPTER_CHECK_NE(output_dimensions[2], NNADAPTER_UNKNOWN)
-      << "output_dimensions[2] is unknown, dynamic shape is still not "
-         "supported.";
+  NNADAPTER_CHECK_EQ(output_padding_height, 0)
+      << "Only supports output_padding_height = 0 and output_padding_width = "
+         "0.";
+  NNADAPTER_CHECK_EQ(output_padding_width, 0)
+      << "Only supports output_padding_height = 0 and output_padding_width = "
+         "0.";
+  NNADAPTER_CHECK_EQ(output_shape_height, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
+  NNADAPTER_CHECK_EQ(output_shape_width, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
+    // NHWC
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[1],
         filter_height,
@@ -50,6 +53,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
+  NNADAPTER_CHECK_EQ(dilation_height, 1) << "Only supports dilations = [1,1]";
+  NNADAPTER_CHECK_EQ(dilation_width, 1) << "Only supports dilations = [1,1]";
 
   // Convert to NNAPI operands and operations
   auto input_index = converter->GetMappedIndex(input_operand);

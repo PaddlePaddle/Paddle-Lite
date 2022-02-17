@@ -40,7 +40,10 @@ void FixMultipleOutputsOps(hal::Model* model) {
         for (uint32_t i = 0; i < output_count; i++) {
           auto output_operand = output_operands[i];
           if (IsModelOutputOperand(output_operand)) {
-            AddDummyOperation(model, output_operand);
+            auto dummy_output_operand =
+                InsertDummyOperation(model, output_operand);
+            UpdateOperationOutputOperands(
+                operation, output_operand, dummy_output_operand);
           }
         }
       } break;

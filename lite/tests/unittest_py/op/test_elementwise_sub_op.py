@@ -67,6 +67,8 @@ class TestElementwiseSubOp(AutoScanTest):
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -116,6 +118,8 @@ class TestElementwiseSubOp(AutoScanTest):
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
+            input_data_type = draw(st.sampled_from([np.float32]))
+        else:
             input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
