@@ -263,11 +263,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
         if (dim_out[2] < 1 || dim_out[3] < 1) {
           continue;
         }
-        delete param_fp32_out.output;
-        param_fp32_out.output = new Tensor;
         param_fp32_out.output->set_precision(PRECISION(kFloat));
-        delete param_int8_out.output;
-        param_int8_out.output = new Tensor;
         param_int8_out.output->set_precision(PRECISION(kInt8));
 
         param_int8_out.x->Resize(dim_in);

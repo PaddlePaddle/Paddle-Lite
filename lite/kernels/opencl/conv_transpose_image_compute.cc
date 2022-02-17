@@ -64,6 +64,8 @@ void ConvTransposeImageCompute::PrepareForRun() {
   /*********************************************
    * Upload filter, bias to opencl device
    *********************************************/
+  filter_tensor_h_ = dilation_h_ * (filter_tensor_h_ - 1) + 1;
+  filter_tensor_w_ = dilation_w_ * (filter_tensor_w_ - 1) + 1;
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
 
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -279,7 +281,10 @@ void ConvTransposeImageCompute::SetArgs() {
   cl_int2 output_wh = {output_tensor_w_, output_tensor_h_};
   cl_int2 filter_wh = {filter_tensor_w_, filter_tensor_h_};
   cl_int2 stride_wh = {stride_w_, stride_h_};
-
+  cl_int2 dilation_wh = {dilation_w_, dilation_h_};
+  cl_int2 filter_prev_wh = {
+      static_cast<cl_int>(conv_param_->filter->dims()[3]),
+      static_cast<cl_int>(conv_param_->filter->dims()[2])};
   auto kernel = &kernel_;
 
   uint32_t idx = 0;
@@ -307,6 +312,10 @@ void ConvTransposeImageCompute::SetArgs() {
   kernel->setArg(idx++, pad_wh);
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, filter_wh);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, dilation_wh);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, filter_prev_wh);
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++,
                  static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));

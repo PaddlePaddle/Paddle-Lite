@@ -1618,8 +1618,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
   const int8_t* weights_ptr = x;
   int out_cnt = M >> 4;
   int out_remain = M & 15;
-  float* zerobuf = ctx->workspace_data<float>();
-  int* zero_ptr = ctx->workspace_data<int>() + M + 16;
+  int* zero_ptr = new int[M + 16];
+  float* zerobuf = new float[M + 16];
   memset(zero_ptr, 0, sizeof(int) * (M + 16));
   memset(zerobuf, 0, sizeof(float) * (M + 16));
   const float* bias_ptr = is_bias ? bias : zerobuf;
@@ -2146,6 +2146,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
                  alpha,
                  offset,
                  threshold);
+  delete[] zero_ptr;
+  delete[] zerobuf;
   return true;
 }
 

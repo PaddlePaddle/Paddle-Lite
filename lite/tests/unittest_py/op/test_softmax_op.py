@@ -65,15 +65,14 @@ class TestSoftmaxOp(AutoScanTest):
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data"].shape)
         axis = program_config.ops[0].attrs["axis"]
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(x_shape) < 2 or (len(x_shape) == 4 and axis == 0):
-                return False
         if predictor_config.target() == TargetType.Metal:
             if len(x_shape) != 4 or axis != 1 or x_shape[0] != 1:
                 return False
@@ -112,6 +111,8 @@ class TestSoftmaxOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-3, 1e-3
+        elif target_str == "OpenCL":
+            atol, rtol = 1e-4, 1e-4
         elif target_str == "NNAdapter":
             atol, rtol = 4e-5, 4e-5
         return self.get_predictor_configs(), ["softmax"], (atol, rtol)

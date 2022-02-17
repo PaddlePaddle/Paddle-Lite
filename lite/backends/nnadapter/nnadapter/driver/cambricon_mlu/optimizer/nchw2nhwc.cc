@@ -62,8 +62,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
-    auto transpose_input_operand = AddTransposeOperation(
+    auto transpose_input_operand = AppendTransposeOperation(
         GetModel(), input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
   std::vector<int32_t> filter_permutation = {};

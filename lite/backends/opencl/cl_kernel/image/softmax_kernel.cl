@@ -85,6 +85,43 @@ __kernel void softmax_height(__read_only image2d_t input,
   }
 }
 
+__kernel void softmax_batch(__read_only image2d_t input,
+                            __write_only image2d_t output,
+                            __private const int N,
+                            __private const int C,
+                            __private const int H,
+                            __private const int W) {
+  int wc = get_global_id(0);
+  int h = get_global_id(1);
+
+  if (wc < C * W && h < H) {
+    // Compute Max
+    CL_DTYPE4 max_value =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(wc, h));
+    for (int i = 1; i < N; ++i) {
+      max_value = max(
+          max_value,
+          READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(wc, i * H + h)));
+    }
+    // Compute Exp Sum
+    CL_DTYPE4 sum_value = (CL_DTYPE4)(0.0f);
+    for (int i = 0; i < N; ++i) {
+      sum_value += exp(
+          READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(wc, i * H + h)) -
+          max_value);
+    }
+    // Compute Result
+    for (int i = 0; i < N; ++i) {
+      CL_DTYPE4 value =
+          exp(READ_IMG_TYPE(
+                  CL_DTYPE_CHAR, input, SAMPLER, (int2)(wc, i * H + h)) -
+              max_value) /
+          sum_value;
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(wc, i * H + h), value);
+    }
+  }
+}
+
 __kernel void softmax_channel(__read_only image2d_t input,
                               __write_only image2d_t output,
                               __private const int output_channels,
