@@ -46,11 +46,9 @@ void ReduceImageCompute::PrepareForRun() {
 
     if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
-            should_use_mps = true;
+            if (input_buffer_->tensor_dim_[1] >= 4 && param.dim.size() == 1) should_use_mps = true;
         }
     }
-    if (input_buffer_->tensor_dim_[1] < 4) should_use_mps = false;
-
     use_mps_ = should_use_mps;
     if (use_mps_) {
         if (reduce_type_ == ("reduce_max")) {
@@ -107,19 +105,13 @@ void ReduceImageCompute::setup_without_mps() {
 
     // only support reduce_max by channel
     if (param.dim.size() == 1 && param.dim[0] == 1 && param.keep_dim == true && irank == 4) {
+        function_name_ = reduce_type_ + "_c";
+    } else if (param.dim.size() == 2 && param.dim[0] == 2 && param.dim[1] == 3) {
+        function_name_ = reduce_type_ + "_hw";
     } else {
         LOG(FATAL) << "reduce: only support max by channel";
     }
 
-    if (reduce_type_ == ("reduce_max")) {
-        function_name_ = "reduce_max_c";
-    } else if (reduce_type_ == ("reduce_min")) {
-        function_name_ = "reduce_min_c";
-    } else if (reduce_type_ == ("reduce_mean")) {
-        function_name_ = "reduce_mean_c";
-    } else if (reduce_type_ == ("reduce_sum")) {
-        function_name_ = "reduce_sum_c";
-    }
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];

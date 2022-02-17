@@ -28,16 +28,30 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  auto input_channel_size = input_operand->type.dimensions.data[1];            \
+  auto input_layout = input_operand->type.layout;                              \
+  auto input_channel_size = input_operand->type.dimensions                     \
+                                .data[input_layout == NNADAPTER_NCHW ? 1 : 3]; \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions.data[1];          \
-  auto filter_height = filter_operand->type.dimensions.data[2];                \
-  auto filter_width = filter_operand->type.dimensions.data[3];                 \
-  NNADAPTER_VLOG(5) << "filter_dims: [" << input_channel_size << ", "          \
-                    << output_channel_size << ", " << filter_height << ", "    \
-                    << filter_width << "]";                                    \
+  /* (1) For NCHW, [C_in, C_out, filter_height, filter_width] */               \
+  /* (2) For NHWC, [C_out, filter_height, filter_width, C_in] */               \
+  auto filter_layout = filter_operand->type.layout;                            \
+  auto output_channel_size =                                                   \
+      filter_operand->type.dimensions                                          \
+          .data[filter_layout == NNADAPTER_NCHW ? 1 : 0];                      \
+  auto filter_channel_size =                                                   \
+      filter_operand->type.dimensions                                          \
+          .data[filter_layout == NNADAPTER_NCHW ? 0 : 3];                      \
+  auto filter_height = filter_operand->type.dimensions                         \
+                           .data[filter_layout == NNADAPTER_NCHW ? 2 : 1];     \
+  auto filter_width = filter_operand->type.dimensions                          \
+                          .data[filter_layout == NNADAPTER_NCHW ? 3 : 2];      \
+  NNADAPTER_VLOG(5) << "input_channel_size: " << input_channel_size;           \
+  NNADAPTER_VLOG(5) << "output_channel_size: " << output_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_channel_size: " << filter_channel_size;         \
+  NNADAPTER_VLOG(5) << "filter_height: " << filter_height;                     \
+  NNADAPTER_VLOG(5) << "filter_width: " << filter_width;                       \
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \

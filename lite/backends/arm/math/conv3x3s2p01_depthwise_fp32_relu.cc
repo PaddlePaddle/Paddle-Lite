@@ -210,8 +210,6 @@ namespace math {
   \
   \
   "3:                                         \n"          \
-  "bif  v0.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v1.16b, %[vzero].16b, %[mask2].16b    \n"          \
   \
   "bif  v15.16b, %[vzero].16b, %[mask3].16b    \n"          \
   "bif  v18.16b, %[vzero].16b, %[mask3].16b    \n"          \
@@ -219,24 +217,14 @@ namespace math {
   "bif  v20.16b, %[vzero].16b, %[mask3].16b    \n"          \
   "bif  v21.16b, %[vzero].16b, %[mask3].16b    \n"          \
                                                            \
-  "bif  v2.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v3.16b, %[vzero].16b, %[mask2].16b    \n"          \
-                                                           \
-  "bif  v4.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v5.16b, %[vzero].16b, %[mask2].16b    \n"          \
-                                                           \
   "ext  v10.16b, v0.16b, v15.16b, #4     \n"          \
-                                                           \
-  "bif  v6.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v7.16b, %[vzero].16b, %[mask2].16b    \n" /* r0 */ \
   \
   "fmul v11.4s, v0.4s, %[w0].s[0]            \n"           \
   "fmul v12.4s, v1.4s, %[w0].s[1]            \n"           \
   "fmla v16.4s, v10.4s, %[w0].s[2]            \n"          \
                                                            \
   "ext  v10.16b, v2.16b, v18.16b, #4     \n"          \
-  "bif  v8.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v9.16b, %[vzero].16b, %[mask2].16b    \n" /* r1 */ \
+  \
   "fmla v11.4s, v2.4s, %[w1].s[0]            \n"           \
   "fmla v12.4s, v3.4s, %[w1].s[1]            \n"           \
   "fmla v16.4s, v10.4s, %[w1].s[2]            \n"          \
@@ -468,7 +456,7 @@ namespace math {
   [vzero] "w"(vzero), \
   [w0] "w"(wr0), [w1] "w"(wr1), [w2] "w"(wr2), \
   [remain] "r"(cnt_remain), \
-  [mask1] "w"(vmask_rp1), [mask2] "w"(vmask_rp2), [mask3] "w"(vmask_rp3), \
+  [mask3] "w"(vmask_rp3), \
   [vbias] "w"(wbias), \
   [right_pad_num_in] "r"(right_pad_num_in), \
   [right_pad_num_out] "r"(right_pad_num_out)
@@ -586,23 +574,8 @@ namespace math {
   /* make outut pointer smaller */ \
   "subs %[outptr], %[right_pad_num_out] \n"        \
   \
-  "vld1.f32   {d12-d15}, [%[mask_ptr]]!           @ load mask\n"            \
   "vdup.32  q3, %[bias]                           @ and \n"                 \
   \
-  /* update q10~q15 according to q6 and q7 */                 \
-  "vbif q10, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q11, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q12, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q13, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q14, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q15, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                 \
-\
   /* generate q6, i.e. [2,4,6,8] */                                           \
   "vld1.f32   {d8-d9}, [%[mask_ptr]]           @ load mask\n"              \
   "vld1.32  {d16-d17}, [%[din0_ptr]]                  @ load din r0\n"       \
@@ -779,13 +752,8 @@ namespace math {
 // clang-format on
 
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s2_fp32(
-    int w_in,
-    int w_out,
-    int left_padding,
-    uint32x4_t* vmask_rp1,
-    uint32x4_t* vmask_rp2,
-    uint32x4_t* vmask_rp3) {
-  int right_pad_idx[12] = {0, 2, 4, 6, 1, 3, 5, 7, 8, 0xffff, 0xffff, 0xffff};
+    int w_in, int w_out, int left_padding, uint32x4_t* vmask_rp3) {
+  int right_pad_idx[4] = {8, 0xffff, 0xffff, 0xffff};
 
   int cnt_col;
   int tile_w = w_out >> 2;
@@ -793,6 +761,8 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2_fp32(
   // size_right_remain: When we process the last cnt_remain([1,4]) outputs, the
   // number of valid data
   // Obviously, it should be within (0, 8]!
+  // attention : size_right_remain's meaning is different in
+  // right_mask_3x3s1_fp32
   int cnt_remain;
   if (left_padding > 0) {
     cnt_col = tile_w - 2;
@@ -813,12 +783,8 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2_fp32(
   // make size_right_remain larger
   size_right_remain += (4 - cnt_remain) * 2;
 
-  *vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                         vld1q_s32(right_pad_idx));  // 0 2 4 6
-  *vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                         vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
   *vmask_rp3 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                         vld1q_s32(right_pad_idx + 8));  // 8!
+                         vld1q_s32(right_pad_idx));  // 8!
 
   return std::make_pair(cnt_col, cnt_remain);
 }
@@ -840,9 +806,8 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
                                       const int h_out,
                                       const int w_out,
                                       ARMContext* ctx) {
-  uint32x4_t vmask_rp1, vmask_rp2, vmask_rp3;
-  auto&& res =
-      right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp1, &vmask_rp2, &vmask_rp3);
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp3);
   int cnt_col = res.first;
   int cnt_remain = res.second;
 
@@ -855,10 +820,8 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
   memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
   float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, vmask_rp3);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
@@ -1020,9 +983,8 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
                                          const int h_out,
                                          const int w_out,
                                          ARMContext* ctx) {
-  uint32x4_t vmask_rp1, vmask_rp2, vmask_rp3;
-  auto&& res =
-      right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp1, &vmask_rp2, &vmask_rp3);
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp3);
   int cnt_col = res.first;
   int cnt_remain = res.second;
 
@@ -1035,10 +997,8 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
   memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
   float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, vmask_rp3);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
@@ -1457,9 +1417,8 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
                                       const int h_out,
                                       const int w_out,
                                       ARMContext* ctx) {
-  uint32x4_t vmask_rp1, vmask_rp2, vmask_rp3;
-  auto&& res =
-      right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp1, &vmask_rp2, &vmask_rp3);
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp3);
   int cnt_col = res.first;
   int cnt_remain = res.second;
 
@@ -1472,10 +1431,8 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
   memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
   float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, vmask_rp3);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
@@ -1628,9 +1585,8 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
                                          const int h_out,
                                          const int w_out,
                                          ARMContext* ctx) {
-  uint32x4_t vmask_rp1, vmask_rp2, vmask_rp3;
-  auto&& res =
-      right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp1, &vmask_rp2, &vmask_rp3);
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp3);
   int cnt_col = res.first;
   int cnt_remain = res.second;
 
@@ -1643,10 +1599,8 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
   memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
   float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, vmask_rp3);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;

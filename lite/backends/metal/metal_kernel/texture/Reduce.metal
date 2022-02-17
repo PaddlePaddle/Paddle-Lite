@@ -121,3 +121,100 @@ kernel void reduce_sum_c(texture2d_array<ftype, access::read> inTexture[[texture
     }
     outTexture.write(ftype4(osum, 0.0, 0.0, 0.0), gid.xy, 0);
 }
+
+kernel void reduce_mean_hw(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+#if LITE_WITH_METAL_FULL
+    float4 omean = 0;
+#else
+    half4 omean = 0;
+#endif
+    uint iC = inTexture.get_array_size();
+    uint iH = inTexture.get_height();
+    uint iW = inTexture.get_width();
+    for (uint i = 0; i < iW; ++i) {
+        for (uint j = 0; j < iH; ++j) {
+            ftype4 in = inTexture.read(uint2(i, j), gid.z);
+            omean += in;
+        }
+    }
+    omean = omean / iW / iH;
+    outTexture.write(omean, uint2(0, 0), gid.z);
+}
+
+kernel void reduce_max_hw(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+#if LITE_WITH_METAL_FULL
+    float4 omax = FLT_MIN;
+#else
+    half4 omax = HALF_MIN;
+#endif
+    uint iC = inTexture.get_array_size();
+    uint iH = inTexture.get_height();
+    uint iW = inTexture.get_width();
+    for (uint i = 0; i < iW; ++i) {
+        for (uint j = 0; j < iH; ++j) {
+            ftype4 in = inTexture.read(uint2(i, j), gid.z);
+            omax = max(omax, in);
+        }
+    }
+    outTexture.write(omax, uint2(0, 0), gid.z);
+}
+
+kernel void reduce_min_hw(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+#if LITE_WITH_METAL_FULL
+    float4 omin = FLT_MAX;
+#else
+    half4 omin = HALF_MAX;
+#endif
+    uint iC = inTexture.get_array_size();
+    uint iH = inTexture.get_height();
+    uint iW = inTexture.get_width();
+    for (uint i = 0; i < iW; ++i) {
+        for (uint j = 0; j < iH; ++j) {
+            ftype4 in = inTexture.read(uint2(i, j), gid.z);
+            omin = min(omin, in);
+        }
+    }
+    outTexture.write(omin, uint2(0, 0), gid.z);
+}
+
+kernel void reduce_sum_hw(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+#if LITE_WITH_METAL_FULL
+    float4 osum = 0;
+#else
+    half4 osum = 0;
+#endif
+    uint iC = inTexture.get_array_size();
+    uint iH = inTexture.get_height();
+    uint iW = inTexture.get_width();
+    for (uint i = 0; i < iW; ++i) {
+        for (uint j = 0; j < iH; ++j) {
+            ftype4 in = inTexture.read(uint2(i, j), gid.z);
+            osum += in;
+        }
+    }
+    outTexture.write(osum, uint2(0, 0), gid.z);
+}

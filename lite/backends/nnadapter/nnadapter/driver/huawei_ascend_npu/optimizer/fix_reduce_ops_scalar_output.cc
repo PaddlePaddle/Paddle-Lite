@@ -36,7 +36,9 @@ static void ReduceOpsAddDummyOperation(hal::Model* model,
   auto reduce_all =
       axes_size == static_cast<int>(input_operand->type.dimensions.count);
   if (!keep_dim && reduce_all && IsModelOutputOperand(output_operand)) {
-    AddDummyOperation(model, output_operand);
+    auto dummy_output_operand = InsertDummyOperation(model, output_operand);
+    UpdateOperationOutputOperands(
+        operation, output_operand, dummy_output_operand);
   }
 }
 

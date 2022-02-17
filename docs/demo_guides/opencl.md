@@ -26,15 +26,11 @@ Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序，目前支
 
 ```bash
 ######################################
-# 假设当前位于处于 Paddle Lite 源码根目录下   #
+# 假设当前目录在 Paddle Lite 根目录下    #
 ######################################
 
 # 导入 NDK_ROOT 变量，注意检查 NDK 安装目录若与本示例是否不同
 export NDK_ROOT=/opt/android-ndk-r17c
-
-# 删除上一次 CMake 自动生成的 .h 文件
-rm ./lite/api/paddle_use_kernels.h
-rm ./lite/api/paddle_use_ops.h
 
 # 设置编译参数并开始编译
 # android-armv7: cpu+gpu+cv+extra
@@ -45,15 +41,6 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
-或
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv7 \
-  --arm_lang=clang \
-  --android_stl=c++_shared \
-  --with_log=OFF \
-  --build_extra=ON \
-  opencl
 
 # android-armv8: cpu+gpu+cv+extra
 ./lite/tools/build_android.sh \
@@ -63,15 +50,6 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
-或
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --arm_lang=clang \
-  --android_stl=c++_shared \
-  --with_log=OFF \
-  --build_extra=ON \
-  opencl
 
 # 注：编译帮助请执行: ./lite/tools/build_android.sh help
 ```
@@ -80,17 +58,15 @@ rm ./lite/api/paddle_use_ops.h
 
 #### 针对 Paddle Lite 开发者的编译命令(有单元测试,编译产物)
 
-注：调用 `./lite/tools/ci_build.sh` 执行编译，该命令会编译 armv7 和 armv8 的 opencl 库。虽然有编译产物，但因编译单元测试，编译产物包体积可能较大，生产环境不推荐使用。
+注：调用 `./lite/tools/ci_build.sh` 执行编译，该命令会编译 armv7 和 armv8 的 opencl 库。虽然有编译产物，但因编译单元测试，编译产物包体积较大，生产环境不推荐使用。
 
 ```bash
-# 假设当前位于处于 Paddle Lite 源码根目录下
+######################################
+# 假设当前目录在 Paddle Lite 根目录下    #
+######################################
 
 # 导入 NDK_ROOT 变量，注意检查您的安装目录若与本示例不同
 export NDK_ROOT=/opt/android-ndk-r17c
-
-# 删除上一次 CMake 自动生成的 .h 文件
-rm ./lite/api/paddle_use_kernels.h
-rm ./lite/api/paddle_use_ops.h
 
 # 根据指定编译参数编译
 ./lite/tools/ci_build.sh \
@@ -106,10 +82,10 @@ rm ./lite/api/paddle_use_ops.h
 
 编译产物位于 `build.lite.android.armv8.gcc.opencl` 下的 `inference_lite_lib.android.armv8.opencl` 文件夹内，根据编译参数不同，文件夹名字会略有不同。这里仅罗列关键产物：
 
-- `cxx`: 该目录是编译目标的C++的头文件和库文件;
-- `demo`: 该目录包含了两个demo，用来调用使用 `libpaddle_api_full_bundled.a` 和 `libpaddle_api_light_bundled.a`，分别对应 `mobile_full` 和 `mobile_light` 文件夹。编译对应的 demo 仅需在 `mobile_full` 或 `mobile_light` 文件夹下执行 `make`
-  - `mobile_full`: 使用 `cxx config`，可直接加载 fluid 模型，若使用 OpenCL 需要在运行时加入 `--use_gpu=true` 选项;
-  - `mobile_light`: 使用 `mobile config`，只能加载 `model_optimize_tool` 优化过的模型。
+- `cxx`: 该目录是编译目标的 C++ 的头文件和库文件;
+- `demo`: 该目录包含了两个 demo，用来调用使用 `libpaddle_api_full_bundled.a` 和 `libpaddle_api_light_bundled.a`，分别对应 `mobile_full` 和 `mobile_light` 文件夹。编译对应的 demo 仅需在 `mobile_full` 或 `mobile_light` 文件夹下执行 `make`
+  - `mobile_full`: 使用 `cxx config`，可直接加载 paddle 模型，若使用 OpenCL 需要在运行时加入 `--use_gpu=true` 选项;
+  - `mobile_light`: 使用 `mobile config`，只能加载 `opt` 优化过的模型。
 注：`opencl` 实现的相关 kernel 已经打包到动态库中。
 
 ```bash
@@ -153,11 +129,11 @@ rm ./lite/api/paddle_use_ops.h
 
 ## 2. 运行示例
 
-下面以 android 的环境为例，介绍 3 个示例，分别如何在手机上执行基于 OpenCL 的 ARM GPU 推理过程。
+下面以 android 的环境为例，介绍 3 个示例，分别如何在手机上执行基于 OpenCL 的 GPU 推理过程。
 
 ### 2.1 运行示例1: 编译产物 demo 示例和 benchmark
 
-需要提前用模型优化工具 opt 转好模型(下面假设已经转换好模型，且模型名为 `mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb`)。编译脚本为前文**针对 Paddle Lite 用户的编译命令(无单元测试,有编译产物,适用于 benchmark)**。
+需要提前用模型优化工具 opt 转好模型(下面假设已经转换好模型，且模型名为 `mobilenetv1_opencl_opt.nb`)。编译脚本为前文**针对 Paddle Lite 用户的编译命令(无单元测试,有编译产物,适用于 benchmark)**。
 
 ```bash
 #################################
@@ -178,12 +154,12 @@ adb shell chmod +x /data/local/tmp/opencl/mobilenetv1_light_api
 adb push inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/opencl/
 
 # push model with optimized(opt) to device
-adb push ./mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb /data/local/tmp/opencl/
+adb push ./mobilenetv1_opencl_opt.nb /data/local/tmp/opencl/
 
 # run demo on device
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
-           /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
+           /data/local/tmp/opencl/mobilenetv1_opencl_opt.nb \
            1,3,224,224 \
            100 10 0 1 1 0"
            # repeats=100, warmup=10
@@ -222,16 +198,16 @@ adb shell "export GLOG_v=1; \
   --repeats=100"
 ```
 
-### 2.3 运行示例3: test_layout_opencl 单元测试
+### 2.3 运行示例3: test_layout_image_opencl 单元测试
 
 编译脚本为前文**针对 Paddle Lite 开发者的编译命令(有单元测试,编译产物)**。
 
 ```bash
 adb shell mkdir -p /data/local/tmp/opencl
-adb push build.lite.android.armv8.gcc.opencl/lite/kernels/opencl/test_layout_opencl /data/local/tmp/opencl/
-adb shell chmod +x /data/local/tmp/opencl/test_layout_opencl
+adb push build.lite.android.armv8.gcc.opencl/lite/kernels/opencl/test_layout_image_opencl /data/local/tmp/opencl/
+adb shell chmod +x /data/local/tmp/opencl/test_layout_image_opencl
 adb shell "export GLOG_v=4; \
-  /data/local/tmp/opencl/test_layout_opencl"
+  /data/local/tmp/opencl/test_layout_image_opencl"
 ```
 
 ## 3. 如何在 Code 中使用
