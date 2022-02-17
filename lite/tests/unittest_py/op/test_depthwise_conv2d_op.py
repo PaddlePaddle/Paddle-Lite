@@ -44,6 +44,8 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             Place(TargetType.X86, PrecisionType.INT8, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
         # opencl_valid_places = [
         #     Place(TargetType.OpenCL, PrecisionType.FP16,
         #           DataLayoutType.ImageDefault), Place(
