@@ -384,6 +384,23 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions_data,
          output_dimensions.size() * sizeof(int32_t));
 }
 
+NNADAPTER_EXPORT bool MatchDimensions(const int32_t* target_dimensions_data,
+                                      uint32_t target_dimensions_count,
+                                      const int32_t* reference_dimensions_data,
+                                      uint32_t reference_dimensions_count) {
+  // Check whether the count of dimension has been changed
+  if (target_dimensions_count != reference_dimensions_count) {
+    return false;
+  }
+  // Check whether the data of dimension has been changed
+  for (uint32_t i = 0; i < target_dimensions_count; i++) {
+    if (target_dimensions_data[i] != reference_dimensions_data[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 NNADAPTER_EXPORT void Symm2AsymmData(const int8_t* input_data,
                                      size_t input_data_count,
                                      int32_t zero_point,
@@ -573,6 +590,14 @@ NNADAPTER_EXPORT std::string GetRealPath(const char* path) {
     return "";
   }
   return std::string(real_path);
+}
+
+NNADAPTER_EXPORT bool IsAllZeros(void* buffer, size_t length) {
+  uint8_t* values = reinterpret_cast<uint8_t*>(buffer);
+  for (size_t i = 0; i < length; i++) {
+    if (values[i] != 0) return false;
+  }
+  return true;
 }
 
 }  // namespace nnadapter

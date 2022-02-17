@@ -29,7 +29,7 @@ import numpy as np
 from functools import partial
 
 
-class TestAssignOp(AutoScanTest):
+class TestGreaterOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_op_config = [
@@ -37,6 +37,8 @@ class TestAssignOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.Any)
         ]
         self.enable_testing_on_place(places=host_op_config)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -106,16 +108,7 @@ class TestAssignOp(AutoScanTest):
                                                                           1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Host:
-                in_dtype = program_config.inputs["data_x"].dtype
-                if "int32" == in_dtype:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on host. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

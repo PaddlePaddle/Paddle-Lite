@@ -13,25 +13,13 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+#include "core/hal/types.h"
 
-#ifdef ENABLE_ARM_FP16
-class ShuffleChannelCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFP16)> {
- public:
-  void Run() override;
+namespace nnadapter {
+namespace mediatek_apu {
 
-  virtual ~ShuffleChannelCompute() = default;
-};
-#endif
+void ResolveOperationLiminations(hal::Model* model);
 
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+}  // namespace mediatek_apu
+}  // namespace nnadapter

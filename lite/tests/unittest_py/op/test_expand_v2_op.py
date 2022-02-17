@@ -35,6 +35,8 @@ class TestExpandV2Op(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.Any,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -53,8 +55,8 @@ class TestExpandV2Op(AutoScanTest):
         def generate_shape(*args, **kwargs):
             return np.array(Shape).astype(np.int32)
 
-        def generate_expand_shape(*args, **kwargs):
-            return np.array(expand_shape).astype(np.int32)
+        def generate_expand_shape(i, *args, **kwargs):
+            return np.array([expand_shape[i]]).astype(np.int32)
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -72,11 +74,11 @@ class TestExpandV2Op(AutoScanTest):
         def gnerate_inputs(with_Shape, with_expand_shape):
             inputs1 = {}
             inputs2 = {}
-            if (with_Shape and with_expand_shape):
+            # with_Shape has a higher priority than expand_shapes_tensor
+            if (with_Shape):
                 inputs1 = {
                     "X": ["input_data"],
                     "Shape": ["shape_data"],
-                    "expand_shapes_tensor": ["expand_data"]
                 }
                 inputs2 = {
                     "input_data": TensorConfig(data_gen=partial(
@@ -86,14 +88,13 @@ class TestExpandV2Op(AutoScanTest):
                         high=10,
                         shape=in_shape)),
                     "shape_data":
-                    TensorConfig(data_gen=partial(generate_shape)),
-                    "expand_data":
-                    TensorConfig(data_gen=partial(generate_expand_shape))
+                    TensorConfig(data_gen=partial(generate_shape))
                 }
             elif ((not with_Shape) and with_expand_shape):
                 inputs1 = {
                     "X": ["input_data"],
-                    "expand_shapes_tensor": ["expand_data"]
+                    "expand_shapes_tensor":
+                    ["expand_data0", "expand_data1", "expand_data2"]
                 }
                 inputs2 = {
                     "input_data": TensorConfig(data_gen=partial(
@@ -102,8 +103,12 @@ class TestExpandV2Op(AutoScanTest):
                         low=-10,
                         high=10,
                         shape=in_shape)),
-                    "expand_data":
-                    TensorConfig(data_gen=partial(generate_expand_shape))
+                    "expand_data0":
+                    TensorConfig(data_gen=partial(generate_expand_shape, 0)),
+                    "expand_data1":
+                    TensorConfig(data_gen=partial(generate_expand_shape, 1)),
+                    "expand_data2":
+                    TensorConfig(data_gen=partial(generate_expand_shape, 2))
                 }
             elif (with_Shape and (not with_expand_shape)):
                 inputs1 = {"X": ["input_data"], "Shape": ["shape_data"]}
@@ -138,6 +143,7 @@ class TestExpandV2Op(AutoScanTest):
             inputs=inputs[0],
             outputs={"Out": ["output_data"]},
             attrs={"shape": attr_shape})
+        expand_v2_op.outputs_dtype = {"output_data": input_type}
 
         program_config = ProgramConfig(
             ops=[expand_v2_op],
@@ -150,18 +156,7 @@ class TestExpandV2Op(AutoScanTest):
         return self.get_predictor_configs(), ["expand_v2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_dtype = program_config.inputs["input_data"].dtype
-            if target_type == TargetType.Host:
-                if "float32" != in_dtype or "expand_shapes_tensor" in program_config.ops[
-                        0].inputs:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on Host. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

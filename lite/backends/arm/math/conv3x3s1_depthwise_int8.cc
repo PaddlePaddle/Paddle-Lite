@@ -273,12 +273,10 @@ namespace math {
   "sub %[din_ptr3], %[din_ptr3], %[right_pad_num_in]\n"\
   "ld1    {v0.8b, v1.8b}, [%[din_ptr0]]\n"    \
   "ld1    {v2.8b, v3.8b}, [%[din_ptr1]]\n"    \
-  "ld1    {v8.8b, v9.8b}, [%[vmask]]\n"       \
+  "ld1    {v9.8b}, [%[vmask]]\n"       \
   "sub %[dout_ptr0], %[dout_ptr0], %[right_pad_num_out]\n"\
   "sub %[dout_ptr1], %[dout_ptr1], %[right_pad_num_out]\n"\
-  "bif    v0.8b,  v21.8b, v8.8b       \n"     \
   "bif    v1.8b,  v21.8b, v9.8b       \n"     \
-  "bif    v2.8b,  v21.8b, v8.8b       \n"     \
   "bif    v3.8b,  v21.8b, v9.8b       \n"     \
   /* r0 */                                    \
   "ext    v4.8b,  v0.8b,  v1.8b, #1   \n"     \
@@ -292,7 +290,6 @@ namespace math {
   "smull  v19.8h, v6.8b,  %[v1].8b    \n"     \
   "smlal  v16.8h, v5.8b,  %[v2].8b    \n"     \
   "smlal  v18.8h, v7.8b,  %[v2].8b    \n"     \
-  "bif    v0.8b,  v21.8b, v8.8b       \n"     \
   "bif    v1.8b,  v21.8b, v9.8b       \n"     \
   /* r1 */                                    \
   "ext    v4.8b,  v0.8b,  v1.8b, #1   \n"     \
@@ -310,7 +307,6 @@ namespace math {
   "saddw2 v13.4s, v13.4s, v17.8h      \n"     \
   "saddw  v14.4s, v14.4s, v19.4h      \n"     \
   "saddw2 v15.4s, v15.4s, v19.8h      \n"     \
-  "bif    v2.8b,  v21.8b, v8.8b       \n"     \
   "bif    v3.8b,  v21.8b, v9.8b       \n"     \
   "smull  v17.8h, v7.8b,  %[v5].8b    \n"     \
   "smull  v19.8h, v5.8b,  %[v5].8b    \n"     \
@@ -635,7 +631,7 @@ namespace math {
 
 #define RIGHT_COMPUTE_S1                  \
   "1:                               \n"   \
-  "vld1.8 {d14-d15}, [%[vmask]]     \n"   \
+  "vld1.8 {d15}, [%[vmask]]     \n"   \
   "sub %[din_ptr0], %[right_pad_num_in]\n"\
   "sub %[din_ptr1], %[right_pad_num_in]\n"\
   "sub %[din_ptr2], %[right_pad_num_in]\n"\
@@ -645,8 +641,6 @@ namespace math {
   "sub %[dout_ptr0], %[right_pad_num_out]\n"\
   "sub %[dout_ptr1], %[right_pad_num_out]\n"\
   /* r0 */                                \
-  "vbif.s8  d12, d11, d14           \n"   \
-  "vbif.s8  d16, d11, d14           \n"   \
   "vbif.s8  d13, d11, d15           \n"   \
   "vbif.s8  d17, d11, d15           \n"   \
   "vmull.s8 q10, d12, d2            \n"   \
@@ -661,11 +655,10 @@ namespace math {
   "vaddw.s16 q12, q12, d20          \n"   \
   "vaddw.s16 q13, q13, d21          \n"   \
   "vmull.s8 q10, d15, d4            \n"   \
-  "vld1.8 {d14-d15}, [%[vmask]]     \n"   \
+  "vld1.8 {d15}, [%[vmask]]     \n"   \
   "vaddw.s16 q14, q14, d22          \n"   \
   "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8 q11, d19, d4            \n"   \
-  "vbif.s8  d12, d11, d14           \n"   \
   "vbif.s8  d13, d11, d15           \n"   \
   /* r1 */                                \
   "vext.8   d14, d12, d13, #1       \n"   \
@@ -680,9 +673,8 @@ namespace math {
   "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8  q11, d14, d6           \n"   \
   "vmlal.s8  q10, d19, d7           \n"   \
-  "vld1.8 {d18-d19}, [%[vmask]]     \n"   \
+  "vld1.8 {d19}, [%[vmask]]     \n"   \
   "vmlal.s8  q11, d15, d7           \n"   \
-  "vbif.s8  d16, d11, d18           \n"   \
   "vbif.s8  d17, d11, d19           \n"   \
   /* r2 */                                \
   "vaddw.s16 q12, q12, d20          \n"   \
@@ -1134,8 +1126,7 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p1_int8(int w_in,
                                                              int w_out,
                                                              uint8_t* vmask) {
-  const uint8_t right_pad_idx[16] = {
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  const uint8_t right_pad_idx[8] = {8, 9, 10, 11, 12, 13, 14, 15};
   uint32_t cnt_col = ((w_out >> 3) - 2);
   uint8_t size_right_remain = static_cast<uint8_t>(w_in - (7 + cnt_col * 8));
   if (size_right_remain >= 9) {
@@ -1146,20 +1137,16 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p1_int8(int w_in,
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
   size_right_remain = size_right_remain + 8 - cnt_remain;
-  uint8x8_t vmask_rp1 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx + 8));
-  vst1_u8(vmask, vmask_rp1);
-  vst1_u8(vmask + 8, vmask_rp2);
+      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
+  vst1_u8(vmask, vmask_rp2);
   return std::make_pair(cnt_col, cnt_remain);
 }
 
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
                                                              int w_out,
                                                              uint8_t* vmask) {
-  const uint8_t right_pad_idx[16] = {
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  const uint8_t right_pad_idx[8] = {8, 9, 10, 11, 12, 13, 14, 15};
   uint32_t cnt_col = ((w_out >> 3) - 1);
   uint8_t size_right_remain = static_cast<uint8_t>(w_in - cnt_col * 8);
   if (size_right_remain >= 9) {
@@ -1170,12 +1157,9 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
   size_right_remain = size_right_remain + 8 - cnt_remain;
-  uint8x8_t vmask_rp1 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx + 8));
-  vst1_u8(vmask, vmask_rp1);
-  vst1_u8(vmask + 8, vmask_rp2);
+      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
+  vst1_u8(vmask, vmask_rp2);
   return std::make_pair(cnt_col, cnt_remain);
 }
 
@@ -1362,7 +1346,7 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
                                             ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1433,7 +1417,7 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
                                            ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1505,7 +1489,7 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
                                             ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1575,7 +1559,7 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
                                            ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1645,7 +1629,7 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
                                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1718,7 +1702,7 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                                                   ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1791,7 +1775,7 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_int8(int8_t* dout,
                                                 ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1863,7 +1847,7 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
                                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1935,7 +1919,7 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_float(float* dout,
                                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -2007,7 +1991,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_float(float* dout,
                                                   ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -2078,7 +2062,7 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_int8(int8_t* dout,
                                                 ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -2148,7 +2132,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
                                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;

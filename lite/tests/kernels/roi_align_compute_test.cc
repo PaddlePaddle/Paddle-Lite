@@ -311,28 +311,26 @@ class RoiAlignComputeTester : public arena::TestCase {
     }
 
     {
-      auto rois = std::vector<float>();
-      DDim rois_dims(
-          std::vector<int64_t>({batch_size * (batch_size + 1) / 2, 4}));
+      int num_rois = 0;
+      std::vector<int32_t> rois_nums(batch_size, 0);
+      DDim rois_nums_dim(std::vector<int64_t>({batch_size}));
+      fill_data_rand<int32_t>(rois_nums.data(), 0, 4, batch_size);
+      for (int i = 0; i < batch_size; i++) num_rois += rois_nums[i];
+
+      auto rois = std::vector<float>(num_rois * 4, 0);
+      DDim rois_dims(std::vector<int64_t>({num_rois, 4}));
       auto rois_lod0 = std::vector<uint64_t>(1, 0);
-      std::vector<int32_t> rois_nums(batch_size * (batch_size + 1) / 2, 0);
-      for (int bno = 0; bno < batch_size; ++bno) {
-        uint64_t new_end = *rois_lod0.rbegin() + bno + 1;
-        rois_lod0.push_back(new_end);
-        int num = 0;
-        for (int i = 0; i < (bno + 1); ++i) {
-          num += 1;
-          float x1 = 1.f * randint(0, width / spatial_scale_ - pooled_width_);
-          float y1 = 1.f * randint(0, height / spatial_scale_ - pooled_height_);
 
-          float x2 = 1.f * randint(x1 + pooled_width_, width / spatial_scale_);
-          float y2 =
-              1.f * randint(y1 + pooled_height_, height / spatial_scale_);
+      for (int bno = 0; bno < num_rois; ++bno) {
+        float x1 = 1.f * randint(0, width / spatial_scale_ - pooled_width_);
+        float y1 = 1.f * randint(0, height / spatial_scale_ - pooled_height_);
 
-          auto roi = std::vector<float>{x1, y1, x2, y2};
-          rois.insert(rois.end(), roi.begin(), roi.end());
-        }
-        rois_nums[bno] = num;
+        float x2 = 1.f * randint(x1 + pooled_width_, width / spatial_scale_);
+        float y2 = 1.f * randint(y1 + pooled_height_, height / spatial_scale_);
+        rois[bno * 4 + 0] = x1;
+        rois[bno * 4 + 1] = y1;
+        rois[bno * 4 + 2] = x2;
+        rois[bno * 4 + 3] = y2;
       }
 
       if (test_fluid_v18_api_) {
@@ -342,8 +340,7 @@ class RoiAlignComputeTester : public arena::TestCase {
         SetCommonTensor(roislod_, lod_dims, rois_lod0.data());
       } else if (use_rois_num_) {
         SetCommonTensor(rois_, rois_dims, rois.data());
-        DDim lod_num_dims(std::vector<int64_t>({rois_dims[0]}));
-        SetCommonTensor(rois_num_, lod_num_dims, rois_nums.data());
+        SetCommonTensor(rois_num_, rois_nums_dim, rois_nums.data());
       } else {
         LoD lod;
         lod.push_back(rois_lod0);

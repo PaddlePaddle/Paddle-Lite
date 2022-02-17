@@ -96,22 +96,23 @@ class RPCService(rpyc.Service):
 
         predictor = create_paddle_predictor(config)
 
+        # 3. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir + "/opt_model")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
+            model = f.read()
+
         for name in inputs:
             input_tensor = predictor.get_input_by_name(name)
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
+
         predictor.run()
-        # 3. inference results
+        # 4. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
-        # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir + "/opt_model")
-        with open(self.cache_dir + "/opt_model/model", "rb") as f:
-            model = f.read()
-
         return result_res, model
 
 

@@ -136,6 +136,9 @@ bool MatMulV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   if (op_desc.HasAttr("alpha")) {
     param_.alpha = op_desc.GetAttr<float>("alpha");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  input_tensor_ptrs_cache_.push_back(param_.Y);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
   return true;
 }
 

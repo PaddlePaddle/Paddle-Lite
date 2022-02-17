@@ -23,6 +23,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
 
 class TestReciprocalOp(AutoScanTest):
@@ -34,7 +35,7 @@ class TestReciprocalOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2])
         self.enable_testing_on_place(
-            TargetType.X86,
+            TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
@@ -48,14 +49,18 @@ class TestReciprocalOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
+                    min_value=1, max_value=64), max_size=2))
+
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        rec_op = OpConfig(
             type="reciprocal",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={})
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[rec_op],
             weights={},
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
@@ -65,17 +70,10 @@ class TestReciprocalOp(AutoScanTest):
         return self.get_predictor_configs(), ["reciprocal"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.X86:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,25 @@
 
 #pragma once
 
+#include <limits>
+#include <memory>
+#include <string>
+#include <vector>
+#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/tensor.h"
+#include "lite/core/types.h"
+
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
-typedef __fp16 float16_t;
-void shuffle_channel(const float16_t* inputs,
-                     float16_t* outputs,
-                     int group,
-                     int num,
-                     int channel,
-                     int height,
-                     int width);
+namespace mir {
 
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
+class ScaleCalcOfflinePass : public mir::StmtPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void RemoveScalePattern(const std::unique_ptr<SSAGraph>& graph);
+};
+
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

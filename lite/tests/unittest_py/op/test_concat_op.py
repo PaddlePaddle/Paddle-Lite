@@ -65,6 +65,8 @@ class TestConcatOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -164,8 +166,6 @@ class TestConcatOp(AutoScanTest):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data0"].shape
             if target_type == TargetType.Metal:
-                if "AxisTensor" in program_config.ops[0].inputs:
-                    return True
                 if len(input_shape) != 4:
                     return True
 

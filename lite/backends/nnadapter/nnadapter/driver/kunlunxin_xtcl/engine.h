@@ -34,10 +34,10 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
-  int GetFirstDeviceID() {
+  int first_device_id() {
     return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
-  std::string GetDeviceTarget() { return device_target_; }
+  std::string device_target() { return device_target_; }
   ~Context();
 
  private:

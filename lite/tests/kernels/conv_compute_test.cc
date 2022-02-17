@@ -514,6 +514,8 @@ TEST(Conv2d, precision) {
   abs_error = 5e-2;
   TestConvKsize(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  abs_error = 5e-2;
 #else
   return;
 #endif

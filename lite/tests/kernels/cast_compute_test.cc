@@ -138,6 +138,8 @@ TEST(Cast, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -151,7 +153,8 @@ TEST(Cast, precision) {
 
 // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
 // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) && \
+    !defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   TestCast(place, abs_error, 20, 5);
 #endif
   TestCast(place, abs_error, 2, 5);

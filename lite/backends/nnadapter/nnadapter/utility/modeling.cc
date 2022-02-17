@@ -25,12 +25,16 @@ namespace nnadapter {
 
 NNADAPTER_EXPORT hal::Operand* AddOperand(hal::Model* model) {
   model->operands.emplace_back();
-  return &model->operands.back();
+  auto operand = &model->operands.back();
+  memset(operand, 0, sizeof(hal::Operand));
+  return operand;
 }
 
 NNADAPTER_EXPORT hal::Operation* AddOperation(hal::Model* model) {
   model->operations.emplace_back();
-  return &model->operations.back();
+  auto operation = &model->operations.back();
+  memset(&operation->type, 0, sizeof(NNAdapterOperationType));
+  return operation;
 }
 
 NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
@@ -396,65 +400,71 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
   }
 }
 
-NNADAPTER_EXPORT bool InsertOperand(
-    hal::Model* model,
-    hal::Operand* reference_operand,
-    hal::Operand* target_operand,
-    bool after,
-    const std::vector<hal::Operation*> specified_affected_operations) {
-  bool found = false;
-  if (after) {
-    // Update if any operation use the 'reference_operand' as input
-    for (auto& operation : model->operations) {
-      if (!specified_affected_operations.empty() &&
-          std::find(specified_affected_operations.begin(),
-                    specified_affected_operations.end(),
-                    &operation) == specified_affected_operations.end()) {
-        continue;
+NNADAPTER_EXPORT bool UpdateOperationInputOperands(
+    std::vector<hal::Operation*> operations,
+    hal::Operand* old_operand,
+    hal::Operand* new_operand) {
+  if (operations.empty()) return false;
+  // Update if any operation use the 'old_operand' as a input operand
+  bool updated = false;
+  for (auto& operation : operations) {
+    for (auto& operand : operation->input_operands) {
+      if (operand == old_operand) {
+        operand = new_operand;
+        updated = true;
       }
-      for (auto& operand : operation.input_operands) {
-        if (operand == reference_operand) {
-          operand = target_operand;
-          found = true;
-        }
-      }
-    }
-    if (reference_operand->type.lifetime == NNADAPTER_MODEL_OUTPUT) {
-      for (auto& operand : model->output_operands) {
-        if (operand == reference_operand) {
-          operand = target_operand;
-        }
-      }
-      reference_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
-      target_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
-    }
-  } else {
-    // Replace if any operation use the 'reference_operand' as output
-    for (auto& operation : model->operations) {
-      if (!specified_affected_operations.empty() &&
-          std::find(specified_affected_operations.begin(),
-                    specified_affected_operations.end(),
-                    &operation) == specified_affected_operations.end()) {
-        continue;
-      }
-      for (auto& operand : operation.output_operands) {
-        if (operand == reference_operand) {
-          operand = target_operand;
-          found = true;
-        }
-      }
-    }
-    if (reference_operand->type.lifetime == NNADAPTER_MODEL_INPUT) {
-      for (auto& operand : model->input_operands) {
-        if (operand == reference_operand) {
-          operand = target_operand;
-        }
-      }
-      reference_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
-      target_operand->type.lifetime = NNADAPTER_MODEL_INPUT;
     }
   }
-  return found;
+  return updated;
+}
+
+NNADAPTER_EXPORT bool UpdateOperationOutputOperands(hal::Operation* operation,
+                                                    hal::Operand* old_operand,
+                                                    hal::Operand* new_operand) {
+  if (!operation) return false;
+  // Replace if the operation use the 'old_operand' as a output operand
+  bool updated = false;
+  for (auto& operand : operation->output_operands) {
+    if (operand == old_operand) {
+      operand = new_operand;
+      updated = true;
+    }
+  }
+  return updated;
+}
+
+NNADAPTER_EXPORT bool UpdateModelInputOperands(hal::Model* model,
+                                               hal::Operand* old_operand,
+                                               hal::Operand* new_operand) {
+  bool updated = false;
+  if (IsModelInputOperand(old_operand)) {
+    for (auto& operand : model->input_operands) {
+      if (operand == old_operand) {
+        operand = new_operand;
+        updated = true;
+      }
+    }
+    old_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+    new_operand->type.lifetime = NNADAPTER_MODEL_INPUT;
+  }
+  return updated;
+}
+
+NNADAPTER_EXPORT bool UpdateModelOutputOperands(hal::Model* model,
+                                                hal::Operand* old_operand,
+                                                hal::Operand* new_operand) {
+  bool updated = false;
+  if (IsModelOutputOperand(old_operand)) {
+    for (auto& operand : model->output_operands) {
+      if (operand == old_operand) {
+        operand = new_operand;
+        updated = true;
+      }
+    }
+    old_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+    new_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
+  }
+  return updated;
 }
 
 NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
@@ -546,37 +556,63 @@ NNADAPTER_EXPORT int GetModelOutputOperandIndex(hal::Model* model,
   return -1;
 }
 
-NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
-    hal::Model* model,
-    hal::Operand* input_operand,
-    std::vector<int32_t> permutation) {
-  auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  TransposeDimensions(output_operand->type.dimensions.data, permutation);
-  // Update the inputs of the operations and the output of the model
-  InsertOperand(model, input_operand, output_operand, true);
+hal::Operand* AddTransposeOperation(hal::Model* model,
+                                    hal::Operand* reference_operand,
+                                    std::vector<int32_t> permutation,
+                                    bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  auto target_permutation =
+      after ? permutation : InversePermutation(permutation);
+  TransposeDimensions(target_operand->type.dimensions.data, target_permutation);
+  for (uint32_t i = 0; i < target_operand->type.dimensions.dynamic_count; i++) {
+    TransposeDimensions(target_operand->type.dimensions.dynamic_data[i],
+                        target_permutation);
+  }
   auto perm_operand = AddInt32ConstantOperand(model, permutation);
   auto transpose_operation = AddOperation(model);
   transpose_operation->type = NNADAPTER_TRANSPOSE;
-  transpose_operation->input_operands = {input_operand, perm_operand};
-  transpose_operation->output_operands = {output_operand};
-  return output_operand;
+  transpose_operation->input_operands = {
+      after ? reference_operand : target_operand, perm_operand};
+  transpose_operation->output_operands = {after ? target_operand
+                                                : reference_operand};
+  return target_operand;
 }
 
-NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
-                                                   hal::Operand* input_operand,
-                                                   std::vector<int32_t> shape) {
+NNADAPTER_EXPORT hal::Operand* AppendTransposeOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    std::vector<int32_t> permutation) {
+  return AddTransposeOperation(model, input_operand, permutation, true);
+}
+
+NNADAPTER_EXPORT hal::Operand* InsertTransposeOperation(
+    hal::Model* model,
+    hal::Operand* output_operand,
+    std::vector<int32_t> permutation) {
+  return AddTransposeOperation(model, output_operand, permutation, false);
+}
+
+NNADAPTER_EXPORT hal::Operand* AppendReshapeOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    std::vector<int32_t> shape) {
   auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
+  CopyOperandType(&output_operand->type, input_operand->type);
+  if (!IsTemporaryShapeOperand(input_operand)) {
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   ReshapeDimensions(output_operand->type.dimensions.data,
                     &output_operand->type.dimensions.count,
                     shape);
-  // Update the inputs of the operations and the output of the model
-  InsertOperand(model, input_operand, output_operand, true);
+  for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
+    ReshapeDimensions(output_operand->type.dimensions.dynamic_data[i],
+                      &output_operand->type.dimensions.count,
+                      shape);
+  }
   auto shape_operand = AddInt32ConstantOperand(model, shape);
   auto reshape_operation = AddOperation(model);
   reshape_operation->type = NNADAPTER_RESHAPE;
@@ -585,18 +621,42 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
   return output_operand;
 }
 
-NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
-                                                 hal::Operand* input_operand) {
-  // Insert a new operand after input_operand
-  auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  InsertOperand(model, input_operand, output_operand, true);
+NNADAPTER_EXPORT hal::Operand* InsertReshapeOperation(
+    hal::Model* model,
+    hal::Operand* output_operand,
+    const NNAdapterOperandDimensionType& input_dimensions,
+    std::vector<int32_t> shape) {
+  auto input_operand = AddOperand(model);
+  CopyOperandType(&input_operand->type, output_operand->type);
+  input_operand->type.dimensions = input_dimensions;
+  if (!IsTemporaryShapeOperand(output_operand)) {
+    input_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  if (shape.empty()) {
+    NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
+    shape = std::vector<int32_t>(output_operand->type.dimensions.data,
+                                 output_operand->type.dimensions.data +
+                                     output_operand->type.dimensions.count);
+  }
+  auto shape_operand = AddInt32ConstantOperand(model, shape);
+  auto reshape_operation = AddOperation(model);
+  reshape_operation->type = NNADAPTER_RESHAPE;
+  reshape_operation->input_operands = {input_operand, shape_operand};
+  reshape_operation->output_operands = {output_operand};
+  return input_operand;
+}
+
+hal::Operand* AddDummyOperation(hal::Model* model,
+                                hal::Operand* reference_operand,
+                                bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   // Add a zero addend operand
   auto zero_operand = AddOperand(model);
-  memcpy(
-      &zero_operand->type, &input_operand->type, sizeof(NNAdapterOperandType));
+  CopyOperandType(&zero_operand->type, reference_operand->type);
   zero_operand->type.dimensions.count = 1;
   zero_operand->type.dimensions.data[0] = 1;
   zero_operand->length =
@@ -608,30 +668,58 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
   memset(zero_operand->buffer, 0, zero_operand->length);
   zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
   auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-  // Insert a new ADD operation between a new operand and output_operand
+  // Insert a new ADD operation
   auto dummy_add_operation = AddOperation(model);
   dummy_add_operation->type = NNADAPTER_ADD;
   dummy_add_operation->input_operands = {
-      input_operand, zero_operand, fuse_code_operand};
-  dummy_add_operation->output_operands = {output_operand};
-  return output_operand;
+      after ? reference_operand : target_operand,
+      zero_operand,
+      fuse_code_operand};
+  dummy_add_operation->output_operands = {after ? target_operand
+                                                : reference_operand};
+  return target_operand;
 }
 
-NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
+NNADAPTER_EXPORT hal::Operand* AppendDummyOperation(
+    hal::Model* model, hal::Operand* input_operand) {
+  return AddDummyOperation(model, input_operand, true);
+}
+
+NNADAPTER_EXPORT hal::Operand* InsertDummyOperation(
+    hal::Model* model, hal::Operand* output_operand) {
+  return AddDummyOperation(model, output_operand, false);
+}
+
+hal::Operand* AddUnaryOperation(hal::Model* model,
+                                hal::Operand* reference_operand,
+                                NNAdapterOperationType operation_type,
+                                bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  auto unary_operation = AddOperation(model);
+  unary_operation->type = operation_type;
+  unary_operation->input_operands = {after ? reference_operand
+                                           : target_operand};
+  unary_operation->output_operands = {after ? target_operand
+                                            : reference_operand};
+  return target_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AppendUnaryOperation(
     hal::Model* model,
     hal::Operand* input_operand,
     NNAdapterOperationType operation_type) {
-  // Insert a new operand after input_operand
-  auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  InsertOperand(model, input_operand, output_operand, true);
-  auto unary_operation = AddOperation(model);
-  unary_operation->type = operation_type;
-  unary_operation->input_operands = {input_operand};
-  unary_operation->output_operands = {output_operand};
-  return output_operand;
+  return AddUnaryOperation(model, input_operand, operation_type, true);
+}
+
+NNADAPTER_EXPORT hal::Operand* InsertUnaryOperation(
+    hal::Model* model,
+    hal::Operand* output_operand,
+    NNAdapterOperationType operation_type) {
+  return AddUnaryOperation(model, output_operand, operation_type, false);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
@@ -643,16 +731,17 @@ NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
   auto immediate_operand = AddOperand(model);
   // Make the quantization parameters and precision of the immediate operand the
   // same as output's
-  memcpy(&immediate_operand->type,
-         &reference_operand->type,
-         sizeof(NNAdapterOperandType));
+  CopyOperandType(&immediate_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    immediate_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   // Update to the dimensions of input operand, and update the input operand of
   // the operation with immediate_operand
   immediate_operand->type.dimensions = target_operand->type.dimensions;
   // Add a zero addend operand
   auto zero_operand = AddOperand(model);
-  memset(&zero_operand->type, 0, sizeof(NNAdapterOperandType));
-  zero_operand->type.precision = reference_operand->type.precision;
+  CopyOperandType(&zero_operand->type, reference_operand->type);
+  zero_operand->type.asymm_per_layer_params.zero_point = 0;
   zero_operand->type.dimensions.count = 1;
   zero_operand->type.dimensions.data[0] = 1;
   zero_operand->length =

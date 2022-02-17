@@ -45,14 +45,12 @@ class TestGatherOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # check config
-        in_dtype = program_config.inputs["input_data"].dtype
-        if "float32" != in_dtype or "axis_data" not in program_config.inputs:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -67,10 +65,13 @@ class TestGatherOp(AutoScanTest):
             ], [in_shape[axis] - 2, in_shape[axis] - 1]]))
         axis_type = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
+        with_tenor_axis = draw(st.booleans())
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
         if self.get_target() == "OpenCL":
             axis_type = "int32"
             index_type = "int32"
-        with_tenor_axis = draw(st.booleans())
+            input_type = "float32"
+            with_tenor_axis = True
 
         def generate_axis(*args, **kwargs):
             if axis_type == "int32":
@@ -94,8 +95,6 @@ class TestGatherOp(AutoScanTest):
             elif kwargs["type"] == "float32":
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
-
-        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
         op_inputs = {}
         program_inputs = {}
@@ -131,6 +130,7 @@ class TestGatherOp(AutoScanTest):
             inputs=op_inputs,
             outputs={"Out": ["output_data"]},
             attrs={"axis": axis})
+        gather_op.outputs_dtype = {"output_data": input_type}
         program_config = ProgramConfig(
             ops=[gather_op],
             weights={},
@@ -146,8 +146,8 @@ class TestGatherOp(AutoScanTest):
             in_dtype = program_config.inputs["input_data"].dtype
             index_dtpye = program_config.inputs["index_data"].dtype
             in_shape = list(program_config.inputs["input_data"].shape)
-            axis_dtpye = program_config.inputs["axis_data"].dtype
             if predictor_config.target() == TargetType.OpenCL:
+                axis_dtpye = program_config.inputs["axis_data"].dtype
                 if "int32" != axis_dtpye or "int32" != index_dtpye or len(
                         in_shape) != 2:
                     return True

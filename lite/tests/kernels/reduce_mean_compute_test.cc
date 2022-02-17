@@ -392,6 +392,8 @@ TEST(ReduceMean, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_err = 1e-3;
   keep_dim_vec = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_err = 1e-3;
 #else
   return;
 #endif

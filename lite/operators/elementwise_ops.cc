@@ -101,6 +101,9 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.alpha = opdesc.GetAttr<float>("alpha");
     param_.bias = opdesc.GetAttr<float>("bias");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  input_tensor_ptrs_cache_.push_back(param_.Y);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
 
   return true;
 }

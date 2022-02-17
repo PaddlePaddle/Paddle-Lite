@@ -35,6 +35,8 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             PrecisionType.Any,
             DataLayoutType.Any,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -74,7 +76,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
                      "XShape": ["xshape_data"]},
             attrs={"start_axis": start_axis,
                    "stop_axis": stop_axis})
-
+        flatten_contiguous_range_op.outputs_dtype = {"output_data": input_type}
         program_config = ProgramConfig(
             ops=[flatten_contiguous_range_op],
             weights={"xshape_data": TensorConfig(shape=in_shape)},
@@ -95,16 +97,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Host:
-                in_dtype = program_config.inputs["input_data"].dtype
-                if in_dtype != "float32":
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

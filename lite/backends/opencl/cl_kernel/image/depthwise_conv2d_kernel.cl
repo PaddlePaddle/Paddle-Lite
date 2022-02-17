@@ -66,8 +66,7 @@ __kernel void depth_conv2d_3x3(
   int2 pos_in_input_block =
       (int2)(out_c * input_width, batch_index * input_height);
 
-  int2 pos_in_filter_block =
-      (int2)(out_c * filter_width, batch_index * filter_height);
+  int2 pos_in_filter_block = (int2)(out_c * filter_width, 0);
 
   int filter_x = pos_in_filter_block.x;
   int filter_y = pos_in_filter_block.y;

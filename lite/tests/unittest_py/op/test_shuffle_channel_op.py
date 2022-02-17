@@ -32,17 +32,6 @@ class TestShuffleChannelOp(AutoScanTest):
             TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #The selection of TargetType.ARM errors.
-        '''
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP16],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -121,11 +110,7 @@ class TestShuffleChannelOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=200)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

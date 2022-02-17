@@ -96,6 +96,8 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   CHECK(scope->FindVar(out));
   param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
+  input_tensor_ptrs_cache_.push_back(param_.input);
+  output_tensor_ptrs_cache_.push_back(param_.output);
 
   if (op_desc.HasAttr("activation_type")) {
     param_.activation_type = op_desc.GetAttr<std::string>("activation_type");

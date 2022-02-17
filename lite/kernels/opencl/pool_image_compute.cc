@@ -38,7 +38,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& in_dims = param.x->dims();
     const auto& out_dims = param.output->dims();
     const bool global_pooling = param.global_pooling;
-    const bool exclusive = param.exclusive;
     const bool adaptive = param.adaptive;
     const std::string padding_algorithm = param.padding_algorithm;
     const std::vector<int>& ksize = param.ksize;
@@ -66,9 +65,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                              param.strides,
                              ksize);
 
-    if (exclusive) {
-      build_options_ += " -DEXCLUSIVE";
-    }
     if (global_pooling) {
       build_options_ += " -DGLOBAL";
       ksize_.resize(static_cast<size_t>(in_dims.size()) - 2);
@@ -81,8 +77,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     run_local_work_ =
         out_dims[0] * UP_DIV(out_dims[1], 4) * out_dims[2] * out_dims[3] <
             low_op_parallelism_thre_ &&
-        ksize_[0] * ksize_[1] >= high_op_intensity_thre_;
-    run_local_work_ = false;
+        ksize_[0] * ksize_[1] >= high_op_intensity_thre_ && !adaptive;
     if (run_local_work_) {
       kernel_func_name_ += "_local";
     }
@@ -154,39 +149,40 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       }
 
       const int out_c_blks = UP_DIV(out_dims[1], 4);
-      uint32_t workgroup_size = 0;
-
-      int type_size =
-          (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
-              ? sizeof(uint16_t)
-              : sizeof(float);
-      if (pooling_type == "avg") {
-        type_size = sizeof(float);
-      }
-      uint32_t local_mem_size =
-          CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_LOCAL_MEM_SIZE_KB"] *
-          1024;
-      uint32_t workgroupsize_max =
-          CLRuntime::Global()->GetMaxWorkGroupSize(kernel_);
-
       uint32_t compute_intensity = ksize_[0] * ksize_[1];
       run_local_work_ = out_dims[0] * out_c_blks * out_dims[2] * out_dims[3] <
                             low_op_parallelism_thre_ &&
-                        compute_intensity >= high_op_intensity_thre_;
-      run_local_work_ = false;
+                        compute_intensity >= high_op_intensity_thre_ &&
+                        !adaptive;
       if (run_local_work_) {
-        workgroup_size =
+        // Calculate workgroup_w_size, workgroup_h_size
+        int type_size = (CLRuntime::Global()->get_precision() ==
+                         lite_api::CL_PRECISION_FP16)
+                            ? sizeof(uint16_t)
+                            : sizeof(float);
+        if (pooling_type == "avg") {
+          type_size = sizeof(float);
+        }
+        uint32_t local_mem_size =
+            CLRuntime::Global()
+                ->GetDeviceInfo()["CL_DEVICE_LOCAL_MEM_SIZE_KB"] *
+            1024;
+        uint32_t workgroupsize_max =
+            CLRuntime::Global()->GetMaxWorkGroupSize(kernel_);
+        uint32_t workgroup_size =
             std::min(static_cast<uint32_t>(local_mem_size / (4 * type_size)),
                      workgroupsize_max);
         workgroup_size =
             std::min(static_cast<uint32_t>(compute_intensity), workgroup_size);
+
+        // make workgroup_size floor-round to pow(2)
         uint32_t temp_size = 1;
         while ((temp_size <<= 1) <= workgroup_size) {
         }
         workgroup_size = temp_size >> 1;
-
+        // make workgroup_w_size floor-round to pow(2)
         int workgroup_w_size = 1, workgroup_h_size;
-        while ((workgroup_w_size <<= 1) <= ksize_[0] &&
+        while ((workgroup_w_size <<= 1) <= ksize_[1] &&
                workgroup_w_size <= workgroup_size) {
         }
         workgroup_w_size >>= 1;
@@ -198,14 +194,21 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         local_work_size_ = cl::NDRange(workgroup_size, 1, 1);
 
         cl_int2 local_block_size_shape = {workgroup_w_size, workgroup_h_size};
-        cl_int2 local_block_count_shape = {UP_DIV(ksize_[0], workgroup_w_size),
-                                           UP_DIV(ksize_[1], workgroup_h_size)};
+        cl_int2 local_block_count_shape = {UP_DIV(ksize_[1], workgroup_w_size),
+                                           UP_DIV(ksize_[0], workgroup_h_size)};
 
-        int idx = 12;
+        int idx = 14;
         kernel_.setArg(idx++, static_cast<int>(workgroup_size));
         kernel_.setArg(idx++, local_block_size_shape);
         kernel_.setArg(idx++, local_block_count_shape);
         kernel_.setArg(idx++, workgroup_size * 4 * type_size, nullptr);
+#ifdef LITE_WITH_LOG
+        VLOG(4) << "workgroup_size: " << workgroup_size;
+        VLOG(4) << "local_block_size_shape(wh): " << local_block_size_shape.x
+                << " " << local_block_size_shape.y;
+        VLOG(4) << "local_block_count_shape(wh): " << local_block_count_shape.x
+                << " " << local_block_count_shape.y;
+#endif
       } else {
         global_work_size_ =
             cl::NDRange(out_c_blks, out_dims[3], out_dims[0] * out_dims[2]);
@@ -234,11 +237,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, paddings_[2]);
       CL_CHECK_FATAL(status);
-      if (kernel_func_name_ == "pool") {
-        int ad = param.adaptive;
-        status = kernel_.setArg(arg_idx++, ad);
-        CL_CHECK_FATAL(status);
-      }
+      status = kernel_.setArg(arg_idx++, static_cast<int>(exclusive));
+      CL_CHECK_FATAL(status);
+      status = kernel_.setArg(arg_idx++, static_cast<int>(adaptive));
+      CL_CHECK_FATAL(status);
 
 #ifdef LITE_WITH_LOG
       const std::vector<int>& paddings = *param.paddings;

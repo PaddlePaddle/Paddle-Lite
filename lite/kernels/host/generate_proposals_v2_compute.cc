@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/host/generate_proposals_v2_compute.h"
+#include "lite/backends/host/math/bbox_util.h"
+#include "lite/backends/host/math/gather.h"
+#include "lite/backends/host/math/nms_util.h"
+#include "lite/backends/host/math/transpose.h"
 
 #include <cmath>
 #include <string>
@@ -28,273 +32,6 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
-
-static void permute(const Tensor &input,
-                    Tensor *output,
-                    const std::vector<int> &orders) {
-  auto in_dims = input.dims();
-  auto out_dims = output->dims();
-  int num_axes = in_dims.size();
-  int count = in_dims.production();
-
-  const float *din = input.data<float>();
-  float *dout = output->mutable_data<float>();
-  std::vector<int> old_steps(
-      {static_cast<int>(in_dims[1] * in_dims[2] * in_dims[3]),
-       static_cast<int>(in_dims[2] * in_dims[3]),
-       static_cast<int>(in_dims[3]),
-       1});
-  std::vector<int> new_steps(
-      {static_cast<int>(out_dims[1] * out_dims[2] * out_dims[3]),
-       static_cast<int>(out_dims[2] * out_dims[3]),
-       static_cast<int>(out_dims[3]),
-       1});
-
-  for (int i = 0; i < count; ++i) {
-    int old_idx = 0;
-    int idx = i;
-    for (int j = 0; j < num_axes; ++j) {
-      int order = orders[j];
-      old_idx += (idx / new_steps[j]) * old_steps[order];
-      idx %= new_steps[j];
-    }
-    dout[i] = din[old_idx];
-  }
-}
-
-template <typename T, typename IndexT = int>
-static void gather(const Tensor &src, const Tensor &index, Tensor *output) {
-  auto *p_src = src.data<T>();
-  auto *p_index = index.data<IndexT>();
-  auto *p_output = output->mutable_data<T>();
-
-  auto src_dims = src.dims();
-  int slice_size = 1;
-  for (int i = 1; i < src_dims.size(); i++) slice_size *= src_dims[i];
-  size_t slice_bytes = slice_size * sizeof(T);
-
-  int64_t index_size = index.numel();
-  for (int64_t i = 0; i < index_size; i++) {
-    IndexT index_ = p_index[i];
-    memcpy(p_output + i * slice_size, p_src + index_ * slice_size, slice_bytes);
-  }
-}
-
-template <class T>
-static void BoxCoder(Tensor *all_anchors,
-                     Tensor *bbox_deltas,
-                     Tensor *variances,
-                     Tensor *proposals) {
-  T *proposals_data = proposals->mutable_data<T>();
-
-  int64_t row = all_anchors->dims()[0];
-  int64_t len = all_anchors->dims()[1];
-
-  auto *bbox_deltas_data = bbox_deltas->data<T>();
-  auto *anchor_data = all_anchors->data<T>();
-  const T *variances_data = nullptr;
-  if (variances) {
-    variances_data = variances->data<T>();
-  }
-
-  for (int64_t i = 0; i < row; ++i) {
-    T anchor_width = anchor_data[i * len + 2] - anchor_data[i * len] + 1.0;
-    T anchor_height = anchor_data[i * len + 3] - anchor_data[i * len + 1] + 1.0;
-
-    T anchor_center_x = anchor_data[i * len] + 0.5 * anchor_width;
-    T anchor_center_y = anchor_data[i * len + 1] + 0.5 * anchor_height;
-
-    T bbox_center_x = 0, bbox_center_y = 0;
-    T bbox_width = 0, bbox_height = 0;
-
-    if (variances) {
-      bbox_center_x =
-          variances_data[i * len] * bbox_deltas_data[i * len] * anchor_width +
-          anchor_center_x;
-      bbox_center_y = variances_data[i * len + 1] *
-                          bbox_deltas_data[i * len + 1] * anchor_height +
-                      anchor_center_y;
-      bbox_width = std::exp(std::min<T>(variances_data[i * len + 2] *
-                                            bbox_deltas_data[i * len + 2],
-                                        kBBoxClipDefault)) *
-                   anchor_width;
-      bbox_height = std::exp(std::min<T>(variances_data[i * len + 3] *
-                                             bbox_deltas_data[i * len + 3],
-                                         kBBoxClipDefault)) *
-                    anchor_height;
-    } else {
-      bbox_center_x =
-          bbox_deltas_data[i * len] * anchor_width + anchor_center_x;
-      bbox_center_y =
-          bbox_deltas_data[i * len + 1] * anchor_height + anchor_center_y;
-      bbox_width = std::exp(std::min<T>(bbox_deltas_data[i * len + 2],
-                                        kBBoxClipDefault)) *
-                   anchor_width;
-      bbox_height = std::exp(std::min<T>(bbox_deltas_data[i * len + 3],
-                                         kBBoxClipDefault)) *
-                    anchor_height;
-    }
-
-    proposals_data[i * len] = bbox_center_x - bbox_width / 2;
-    proposals_data[i * len + 1] = bbox_center_y - bbox_height / 2;
-    proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2 - 1;
-    proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2 - 1;
-  }
-  // return proposals;
-}
-
-template <class T>
-static void ClipTiledBoxes(const Tensor &im_shape, Tensor *boxes) {
-  T *boxes_data = boxes->mutable_data<T>();
-  const T *im_shape_data = im_shape.data<T>();
-  T zero(0);
-  for (int64_t i = 0; i < boxes->numel(); ++i) {
-    if (i % 4 == 0) {
-      boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_shape_data[1] - 1), zero);
-    } else if (i % 4 == 1) {
-      boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_shape_data[0] - 1), zero);
-    } else if (i % 4 == 2) {
-      boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_shape_data[1] - 1), zero);
-    } else {
-      boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_shape_data[0] - 1), zero);
-    }
-  }
-}
-
-template <class T>
-static void FilterBoxesWithoutScale(Tensor *boxes,
-                                    float min_size,
-                                    const Tensor &im_shape,
-                                    Tensor *keep) {
-  T *boxes_data = boxes->mutable_data<T>();
-  const T *im_shape_data = im_shape.data<T>();
-  min_size = std::max(min_size, 1.0f);
-  keep->Resize(std::vector<int64_t>({boxes->dims()[0]}));
-  int *keep_data = keep->mutable_data<int>();
-
-  int keep_len = 0;
-  for (int i = 0; i < boxes->dims()[0]; ++i) {
-    T ws = boxes_data[4 * i + 2] - boxes_data[4 * i] + 1;
-    T hs = boxes_data[4 * i + 3] - boxes_data[4 * i + 1] + 1;
-    T x_ctr = boxes_data[4 * i] + ws / 2;
-    T y_ctr = boxes_data[4 * i + 1] + hs / 2;
-    if (ws >= min_size && ws >= min_size && x_ctr <= im_shape_data[1] &&
-        y_ctr <= im_shape_data[0]) {
-      keep_data[keep_len++] = i;
-    }
-  }
-  keep->Resize(std::vector<int64_t>({keep_len}));
-}
-
-template <class T>
-static std::vector<std::pair<T, int>> GetSortedScoreIndex(
-    const std::vector<T> &scores) {
-  std::vector<std::pair<T, int>> sorted_indices;
-  sorted_indices.reserve(scores.size());
-  for (size_t i = 0; i < scores.size(); ++i) {
-    sorted_indices.emplace_back(scores[i], i);
-  }
-  // Sort the score pair according to the scores in descending order
-  std::stable_sort(sorted_indices.begin(),
-                   sorted_indices.end(),
-                   [](const std::pair<T, int> &a, const std::pair<T, int> &b) {
-                     return a.first < b.first;
-                   });
-  return sorted_indices;
-}
-
-template <class T>
-static T BBoxArea(const T *box, bool normalized) {
-  if (box[2] < box[0] || box[3] < box[1]) {
-    // If coordinate values are is invalid
-    // (e.g. xmax < xmin or ymax < ymin), return 0.
-    return static_cast<T>(0.);
-  } else {
-    const T w = box[2] - box[0];
-    const T h = box[3] - box[1];
-    if (normalized) {
-      return w * h;
-    } else {
-      // If coordinate values are not within range [0, 1].
-      return (w + 1) * (h + 1);
-    }
-  }
-}
-
-template <class T>
-static T JaccardOverlap(const T *box1, const T *box2, bool normalized) {
-  if (box2[0] > box1[2] || box2[2] < box1[0] || box2[1] > box1[3] ||
-      box2[3] < box1[1]) {
-    return static_cast<T>(0.);
-  } else {
-    const T inter_xmin = std::max(box1[0], box2[0]);
-    const T inter_ymin = std::max(box1[1], box2[1]);
-    const T inter_xmax = std::min(box1[2], box2[2]);
-    const T inter_ymax = std::min(box1[3], box2[3]);
-    const T inter_w = std::max(T(0), inter_xmax - inter_xmin + 1);
-    const T inter_h = std::max(T(0), inter_ymax - inter_ymin + 1);
-    const T inter_area = inter_w * inter_h;
-    const T bbox1_area = BBoxArea<T>(box1, normalized);
-    const T bbox2_area = BBoxArea<T>(box2, normalized);
-    return inter_area / (bbox1_area + bbox2_area - inter_area);
-  }
-}
-
-template <class T>
-static Tensor VectorToTensor(const std::vector<T> &selected_indices,
-                             int selected_num) {
-  Tensor keep_nms;
-  keep_nms.Resize(std::vector<int64_t>({selected_num}));
-  auto *keep_data = keep_nms.mutable_data<T>();
-  for (int i = 0; i < selected_num; ++i) {
-    keep_data[i] = selected_indices[i];
-  }
-  return keep_nms;
-}
-
-template <class T>
-static Tensor NMS(Tensor *bbox, Tensor *scores, T nms_threshold, float eta) {
-  int64_t num_boxes = bbox->dims()[0];
-  int64_t box_size = bbox->dims()[1];  // 4: [xmin ymin xmax ymax]
-
-  std::vector<T> scores_data(num_boxes);
-  std::copy_n(scores->data<T>(), num_boxes, scores_data.begin());
-  std::vector<std::pair<T, int>> sorted_indices =
-      GetSortedScoreIndex<T>(scores_data);
-
-  std::vector<int> selected_indices;
-  int selected_num = 0;
-  T adaptive_threshold = nms_threshold;
-  const T *bbox_data = bbox->data<T>();
-  while (sorted_indices.size() != 0) {
-    int idx = sorted_indices.back().second;
-    bool flag = true;
-    for (int kept_idx : selected_indices) {
-      if (flag) {
-        T overlap = JaccardOverlap<T>(
-            bbox_data + idx * box_size, bbox_data + kept_idx * box_size, false);
-        flag = (overlap <= adaptive_threshold);
-      } else {
-        break;
-      }
-    }
-    if (flag) {
-      selected_indices.push_back(idx);
-      ++selected_num;
-    }
-    sorted_indices.erase(sorted_indices.end() - 1);
-    if (flag && eta < 1 && adaptive_threshold > 0.5) {
-      adaptive_threshold *= eta;
-    }
-  }
-  return VectorToTensor(selected_indices, selected_num);
-}
-
 static std::pair<Tensor, Tensor> ProposalForOneImage(
     const Tensor &im_shape_slice,
     const Tensor &anchors,
@@ -305,7 +42,8 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
     int post_nms_top_n,
     float nms_thresh,
     float min_size,
-    float eta) {
+    float eta,
+    bool pixel_offset = true) {
   // sort scores_slice
   Tensor index_t;
   index_t.Resize(std::vector<int64_t>({scores_slice.numel()}));
@@ -332,19 +70,22 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
   bbox_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
   anchor_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
   var_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
-  gather<float>(scores_slice, index_t, &scores_sel);
-  gather<float>(bbox_deltas_slice, index_t, &bbox_sel);
-  gather<float>(anchors, index_t, &anchor_sel);
-  gather<float>(variances, index_t, &var_sel);
+  lite::host::math::Gather<float>(scores_slice, index_t, &scores_sel);
+  lite::host::math::Gather<float>(bbox_deltas_slice, index_t, &bbox_sel);
+  lite::host::math::Gather<float>(anchors, index_t, &anchor_sel);
+  lite::host::math::Gather<float>(variances, index_t, &var_sel);
 
   Tensor proposals;
   proposals.Resize(std::vector<int64_t>({index_t.numel(), 4}));
-  BoxCoder<float>(&anchor_sel, &bbox_sel, &var_sel, &proposals);
+  lite::host::math::BoxCoder<float>(
+      &anchor_sel, &bbox_sel, &var_sel, &proposals, pixel_offset);
 
-  ClipTiledBoxes<float>(im_shape_slice, &proposals);
+  lite::host::math::ClipTiledBoxes<float>(
+      im_shape_slice, proposals, &proposals, false, pixel_offset);
 
   Tensor keep;
-  FilterBoxesWithoutScale<float>(&proposals, min_size, im_shape_slice, &keep);
+  lite::host::math::FilterBoxes<float>(
+      &proposals, min_size, im_shape_slice, false, &keep, pixel_offset);
   // Handle the case when there is no keep index left
   if (keep.numel() == 0) {
     Tensor scores_filter;
@@ -364,32 +105,22 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
   Tensor scores_filter;
   scores_filter.Resize(std::vector<int64_t>({keep.numel(), 1}));
   bbox_sel.Resize(std::vector<int64_t>({keep.numel(), 4}));
-  gather<float>(scores_sel, keep, &scores_filter);
-  gather<float>(proposals, keep, &bbox_sel);
+  lite::host::math::Gather<float>(scores_sel, keep, &scores_filter);
+  lite::host::math::Gather<float>(proposals, keep, &bbox_sel);
   if (nms_thresh <= 0) {
     return std::make_pair(bbox_sel, scores_filter);
   }
 
-  Tensor keep_nms = NMS<float>(&bbox_sel, &scores_filter, nms_thresh, eta);
+  Tensor keep_nms = lite::host::math::NMS<float>(
+      &bbox_sel, &scores_filter, nms_thresh, eta, pixel_offset);
   if (post_nms_top_n > 0 && post_nms_top_n < keep_nms.numel()) {
     keep_nms.Resize(std::vector<int64_t>({post_nms_top_n}));
   }
   proposals.Resize(std::vector<int64_t>({keep_nms.numel(), 4}));
   scores_sel.Resize(std::vector<int64_t>({keep_nms.numel(), 1}));
-  gather<float>(bbox_sel, keep_nms, &proposals);
-  gather<float>(scores_filter, keep_nms, &scores_sel);
+  lite::host::math::Gather<float>(bbox_sel, keep_nms, &proposals);
+  lite::host::math::Gather<float>(scores_filter, keep_nms, &scores_sel);
   return std::make_pair(proposals, scores_sel);
-}
-
-void AppendTensor(Tensor *dst, int64_t offset, const Tensor &src) {
-  auto *out_data = static_cast<void *>(dst->mutable_data<float>());
-  auto *to_add_data = static_cast<const void *>(src.data<float>());
-  size_t size_of_t = sizeof(float);
-  offset *= size_of_t;
-  std::memcpy(
-      reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(out_data) + offset),
-      to_add_data,
-      src.numel() * size_of_t);
 }
 
 void GenerateProposalsV2Compute::Run() {
@@ -406,6 +137,7 @@ void GenerateProposalsV2Compute::Run() {
   float nms_thresh = param.nms_thresh;
   float min_size = param.min_size;
   float eta = param.eta;
+  bool pixel_offset = param.pixel_offset;
 
   auto &scores_dim = scores->dims();
   int64_t num = scores_dim[0];
@@ -424,8 +156,8 @@ void GenerateProposalsV2Compute::Run() {
   scores_swap.Resize(std::vector<int64_t>({num, h_score, w_score, c_score}));
   bbox_deltas_swap.Resize(std::vector<int64_t>({num, h_bbox, w_bbox, c_bbox}));
   std::vector<int> orders({0, 2, 3, 1});
-  permute(*scores, &scores_swap, orders);
-  permute(*bbox_deltas, &bbox_deltas_swap, orders);
+  lite::host::math::Transpose<float>(*scores, &scores_swap, orders);
+  lite::host::math::Transpose<float>(*bbox_deltas, &bbox_deltas_swap, orders);
   LoD lod;
   lod.resize(1);
   auto &lod0 = lod[0];
@@ -454,11 +186,13 @@ void GenerateProposalsV2Compute::Run() {
                             post_nms_top_n,
                             nms_thresh,
                             min_size,
-                            eta);
+                            eta,
+                            pixel_offset);
     Tensor &proposals = tensor_pair.first;
     Tensor &scores = tensor_pair.second;
-    AppendTensor(rpn_rois, 4 * num_proposals, proposals);
-    AppendTensor(rpn_roi_probs, num_proposals, scores);
+    lite::host::math::AppendTensor<float>(
+        rpn_rois, 4 * num_proposals, proposals);
+    lite::host::math::AppendTensor<float>(rpn_roi_probs, num_proposals, scores);
 
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);

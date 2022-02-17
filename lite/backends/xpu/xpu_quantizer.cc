@@ -152,6 +152,7 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
   // transpose
   const T* cpu_ptr = nullptr;
   int numel = dims.production();
+  int max_ptr_size = XPUMemory::get_max_ptr_size();
   std::vector<T> transpose_data(numel, 0);
   if (data_transpose) {
     CHECK(dims.size() == 2) << "Not support: dims.size = " << dims.size();
@@ -163,6 +164,11 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
   }
   // copy to XPU
   XPUScratchPadGuard weight_max_guard(new XPUScratchPad(nullptr, 0));
+  if (std::is_same<T, int8_t>::value) {
+    // prepare max_w space for slim int8 quant
+    weight_max_guard =
+        std::move(XPUMemory::MallocScratchPad(max_ptr_size * sizeof(float)));
+  }
   XPUScratchPadGuard quant_weight_guard;
   quant_weight_guard =
       std::move(XPUMemory::MallocScratchPad(numel * sizeof(T)));

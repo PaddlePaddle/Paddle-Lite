@@ -24,10 +24,18 @@ namespace huawei_ascend_npu {
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto output_dimensions = output_operand->type.dimensions.data;
+  NNADAPTER_CHECK_NE(output_dimensions[0], NNADAPTER_UNKNOWN)
+      << "output_dimensions[0] is unknown, dynamic shape is still not "
+         "supported.";
+  NNADAPTER_CHECK_NE(output_dimensions[1], NNADAPTER_UNKNOWN)
+      << "output_dimensions[1] is unknown, dynamic shape is still not "
+         "supported.";
   NNADAPTER_CHECK_NE(output_dimensions[2], NNADAPTER_UNKNOWN)
-      << "AscendNPU must set out shape.";
+      << "output_dimensions[2] is unknown, dynamic shape is still not "
+         "supported.";
   NNADAPTER_CHECK_NE(output_dimensions[3], NNADAPTER_UNKNOWN)
-      << "AscendNPU must set out shape.";
+      << "output_dimensions[3] is unknown, dynamic shape is still not "
+         "supported.";
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],
@@ -46,20 +54,20 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
-  // Group of AscendNPU may be different from paddle.
+  // Group only supports 1
   NNADAPTER_CHECK_EQ(group, 1);
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (input_operator == nullptr) {
+  if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto filter_operator = converter->GetMappedOperator(filter_operand);
-  if (filter_operator == nullptr) {
+  if (!filter_operator) {
     filter_operator = converter->ConvertOperand(filter_operand);
   }
   auto bias_operator = converter->GetMappedOperator(bias_operand);
-  if (bias_operator == nullptr) {
+  if (!bias_operator) {
     bias_operator = converter->ConvertOperand(bias_operand);
   }
   auto conv2d_transpose_op =

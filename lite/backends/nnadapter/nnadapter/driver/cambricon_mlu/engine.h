@@ -34,7 +34,7 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
-  std::string GetBuildConfigFilePath() { return build_config_file_path_; }
+  std::string build_config_file_path() { return build_config_file_path_; }
   ~Context();
 
  private:

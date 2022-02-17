@@ -88,7 +88,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK_GT(output_count, 0);
     output_types_ = cache->output_types;
     // Create a runtime instance from a buffer
-    runtime_ = LoadInstanceRuntimeFromBuffer(context_->GetFirstDeviceID(),
+    runtime_ = LoadInstanceRuntimeFromBuffer(context_->first_device_id(),
                                              &cache->buffer);
   } else {
     // Build from model
@@ -123,8 +123,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     // Build a XTCL network to a runtime instance, and serialize it into a
     // buffer
     runtime_ = BuildInstanceRuntimeToBuffer(
-        context_->GetFirstDeviceID(),
-        context_->GetDeviceTarget(),
+        context_->first_device_id(),
+        context_->device_target(),
         &builder_,
         &params_,
         &output_exprs,
