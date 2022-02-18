@@ -400,8 +400,15 @@ class AutoScanBaseTest(unittest.TestCase):
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
+                if flag_precision_fp16:
+                    if platform.system() == 'Linux':
+                        # only run in M1
+                        continue
                 # creat model and prepare feed data
                 if quant:
+                    if platform.system() == 'Darwin':
+                        # only run in linux
+                        continue
                     atol_ = 1e-3
                     rtol_ = 1e-3
                     if cnt == 0:
