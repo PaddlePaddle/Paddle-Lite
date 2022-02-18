@@ -43,8 +43,7 @@ Context::Context(void* device, const char* properties) : device_(device) {
                       << nnapi()->android_sdk_version;
   NNADAPTER_CHECK(nnapi()->nnapi_exists) << "NNAPI is not found!";
   // Get the available device list
-  if (nnapi()->android_sdk_version >=
-      ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12) {
+  if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_3) {
     std::vector<std::pair<ANeuralNetworksDevice*, std::pair<std::string, int>>>
         available_device_list;
     uint32_t num_devices = 0;
@@ -215,13 +214,12 @@ Context::Context(void* device, const char* properties) : device_(device) {
                               "'ANDROID_NNAPI_SELECTED_DEVICE_IDS' and "
                               "'ANDROID_NNAPI_DISABLE_REFERENCE_DEVICE' are "
                               "only supported since Android sdk version "
-                           << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12
+                           << ANEURALNETWORKS_FEATURE_LEVEL_3
                            << " but the runtime's is "
                            << nnapi()->android_sdk_version;
   }
   // Relax computation float32 to float16
-  if (nnapi()->android_sdk_version >=
-      ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_11) {
+  if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_2) {
     // ANDROID_NNAPI_RELAX_FP32_TO_FP16
     if (key_values.count(ANDROID_NNAPI_RELAX_FP32_TO_FP16)) {
       relax_fp32_to_fp16_ =
@@ -234,7 +232,7 @@ Context::Context(void* device, const char* properties) : device_(device) {
   } else {
     NNADAPTER_LOG(WARNING) << "The property 'ANDROID_NNAPI_RELAX_FP32_TO_FP16' "
                               "is only supported since Android sdk version "
-                           << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_11
+                           << ANEURALNETWORKS_FEATURE_LEVEL_2
                            << " but the runtime's is "
                            << nnapi()->android_sdk_version;
   }
@@ -336,8 +334,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                          << result << ")!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-  if (nnapi()->android_sdk_version >=
-      ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_11) {
+  if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_2) {
     result = nnapi()->ANeuralNetworksModel_relaxComputationFloat32toFloat16(
         model_, context_->relax_fp32_to_fp16());
     if (result != ANEURALNETWORKS_NO_ERROR) {
@@ -369,8 +366,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   if (cache->token && cache->dir) {
-    if (nnapi()->android_sdk_version >=
-        ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12) {
+    if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_3) {
       result = nnapi()->ANeuralNetworksCompilation_setCaching(
           compilation_,
           cache->dir,
@@ -384,7 +380,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     } else {
       NNADAPTER_LOG(WARNING) << "The compilation caching is only supported "
                                 "since Android sdk version "
-                             << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12
+                             << ANEURALNETWORKS_FEATURE_LEVEL_3
                              << " but the runtime's is "
                              << nnapi()->android_sdk_version;
     }
@@ -434,8 +430,7 @@ int Program::Execute(uint32_t input_count,
   bool should_reset_execution = false;
   // Must reset execution before Android API 31
   if (!execution_ ||
-      nnapi()->android_sdk_version <=
-          ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_13) {
+      nnapi()->android_sdk_version <= ANEURALNETWORKS_FEATURE_LEVEL_4) {
     should_reset_execution = true;
   }
   if (should_reset_execution) {
@@ -447,8 +442,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_EQ(
         nnapi()->ANeuralNetworksExecution_create(compilation_, &execution),
         ANEURALNETWORKS_NO_ERROR);
-    if (nnapi()->android_sdk_version >
-        ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_13) {
+    if (nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_5) {
       NNADAPTER_CHECK_EQ(nnapi()->ANeuralNetworksExecution_setReusable(
                              execution, /*reusable=*/true),
                          ANEURALNETWORKS_NO_ERROR);
@@ -501,7 +495,7 @@ int Program::Execute(uint32_t input_count,
     output_buffers[arg.index].second = length;
   }
   auto start_time = GetCurrentUS();
-  if (nnapi()->android_sdk_version < ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12) {
+  if (nnapi()->android_sdk_version < ANEURALNETWORKS_FEATURE_LEVEL_3) {
     ANeuralNetworksEvent* event = nullptr;
     NNADAPTER_CHECK_EQ(
         nnapi()->ANeuralNetworksExecution_startCompute(execution_, &event),

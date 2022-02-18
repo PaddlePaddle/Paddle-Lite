@@ -15,6 +15,7 @@
 #include "driver/android_nnapi/optimizer/restrict_input_output_quant_params.h"
 #include <cmath>
 #include <vector>
+#include "driver/android_nnapi/utility.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -23,33 +24,117 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-static void RestrictSameInputOutputScale(hal::Model* model,
-                                         hal::Operation* operation,
-                                         hal::Operand* target_operand,
-                                         hal::Operand* reference_operand,
-                                         double threshold = 1e-5f) {
-  auto& target_type = target_operand->type;
-  auto& reference_type = reference_operand->type;
-  auto target_precision = target_type.precision;
-  auto reference_precision = reference_type.precision;
-  if (IsAsymmPerLayerQuantType(target_precision) &&
-      IsAsymmPerLayerQuantType(reference_precision)) {
-    if (fabs(target_type.asymm_per_layer_params.scale -
-             reference_type.asymm_per_layer_params.scale) > threshold) {
-      AddRequantOperation(model, operation, target_operand, reference_operand);
-    }
-  } else if (IsSymmPerLayerQuantType(target_precision) &&
-             IsSymmPerLayerQuantType(reference_precision)) {
-    if (fabs(target_type.symm_per_layer_params.scale -
-             reference_type.symm_per_layer_params.scale) > threshold) {
-      AddRequantOperation(model, operation, target_operand, reference_operand);
-    }
-  } else {
-    NNADAPTER_LOG(WARNING) << "Unhandled case: target_precision="
-                           << OperandPrecisionCodeToString(target_precision)
-                           << ", reference_precision="
-                           << OperandPrecisionCodeToString(reference_precision);
+static bool RestrictInputOutputScale(hal::Model* model,
+                                     hal::Operation* operation,
+                                     hal::Operand* target_operand,
+                                     float quant_scale,
+                                     int32_t zero_point,
+                                     bool is_output = false,
+                                     double threshold = 1e-5f) {
+  if (!IsAsymmPerLayerQuantType(target_operand->type.precision)) {
+    return false;
   }
+  auto target_quant_scale = target_operand->type.asymm_per_layer_params.scale;
+  auto target_zero_point =
+      target_operand->type.asymm_per_layer_params.zero_point;
+  if (fabs(target_quant_scale - quant_scale) <= threshold &&
+      target_zero_point == zero_point) {
+    return false;
+  }
+  NNADAPTER_VLOG(5) << "Requantize input/output operand "
+                    << OperandIdToString(target_operand) << ": scale "
+                    << target_quant_scale << " -> " << quant_scale
+                    << ", zero_point " << target_zero_point << " -> "
+                    << zero_point;
+  NNAdapterAsymmPerLayerQuantParams asymm_per_layer_params{quant_scale,
+                                                           zero_point};
+  if (is_output) {
+    auto requantized_operand =
+        InsertRequantOperation(model, target_operand, &asymm_per_layer_params);
+    UpdateOperationOutputOperands(
+        operation, target_operand, requantized_operand);
+  } else {
+    auto requantized_operand =
+        AppendRequantOperation(model, target_operand, &asymm_per_layer_params);
+    UpdateOperationInputOperands(
+        {operation}, target_operand, requantized_operand);
+  }
+  return true;
+}
+
+static bool RestrictInputOutputScale(hal::Model* model,
+                                     hal::Operation* operation,
+                                     hal::Operand* target_operand,
+                                     hal::Operand* reference_operand,
+                                     bool is_output = false,
+                                     double threshold = 1e-5f) {
+  if (!IsAsymmPerLayerQuantType(reference_operand->type.precision)) {
+    return false;
+  }
+  return RestrictInputOutputScale(
+      model,
+      operation,
+      target_operand,
+      reference_operand->type.asymm_per_layer_params.scale,
+      reference_operand->type.asymm_per_layer_params.zero_point,
+      is_output,
+      threshold);
+}
+
+static bool RestrictOutputBiasScale(hal::Model* model,
+                                    hal::Operation* operation,
+                                    hal::Operand* input_operand,
+                                    hal::Operand* weight_operand,
+                                    hal::Operand* bias_operand,
+                                    hal::Operand* output_operand) {
+  if (!IsAsymmPerLayerQuantType(input_operand->type.precision) ||
+      !IsAsymmPerLayerQuantType(weight_operand->type.precision) ||
+      !IsSymmPerLayerQuantType(bias_operand->type.precision) ||
+      !IsAsymmPerLayerQuantType(output_operand->type.precision)) {
+    return false;
+  }
+  auto input_scale = input_operand->type.asymm_per_layer_params.scale;
+  auto weight_scale = weight_operand->type.asymm_per_layer_params.scale;
+  auto& bias_scale = bias_operand->type.symm_per_layer_params.scale;
+  float output_scale = output_operand->type.asymm_per_layer_params.scale;
+  // Requantize the bias data if the following condition is not satisfied
+  bool updated = false;
+  double input_scale_x_weight_scale =
+      static_cast<double>(input_scale) * static_cast<double>(weight_scale);
+  if (fabs(input_scale_x_weight_scale - bias_scale) > 1e-6f) {
+    NNADAPTER_VLOG(5) << "Requantize bias operand "
+                      << OperandIdToString(bias_operand) << ": scale "
+                      << bias_scale << " -> " << input_scale_x_weight_scale;
+    NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
+    auto channel_size = bias_operand->type.dimensions.data[0];
+    auto quantized_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
+    std::vector<float> float_bias_data(channel_size);
+    DequantizeData<int32_t>(quantized_bias_data,
+                            channel_size,
+                            &bias_scale,
+                            1,
+                            float_bias_data.data());
+    bias_scale = input_scale_x_weight_scale;
+    QuantizeData<int32_t>(float_bias_data.data(),
+                          channel_size,
+                          &bias_scale,
+                          1,
+                          quantized_bias_data);
+    updated = true;
+  }
+  // Before NNAPI feature level 3, insert a requantize operation and a operand
+  // with output_scale = input_scale * weight_scale + 1e-6f
+  if (output_scale > input_scale_x_weight_scale ||
+      nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_3) {
+    return updated;
+  }
+  return updated | RestrictInputOutputScale(
+                       model,
+                       operation,
+                       output_operand,
+                       input_scale_x_weight_scale + 1e-6f,
+                       output_operand->type.asymm_per_layer_params.zero_point,
+                       true);
 }
 
 void RestrictInputOutputQuantParams(hal::Model* model) {
@@ -66,10 +151,19 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
     auto& output_operands = operation->output_operands;
     auto output_count = output_operands.size();
     switch (operation->type) {
+      case NNADAPTER_CONV_2D:
+      case NNADAPTER_FULLY_CONNECTED:
+        RestrictOutputBiasScale(model,
+                                operation,
+                                input_operands[0],
+                                input_operands[1],
+                                input_operands[2],
+                                output_operands[0]);
+        break;
       case NNADAPTER_CONCAT:
         for (uint32_t i = 0; i < input_count - 1; i++) {
-          RestrictSameInputOutputScale(
-              model, operation, input_operands[i], output_operands[0]);
+          RestrictInputOutputScale(
+              model, operation, input_operands[i], output_operands[0], false);
         }
         break;
       case NNADAPTER_FLATTEN:
@@ -77,21 +171,23 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_UNSQUEEZE:
-        RestrictSameInputOutputScale(
-            model, operation, input_operands[0], output_operands[0]);
+        RestrictInputOutputScale(
+            model, operation, input_operands[0], output_operands[0], false);
         break;
       case NNADAPTER_SPLIT:
         for (uint32_t i = 0; i < output_count; i++) {
-          RestrictSameInputOutputScale(
-              model, operation, output_operands[i], input_operands[0]);
+          RestrictInputOutputScale(
+              model, operation, output_operands[i], input_operands[0], true);
         }
+        break;
+      case NNADAPTER_SOFTMAX:
+        RestrictInputOutputScale(
+            model, operation, output_operands[0], 1 / 256.0f, 0, true);
         break;
       case NNADAPTER_ADD:
       case NNADAPTER_AVERAGE_POOL_2D:
-      case NNADAPTER_CONV_2D:
       case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
-      case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_MAT_MUL:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
@@ -99,7 +195,6 @@ void RestrictInputOutputQuantParams(hal::Model* model) {
       case NNADAPTER_MUL:
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
-      case NNADAPTER_SOFTMAX:
       case NNADAPTER_SUB:
       case NNADAPTER_TANH:
         break;
