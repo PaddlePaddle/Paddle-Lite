@@ -50,7 +50,7 @@ class TestMulOp(AutoScanTest):
     def sample_program_configs(self, draw):
         shape0 = draw(st.integers(min_value=1, max_value=32))
         shape1 = draw(st.integers(min_value=1, max_value=32))
-        shape2 = draw(st.integers(min_value=1, max_value=32))
+        shape2 = draw(st.integers(min_value=1, max_value=16))
         shape3 = draw(st.integers(min_value=1, max_value=16))
         shape4 = draw(st.integers(min_value=1, max_value=16))
         shape5 = draw(st.integers(min_value=1, max_value=16))

@@ -445,7 +445,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 # creat model and prepare feed data
                 if flag_precision_fp16:
                     atol_ = 1e-1
-                    rtol_ = 6e-2
+                    rtol_ = 5e-2
                 if quant:
                     atol_ = 1e-3
                     rtol_ = 1e-3
