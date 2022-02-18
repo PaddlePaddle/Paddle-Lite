@@ -40,6 +40,7 @@ class Context {
     return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
   std::string profiling_file_path() { return profiling_file_path_; }
+  AscendConfigParams* ascend_config_params() { return &ascend_config_params_; }
   ~Context();
 
  private:
@@ -47,6 +48,7 @@ class Context {
   void* context_{nullptr};
   std::vector<int> selected_device_ids_;
   std::string profiling_file_path_ = "";
+  AscendConfigParams ascend_config_params_;
 };
 
 class Program {

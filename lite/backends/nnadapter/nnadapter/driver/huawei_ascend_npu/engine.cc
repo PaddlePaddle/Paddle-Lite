@@ -18,6 +18,8 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "driver/huawei_ascend_npu/utility.h"
+#include "optimizer/eliminate_fill_constant.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -70,6 +72,38 @@ Context::Context(void* device, const char* properties) : device_(device) {
         GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
   }
   NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
+  // HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH)) {
+    ascend_config_params_.dump_model_path =
+        key_values[HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH];
+  } else {
+    ascend_config_params_.dump_model_path =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH);
+  }
+  NNADAPTER_LOG(INFO) << "dump model path: "
+                      << ascend_config_params_.dump_model_path;
+  // HUAWEI_ASCEND_NPU_PRECISION_MODE
+  if (key_values.count(HUAWEI_ASCEND_NPU_PRECISION_MODE)) {
+    ascend_config_params_.precision_mode =
+        key_values[HUAWEI_ASCEND_NPU_PRECISION_MODE];
+  } else {
+    ascend_config_params_.precision_mode =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_PRECISION_MODE);
+  }
+  NNADAPTER_LOG(INFO) << "precision mode: "
+                      << ascend_config_params_.precision_mode;
+  if (ascend_config_params_.precision_mode == "allow_mix_precision") {
+    // HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH
+    if (key_values.count(HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH)) {
+      ascend_config_params_.modify_mixlist_path =
+          key_values[HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH];
+    } else {
+      ascend_config_params_.modify_mixlist_path =
+          GetStringFromEnv(HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH);
+    }
+    NNADAPTER_LOG(INFO) << "modify mixlist path: "
+                        << ascend_config_params_.modify_mixlist_path;
+  }
 }
 
 Context::~Context() {}
@@ -123,6 +157,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
+    // EliminateFillConstant(model);
     FuseMatMulAddIntoFullyConnected(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
@@ -163,7 +198,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                               model_buffer,
                               dynamic_shape_info,
                               optional_shape_str,
-                              dynamic_shape_mode_)) {
+                              dynamic_shape_mode_,
+                              context_->ascend_config_params())) {
       NNADAPTER_LOG(FATAL)
           << "Failed to build a CANN OM model and serialize it into a buffer!";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;

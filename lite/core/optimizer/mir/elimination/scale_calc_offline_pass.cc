@@ -18,7 +18,10 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include "lite/core/optimizer/mir/elimination/utility.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
@@ -41,6 +44,20 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
     auto& scale_instruct = node->AsStmt();
     auto* scope = scale_instruct.op()->scope();
     auto op_desc = scale_instruct.mutable_op_info();
+    // Skip control flow ops
+    std::unordered_set<std::string> in_vars;
+    std::unordered_set<std::string> out_vars;
+    bool is_var_of_control_flow_ops = false;
+    CollectControlFlowOpInputsOutputs(graph, &in_vars, &out_vars);
+    auto scale_outlinks = node->outlinks;
+    for (auto& scale_out_link : scale_outlinks) {
+      auto var_name = scale_out_link->arg()->name;
+      if (in_vars.count(var_name) || out_vars.count(var_name)) {
+        is_var_of_control_flow_ops = true;
+        break;
+      }
+    }
+    if (is_var_of_control_flow_ops) continue;
     // Get scale's input tensor
     auto x_var = scope->FindVar(op_desc->Input("X").front());
     auto x_t = x_var->GetMutable<lite::Tensor>();
@@ -69,7 +86,6 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
 
     // Offline calc scale, only retain output tensor as persistable tensor
     out_t->set_persistable(true);
-    auto scale_outlinks = node->outlinks;
     for (auto& scale_out_link : scale_outlinks) {
       scale_out_link->arg()->is_weight = true;
     }

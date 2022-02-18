@@ -23,8 +23,10 @@ aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} model_client.cc engine.cc driver.cc)
 set(DEPS ${NNADAPTER_CORE}
         ${NNADAPTER_UTILITIES}
+        nnadapter_optimizer_fuse_matmul_add_into_fully_connected
+        nnadapter_optimizer_eliminate_fill_constant
         ${${DEVICE_NAME}_deps}
-        nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
+)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")

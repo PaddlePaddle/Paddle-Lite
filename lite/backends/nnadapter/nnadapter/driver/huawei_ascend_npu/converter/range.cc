@@ -23,8 +23,6 @@ namespace huawei_ascend_npu {
 
 int ConvertRange(Converter* converter, hal::Operation* operation) {
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(IsOperationWithAllInputConstantOperands(operation))
-      << "Range input operands only support constant!";
 
   // Convert to GE operators
   auto start_operator = converter->GetMappedOperator(start_operand);

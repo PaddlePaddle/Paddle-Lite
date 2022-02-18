@@ -54,6 +54,7 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
   InitTargetTypeTransformPass();
   InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
+  InitControlFlowOpSharedInputsAndOutputsDataSyncPass();
 
   ApplyPasses(&graphs_);
 
@@ -98,6 +99,16 @@ void Optimizer::InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass() {
   pass->SetAllGraphs(&graphs_);
 }
 
+void Optimizer::InitControlFlowOpSharedInputsAndOutputsDataSyncPass() {
+  auto* pass =
+      mir::PassManager::Global()
+          .LookUp<mir::ControlFlowOpSharedInputsAndOutputsDataSyncPass>(
+              "control_flow_op_shared_inputs_and_outputs_data_sync_pass");
+  CHECK(pass);
+  CHECK(!graphs_.empty());
+  pass->SetAllGraphs(&graphs_);
+}
+
 void Optimizer::ApplyPasses(
     std::vector<std::unique_ptr<mir::SSAGraph>>* graphes) {
   for (auto& pass : passes_) {
@@ -116,7 +127,19 @@ void Optimizer::ApplyPasses(
       if (kSubblockUnsupportedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
+        int graph_idx = 0;
         for (auto& graph : *graphes) {
+          graph_idx += 1;
+          if (graph_idx > 1 &&
+                  pass->name() == "fill_constant_calc_offline_pass" ||
+              pass->name() == "scale_calc_offline_pass" ||
+              pass->name() == "unsqueeze_calc_offline_pass" ||
+              pass->name() == "range_calc_offline_pass" ||
+              pass->name() == "assign_value_calc_offline_pass" ||
+              pass->name() == "ssd_boxes_calc_offline_pass" ||
+              pass->name() == "p_norm_fill_constant_max_div_fuse_pass") {
+            continue;
+          }
           pass->Apply(graph);
         }
       }
@@ -139,12 +162,19 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "op_transformation_pass",               //
        "remove_scale1_pass",                   //
        "assign_value_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "fill_constant_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "range_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "scale_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "unsqueeze_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "ssd_boxes_calc_offline_pass",
+       "control_flow_op_shared_inputs_and_outputs_data_sync_pass",
        "adaptive_1x1_pool2d_convert_global_pass",  //
        "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",
        "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn

@@ -18,7 +18,10 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include "lite/core/optimizer/mir/elimination/utility.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
@@ -46,7 +49,20 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     auto& priorbox_instruct = node->AsStmt();
     auto* scope = priorbox_instruct.op()->scope();
     auto op_desc = priorbox_instruct.mutable_op_info();
-
+    // Skip control flow ops
+    std::unordered_set<std::string> in_vars;
+    std::unordered_set<std::string> out_vars;
+    bool is_var_of_control_flow_ops = false;
+    CollectControlFlowOpInputsOutputs(graph, &in_vars, &out_vars);
+    auto priorbox_outlinks = node->outlinks;
+    for (auto& priorbox_out_link : priorbox_outlinks) {
+      auto var_name = priorbox_out_link->arg()->name;
+      if (in_vars.count(var_name) || out_vars.count(var_name)) {
+        is_var_of_control_flow_ops = true;
+        break;
+      }
+    }
+    if (is_var_of_control_flow_ops) continue;
     // Get priorbox's input tensor
     auto image_var = scope->FindVar(op_desc->Input("Image").front());
     auto image_t = &(image_var->Get<lite::Tensor>());
@@ -193,7 +209,6 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     // Offline calc priorbox, only retain output tensor as persistable tensor
     boxes_t->set_persistable(true);
     variances_t->set_persistable(true);
-    auto priorbox_outlinks = node->outlinks;
     for (auto& priorbox_out_link : priorbox_outlinks) {
       priorbox_out_link->arg()->is_weight = true;
     }

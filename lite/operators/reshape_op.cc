@@ -30,12 +30,19 @@ bool ReshapeOp::InferShapeImpl() const {
   const auto &shape_tensor_vct = param_.shape_tensor_vct;
   auto *shape_tensor = param_.shape_tensor;
   const auto &shape_vct = param_.shape_vct;
-
   std::vector<int> final_shape;
   if (shape_tensor_vct.size() > 0) {
     final_shape.resize(shape_tensor_vct.size());
     for (size_t i = 0; i < shape_tensor_vct.size(); i++) {
-      final_shape[i] = shape_tensor_vct[i]->data<int>()[0];
+      if (shape_tensor_vct[i]->dims().empty()) {
+        if (!shape_vct.empty()) {
+          final_shape[i] = shape_vct[i];
+        } else {
+          LOG(FATAL) << "Input shape error";
+        }
+      } else {
+        final_shape[i] = shape_tensor_vct[i]->data<int>()[0];
+      }
     }
   } else if (shape_tensor != nullptr && shape_tensor->data<int>() != nullptr) {
     auto *shape_tensor_data = shape_tensor->data<int>();
@@ -44,9 +51,8 @@ bool ReshapeOp::InferShapeImpl() const {
   } else if (!shape_vct.empty()) {
     final_shape = shape_vct;
   } else {
-    LOG(FATAL) << "input shape error";
+    LOG(FATAL) << "Input shape error";
   }
-
   const auto &x_dims = param_.x->dims();
   auto output_dims = ValidateShape(final_shape, x_dims);
   param_.output->Resize(output_dims);

@@ -18,7 +18,10 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include "lite/core/optimizer/mir/elimination/utility.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
@@ -48,7 +51,20 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto& range_instruct = node->AsStmt();
     auto* scope = range_instruct.op()->scope();
     auto op_desc = range_instruct.mutable_op_info();
-
+    // Skip control flow ops
+    std::unordered_set<std::string> in_vars;
+    std::unordered_set<std::string> out_vars;
+    bool is_var_of_control_flow_ops = false;
+    CollectControlFlowOpInputsOutputs(graph, &in_vars, &out_vars);
+    auto range_outlinks = node->outlinks;
+    for (auto& range_out_link : range_outlinks) {
+      auto var_name = range_out_link->arg()->name;
+      if (in_vars.count(var_name) || out_vars.count(var_name)) {
+        is_var_of_control_flow_ops = true;
+        break;
+      }
+    }
+    if (is_var_of_control_flow_ops) continue;
     // Get range's input tensor
     auto start_var = scope->FindVar(op_desc->Input("Start").front());
     auto end_var = scope->FindVar(op_desc->Input("End").front());
@@ -82,7 +98,6 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     }
     // Offline calc range, only retain output tensor as persistable tensor
     out_t->set_persistable(true);
-    auto range_outlinks = node->outlinks;
     for (auto& range_out_link : range_outlinks) {
       range_out_link->arg()->is_weight = true;
     }

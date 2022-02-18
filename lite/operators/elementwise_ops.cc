@@ -90,10 +90,13 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto X_name = opdesc.Input("X").front();
   auto Y_name = opdesc.Input("Y").front();
   auto Out_name = opdesc.Output("Out").front();
+  CHECK(scope->FindVar(X_name));
+  CHECK(scope->FindVar(Y_name));
+  CHECK(scope->FindVar(Out_name));
+  param_.X = scope->FindVar(X_name)->GetMutable<lite::Tensor>();
+  param_.Y = scope->FindVar(Y_name)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(Out_name)->GetMutable<lite::Tensor>();
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Y = GetVar<lite::Tensor>(scope, Y_name);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   if (opdesc.HasAttr("fuse_scale")) {
     param_.fuse_scale = opdesc.GetAttr<bool>("fuse_scale");

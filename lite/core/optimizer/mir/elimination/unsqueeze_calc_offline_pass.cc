@@ -18,7 +18,10 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include "lite/core/optimizer/mir/elimination/utility.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
@@ -43,6 +46,20 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     auto& unsqueeze_instruct = node->AsStmt();
     auto* scope = unsqueeze_instruct.op()->scope();
     auto op_desc = unsqueeze_instruct.mutable_op_info();
+    // Skip control flow ops
+    std::unordered_set<std::string> in_vars;
+    std::unordered_set<std::string> out_vars;
+    bool is_var_of_control_flow_ops = false;
+    CollectControlFlowOpInputsOutputs(graph, &in_vars, &out_vars);
+    auto unsqueeze_outlinks = node->outlinks;
+    for (auto& unsqueeze_out_link : unsqueeze_outlinks) {
+      auto var_name = unsqueeze_out_link->arg()->name;
+      if (in_vars.count(var_name) || out_vars.count(var_name)) {
+        is_var_of_control_flow_ops = true;
+        break;
+      }
+    }
+    if (is_var_of_control_flow_ops) continue;
     // Get unsqueeze's input tensor
     auto input_var = scope->FindVar(op_desc->Input("X").front());
     auto input_t = input_var->GetMutable<lite::Tensor>();
@@ -77,7 +94,6 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     // Offline calc unsqueeze, only retain output tensor as persistable
     // tensor
     out_t->set_persistable(true);
-    auto unsqueeze_outlinks = node->outlinks;
     for (auto& unsqueeze_out_link : unsqueeze_outlinks) {
       unsqueeze_out_link->arg()->is_weight = true;
     }

@@ -72,7 +72,7 @@ static void FinalizeGraphBuilder() {
   // ge::aclgrphBuildFinalize();
 }
 
-void InitializeGraphBuilder() {
+void InitializeGraphBuilder(AscendConfigParams* config_params) {
   static std::mutex mtx;
   static bool initialized = false;
   mtx.lock();
@@ -85,9 +85,21 @@ void InitializeGraphBuilder() {
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 3)
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
     global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
     global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
+    auto precision_mode = config_params->precision_mode;
+    if (!precision_mode.empty()) {
+      global_options.insert(
+          std::make_pair(ge::ir_option::PRECISION_MODE,
+                         ge::AscendString(precision_mode.c_str())));
+      if (precision_mode == "allow_mix_precision" &&
+          !config_params->modify_mixlist_path.empty()) {
+        global_options.insert(std::make_pair(
+            ge::ir_option::MODIFY_MIXLIST,
+            ge::AscendString(config_params->modify_mixlist_path.c_str())));
+      }
+    }
 #endif
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
@@ -203,9 +215,10 @@ bool BuildOMModelToBuffer(
     std::vector<uint8_t>* model_buffer,
     const std::vector<std::string>& dynamic_shape_info,
     const std::string& optional_shape_str,
-    const DynamicShapeMode dynamic_shape_mode) {
+    const DynamicShapeMode dynamic_shape_mode,
+    AscendConfigParams* config_params) {
   // Should initialize the GE graph builder before model building
-  InitializeGraphBuilder();
+  InitializeGraphBuilder(config_params);
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1
@@ -255,7 +268,9 @@ bool BuildOMModelToBuffer(
   }
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.
-  // ATC_CALL(aclgrphSaveModel("ir_graph_model", om_buffer));
+  if (!config_params->dump_model_path.empty()) {
+    ATC_CALL(aclgrphSaveModel(config_params->dump_model_path, om_buffer));
+  }
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
   memcpy(reinterpret_cast<void*>(model_buffer->data()),

@@ -41,6 +41,24 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH \
   "HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"
 
+// Specify the file path to dump the model
+#define HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH \
+  "HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH"
+
+// Select operator precision mode
+#define HUAWEI_ASCEND_NPU_PRECISION_MODE "HUAWEI_ASCEND_NPU_PRECISION_MODE"
+
+// Specify the file path of the modify mixlist if precision mode is
+// allow_mix_precision
+#define HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH \
+  "HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH"
+
+typedef struct AscendConfigParams {
+  std::string dump_model_path = "";
+  std::string precision_mode = "";
+  std::string modify_mixlist_path = "";
+} AscendConfigParams;
+
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
     major, minor, patch)                                         \
   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
@@ -60,7 +78,7 @@ namespace huawei_ascend_npu {
 void InitializeAscendCL();
 // Initialize the resources of the model builder and register the finalizer to
 // be called at normal process termination
-void InitializeGraphBuilder();
+void InitializeGraphBuilder(AscendConfigParams* context);
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
@@ -86,7 +104,8 @@ bool BuildOMModelToBuffer(
     std::vector<uint8_t>* model_buffer,
     const std::vector<std::string>& dynamic_shape_info,
     const std::string& optional_shape_str,
-    const DynamicShapeMode dynamic_shape_mode);
+    const DynamicShapeMode dynamic_shape_mode,
+    AscendConfigParams* context);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);

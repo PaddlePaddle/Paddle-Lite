@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/core/optimizer/mir/control_flow_op_shared_inputs_and_outputs_data_sync_pass.h"
 #include "lite/core/optimizer/mir/control_flow_op_shared_inputs_and_outputs_place_sync_pass.h"
 #include "lite/core/optimizer/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
 #include "lite/core/optimizer/mir/fp16_attribute_pass.h"
@@ -76,6 +77,7 @@ class Optimizer {
   void InitTargetTypeTransformPass();
   void InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   void InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
+  void InitControlFlowOpSharedInputsAndOutputsDataSyncPass();
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
   Scope* exec_scope() { return exec_scope_; }
 

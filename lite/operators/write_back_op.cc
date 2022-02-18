@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/write_back_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -45,12 +46,18 @@ bool WriteBackOp::InferShapeImpl() const {
 bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("tensor_array_copy")) param_.tensor_array_copy = true;
   if (!param_.tensor_array_copy) {
-    param_.x = scope->FindTensor(opdesc.Input("Src_LoDTensor").front());
-    param_.y = scope->FindMutableTensor(opdesc.Input("Dst_LoDTensor").front());
+    auto x = opdesc.Input("Src_LoDTensor").front();
+    auto y = opdesc.Input("Dst_LoDTensor").front();
+    CHECK(scope->FindVar(x));
+    CHECK(scope->FindVar(y));
+    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
+    param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
     return true;
   } else {
     auto src = opdesc.Input("Src_LoDTensorArray").front();
     auto dst = opdesc.Input("Dst_LoDTensorArray").front();
+    CHECK(scope->FindVar(src));
+    CHECK(scope->FindVar(dst));
     param_.array_x = scope->FindVar(src)->GetMutable<std::vector<Tensor>>();
     param_.array_y = scope->FindVar(dst)->GetMutable<std::vector<Tensor>>();
     return true;

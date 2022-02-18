@@ -65,7 +65,9 @@ int PrepareFill(hal::Operation* operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   output_type.precision = value_operand->type.precision;
-  output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  output_type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
+  output_operand->buffer = value_operand->buffer;
+  output_operand->length = shape_operand->length;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
