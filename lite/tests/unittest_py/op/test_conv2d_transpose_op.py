@@ -275,20 +275,10 @@ class TestConv2dTransposeOp(AutoScanTest):
 
         def _teller2(program_config, predictor_config):
             groups = program_config.ops[0].attrs["groups"]
-            strides = program_config.ops[0].attrs["strides"]
-            paddings = program_config.ops[0].attrs["paddings"]
-            dilations = program_config.ops[0].attrs["dilations"]
-            weights_shape = program_config.weights["filter_data"].shape
-            gemm_kernel = (
-                (strides[0] == strides[1] and strides[0] == 1) and
-                (paddings[0] == paddings[1] and paddings[0] == 0) and
-                (dilations[0] == dilations[1] and dilations[0] == 1) and (
-                    weights_shape[2] == weights_shape[3] and
-                    weights_shape[2] == 1))
 
             if predictor_config.target(
             ) == TargetType.ARM and predictor_config.precision(
-            ) == PrecisionType.INT8 and (not gemm_kernel):
+            ) == PrecisionType.INT8 and groups > 1:
                 return True
 
         self.add_ignore_check_case(
