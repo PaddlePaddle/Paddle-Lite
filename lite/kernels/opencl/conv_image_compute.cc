@@ -922,6 +922,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
+        w_blk_ = UP_DIV(default_w_blk_, 5);
         kernel_id = 1;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
@@ -934,6 +935,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 2) {
         kernel_func_names_[0] = "conv2d_1x1_h1w7c1";
+        w_blk_ = UP_DIV(default_w_blk_, 7);
         kernel_id = 2;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
@@ -946,6 +948,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 3) {
         kernel_func_names_[0] = "conv2d_1x1_h2w3c2";
+        c_blk_ = UP_DIV(default_c_blk_, 2);
+        w_blk_ = UP_DIV(default_w_blk_, 3);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
         kernel_id = 3;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),
@@ -958,6 +963,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 4) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c1";
+        w_blk_ = UP_DIV(default_w_blk_, 2);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
         kernel_id = 4;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
@@ -970,6 +977,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 5) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c2";
+        c_blk_ = UP_DIV(default_c_blk_, 2);
+        w_blk_ = UP_DIV(default_w_blk_, 2);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
         kernel_id = 5;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),

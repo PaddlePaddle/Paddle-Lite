@@ -60,6 +60,8 @@ class TestSoftmaxOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -104,6 +106,8 @@ class TestSoftmaxOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-3, 1e-3
+        elif target_str == "OpenCL":
+            atol, rtol = 1e-4, 1e-4
         elif target_str == "NNAdapter":
             atol, rtol = 4e-5, 4e-5
         return self.get_predictor_configs(), ["softmax"], (atol, rtol)
