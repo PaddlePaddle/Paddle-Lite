@@ -256,10 +256,11 @@ class AutoScanBaseTest(unittest.TestCase):
                             base, arr, atol=atol, rtol=rtol),
                         "Output has diff. ")
             else:
+                diff = abs(base - arr)
                 self.assertTrue(
                     np.allclose(
                         base, arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
+                    "Output has diff, diff = {}, index = {}".format(diff.max(), diff.argmax()))
 
         else:
             for key in tensor:
@@ -301,10 +302,11 @@ class AutoScanBaseTest(unittest.TestCase):
                                 rtol=rtol),
                             "Output has diff. ")
                 else:
+                    diff = abs(baseline[paddlekey] - arr)
                     self.assertTrue(
                         np.allclose(
                             baseline[paddlekey], arr, atol=atol, rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, diff = {}, index = {}".format(diff.max(), diff.argmax()))
 
     def generate_op_config(self,
                            ops_config: List[Dict[str, Any]]) -> List[OpConfig]:
