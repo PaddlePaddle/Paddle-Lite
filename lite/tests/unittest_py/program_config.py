@@ -237,7 +237,6 @@ def create_quant_model(model, params, prefix, program_config):
     place = paddle.CPUPlace()
     exe = paddle.static.Executor(place)
 
-    # input_shape = program_config.inputs["input_data"].shape
     batch_size = 1
 
     def _reader_list():
@@ -248,11 +247,6 @@ def create_quant_model(model, params, prefix, program_config):
                 batch_size = input_shape[0]
                 res.append(np.random.random(input_shape).astype(np.float32))
             yield res
-
-    # def _reader():
-    #     for _ in range(10):
-    #         yield np.random.random(input_shape).astype(np.float32)
-    # yield [np.random.random(input_shape).astype(np.float32), np.ones]
 
     # 3. quant_post_static
     quantize_model_path = prefix + "/static_quantized_conv_2d"

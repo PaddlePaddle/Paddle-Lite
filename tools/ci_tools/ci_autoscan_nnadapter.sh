@@ -17,8 +17,10 @@ SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 # Skip op or pass, use | to separate them, such as "expand_op" or "expand_op|abc_pass", etc.
 SKIP_LIST="abc_op|abc_pass"
+UNIT_TEST_FILTER_TYPE=2 # 0: black list 1: white list
+UNIT_TEST_CHECK_LIST=""
 # Models URL
-MODELS_URL="https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz"
+MODELS_URL="http://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz"
 
 # Helper functions
 source ${SHELL_FOLDER}/utils.sh
@@ -27,7 +29,24 @@ function auto_scan_test {
   rm -rf $(find $WORKSPACE/lite/tests/unittest_py/ -name statics_data)
   cd $WORKSPACE/lite/tests/unittest_py/op/
   unittests=$(ls | egrep -v $SKIP_LIST)
+  local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
   for test in ${unittests[@]}; do
+    local is_matched=0
+    for unit_test_check_item in ${unit_test_check_items[@]}; do
+        if [[ "$unit_test_check_item" == "$test" ]]; then
+            echo "$test on the checklist."
+            is_matched=1
+            break
+        fi
+    done
+    # black list
+    if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+        continue
+    fi
+    # white list
+    if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+        continue
+    fi
     if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=NNAdapter --nnadapter_device_names=$NNADAPTER_DEVICE_NAMES
     fi
@@ -143,6 +162,14 @@ function main() {
               ;;
           --skip_list=*)
               SKIP_LIST="${i#*=}"
+              shift
+              ;;
+          --unit_test_check_list=*)
+              UNIT_TEST_CHECK_LIST="${i#*=}"
+              shift
+              ;;
+          --unit_test_filter_type=*)
+              UNIT_TEST_FILTER_TYPE="${i#*=}"
               shift
               ;;
           --python_version=*)

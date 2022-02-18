@@ -31,19 +31,21 @@ int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   auto beta_index = converter->AddFloat32ConstantOperand(1.0f);
   auto output_index = converter->ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes({input_index, beta_index});
-  if (nnapi()->android_sdk_version < ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12) {
-    auto input_dimensions_count = input_operand->type.dimensions.count;
+  auto input_dimensions_count = input_operand->type.dimensions.count;
+  if (nnapi()->android_sdk_version < ANEURALNETWORKS_FEATURE_LEVEL_3) {
     NNADAPTER_CHECK(
         (input_dimensions_count == 2 && (axis == 1 || axis == -1)) ||
-        (input_dimensions_count == 4 && axis == 1))
-        << "The 2D(axis = -1 or axis = 1) and 4D(axis = 1) input tensors are "
+        (input_dimensions_count == 4 && (axis == 3 || axis == -1)))
+        << "The 2D(axis = -1 or 1) and 4D(axis = -1 or 3) input tensors are "
            "only supported before Android "
-        << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12 << " but the runtime's is "
+        << ANEURALNETWORKS_FEATURE_LEVEL_3 << " but the runtime's is "
         << nnapi()->android_sdk_version
         << " and rank = " << input_dimensions_count << ", axis = " << axis;
   } else {
-    auto axis_index = converter->AddInt32ConstantOperand(axis);
-    input_indexes.push_back(axis_index);
+    if (axis != -1 && axis != input_dimensions_count - 1) {
+      auto axis_index = converter->AddInt32ConstantOperand(axis);
+      input_indexes.push_back(axis_index);
+    }
   }
   NNADAPTER_CHECK_EQ(
       converter->AddOperation(

@@ -722,22 +722,43 @@ NNADAPTER_EXPORT hal::Operand* InsertUnaryOperation(
   return AddUnaryOperation(model, output_operand, operation_type, false);
 }
 
-NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
-    hal::Model* model,
-    hal::Operation* operation,
-    hal::Operand* target_operand,
-    hal::Operand* reference_operand) {
-  // Insert a new operand before output_operand
-  auto immediate_operand = AddOperand(model);
-  // Make the quantization parameters and precision of the immediate operand the
-  // same as output's
-  CopyOperandType(&immediate_operand->type, reference_operand->type);
+hal::Operand* AddRequantOperation(hal::Model* model,
+                                  hal::Operand* reference_operand,
+                                  void* target_quant_params,
+                                  bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
   if (!IsTemporaryShapeOperand(reference_operand)) {
-    immediate_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   }
-  // Update to the dimensions of input operand, and update the input operand of
-  // the operation with immediate_operand
-  immediate_operand->type.dimensions = target_operand->type.dimensions;
+  // Copy the target_quant_params to target_operand
+  if (IsSymmPerLayerQuantType(target_operand->type.precision)) {
+    target_operand->type.symm_per_layer_params =
+        *reinterpret_cast<NNAdapterSymmPerLayerQuantParams*>(
+            target_quant_params);
+  } else if (IsSymmPerChannelQuantType(target_operand->type.precision) &&
+             target_operand->type.symm_per_channel_params.scales) {
+    free(target_operand->type.symm_per_channel_params.scales);
+    auto target_symm_per_channel_params =
+        reinterpret_cast<NNAdapterSymmPerChannelQuantParams*>(
+            target_quant_params);
+    auto scale_size =
+        target_symm_per_channel_params->scale_count * sizeof(float);
+    auto scales = reinterpret_cast<float*>(malloc(scale_size));
+    NNADAPTER_CHECK(scales) << "Failed to allocate the scale buffer for a symm "
+                               "per-channel quant type!";
+    memcpy(scales, target_symm_per_channel_params->scales, scale_size);
+    target_operand->type.symm_per_channel_params.scales = scales;
+  } else if (IsAsymmPerLayerQuantType(target_operand->type.precision)) {
+    target_operand->type.asymm_per_layer_params =
+        *reinterpret_cast<NNAdapterAsymmPerLayerQuantParams*>(
+            target_quant_params);
+  } else {
+    NNADAPTER_LOG(FATAL)
+        << "Unknown precision type("
+        << OperandPrecisionCodeToString(target_operand->type.precision)
+        << ") to identity the type of quantization parameters!";
+  }
   // Add a zero addend operand
   auto zero_operand = AddOperand(model);
   CopyOperandType(&zero_operand->type, reference_operand->type);
@@ -753,30 +774,26 @@ NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
   memset(zero_operand->buffer, 0, zero_operand->length);
   zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
   auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-  // Insert a dummy ADD operation before or after target_operand
+  // Insert a dummy ADD operation before/after reference_operand
   auto dummy_add_operation = AddOperation(model);
   dummy_add_operation->type = NNADAPTER_ADD;
-  // After target_operand
-  for (auto& operand : operation->input_operands) {
-    if (operand == target_operand) {
-      dummy_add_operation->input_operands = {
-          target_operand, zero_operand, fuse_code_operand};
-      dummy_add_operation->output_operands = {immediate_operand};
-      operand = immediate_operand;
-      break;
-    }
-  }
-  // Before target_operand
-  for (auto& operand : operation->output_operands) {
-    if (operand == target_operand) {
-      dummy_add_operation->input_operands = {
-          immediate_operand, zero_operand, fuse_code_operand};
-      dummy_add_operation->output_operands = {target_operand};
-      operand = immediate_operand;
-      break;
-    }
-  }
-  return immediate_operand;
+  dummy_add_operation->input_operands = {
+      after ? reference_operand : target_operand,
+      zero_operand,
+      fuse_code_operand};
+  dummy_add_operation->output_operands = {after ? target_operand
+                                                : reference_operand};
+  return target_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AppendRequantOperation(
+    hal::Model* model, hal::Operand* input_operand, void* output_quant_params) {
+  return AddRequantOperation(model, input_operand, output_quant_params, true);
+}
+
+NNADAPTER_EXPORT hal::Operand* InsertRequantOperation(
+    hal::Model* model, hal::Operand* output_operand, void* input_quant_params) {
+  return AddRequantOperation(model, output_operand, input_quant_params, false);
 }
 
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
