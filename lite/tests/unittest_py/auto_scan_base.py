@@ -317,9 +317,6 @@ class AutoScanBaseTest(unittest.TestCase):
                             flag_precision_fp16: False):
         if len(tensor) == 0 and len(baseline) == 0:
             return
-        if flag_precision_fp16:
-            atol = 0.1
-            rtol = 0.05
         if len(tensor) == 1 and len(baseline) == 1:
             tensor_key = list(tensor.keys())
             arr = np.array(tensor[tensor_key[0]])
@@ -446,6 +443,9 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.num_ran_programs_list[predictor_idx] += 1
 
                 # creat model and prepare feed data
+                if flag_precision_fp16:
+                    atol_ = 1e-1
+                    rtol_ = 6e-2
                 if quant:
                     atol_ = 1e-3
                     rtol_ = 1e-3
