@@ -402,7 +402,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
                 # creat model and prepare feed data
                 if quant:
-                    atol_ = 1e-2
+                    atol_ = 5e-2
                     rtol_ = 1e-3
                     if cnt == 0:
                         self.insert_leaky_relu_op(prog_config)
