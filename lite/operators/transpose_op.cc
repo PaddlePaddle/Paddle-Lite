@@ -70,6 +70,8 @@ bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   if (op_desc.HasAttr("data_format")) {
     param_.data_format = op_desc.GetAttr<std::string>("data_format");
   }
+  input_tensor_ptrs_cache_.push_back(param_.x);
+  output_tensor_ptrs_cache_.push_back(param_.output);
   return true;
 }
 

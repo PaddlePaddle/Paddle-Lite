@@ -172,6 +172,9 @@ TEST(Pad2d, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  pad_mode_list = {"constant", "reflect"};
 #else
   return;
 #endif
@@ -200,7 +203,7 @@ TEST(Pad2d, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
               // Ascend does not support the following scenarios.
               if (std::abs(pad_value - 1) < 1e-6 ||
-                  (pad_top == 0 && pad_bottom == 1 && pad_left == 0 &&
+                  ((pad_top == 1 || pad_bottom == 1) && pad_left == 0 &&
                    pad_right == 0))
                 continue;
 #endif

@@ -33,7 +33,8 @@ void FixNoInputsOps(hal::Model* model) {
       auto output_operand = model->output_operands[i];
       if (IsModelOutputOperand(output_operand)) {
         output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
-        AddDummyOperation(model, output_operand);
+        auto dummy_output_operand = AppendDummyOperation(model, output_operand);
+        UpdateModelOutputOperands(model, output_operand, dummy_output_operand);
       }
     }
   }

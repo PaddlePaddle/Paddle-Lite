@@ -58,6 +58,12 @@ void NearestInterpCompute<PRECISION(kFloat)>::Run() {
   lite::arm::math::interpolate(INTERP_PARAM);
 }
 
+template <>
+void NearestInterpComputeV2<PRECISION(kFloat)>::Run() {
+  INIT_PARAM("Nearest")
+  lite::arm::math::nearest_interp_v2<float>(INTERP_PARAM);
+}
+
 #ifdef ENABLE_ARM_FP16
 template <>
 void BilinearInterpCompute<PRECISION(kFP16)>::Run() {
@@ -69,6 +75,12 @@ template <>
 void NearestInterpCompute<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Nearest")
   lite::arm::math::fp16::interpolate(INTERP_PARAM);
+}
+
+template <>
+void NearestInterpComputeV2<PRECISION(kFP16)>::Run() {
+  INIT_PARAM("Nearest")
+  lite::arm::math::nearest_interp_v2<float16_t>(INTERP_PARAM);
 }
 #endif
 
@@ -82,6 +94,8 @@ typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>
     bilinear_interp_fp16;
 typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFP16)>
     nearest_interp_fp16;
+typedef paddle::lite::kernels::arm::NearestInterpComputeV2<PRECISION(kFP16)>
+    nearest_interp_v2_fp16;
 
 REGISTER_LITE_KERNEL(
     bilinear_interp, kARM, kFP16, kNCHW, bilinear_interp_fp16, def)
@@ -117,7 +131,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    nearest_interp_v2, kARM, kFP16, kNCHW, nearest_interp_fp16, def)
+    nearest_interp_v2, kARM, kFP16, kNCHW, nearest_interp_v2_fp16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -132,6 +146,9 @@ typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
     bilinear_interp_fp32;
 typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
     nearest_interp_fp32;
+
+typedef paddle::lite::kernels::arm::NearestInterpComputeV2<PRECISION(kFloat)>
+    nearest_interp_v2_fp32;
 
 REGISTER_LITE_KERNEL(
     bilinear_interp, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
@@ -167,7 +184,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    nearest_interp_v2, kARM, kFloat, kNCHW, nearest_interp_fp32, def)
+    nearest_interp_v2, kARM, kFloat, kNCHW, nearest_interp_v2_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

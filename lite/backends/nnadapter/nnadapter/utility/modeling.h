@@ -111,36 +111,31 @@ hal::Operand* AddFloat32VariableOperand(hal::Model* model,
 void TransposeOperand(hal::Operand* operand, std::vector<int32_t> permutation);
 // Reshapes the dimensions of a operand, similar to numpy.reshape
 void ReshapeOperand(hal::Operand* operand, std::vector<int32_t> dimensions);
-// Insert a operand at the back or front of a operand
-// For 'after' = true, 'target_operand' is added at back of 'reference_operand',
-// at front of 'reference_operations'(if not empty), so only update the inputs
-// of the operations and the outputs of the model
-// For 'after' = false, 'target_operand' is added at front of
-// 'reference_operand', at back of 'reference_operations'(if not empty), so only
-// update the outputs of the operations and the input of the model
+// Update the input/output operands of the operations which equal to the
+// old_operand with the new_operand
 // For example:
 //   op0 -> var0 -> op1
 //            |---> op2
-// case0: reference_operand=var0, after=true, specified_affected_operations={}
-//   op0 -> var0   new_var -> op1
-//                      |---> op2
-// case1: reference_operand=var0, after=true,
-// specified_affected_operations={op1}
+// case0: UpdateOperationInputOperands, operations={op1}, old_operand=var0,
+// new_operand=new_var
 //   op0 -> var0   new_var -> op1
 //            |---> op2
-// case2: reference_operand=var0, after=false, specified_affected_operations={}
-//   op0 -> new_var var0 -> op1
-//                    |---> op2
-// case3: reference_operand=var0, after=false,
-// specified_affected_operations={op0}
-//   op0 -> new_var var0 -> op1
-//                    |---> op2
-bool InsertOperand(
-    hal::Model* model,
-    hal::Operand* reference_operand,
-    hal::Operand* target_operand,
-    bool after,
-    const std::vector<hal::Operation*> specified_affected_operations = {});
+// case1: UpdateOperationOutputOperands, operation=op0, old_operand=var0,
+// new_operand=new_var
+//   op0 -> new_var   var0 -> op1
+//                      |---> op2
+bool UpdateOperationInputOperands(std::vector<hal::Operation*> operations,
+                                  hal::Operand* old_operand,
+                                  hal::Operand* new_operand);
+bool UpdateOperationOutputOperands(hal::Operation* operation,
+                                   hal::Operand* old_operand,
+                                   hal::Operand* new_operand);
+bool UpdateModelInputOperands(hal::Model* model,
+                              hal::Operand* old_operand,
+                              hal::Operand* new_operand);
+bool UpdateModelOutputOperands(hal::Model* model,
+                               hal::Operand* old_operand,
+                               hal::Operand* new_operand);
 // Check if it is a constant operand
 bool IsConstantOperand(hal::Operand* operand);
 // Check if it is a temporary shape operand
@@ -159,36 +154,43 @@ hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand);
 int GetModelInputOperandIndex(hal::Model* model, hal::Operand* operand);
 int GetModelOutputOperandIndex(hal::Model* model, hal::Operand* operand);
 
-// Add a transpose operation, set 'input_operand' as its input operand, create a
-// output operand with the permutated dimensions, and update all of operations
-hal::Operand* AddTransposeOperation(hal::Model* model,
-                                    hal::Operand* input_operand,
-                                    std::vector<int32_t> permutation);
-// Add a reshape operation, set 'input_operand' as its input operand, create a
-// output operand with the shape dimensions, and update all of operations
-hal::Operand* AddReshapeOperation(hal::Model* model,
-                                  hal::Operand* input_operand,
-                                  std::vector<int32_t> shape);
-// Add a dummy add operation, set 'input_operand' as its input operand, create a
-// output operand with the same dimensions, and the addend is a zero operand
-hal::Operand* AddDummyOperation(hal::Model* model, hal::Operand* input_operand);
-// Add a unary operation which has only one input and output operand.
-hal::Operand* AddUnaryOperation(hal::Model* model,
-                                hal::Operand* input_operand,
-                                NNAdapterOperationType operation_type);
-// Add a dummy ADD to simuate the REQUANT operation
-// i.e.
-// target_operand(target_quant_params)->CONCAT->reference_operand(reference_quant_params),
-// After applying this,
-// target_operand(target_quant_params)->ADD->immediate_operand(reference_quant_params)->CONCAT->reference_operand(reference_quant_params)
-// i.e.
-// reference_operand(reference_quant_params)->SPLIT->target_operand(target_quant_params),
-// After applying this,
-// reference_operand(reference_quant_params)->SPLIT->immediate_operand(reference_quant_params)->ADD->target_operand(target_quant_params)
-hal::Operand* AddRequantOperation(hal::Model* model,
-                                  hal::Operation* operation,
-                                  hal::Operand* target_operand,
-                                  hal::Operand* reference_operand);
+// Append or insert a transpose operation
+hal::Operand* AppendTransposeOperation(hal::Model* model,
+                                       hal::Operand* input_operand,
+                                       std::vector<int32_t> permutation);
+hal::Operand* InsertTransposeOperation(hal::Model* model,
+                                       hal::Operand* output_operand,
+                                       std::vector<int32_t> permutation);
+// Append or insert a reshape operation
+hal::Operand* AppendReshapeOperation(hal::Model* model,
+                                     hal::Operand* input_operand,
+                                     std::vector<int32_t> shape);
+hal::Operand* InsertReshapeOperation(
+    hal::Model* model,
+    hal::Operand* output_operand,
+    const NNAdapterOperandDimensionType& input_dimensions,
+    std::vector<int32_t> shape = {});
+// Append or insert a dummy add operation, set the addend to a zero operand
+hal::Operand* AppendDummyOperation(hal::Model* model,
+                                   hal::Operand* input_operand);
+hal::Operand* InsertDummyOperation(hal::Model* model,
+                                   hal::Operand* output_operand);
+// Append or insert a unary activiation or other operation which has only one
+// input and output operand
+hal::Operand* AppendUnaryOperation(hal::Model* model,
+                                   hal::Operand* input_operand,
+                                   NNAdapterOperationType operation_type);
+hal::Operand* InsertUnaryOperation(hal::Model* model,
+                                   hal::Operand* output_operand,
+                                   NNAdapterOperationType operation_type);
+// Append or insert a dummy ADD to simulate the REQUANT operation
+// input_operand(input_quant_params)->ADD->output_operand(output_quant_params)
+hal::Operand* AppendRequantOperation(hal::Model* model,
+                                     hal::Operand* input_operand,
+                                     void* output_quant_params);
+hal::Operand* InsertRequantOperation(hal::Model* model,
+                                     hal::Operand* output_operand,
+                                     void* input_quant_params);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

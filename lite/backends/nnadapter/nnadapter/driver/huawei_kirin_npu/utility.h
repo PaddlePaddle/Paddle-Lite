@@ -73,6 +73,7 @@ std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code);
 std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code);
+std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 
 }  // namespace huawei_kirin_npu
 }  // namespace nnadapter

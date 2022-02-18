@@ -463,6 +463,8 @@ TEST(Activation_relu, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  abs_error = 5e-2;
 #else
   return;
 #endif
@@ -974,6 +976,8 @@ TEST(Activation_gelu, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif

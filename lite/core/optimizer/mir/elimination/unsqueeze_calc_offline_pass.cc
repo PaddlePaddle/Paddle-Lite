@@ -61,24 +61,18 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     auto out_t = out_var->GetMutable<lite::Tensor>();
     std::vector<int64_t> output_shape(input_shape);
     output_shape.insert(output_shape.end(), axes.size(), 1);
-
-    auto infer_output_shape = [&](int64_t* input_dimensions,
-                                  int64_t* output_dimensions) {
-      uint32_t cur_size = input_shape.size();
-      for (size_t i = 0; i < axes.size(); i++) {
-        int32_t axis = axes[i] < 0 ? axes[i] + cur_size + 1 : axes[i];
-        CHECK_GE(axis, 0);
-        CHECK_LE(axis, cur_size);
-        for (uint32_t j = cur_size; j > axis; j--) {
-          output_dimensions[j] = output_dimensions[j - 1];
-        }
-        output_dimensions[axis] = 1;
-        cur_size++;
-      }
-    };
-
     out_t->CopyDataFrom(*input_t);
-    infer_output_shape(input_shape.data(), output_shape.data());
+    uint32_t cur_size = input_shape.size();
+    for (size_t i = 0; i < axes.size(); i++) {
+      int32_t axis = axes[i] < 0 ? axes[i] + cur_size + 1 : axes[i];
+      CHECK_GE(axis, 0);
+      CHECK_LE(axis, cur_size);
+      for (uint32_t j = cur_size; j > axis; j--) {
+        output_shape[j] = output_shape[j - 1];
+      }
+      output_shape[axis] = 1;
+      cur_size++;
+    }
     out_t->Resize(DDim(output_shape));
     // Offline calc unsqueeze, only retain output tensor as persistable
     // tensor

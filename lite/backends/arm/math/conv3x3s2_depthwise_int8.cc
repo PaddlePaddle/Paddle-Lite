@@ -614,24 +614,25 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
                                                              int w_out,
                                                              uint8_t* vmask) {
-  const uint8_t right_pad_idx[16] = {
-      0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
+  const uint8_t right_pad_idx[8] = {
+      16, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
   uint32_t cnt_col = ((w_out >> 3) - 2);
   uint8_t size_right_remain = static_cast<uint8_t>(w_in - (15 + cnt_col * 16));
   if (size_right_remain >= 17) {
     cnt_col++;
     size_right_remain -= 16;
   }
+  // size_right_remain means what valid data we have when dealing with right
+  // part!
   uint32_t cnt_remain = (size_right_remain == 16 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
+
+  // we need shift left (8 - cnt_remain) * 2 byte , so valid data growes!
   size_right_remain = size_right_remain + (8 - cnt_remain) * 2;
-  uint8x8_t vmask_rp1 =
+  uint8x8_t vmask_rp3 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
-  uint8x8_t vmask_rp2 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx + 8));
-  vst1_u8(vmask, vmask_rp1);
-  vst1_u8(vmask + 8, vmask_rp2);
+  vst1_u8(vmask, vmask_rp3);
   return std::make_pair(cnt_col, cnt_remain);
 }
 // clang-format off
@@ -895,19 +896,21 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n" \
   "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n" \
   "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n" \
-  "ld1    {v12.8b, v13.8b}, [%[vmask]]              \n" \
+  \
+  "ld1    {v12.8b}, [%[vmask]]         \n" \
+  \
   "movi    v18.4s, #0                               \n" \
   "movi    v19.4s, #0                               \n" \
-  "bif    v0.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v1.8b, %[vzero].8b, v13.8b                \n" \
-  "bif    v4.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v5.8b, %[vzero].8b, v13.8b                \n" \
-  "bif    v2.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v3.8b, %[vzero].8b, v13.8b                \n" \
-  "ext    v10.8b, v0.8b, %[vzero].8b, #1            \n" \
-  "ext    v11.8b, v4.8b, %[vzero].8b, #1            \n" \
-  "bif    v6.16b, %[vzero].16b, v12.16b             \n" \
-  "bif    v7.16b, %[vzero].16b, v13.16b             \n" \
+  \
+  /* generating v10, v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr0]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v10.8b, v0.8b, v13.8b, #1            \n" \
+  "ld1    {v13.8b}, [%[din_ptr2]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v4.8b, v13.8b, #1            \n" \
+  /* generating v10, v11 ends */\
+  \
   "movi    v20.4s, #0                               \n" \
   "movi    v21.4s, #0                               \n" \
   "smull  v14.8h, v0.8b, %[wr00].8b                 \n" \
@@ -921,14 +924,20 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
-  "bif    v8.16b, %[vzero].16b, v12.16b             \n" \
-  "bif    v9.16b, %[vzero].16b, v13.16b             \n" \
   "saddw  v18.4s, v18.4s, v15.4h                    \n" \
   "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
   "smull  v14.8h, v5.8b, %[wr21].8b                 \n" \
   "smull  v15.8h, v11.8b, %[wr22].8b                \n" \
-  "ext    v10.8b, v2.8b, %[vzero].8b, #1            \n" \
-  "ext    v11.8b, v6.8b, %[vzero].8b, #1            \n" \
+  \
+    /* generating v10, v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr1]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v10.8b, v2.8b, v13.8b, #1            \n" \
+  "ld1    {v13.8b}, [%[din_ptr3]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v6.8b, v13.8b, #1            \n" \
+  /* generating v10, v11, according to [vmask] */\
+  \
   /* line 1 */                                          \
   "smlal  v17.8h, v6.8b, %[wr10].8b                 \n" \
   "smlal  v14.8h, v2.8b, %[wr10].8b                 \n" \
@@ -943,7 +952,12 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw  v18.4s, v18.4s, v15.4h                    \n" \
   "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
   /* line 2 */                                          \
-  "ext    v11.8b, v8.8b, %[vzero].8b, #1            \n" \
+  /* generating v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr4]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v8.8b, v13.8b, #1            \n" \
+  /* generating v11, according to [vmask] */\
+  \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
   "smull  v17.8h, v8.8b, %[wr20].8b                 \n" \
@@ -1217,21 +1231,24 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "sub    %[din_ptr1], %[right_pad_num_in]          \n" \
   "sub    %[din_ptr2], %[right_pad_num_in]          \n" \
   "sub    %[ptr_out0], %[right_pad_num_out]         \n" \
-  "vld2.8    {d12-d13}, [%[din_ptr0]]               \n" \
-  "vld2.8    {d14-d15}, [%[din_ptr1]]               \n" \
-  "vld2.8    {d16-d17}, [%[din_ptr2]]               \n" \
-  "vld1.8 {d18-d19}, [%[vmask]]                     \n" \
+  "vld2.8    {d12-d13}, [%[din_ptr0]]!               \n" \
+  "vld2.8    {d14-d15}, [%[din_ptr1]]!              \n" \
+  "vld2.8    {d16-d17}, [%[din_ptr2]]!             \n" \
+  \
+  /* below generating d18,d19,d20 according to [vmask] */\
+  "vld1.8 {d18}, [%[vmask]]                     \n" \
+  "vld1.8    {d19}, [%[din_ptr0]]               \n" \
+  "vld1.8    {d28}, [%[din_ptr1]]               \n" \
+  "vld1.8    {d29}, [%[din_ptr2]]               \n" \
+  "vbif      d19, d11, d18                          \n" \
+  "vbif      d28, d11, d18                          \n" \
+  "vbif      d29, d11, d18                          \n" \
+  "vext.8    d18, d12, d19, #1                      \n" \
+  "vext.8    d19, d14, d28, #1                      \n" \
+  "vext.8    d20, d16, d29, #1                      \n" \
+  /* generating d18,d19,d20 ends */\
   "vmov.u32  q14, #0                                \n" \
   "vmov.u32  q15, #0                                \n" \
-  "vbif      d12, d11, d18                          \n" \
-  "vbif      d13, d11, d19                          \n" \
-  "vbif      d14, d11, d18                          \n" \
-  "vbif      d15, d11, d19                          \n" \
-  "vbif      d16, d11, d18                          \n" \
-  "vbif      d17, d11, d19                          \n" \
-  "vext.8    d18, d12, d11, #1                      \n" \
-  "vext.8    d19, d14, d11, #1                      \n" \
-  "vext.8    d20, d16, d11, #1                      \n" \
   /* line 0 */                                          \
   "vmull.s8  q11, d12, d2                           \n" \
   "vmull.s8  q12, d13, d3                           \n" \
@@ -1340,8 +1357,9 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
       reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
+
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
@@ -1424,7 +1442,7 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
       reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1508,7 +1526,7 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
       reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1590,7 +1608,7 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
       reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1673,7 +1691,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
       reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1756,7 +1774,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
       reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1839,7 +1857,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
       reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
@@ -1922,7 +1940,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
       reinterpret_cast<float*>(ctx->workspace_data<float>() + (win + 18));
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  uint8_t vmask[16];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
