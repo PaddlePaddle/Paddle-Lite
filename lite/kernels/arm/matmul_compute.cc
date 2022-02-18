@@ -80,7 +80,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
     }
 
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
-    m_ = x_dims[1];
+    m_ = x_dims.count(0, x_dims.size() - 1);
     n_ = 1;
     k_ = x_dims[0];
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
