@@ -30,9 +30,21 @@ import numpy as np
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageFolder),
@@ -66,8 +78,8 @@ class TestFcOp(AutoScanTest):
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
         padding_weights = draw(st.booleans())
-        # OpenCL dose not support this attribute
-        if (self.get_target() == 'OpenCL'):
+        # OpenCL and ARM dose not support this attribute
+        if (self.get_target() in ['OpenCL', 'ARM']):
             padding_weights = False
         if (padding_weights):
             weights_shape = [weights_0 + 4, weights_1 + 4]

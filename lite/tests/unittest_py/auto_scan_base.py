@@ -211,7 +211,7 @@ class AutoScanBaseTest(unittest.TestCase):
             return
         if flag_precision_fp16:
             atol = 0.1
-            rtol = 0.05
+            rtol = 0.06
         if len(tensor) == 1 and len(baseline) == 1:
             tensor_key = list(tensor.keys())
             arr = np.array(tensor[tensor_key[0]])
@@ -249,6 +249,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 other_str = "__Mangled_1"
                 index = key.rfind(opencl_str)
                 paddlekey = key
+                if (key.rfind("/precision_trans") != -1):
+                    paddlekey = key.split("/")[0]
                 if index > 0:
                     paddlekey = key[0:index]
                 index = key.rfind(other_str)
