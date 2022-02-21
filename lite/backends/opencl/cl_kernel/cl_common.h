@@ -172,10 +172,14 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #endif
 
 #ifdef SIGMOID
-  output.x = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.x))));
-  output.y = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.y))));
-  output.z = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.z))));
-  output.w = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.w))));
+  output.x =
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.x))));
+  output.y =
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.y))));
+  output.z =
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.z))));
+  output.w =
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.w))));
 #endif
 
 #ifdef HARD_SIGMOID
