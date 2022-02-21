@@ -112,7 +112,8 @@ class TestConv2dTransposeOp(AutoScanTest):
         output_size = []
         groups = draw(st.integers(min_value=1, max_value=input_c))
         assume(filter_c % groups == 0)
-        assume(filter_m >= groups)
+        assume(filter_m >= groups and filter_m % groups == 0)
+        assume(groups != filter_m or groups != filter_c)
         data_format = draw(st.sampled_from(['NCHW']))
         padding_algorithm = draw(st.sampled_from(['VALID', 'SAME']))
         dilations = draw(
@@ -262,15 +263,7 @@ class TestConv2dTransposeOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d_transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            groups = program_config.ops[0].attrs["groups"]
-            if predictor_config.target() == TargetType.OpenCL and groups > 1:
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

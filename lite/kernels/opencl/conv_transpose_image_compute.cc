@@ -109,6 +109,26 @@ void ConvTransposeImageCompute::PrepareForRun() {
                           filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+  } else if (groups_ > 1) {
+    CHECK_EQ(filter_tensor_n_ % groups_, 0);
+    kernel_name = "group_conv2d_transpose";
+    is_group_conv_ = true;
+    kernel_func_names_.push_back(kernel_name);
+
+    DDimLite filter_trans_dims{
+        {filter_dims[0], filter_dims[1], filter_dims[2], filter_dims[3]}};
+    CLImageConverterDefault converter;
+    const DDim& filter_image_dims =
+        converter.InitImageDimInfoWith(filter_trans_dims);
+    filter_image_w_ = filter_image_dims[0];
+    filter_image_h_ = filter_image_dims[1];
+    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
+    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+    converter.NCHWToImage(reinterpret_cast<float*>(filter_cpu),
+                          filter_image_data,
+                          filter_trans_dims);
+    MUTABLE_DATA_GPU(
+        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
     LOG(FATAL)
         << "conv2d_transpose image compute not support this condition yet! "
@@ -322,6 +342,16 @@ void ConvTransposeImageCompute::SetArgs() {
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
   CL_CHECK_FATAL(status);
+  if (is_group_conv_) {
+    int in_channels_per_group = input_tensor_c_ / groups_;
+    kernel->setArg(idx++, in_channels_per_group);
+    CL_CHECK_FATAL(status);
+    int out_channels_per_group = output_tensor_c_ / groups_;
+    kernel->setArg(idx++, out_channels_per_group);
+    CL_CHECK_FATAL(status);
+    VLOG(4) << "in_per_group: " << in_channels_per_group
+            << ", out_per_group: " << out_channels_per_group;
+  }
 }
 
 void ConvTransposeImageCompute::Run() {
