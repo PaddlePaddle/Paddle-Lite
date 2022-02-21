@@ -262,21 +262,40 @@ void Program::Clear() {
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
-  NNADAPTER_CHECK(cache->buffer.empty())
-      << "NNAPI does not support loading the cached model from buffer, only "
-         "supports using set_nnadapter_model_cache_dir(...) to set the caching "
-         "directory!";
-  // Convert the data layout and the quantization parameters of the NNAdapter
-  // Model
-  NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  FuseMatMulAddIntoFullyConnected(model);
-  ConvertQuantizationSymmToAsymm(model);
-  RestrictInputOutputQuantParams(model);
-  ConvertDataLayoutNCHWToNHWC(model);
-  ResolveOperationLiminations(model);
-  NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
+  Clear();
+  bool model_from_cache = false;
+  if (!cache->buffer.empty()) {
+    // Build from cache
+    auto input_count = cache->input_types.size();
+    NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    input_types_ = cache->input_types;
+    auto output_count = cache->output_types.size();
+    NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+    NNADAPTER_CHECK_GT(output_count, 0);
+    output_types_ = cache->output_types;
+    NNADAPTER_CHECK(!model);
+    if (!DeserializeModel(cache->buffer.data(), cache->buffer.size(), &model)) {
+      NNADAPTER_LOG(FATAL)
+          << "Failed to deserialize the optimized hal::Model from a buffer!";
+    } else {
+      model_from_cache = true;
+      NNADAPTER_VLOG(3)
+          << "Deserialize the optimized hal::Model from a buffer success.";
+    }
+    NNADAPTER_VLOG(5) << "Cached model:" << std::endl << Visualize(model);
+  } else {
+    // Build from model
+    NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+    // Convert the data layout and the quantization parameters of the NNAdapter
+    // Model
+    FuseMatMulAddIntoFullyConnected(model);
+    ConvertQuantizationSymmToAsymm(model);
+    RestrictInputOutputQuantParams(model);
+    ConvertDataLayoutNCHWToNHWC(model);
+    ResolveOperationLiminations(model);
+    NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
+  }
   // Convert the NNAdapter model to NNAPI model
-  operand_indexes_.clear();
   int result = nnapi()->ANeuralNetworksModel_create(&model_);
   if (result != ANEURALNETWORKS_NO_ERROR) {
     NNADAPTER_LOG(FATAL) << "Failed to create a NNAPI Model(" << result << ")!";
@@ -287,7 +306,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  std::vector<uint32_t> input_operand_indexes(input_count);
+  std::vector<uint32_t> input_operand_indexes;
   if (input_count > 0) {
     input_operand_indexes.resize(input_count);
     input_types_.resize(input_count);
@@ -384,6 +403,16 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                              << " but the runtime's is "
                              << nnapi()->android_sdk_version;
     }
+    // Serialize hal::Model to buffer if cache mode is enabled
+    if (cache->buffer.empty()) {
+      if (!SerializeModel(model, &cache->buffer)) {
+        NNADAPTER_LOG(FATAL)
+            << "Failed to serialize the optimized hal::Model into a buffer!";
+      } else {
+        NNADAPTER_VLOG(3)
+            << "Serialize the optimized hal::Model into a buffer success.";
+      }
+    }
   }
   result = nnapi()->ANeuralNetworksCompilation_finish(compilation_);
   if (result != ANEURALNETWORKS_NO_ERROR) {
@@ -392,6 +421,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_LOG(FATAL) << "Failed to compile the NNAPI Model(" << result
                          << ")!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  // Release the restored hal::Model
+  if (model_from_cache) {
+    nnadapter::ClearModel(model);
   }
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
