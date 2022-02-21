@@ -58,7 +58,6 @@ void SliceImageCompute::run_tex_to_buf() {
     auto pipline = pipline_tex_to_buf;
     auto outTexture = input_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-
     auto encoder = [backend commandEncoder];
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setBuffer:intermediate_input_ offset:(0) atIndex:(0)];
