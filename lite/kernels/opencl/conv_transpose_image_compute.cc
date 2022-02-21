@@ -40,6 +40,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
   output_tensor_w_ = output_dims[3];
 
   auto filter_dims = conv_param_->filter->dims();
+  filter_tensor_n_ = filter_dims[0];
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
   filter_tensor_w_ = filter_dims[3];
@@ -111,7 +112,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else if (groups_ > 1) {
     CHECK_EQ(filter_tensor_n_ % groups_, 0);
-    kernel_name = "group_conv2d_transpose";
+    std::string kernel_name = "group_conv2d_transpose";
     is_group_conv_ = true;
     kernel_func_names_.push_back(kernel_name);
 
