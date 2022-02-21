@@ -53,17 +53,17 @@ class LookupTableV2ComputeTest : public arena::TestCase {
     out_shape.push_back(w_dims_[1]);
     out->Resize(out_shape);
 
-    auto ids_data = ids->template data<int64_t>();
+    auto ids_data = ids->template data<T>();
     auto ids_size = ids_dims_.production();
-    auto w_data = w->template data<T>();
+    auto w_data = w->template data<float>();
     auto w_rows = w_dims_[0];
     auto w_cols = w_dims_[1];
-    auto out_data = out->template mutable_data<T>();
+    auto out_data = out->template mutable_data<float>();
 
     for (int64_t i = 0; i < ids_size; i++) {
       auto id = ids_data[i];
       if (padding_idx_ != -1 && id == padding_idx_) {
-        memset(out_data + i * w_cols, 0, w_cols * sizeof(T));
+        memset(out_data + i * w_cols, 0, w_cols * sizeof(float));
       } else {
         CHECK_LT(id, w_rows) << "lookup_table ids[i] expected < " << w_rows
                              << " but got " << id;
@@ -82,19 +82,31 @@ class LookupTableV2ComputeTest : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<int64_t> ids(ids_dims_.production());
-    fill_data_rand<int64_t>(
-        ids.data(), 0, w_dims_[0] - 1, ids_dims_.production());
+    std::vector<T> ids(ids_dims_.production());
+    fill_data_rand<T>(ids.data(), 0, w_dims_[0] - 1, ids_dims_.production());
     SetCommonTensor(ids_, ids_dims_, ids.data());
 
-    std::vector<T> w(w_dims_.production());
+    std::vector<float> w(w_dims_.production());
     fill_data_rand(w.data(),
-                   static_cast<T>(-10),
-                   static_cast<T>(10),
+                   static_cast<float>(-10),
+                   static_cast<float>(10),
                    w_dims_.production());
     SetCommonTensor(w_, w_dims_, w.data(), {}, true);
   }
 };
+
+template <typename T>
+void TestLookupTableV2Case(Place place, float abs_error) {
+  for (auto ids_dims :
+       std::vector<std::vector<int64_t>>{{5, 2, 3}, {2, 3}, {3}}) {
+    for (auto w_dims : std::vector<std::vector<int64_t>>{{4, 2}, {6, 1}}) {
+      std::unique_ptr<arena::TestCase> tester(new LookupTableV2ComputeTest<T>(
+          place, "def", DDim(ids_dims), DDim(w_dims), -1));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
+}
 
 TEST(LookupTableV2, precision) {
   float abs_error = 1e-5;
@@ -103,6 +115,10 @@ TEST(LookupTableV2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  TestLookupTableV2Case<int>(place, abs_error);
+  return;
 #else
   return;
 #endif
@@ -110,16 +126,7 @@ TEST(LookupTableV2, precision) {
   return;
 #endif
 
-  for (auto ids_dims :
-       std::vector<std::vector<int64_t>>{{5, 2, 3}, {2, 3}, {3}}) {
-    for (auto w_dims : std::vector<std::vector<int64_t>>{{4, 2}, {6, 1}}) {
-      std::unique_ptr<arena::TestCase> tester(
-          new LookupTableV2ComputeTest<float>(
-              place, "def", DDim(ids_dims), DDim(w_dims), -1));
-      arena::Arena arena(std::move(tester), place, abs_error);
-      arena.TestPrecision();
-    }
-  }
+  TestLookupTableV2Case<int64_t>(place, abs_error);
 }
 
 }  // namespace lite
