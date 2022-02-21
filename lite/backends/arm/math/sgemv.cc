@@ -1014,6 +1014,7 @@ void sgemv_trans(const int M,
 
   delete[] zero_buf;
   delete[] y_buf;
+  delete[] x_buf;
 }
 #endif  // __aarch64__
 
