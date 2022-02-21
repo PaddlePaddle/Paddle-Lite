@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,21 +18,19 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ILSVRC2012_utility.h"
+#include "lite/tests/api/utility.h"
+#include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 100, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
+DEFINE_int32(iteration, 1, "iteration times to run");
 
 namespace paddle {
 namespace lite {
 
-TEST(DarkNet, test_darknet53_fp32_v2_3_nnadapter) {
+TEST(wide_deep, test_wide_deep_fp32_v2_1_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
-  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
@@ -46,7 +44,6 @@ TEST(DarkNet, test_darknet53_fp32_v2_3_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -71,62 +68,57 @@ TEST(DarkNet, test_darknet53_fp32_v2_3_nnadapter) {
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
-  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+  std::string input_data_dir =
+      FLAGS_data_dir + std::string("/wide_deep_input.txt");
+  std::string output_data_dir =
+      FLAGS_data_dir + std::string("/wide_deep_output.txt");
+  std::vector<std::vector<std::vector<uint8_t>>> input_data_set;
+  std::vector<std::vector<std::vector<int64_t>>> input_data_set_shapes;
+  LoadSpecificData(input_data_dir,
+                   input_data_set,
+                   input_data_set_shapes,
+                   predictor,
+                   "input");
+  std::vector<std::vector<std::vector<uint8_t>>> output_data_set;
+  std::vector<std::vector<std::vector<int64_t>>> output_data_set_shapes;
+  LoadSpecificData(output_data_dir,
+                   output_data_set,
+                   output_data_set_shapes,
+                   predictor,
+                   "output");
 
-  int input_size = 1;
-  for (auto i : input_shape) {
-    input_size *= i;
-  }
-
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    for (int j = 0; j < input_size; j++) {
-      data[j] = 0.f;
-    }
+  FLAGS_warmup = 1;
+  for (int i = 0; i < FLAGS_warmup; i++) {
+    FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
     predictor->Run();
   }
 
-  std::vector<std::vector<float>> out_rets;
-  out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
-  for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+  std::vector<std::vector<float>> results;
+  for (int i = 0; i < FLAGS_iteration; i++) {
+    FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
 
     double start = GetCurrentUS();
     predictor->Run();
-    cost_time += GetCurrentUS() - start;
+    cost_time += (GetCurrentUS() - start);
 
-    auto output_tensor = predictor->GetOutput(0);
-    auto output_shape = output_tensor->shape();
-    auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_EQ(output_shape[0], 1);
-    ASSERT_EQ(output_shape[1], 1000);
+    std::vector<float> abs_error;
+    GetModelOutputAndAbsError(
+        predictor, output_data_set[i], output_data_set_shapes[i], abs_error);
+    results.push_back(abs_error);
+  }
 
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
+  for (float abs_error : {1e-0, 1e-1, 1e-2}) {
+    float acc = CalOutAccuracy(results, abs_error);
+    LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
+    ASSERT_GE(acc, 0.99);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
+            << ", warmup: " << FLAGS_warmup
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
-
-  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
-  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 
 }  // namespace lite
