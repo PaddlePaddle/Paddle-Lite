@@ -17,6 +17,7 @@ import unittest
 import abc
 import os
 import sys
+import platform
 import enum
 import time
 import logging
