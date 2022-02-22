@@ -114,6 +114,23 @@ NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantType(
   return type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
+NNADAPTER_EXPORT bool IsConstantOperandType(const NNAdapterOperandType& type) {
+  return type.lifetime == NNADAPTER_CONSTANT_COPY ||
+         type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+}
+
+NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
+    const NNAdapterOperandType& type) {
+  uint32_t count = type.dimensions.count;
+  auto dimensions = type.dimensions.data;
+  for (uint32_t i = 0; i < count; i++) {
+    if (dimensions[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
+}
+
 NNADAPTER_EXPORT int64_t
 GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
   switch (type) {
@@ -148,18 +165,6 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
       break;
   }
   return 0;
-}
-
-NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
-    const NNAdapterOperandType& type) {
-  uint32_t count = type.dimensions.count;
-  auto dimensions = type.dimensions.data;
-  for (uint32_t i = 0; i < count; i++) {
-    if (dimensions[i] == NNADAPTER_UNKNOWN) {
-      return true;
-    }
-  }
-  return false;
 }
 
 NNADAPTER_EXPORT int64_t

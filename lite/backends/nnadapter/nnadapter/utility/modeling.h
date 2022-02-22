@@ -19,6 +19,8 @@
 
 namespace nnadapter {
 
+// Clear all of buffers in a model
+void ClearModel(hal::Model* model);
 // Append a operand into a model
 hal::Operand* AddOperand(hal::Model* model);
 // Append a operation into a model
@@ -195,5 +197,9 @@ hal::Operand* InsertRequantOperation(hal::Model* model,
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model);
+
+// Serialize/deserialize hal::Model into/from the binary buffer
+bool SerializeModel(hal::Model* model, std::vector<uint8_t>* buffer);
+bool DeserializeModel(void* buffer, uint64_t size, hal::Model** model);
 
 }  // namespace nnadapter
