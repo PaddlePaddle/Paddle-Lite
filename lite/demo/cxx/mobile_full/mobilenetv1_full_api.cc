@@ -30,9 +30,19 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-DEFINE_string(model_dir, "", "Model dir path.");
+DEFINE_string(model_dir,
+              "",
+              "Model dir path. Set it when the model is uncombined format.");
+DEFINE_string(model_file,
+              "",
+              "Model file. Set it when the model is combined format.");
+DEFINE_string(param_file,
+              "",
+              "Param file. Set it when the model is combined format.");
 DEFINE_string(optimized_model_dir, "", "Optimized model dir.");
-DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
+DEFINE_bool(prefer_int8_kernel,
+            false,
+            "Prefer to run model with int8 kernels.");
 DEFINE_int32(power_mode,
              3,
              "power mode: "
@@ -44,7 +54,6 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 10, "warmup times");
 DEFINE_int32(repeats, 100, "repeats times");
 DEFINE_bool(use_gpu, false, "use opencl backend");
-DEFINE_bool(print_output, false, "Print outputs to stdout");
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -55,7 +64,12 @@ int64_t ShapeProduction(const shape_t& shape) {
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
+    config.set_model_file(FLAGS_model_file);
+    config.set_param_file(FLAGS_param_file);
+  } else if (!FLAGS_model_dir.empty()) {
+    config.set_model_dir(FLAGS_model_dir);
+  }
   config.set_power_mode((paddle::lite_api::PowerMode)FLAGS_power_mode);
   config.set_threads(FLAGS_threads);
 
@@ -126,11 +140,17 @@ void RunModel() {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_model_dir == "" || FLAGS_optimized_model_dir == "") {
+  if (FLAGS_model_dir.empty() &&
+          (FLAGS_model_file.empty() || FLAGS_param_file.empty()) ||
+      FLAGS_optimized_model_dir.empty()) {
     std::cerr
-        << "[ERROR] usage: " << argv[0]
-        << " --model_dir=                 string  Path to PaddlePaddle model "
-           "file.\n"
+        << "[ERROR] usage: \n"
+        << argv[0] << " --model_dir=                 string  Path to "
+                      "PaddlePaddle uncombined model.\n"
+        << " --model_file=                string  Model file in PaddlePaddle "
+           "combined model.\n"
+        << " --param_file=                string  Param file in PaddlePaddle "
+           "combined model.\n"
         << " --optimized_model_dir=       string  Path to optmized model "
            "file.\n"
         << " --prefer_int8_kernel=false   bool    Prefer to run model with "
@@ -139,8 +159,7 @@ int main(int argc, char** argv) {
         << " --threads=1                  int32   Number of threads.\n"
         << " --warmup=10                  int32   Number of warmups.\n"
         << " --repeats=100                int32   Number of repeats.\n"
-        << " --use_gpu=false              bool    Use gpu or not.\n"
-        << " --print_out=false            bool    Print outputs to stdout.\n";
+        << " --use_gpu=false              bool    Use gpu or not.\n";
     exit(1);
   }
 
