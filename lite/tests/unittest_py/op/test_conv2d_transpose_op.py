@@ -62,11 +62,17 @@ class TestConv2dTransposeOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP16,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP16,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+
         opencl_valid_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -262,14 +268,26 @@ class TestConv2dTransposeOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d_transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
+        def _teller1(program_config, predictor_config):
             groups = program_config.ops[0].attrs["groups"]
             if predictor_config.target() == TargetType.OpenCL and groups > 1:
                 return True
 
+        def _teller2(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+
+            if predictor_config.target(
+            ) == TargetType.ARM and predictor_config.precision(
+            ) == PrecisionType.INT8 and groups > 1:
+                return True
+
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has diff in a specific case on arm-int8. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

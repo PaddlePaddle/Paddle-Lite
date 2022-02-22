@@ -17,6 +17,7 @@ import unittest
 import abc
 import os
 import sys
+import platform
 import enum
 import time
 import logging
@@ -443,11 +444,18 @@ class AutoScanBaseTest(unittest.TestCase):
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
+                if flag_precision_fp16:
+                    if platform.system() == 'Linux':
+                        # only run in M1
+                        continue
                 # creat model and prepare feed data
                 if flag_precision_fp16:
                     atol_ = 1e-1
                     rtol_ = 5e-2
                 if quant:
+                    if platform.system() == 'Darwin':
+                        # only run in linux
+                        continue
                     atol_ = 1e-3
                     rtol_ = 1e-3
                     if cnt == 0:
