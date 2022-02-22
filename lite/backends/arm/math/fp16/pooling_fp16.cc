@@ -1749,10 +1749,16 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
             float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
         float16x4_t vcoef_4 = vget_low_f16(vcoef);
         int cnt_num = w_unroll_size;
-        P3x3S1P0_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN cnt_remain += cnt * 4;
-        AVG_ONE_COMPUTE(
-            dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend, S)
-        r0 = r1;
+        P3x3S1P0_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN AVG_ONE_COMPUTE(
+            dr0,
+            dr1,
+            dr2,
+            dr_out,
+            cnt_remain + cnt * 4,
+            minval,
+            right_remain,
+            wend,
+            S) r0 = r1;
         r1 = r2;
         r2 = r1 + win;
         data_out_channel += wout;
