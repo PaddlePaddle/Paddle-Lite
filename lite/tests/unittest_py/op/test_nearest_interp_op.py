@@ -184,8 +184,7 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.ARM, TargetType.OpenCL]:
+            if predictor_config.target() in [TargetType.OpenCL]:
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
 
