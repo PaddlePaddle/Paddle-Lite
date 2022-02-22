@@ -128,15 +128,15 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
            in / (CL_DTYPE)ACT_SCALE;
 #endif
 
-#ifdef SIGMOID
-  output = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in))));
-#endif
-
 #ifdef HARD_SIGMOID
   output =
       clamp(in * (CL_DTYPE)HARD_SIGMOID_SLOPE + (CL_DTYPE)HARD_SIGMOID_OFFSET,
             (CL_DTYPE)0.0,
             (CL_DTYPE)1.0);
+#endif
+
+#ifdef SIGMOID
+  output = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in))));
 #endif
 
   return output;
@@ -171,6 +171,13 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
            in / (CL_COMPUTE_DTYPE4)ACT_SCALE;
 #endif
 
+#ifdef HARD_SIGMOID
+  output = clamp(in * (CL_COMPUTE_DTYPE4)HARD_SIGMOID_SLOPE +
+                     (CL_COMPUTE_DTYPE4)HARD_SIGMOID_OFFSET,
+                 (CL_COMPUTE_DTYPE4)0.0,
+                 (CL_COMPUTE_DTYPE4)1.0);
+#endif
+
 #ifdef SIGMOID
   output.x =
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.x))));
@@ -180,13 +187,6 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.z))));
   output.w =
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.w))));
-#endif
-
-#ifdef HARD_SIGMOID
-  output = clamp(in * (CL_COMPUTE_DTYPE4)HARD_SIGMOID_SLOPE +
-                     (CL_COMPUTE_DTYPE4)HARD_SIGMOID_OFFSET,
-                 (CL_COMPUTE_DTYPE4)0.0,
-                 (CL_COMPUTE_DTYPE4)1.0);
 #endif
 
   return output;
