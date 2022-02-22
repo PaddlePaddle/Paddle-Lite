@@ -626,7 +626,7 @@ void MatMulCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
     if (x_transpose == false && y_transpose == false) {
       o_data[0] = 0.;
       for (size_t i = 0; i < x_dims[0]; ++i) {
-        o_data[0] += x_data[i] * y_data[i];
+        o_data[0] += x_data[i] * y_data[i]* alpha;
       }
     } else if (x_transpose == true && y_transpose == true) {
       lite::arm::math::fp16::sgemm_fp16(false,
