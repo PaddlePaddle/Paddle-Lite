@@ -46,9 +46,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   threads_ = config.threads();
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
-  if (thread_num > 1) {
-    ThreadPool::AcquireThreadPool();
-  }
 #endif
   if (!status_is_cloned_) {
     auto places = config.valid_places();
@@ -226,7 +223,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
 CxxPaddleApiImpl::~CxxPaddleApiImpl() {
 #ifdef LITE_USE_THREAD_POOL
-  ThreadPool::ReleaseThreadPool();
+  ThreadPool::Destroy();
 #endif
 }
 
