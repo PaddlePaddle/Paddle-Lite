@@ -44,7 +44,8 @@ namespace arm {
   /* deconv weights layout: chin * chout * kh * kw*/ \
   int m = chout * kw * kh / group;                   \
   int n = hin * win;                                 \
-  int k = chin / group;
+  int k = chin / group;                              \
+  workspace_size_ = group * m * n;
 
 #define DEPTHWISE_PARAM                                                   \
   auto dilations = *param.dilations;                                      \
@@ -65,7 +66,6 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kFloat),
                             PRECISION(kFloat)>::PrepareForRun() {
   INIT_PARAM
-  workspace_size_ = group * m * n * sizeof(float);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   DEPTHWISE_PARAM
@@ -81,8 +81,6 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8),
                             PRECISION(kFloat)>::PrepareForRun() {
   INIT_PARAM
-
-  workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
@@ -112,9 +110,6 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8),
                             PRECISION(kInt8)>::PrepareForRun() {
   INIT_PARAM
-
-  // col_out(m*n*group) + gemm_out(m*n*group)
-  workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
@@ -281,7 +276,7 @@ PROFILE_INFO(kInt8, kFloat)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
+  ctx.ExtendWorkspace((workspace_size_ * 4 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -293,6 +288,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int group_size_in = win * hin * chin / group;
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
+  int group_channel_out = chout / group;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
   int hblock = lite::arm::math::get_hblock(&ctx, m);
@@ -314,21 +310,19 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   bool has_act = act_param.has_active;
   int32_t* workspace_ptr =
       static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
-      ctx.llc_size() / sizeof(int32_t);
-  int offset = group * m * n;
+      ctx.llc_size() / sizeof(float);
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
-    int32_t* dout_batch_int32 = workspace_ptr + offset;
-    int32_t* col_data = static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
-                        ctx.llc_size() / sizeof(int32_t);
+    int32_t* dout_batch_int32 = workspace_ptr + workspace_size_;
+    int32_t* col_data = workspace_ptr;
     if (flag_1x1s1p1) {
       col_data = dout_batch_int32;
     }
     for (int g = 0; g < group; g++) {
       const int8_t* din_group = din_batch + g * group_size_in;
       const int8_t* weights_group = weights + g * group_size_weights;
-      const float* scale_group = w_scale_.data() + g * m;
+      const float* scale_group = w_scale_.data() + g * group_channel_out;
       int32_t* coldata_group = col_data + g * group_size_coldata;
       if (flag_bias) {
         act_param.has_active = false;
@@ -380,7 +374,7 @@ PROFILE_INFO(kInt8, kInt8)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
+  ctx.ExtendWorkspace((workspace_size_ * 4 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -392,6 +386,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int group_size_in = win * hin * chin / group;
   int group_size_out = wout * hout * chout / group;
   int group_size_coldata = m * n;
+  int group_channel_out = chout / group;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
   int hblock = lite::arm::math::get_hblock(&ctx, m);
@@ -413,7 +408,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   bool has_act = act_param.has_active;
   int32_t* workspace_ptr =
       static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
-      ctx.llc_size() / sizeof(int32_t);
+      ctx.llc_size() / sizeof(float);
   int offset = group * m * n;
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
@@ -426,7 +421,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     for (int g = 0; g < group; g++) {
       const int8_t* din_group = din_batch + g * group_size_in;
       const int8_t* weights_group = weights + g * group_size_weights;
-      const float* scale_group = w_scale_.data() + g * m;
+      const float* scale_group = w_scale_.data() + g * group_channel_out;
       int32_t* coldata_group = col_data + g * group_size_coldata;
       if (flag_bias) {
         act_param.has_active = false;

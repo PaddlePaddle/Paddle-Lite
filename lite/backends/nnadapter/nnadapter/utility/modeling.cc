@@ -15,13 +15,33 @@
 #include "utility/modeling.h"
 #include <algorithm>
 #include <map>
+#include <memory>
+#include <unordered_map>
 #include <utility>
+#include "utility/cache.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
+
+NNADAPTER_EXPORT void ClearModel(hal::Model* model) {
+  for (auto& operand : model->operands) {
+    if (operand.type.lifetime == NNADAPTER_CONSTANT_COPY && operand.buffer) {
+      free(operand.buffer);
+    }
+    if (IsPerChannelQuantType(operand.type.precision) &&
+        operand.type.symm_per_channel_params.scales) {
+      free(operand.type.symm_per_channel_params.scales);
+    }
+    for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+      if (operand.hints[i].handler) {
+        operand.hints[i].deleter(&operand.hints[i].handler);
+      }
+    }
+  }
+}
 
 NNADAPTER_EXPORT hal::Operand* AddOperand(hal::Model* model) {
   model->operands.emplace_back();
@@ -845,6 +865,268 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     }
   }
   return operations;
+}
+
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY =
+    "operands";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERATIONS_KEY =
+    "operations";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_INPUT_OPERANDS_KEY =
+    "input_operands";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OUTPUT_OPERANDS_KEY =
+    "output_operands";
+
+inline void SerializeData(std::vector<uint8_t>* buffer,
+                          size_t* offset,
+                          void* data,
+                          size_t length) {
+  memcpy(buffer->data() + *offset, data, length);
+  *offset += length;
+}
+
+template <typename T>
+void SerializeData(std::vector<uint8_t>* buffer, size_t* offset, T value) {
+  SerializeData(buffer, offset, &value, sizeof(T));
+}
+
+inline void DeserializeData(std::vector<uint8_t>* buffer,
+                            size_t* offset,
+                            void* data,
+                            size_t length) {
+  memcpy(data, buffer->data() + *offset, length);
+  *offset += length;
+}
+
+template <typename T>
+void DeserializeData(std::vector<uint8_t>* buffer, size_t* offset, T* value) {
+  DeserializeData(buffer, offset, value, sizeof(T));
+}
+
+NNADAPTER_EXPORT bool SerializeModel(hal::Model* model,
+                                     std::vector<uint8_t>* buffer) {
+  auto helper = std::make_shared<Cache>();
+  // Serialize the model operands
+  std::vector<uint8_t> value;
+  size_t offset = sizeof(size_t);  // number of operands
+  for (auto& operand : model->operands) {
+    offset += sizeof(NNAdapterOperandType);
+    if (IsPerChannelQuantType(operand.type.precision)) {
+      offset +=
+          operand.type.symm_per_channel_params.scale_count * sizeof(float);
+    }
+    if (IsConstantOperand(&operand)) {
+      offset += sizeof(size_t) + operand.length;
+    }
+  }
+  value.resize(offset);
+  // Flatten the model operands
+  offset = 0;
+  SerializeData(&value, &offset, model->operands.size());
+  int64_t operand_index = 0;
+  std::unordered_map<hal::Operand*, int64_t> operand_to_index;
+  operand_to_index[0] = -1;  // Map to -1 if operand is nullptr
+  for (auto& operand : model->operands) {
+    // The type of the operand
+    SerializeData(&value, &offset, &operand.type, sizeof(NNAdapterOperandType));
+    // The quantization parameters of the operand
+    if (IsPerChannelQuantType(operand.type.precision)) {
+      NNADAPTER_CHECK(operand.type.symm_per_channel_params.scales);
+      SerializeData(
+          &value,
+          &offset,
+          operand.type.symm_per_channel_params.scales,
+          operand.type.symm_per_channel_params.scale_count * sizeof(float));
+    }
+    // The constant values of the operand
+    if (IsConstantOperandType(operand.type)) {
+      NNADAPTER_CHECK(operand.buffer);
+      SerializeData(&value, &offset, static_cast<size_t>(operand.length));
+      SerializeData(&value, &offset, operand.buffer, operand.length);
+    }
+    operand_to_index[&operand] = operand_index++;
+  }
+  NNADAPTER_CHECK(
+      helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY, value));
+  // Serialize the model operations
+  offset = sizeof(size_t);  // number of operations
+  for (auto& operation : model->operations) {
+    offset += sizeof(NNAdapterOperationType) + sizeof(size_t) +
+              operation.input_operands.size() * sizeof(int64_t) +
+              sizeof(size_t) +
+              operation.output_operands.size() * sizeof(int64_t);
+  }
+  value.resize(offset);
+  // Flatten the model operations
+  offset = 0;
+  SerializeData(&value, &offset, model->operations.size());
+  for (auto& operation : model->operations) {
+    // The type of the operation
+    SerializeData(
+        &value, &offset, &operation.type, sizeof(NNAdapterOperationType));
+    // The indexes of the input operands of the operation
+    SerializeData(&value, &offset, operation.input_operands.size());
+    for (auto operand : operation.input_operands) {
+      NNADAPTER_CHECK(operand_to_index.count(operand))
+          << "Operand @" << OperandIdToString(operand) << " not found!";
+      SerializeData(&value, &offset, operand_to_index[operand]);
+    }
+    // The indexes of the output operands of the operation
+    SerializeData(&value, &offset, operation.output_operands.size());
+    for (auto operand : operation.output_operands) {
+      NNADAPTER_CHECK(operand_to_index.count(operand))
+          << "Operand @" << OperandIdToString(operand) << " not found!";
+      SerializeData(&value, &offset, operand_to_index[operand]);
+    }
+  }
+  NNADAPTER_CHECK(
+      helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERATIONS_KEY, value));
+  // Serialize the model input operands
+  size_t num_input_operands = model->input_operands.size();
+  value.resize(sizeof(size_t) + num_input_operands * sizeof(int64_t));
+  // Flatten the model input operands
+  offset = 0;
+  SerializeData(&value, &offset, num_input_operands);
+  for (auto operand : model->input_operands) {
+    NNADAPTER_CHECK(operand_to_index.count(operand))
+        << "Operand @" << OperandIdToString(operand) << " not found!";
+    SerializeData(&value, &offset, operand_to_index[operand]);
+  }
+  NNADAPTER_CHECK(helper->Set(
+      NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_INPUT_OPERANDS_KEY, value));
+  // Serialize the model output operands
+  size_t num_output_operands = model->output_operands.size();
+  value.resize(sizeof(size_t) + num_output_operands * sizeof(int64_t));
+  // Flatten the model output operands
+  offset = 0;
+  SerializeData(&value, &offset, num_output_operands);
+  for (auto operand : model->output_operands) {
+    NNADAPTER_CHECK(operand_to_index.count(operand))
+        << "Operand @" << OperandIdToString(operand) << " not found!";
+    SerializeData(&value, &offset, operand_to_index[operand]);
+  }
+  NNADAPTER_CHECK(helper->Set(
+      NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OUTPUT_OPERANDS_KEY, value));
+  // Serialize all of model into buffer
+  auto size = helper->GetSerializedSize();
+  buffer->resize(size);
+  return helper->Serialize(buffer->data(), size);
+}
+
+NNADAPTER_EXPORT bool DeserializeModel(void* buffer,
+                                       uint64_t size,
+                                       hal::Model** model) {
+  NNADAPTER_CHECK(model);
+  *model = new hal::Model();
+  NNADAPTER_CHECK(*model)
+      << "Failed to allocate the hal::Model for restoring from buffer!";
+  // Deserialize all of model from buffer
+  auto helper = std::make_shared<Cache>();
+  if (!helper->Deserialize(buffer, size)) {
+    return false;
+  }
+  std::vector<uint8_t> value;
+  // Deserialize the model operands
+  NNADAPTER_CHECK(
+      helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY, &value));
+  size_t offset = 0;
+  size_t num_operands;
+  DeserializeData(&value, &offset, &num_operands);
+  std::vector<hal::Operand*> index_to_operand(num_operands);
+  for (size_t i = 0; i < num_operands; i++) {
+    auto operand = AddOperand(*model);
+    // The type of the operand
+    DeserializeData(
+        &value, &offset, &operand->type, sizeof(NNAdapterOperandType));
+    // The quantization parameters of the operand
+    if (IsPerChannelQuantType(operand->type.precision)) {
+      size_t length =
+          operand->type.symm_per_channel_params.scale_count * sizeof(float);
+      auto buffer = reinterpret_cast<float*>(malloc(length));
+      NNADAPTER_CHECK(buffer) << "Failed to allocate the scale buffer for a "
+                                 "symm per-channel quant type!";
+      DeserializeData(&value, &offset, buffer, length);
+      operand->type.symm_per_channel_params.scales = buffer;
+    }
+    // The constant values of the operand
+    if (IsConstantOperandType(operand->type)) {
+      size_t length;
+      DeserializeData(&value, &offset, &length);
+      auto buffer = reinterpret_cast<void*>(malloc(length));
+      NNADAPTER_CHECK(buffer)
+          << "Failed to allocate the buffer for a constant operand!";
+      DeserializeData(&value, &offset, buffer, length);
+      operand->buffer = buffer;
+      operand->length = length;
+    }
+    index_to_operand[i] = operand;
+  }
+  // Deserialize the model operations
+  NNADAPTER_CHECK(
+      helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERATIONS_KEY, &value));
+  offset = 0;
+  size_t num_operations;
+  DeserializeData(&value, &offset, &num_operations);
+  for (size_t i = 0; i < num_operations; i++) {
+    auto operation = AddOperation(*model);
+    // The type of the operation
+    DeserializeData(
+        &value, &offset, &operation->type, sizeof(NNAdapterOperationType));
+    // The indexes of the input operands of the operation
+    size_t num_input_operands;
+    DeserializeData(&value, &offset, &num_input_operands);
+    operation->input_operands.resize(num_input_operands);
+    for (size_t j = 0; j < num_input_operands; j++) {
+      int64_t operand_index;
+      DeserializeData(&value, &offset, &operand_index);
+      NNADAPTER_CHECK(operand_index == -1 ||
+                      (operand_index >= 0 && operand_index < num_operands));
+      operation->input_operands[j] =
+          operand_index == -1 ? nullptr : index_to_operand[operand_index];
+    }
+    // The indexes of the output operands of the operation
+    size_t num_output_operands;
+    DeserializeData(&value, &offset, &num_output_operands);
+    operation->output_operands.resize(num_output_operands);
+    for (size_t j = 0; j < num_output_operands; j++) {
+      int64_t operand_index;
+      DeserializeData(&value, &offset, &operand_index);
+      NNADAPTER_CHECK(operand_index == -1 ||
+                      (operand_index >= 0 && operand_index < num_operands));
+      operation->output_operands[j] =
+          operand_index == -1 ? nullptr : index_to_operand[operand_index];
+    }
+  }
+  // Deserialize the model input operands
+  NNADAPTER_CHECK(helper->Get(
+      NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_INPUT_OPERANDS_KEY, &value));
+  offset = 0;
+  size_t num_input_operands;
+  DeserializeData(&value, &offset, &num_input_operands);
+  (*model)->input_operands.resize(num_input_operands);
+  for (size_t i = 0; i < num_input_operands; i++) {
+    int64_t operand_index;
+    DeserializeData(&value, &offset, &operand_index);
+    NNADAPTER_CHECK(operand_index == -1 ||
+                    (operand_index >= 0 && operand_index < num_operands));
+    (*model)->input_operands[i] =
+        operand_index == -1 ? nullptr : index_to_operand[operand_index];
+  }
+  // Deserialize the model output operands
+  NNADAPTER_CHECK(helper->Get(
+      NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OUTPUT_OPERANDS_KEY, &value));
+  offset = 0;
+  size_t num_output_operands;
+  DeserializeData(&value, &offset, &num_output_operands);
+  (*model)->output_operands.resize(num_output_operands);
+  for (size_t i = 0; i < num_output_operands; i++) {
+    int64_t operand_index;
+    DeserializeData(&value, &offset, &operand_index);
+    NNADAPTER_CHECK(operand_index == -1 ||
+                    (operand_index >= 0 && operand_index < num_operands));
+    (*model)->output_operands[i] =
+        operand_index == -1 ? nullptr : index_to_operand[operand_index];
+  }
+  return true;
 }
 
 }  // namespace nnadapter
