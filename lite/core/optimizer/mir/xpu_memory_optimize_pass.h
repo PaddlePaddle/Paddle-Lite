@@ -31,6 +31,17 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+/*
+ * XPUMemoryOptimizePass will
+ */
+typedef struct {
+  std::string name;
+  int cluster;
+  std::pair<int, int> lifetime;
+  int life_interval;
+  std::set<std::string> adj;
+} XPUMemNode;
+
 class XPUMemoryOptimizePass : public ProgramPass {
  public:
   using lifecycle_t = std::pair<int, int>;
@@ -38,16 +49,9 @@ class XPUMemoryOptimizePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  void CollectLifeCycleByDevice(
-      std::map<std::string, lifecycle_map_t>* lifecycles,
-      SSAGraph*,
-      std::map<std::string, std::string>* inplaceop_input2output,
-      std::map<std::string, std::string>* inplaceop_output2input);
-  void MakeReusePlan(
-      const lifecycle_map_t& lifecycles,
-      std::map<std::string, std::string>* node2cluster,
-      std::map<std::string, std::string>* inplaceop_input2output,
-      std::map<std::string, std::string>* inplaceop_output2input);
+  void CollectLifeCycleByDevice(SSAGraph* graph,std::vector<XPUMemNode>* mem_nodes);
+  void MakeReusePlan(std::vector<XPUMemNode>& mem_nodes,
+                     std::map<std::string, std::string>* node2cluster);
   void PerformReusePlan(SSAGraph* graph,
                         const std::map<std::string, std::string>& reuse_table);
 

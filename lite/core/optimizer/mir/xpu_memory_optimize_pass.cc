@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <algorithm>
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/type_system.h"
@@ -25,21 +26,9 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-typedef struct {
-  std::string name;
-  int cluster;
-  std::pair<int, int> lifetime;
-  int life_interval;
-  int mapping;
-  std::set<std::string> adj;
-} XPUMemNode;
-
-void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
-    std::map<std::string, lifecycle_map_t>* lifecycles,
-    SSAGraph* graph,
-    std::map<std::string, std::string>* inplaceop_input2output,
-    std::map<std::string, std::string>* inplaceop_output2input) {
+void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph,std::vector<XPUMemNode>* mem_nodes) {
   max_lifecycle_ = 0;
+  std::map<std::string, lifecycle_map_t> lifecycles;
 
   auto is_host = [](TargetType x) -> bool {
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
@@ -97,7 +86,9 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
         }
       };
 
+  VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
   insert_invalid_op_nodes_for_specific_target(invalid_op_nodes);
+  VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
 
   // Collect the invalid input and output variables that will not be reused.
   std::set<std::string> invalid_var_names;
@@ -128,40 +119,31 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
     }
   }
 
+  std::map<std::string,
+             std::pair<std::set<std::string>, std::set<std::string>>>
+        inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
+                            {"reshape2", {{"X"}, {"Out"}}},
+                            {"flatten", {{"X"}, {"Out"}}},
+                            {"flatten2", {{"X"}, {"Out"}}},
+                            {"squeeze", {{"X"}, {"Out"}}},
+                            {"squeeze2", {{"X"}, {"Out"}}},
+                            {"unsqueeze", {{"X"}, {"Out"}}},
+                            {"unsqueeze2", {{"X"}, {"Out"}}}};
+  std::vector<std::vector<std::string>> inpalce_reuse_var_names;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
+    auto op_type = op_node->AsStmt().op_info()->Type();
+    auto op_info = op_node->AsStmt().op_info();
     if (op_node->IsStmt()) {
-      if (op_node->AsStmt().op_info()->Type() == "io_copy_once") {
+      if (op_type == "io_copy_once") {
         continue;
       }
-
-      std::map<std::string,
-               std::pair<std::set<std::string>, std::set<std::string>>>
-          inplace_ops = {{"reshape", {{"X"}, {"Out"}}},
-                         {"reshape2", {{"X"}, {"Out"}}},
-                         {"flatten", {{"X"}, {"Out"}}},
-                         {"flatten2", {{"X"}, {"Out"}}},
-                         {"squeeze", {{"X"}, {"Out"}}},
-                         {"squeeze2", {{"X"}, {"Out"}}},
-                         {"unsqueeze", {{"X"}, {"Out"}}},
-                         {"unsqueeze2", {{"X"}, {"Out"}}}};
-      VLOG(4) << op_node->AsStmt().op_info()->Type() << " life is "
+      VLOG(4) << op_type << " life is "
               << max_lifecycle_;
       std::vector<Node*> var_nodes(op_node->inlinks.begin(),
                                    op_node->inlinks.end());
       var_nodes.insert(
           var_nodes.end(), op_node->outlinks.begin(), op_node->outlinks.end());
-
-      int count = 0;
-
-      bool is_inplace = false;
-
-      if (op_node->AsStmt().op_info()->HasAttr("inplace")) {
-        is_inplace = op_node->AsStmt().op_info()->GetAttr<bool>("inplace");
-      }
-
-      std::string input_host_var_name = " ";
-      std::string input_xpu_var_name = " ";
-
+       TargetType target_type;
       for (auto* var_node : var_nodes) {
         CHECK(var_node->IsArg());
         auto& arg = var_node->AsArg();
@@ -170,82 +152,108 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
         VLOG(4) << "OP VAR NAME IS " << var_name;
         if (var_name.find("_xpu_max") != std::string::npos) continue;
         if (invalid_var_names.count(var_name)) continue;
-        auto find_inplace_op =
-            inplace_ops.find(op_node->AsStmt().op_info()->Type());
+        target_type = arg.type->target();
+        if (is_host(target_type)) target_type = TARGET(kHost);
 
-        if (find_inplace_op != inplace_ops.end() && count != 2) {
-          TargetType target_type = arg.type->target();
-          if (is_host(target_type)) {
-            target_type = TARGET(kHost);
-            continue;
-          }
-
-          if ((*lifecycles)[TargetToStr(target_type)].count(var_name)) {
-            if (is_host(target_type)) {
-              input_host_var_name = var_name;
-            } else {
-              input_xpu_var_name = var_name;
-              count++;
-              int cur_life =
-                  (*lifecycles)[TargetToStr(target_type)][var_name].second;
-              (*lifecycles)[TargetToStr(target_type)][var_name].second =
-                  (std::max)(max_lifecycle_, cur_life);
-            }
-          } else if (!(*lifecycles)[TargetToStr(target_type)].count(var_name)) {
-            count++;
-            if (is_host(target_type)) {
-              (*lifecycles)[TargetToStr(target_type)].emplace(
-                  var_name,
-                  (*lifecycles)[TargetToStr(target_type)][input_host_var_name]);
-            } else {
-              if (is_inplace) {
-                (*lifecycles)[TargetToStr(target_type)].emplace(
-                    var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
-                inplaceop_input2output->emplace(input_xpu_var_name, var_name);
-                inplaceop_output2input->emplace(var_name, input_xpu_var_name);
-              } else {
-                (*lifecycles)[TargetToStr(target_type)].emplace(
-                    var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
-              }
-            }
-          }
-        } else if (find_inplace_op == inplace_ops.end()) {
-          TargetType target_type = arg.type->target();
-          if (is_host(target_type)) target_type = TARGET(kHost);
-
-          if (!(*lifecycles)[TargetToStr(target_type)].count(var_name)) {
-            (*lifecycles)[TargetToStr(target_type)].emplace(
-                var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
-          } else {
-            int cur_life =
-                (*lifecycles)[TargetToStr(target_type)][var_name].second;
-            (*lifecycles)[TargetToStr(target_type)][var_name].second =
-                (std::max)(max_lifecycle_, cur_life);
-          }
-        }  // if else
+        if (!lifecycles[TargetToStr(target_type)].count(var_name)) {
+          lifecycles[TargetToStr(target_type)].emplace(
+              var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
+        } else {
+          int cur_life =
+              lifecycles[TargetToStr(target_type)][var_name].second;
+          lifecycles[TargetToStr(target_type)][var_name].second =
+              (std::max)(max_lifecycle_, cur_life);
+        }
       }
       ++max_lifecycle_;
+
+      auto inplace_op_node = inplace_op_nodes.find(op_type);
+      if (inplace_op_node != inplace_op_nodes.end()) {
+        bool inplace = false;
+        if (op_info->HasAttr("inplace")) {
+          inplace = op_info->GetAttr<bool>("inplace");
+        }
+        if (inplace) {
+          /////TODO(quwei)
+           auto in_arg_name = op_info->Input("X")[0];
+           auto out_arg_name = op_info->Output("Out")[0];
+           VLOG(4) << "quwei in_arg_name : " << in_arg_name << "out_arg_name:" << out_arg_name;
+          bool reuse = false;
+          int i = 0;
+          for(const auto& reuse_var_names: inpalce_reuse_var_names){
+            auto in_iter = std::find(reuse_var_names.begin(),reuse_var_names.end(),in_arg_name);
+            //auto& out_iter = std::find(reuse_var_names.begin(),reuse_var_names.end(),out_arg_name);
+            if(in_iter != reuse_var_names.end()){
+              reuse = true;
+              inpalce_reuse_var_names[i].push_back(out_arg_name);
+              break;
+            } 
+            ++i;
+          }
+          if(!reuse){
+            std::vector<std::string> tmp_reuse_var_name {in_arg_name,out_arg_name};
+            inpalce_reuse_var_names.push_back(tmp_reuse_var_name);
+          }
+        }
+      }
     }
   }
-  LOG(INFO) << "There are " << (*lifecycles).size() << " types device var.";
+
+  for(const auto & reuse_var_names : inpalce_reuse_var_names){
+    if(!lifecycles["xpu"].count(reuse_var_names.front()) || !lifecycles["xpu"].count(reuse_var_names.back())){
+      VLOG(4) << "quwei var name is not in lifecycles:" << reuse_var_names.front() << "," << reuse_var_names.back();
+      continue;
+    }
+    int min_life = lifecycles["xpu"][reuse_var_names.front()].first;
+    int max_life = lifecycles["xpu"][reuse_var_names.back()].second;
+    for(const auto & reuse_var_name : reuse_var_names){
+      VLOG(4) << "quwei lifecycle old:" << reuse_var_name << "min :" << lifecycles["xpu"][reuse_var_name].first 
+        << "max :" << lifecycles["xpu"][reuse_var_name].second ;
+      lifecycles["xpu"][reuse_var_name].first = min_life;
+      lifecycles["xpu"][reuse_var_name].second = max_life;
+      VLOG(4) << "quwei lifecycle new:" << reuse_var_name << "min :" << lifecycles["xpu"][reuse_var_name].first 
+        << "max :" << lifecycles["xpu"][reuse_var_name].second ;
+    }
+  }
+
+  LOG(INFO) << "There are " << lifecycles.size() << " types device var.";
+  for (auto& ele : lifecycles) {
+    if (ele.first != "xpu") {
+      continue;
+    }
+
+    for (auto& data : ele.second) {
+      XPUMemNode temp_node;
+      temp_node.name = data.first;
+      temp_node.cluster = -1;
+      temp_node.lifetime = data.second;
+      temp_node.life_interval = data.second.second - data.second.first;
+    
+      for(const auto & reuse_var_names: inpalce_reuse_var_names){
+          auto in_iter = std::find(reuse_var_names.begin() + 1,reuse_var_names.end(),data.first);
+          if(in_iter != reuse_var_names.end() ){
+            temp_node.cluster = 1 ;
+          }
+      }
+      (*mem_nodes).push_back(temp_node);
+    }
+  }
 }
 
 void XPUMemoryOptimizePass::MakeReusePlan(
-    const lifecycle_map_t& lifecycles,
-    std::map<std::string, std::string>* node2cluster,
-    std::map<std::string, std::string>* inplaceop_input2output,
-    std::map<std::string, std::string>* inplaceop_output2input) {
-  std::vector<XPUMemNode> mem_nodes;
+    std::vector<XPUMemNode>& mem_nodes,
+    std::map<std::string, std::string>* node2cluster) {
+  
   std::vector<std::string> cluster;
-  for (auto& data : lifecycles) {
-    XPUMemNode temp_node;
-    temp_node.name = data.first;
-    temp_node.cluster = -1;
-    temp_node.lifetime = data.second;
-    temp_node.mapping = 0;
-    temp_node.life_interval = data.second.second - data.second.first;
-    mem_nodes.push_back(temp_node);
-  }
+  // for (auto& data : lifecycles) {
+  //   XPUMemNode temp_node;
+  //   temp_node.name = data.first;
+  //   temp_node.cluster = -1;
+  //   temp_node.lifetime = data.second;
+  //   temp_node.life_interval = data.second.second - data.second.first;
+  //   mem_nodes.push_back(temp_node);
+  // }
+
   // Sort Node with life_interval to optimize L3 usage by Greedy Way later
   struct {
     bool operator()(XPUMemNode a, XPUMemNode b) const {
@@ -273,129 +281,33 @@ void XPUMemoryOptimizePass::MakeReusePlan(
       }
     }
   }
-  VLOG(4) << "Step1 get inplace node Cluster: ";
+
+  // Generating XPUMemory Reuse Strategy Based on Greedy Way
+  // The vars can be reused if there is no overlap between them.
   for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (inplaceop_input2output->count(mem_nodes[i].name)) {
-      int cluster_index = cluster.size();
-      mem_nodes[i].cluster = cluster_index;
-      (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
-      VLOG(4) << "Mapping Tensor Cluster: " << mem_nodes[i].name
-              << ", life time is " << mem_nodes[i].lifetime.first << " --> "
-              << mem_nodes[i].lifetime.second << ", cluster name is "
-              << (*node2cluster)[mem_nodes[i].name];
-      std::set<std::string> cluster_adj = mem_nodes[i].adj;
-      for (size_t j = 0; j < mem_nodes.size(); j++) {
-        if (mem_nodes[j].name == (*inplaceop_input2output)[mem_nodes[i].name]) {
-          (*node2cluster)[mem_nodes[j].name] == mem_nodes[i].name;
-          mem_nodes[j].cluster = cluster_index;
-          VLOG(4) << mem_nodes[j].name << ", life time is "
-                  << mem_nodes[j].lifetime.first << " --> "
-                  << mem_nodes[j].lifetime.second << ", cluster name is "
-                  << (*node2cluster)[mem_nodes[j].name];
-          for (auto& n : mem_nodes[j].adj) {
-            cluster_adj.insert(n);
-          }
+    if (mem_nodes[i].cluster >= 0 || mem_nodes[i].life_interval == 0) continue;
+    int cluster_index = cluster.size();
+    mem_nodes[i].cluster = cluster_index;
+    (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
+    VLOG(4) << "Mapping Tensor Cluster: " << mem_nodes[i].name
+            << ", life time is " << mem_nodes[i].lifetime.first << " --> "
+            << mem_nodes[i].lifetime.second;
+    cluster.push_back(mem_nodes[i].name);
+    std::set<std::string> cluster_adj = mem_nodes[i].adj;
+    for (size_t j = i + 1; j < mem_nodes.size(); j++) {
+      if (mem_nodes[j].cluster < 0 &&
+          (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end())) {
+        (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
+        mem_nodes[j].cluster = cluster_index;
+        VLOG(4) << mem_nodes[j].name << ", life time is "
+                << mem_nodes[j].lifetime.first << " --> "
+                << mem_nodes[j].lifetime.second;
+        for (auto& n : mem_nodes[j].adj) {
+          cluster_adj.insert(n);
         }
       }
     }
   }
-  VLOG(4) << "Step2 merge inplace node Cluster: ";
-  for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (inplaceop_input2output->count(mem_nodes[i].name) &&
-        mem_nodes[i].mapping != 1) {
-      int cluster_index = cluster.size();
-      mem_nodes[i].cluster = cluster_index;
-      (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
-      mem_nodes[i].mapping = 1;
-      VLOG(4) << "Mapping Tensor Cluster: " << mem_nodes[i].name
-              << ", life time is " << mem_nodes[i].lifetime.first << " --> "
-              << mem_nodes[i].lifetime.second << ", cluster index is "
-              << mem_nodes[i].cluster << ", cluster name is "
-              << (*node2cluster)[mem_nodes[i].name];
-      cluster.push_back(mem_nodes[i].name);
-
-      std::set<std::string> cluster_adj = mem_nodes[i].adj;
-      for (size_t j = 0; j < mem_nodes.size(); j++) {
-        if (mem_nodes[j].name == (*inplaceop_input2output)[mem_nodes[i].name]) {
-          mem_nodes[j].cluster = mem_nodes[i].cluster;
-          (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
-          VLOG(4) << mem_nodes[j].name << ", life time is "
-                  << mem_nodes[j].lifetime.first << " --> "
-                  << mem_nodes[j].lifetime.second << ", cluster index is "
-                  << mem_nodes[j].cluster << ", cluster name is "
-                  << (*node2cluster)[mem_nodes[j].name];
-
-          for (auto& m : mem_nodes[j].adj) {
-            cluster_adj.insert(m);
-          }
-        } else if (inplaceop_input2output->count(mem_nodes[j].name) &&
-                   (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end()) &&
-                   mem_nodes[j].mapping != 1) {
-          mem_nodes[j].mapping = 1;
-          mem_nodes[j].cluster = mem_nodes[i].cluster;
-          (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
-          VLOG(4) << mem_nodes[j].name << ", life time is "
-                  << mem_nodes[j].lifetime.first << " --> "
-                  << mem_nodes[j].lifetime.second << ", cluster index is "
-                  << mem_nodes[j].cluster << ", cluster name is "
-                  << (*node2cluster)[mem_nodes[j].name];
-
-          for (auto& n : mem_nodes[j].adj) {
-            cluster_adj.insert(n);
-          }
-          for (size_t n = 0; n < mem_nodes.size(); n++) {
-            if (mem_nodes[n].name ==
-                (*inplaceop_input2output)[mem_nodes[j].name]) {
-              mem_nodes[n].cluster = mem_nodes[i].cluster;
-              (*node2cluster)[mem_nodes[n].name] = mem_nodes[i].name;
-              VLOG(4) << mem_nodes[n].name << ", life time is "
-                      << mem_nodes[n].lifetime.first << " --> "
-                      << mem_nodes[n].lifetime.second << ", cluster index is "
-                      << mem_nodes[n].cluster << ", cluster name is "
-                      << (*node2cluster)[mem_nodes[n].name];
-
-              for (auto& m : mem_nodes[n].adj) {
-                cluster_adj.insert(m);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  VLOG(4) << "Step3 get others node Cluster : ";
-  for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (!(inplaceop_input2output->count(mem_nodes[i].name)) &&
-        mem_nodes[i].cluster < 0 && mem_nodes[i].life_interval != 0) {
-      int cluster_index = cluster.size();
-      mem_nodes[i].cluster = cluster_index;
-      (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
-      VLOG(4) << "Mapping Tensor Cluster: " << mem_nodes[i].name
-              << ", life time is " << mem_nodes[i].lifetime.first << " --> "
-              << mem_nodes[i].lifetime.second << ", cluster index is "
-              << mem_nodes[i].cluster << ", cluster name is "
-              << (*node2cluster)[mem_nodes[i].name];
-      cluster.push_back(mem_nodes[i].name);
-      std::set<std::string> cluster_adj = mem_nodes[i].adj;
-      for (size_t j = i + 1; j < mem_nodes.size(); j++) {
-        if (!(inplaceop_input2output->count(mem_nodes[j].name)) &&
-            mem_nodes[j].cluster < 0 &&
-            (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end())) {
-          mem_nodes[j].cluster = mem_nodes[i].cluster;
-          (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
-          VLOG(4) << mem_nodes[j].name << ", life time is "
-                  << mem_nodes[j].lifetime.first << " --> "
-                  << mem_nodes[j].lifetime.second << ", cluster index is "
-                  << mem_nodes[j].cluster << ", cluster name is "
-                  << (*node2cluster)[mem_nodes[j].name];
-          for (auto& n : mem_nodes[j].adj) {
-            cluster_adj.insert(n);
-          }
-        }
-      }
-    }
-  }
-
   for (auto& name : cluster) {
     LOG(INFO) << "cluster: " << name;
   }
@@ -407,7 +319,6 @@ void XPUMemoryOptimizePass::PerformReusePlan(
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto& stmt = op_node->AsStmt();
-
     auto* op_info = stmt.mutable_op_info();
     std::map<std::string, std::vector<std::string>> in_args, out_args;
     // replace the op's input according the reuse table.
@@ -489,24 +400,14 @@ void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // name of var and the value in the table represents the current name of var.
   // 3. Perform reuse plan: Replace all var's name in the model according to the
   // mapping table.
-  std::map<std::string, lifecycle_map_t> lifecycles;
-  std::map<std::string, std::string> inplaceop_input2output;
-  std::map<std::string, std::string> inplaceop_output2input;
-  CollectLifeCycleByDevice(&lifecycles,
-                           graph.get(),
-                           &inplaceop_input2output,
-                           &inplaceop_output2input);
-  for (auto& ele : lifecycles) {
-    if (ele.first != "xpu") {
-      continue;
-    }
-    std::map<std::string, std::string> node2cluster;
-    MakeReusePlan(ele.second,
-                  &node2cluster,
-                  &inplaceop_input2output,
-                  &inplaceop_output2input);
-    PerformReusePlan(graph.get(), node2cluster);
-  }
+  //std::map<std::string, lifecycle_map_t> lifecycles;
+  std::vector<XPUMemNode> mem_nodes;
+  CollectLifeCycleByDevice(graph.get(), &mem_nodes);
+  
+  std::map<std::string, std::string> node2cluster;
+  MakeReusePlan(mem_nodes, &node2cluster);
+  PerformReusePlan(graph.get(), node2cluster);
+
 }
 
 }  // namespace mir
@@ -520,6 +421,8 @@ REGISTER_MIR_PASS(xpu_memory_optimize_pass,
                      TARGET(kNPU),
                      TARGET(kOpenCL),
                      TARGET(kBM),
+                     TARGET(kRKNPU),
                      TARGET(kMLU),
                      TARGET(kMetal),
                      TARGET(kNNAdapter)});
+                     
