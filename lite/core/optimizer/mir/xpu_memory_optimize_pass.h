@@ -34,6 +34,7 @@ namespace mir {
 /*
  * XPUMemoryOptimizePass will
  */
+
 typedef struct {
   std::string name;
   int cluster;
@@ -49,14 +50,14 @@ class XPUMemoryOptimizePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  void CollectLifeCycleByDevice(SSAGraph* graph,std::vector<XPUMemNode>* mem_nodes);
-  void MakeReusePlan(std::vector<XPUMemNode>& mem_nodes,
-                     std::map<std::string, std::string>* node2cluster);
+  void CollectLifeCycleByDevice(SSAGraph* graph);
+  void MakeReusePlan(std::map<std::string, std::string>* node2cluster);
   void PerformReusePlan(SSAGraph* graph,
                         const std::map<std::string, std::string>& reuse_table);
 
  private:
   int max_lifecycle_{-1};
+  std::vector<XPUMemNode> mem_nodes_;
 };
 
 }  // namespace mir
