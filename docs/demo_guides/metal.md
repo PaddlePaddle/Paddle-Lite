@@ -134,6 +134,7 @@ inference_lite_lib.armmacos.armv8.metal
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -isysroot $(xcrun --sdk macosx --show-sdk-path) -target arm64-macos11 -std=c++11 -I .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/include .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/lib/libpaddle_api_light_bundled.a ./mobilenet_light_api.cc -o mobilenet_light_api -framework MetalPerformanceShaders -framework Metal -framework Foundation -framework CoreGraphics -DMETAL=ON
 ```
 
+
 注意:  将 mobilenetv1_light_api.cc 文件中以下两个头文件注释去掉。
 ```
 #include "include/paddle_use_ops.h"
