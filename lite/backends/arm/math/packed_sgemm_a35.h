@@ -1137,7 +1137,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "pld [%[b_ptr], #64]                    @ preload b\n"
             "vdup.32    q13, d7[0]                  @ add bias to out21\n"
             "pld [%[a_ptr], #128]                   @ preload a\n"
-            "cmp %[has_beta], #0\n"                //  check beta == 0
+            "cmp %[beta], #0\n"                     //  check beta == 0
             "vdup.32    q14, d7[1]                  @ add bias to out30\n"
             "pld [%[b_ptr], #128]                   @ preload b\n"
             "vdup.32    q15, d7[1]                  @ add bias to out31\n"
@@ -1405,7 +1405,6 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
-              [has_beta] "r"(has_beta),
               [beta] "r"(beta),
               [alpha] "r"(alpha)
             : "r0", "r1", "q0","q1","q2","q3",
