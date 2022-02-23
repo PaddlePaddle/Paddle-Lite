@@ -66,14 +66,14 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // process new quant op pass: quantize_linear and dequantize_linear
-  std::vector<std::string> quant_op_types = {"conv2d",
+  std::vector<std::string> new_quantized_op_types = {"conv2d",
                                              "depthwise_conv2d",
                                              "conv2d_transpose",
                                              "depthwise_conv2d_transpose",
                                              "mul",
                                              "matmul"};
   // pass1: input+quantize_linear+dequantize_linear --> input
-  for (auto& op_type : quant_op_types) {
+  for (auto& op_type : new_quantized_op_types) {
     fusion::QuantDequantLinearOpFuser fuser(op_type);
     fuser(graph.get());
   }

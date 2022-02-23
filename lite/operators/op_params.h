@@ -652,7 +652,7 @@ struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
 struct QuantizeLinearParam : ParamBase {
   const lite::Tensor* x{};
   const lite::Tensor* scale{};
-  const lite::Tensor* ZeroPoint{};
+  const lite::Tensor* zero_point{};
   lite::Tensor* y{};
   int quant_axis;
   int bit_length;
