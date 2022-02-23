@@ -15,10 +15,12 @@
 #pragma once
 
 #include <algorithm>
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <mutex>  // NOLINT
 #include <string>
+#include <thread>  // NOLINT
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
@@ -27,6 +29,7 @@
 #include "lite/backends/xpu/xpu_scratch.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/env.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
 
@@ -47,6 +50,9 @@ class TargetWrapper<TARGET(kXPU)> {
  public:
   static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
+  static void enable_xpu_multi_stream() { enable_multi_stream_ = true; }
+  static bool xpu_multi_stream() { return enable_multi_stream_; }
+  static void* get_xpu_stream() { return xpu_stream_.get(); }
 
   static void* Malloc(size_t size) { return XPUMemory::Malloc(size); }
   static void Free(void* ptr) { XPUMemory::Free(ptr); }
@@ -69,6 +75,24 @@ class TargetWrapper<TARGET(kXPU)> {
     if (tls_raw_ctx_.get() == nullptr) {
       tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
       CHECK(tls_raw_ctx_.get());
+      if (!enable_multi_stream_) {
+        CHECK(xpu_stream_.get() == nullptr)
+            << " xpu default stream should be nullptr: " << xpu_stream_.get();
+        VLOG(3) << "all threads share the default xpu stream";
+      } else {
+        // use different stream per thread
+        CHECK(xpu_stream_.get() == nullptr)
+            << " xpu stream not null before create: " << xpu_stream_.get();
+        void* tls_xpu_stream = nullptr;
+        CHECK(xpu_stream_create(&tls_xpu_stream) == 0)
+            << "xpu_stream_create failed";
+        CHECK(tls_xpu_stream != nullptr);
+        xpu_stream_.reset(tls_xpu_stream, xpu_stream_destroy);
+        CHECK(xpu_stream_.get());
+      }
+      tls_raw_ctx_.get()->xpu_stream = xpu_stream_.get();
+      LOG(INFO) << "thread 0x" << std::hex << std::this_thread::get_id()
+                << " set context xpu stream: " << xpu_stream_.get();
       if (l3_planner_ == nullptr) {
         l3_planner_ = new XPUL3Planner;
       }
@@ -156,9 +180,11 @@ class TargetWrapper<TARGET(kXPU)> {
       size_t l3_size,
       const std::vector<std::vector<int64_t>>& query_shape);
   static LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> tls_raw_ctx_;
+  static LITE_THREAD_LOCAL std::shared_ptr<void> xpu_stream_;
   static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
+  static bool enable_multi_stream_;
   static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
   static LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> quantizer_;
 };

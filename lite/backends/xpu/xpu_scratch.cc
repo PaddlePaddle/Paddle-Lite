@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/xpu_scratch.h"
+#include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -42,18 +43,18 @@ void* XPUMemory::Malloc(size_t size) {
 }
 
 void XPUMemory::Free(void* ptr) {
-  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   XPU_CALL(xpu_free(ptr));
   ptr = nullptr;
 }
 
 void XPUMemory::MemcpyHtoDSync(void* dst, const void* src, size_t size) {
-  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
 }
 
 void XPUMemory::MemcpyDtoHSync(void* dst, const void* src, size_t size) {
-  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   XPU_CALL(xpu_memcpy(dst, src, size, XPU_DEVICE_TO_HOST));
 }
 
