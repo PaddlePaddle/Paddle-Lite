@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories(include)
-include_directories(source)
-add_subdirectory(source)
+add_library(nnadapter_optimizer_convert_quantization_symm_to_asymm STATIC convert_quantization_symm_to_asymm.cc)
+add_library(nnadapter_optimizer_convert_datalayout_nchw_to_nhwc STATIC convert_datalayout_nchw_to_nhwc.cc)
+add_library(nnadapter_optimizer_fuse_matmul_add_into_fully_connected STATIC fuse_matmul_add_into_fully_connected.cc)
+
+set(NNADAPTER_OPTIMIZERS nnadapter_optimizer_convert_quantization_symm_to_asymm nnadapter_optimizer_convert_datalayout_nchw_to_nhwc nnadapter_optimizer_fuse_matmul_add_into_fully_connected CACHE INTERNAL "")

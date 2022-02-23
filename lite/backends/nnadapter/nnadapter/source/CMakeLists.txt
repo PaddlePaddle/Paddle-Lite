@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories(include)
-include_directories(source)
-add_subdirectory(source)
+# Golbal compilation configuration for NNAdapter and its driver HALs
+include(driver/configuration.cmake)
+
+add_subdirectory(api)
+add_subdirectory(core)
+add_subdirectory(driver)
+add_subdirectory(operation)
+add_subdirectory(optimizer)
+add_subdirectory(runtime)
+add_subdirectory(utility)

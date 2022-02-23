@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories(include)
-include_directories(source)
-add_subdirectory(source)
+add_library(nnadapter SHARED api.cc)
+
+target_link_libraries(nnadapter "-Wl,--start-group" ${NNADAPTER_UTILITIES} ${NNADAPTER_OPERATIONS} ${NNADAPTER_OPTIMIZERS} ${NNADAPTER_RUNTIME} "-Wl,--end-group")

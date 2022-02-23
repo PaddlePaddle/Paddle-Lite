@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories(include)
-include_directories(source)
-add_subdirectory(source)
+aux_source_directory(. OPERATIONS)
+add_library(nnadapter_operations STATIC ${OPERATIONS})
+
+set(NNADAPTER_OPERATIONS nnadapter_operations CACHE INTERNAL "")
