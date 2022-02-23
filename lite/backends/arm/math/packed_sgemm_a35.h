@@ -511,7 +511,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "dup v31.2s, v3.s[3]\n"
             "blt 0f\n" /* check beta == 0? */
             /* process beta */
-            "dup v7.4s, %w[beta]\n"
+            "dup v7.2s, %w[beta]\n"
             "ld1 {v0.2s, v1.2s, v2.2s}, [%[c_ptr0]]\n"
             "ld1 {v3.2s, v4.2s, v5.2s}, [%[c_ptr1]]\n"
             "fmla v8.2s, v0.2s, v7.2s\n"
@@ -763,7 +763,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v9.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v12.2s, v0.2s\n"
             "fmul v5.2s, v12.2s, v1.2s\n"
-            "bif v10.16b, v6.16b, v7.16b\n"
+            "bif v10.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v13.2s, v0.2s\n"
             "fmul v7.2s, v13.2s, v1.2s\n"
             "bif v11.16b, v3.16b, v2.16b\n"
@@ -772,7 +772,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v12.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v15.2s, v0.2s\n"
             "fmul v5.2s, v15.2s, v1.2s\n"
-            "bif v13.16b, v6.16b, v7.16b\n"
+            "bif v13.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v16.2s, v0.2s\n"
             "fmul v7.2s, v16.2s, v1.2s\n"
             "bif v14.16b, v3.16b, v2.16b\n"
@@ -781,7 +781,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v15.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v18.2s, v0.2s\n"
             "fmul v5.2s, v18.2s, v1.2s\n"
-            "bif v16.16b, v6.16b, v7.16b\n"
+            "bif v16.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v19.2s, v0.2s\n"
             "fmul v7.2s, v19.2s, v1.2s\n"
             "bif v17.16b, v3.16b, v2.16b\n"
@@ -790,7 +790,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v18.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v21.2s, v0.2s\n"
             "fmul v5.2s, v21.2s, v1.2s\n"
-            "bif v19.16b, v6.16b, v7.16b\n"
+            "bif v19.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v22.2s, v0.2s\n"
             "fmul v7.2s, v22.2s, v1.2s\n"
             "bif v20.16b, v3.16b, v2.16b\n"
@@ -799,7 +799,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v21.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v24.2s, v0.2s\n"
             "fmul v5.2s, v24.2s, v1.2s\n"
-            "bif v22.16b, v6.16b, v7.16b\n"
+            "bif v22.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v25.2s, v0.2s\n"
             "fmul v7.2s, v25.2s, v1.2s\n"
             "bif v23.16b, v3.16b, v2.16b\n"
@@ -808,7 +808,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v24.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v27.2s, v0.2s\n"
             "fmul v5.2s, v27.2s, v1.2s\n"
-            "bif v25.16b, v6.16b, v7.16b\n"
+            "bif v25.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v28.2s, v0.2s\n"
             "fmul v7.2s, v28.2s, v1.2s\n"
             "bif v26.16b, v3.16b, v2.16b\n"
@@ -817,7 +817,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v27.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v30.2s, v0.2s\n"
             "fmul v5.2s, v30.2s, v1.2s\n"
-            "bif v28.16b, v6.16b, v7.16b\n"
+            "bif v28.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v31.2s, v0.2s\n"
             "fmul v7.2s, v31.2s, v1.2s\n"
             "bif v29.16b, v3.16b, v2.16b\n"
@@ -1137,7 +1137,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "pld [%[b_ptr], #64]                    @ preload b\n"
             "vdup.32    q13, d7[0]                  @ add bias to out21\n"
             "pld [%[a_ptr], #128]                   @ preload a\n"
-            "cmp %[beta], #0\n"                     //  check beta == 0
+            "cmp %[has_beta], #0\n"                //  check beta == 0
             "vdup.32    q14, d7[1]                  @ add bias to out30\n"
             "pld [%[b_ptr], #128]                   @ preload b\n"
             "vdup.32    q15, d7[1]                  @ add bias to out31\n"
@@ -1405,6 +1405,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
+              [has_beta] "r"(has_beta),
               [beta] "r"(beta),
               [alpha] "r"(alpha)
             : "r0", "r1", "q0","q1","q2","q3",
