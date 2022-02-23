@@ -23,7 +23,7 @@
 #include <sys/cdefs.h>
 
 enum { NNADAPTER_VERSION = 1 };
-enum { NNADAPTER_UNKNOWN = -65504 };
+enum { NNADAPTER_UNKNOWN = -65535 };
 
 /**
  * Result codes.

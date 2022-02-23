@@ -21,7 +21,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "lite/core/optimizer/mir/elimination/utility.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"

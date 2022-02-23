@@ -20,6 +20,8 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
@@ -150,6 +152,33 @@ static void LocalInferenceType(Node *a, Node *b, const std::string &arg_name) {
     auto &inst = b->AsStmt();
     if (!input.type) {
       input.type = inst.picked_kernel().GetInputDeclType(arg_name);
+    }
+  }
+}
+
+static void CollectControlFlowOpInputsOutputs(
+    const std::unique_ptr<mir::SSAGraph> &graph,
+    std::unordered_set<std::string> *in_vars,
+    std::unordered_set<std::string> *out_vars) {
+  const std::unordered_set<std::string> control_flow_op_types = {
+      "while", "conditional_block"};
+  for (auto &op_node : graph->StmtTopologicalOrder()) {
+    if (!op_node->IsStmt()) continue;
+    auto op_info = op_node->AsStmt().op_info();
+    auto op_type = op_info->Type();
+    if (control_flow_op_types.count(op_type)) {
+      for (auto &var_node : op_node->inlinks) {
+        auto &var_name = var_node->AsArg().name;
+        if (!in_vars->count(var_name)) {
+          in_vars->insert(var_name);
+        }
+      }
+      for (auto &var_node : op_node->outlinks) {
+        auto &var_name = var_node->AsArg().name;
+        if (!out_vars->count(var_name)) {
+          out_vars->insert(var_name);
+        }
+      }
     }
   }
 }
