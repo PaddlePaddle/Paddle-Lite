@@ -133,6 +133,10 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange global_work_size_wino2_ =
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_fill0_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_cut0_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   // opencl kernel args
   int c_blk_ = 1;
   int w_blk_ = 1;
@@ -225,6 +229,10 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::NDRange local_work_size_wino1_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange local_work_size_wino2_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_fill0_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_cut0_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
 };

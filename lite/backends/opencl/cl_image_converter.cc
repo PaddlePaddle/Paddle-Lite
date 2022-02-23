@@ -614,7 +614,6 @@ DDim CLImageConverterNBlockGroup::InitImageDimInfoWith(const DDim &tensor_dim) {
   W = tensor_dim[3];
   size_t width = ((C + 3) / 4) * 4;
   size_t height = ((N / groups + 3) / 4 * groups) * H * W;
-  std::cout << "mul_group: " << width << "h:  " << height << std::endl;
   return DDim(
       std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
                                      static_cast<DDim::value_type>(height)}));
