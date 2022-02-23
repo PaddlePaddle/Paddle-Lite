@@ -61,9 +61,15 @@ class TestReduceMeanOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
-        axis = draw(st.integers(min_value=-1, max_value=3))
-        assume(axis < len(in_shape))
+        axis_type = draw(st.sampled_from(["int", "list"]))
+        axis_int = draw(st.integers(min_value=-1, max_value=3))
+        axis_list = draw(
+            st.sampled_from([[2, 3], [1, 2], [0, 1], [1, 2, 3], [0, 1, 2]]))
 
+        if axis_type == "int":
+            axis = axis_int
+        else:
+            axis = axis_list
         if isinstance(axis, int):
             axis = [axis]
         reduce_all_data = True if axis == None or axis == [] else False
