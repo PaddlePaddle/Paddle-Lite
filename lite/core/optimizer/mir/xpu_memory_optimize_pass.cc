@@ -86,9 +86,7 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph,std::vector
         }
       };
 
-  VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
   insert_invalid_op_nodes_for_specific_target(invalid_op_nodes);
-  VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
 
   // Collect the invalid input and output variables that will not be reused.
   std::set<std::string> invalid_var_names;
@@ -174,15 +172,12 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph,std::vector
           inplace = op_info->GetAttr<bool>("inplace");
         }
         if (inplace) {
-          /////TODO(quwei)
            auto in_arg_name = op_info->Input("X")[0];
            auto out_arg_name = op_info->Output("Out")[0];
-           VLOG(4) << "quwei in_arg_name : " << in_arg_name << "out_arg_name:" << out_arg_name;
           bool reuse = false;
           int i = 0;
           for(const auto& reuse_var_names: inpalce_reuse_var_names){
             auto in_iter = std::find(reuse_var_names.begin(),reuse_var_names.end(),in_arg_name);
-            //auto& out_iter = std::find(reuse_var_names.begin(),reuse_var_names.end(),out_arg_name);
             if(in_iter != reuse_var_names.end()){
               reuse = true;
               inpalce_reuse_var_names[i].push_back(out_arg_name);
@@ -201,18 +196,21 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph,std::vector
 
   for(const auto & reuse_var_names : inpalce_reuse_var_names){
     if(!lifecycles["xpu"].count(reuse_var_names.front()) || !lifecycles["xpu"].count(reuse_var_names.back())){
-      VLOG(4) << "quwei var name is not in lifecycles:" << reuse_var_names.front() << "," << reuse_var_names.back();
+      for(const auto & reuse_var_name : reuse_var_names){
+        VLOG(4) << "inplace node var name is not in lifecycles:" << reuse_var_name;
+      }
       continue;
     }
+
     int min_life = lifecycles["xpu"][reuse_var_names.front()].first;
     int max_life = lifecycles["xpu"][reuse_var_names.back()].second;
     for(const auto & reuse_var_name : reuse_var_names){
-      VLOG(4) << "quwei lifecycle old:" << reuse_var_name << "min :" << lifecycles["xpu"][reuse_var_name].first 
-        << "max :" << lifecycles["xpu"][reuse_var_name].second ;
+      VLOG(4) << "inplace node var name:" << reuse_var_name << "origin life time is :"
+        << lifecycles["xpu"][reuse_var_name].first << " --> " << lifecycles["xpu"][reuse_var_name].second;
       lifecycles["xpu"][reuse_var_name].first = min_life;
       lifecycles["xpu"][reuse_var_name].second = max_life;
-      VLOG(4) << "quwei lifecycle new:" << reuse_var_name << "min :" << lifecycles["xpu"][reuse_var_name].first 
-        << "max :" << lifecycles["xpu"][reuse_var_name].second ;
+      VLOG(4) << "inplace node var name:" << reuse_var_name << "new life time is :"
+        << lifecycles["xpu"][reuse_var_name].first << " --> " << lifecycles["xpu"][reuse_var_name].second;
     }
   }
 
@@ -245,14 +243,6 @@ void XPUMemoryOptimizePass::MakeReusePlan(
     std::map<std::string, std::string>* node2cluster) {
   
   std::vector<std::string> cluster;
-  // for (auto& data : lifecycles) {
-  //   XPUMemNode temp_node;
-  //   temp_node.name = data.first;
-  //   temp_node.cluster = -1;
-  //   temp_node.lifetime = data.second;
-  //   temp_node.life_interval = data.second.second - data.second.first;
-  //   mem_nodes.push_back(temp_node);
-  // }
 
   // Sort Node with life_interval to optimize L3 usage by Greedy Way later
   struct {
