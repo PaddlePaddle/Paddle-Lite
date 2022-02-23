@@ -24,8 +24,10 @@ namespace verisilicon_timvx {
 
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
+  NNADAPTER_CHECK_EQ(output_shape_height, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
+  NNADAPTER_CHECK_EQ(output_shape_width, -1)
+      << "Only supports output_shape_height = -1 and output_shape_width = -1.";
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],
@@ -50,6 +52,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  // [C_in, C_out, filter_height, filter_width]->[C_out, C_in, filter_height,
+  // filter_width]
   std::vector<int32_t> filter_permutation = {1, 0, 2, 3};
   TransposeOperand(filter_operand, filter_permutation);
   int32_t multiplier = 0;

@@ -39,6 +39,8 @@ class TestDeformableConvOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -139,8 +141,8 @@ class TestDeformableConvOp(AutoScanTest):
             return self.get_predictor_configs(), ["deformable_conv"], (3e-4,
                                                                        1e-5)
         elif self.get_target().lower() == "arm":
-            return self.get_predictor_configs(), ["deformable_conv"], (1e-4,
-                                                                       1e-5)
+            return self.get_predictor_configs(), ["deformable_conv"], (
+                5e-4, 1e-5)  #arm_linux
         else:
             return self.get_predictor_configs(), ["deformable_conv"], (1e-5,
                                                                        1e-5)

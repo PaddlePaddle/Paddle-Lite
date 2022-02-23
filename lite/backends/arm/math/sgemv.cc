@@ -181,9 +181,12 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-  float *zero_buf = ctx->workspace_data<float>();
-  float *y_buf = zero_buf + M;
-  float *x_buf = y_buf + valid_ths * M;
+  float *y_buf = new float[valid_ths * M];
+  float *zero_buf = new float[M];
+  float *x_buf = new float[valid_block * valid_ths];
+  std::shared_ptr<float> y_buf_shared(y_buf);
+  std::shared_ptr<float> zero_buf_shared(zero_buf);
+  std::shared_ptr<float> x_buf_shared(x_buf);
 
   memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
   memcpy(x_buf, x, N * sizeof(float));
@@ -611,8 +614,8 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-  float *zero_buf = ctx->workspace_data<float>();
-  float *y_buf = zero_buf + M;
+  float *zero_buf = new float[M];
+  float *y_buf = new float[valid_ths * M];
   memset(zero_buf, 0, M * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   if (flag_bias) {
@@ -1003,6 +1006,9 @@ void sgemv_trans(const int M,
       memcpy(y, y_buf, M * sizeof(float));
     }
   }
+
+  delete[] zero_buf;
+  delete[] y_buf;
 }
 #endif  // __aarch64__
 

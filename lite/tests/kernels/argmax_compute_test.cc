@@ -171,10 +171,12 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 };
 
-void TestArgmax(const Place& place, std::vector<std::string> aliases) {
+void TestArgmax(const Place& place,
+                std::vector<std::string> aliases,
+                std::vector<int> dtype_list) {
   for (int axis : {-1, -2, 0, 2}) {
     for (bool keepdims : {false, true}) {
-      for (int dtype : {-1, 2, 3}) {
+      for (int dtype : dtype_list) {
         for (auto x_shape :
              std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4, 5}}) {
           int x_size = x_shape.size();
@@ -198,6 +200,9 @@ TEST(Argmax, precision) {
   place = TARGET(kNNAdapter);
   aliases = {"def"};
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  TestArgmax(place, aliases, {2});
+  return;
 #else
   return;
 #endif
@@ -209,7 +214,7 @@ TEST(Argmax, precision) {
   return;
 #endif
 
-  TestArgmax(place, aliases);
+  TestArgmax(place, aliases, {-1, 2, 3});
 }
 
 }  // namespace lite

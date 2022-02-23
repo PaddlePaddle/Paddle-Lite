@@ -49,9 +49,6 @@ namespace android_nnapi {
 
 // Constants of NNAPI
 #define ANDROID_NNAPI_REFERENCE_DEVICE_NAME "nnapi-reference"
-#define ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_11 28
-#define ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12 29
-#define ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_13 30
 
 // Simplify the calls of NNAPI
 inline const NnApi* nnapi() { return NnApiImplementation(); }

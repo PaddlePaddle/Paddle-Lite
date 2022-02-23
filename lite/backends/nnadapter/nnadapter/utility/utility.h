@@ -43,8 +43,9 @@ bool IsInt16SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
 bool IsUInt32AsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
-int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
+bool IsConstantOperandType(const NNAdapterOperandType& type);
 bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
+int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
 
 // Copy operand type under certain conditions
@@ -251,5 +252,7 @@ uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
 
 // Get the real path of the path argument
 std::string GetRealPath(const char* path);
+
+bool IsAllZeros(void* buffer, size_t length);
 
 }  // namespace nnadapter

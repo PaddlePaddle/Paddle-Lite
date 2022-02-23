@@ -22,31 +22,30 @@ namespace android_nnapi {
 
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[1],
-                                        filter_height,
-                                        auto_pad,
-                                        &pad_height_top,
-                                        &pad_height_bottom,
-                                        stride_height,
-                                        &dilation_height);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
-                                        filter_width,
-                                        auto_pad,
-                                        &pad_width_left,
-                                        &pad_width_right,
-                                        stride_width,
-                                        &dilation_width);
-  // NHWC
-  input_channel_size = input_operand->type.dimensions.data[3];
-  is_depthwise_mode = group != 1 && input_channel_size == group;
-  NNADAPTER_VLOG(5) << "Update depthwise mode(" << is_depthwise_mode << ").";
+  if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
+    // NHWC
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[1],
+        filter_height,
+        auto_pad,
+        &pad_height_top,
+        &pad_height_bottom,
+        stride_height,
+        &dilation_height);
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[2],
+        filter_width,
+        auto_pad,
+        &pad_width_left,
+        &pad_width_right,
+        stride_width,
+        &dilation_width);
+  }
   if (dilation_height != 1 || dilation_width != 1) {
     NNADAPTER_CHECK_GE(nnapi()->android_sdk_version,
-                       ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12)
+                       ANEURALNETWORKS_FEATURE_LEVEL_3)
         << "The dilated Conv2D is only supported since Android "
-        << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12 << " but the runtime's is "
+        << ANEURALNETWORKS_FEATURE_LEVEL_3 << " but the runtime's is "
         << nnapi()->android_sdk_version;
   }
 
@@ -82,26 +81,30 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                                          stride_width_index,
                                          stride_height_index};
   std::vector<uint32_t> output_indexes = {output_index};
+  ANeuralNetworksOperationType op_type = ANEURALNETWORKS_CONV_2D;
   if (is_depthwise_mode) {
-    int32_t multiplier = filter_operand->type.dimensions.data[3] / group;
+    int32_t multiplier = output_channel_size / group;
     NNADAPTER_CHECK_EQ(multiplier, 1)
         << "Only supports multiplier=1, but recieved multiplier=" << multiplier
-        << " which C_out=" << filter_operand->type.dimensions.data[3]
-        << " and group=" << group;
+        << " which C_out=" << output_channel_size << " and group=" << group;
     auto multiplier_index = converter->AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);
-    input_indexes.push_back(fuse_code_index);
-    NNADAPTER_CHECK_EQ(
-        converter->AddOperation(
-            ANEURALNETWORKS_DEPTHWISE_CONV_2D, input_indexes, output_indexes),
-        ANEURALNETWORKS_NO_ERROR);
-  } else {
-    input_indexes.push_back(fuse_code_index);
-    NNADAPTER_CHECK_EQ(
-        converter->AddOperation(
-            ANEURALNETWORKS_CONV_2D, input_indexes, output_indexes),
-        ANEURALNETWORKS_NO_ERROR);
+    op_type = ANEURALNETWORKS_DEPTHWISE_CONV_2D;
   }
+  input_indexes.push_back(fuse_code_index);
+  if (dilation_height != 1 || dilation_width != 1) {
+    auto is_nchw_index = converter->AddBool8ConstantOperand(false);
+    input_indexes.push_back(is_nchw_index);
+    auto dilation_width_index =
+        converter->AddInt32ConstantOperand(dilation_width);
+    input_indexes.push_back(dilation_width_index);
+    auto dilation_height_index =
+        converter->AddInt32ConstantOperand(dilation_height);
+    input_indexes.push_back(dilation_height_index);
+  }
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(op_type, input_indexes, output_indexes),
+      ANEURALNETWORKS_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 

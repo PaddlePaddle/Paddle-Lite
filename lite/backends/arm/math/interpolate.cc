@@ -23,28 +23,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
-  // get tensor from
-  std::vector<int> vec_new_shape;
-  for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
-    auto tensor = list_new_shape_tensor[i];
-    vec_new_shape.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
-  }
-
-  return vec_new_shape;
-}
-
-template <typename T>
-inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
-  std::vector<T> vec_new_data;
-  auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
-  vec_new_data =
-      std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
-  return vec_new_data;
-}
-
 // The following function bilinear_interp is partially base on
 // https://github.com/Tencent/ncnn/blob/master/src/layer/arm/interp_arm.cpp
 // Tencent is pleased to support the open source community by making ncnn
@@ -480,27 +458,21 @@ void nearest_interp(const float* src,
                     float scale_x,
                     float scale_y,
                     bool with_align) {
-  float scale_w_new = (with_align)
-                          ? (static_cast<float>(w_in - 1) / (w_out - 1))
-                          : (static_cast<float>(w_in) / (w_out));
-  float scale_h_new = (with_align)
-                          ? (static_cast<float>(h_in - 1) / (h_out - 1))
-                          : (static_cast<float>(h_in) / (h_out));
   if (with_align) {
     for (int h = 0; h < h_out; ++h) {
       float* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      int near_y = static_cast<int>(scale_y * h + 0.5);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w + 0.5);
+        int near_x = static_cast<int>(scale_x * w + 0.5);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
   } else {
     for (int h = 0; h < h_out; ++h) {
       float* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h);
+      int near_y = static_cast<int>(scale_y * h);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w);
+        int near_x = static_cast<int>(scale_x * w);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
@@ -590,6 +562,13 @@ void interpolate(lite::Tensor* X,
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
 
+  float scale_w_new = (with_align)
+                          ? (static_cast<float>(in_w - 1) / (out_w - 1))
+                          : (static_cast<float>(in_w) / (out_w));
+  float scale_h_new = (with_align)
+                          ? (static_cast<float>(in_h - 1) / (out_h - 1))
+                          : (static_cast<float>(in_h) / (out_h));
+
   if ("Bilinear" == interpolate_type) {
     LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
@@ -612,8 +591,8 @@ void interpolate(lite::Tensor* X,
                      dout + spatial_out * i,
                      out_w,
                      out_h,
-                     1.f / width_scale,
-                     1.f / height_scale,
+                     scale_w_new,
+                     scale_h_new,
                      with_align);
     }
     LITE_PARALLEL_END()

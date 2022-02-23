@@ -23,6 +23,7 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
+
 /**
  * fill_like --value==0--> eltwise_mul(zero)
  *          |
@@ -55,24 +56,6 @@ namespace nnadapter {
  *                          output
  *
  */
-static void InsertAdd(hal::Model* model,
-                      hal::Operand* input_operand,
-                      hal::Operand* value_operand) {
-  // Insert a new operand after input_operand
-  auto output_operand = AddOperand(model);
-  memcpy(&output_operand->type,
-         &input_operand->type,
-         sizeof(NNAdapterOperandType));
-  InsertOperand(model, input_operand, output_operand, true);
-  auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-  // Insert a new ADD operation between a input operand and output_operand
-  auto dummy_add_operation = AddOperation(model);
-  dummy_add_operation->type = NNADAPTER_ADD;
-  dummy_add_operation->input_operands = {
-      input_operand, value_operand, fuse_code_operand};
-  dummy_add_operation->output_operands = {output_operand};
-}
-
 NNADAPTER_EXPORT void ConvertFillLikeIntoMulAdd(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -80,6 +63,7 @@ NNADAPTER_EXPORT void ConvertFillLikeIntoMulAdd(hal::Model* model) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     if (operation->type == NNADAPTER_FILL_LIKE) {
+      // y = fill_like(x, value) => y = add(mul(x, 0), value)
       auto& input_operands = operation->input_operands;
       auto& output_operands = operation->output_operands;
       NNADAPTER_CHECK_EQ(input_operands.size(), 2);
@@ -88,11 +72,9 @@ NNADAPTER_EXPORT void ConvertFillLikeIntoMulAdd(hal::Model* model) {
       auto value_operand = input_operands[1];
       input_operands.pop_back();
       auto output_operand = output_operands[0];
-      // Add a zero multiply operand
+      // Multiply a zero operand
       auto zero_operand = AddOperand(model);
-      memcpy(&zero_operand->type,
-             &input_operand->type,
-             sizeof(NNAdapterOperandType));
+      CopyOperandType(&zero_operand->type, input_operand->type);
       zero_operand->type.dimensions.count = 1;
       zero_operand->type.dimensions.data[0] = 1;
       zero_operand->length =
@@ -107,21 +89,23 @@ NNADAPTER_EXPORT void ConvertFillLikeIntoMulAdd(hal::Model* model) {
       auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
       input_operands.push_back(fuse_code_operand);
       operation->type = NNADAPTER_MUL;
-      // if value is not zero , insert an add operation
-      if (IsUInt8AsymmPerLayerQuantType(input_operand->type.precision)) {
-        uint8_t value = *static_cast<uint8_t*>(value_operand->buffer);
-        if (value == 0) {
-          RemoveOperand(model, value_operand);
-        } else {
-          InsertAdd(model, output_operand, value_operand);
+      // Insert a Add operation to add the constant value if value is not zero
+      if (!IsAllZeros(value_operand->buffer, value_operand->length)) {
+        auto immediate_operand = AddOperand(model);
+        CopyOperandType(&immediate_operand->type, input_operand->type);
+        if (!IsTemporaryShapeOperand(input_operand)) {
+          immediate_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
         }
+        auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
+        auto add_operation = AddOperation(model);
+        add_operation->type = NNADAPTER_ADD;
+        add_operation->input_operands = {
+            immediate_operand, value_operand, fuse_code_operand};
+        add_operation->output_operands = {output_operand};
+        UpdateOperationOutputOperands(
+            operation, output_operand, immediate_operand);
       } else {
-        float value = *static_cast<float*>(value_operand->buffer);
-        if (value == 0.f) {
-          RemoveOperand(model, value_operand);
-        } else {
-          InsertAdd(model, output_operand, value_operand);
-        }
+        RemoveOperand(model, value_operand);
       }
     }
   }

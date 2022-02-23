@@ -70,34 +70,107 @@ class TestMatmulV2Op(AutoScanTest):
             shape0 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape1 = draw(st.integers(min_value=1, max_value=4)) * 4
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
-            batch0 = draw(st.integers(min_value=1, max_value=4)) * 4
-            batch1 = draw(st.integers(min_value=1, max_value=4)) * 4
+            channels = draw(st.integers(min_value=1, max_value=64))
+            batch = draw(st.integers(min_value=1, max_value=4))
         if target_str == "ARM" or target_str == "X86":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))
-            batch0 = draw(st.integers(min_value=1, max_value=64))
-            batch1 = draw(st.integers(min_value=1, max_value=64))
+            channels = draw(st.integers(min_value=1, max_value=64))
+            batch = draw(st.integers(min_value=1, max_value=4))
         if target_str == "Metal":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))
-            batch0 = draw(st.integers(min_value=1, max_value=1))
-            batch1 = draw(st.integers(min_value=1, max_value=1))
+            channels = draw(st.integers(min_value=1, max_value=64))
+            batch = draw(st.integers(min_value=1, max_value=4))
+
         transpose_X = draw(st.booleans())
         transpose_Y = draw(st.booleans())
-        if ((not transpose_X) and (not transpose_Y)):
-            X_shape = [batch0, 1, shape0, shape1]
-            Y_shape = [batch0, 1, shape1, shape2]
-        if ((transpose_X) and (not transpose_Y)):
-            X_shape = [batch1, 1, shape1, shape0]
-            Y_shape = [batch1, 1, shape1, shape2]
-        if ((not transpose_X) and (transpose_Y)):
-            X_shape = [batch0, shape0, shape1]
-            Y_shape = [batch0, shape2, shape1]
-        if ((transpose_X) and (transpose_Y)):
-            X_shape = [batch0, shape1, shape0]
-            Y_shape = [batch0, shape2, shape1]
+        len_X = draw(st.integers(min_value=1, max_value=4))
+        len_Y = draw(st.integers(min_value=1, max_value=4))
+
+        assume((len_X == 1 and len_Y == 1) or (len_X == 2 and len_Y == 2) or
+               (len_X == 4 and len_Y == 4) or (len_X == 4 and len_Y == 2) or
+               (len_X == 4 and len_Y == 1) or (len_X == 3 and len_Y == 3) or
+               (len_X == 3 and len_Y == 2) or (len_X == 3 and len_Y == 1))
+
+        if (len_X == 1 and len_Y == 1):
+            X_shape = [shape0]
+            Y_shape = [shape0]
+        if (len_X == 2 and len_Y == 2):
+            if ((not transpose_X) and (not transpose_Y)):
+                X_shape = [shape0, shape1]
+                Y_shape = [shape1, shape2]
+            if ((transpose_X) and (not transpose_Y)):
+                X_shape = [shape1, shape0]
+                Y_shape = [shape1, shape2]
+            if ((not transpose_X) and (transpose_Y)):
+                X_shape = [shape0, shape1]
+                Y_shape = [shape2, shape1]
+            if ((transpose_X) and (transpose_Y)):
+                X_shape = [shape1, shape0]
+                Y_shape = [shape2, shape1]
+        if (len_X == 4 and len_Y == 4):
+            if ((not transpose_X) and (not transpose_Y)):
+                X_shape = [batch, channels, shape0, shape1]
+                Y_shape = [batch, channels, shape1, shape2]
+            if ((transpose_X) and (not transpose_Y)):
+                X_shape = [batch, channels, shape1, shape0]
+                Y_shape = [batch, channels, shape1, shape2]
+            if ((not transpose_X) and (transpose_Y)):
+                X_shape = [batch, channels, shape0, shape1]
+                Y_shape = [batch, channels, shape2, shape1]
+            if ((transpose_X) and (transpose_Y)):
+                X_shape = [batch, channels, shape1, shape0]
+                Y_shape = [batch, channels, shape2, shape1]
+        if (len_X == 4 and len_Y == 2):
+            if ((not transpose_X) and (not transpose_Y)):
+                X_shape = [batch, channels, shape0, shape1]
+                Y_shape = [shape1, shape2]
+            if ((transpose_X) and (not transpose_Y)):
+                X_shape = [batch, channels, shape1, shape0]
+                Y_shape = [shape1, shape2]
+            if ((not transpose_X) and (transpose_Y)):
+                X_shape = [batch, channels, shape0, shape1]
+                Y_shape = [shape2, shape1]
+            if ((transpose_X) and (transpose_Y)):
+                X_shape = [batch, channels, shape1, shape0]
+                Y_shape = [shape2, shape1]
+        if (len_X == 4 and len_Y == 1):
+            assume(transpose_X == transpose_Y == False)
+            X_shape = [batch, channels, shape0, shape1]
+            Y_shape = [shape1]
+        if (len_X == 3 and len_Y == 3):
+            if ((not transpose_X) and (not transpose_Y)):
+                X_shape = [channels, shape0, shape1]
+                Y_shape = [channels, shape1, shape2]
+            if ((transpose_X) and (not transpose_Y)):
+                X_shape = [channels, shape1, shape0]
+                Y_shape = [channels, shape1, shape2]
+            if ((not transpose_X) and (transpose_Y)):
+                X_shape = [channels, shape0, shape1]
+                Y_shape = [channels, shape2, shape1]
+            if ((transpose_X) and (transpose_Y)):
+                X_shape = [channels, shape1, shape0]
+                Y_shape = [channels, shape2, shape1]
+        if (len_X == 3 and len_Y == 2):
+            if ((not transpose_X) and (not transpose_Y)):
+                X_shape = [channels, shape0, shape1]
+                Y_shape = [shape1, shape2]
+            if ((transpose_X) and (not transpose_Y)):
+                X_shape = [channels, shape1, shape0]
+                Y_shape = [shape1, shape2]
+            if ((not transpose_X) and (transpose_Y)):
+                X_shape = [channels, shape0, shape1]
+                Y_shape = [shape2, shape1]
+            if ((transpose_X) and (transpose_Y)):
+                X_shape = [channels, shape1, shape0]
+                Y_shape = [shape2, shape1]
+        if (len_X == 3 and len_Y == 1):
+            assume(transpose_X == transpose_Y == False)
+            X_shape = [channels, shape0, shape1]
+            Y_shape = [shape1]
 
         matmul_v2_op = OpConfig(
             type="matmul_v2",
@@ -131,12 +204,34 @@ class TestMatmulV2Op(AutoScanTest):
             if target_type == TargetType.Metal:
                 if len(in_shape) != 4:
                     return True
-            if target_type == TargetType.OpenCL:
-                return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+
+        def _teller2(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data_x"].shape)
+            y_shape = list(program_config.inputs["input_data_y"].shape)
+            if predictor_config.target() == TargetType.ARM:
+                if len(x_shape) == 1 and len(y_shape) == 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on arm. We need to fix it as soon as possible."
+        )
+
+        def _teller3(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data_x"].shape)
+            y_shape = list(program_config.inputs["input_data_y"].shape)
+            if predictor_config.target() == TargetType.ARM:
+                if len(x_shape) < 2 or len(y_shape) < 2:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has diff in a specific case on arm. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
