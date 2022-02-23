@@ -37,12 +37,8 @@ __kernel void nearest_interp(__read_only image2d_t input,
   int2 input_pos;
   int src_w = w * scale_w + align_data;
   int src_h = out_h * scale_h + align_data;
-  if (src_w > in_dims_w - 1) {
-    src_w = in_dims_w - 1;
-  }
-  if (src_h > in_dims_h - 1) {
-    src_h = in_dims_h - 1;
-  }
+  src_w = min(src_w, in_dims_w - 1);
+  src_h = min(src_h, in_dims_h - 1);
   input_pos.x = c * in_dims_w + src_w;
   input_pos.y = out_n * in_dims_h + src_h;
 

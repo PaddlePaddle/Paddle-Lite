@@ -60,17 +60,19 @@ class NearestInterpComputeImageDefault
                                      out_image_shape["height"],
                                      nullptr);
 
-    float scale_h;
-    float scale_w;
-    float align_data;
-    if (param.align_corners) {
-      scale_h = static_cast<float>(x_dims[2] - 1.0f) / (y_dims[2] - 1.0f);
-      scale_w = static_cast<float>(x_dims[3] - 1.0f) / (y_dims[3] - 1.0f);
-      align_data = 0.5f;
-    } else {
-      scale_h = static_cast<float>(x_dims[2]) / y_dims[2];
-      scale_w = static_cast<float>(x_dims[3]) / y_dims[3];
-      align_data = 0.0f;
+    float scale_h = 0.0f;
+    float scale_w = 0.0f;
+    float align_data = (param.align_corners) ? 0.5 : 0.0f;
+
+    if (y_dims[2] > 1) {
+      scale_h = (param.align_corners)
+                    ? static_cast<float>(x_dims[2] - 1) / (y_dims[2] - 1)
+                    : static_cast<float>(x_dims[2]) / y_dims[2];
+    }
+    if (y_dims[3] > 1) {
+      scale_w = (param.align_corners)
+                    ? static_cast<float>(x_dims[3] - 1) / (y_dims[3] - 1)
+                    : static_cast<float>(x_dims[3]) / y_dims[3];
     }
 
     int in_dims_h = x_dims[2];

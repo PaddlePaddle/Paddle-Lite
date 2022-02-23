@@ -71,12 +71,11 @@ class TestNearestInterpOp(AutoScanTest):
         in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=4), min_size=1, max_size=1))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
         in_c_h_w = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=64), min_size=3, max_size=3))
-
+                    min_value=1, max_value=64), min_size=3, max_size=3))
         X_shape = in_num + in_c_h_w
         align_corners = draw(st.booleans())
         scale = draw(st.floats(min_value=0.1, max_value=10.0))
@@ -91,8 +90,8 @@ class TestNearestInterpOp(AutoScanTest):
 
         def generate_scale(*args, **kwargs):
             tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
-            assume(X_shape[3] * tmp[0] > 2.0)
-            assume(X_shape[2] * tmp[0] > 2.0)
+            assume(tmp[0] * X_shape[2] > 1.0)
+            assume(tmp[0] * X_shape[2] > 1.0)
             return tmp
 
         def generate_input2(*args, **kwargs):
@@ -101,9 +100,8 @@ class TestNearestInterpOp(AutoScanTest):
         def generate_input1_fp16(*args, **kwargs):
             return np.random.normal(0.0, 1.0, X_shape).astype(np.float16)
 
-        assume(scale * X_shape[2] > 2.0)
-        assume(scale * X_shape[3] > 2.0)
-        test_case = 3
+        assume(scale * X_shape[2] > 1.0)
+        assume(scale * X_shape[3] > 1.0)
 
         if test_case == 1:
             nearest_interp = OpConfig(
