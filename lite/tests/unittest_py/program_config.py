@@ -259,7 +259,7 @@ def create_quant_model(model, params, prefix, program_config):
         sample_generator=_reader_list,
         weight_quantize_type='abs_max',
         quantizable_op_type=[
-            "conv2d", "depthwise_conv2d", "conv2d_transpose", "mul"
+            "conv2d", "depthwise_conv2d", "conv2d_transpose", "mul", "matmul"
         ],
         model_filename="model",
         params_filename="params", )
