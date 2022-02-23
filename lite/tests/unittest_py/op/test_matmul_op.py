@@ -222,7 +222,7 @@ class TestMulOp(AutoScanTest):
                 "input_data_x": TensorConfig(shape=X_shape),
                 "input_data_y": TensorConfig(shape=Y_shape)
             },
-            outputs={"output_data"})
+            outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
