@@ -34,26 +34,16 @@ int PrepareGather(hal::Operation* operation) {
   auto& out_dims = output_operand->type.dimensions;
   int32_t in_count = in_dims.count;
   int32_t ids_count = ids_dims.count;
+  out_dims.count = in_count + ids_count - 1;
 
   auto infer_output_shape = [&](const int32_t* in_dims_data,
                                 const int32_t* ids_dims_data,
                                 int32_t* out_dims_data) {
-    std::vector<int32_t> out_shape;
-    for (int i = 0; i < axis; i++) {
-      out_shape.push_back(in_dims_data[i]);
-    }
-    int32_t ids_numel = 1;
-    for (int i = 0; i < ids_count; i++) {
-      ids_numel *= ids_dims_data[i];
-    }
-    out_shape.push_back(ids_numel);
-    for (int i = axis + 1; i < in_count; i++) {
-      out_shape.push_back(in_dims_data[i]);
-    }
-    out_dims.count = out_shape.size();
-    for (int i = 0; i < out_shape.size(); i++) {
-      out_dims_data[i] = out_shape[i];
-    }
+    memcpy(out_dims_data, in_dims_data, sizeof(int32_t) * axis);
+    memcpy(out_dims_data + axis, ids_dims_data, sizeof(int32_t) * ids_count);
+    memcpy(out_dims_data + axis + ids_count,
+           in_dims_data + axis + 1,
+           sizeof(int32_t) * (in_count - axis));
   };
 
   infer_output_shape(in_dims.data, ids_dims.data, out_dims.data);

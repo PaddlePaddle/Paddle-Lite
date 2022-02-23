@@ -101,6 +101,10 @@ void InitializeGraphBuilder(AscendConfigParams* config_params) {
       }
     }
 #endif
+    global_options.insert(
+        std::make_pair(ge::ir_option::OP_SELECT_IMPL_MODE, "high_precision"));
+    global_options.insert(
+        std::make_pair(ge::ir_option::OPTYPELIST_FOR_IMPLMODE, "LayerNorm"));
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination
