@@ -185,6 +185,8 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd04:
           arch_type = kA35;
           break;
+        case 0x803:
+        case 0x805:
         case 0xd05:
           arch_type = kA55;
           break;
@@ -192,47 +194,32 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
           arch_type = kA57;
           break;
         case 0xd08:
+        case 0x205:
           arch_type = kA72;
           break;
+        case 0x800:
+        case 0x801:
         case 0xd09:
           arch_type = kA73;
           break;
+        case 0x802:
         case 0xd0a:
           arch_type = kA75;
+          break;
+        case 0x804:
+        case 0xd40:
+          arch_type = kA76;
           break;
         case 0xd0d:
           arch_type = kA77;
           break;
-        case 0xd40:
-          arch_type = kA76;
+        case 0xd41:
+          // 888
+          arch_type = kA78;
           break;
-        case 0x804:
-          // 855
-          arch_type = kA76;
-          break;
-        case 0x805:
-          // 855
-          arch_type = kA55;
-          break;
-        case 0x802:
-          // 845
-          arch_type = kA75;
-          break;
-        case 0x803:
-          // 845
-          arch_type = kA55;
-          break;
-        case 0x801:
-          // 835
-          arch_type = kA73;
-          break;
-        case 0x800:
-          // 835
-          arch_type = kA73;
-          break;
-        case 0x205:
-          // 820
-          arch_type = kA72;
+        case 0xd44:
+          // 888
+          arch_type = kX1;
           break;
         default:
           LOG(ERROR) << "Unknow cpu arch: " << arch_id;
@@ -470,12 +457,16 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
 }
 
 int set_sched_affinity(const std::vector<int>& cpu_ids) {
-// #define CPU_SETSIZE 1024
-// #define __NCPUBITS  (8 * sizeof (unsigned long))
-// typedef struct
-// {
-//    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
-// } cpu_set_t;
+#define PD_CPU_SETSIZE 1024
+#define PD__NCPUBITS (8 * sizeof(unsigned long))  // NOLINT
+  typedef struct {
+    unsigned long __bits[PD_CPU_SETSIZE / PD__NCPUBITS];  // NOLINT
+  } cpu_set_t;
+
+#define PD_CPU_SET(cpu, cpusetp) \
+  ((cpusetp)->__bits[(cpu) / PD__NCPUBITS] |= (1UL << ((cpu) % PD__NCPUBITS)))
+
+#define PD_CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
 
 // set affinity for thread
 #ifdef __GLIBC__
@@ -486,10 +477,11 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   cpu_set_t mask;
   CPU_ZERO(&mask);
   for (int i = 0; i < cpu_ids.size(); ++i) {
-    CPU_SET(cpu_ids[i], &mask);
+    PD_CPU_SET(cpu_ids[i], &mask);
   }
   int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
   if (syscallret) {
+    fprintf(stderr, "syscall error %d\n", syscallret);
     return -1;
   }
   return 0;
@@ -499,10 +491,7 @@ bool bind_threads(const std::vector<int> cpu_ids) {
 #ifdef ARM_WITH_OMP
   int thread_num = cpu_ids.size();
   omp_set_num_threads(thread_num);
-  std::vector<int> ssarets;
-  for (int i = 0; i < thread_num; ++i) {
-    ssarets.push_back(0);
-  }
+  std::vector<int> ssarets(thread_num, 0);
 #pragma omp parallel for
   for (int i = 0; i < thread_num; i++) {
     ssarets[i] = set_sched_affinity(cpu_ids);
@@ -623,13 +612,26 @@ void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
     for (int i = 0; i < core_num_; ++i) {
       (*cache)[i] = cache_size;
     }
-  } else {
+  } else if (argc == 2) {
     int big_core_num = big_core_ids_.size();
     int little_core_num = little_core_ids_.size();
     int big_core_cache_size = va_arg(arg_ptr, int);
     int little_core_cache_size = va_arg(arg_ptr, int);
     for (int i = 0; i < big_core_num; ++i) {
       (*cache)[big_core_ids_[i]] = big_core_cache_size;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      (*cache)[little_core_ids_[i]] = little_core_cache_size;
+    }
+  } else if (argc == 3) {
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    int big_core_cache_size0 = va_arg(arg_ptr, int);
+    int big_core_cache_size1 = va_arg(arg_ptr, int);
+    int little_core_cache_size = va_arg(arg_ptr, int);
+    (*cache)[big_core_ids_[big_core_num - 1]] = big_core_cache_size0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
+      (*cache)[big_core_ids_[i]] = big_core_cache_size1;
     }
     for (int i = 0; i < little_core_num; ++i) {
       (*cache)[little_core_ids_[i]] = little_core_cache_size;
@@ -647,7 +649,7 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
     for (int i = 0; i < core_num_; ++i) {
       archs_[i] = arch;
     }
-  } else {
+  } else if (argc == 2) {
     ARMArch big_core_arch = (ARMArch)va_arg(arg_ptr, int);
     ARMArch little_core_arch = (ARMArch)va_arg(arg_ptr, int);
     int big_core_num = big_core_ids_.size();
@@ -658,12 +660,40 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
     for (int i = 0; i < little_core_num; ++i) {
       archs_[little_core_ids_[i]] = little_core_arch;
     }
+  } else if (argc == 3) {
+    // 888
+    ARMArch big_core_arch0 = (ARMArch)va_arg(arg_ptr, int);
+    ARMArch big_core_arch1 = (ARMArch)va_arg(arg_ptr, int);
+    ARMArch little_core_arch = (ARMArch)va_arg(arg_ptr, int);
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    archs_[big_core_ids_[big_core_num - 1]] = big_core_arch0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
+      archs_[big_core_ids_[i]] = big_core_arch1;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      archs_[little_core_ids_[i]] = little_core_arch;
+    }
   }
   va_end(arg_ptr);
 }
 
 bool DeviceInfo::SetCPUInfoByName() {
   /* Snapdragon */
+  if (dev_name_.find("SM8350") != std::string::npos) {  // 888
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(3, kX1, kA78, kA55);
+    SetCacheInfo(0, 3, 512 * 1024, 192 * 1024, 256 * 1024);
+    SetCacheInfo(1, 3, 1024 * 1024, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  }
   if (dev_name_.find("KONA") != std::string::npos) {  // 865
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};

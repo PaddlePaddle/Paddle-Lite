@@ -180,6 +180,11 @@ TEST(InstanceNorm, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   ignored_outs = {"saved_mean", "saved_variance"};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  ignored_outs = {"saved_mean", "saved_variance"};
+  // TODO(liusiyuan): support later
+  return;
 #else
   return;
 #endif

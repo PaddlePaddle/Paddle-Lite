@@ -362,5 +362,24 @@ std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code) {
   return "SPECIFIC";
 }
 
+std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
+  switch (pad_mode_code) {
+    case NNADAPTER_PAD_MODE_CONSTANT:
+      return "constant";
+    case NNADAPTER_PAD_MODE_REFLECT:
+      return "reflect";
+    case NNADAPTER_PAD_MODE_REPLICATE:
+      return "replicate";
+    case NNADAPTER_PAD_MODE_EDGE:
+      return "edge";
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand pad mode code("
+          << pad_mode_code << ") to pad mode !";
+      break;
+  }
+  return "constant";
+}
+
 }  // namespace huawei_kirin_npu
 }  // namespace nnadapter

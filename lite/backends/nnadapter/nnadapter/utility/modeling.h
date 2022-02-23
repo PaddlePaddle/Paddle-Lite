@@ -19,6 +19,8 @@
 
 namespace nnadapter {
 
+// Clear all of buffers in a model
+void ClearModel(hal::Model* model);
 // Append a operand into a model
 hal::Operand* AddOperand(hal::Model* model);
 // Append a operation into a model
@@ -183,22 +185,21 @@ hal::Operand* AppendUnaryOperation(hal::Model* model,
 hal::Operand* InsertUnaryOperation(hal::Model* model,
                                    hal::Operand* output_operand,
                                    NNAdapterOperationType operation_type);
-// Add a dummy ADD to simulate the REQUANT operation
-// i.e.
-// target_operand(target_quant_params)->CONCAT->reference_operand(reference_quant_params),
-// After applying this,
-// target_operand(target_quant_params)->ADD->immediate_operand(reference_quant_params)->CONCAT->reference_operand(reference_quant_params)
-// i.e.
-// reference_operand(reference_quant_params)->SPLIT->target_operand(target_quant_params),
-// After applying this,
-// reference_operand(reference_quant_params)->SPLIT->immediate_operand(reference_quant_params)->ADD->target_operand(target_quant_params)
-hal::Operand* AddRequantOperation(hal::Model* model,
-                                  hal::Operation* operation,
-                                  hal::Operand* target_operand,
-                                  hal::Operand* reference_operand);
+// Append or insert a dummy ADD to simulate the REQUANT operation
+// input_operand(input_quant_params)->ADD->output_operand(output_quant_params)
+hal::Operand* AppendRequantOperation(hal::Model* model,
+                                     hal::Operand* input_operand,
+                                     void* output_quant_params);
+hal::Operand* InsertRequantOperation(hal::Model* model,
+                                     hal::Operand* output_operand,
+                                     void* input_quant_params);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model);
+
+// Serialize/deserialize hal::Model into/from the binary buffer
+bool SerializeModel(hal::Model* model, std::vector<uint8_t>* buffer);
+bool DeserializeModel(void* buffer, uint64_t size, hal::Model** model);
 
 }  // namespace nnadapter
