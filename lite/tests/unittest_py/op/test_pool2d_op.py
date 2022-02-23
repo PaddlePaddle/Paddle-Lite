@@ -177,6 +177,7 @@ class TestPool2dOp(AutoScanTest):
         def teller2(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data"].shape)
             if predictor_config.target() == TargetType.Metal:
+                return True
                 if program_config.ops[0].attrs["adaptive"] == True \
                     or program_config.ops[0].attrs["ceil_mode"] == True:
                     return True
