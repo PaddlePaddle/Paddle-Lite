@@ -60,8 +60,19 @@ class NearestInterpComputeImageDefault
                                      out_image_shape["height"],
                                      nullptr);
 
-    float scale_h = y_dims[2] / x_dims[2];
-    float scale_w = y_dims[3] / x_dims[3];
+    float scale_h;
+    float scale_w;
+    float align_data;
+    if (param.align_corners) {
+      scale_h = static_cast<float>(x_dims[2] - 1.0f) / (y_dims[2] - 1.0f);
+      scale_w = static_cast<float>(x_dims[3] - 1.0f) / (y_dims[3] - 1.0f);
+      align_data = 0.5f;
+    } else {
+      scale_h = static_cast<float>(x_dims[2]) / y_dims[2];
+      scale_w = static_cast<float>(x_dims[3]) / y_dims[3];
+      align_data = 0.0f;
+    }
+
     int in_dims_h = x_dims[2];
     int out_dims_h = y_dims[2];
     int in_dims_w = x_dims[3];
@@ -89,6 +100,8 @@ class NearestInterpComputeImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_w));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const float>(align_data));
     CL_CHECK_FATAL(status);
 
 #ifdef LITE_WITH_LOG

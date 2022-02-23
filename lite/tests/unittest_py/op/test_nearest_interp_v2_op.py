@@ -71,11 +71,11 @@ class TestNearestV2InterpOp(AutoScanTest):
         in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=4), min_size=1, max_size=1))
+                    min_value=2, max_value=4), min_size=1, max_size=1))
         in_c_h_w = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=3, max_size=3))
+                    min_value=2, max_value=64), min_size=3, max_size=3))
         X_shape = in_num + in_c_h_w
         align_corners = draw(st.booleans())
         scale1 = draw(st.floats(min_value=0.1, max_value=10.0))
@@ -91,10 +91,10 @@ class TestNearestV2InterpOp(AutoScanTest):
 
         def generate_scale(*args, **kwargs):
             tmp = np.random.normal(0.1, 10.0, 2).astype(np.float32)
-            assume(tmp[0] * X_shape[2] > 1.0)
-            assume(tmp[0] * X_shape[3] > 1.0)
-            assume(tmp[1] * X_shape[2] > 1.0)
-            assume(tmp[1] * X_shape[3] > 1.0)
+            assume(tmp[0] * X_shape[2] > 2.0)
+            assume(tmp[0] * X_shape[3] > 2.0)
+            assume(tmp[1] * X_shape[2] > 2.0)
+            assume(tmp[1] * X_shape[3] > 2.0)
             return tmp
 
         def generate_input2(*args, **kwargs):
@@ -103,10 +103,10 @@ class TestNearestV2InterpOp(AutoScanTest):
         def generate_input1_fp16(*args, **kwargs):
             return np.random.normal(0.0, 1.0, X_shape).astype(np.float16)
 
-        assume(scale1 * X_shape[2] > 1.0)
-        assume(scale1 * X_shape[3] > 1.0)
-        assume(scale2 * X_shape[2] > 1.0)
-        assume(scale2 * X_shape[3] > 1.0)
+        assume(scale1 * X_shape[2] > 2.0)
+        assume(scale1 * X_shape[3] > 2.0)
+        assume(scale2 * X_shape[2] > 2.0)
+        assume(scale2 * X_shape[3] > 2.0)
 
         if test_case == 1:
             nearest_interp_v2 = OpConfig(
@@ -184,8 +184,7 @@ class TestNearestV2InterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.ARM, TargetType.OpenCL]:
+            if predictor_config.target() in [TargetType.ARM]:
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
 
@@ -203,7 +202,7 @@ class TestNearestV2InterpOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":
