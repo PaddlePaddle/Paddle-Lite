@@ -91,7 +91,7 @@ class TestNearestInterpOp(AutoScanTest):
         def generate_scale(*args, **kwargs):
             tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
             assume(tmp[0] * X_shape[2] > 1.0)
-            assume(tmp[0] * X_shape[2] > 1.0)
+            assume(tmp[0] * X_shape[3] > 1.0)
             return tmp
 
         def generate_input2(*args, **kwargs):
