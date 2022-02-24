@@ -53,12 +53,22 @@ class TestRoiAlignOp(AutoScanTest):
         roi_num_data = np.random.randint(
             low=0, high=4, size=[in_shape[0]]).astype(np.int32)
         num_rois = np.sum(roi_num_data)
+        case_type = draw(st.sampled_from(
+            ["c1", "c2"]))  #c1 has 2 inputs, c2 has 3 inputs
 
         def generate_roisnum(*args, **kwargs):
             return roi_num_data
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
+        def generate_lod():
+            lod_num = []
+            lod_num.append(0)
+            for i in range(in_shape[0] - 1):
+                lod_num.append(i + 1)
+            lod_num.append(num_rois)
+            return lod_num
 
         height = in_shape[2]
         width = in_shape[3]
@@ -83,31 +93,56 @@ class TestRoiAlignOp(AutoScanTest):
             b.reshape([num_rois, 4])
             return b
 
-        roi_align_op = OpConfig(
-            type="roi_align",
-            inputs={
-                "X": ["input_data"],
-                "ROIs": ["rois_data"],
-                "RoisNum": ["roisnum_data"]
-            },
-            outputs={"Out": ["output_data"]},
-            attrs={
-                "spatial_scale": spatial_scale,
-                "pooled_height": pooled_height,
-                "pooled_width": pooled_width,
-                "sampling_ratio": sampling_ratio,
-                "aligned": aligned
-            })
-        program_config = ProgramConfig(
-            ops=[roi_align_op],
-            weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
-                "rois_data": TensorConfig(data_gen=partial(generate_rois)),
-                "roisnum_data":
-                TensorConfig(data_gen=partial(generate_roisnum))
-            },
-            outputs=["output_data"])
+        if case_type == "c2":
+            roi_align_op = OpConfig(
+                type="roi_align",
+                inputs={
+                    "X": ["input_data"],
+                    "ROIs": ["rois_data"],
+                    "RoisNum": ["roisnum_data"]
+                },
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "spatial_scale": spatial_scale,
+                    "pooled_height": pooled_height,
+                    "pooled_width": pooled_width,
+                    "sampling_ratio": sampling_ratio,
+                    "aligned": aligned
+                })
+            program_config = ProgramConfig(
+                ops=[roi_align_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                    "rois_data": TensorConfig(data_gen=partial(generate_rois)),
+                    "roisnum_data":
+                    TensorConfig(data_gen=partial(generate_roisnum))
+                },
+                outputs=["output_data"])
+        else:
+            roi_align_op = OpConfig(
+                type="roi_align",
+                inputs={"X": ["input_data"],
+                        "ROIs": ["rois_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "spatial_scale": spatial_scale,
+                    "pooled_height": pooled_height,
+                    "pooled_width": pooled_width,
+                    "sampling_ratio": sampling_ratio,
+                    "aligned": aligned
+                })
+            program_config = ProgramConfig(
+                ops=[roi_align_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                    "rois_data": TensorConfig(
+                        data_gen=partial(generate_rois), lod=[generate_lod()])
+                },
+                outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
