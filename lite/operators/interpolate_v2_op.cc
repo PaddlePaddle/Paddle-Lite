@@ -60,9 +60,6 @@ bool InterpolateV2Op::InferShapeImpl() const {
     auto OutSize_data = OutSize->data<int>();
     out_h = OutSize_data[0];
     out_w = OutSize_data[1];
-  } else if (param_.out_h > 0 && param_.out_w > 0) {
-    out_h = param_.out_h;
-    out_w = param_.out_w;
   } else {
     float scale_w = -1.f;
     float scale_h = -1.f;
