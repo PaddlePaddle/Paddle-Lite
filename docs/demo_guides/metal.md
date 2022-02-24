@@ -6,13 +6,13 @@ Paddle Lite 支持在 iOS 和 macOS 系统上运行基于 Metal 的程序
 
 ### 1.1 编译环境
 
- Paddle Lite 支持在 macOS 安装好 Xcode 的环境编译 Metal 预测库，支持 x86/arm 架构。
+macOS 操作系统（支持 x86/arm 架构），并且成功安装 Xcode。
 
-详见 **源码编译指南-环境准备** 章节。
+详见 [**源码编译指南**](https://paddlelite.paddlepaddle.org.cn/source_compile/macos_compile_ios.html) 章节。
 
 ### 1.2 编译 Paddle Lite Metal 库 iOS 范例
 
-注：以 `ios/metal` 为目标、macOS M1芯片、CMake3.21 作为编译开发环境为例。
+注：以 `ios/metal` 为目标、macOS M1 芯片、CMake3.21 作为编译开发环境为例。
 
 #### (1) 下载代码
 ```bash
@@ -63,7 +63,7 @@ inference_lite_lib.ios64.armv8.metal
 ```
 ### 1.3 编译 Paddle Lite Metal 库 macOS 范例
 
-注：以 `macOS/metal` 为目标、macOS M1芯片、CMake3.21 作为编译开发环境为例。
+注：以 `macOS/metal` 为目标、macOS M1 芯片、CMake3.21 作为编译开发环境为例。
 
 #### (1) 源码编译
 ```bash
@@ -117,7 +117,7 @@ inference_lite_lib.armmacos.armv8.metal
 
 ## 2. 运行示例
 
-下面以 macOS 的环境为例，介绍 opt 转换得到的 Metal 模型如何在 IOS/macOS 设备上执行基于 Metal 的 ARM GPU 推理过程。
+下面以 macOS 的环境为例，介绍 opt 转换得到的 Metal 模型如何在 iOS/macOS 设备上执行基于 Metal 的 ARM GPU 推理过程。
 
 ### 2.1 iOS demo 部署方法
 在 iOS demo 部署过程中，需要将 inference_lite_lib.ios64.armv8.metal 文件中的所有编译产物手动复制到 Xcode 工程当中，其中包括： 
