@@ -196,9 +196,6 @@ function make_tiny_publish_so {
 
   # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      build_dir=${build_dir}.opencl
-  fi
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
