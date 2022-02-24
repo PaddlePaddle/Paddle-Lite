@@ -29,10 +29,21 @@ import hypothesis.strategies as st
 class TestMulOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
         #                             DataLayoutType.NCHW)
         opencl_places = [
@@ -215,10 +226,8 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        sample_size = 25
+        sample_size = 250
         target_str = self.get_target()
-        if target_str == "OpenCL":
-            sample_size = 100
         self.run_and_statis(quant=False, max_examples=sample_size)
 
 

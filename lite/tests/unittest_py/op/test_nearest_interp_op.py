@@ -32,7 +32,13 @@ class TestNearestInterpOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
@@ -90,8 +96,8 @@ class TestNearestInterpOp(AutoScanTest):
 
         def generate_scale(*args, **kwargs):
             tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
-            assume(tmp[0] * out_w > 1.0)
-            assume(tmp[0] * out_h > 1.0)
+            assume(scale * X_shape[2] > 1.0)
+            assume(scale * X_shape[3] > 1.0)
             return tmp
 
         def generate_input2(*args, **kwargs):
@@ -100,8 +106,6 @@ class TestNearestInterpOp(AutoScanTest):
         def generate_input1_fp16(*args, **kwargs):
             return np.random.normal(0.0, 1.0, X_shape).astype(np.float16)
 
-        assume(scale * out_w > 1.0)
-        assume(scale * out_h > 1.0)
         assume(scale * X_shape[2] > 1.0)
         assume(scale * X_shape[3] > 1.0)
 
@@ -180,8 +184,7 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.ARM, TargetType.OpenCL]:
+            if predictor_config.target() in [TargetType.OpenCL]:
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
 
@@ -199,7 +202,7 @@ class TestNearestInterpOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

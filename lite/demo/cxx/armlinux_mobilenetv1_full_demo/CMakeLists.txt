@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(TARGET mobilenet_full_api)
+set(TARGET mobilenetv1_full_api)
 
 # Set ARMLINUX_ARCH_ABI to armv8 or armv7 or armv7hf
 set(ARMLINUX_ARCH_ABI armv8)

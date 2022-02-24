@@ -16,36 +16,18 @@
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace runtime {
 
-Model::~Model() {
-  for (auto& operand : model_.operands) {
-    if ((operand.type.lifetime == NNADAPTER_CONSTANT_COPY ||
-         operand.type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
-        operand.buffer) {
-      free(operand.buffer);
-    }
-    if ((operand.type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
-         operand.type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) &&
-        operand.type.symm_per_channel_params.scales) {
-      free(operand.type.symm_per_channel_params.scales);
-    }
-    for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-      if (operand.hints[i].handler) {
-        operand.hints[i].deleter(&operand.hints[i].handler);
-      }
-    }
-  }
-}
+Model::~Model() { nnadapter::ClearModel(&model_); }
 
 int Model::AddOperand(const NNAdapterOperandType& type,
                       hal::Operand** operand) {
   *operand = nnadapter::AddOperand(&model_);
   memcpy(&(*operand)->type, &type, sizeof(NNAdapterOperandType));
-  if (type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
-      type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) {
+  if (IsPerChannelQuantType(type.precision)) {
     uint32_t scale_size =
         type.symm_per_channel_params.scale_count * sizeof(float);
     float* scales = reinterpret_cast<float*>(malloc(scale_size));

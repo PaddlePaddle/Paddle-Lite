@@ -43,9 +43,9 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   }
   if (dilation_height != 1 || dilation_width != 1) {
     NNADAPTER_CHECK_GE(nnapi()->android_sdk_version,
-                       ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12)
+                       ANEURALNETWORKS_FEATURE_LEVEL_3)
         << "The dilated Conv2D is only supported since Android "
-        << ANDROID_NNAPI_MIN_API_LEVEL_FOR_NNAPI_12 << " but the runtime's is "
+        << ANEURALNETWORKS_FEATURE_LEVEL_3 << " but the runtime's is "
         << nnapi()->android_sdk_version;
   }
 

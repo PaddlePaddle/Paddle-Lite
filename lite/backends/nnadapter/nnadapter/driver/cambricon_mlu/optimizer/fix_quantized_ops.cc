@@ -57,7 +57,6 @@ static hal::Operand* AddQuantOperation(
   }
   UpdateOperationInputOperands(
       reference_operations, input_operand, output_operand);
-  UpdateModelOutputOperands(model, input_operand, output_operand);
   output_operand->type.precision = NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
   // Insert a new quant operation between input_operand and output_operand
   auto quant_operation = AddOperation(model);
@@ -181,10 +180,9 @@ static void ChangeQuantizedOpOutPrecision(hal::Model* model) {
   for (auto operation : operations) {
     if (std::find(valid_quant_ops_type.begin(),
                   valid_quant_ops_type.end(),
-                  operation->type) == valid_quant_ops_type.end()) {
+                  operation->type) != valid_quant_ops_type.end()) {
       auto output_operand = operation->output_operands[0];
-      auto output_type = output_operand->type;
-      output_type.precision = NNAdapterOperandPrecisionCode::NNADAPTER_FLOAT32;
+      output_operand->type.precision = NNADAPTER_FLOAT32;
     }
   }
 }

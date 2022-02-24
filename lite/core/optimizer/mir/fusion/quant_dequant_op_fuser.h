@@ -93,7 +93,7 @@ class QuantDequantOpFuser : public FuseBase {
 
  private:
   std::string quant_dequant_op_type_{};
-  std::vector<std::string> input_activation_quant_op = {"matmul"};
+  std::vector<std::string> input_activation_quant_op = {"matmul", "mul"};
 };
 
 /* DynamicQuantOpFuser is applied for LSTM and GRU for now.
