@@ -240,7 +240,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
     updata_gate = updata_gate_ptr + b * stride_update;
     cell_state = cell_state_ptr + b * stride_cell_state;
     if (hidden_prev) {
-      hidden_prev += hidden_prev_ptr + b * stride_hidden_prev;
+      hidden_prev = hidden_prev_ptr + b * stride_hidden_prev;
     }
     hidden = hidden_ptr + b * stride_hidden;
   }
