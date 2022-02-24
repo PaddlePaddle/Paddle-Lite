@@ -41,7 +41,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #some case OpenCL not support 
+        #some case OpenCL not support
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -79,6 +79,9 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                         0].type == "conv2d_transpose" or dilations[0] == 2 or (
                             filter_shape[2] == 3 and filter_shape[3] == 3):
                 result = False
+        if program_config.ops[1].type == "sigmoid" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
         if program_config.ops[0].type == "conv2d_transpose":  #TODO
             result = result and program_config.ops[
                 1].type != "hard_swish" and program_config.ops[
@@ -200,8 +203,13 @@ class TestConvActiveFuse(FusePassAutoScanTest):
 
         act_type = draw(
             st.sampled_from([
-                'relu', 'relu6', 'leaky_relu', 'hard_swish', 'prelu',
-                'hard_sigmoid'
+                'relu',
+                'relu6',
+                'leaky_relu',
+                'hard_swish',
+                'prelu',
+                'hard_sigmoid',
+                'sigmoid',
             ]))
 
         def generate_act_attrs(act_type_str):
