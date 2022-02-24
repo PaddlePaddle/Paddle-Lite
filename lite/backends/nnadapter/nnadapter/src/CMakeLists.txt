@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
-include_directories(include/nnadapter)
-include_directories(src)
-add_subdirectory(src)
+# Golbal compilation configuration for NNAdapter and its driver HALs
+include(driver/configuration.cmake)
+
+add_subdirectory(core)
+add_subdirectory(operation)
+add_subdirectory(utility)
+add_subdirectory(optimizer)
+add_subdirectory(runtime)
+add_subdirectory(driver)
+add_subdirectory(api)
