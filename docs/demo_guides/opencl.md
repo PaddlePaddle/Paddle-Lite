@@ -3,7 +3,6 @@
 Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行，以充分利用 GPU 硬件算力，提高推理性能。在执行时会优先在 GPU 上执行算子，如果算子没有 GPU 实现，则该算子会回退到 CPU 上执行。
 
 ## 1. 支持现状
-### 1.1 OS/硬件
 - Android/ARMLinux 系统下:
   - 高通骁龙 Adreno 系列 GPU，包括但不限于 Adreno 888+/888/875/865/855/845/835/625 等具体型号
   - ARM Mali 系列 GPU (具体为支持 Midgard、Bifrost、Valhall 这三个 GPU 架构下的 GPU)，如 Mali G76 MP16 (Valhall 架构，华为 P40 Pro), Mali-G72 MP3 (Bifrost 架构，OPPO R15), Mali T860（Midgard 架构，RK3399）
@@ -14,9 +13,6 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
 - Windows 64 位系统下：
   - Intel 集成显卡
   - NVIDIA/AMD 独立显卡
-
-### 1.2 运行精度
-
 
 ## 2. 在 Android 系统上运行
 ### 2.1 编译预测库
