@@ -449,11 +449,90 @@ Windows x86 平台下：
 .\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
 
-## 8. 常见问题
+## 8. 关键 API 接口
+### 判断设备是否支持 OpenCL
+函数 `IsOpenCLBackendValid` 用来检查设备是否支持 OpenCL，该函数内部会依次进行 OpenCL 驱动库检查、库函数检查、精度检查，检查均通过后返回 `true`，否则返回 `false`.
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
-1. opencl 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度；
-2. 部署时需考虑不支持 opencl 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+### 设置 OpenCL kernel 缓存文件的路径
+函数 `set_opencl_binary_path_name` 用来开启 OpenCL kernel 缓存功能，并设置缓存文件名和存放路径。使用该函数可以避免在线编译 OpenCL kernel，进而提高首帧运行速度。推荐在工程代码中使用该函数。
+
+```c++
+  /// \brief Set path and file name of generated OpenCL compiled kernel binary.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// initialization.
+  ///
+  /// \param path  Path that OpenCL compiled kernel binay file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL compiled kernel binay.
+  /// \return void
+  void set_opencl_binary_path_name(const std::string& path,
+                                   const std::string& name);
+```
+
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+
+### 设置 OpenCL Auto-tune 策略
+函数 `set_opencl_tune` 用来自动选择当前硬件和模型下的最优 OpenCL 卷积算子实现方案，并将找到的算法配置序列化到文件中。该函数通过预先试跑，找到最优的算法。推荐在 benchmark 时使用该函数。
+
+```c++
+
+  /// \brief Set path and file name of generated OpenCL algorithm selecting file.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// running time in most cases. But the first running for algorithm selecting
+  /// is timg-costing.
+  ///
+  /// \param tune_mode  Set a tune mode:
+  ///        CL_TUNE_NONE: turn off
+  ///        CL_TUNE_RAPID: find the optimal algorithm in a rapid way(less time-cost)
+  ///        CL_TUNE_NORMAL: find the optimal algorithm in a noraml way(suggestion)
+  ///        CL_TUNE_EXHAUSTIVE: find the optimal algorithm in a exhaustive way(most time-costing)
+  /// \param path  Path that OpenCL algorithm selecting file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL algorithm selecting file.
+  /// \param lws_repeats  Repeat number for find the optimal local work size .
+  /// \return void
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       const std::string& path = "",
+                       const std::string& name = "",
+                       size_t lws_repeats = 4);
+```
+
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+
+### 设置运行时精度
+函数 `set_opencl_precision` 用来设置 OpenCL 运行时精度为 fp32 或 fp16。
+
+OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移动端设备都支持该特性。Paddle-Lite 的 OpenCL 实现同时支持如上两种运行时精度。
+- 在 Android/ARMLinux 系统下默认使用 fp16 计算，可通过调用该函数配置为 fp32 精度计算；
+- 在 macOS/Windows 64 位系统下默认使用 fp32 计算，其中 macOS 系统下由于苹果驱动原因只能支持 fp32 精度；Windows 64 位系统下，Intel 集成显卡只能支持 fp32 精度计算，NVIDIA 独立显卡可以支持 fp32/fp16 两种精度计算。如果设备不支持 fp16，在编译预测库时开启 log 的前提下，Paddle-Lite OpenCL 后端代码会有报错提示。
+
+```c++
+  /// \brief Set runtime precision on GPU using OpenCL backend.
+  ///
+  /// \param p
+  ///          CL_PRECISION_AUTO: first fp16 if valid, default
+  ///          CL_PRECISION_FP32: force fp32
+  ///          CL_PRECISION_FP16: force fp16
+  /// \return void
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+```
+
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+
+
+## 9. 常见问题
+
+1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度；
+2. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
 3. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
 4. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
 5. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
-6. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](./performance/gpu)中的【优化建议】章节。
+6. Paddle Lite OpenCL 后端代码尚未完全支持动态 shape，因此在运行动态 shape 的模型时可能会报错。
+7. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](./performance/gpu)中的【优化建议】章节。
