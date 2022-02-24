@@ -115,10 +115,15 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
     float16x8_t vpre2 = vdupq_n_f16(0.f);
     float16x8_t vpre3 = vdupq_n_f16(0.f);
     float16_t prev = 0.f;
-    float16_t* updata_gate_ptr = updata_gate;
-    float16_t* reset_gate_ptr = reset_gate;
     const float16_t* hidden_prev_ptr = hidden_prev;
-    float16_t* reset_hidden_prev_ptr = reset_hidden_prev;
+    float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+    float16_t* reset_gate_ptr = reset_gate + b * stride_reset;
+    if (hidden_prev) {
+      hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+    }
+    float16_t* reset_hidden_prev_ptr =
+        reset_hidden_prev + b * stride_reset_hidden_prev;
+
     int i = 0;
     for (; i < frame_size - 31; i += 32) {
       float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
@@ -187,13 +192,6 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
       }
       reset_hidden_prev_ptr[i] = reset_gate_ptr[i] * prev;
     }
-
-    updata_gate_ptr = updata_gate + b * stride_update;
-    reset_gate_ptr = reset_gate + b * stride_reset;
-    if (hidden_prev) {
-      hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
-    }
-    reset_hidden_prev_ptr = reset_hidden_prev + b * stride_reset_hidden_prev;
   }
   LITE_PARALLEL_END()
 }
@@ -217,9 +215,12 @@ static void gru_unit_out_act_impl(bool origin_mode,
       float16x8_t vpre2 = vdupq_n_f16(0.f);
       float16x8_t vpre3 = vdupq_n_f16(0.f);
       const float16_t* hidden_prev_ptr = hidden_prev;
-      float16_t* cell_state_ptr = cell_state;
-      float16_t* updata_gate_ptr = updata_gate;
-      float16_t* hidden_ptr = hidden;
+      float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+      float16_t* cell_state_ptr = cell_state + b * stride_cell_state;
+      if (hidden_prev) {
+        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+      }
+      float16_t* hidden_ptr = hidden + b * stride_hidden;
       float16_t prev = 0.f;
       int i = 0;
       for (; i < frame_size - 31; i += 32) {
@@ -285,13 +286,6 @@ static void gru_unit_out_act_impl(bool origin_mode,
         hidden_ptr[i] = cell_state_ptr[i] * (1.f - updata_gate_ptr[i]) +
                         updata_gate_ptr[i] * prev;
       }
-
-      updata_gate_ptr = updata_gate + b * stride_update;
-      cell_state_ptr = cell_state + b * stride_cell_state;
-      if (hidden_prev) {
-        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
-      }
-      hidden_ptr = hidden + b * stride_hidden;
     }
     LITE_PARALLEL_END()
   } else {
@@ -301,9 +295,12 @@ static void gru_unit_out_act_impl(bool origin_mode,
       float16x8_t vpre2 = vdupq_n_f16(0.f);
       float16x8_t vpre3 = vdupq_n_f16(0.f);
       const float16_t* hidden_prev_ptr = hidden_prev;
-      float16_t* cell_state_ptr = cell_state;
-      float16_t* updata_gate_ptr = updata_gate;
-      float16_t* hidden_ptr = hidden;
+      float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+      float16_t* cell_state_ptr = cell_state + b * stride_cell_state;
+      if (hidden_prev) {
+        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+      }
+      float16_t* hidden_ptr = hidden + b * stride_hidden;
       float16_t prev = 0.f;
       int i = 0;
       for (; i < frame_size - 31; i += 32) {
@@ -367,12 +364,6 @@ static void gru_unit_out_act_impl(bool origin_mode,
         hidden_ptr[i] = prev * (1.f - updata_gate_ptr[i]) +
                         updata_gate_ptr[i] * cell_state_ptr[i];
       }
-      updata_gate_ptr = updata_gate + b * stride_update;
-      cell_state_ptr = cell_state + b * stride_cell_state;
-      if (hidden_prev) {
-        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
-      }
-      hidden_ptr = hidden + b * stride_hidden;
     }
     LITE_PARALLEL_END()
   }
