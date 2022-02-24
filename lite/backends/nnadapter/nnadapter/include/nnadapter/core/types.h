@@ -16,7 +16,7 @@
 
 #include <list>
 #include <vector>
-#include "api/api.h"
+#include "nnadapter.h"  // NOLINT
 
 namespace nnadapter {
 namespace core {

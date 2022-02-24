@@ -21,7 +21,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "api/api.h"
+#include "nnadapter.h"  // NOLINT
 #include "utility/logging.h"
 
 namespace nnadapter {

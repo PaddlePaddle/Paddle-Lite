@@ -21,4 +21,6 @@ add_subdirectory(utility)
 add_subdirectory(optimizer)
 add_subdirectory(runtime)
 add_subdirectory(driver)
-add_subdirectory(api)
+
+add_library(nnadapter SHARED nnadapter.cc)
+target_link_libraries(nnadapter "-Wl,--start-group" ${NNADAPTER_UTILITIES} ${NNADAPTER_OPERATIONS} ${NNADAPTER_OPTIMIZERS} ${NNADAPTER_RUNTIME} "-Wl,--end-group")
