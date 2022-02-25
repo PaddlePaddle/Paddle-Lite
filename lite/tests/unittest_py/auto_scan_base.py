@@ -17,6 +17,7 @@ import unittest
 import abc
 import os
 import sys
+import platform
 import enum
 import time
 import logging
@@ -251,13 +252,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}".format(
+                            diff.max(), diff.argmax()))
             # arr=[1, K], base=[k]
             elif base_len < arr_len and (arr_shape[0] == 1 or
                                          arr_shape[-1] == 1):
@@ -279,13 +282,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}".format(
+                            diff.max(), diff.argmax()))
             else:
                 self.assertTrue(
                     base.shape == arr.shape,
@@ -443,11 +448,18 @@ class AutoScanBaseTest(unittest.TestCase):
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
+                if flag_precision_fp16:
+                    if platform.system() == 'Linux':
+                        # only run in M1
+                        continue
                 # creat model and prepare feed data
                 if flag_precision_fp16:
                     atol_ = 1e-1
                     rtol_ = 5e-2
                 if quant:
+                    if platform.system() == 'Darwin':
+                        # only run in linux
+                        continue
                     atol_ = 1e-3
                     rtol_ = 1e-3
                     if cnt == 0:

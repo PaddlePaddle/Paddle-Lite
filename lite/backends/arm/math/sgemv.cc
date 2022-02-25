@@ -617,6 +617,11 @@ void sgemv_trans(const int M,
   float *zero_buf = new float[M];
   float *y_buf = new float[valid_ths * M];
   memset(zero_buf, 0, M * sizeof(float));
+
+  float *x_buf = new float[valid_block * valid_ths];
+  memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
+  memcpy(x_buf, x, N * sizeof(float));
+
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   if (flag_bias) {
     memcpy(y_buf, bias, M * sizeof(float));
@@ -626,7 +631,7 @@ void sgemv_trans(const int M,
   }
   LITE_PARALLEL_BEGIN(t, tid, valid_ths) {
     float *block_y = y_buf + t * M;
-    const float *block_x = x + t * valid_block;
+    const float *block_x = x_buf + t * valid_block;
     const float *block_A = A + t * valid_block * M;
     for (int i = 0; i < block_cnt; ++i) {
       float *y_ptr = block_y;
@@ -1009,6 +1014,7 @@ void sgemv_trans(const int M,
 
   delete[] zero_buf;
   delete[] y_buf;
+  delete[] x_buf;
 }
 #endif  // __aarch64__
 

@@ -44,8 +44,14 @@ class TestMulOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
         # self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
         #                             DataLayoutType.NCHW)
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageFolder),
@@ -216,7 +222,7 @@ class TestMulOp(AutoScanTest):
                 "input_data_x": TensorConfig(shape=X_shape),
                 "input_data_y": TensorConfig(shape=Y_shape)
             },
-            outputs={"output_data"})
+            outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
@@ -226,7 +232,7 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        sample_size = 250
+        sample_size = 100
         target_str = self.get_target()
         self.run_and_statis(quant=False, max_examples=sample_size)
 

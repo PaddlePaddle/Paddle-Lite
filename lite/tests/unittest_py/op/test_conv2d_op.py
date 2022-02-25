@@ -78,7 +78,8 @@ class TestConv2dOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -166,13 +167,6 @@ class TestConv2dOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            groups = program_config.ops[0].attrs["groups"]
-            if target_type == TargetType.OpenCL:
-                if groups != 1:
-                    return True
-
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data"].shape
@@ -192,11 +186,6 @@ class TestConv2dOp(AutoScanTest):
                     predictor_config.precision() == PrecisionType.FP16 or
                     predictor_config.precision() == PrecisionType.INT8):
                 return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
