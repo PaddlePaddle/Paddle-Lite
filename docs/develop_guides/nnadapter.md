@@ -81,7 +81,7 @@
   } NNAdapterOperationCode;
   ```
 
-  上述代码摘选自 [nnadapter.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/nnadapter.h) ，描述了`逐元素相加操作符 ADD `的基本功能、输入操作数、输出操作数和适用的 NNAdapter 版本，值得注意的是：操作符的输入、输出操作数列表中的每一个操作数需要严格按照定义的顺序排列。
+  上述代码摘选自 [nnadapter.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/include/nnadapter/nnadapter.h) ，描述了`逐元素相加操作符 ADD `的基本功能、输入操作数、输出操作数和适用的 NNAdapter 版本，值得注意的是：操作符的输入、输出操作数列表中的每一个操作数需要严格按照定义的顺序排列。
 
   注意：每个标准算子的详细定义可以参考『附录』中的『 NNAdapter 标准算子详细说明』章节，最新算子定义可以在 nnadapter.h 中查询。
 
@@ -92,7 +92,7 @@
   - 模型缓存的序列化和反序列化：Runtime 通过设备 HAL 层库调用厂商 SDK 将模型编译、生成设备程序的过程的耗时通常比较长，它一般与模型规模成正比，与芯片 CPU 的处理能力成反比，例如 `MobileNetV1` 模型在的 RK1808 芯片上的编译耗时大约在15秒左右，而 `ResNet50` 模型的耗时更是达到分钟级别。因此，模型的在线编译和生成将大大增加推理框架在用户进程启动后的第一次推理耗时，这在一些应用中是不可接受的，为了避免这个问题，NNAdapter Runtime 支持将已编译的设备代码缓存到设备的文件系统中，在下一次模型编译时将直接加载缓存文件进行恢复，其中就涉及缓存文件的[序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/95766be607af68cd515d824e42426dc54a363cb0/lite/backends/nnadapter/nnadapter/runtime/compilation.cc#L252)和[反序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/95766be607af68cd515d824e42426dc54a363cb0/lite/backends/nnadapter/nnadapter/runtime/compilation.cc#L326)过程。
 
 ### NNAdapter HAL 标准接口定义
-- 为了屏蔽硬件细节，向 NNAdapter Runtime 提供统一的设备访问接口，我们在 Runtime 和 厂商 SDK 之间建立了 NNAdapter HAL （即硬件抽象层），它是由 C 结构体实现的统一设备接口描述、模型、操作数和操作符的中间表达等数据结构组成，代码如下所示（访问 [types.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/core/hal/types.h) 获得最新代码）：
+- 为了屏蔽硬件细节，向 NNAdapter Runtime 提供统一的设备访问接口，我们在 Runtime 和 厂商 SDK 之间建立了 NNAdapter HAL （即硬件抽象层），它是由 C 结构体实现的统一设备接口描述、模型、操作数和操作符的中间表达等数据结构组成，代码如下所示（访问 [types.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/include/nnadapter/core/types.h) 获得最新代码）：
 
   ```c++
   typedef struct Operand {
