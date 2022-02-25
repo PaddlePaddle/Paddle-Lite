@@ -5044,7 +5044,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
                 LEAKY1 LEAKY2
                 "b      20f                    \n" /* leakey relu end */
                 // hard swish
-                "14:                           \n"
+                "15:                           \n"
                 "ldr    q1,  [%[alpha], #0]    \n"
                 "ldr    q2,  [%[alpha], #16]   \n"
                 "movi   v0.4s,    #0           \n"
