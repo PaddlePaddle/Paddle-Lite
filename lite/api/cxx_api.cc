@@ -296,6 +296,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
   if (config.is_model_from_memory()) {
+    LOG(INFO) << "Load model from memory.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),
@@ -305,6 +306,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           config,
           config.get_model_buffer());
   } else {
+    LOG(INFO) << "Load model from file.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),
@@ -329,7 +331,6 @@ void Predictor::Build(const std::string &model_path,
           (!model_file.empty() && !param_file.empty())) {
         combined_param = true;
       }
-      LOG(INFO) << "combined_param: " << combined_param;
       LoadModelPb(model_path,
                   model_file,
                   param_file,
@@ -346,7 +347,6 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  LOG(INFO) << "--Build--";
   Build(program_desc_, valid_places, passes, config);
 }
 

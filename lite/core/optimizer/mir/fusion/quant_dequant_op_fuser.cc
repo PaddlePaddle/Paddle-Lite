@@ -638,13 +638,13 @@ void QuantDequantLinearOpFuser::BuildPattern() {
   auto* quant_op_zero_point =
       VarNode("quant_op_zero_point")
           ->assert_is_op_input("quantize_linear", "ZeroPoint");
-  auto* quant_op_output = VarNode("quant_op_output")
-                              ->assert_is_op_output("quantize_linear", "Y");
-  auto* dequant_op_out = VarNode("dequant_op_out")
-                             ->assert_is_op_output("dequantize_linear", "Y");
+  auto* quant_op_output =
+      VarNode("quant_op_output")->assert_is_op_output("quantize_linear", "Y");
+  auto* dequant_op_out =
+      VarNode("dequant_op_out")->assert_is_op_output("dequantize_linear", "Y");
 
-  auto* quant_op = OpNode("quant_op", "quantize_linear")
-                       ->assert_is_op("quantize_linear");
+  auto* quant_op =
+      OpNode("quant_op", "quantize_linear")->assert_is_op("quantize_linear");
   auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
                          ->assert_is_op("dequantize_linear");
 
@@ -656,12 +656,12 @@ void QuantDequantLinearOpFuser::BuildPattern() {
 }
 
 void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
-                                        const key2nodes_t& matched) {
+                                              const key2nodes_t& matched) {
   auto* input_var_node = matched.at("quant_op_input");
   auto* input_scale_node = matched.at("quant_op_scale");
   auto* quant_op_node = matched.at("quant_op");
   auto* output_var_node = matched.at("dequant_op_out");
-  
+
   auto input_var_name = input_var_node->arg()->name;
   auto output_var_name = output_var_node->arg()->name;
   bool input_var_is_activation = !input_var_node->arg()->is_weight;
@@ -675,8 +675,8 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   auto* scope = quant_op_node->stmt()->op()->scope();
 
   int quant_axis = quant_op_node->stmt()->op_info()->GetAttr<int>("quant_axis");
-  auto* scale_tensor = scope->FindVar(input_scale_node->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+  auto* scale_tensor =
+      scope->FindVar(input_scale_node->arg()->name)->GetMutable<lite::Tensor>();
   std::vector<float> thresholds;
   if (scale_tensor->dims().size() == 1 && scale_tensor->dims()[0] == 1) {
     thresholds.push_back(scale_tensor->data<float>()[0]);
@@ -700,10 +700,10 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.SetAttr<int>("bit_length", bit_length);
     std::string op_type = op_info.Type();
 #ifndef LITE_WITH_FPGA
-  if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
-      quant_op_types_.end()) {
-    op_info.SetAttr("enable_int8", true);
-  }
+    if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
+        quant_op_types_.end()) {
+      op_info.SetAttr("enable_int8", true);
+    }
 #endif
     if (input_var_is_activation) {
       op_info.SetInputScale(input_var_name, scales);
@@ -717,15 +717,6 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
       CHECK_EQ(quant_axis, quant_axis_in)
           << "quant_axis must be equal filter_dims out_channel";
       op_info.SetInputScale(input_var_name, scales);
-      // PaddleLite only supports this int8 ops for now
-      // if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
-      //     quant_op_types_.end()) {
-      //   if (scales.size() == 1) {
-      //     QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
-      //   } else {
-      //     QuantizeTensorInPlace<int8_t>(input_var_tensor, scales, quant_axis);
-      //   }
-      // }
     }
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
     IR_NODE_LINK_TO(input_var_node, quantized_node);
@@ -752,10 +743,10 @@ void DequantLinearOpFuser::BuildPattern() {
           ->assert_is_op_input("dequantize_linear", "ZeroPoint");
   auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
                          ->assert_is_op("dequantize_linear");
-                        //  ->AsIntermediate();
-  auto* dequant_op_out = VarNode("dequant_op_out")
-                             ->assert_is_op_output("dequantize_linear", "Y");
-                            //  ->AsIntermediate();
+  //  ->AsIntermediate();
+  auto* dequant_op_out =
+      VarNode("dequant_op_out")->assert_is_op_output("dequantize_linear", "Y");
+  //  ->AsIntermediate();
 
   dequant_op
       ->LinksFrom({dequant_op_input, dequant_op_scale, dequant_op_zero_point})
