@@ -202,16 +202,6 @@ class TestPool2dOp(AutoScanTest):
             "Paddle does not support this op in a specific case. We have fedback to the Paddle developer."
         )
 
-        def teller4(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
-
-        self.add_ignore_check_case(
-            teller4, IgnoreReasons.ACCURACY_ERROR,
-            "Paddle-Lite has diff in a specific case when fp16, but we do not know the reason is whether fp16 diff or bugs, we will figure out this in the future."
-        )
-
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 100
