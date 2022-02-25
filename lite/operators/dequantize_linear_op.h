@@ -38,31 +38,24 @@ class DequantizeLinearOpLite : public OpLite {
   bool InferShapeImpl() const override { return true; }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
-    LOG(INFO) << "AttachImpl";
     auto x = op_desc.Input("X").front();
     if (op_desc.HasInput("Scale")) {
-      LOG(INFO) << "Scale";
       auto scale = op_desc.Input("Scale").front();
       param_.scale = scope->FindVar(scale)->GetMutable<lite::Tensor>();
     }
     if (op_desc.HasInput("ZeroPoint")) {
-      LOG(INFO) << "ZeroPoint";
       auto zero_point = op_desc.Input("ZeroPoint").front();
       param_.zero_point =
           scope->FindVar(zero_point)->GetMutable<lite::Tensor>();
     }
 
-    LOG(INFO) << "out";
     auto out = op_desc.Output("Y").front();
 
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
 
     param_.y = scope->FindVar(out)->GetMutable<lite::Tensor>();
-    LOG(INFO) << "bit_length";
     param_.bit_length = op_desc.GetAttr<bool>("bit_length") ? 1 : 0;
-    LOG(INFO) << "quant_axis";
     param_.quant_axis = op_desc.GetAttr<int>("quant_axis");
-    LOG(INFO) << "quant_axis: " << param_.quant_axis;
     return true;
   }
 
