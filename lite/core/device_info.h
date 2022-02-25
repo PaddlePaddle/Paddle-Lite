@@ -38,6 +38,7 @@ using L3CacheSetMethod = lite_api::L3CacheSetMethod;
 
 typedef enum {
   kAPPLE = 0,
+  kX1 = 1,
   kA35 = 35,
   kA53 = 53,
   kA55 = 55,

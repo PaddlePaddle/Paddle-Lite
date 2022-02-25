@@ -809,10 +809,10 @@ void output_trans_c8_post_4x6_fp16(const float16_t* src,
   float16x8_t tmp34a = vaddq_f16(src3, src4);
   float16x8_t tmp34b = vsubq_f16(src3, src4);
 
-  float32x4_t dest0 = vaddq_f16(vaddq_f16(src0, tmp12a), tmp34a);
-  float32x4_t dest2 = vaddq_f16(tmp12a, vmulq_n_f16(tmp34a, 4));
-  float32x4_t dest1 = vaddq_f16(tmp12b, vmulq_n_f16(tmp34b, 2));
-  float32x4_t dest3 =
+  float16x8_t dest0 = vaddq_f16(vaddq_f16(src0, tmp12a), tmp34a);
+  float16x8_t dest2 = vaddq_f16(tmp12a, vmulq_n_f16(tmp34a, 4));
+  float16x8_t dest1 = vaddq_f16(tmp12b, vmulq_n_f16(tmp34b, 2));
+  float16x8_t dest3 =
       vaddq_f16(vaddq_f16(tmp12b, vmulq_n_f16(tmp34b, 8)), src5);
 
   vst1q_f16(dest, dest0);

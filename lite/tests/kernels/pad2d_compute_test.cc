@@ -172,6 +172,9 @@ TEST(Pad2d, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  pad_mode_list = {"constant", "reflect"};
 #else
   return;
 #endif

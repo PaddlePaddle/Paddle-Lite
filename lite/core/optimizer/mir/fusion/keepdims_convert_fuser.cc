@@ -31,15 +31,17 @@ void KeepdimsConvertFuser::BuildPattern() {
   auto attr_names = attr_names_;
   auto op_teller = [&](const Node* node) -> bool {
     const std::vector<std::string> attr_names{"keep_dim", "keepdims"};
+    // Convert false to true when the above attribute exists and it's false.
+    // Note the attribute is false by default when the attribute doesn't exist.
     auto* op_desc = const_cast<Node*>(node)->AsStmt().op_info();
     for (auto attr_name : attr_names) {
       if (op_desc->HasAttr(attr_name)) {
-        if (!op_desc->GetAttr<bool>(attr_name)) {
-          return true;
+        if (op_desc->GetAttr<bool>(attr_name)) {
+          return false;
         }
       }
     }
-    return false;
+    return true;
   };
 
   auto* op = OpNode("op", op_type_)
@@ -79,11 +81,8 @@ void KeepdimsConvertFuser::InsertNewNode(SSAGraph* graph,
   // Update Out arg name
   auto op_desc = inst->mutable_op_info();
   for (auto attr_name : attr_names_) {
-    if (op_desc->HasAttr(attr_name)) {
-      op_desc->SetAttr(attr_name, true);
-      op_desc->SetOutput("Out", {new_input_name_});
-      break;
-    }
+    op_desc->SetAttr(attr_name, true);
+    op_desc->SetOutput("Out", {new_input_name_});
   }
 
   IR_NODE_LINK_TO(matched.at("op"), new_input_arg);

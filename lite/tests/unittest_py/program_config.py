@@ -237,22 +237,30 @@ def create_quant_model(model, params, prefix, program_config):
     place = paddle.CPUPlace()
     exe = paddle.static.Executor(place)
 
-    input_shape = program_config.inputs["input_data"].shape
+    batch_size = 1
 
-    def _reader():
-        for _ in range(200):
-            yield np.random.random(input_shape).astype(np.float32)
+    def _reader_list():
+        for _ in range(10):
+            res = []
+            for key in program_config.inputs.keys():
+                input_shape = program_config.inputs[key].shape
+                batch_size = input_shape[0]
+                res.append(np.random.random(input_shape).astype(np.float32))
+            yield res
 
     # 3. quant_post_static
     quantize_model_path = prefix + "/static_quantized_conv_2d"
     paddleslim.quant.quant_post_static(
         executor=exe,
         weight_bits=8,
-        batch_size=input_shape[0],
+        batch_size=batch_size,
         model_dir=prefix,
         quantize_model_path=quantize_model_path,
-        sample_generator=_reader,
+        sample_generator=_reader_list,
         weight_quantize_type='abs_max',
+        quantizable_op_type=[
+            "conv2d", "depthwise_conv2d", "conv2d_transpose", "mul", "matmul"
+        ],
         model_filename="model",
         params_filename="params", )
 

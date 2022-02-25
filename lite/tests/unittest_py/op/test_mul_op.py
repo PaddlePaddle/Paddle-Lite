@@ -36,6 +36,12 @@ class TestMulOp(AutoScanTest):
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+
         self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
@@ -50,7 +56,7 @@ class TestMulOp(AutoScanTest):
     def sample_program_configs(self, draw):
         shape0 = draw(st.integers(min_value=1, max_value=32))
         shape1 = draw(st.integers(min_value=1, max_value=32))
-        shape2 = draw(st.integers(min_value=1, max_value=32))
+        shape2 = draw(st.integers(min_value=1, max_value=16))
         shape3 = draw(st.integers(min_value=1, max_value=16))
         shape4 = draw(st.integers(min_value=1, max_value=16))
         shape5 = draw(st.integers(min_value=1, max_value=16))

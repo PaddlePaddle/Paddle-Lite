@@ -210,6 +210,7 @@ void pad_reflect_fp16(const float16_t* din,
   int right_loop_remain = pad_right & 3;
   int med_rem_cnt = med_loop_remain >> 2;
   int med_rem_rem = med_loop_remain & 3;
+
   LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
@@ -221,12 +222,7 @@ void pad_reflect_fp16(const float16_t* din,
         float16x4_t val =
             vld1_f16(din_s + left_loop_remain + ((left_loop - i - 1) << 2) + 1);
         val = vrev64_f16(val);
-        float16x4_t rst;
-        rst[0] = val[2];
-        rst[1] = val[3];
-        rst[2] = val[0];
-        rst[3] = val[1];
-        vst1_f16(dout_med, rst);
+        vst1_f16(dout_med, val);
         dout_med += 4;
       }
       for (int i = 0; i < left_loop_remain; ++i) {
@@ -255,13 +251,8 @@ void pad_reflect_fp16(const float16_t* din,
       }
       for (int i = 0; i < right_loop; ++i) {
         float16x4_t val = vld1_f16(din_s - ((i + 1) << 2) - 1);
-        val = vrev64_f16(val);
-        float16x4_t rst;
-        rst[0] = val[2];
-        rst[1] = val[3];
-        rst[2] = val[0];
-        rst[3] = val[1];
-        vst1_f16(dout_med, rst);
+        val = vrev64_f16(val);  // different from vrev64_f32
+        vst1_f16(dout_med, val);
         dout_med += 4;
       }
       const float16_t* remain = din_s - (right_loop << 2) - 2;

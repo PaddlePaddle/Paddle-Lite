@@ -47,12 +47,6 @@ class TestPad2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        # Diff occurred.
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP16,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault),
@@ -74,6 +68,11 @@ class TestPad2dOp(AutoScanTest):
                   DataLayoutType.MetalTexture2DArray)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -137,7 +136,7 @@ class TestPad2dOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv8 or armv7hf or armv7, default armv8.
+# armv8 or armv7hf or armv7 or x86, default armv8.
 ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
