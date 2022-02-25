@@ -457,7 +457,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 # creat model and prepare feed data
                 if flag_precision_fp16:
                     atol_ = 1e-1
-                    rtol_ = 5.2e-2
+                    rtol_ = 5.3e-2
                 if quant:
                     if platform.system() == 'Darwin':
                         # only run in linux
