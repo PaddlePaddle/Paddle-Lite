@@ -639,29 +639,20 @@ void QuantDequantLinearOpFuser::BuildPattern() {
       VarNode("quant_op_zero_point")
           ->assert_is_op_input("quantize_linear", "ZeroPoint");
   auto* quant_op_output = VarNode("quant_op_output")
-                              ->assert_is_op_input("quantize_linear", "Y")
-                              ->AsIntermediate();
-  auto* dequant_op_scale =
-      VarNode("dequant_op_scale")
-          ->assert_is_op_input("dequantize_linear", "Scale");
-  auto* dequant_op_zero_point =
-      VarNode("dequant_op_zero_point")
-          ->assert_is_op_input("dequantize_linear", "ZeroPoint");
+                              ->assert_is_op_output("quantize_linear", "Y");
   auto* dequant_op_out = VarNode("dequant_op_out")
-                             ->assert_is_op_output("dequantize_linear", "Y")
-                             ->AsIntermediate();
+                             ->assert_is_op_output("dequantize_linear", "Y");
 
   auto* quant_op = OpNode("quant_op", "quantize_linear")
-                       ->assert_is_op("quantize_linear")
-                       ->AsIntermediate();
+                       ->assert_is_op("quantize_linear");
   auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
-                         ->assert_is_op("dequantize_linear")
-                         ->AsIntermediate();
+                         ->assert_is_op("dequantize_linear");
 
   quant_op->LinksFrom({quant_op_input, quant_op_scale, quant_op_zero_point})
       .LinksTo({quant_op_output});
-  dequant_op->LinksFrom({quant_op_output, dequant_op_scale, dequant_op_zero_point})
+  dequant_op->LinksFrom({quant_op_output, quant_op_scale, quant_op_zero_point})
       .LinksTo({dequant_op_out});
+  VLOG(4) << "QuantDequantLinearOpFuser";
 }
 
 void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
@@ -670,10 +661,11 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   auto* input_scale_node = matched.at("quant_op_scale");
   auto* quant_op_node = matched.at("quant_op");
   auto* output_var_node = matched.at("dequant_op_out");
-
+  
   auto input_var_name = input_var_node->arg()->name;
   auto output_var_name = output_var_node->arg()->name;
   bool input_var_is_activation = !input_var_node->arg()->is_weight;
+  VLOG(4) << "input_var_is_activation: " << input_var_is_activation;
 
   // 1. Get thresholds and scales
   // The activation only has a scale.
@@ -681,8 +673,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   // When the weight is per-channel quantized, the num of scales is equal
   // to the output channel of the weight.
   auto* scope = quant_op_node->stmt()->op()->scope();
-  auto* input_var_tensor =
-      scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+
   int quant_axis = quant_op_node->stmt()->op_info()->GetAttr<int>("quant_axis");
   auto* scale_tensor = scope->FindVar(input_scale_node->arg()->name)
                            ->GetMutable<lite::Tensor>();
@@ -702,7 +693,6 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
       thresholds.end(),
       scales.begin(),
       [&bit_length](float x) { return x / ((1 << (bit_length - 1)) - 1); });
-
   // 2. Update op_info of the quantized op
   for (auto* quantized_node : output_var_node->outlinks) {
     auto op_info = *quantized_node->stmt()->op_info();
@@ -728,172 +718,28 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
           << "quant_axis must be equal filter_dims out_channel";
       op_info.SetInputScale(input_var_name, scales);
       // PaddleLite only supports this int8 ops for now
-      if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
-          quant_op_types_.end()) {
-        if (scales.size() == 1) {
-          QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
-        } else {
-          QuantizeTensorInPlace<int8_t>(input_var_tensor, scales, quant_axis);
-        }
-      }
+      // if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
+      //     quant_op_types_.end()) {
+      //   if (scales.size() == 1) {
+      //     QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
+      //   } else {
+      //     QuantizeTensorInPlace<int8_t>(input_var_tensor, scales, quant_axis);
+      //   }
+      // }
     }
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
-
   // 3. Delete nodes and edges
   std::set<const Node*> nodes2rm = {quant_op_node,
                                     input_scale_node,
                                     matched.at("quant_op_zero_point"),
-                                    matched.at("quant_op_out"),
+                                    matched.at("quant_op_output"),
                                     matched.at("dequant_op"),
-                                    matched.at("dequant_op_scale"),
-                                    matched.at("dequant_op_zero_point"),
                                     output_var_node};
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
-/*
-void DequantLinearOpFuser::BuildPattern() {
-  auto* dequant_op_input = VarNode("dequant_op_input")
-                                 ->assert_is_op_input("dequantize_linear", "X")
-                                 ->AsInput();
-  auto* dequant_op_scale = VarNode("dequant_op_scale")
-                                 ->assert_is_op_input("dequantize_linear",
-"Scale");
-  auto* dequant_op_zero_point = VarNode("dequant_op_zero_point")
-                                 ->assert_is_op_input("dequantize_linear",
-"ZeroPoint");
-  auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
-                         ->assert_is_op("dequantize_linear")
-                         ->AsIntermediate();
-  auto* dequant_op_out =
-      VarNode("dequant_op_out")
-          ->assert_is_op_output("dequantize_linear", "Y")
-          ->AsIntermediate();
 
-  auto* quantized_op_input = VarNode("quantized_op_input")
-                                 ->assert_is_op_input(quantized_op_type_)
-                                 ->AsInput();
-  auto* quantized_op = OpNode("quantized_op", quantized_op_type_)
-                           ->assert_is_op(quantized_op_type_)
-                           ->AsIntermediate();
-  auto* quantized_op_out =
-      VarNode("quantized_op_out")
-          ->assert_is_op_output(quantized_op_type_)
-          ->AsIntermediate();
-
-  dequant_op->LinksFrom({dequant_op_input, dequant_op_scale,
-dequant_op_zero_point}).LinksTo({dequant_op_out});
-  quantized_op->LinksFrom({quantized_op_input,
-dequant_op_out}).LinksTo({quantized_op_out});
-
-  VLOG(4) << "DequantLinearOpFuser BuildPattern op_type:" << quantized_op_type_;
-}
-
-void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
-                                   const key2nodes_t& matched) {
-  auto* dequant_op_input = matched.at("dequant_op_input");
-  auto* dequant_op_scale = matched.at("dequant_op_scale");
-  auto* quantized_op_input = matched.at("quantized_op_input");
-  auto* quantized_op_output = matched.at("quantized_op_output");
-  auto* quantized_op = matched.at("quantized_op");
-  auto* dequant_op = matched.at("dequant_op")
-
-  // obtain weight_scale from max_range
-  auto* scope = dequant_op->stmt()->op()->scope();
-  auto& valid_places = dequant_op->stmt()->op()->valid_places();
-  int bit_length = dequant_op->stmt()->op_info()->GetAttr<int>("bit_length");
-  int quant_axis = dequant_op->stmt()->op_info()->GetAttr<int>("quant_axis");
-  auto dequant_op_scale_var_name =  dequant_op_scale->arg()->name;
-  auto dequant_scale_t =
-scope->FindVar(dequant_op_scale_var_name)->GetMutable<lite::Tensor>();
-  float whole_weight_scale = dequant_scale_t->data<float>()[0];
-  // set op desc
-  auto op_desc = *quantized_op->stmt()->op_info();
-  auto quantized_weight_var_name = dequant_op_input->arg()->name;
-  auto quantized_weight_t =
-      scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
-
-  std::vector<float> weight_scale;
-  int weight_scale_size = 0;
-  if (quantized_op_type_ == "conv2d" ||
-      quantized_op_type_ == "depthwise_conv2d") {
-    op_desc.SetInput("Filter", {quantized_op_input->arg()->name});
-    op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
-    // Conv weight shape: Cout * Cin/group * kh * hw, the weight_scale_size
-    // should
-    // be Cout.
-    weight_scale_size = quantized_weight_t->dims()[0];
-  } else if (quantized_op_type_ == "conv2d_transpose") {
-    op_desc.SetInput("Filter", {quantized_op_input->arg()->name});
-    op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
-
-    auto* conv_op_desc = matched.at("quantized_op")->stmt()->op_info();
-    auto groups = conv_op_desc->GetAttr<int>("groups");
-    // Conv weight shape: Cin * Cout/group * kh * hw, the weight_scale_size
-    // should
-    // be Cout.
-    weight_scale_size = quantized_weight_t->dims()[1] * groups;
-  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
-    op_desc.SetInput("Y", {quantized_op_input->arg()->name});
-    op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
-    // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
-    weight_scale_size = quantized_weight_t->dims()[1];
-  }
-
-  if (dequant_scale_t->dims().size() == 1 && dequant_scale_t->dims()[0] == 1) {
-    for (int i = 0; i < weight_scale_size; i++) {
-      weight_scale.push_back(whole_weight_scale);
-    }
-  } else {
-    // scale store as quant_axis
-    CHECK_EQ(quant_axis, quantized_weight_t->dims().size()) << "The quant_axis
-should be less than quantized_weight dims";
-    CHECK_EQ(dequant_scale_t->dims()[0], weight_scale_size)
-      << "The size of dequant_scale_t should be equal weight_scale_size";
-    auto tmp_data = dequant_scale_t->data<float>();
-    for (int i = 0; i < weight_scale_size; i++) {
-      weight_scale.push_back(tmp_data[i]);
-    }
-  }
-
-#ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
-#endif
-
-  op_desc.SetInputScale(quantized_weight_var_name, weight_scale);
-
-#ifdef LITE_WITH_FPGA
-  // change the weight from the float type to int8 type.
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  int8_t* temp_data = temp_tensor.mutable_data<int8_t>();
-  size_t weight_num = quantized_weight_t->data_size();
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-#else
-  // int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  // for (size_t i = 0; i < weight_num; i++) {
-  //   quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  // }
-  // quantized_weight_t->set_persistable(true);
-  // quantized_weight_t->set_precision(PRECISION(kInt8));
-#endif
-
-  // new op and relink nodes
-  auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
-  new_quantized_op->Attach(op_desc, scope);
-  auto* new_quantized_op_node =
-      graph->GraphCreateInstructNode(new_quantized_op, valid_places);
-  IR_NODE_LINK_TO(quantized_op_input, new_quantized_op_node);
-  IR_NODE_LINK_TO(dequant_op_input, new_quantized_op_node);
-  IR_NODE_LINK_TO(new_quantized_op_node, quantized_op_output);
-}
-*/
 void DequantLinearOpFuser::BuildPattern() {
   auto* dequant_op_input = VarNode("dequant_op_input")
                                ->assert_is_op_input("dequantize_linear", "X")
@@ -905,15 +751,16 @@ void DequantLinearOpFuser::BuildPattern() {
       VarNode("dequant_op_zero_point")
           ->assert_is_op_input("dequantize_linear", "ZeroPoint");
   auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
-                         ->assert_is_op("dequantize_linear")
-                         ->AsIntermediate();
+                         ->assert_is_op("dequantize_linear");
+                        //  ->AsIntermediate();
   auto* dequant_op_out = VarNode("dequant_op_out")
-                             ->assert_is_op_output("dequantize_linear", "Y")
-                             ->AsIntermediate();
+                             ->assert_is_op_output("dequantize_linear", "Y");
+                            //  ->AsIntermediate();
 
   dequant_op
       ->LinksFrom({dequant_op_input, dequant_op_scale, dequant_op_zero_point})
       .LinksTo({dequant_op_out});
+  VLOG(4) << "DequantLinearOpFuser";
 }
 
 void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
