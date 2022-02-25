@@ -42,6 +42,8 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
       "fake_quantize_dequantize_abs_max",
       "fake_quantize_dequantize_moving_average_abs_max",
       "fake_channel_wise_quantize_dequantize_abs_max",
+      "quantize_linear",
+      "dequantize_linear",
   };
   const std::vector<std::string> dynamic_quant_op = {"lstm", "gru"};
   bool is_quantized_model = false;
@@ -294,7 +296,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
   if (config.is_model_from_memory()) {
-    LOG(INFO) << "Load model from memory.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),
@@ -304,7 +305,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           config,
           config.get_model_buffer());
   } else {
-    LOG(INFO) << "Load model from file.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),
@@ -329,6 +329,7 @@ void Predictor::Build(const std::string &model_path,
           (!model_file.empty() && !param_file.empty())) {
         combined_param = true;
       }
+      LOG(INFO) << "combined_param: " << combined_param;
       LoadModelPb(model_path,
                   model_file,
                   param_file,
@@ -345,7 +346,7 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-
+  LOG(INFO) << "--Build--";
   Build(program_desc_, valid_places, passes, config);
 }
 
