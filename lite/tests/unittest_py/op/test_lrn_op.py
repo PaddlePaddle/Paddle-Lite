@@ -54,10 +54,6 @@ class TestLrnOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        n = program_config.ops[0].attrs["n"]
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if n % 2 == 0:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -80,10 +76,11 @@ class TestLrnOp(AutoScanTest):
                 min_size=3,
                 max_size=3))
         in_shape = in_num + in_c_h_w
-        n_ = draw(st.integers(min_value=1, max_value=8))
+        n_ = draw(st.integers(min_value=1, max_value=in_c_h_w[0]))
         k_ = draw(st.floats(min_value=1.0, max_value=10.0))
         alpha_ = draw(st.floats(min_value=1.0, max_value=10.0))
         beta_ = draw(st.floats(min_value=1.0, max_value=10.0))
+        assume(n_ % 2 == 1)
         lrn_op = OpConfig(
             type="lrn",
             inputs={"X": ["input_data"]},
@@ -107,14 +104,7 @@ class TestLrnOp(AutoScanTest):
         return self.get_predictor_configs(), ["lrn"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)
