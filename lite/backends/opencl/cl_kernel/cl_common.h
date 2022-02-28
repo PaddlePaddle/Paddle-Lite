@@ -139,6 +139,10 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   output = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in))));
 #endif
 
+#ifdef TANH
+  output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
+#endif
+
   return output;
 }
 
@@ -189,6 +193,9 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.w))));
 #endif
 
+#ifdef TANH
+  output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
+#endif
   return output;
 }
 
