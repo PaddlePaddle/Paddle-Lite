@@ -72,6 +72,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
   void Conv2dCommon();
+  void Conv2dCommonMulGroup();
   void Conv2d1x1Mali();
   void Conv2d1x1FC();
   void OIHW2OHWIO4I4(
@@ -123,11 +124,18 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> bias_gpu_buffer_{nullptr};
   std::unique_ptr<Tensor> wino_m_gpu_image_{nullptr};
   std::unique_ptr<Tensor> wino_v_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> mulgroups_in_fill_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> mulgroups_out_cut_gpu_image_{nullptr};
+
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange global_work_size_wino1_ =
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange global_work_size_wino2_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_fill0_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_cut0_ =
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   // opencl kernel args
   int c_blk_ = 1;
@@ -146,6 +154,8 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* output_image_p_{nullptr};
   const cl::Image2D* wino_v_image_p_{nullptr};
   const cl::Image2D* wino_m_image_p_{nullptr};
+  const cl::Image2D* mulgroups_input_fill0_image_p_{nullptr};
+  const cl::Image2D* mulgroups_output_cut0_image_p_{nullptr};
 
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
@@ -170,9 +180,11 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int groups_{-1};
   std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
+  bool sigmoid_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
   bool is_wino_{false};
+  bool is_conv_mulgroup_{false};
 
   int input_tensor_n_{-1};
   int input_tensor_c_{-1};
@@ -210,12 +222,18 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::Kernel kernel_inner_product_;
   cl::Kernel kernel_output_trans_;
+  cl::Kernel kernel_input_fill0_;
+  cl::Kernel kernel_output_cut0_;
   cl_int status_;
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange local_work_size_wino1_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange local_work_size_wino2_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_fill0_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_cut0_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
 };

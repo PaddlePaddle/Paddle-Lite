@@ -32,13 +32,7 @@ class TestNearestInterpOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP16,
+            TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
@@ -96,8 +90,8 @@ class TestNearestInterpOp(AutoScanTest):
 
         def generate_scale(*args, **kwargs):
             tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
-            assume(scale * X_shape[2] > 1.0)
-            assume(scale * X_shape[3] > 1.0)
+            assume(tmp[0] * X_shape[2] > 1.0)
+            assume(tmp[0] * X_shape[3] > 1.0)
             return tmp
 
         def generate_input2(*args, **kwargs):
@@ -184,25 +178,16 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target() in [TargetType.OpenCL]:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
-
-        def _teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

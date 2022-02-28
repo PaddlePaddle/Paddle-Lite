@@ -181,6 +181,9 @@ void ConvTransposeImageCompute::PrepareForRun() {
         lite_api::ActivationType::kRelu) {
       build_options_single += " -DRELU";
     } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kSigmoid) {
+      build_options_single += " -DSIGMOID";
+    } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kRelu6) {
       build_options_single += " -DRELU6";
     } else if (conv_param_->activation_param.active_type ==
