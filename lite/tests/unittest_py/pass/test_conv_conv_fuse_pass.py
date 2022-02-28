@@ -62,9 +62,6 @@ class TestConvConvFuse(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs["groups"] != 1:
-                result = False
         return True
 
     def sample_program_configs(self, draw):

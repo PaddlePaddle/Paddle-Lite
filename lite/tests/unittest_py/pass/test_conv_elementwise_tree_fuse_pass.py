@@ -49,13 +49,7 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        result = True
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs[
-                    "groups"] != 1 or program_config.ops[
-                        0].type == "conv2d_transpose":
-                result = False
-        return result
+        return True
 
     def sample_program_configs(self, draw):
 
