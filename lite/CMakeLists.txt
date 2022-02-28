@@ -689,18 +689,24 @@ if (LITE_WITH_MLU)
 endif()
 
 if(LITE_WITH_NNADAPTER)
-  # Build the NNAdapter runtime library and copy it to the publish directory
-  add_custom_target(publish_inference_nnadapter_runtime
-      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/libnnadapter.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+  # Build the NNAdapter runtime library, copy the header files and library file to the publish directory
+  add_custom_target(publish_inference_nnadapter_runtime_header_files
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+      COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/backends/nnadapter/nnadapter/include/nnadapter" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
       DEPENDS nnadapter
       )
-  add_dependencies(publish_inference publish_inference_nnadapter_runtime)
+  add_dependencies(publish_inference publish_inference_nnadapter_runtime_header_files)
+  add_custom_target(publish_inference_nnadapter_runtime_library_file
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/libnnadapter.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS nnadapter
+      )
+  add_dependencies(publish_inference publish_inference_nnadapter_runtime_library_file)
   # Build the NNAdapter device HAL libraries for all of the specified devices and copy it to the publish directory
   foreach(device_name ${NNADAPTER_DEVICES})
     add_custom_target(publish_inference_nnadapter_${device_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/${device_name}/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/${device_name}/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       DEPENDS ${device_name}
       )
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})

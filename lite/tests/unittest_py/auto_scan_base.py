@@ -252,13 +252,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}".format(
+                            diff.max(), diff.argmax()))
             # arr=[1, K], base=[k]
             elif base_len < arr_len and (arr_shape[0] == 1 or
                                          arr_shape[-1] == 1):
@@ -280,13 +282,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}".format(
+                            diff.max(), diff.argmax()))
             else:
                 self.assertTrue(
                     base.shape == arr.shape,

@@ -118,7 +118,8 @@ class TestConv2dTransposeOp(AutoScanTest):
         output_size = []
         groups = draw(st.integers(min_value=1, max_value=input_c))
         assume(filter_c % groups == 0)
-        assume(filter_m >= groups)
+        assume(filter_m >= groups and filter_m % groups == 0)
+        assume(groups != filter_m or groups != filter_c)
         data_format = draw(st.sampled_from(['NCHW']))
         padding_algorithm = draw(st.sampled_from(['VALID', 'SAME']))
         dilations = draw(
@@ -270,11 +271,6 @@ class TestConv2dTransposeOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
             groups = program_config.ops[0].attrs["groups"]
-            if predictor_config.target() == TargetType.OpenCL and groups > 1:
-                return True
-
-        def _teller2(program_config, predictor_config):
-            groups = program_config.ops[0].attrs["groups"]
 
             if predictor_config.target(
             ) == TargetType.ARM and predictor_config.precision(
@@ -282,16 +278,12 @@ class TestConv2dTransposeOp(AutoScanTest):
                 return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.ACCURACY_ERROR,
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
             "Lite has diff in a specific case on arm-int8. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=150)
 
 
 if __name__ == "__main__":

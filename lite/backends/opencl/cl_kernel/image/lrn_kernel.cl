@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#include <cl_common.h>
 
 __kernel void lrn(__read_only image2d_t input,
                   __write_only image2d_t output,
@@ -31,19 +31,21 @@ __kernel void lrn(__read_only image2d_t input,
   const int out_c2 = out_c0 + 2;
   const int out_c3 = out_c0 + 3;
 
-  const int pad = (local_size - 1) / 2;
-  const int start = out_c0 - pad;
-  const int end = out_c0 + pad;
+  CL_DTYPE square0 = CONVERT_TYPE_TO(0.0f, CL_DTYPE);
+  CL_DTYPE square1 = CONVERT_TYPE_TO(0.0f, CL_DTYPE);
+  CL_DTYPE square2 = CONVERT_TYPE_TO(0.0f, CL_DTYPE);
+  CL_DTYPE square3 = CONVERT_TYPE_TO(0.0f, CL_DTYPE);
+
+  int pad = local_size / 2;
+  int start = out_c0 - pad;
+  int end = out_c0 + pad;
   start = start > 0 ? start : 0;
   end = end < out_C - 1 ? end : out_C - 1;
-  float square0 = 0.0;
-  float square1 = 0.0;
-  float square2 = 0.0;
-  float square3 = 0.0;
+
   for (int i = start; i <= end; i++) {
     int input_c0 = i / 4;
     int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
+    input_pos.x = input_c0 * out_W + out_w;
     input_pos.y = out_nh;
     CL_DTYPE4 input_data =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
@@ -68,7 +70,7 @@ __kernel void lrn(__read_only image2d_t input,
   for (int i = start; i <= end; i++) {
     int input_c0 = i / 4;
     int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
+    input_pos.x = input_c0 * out_W + out_w;
     input_pos.y = out_nh;
     CL_DTYPE4 input_data =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
@@ -93,7 +95,7 @@ __kernel void lrn(__read_only image2d_t input,
   for (int i = start; i <= end; i++) {
     int input_c0 = i / 4;
     int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
+    input_pos.x = input_c0 * out_W + out_w;
     input_pos.y = out_nh;
     CL_DTYPE4 input_data =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
@@ -118,7 +120,7 @@ __kernel void lrn(__read_only image2d_t input,
   for (int i = start; i <= end; i++) {
     int input_c0 = i / 4;
     int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
+    input_pos.x = input_c0 * out_W + out_w;
     input_pos.y = out_nh;
     CL_DTYPE4 input_data =
         READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
@@ -141,23 +143,19 @@ __kernel void lrn(__read_only image2d_t input,
   int2 out_pos;
   out_pos.x = out_c * out_W + out_w;
   out_pos.y = out_nh;
-  CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, out_pos);
+  CL_DTYPE4 in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, out_pos);
 
-  float4 out_val;
-  out_val.x = input.x / (pow(k + alpha * (square0), beta));
+  CL_DTYPE4 out_val;
+  out_val.x = in0.x / (pow(k + alpha * (square0), beta));
   if (out_c1 < out_C) {
-    out_val.y = input.y / (pow(k + alpha * (square1), beta));
+    out_val.y = in0.y / (pow(k + alpha * (square1), beta));
   }
   if (out_c2 < out_C) {
-    out_val.z = input.z / (pow(k + alpha * (square1), beta));
+    out_val.z = in0.z / (pow(k + alpha * (square2), beta));
   }
   if (out_c3 < out_C) {
-    out_val.w = input.w / (pow(k + alpha * (square1), beta));
+    out_val.w = in0.w / (pow(k + alpha * (square3), beta));
   }
-#ifdef CL_DTYPE_half
-  CL_DTYPE4 out_data = convert_half4(out_val);
-#else
-  CL_DTYPE4 out_data = out_val;
-#endif
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out_data);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out_val);
 }
