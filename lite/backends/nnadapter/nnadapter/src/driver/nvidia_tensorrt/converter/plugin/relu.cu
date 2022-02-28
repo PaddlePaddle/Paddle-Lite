@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/plugin/relu.h"
+#include "driver/nvidia_tensorrt/converter/plugin/relu.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
