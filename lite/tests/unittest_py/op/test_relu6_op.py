@@ -29,6 +29,11 @@ class TestRelu6Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
+        self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -71,10 +76,15 @@ class TestRelu6Op(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape3 = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
+                    min_value=1, max_value=32), min_size=3, max_size=3))
+        in_shape1 = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_shape = in_shape1 + in_shape3
         threshold_data = draw(st.floats(min_value=6.0, max_value=6.0))
         build_op = OpConfig(
             type="relu6",
