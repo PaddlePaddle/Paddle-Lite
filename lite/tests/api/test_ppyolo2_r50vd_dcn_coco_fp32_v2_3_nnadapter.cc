@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,20 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_data_utility.h"
+#include "lite/tests/api/COCO2017_utility.h"
 #include "lite/tests/api/utility.h"
-#include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 10, "iteration times to run");
+DEFINE_int32(batch, 1, "batch of image");
+DEFINE_int32(channel, 3, "image channel");
+DEFINE_int32(height, 640, "image height");
+DEFINE_int32(width, 640, "image width");
 
 namespace paddle {
 namespace lite {
 
-TEST(ch_ppocr_mobile_v2_0_det,
-     test_ch_ppocr_mobile_v2_0_det_fp32_v2_0_nnadapter) {
+TEST(ppyolo2_r50vd_dcn, test_ppyolo2_r50vd_dcn_coco_fp32_v2_3_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,6 +48,8 @@ TEST(ch_ppocr_mobile_v2_0_det,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  nnadapter_device_names.emplace_back("cambricon_mlu");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -70,69 +74,39 @@ TEST(ch_ppocr_mobile_v2_0_det,
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir =
-      FLAGS_data_dir + std::string("/ICDAR_2015_50/raw_data");
-  std::string out_data_dir =
-      FLAGS_data_dir +
-      std::string("/ICDAR_2015_50/ch_ppocr_mobile_v2_0_out_data");
-  std::string images_shape_path =
-      FLAGS_data_dir + std::string("/ICDAR_2015_50/images_shape.txt");
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
-  auto input_lines = ReadLines(images_shape_path);
-  std::vector<std::string> input_names;
-  std::vector<std::vector<int64_t>> input_shapes;
-  for (auto line : input_lines) {
-    input_names.push_back(Split(line, ":")[0]);
-    input_shapes.push_back(Split<int64_t>(Split(line, ":")[1], " "));
-  }
-
-  std::vector<std::vector<float>> raw_data;
-  std::vector<std::vector<float>> gt_data;
-  for (size_t i = 0; i < FLAGS_iteration; i++) {
-    raw_data.push_back(
-        ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
+  int input_size = 1;
+  for (auto i : input_shape) {
+    input_size *= i;
   }
 
   FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
+    SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
     predictor->Run();
   }
 
+  std::vector<std::vector<float>> out_rets;
+  out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
-  std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+    SetDetectionInput(predictor, input_shape, raw_data[i], input_size);
 
     double start = GetCurrentUS();
     predictor->Run();
     cost_time += (GetCurrentUS() - start);
 
     auto output_tensor = predictor->GetOutput(0);
-    auto output_shape = output_tensor->shape();
-    auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 4UL);
-
-    int64_t output_size = 1;
-    for (auto dim : output_shape) {
-      output_size *= dim;
-    }
-    std::vector<float> ret(output_size);
-    memcpy(ret.data(), output_data, sizeof(float) * output_size);
-    results.push_back(ret);
-    gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
-  }
-
-  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
-    float acc = CalOutAccuracy(results, gt_data, abs_error);
-    LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    CHECK(output_tensor);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup
+            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 }
