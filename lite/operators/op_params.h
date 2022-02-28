@@ -300,6 +300,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0f};
   float hard_swish_scale{6.0f};
   float hard_swish_offset{3.0f};
+  // swish param
+  float swish_scale{6.0f};
   // thresholded_relu
   float relu_threshold{1.0f};
   // elu
@@ -378,6 +380,9 @@ struct ConvParam : ParamBase {
   bool fuse_relu{false};  // only used in mkldnn kernel
   bool fuse_sigmoid{false};
   bool fuse_tanh{false};
+  bool fuse_swish{false};
+  bool fuse_exp{false};
+  bool fuse_abs{false};
   bool use_quantizer{
       false};  // set true for op that should be quantized, only used for cpu
   bool fuse_residual_connection{false};

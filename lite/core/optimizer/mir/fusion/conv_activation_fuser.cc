@@ -120,6 +120,14 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetAttr("fuse_sigmoid", true);
   } else if (act_type_ == "tanh_act") {
     op_desc.SetAttr("fuse_tanh", true);
+  } else if (act_type_ == "swish") {
+    float scale = act_op_desc.GetAttr<float>("scale");
+    op_desc.SetAttr("swish_scale", scale);
+    op_desc.SetAttr("fuse_swish", true);
+  } else if (act_type_ == "exp_act") {
+    op_desc.SetAttr("fuse_exp", true);
+  } else if (act_type_ == "abs_act") {
+    op_desc.SetAttr("fuse_abs", true);
   }
 
   return op_desc;

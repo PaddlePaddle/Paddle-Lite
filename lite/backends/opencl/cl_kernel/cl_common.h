@@ -143,6 +143,18 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
 #endif
 
+#ifdef SWISH
+  output = in / (1 + exp(-(CL_DTYPE)ACT_SCALE * in));
+#endif
+
+#ifdef EXP
+  output = exp(in);
+#endif
+
+#ifdef ABS
+  output = fabs(in);
+#endif
+
   return output;
 }
 
@@ -196,6 +208,19 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #ifdef TANH
   output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
 #endif
+
+#ifdef SWISH
+  output = in / (1 + exp(-(CL_DTYPE)ACT_SCALE * in));
+#endif
+
+#ifdef EXP
+  output = exp(in);
+#endif
+
+#ifdef ABS
+  output = fabs(in);
+#endif
+
   return output;
 }
 

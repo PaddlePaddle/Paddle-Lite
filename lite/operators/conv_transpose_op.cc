@@ -187,8 +187,19 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
       param_.activation_param.active_type = lite_api::ActivationType::kSigmoid;
       param_.fuse_sigmoid = true;
     } else if (act_type == "tanh_act") {
-      param_.activation_param.active_type == lite_api::ActivationType::kTanh;
+      param_.activation_param.active_type = lite_api::ActivationType::kTanh;
       param_.fuse_tanh = true;
+    } else if (act_type == "fuse_swish") {
+      param_.activation_param.swish_scale =
+          op_desc.GetAttr<float>("swish_scale");
+      param_.activation_param.active_type = lite_api::ActivationType::kSwish;
+      param_.fuse_swish = true;
+    } else if (act_type == "fuse_exp") {
+      param_.activation_param.active_type = lite_api::ActivationType::kExp;
+      param_.fuse_exp = true;
+    } else if (act_type == "fuse_abs") {
+      param_.activation_param.active_type = lite_api::ActivationType::kAbs;
+      param_.fuse_abs = true;
     } else if (act_type == "relu6") {
       param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
       param_.activation_param.Relu_clipped_coef =

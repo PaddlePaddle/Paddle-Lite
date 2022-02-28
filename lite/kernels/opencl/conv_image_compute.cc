@@ -664,6 +664,17 @@ void ConvImageCompute::PrepareForRun() {
                lite_api::ActivationType::kTanh) {
       build_options_single += " -DTANH";
     } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kSwish) {
+      std::string scale =
+          std::to_string(conv_param_->activation_param.swish_scale);
+      build_options_single += " -DSWISH -DACT_SCALE=" + scale + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kAbs) {
+      build_options_single += " -DABS";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kExp) {
+      build_options_single += " -DEXP";
+    } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kPRelu) {
       std::string prelu_mode = conv_param_->activation_param.Prelu_mode;
       build_options_single += " -DPRELU";
