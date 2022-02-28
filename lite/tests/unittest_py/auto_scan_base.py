@@ -259,8 +259,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff, max_diff : {}, index : {}".format(
-                            diff.max(), diff.argmax()))
+                        "Output has diff, max_diff = {}, base = {}, arr = {}".
+                        format(diff.max(), base, arr))
             # arr=[1, K], base=[k]
             elif base_len < arr_len and (arr_shape[0] == 1 or
                                          arr_shape[-1] == 1):
@@ -289,8 +289,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff, max_diff : {}, index : {}".format(
-                            diff.max(), diff.argmax()))
+                        "Output has diff, max_diff = {}, base = {}, arr = {}".
+                        format(diff.max(), base, arr))
             else:
                 self.assertTrue(
                     base.shape == arr.shape,
@@ -309,10 +309,12 @@ class AutoScanBaseTest(unittest.TestCase):
                 res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
                 self.assertTrue(res, "Output has diff. ")
             else:
+                diff = abs(base - arr)
                 self.assertTrue(
                     np.allclose(
                         base, arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
+                    "Output has diff, max_diff = {}, base = {}, arr = {}".
+                    format(diff.max(), base, arr))
 
     @abc.abstractmethod
     def assert_tensors_near(self,
