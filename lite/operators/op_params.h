@@ -378,6 +378,7 @@ struct ConvParam : ParamBase {
   bool use_mkldnn{false};
   bool fuse_relu{false};  // only used in mkldnn kernel
   bool fuse_sigmoid{false};
+  bool fuse_tanh{false};
   bool use_quantizer{
       false};  // set true for op that should be quantized, only used for cpu
   bool fuse_residual_connection{false};
