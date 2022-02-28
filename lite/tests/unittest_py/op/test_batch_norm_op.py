@@ -66,6 +66,11 @@ class TestBatchNormOp(AutoScanTest):
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -77,7 +82,6 @@ class TestBatchNormOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=32), min_size=4, max_size=4))
-        is_test_val = draw(st.sampled_from([True, False]))
         epsilon = draw(st.floats(min_value=0.00001, max_value=0.001))
         momentum = draw(st.floats(min_value=0.1, max_value=0.9))
 
@@ -152,8 +156,7 @@ class TestBatchNormOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=250)
 
 
 if __name__ == "__main__":
