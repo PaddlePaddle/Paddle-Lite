@@ -661,6 +661,9 @@ void ConvImageCompute::PrepareForRun() {
       build_options_single += " -DHARD_SIGMOID -DHARD_SIGMOID_SLOPE=" + slope +
                               "f" + " -DHARD_SIGMOID_OFFSET=" + offset + "f";
     } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kTanh) {
+      build_options_single += " -DTANH";
+    } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kPRelu) {
       std::string prelu_mode = conv_param_->activation_param.Prelu_mode;
       build_options_single += " -DPRELU";

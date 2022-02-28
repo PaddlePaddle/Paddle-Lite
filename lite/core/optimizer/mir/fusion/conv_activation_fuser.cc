@@ -118,6 +118,8 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetInput("Prelu_alpha", {matched.at("alpha")->arg()->name});
   } else if (act_type_ == "sigmoid") {
     op_desc.SetAttr("fuse_sigmoid", true);
+  } else if (act_type_ == "tanh_act") {
+    op_desc.SetAttr("fuse_tanh", true);
   }
 
   return op_desc;

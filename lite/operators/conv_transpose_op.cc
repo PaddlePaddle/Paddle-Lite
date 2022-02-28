@@ -186,6 +186,9 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
     } else if (act_type == "sigmoid") {
       param_.activation_param.active_type = lite_api::ActivationType::kSigmoid;
       param_.fuse_sigmoid = true;
+    } else if (act_type == "tanh_act") {
+      param_.activation_param.active_type == lite_api::ActivationType::kTanh;
+      param_.fuse_tanh = true;
     } else if (act_type == "relu6") {
       param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
       param_.activation_param.Relu_clipped_coef =
