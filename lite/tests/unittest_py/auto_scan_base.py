@@ -340,21 +340,11 @@ class AutoScanBaseTest(unittest.TestCase):
                     "/target_trans", "__Mangled_1", "/precision_trans"
                 ]
                 paddlekey = key
-<<<<<<< HEAD
-                if (key.rfind("/precision_trans") != -1):
-                    paddlekey = key.split("/")[0]
-                if index > 0:
-                    paddlekey = key[0:index]
-                index = key.rfind(other_str)
-                if index > 0:
-                    paddlekey = key[0:index]
-=======
                 for s_str in suffix_str:
                     index = key.rfind(s_str)
                     if index > 0:
                         paddlekey = key[0:index]
 
->>>>>>> official/develop
                 if (paddlekey == "saved_mean" or
                         paddlekey == "saved_variance" or
                         paddlekey == "mean_data" or
