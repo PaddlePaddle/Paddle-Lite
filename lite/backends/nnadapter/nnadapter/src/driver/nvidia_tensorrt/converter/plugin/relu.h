@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "driver/nvidia_tensorrt/plugin/plugin.h"
+#include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
