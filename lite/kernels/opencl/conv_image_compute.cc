@@ -86,6 +86,7 @@ void ConvImageCompute::PrepareForRun() {
   groups_ = conv_param_->groups;
   fuse_eltwise_op_type_ = conv_param_->fuse_elementwise_op_type;
   relu_fused_ = conv_param_->fuse_relu;
+  sigmoid_fused_ = conv_param_->fuse_sigmoid;
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
   offset_w_ = filter_tensor_w_ / 2 - pad_left_;
@@ -97,6 +98,7 @@ void ConvImageCompute::PrepareForRun() {
 
 #ifdef LITE_WITH_LOG
   VLOG(3) << "Is relu fused? / " << (relu_fused_ ? "Yes" : "No");
+  VLOG(3) << "Is sigmoid fused? / " << (sigmoid_fused_ ? "Yes" : "No");
   VLOG(3) << "groups:" << groups_ << " stride_h_:" << stride_h_
           << " stride_w_:" << stride_w_ << " pad_left_:" << pad_left_
           << " pad_up_:" << pad_up_ << " filter_tensor_h_:" << filter_tensor_h_
@@ -610,6 +612,7 @@ void ConvImageCompute::PrepareForRun() {
   std::string build_options_single{""};
   // relu options
   VLOG(3) << "relu_fused_:" << relu_fused_
+          << " sigmoid_fused_:" << sigmoid_fused_
           << " conv_param_->activation_param.active_type:"
           << static_cast<int>(conv_param_->activation_param.active_type)
           << " conv_param_->activation_param.has_active:"
@@ -626,6 +629,9 @@ void ConvImageCompute::PrepareForRun() {
     if (conv_param_->activation_param.active_type ==
         lite_api::ActivationType::kRelu) {
       build_options_single += " -DRELU";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kSigmoid) {
+      build_options_single += " -DSIGMOID";
     } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kRelu6) {
       build_options_single += " -DRELU6";
@@ -2764,6 +2770,7 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "offset_:" << offset_;
   LOG(INFO) << "groups_:" << groups_;
   LOG(INFO) << "relu_fused_:" << relu_fused_;
+  LOG(INFO) << "sigmoid_fused_:" << sigmoid_fused_;
   LOG(INFO) << "has_bias_:" << has_bias_;
   LOG(INFO) << "fuse_eltwise_op_type_:" << fuse_eltwise_op_type_;
 
