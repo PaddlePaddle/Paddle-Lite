@@ -144,6 +144,7 @@ Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构
      - armv7:16 / armv8:21
 
 
+
 [^2]Paddle Lite 支持的最低安卓版本是 4.1（芯片版本为 ARMv7 时）或 5.0（芯片版本为 ARMv8 时），可通过 \ ``--android_api_level``\  选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
 
 .. list-table::
