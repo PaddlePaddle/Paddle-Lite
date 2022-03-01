@@ -259,8 +259,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff, max_diff : {}, index : {}".format(
-                            diff.max(), diff.argmax()))
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
             # arr=[1, K], base=[k]
             elif base_len < arr_len and (arr_shape[0] == 1 or
                                          arr_shape[-1] == 1):
@@ -289,8 +289,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff, max_diff : {}, index : {}".format(
-                            diff.max(), diff.argmax()))
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
             else:
                 self.assertTrue(
                     base.shape == arr.shape,
@@ -309,10 +309,19 @@ class AutoScanBaseTest(unittest.TestCase):
                 res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
                 self.assertTrue(res, "Output has diff. ")
             else:
-                self.assertTrue(
-                    np.allclose(
-                        base, arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
+                diff = abs(base - arr)
+                if diff.size != 0:
+                    self.assertTrue(
+                        np.allclose(
+                            base, arr, atol=atol, rtol=rtol),
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            base, arr, atol=atol, rtol=rtol),
+                        "Output has diff,\nbase={}, \narr={}".format(base,
+                                                                     arr))
 
     @abc.abstractmethod
     def assert_tensors_near(self,
@@ -588,7 +597,7 @@ class AutoScanBaseTest(unittest.TestCase):
             base_config = self.create_inference_config(ir_optim=False)
             results.append(
                 self.run_test_config(model, params, base_config, feed_data))
-
+            flag_precision_fp16 = False
             for paddlelite_config in paddlelite_configs:
                 pred_config = paddlelite_config.value()
 
@@ -597,7 +606,7 @@ class AutoScanBaseTest(unittest.TestCase):
                         model, params, feed_data, pred_config)
                     results.append(result)
                     self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
+                                             results[0], flag_precision_fp16)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
