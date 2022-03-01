@@ -2297,7 +2297,7 @@ int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
                                             NNAdapterOperand** output_operands);
 
 /**
- * Check whether the operations of the target model is supported by the target
+ * Check whether the operations of the target model are supported by the target
  * devices.
  *
  * Available since version 1.

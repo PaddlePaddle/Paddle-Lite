@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <vector>
 #include "driver/amlogic_npu/converter/converter.h"
-#include "driver/amlogic_npu/converter/validator.h"
 #include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
