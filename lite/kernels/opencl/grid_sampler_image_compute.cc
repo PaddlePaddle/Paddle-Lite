@@ -47,10 +47,23 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     bool align_corners = grid_param_->align_corners;
     build_options_ = align_corners ? " -DALIGN_CORNER " : "";
     std::string padding_mode = grid_param_->padding_mode;
-    if (padding_mode == "border") {
+    std::string mode = grid_param_->mode;
+    if (padding_mode == "zeros") {
+      build_options_ += "";
+    } else if (padding_mode == "border") {
       build_options_ += " -DBORDER ";
     } else if (padding_mode == "reflection") {
       build_options_ += " -DREFLECTION ";
+    } else {
+      LOG(FATAL) << "Unsupported grid sampler with padding mode:"
+                 << padding_mode;
+    }
+    if (mode == "nearest") {
+      build_options_ += " -DNEAREST ";
+    } else if (mode == "bilinear") {
+      build_options_ += " -DBILINEAR ";
+    } else {
+      LOG(FATAL) << "Unsupported grid sampler with interp mode:" << mode;
     }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -67,12 +80,6 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void ReInitWhenNeeded() override {
     grid_param_ = param_.get_mutable<param_t>();
-    bool align_corners = grid_param_->align_corners;
-    std::string padding_mode = grid_param_->padding_mode;
-    std::string mode = grid_param_->mode;
-    if (mode != "bilinear") {
-      LOG(FATAL) << "Unsupported grid samper with interpolate mode:" << mode;
-    }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
