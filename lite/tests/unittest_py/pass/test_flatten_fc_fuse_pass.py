@@ -56,37 +56,30 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
         #opencl
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        #arm: in_shape > 16 has diff, It may be an accuracy problem
-        #opencl: has diff
-        #in_num_col_dims == start_axis == 1 is right, Other case has diff
-        # get input&output shape, get op attributes
+        padding_weights = program_config.ops[1].attrs["padding_weights"]
         if predictor_config.target() == TargetType.ARM:
-            x_shape = list(program_config.inputs["input_data_x"].shape)
-            in_num_col_dims = program_config.ops[1].attrs["in_num_col_dims"]
-            start_axis = program_config.ops[0].attrs["start_axis"]
-            padding_weights = program_config.ops[1].attrs["padding_weights"]
-            if max(
-                    x_shape
-            ) > 16 or in_num_col_dims != 1 or start_axis != 1 or padding_weights:
+            if padding_weights:
                 return False
         return True
 
@@ -95,13 +88,19 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=16), min_size=2, max_size=4))
-        padding_weights = draw(st.sampled_from([True, False]))
+        padding_weights = draw(st.sampled_from([False, True]))
+        # OpenCL dose not support this attribute
+        if (self.get_target() == 'OpenCL'):
+            padding_weights = False
         start_axis = draw(
             st.integers(
                 min_value=0, max_value=len(in_shape) - 1))
         in_num_col_dims = draw(
             st.integers(
-                min_value=0, max_value=len(in_shape) - 1))
+                min_value=1, max_value=len(in_shape) - 1))
+
+        assume(in_num_col_dims < start_axis + 1)
+
         stop_axis = draw(
             st.integers(
                 min_value=start_axis, max_value=len(in_shape) - 1))
@@ -200,7 +199,7 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=500,
+            max_examples=100,
             passes=["lite_flatten_fc_fuse_pass"])
 
 
