@@ -63,7 +63,7 @@ void fill_bias_fc<float16_t>(float16_t *out,
         vst1q_f16(ptr_out, vout1);
         vst1q_f16(ptr_out + 8, vout2);
         vst1q_f16(ptr_out + 16, vout3);
-        vst1q_f16(ptr_out + 25, vout4);
+        vst1q_f16(ptr_out + 24, vout4);
 
         ptr_out += 32;
         ptr_bias += 32;
@@ -109,7 +109,7 @@ void fill_bias_fc<float16_t>(float16_t *out,
         vst1q_f16(ptr_out, vout1);
         vst1q_f16(ptr_out + 8, vout2);
         vst1q_f16(ptr_out + 16, vout3);
-        vst1q_f16(ptr_out + 25, vout4);
+        vst1q_f16(ptr_out + 24, vout4);
 
         ptr_out += 32;
         ptr_bias += 32;

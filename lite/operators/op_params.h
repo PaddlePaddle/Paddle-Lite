@@ -1066,7 +1066,8 @@ struct SequencePoolParam : ParamBase {
 
 struct SequenceConvParam : ParamBase {
   const lite::Tensor* X{};
-  const lite::Tensor* Filter{};
+  // not const for python unit_test
+  lite::Tensor* Filter{};
   lite::Tensor* Out{};
   int contextStart{0};
   int contextStride{1};
