@@ -48,7 +48,7 @@ void SoftmaxImageCompute::PrepareForRun() {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->dim_[3]);
             int output_c = static_cast<int>(output_buffer_->dim_[3]);
-            if (input_c >= 3 && output_c >= 3 && axis == 1) {
+            if (input_c >= 3 && output_c >= 3 && input_dims.size() == 4 && axis == 1) {
                 should_use_mps = true;
             }
         }
@@ -91,8 +91,8 @@ void SoftmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
 
-    if (input_dims.size() != 4) {
-        LOG(FATAL) << "only support input with rank(dim)=4";
+    if (input_dims.size() != 4 && input_dims.size() != 2) {
+        LOG(FATAL) << "only support input with rank(dim)=4 and 2";
         return;
     }
 
@@ -111,6 +111,10 @@ void SoftmaxImageCompute::setup_without_mps() {
             function_name = "softmax_w_d3_common";
         }
     }
+    if (input_dims.size() == 2) {
+        function_name = "softmax_dim2_common";
+    }
+
     function_name_ = function_name;
 
     // pipline

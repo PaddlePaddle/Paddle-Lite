@@ -200,3 +200,45 @@ kernel void softmax_h_d3_common(texture2d_array<ftype, access::read> inTexture[[
     result_vector = exp(result_vector - max_vector) / sum_vector;
     outTexture.write(result_vector, gid.xy, gid.z);
 }
+
+kernel void softmax_dim2_common(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant SoftmaxParam2& sp[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+    // caculate sum
+    ftype4 max_vector = 0;
+    int w = sp.W % 4 == 0 ? sp.W / 4 : sp.W / 4 + 1;
+    int res = sp.W % 4 == 0 ? 4 : sp.W % 4;
+    ftype max_num = 0;
+    ftype sum_num = 0;
+    for (int z = 0; z < w; z++) {
+        ftype4 temp_value_vector = inTexture.read(uint2(gid.x, gid.y), z);
+        max_vector = max(temp_value_vector, max_vector);
+    }
+    for (int z = 0; z < 4; z++) {
+        max_num = max(max_vector[z], max_num);
+    }
+
+    // caculate sum
+    ftype4 sum_vector = 0.0;
+    for (int z = 0; z < w - 1; z++) {
+        ftype4 tem_value_vector = inTexture.read(uint2(gid.x, gid.y), z);
+        sum_vector += exp(tem_value_vector - max_num);
+    }
+    for (int z = 0; z < 4; z++) {
+        sum_num += sum_vector[z];
+    }
+    ftype4 tem_value_vector = inTexture.read(uint2(gid.x, gid.y), w - 1);
+    for (int z = 0; z < res; z++) {
+        sum_num += exp(tem_value_vector[z] - max_num);
+    }
+
+    // calculate output
+    ftype4 result_vector = inTexture.read(uint2(gid.x, gid.y), gid.z);
+    result_vector = exp(result_vector - max_num) / sum_num;
+    outTexture.write(result_vector, uint2(gid.x, gid.y), gid.z);
+}
