@@ -190,7 +190,7 @@ void LightPredictor::BuildRuntimeProgram(
 
 void LightPredictor::DequantizeWeight() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
-  CHECK(program_desc != NULL);
+  CHECK(program_desc != nullptr);
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \
