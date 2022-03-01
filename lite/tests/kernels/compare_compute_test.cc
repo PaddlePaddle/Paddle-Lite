@@ -261,9 +261,6 @@ TEST(Compare, precision) {
   TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {5}, 3);
 
   TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
-#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  return;
-#endif
   TestCompare<int64_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
 }
 

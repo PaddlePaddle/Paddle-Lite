@@ -36,6 +36,9 @@ class TestPowOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

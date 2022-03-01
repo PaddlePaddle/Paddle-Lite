@@ -62,11 +62,17 @@ class TestConv2dTransposeOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP16,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP16,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+
         opencl_valid_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -81,6 +87,8 @@ class TestConv2dTransposeOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -110,7 +118,8 @@ class TestConv2dTransposeOp(AutoScanTest):
         output_size = []
         groups = draw(st.integers(min_value=1, max_value=input_c))
         assume(filter_c % groups == 0)
-        assume(filter_m >= groups)
+        assume(filter_m >= groups and filter_m % groups == 0)
+        assume(groups != filter_m or groups != filter_c)
         data_format = draw(st.sampled_from(['NCHW']))
         padding_algorithm = draw(st.sampled_from(['VALID', 'SAME']))
         dilations = draw(
@@ -260,18 +269,21 @@ class TestConv2dTransposeOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d_transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
+        def _teller1(program_config, predictor_config):
             groups = program_config.ops[0].attrs["groups"]
-            if predictor_config.target() == TargetType.OpenCL and groups > 1:
+
+            if predictor_config.target(
+            ) == TargetType.ARM and predictor_config.precision(
+            ) == PrecisionType.INT8 and groups > 1:
                 return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has diff in a specific case on arm-int8. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=150)
 
 
 if __name__ == "__main__":

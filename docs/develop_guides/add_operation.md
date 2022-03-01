@@ -211,6 +211,93 @@ Paddle Lite 有 Host, ARM, x86, OpenCL, Metal, NNAdapter 等多种后端，同�
 - 在 Paddle-Lite/lite/kernels/opencl/CMakeLists.txt 中添加
     ```add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)```
 
+### 3.3 Metal 端
+以 Metal 端 Argmax 实现为例说明：
+- 在 Paddle-Lite/lite/kernels/metal/image_op 目录下新建 [argmax_image_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/metal/image_op/argmax_image_compute.h) 文件，定义 ArgmaxImageCompute 类，并继承 KernelLite，ArgmaxImageCompute 类主要代码如下：
+    ```c++
+    class ArgmaxImageCompute
+        : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+        using param_t = operators::ArgmaxParam;
+
+       public:
+        void PrepareForRun() override;
+        void Run() override;
+        void SaveOutput() override {
+            MetalDebug::SaveOutput((use_mps_ ? ("MPS_argmax") : function_name_), output_buffer_);
+        };
+        virtual ~ArgmaxImageCompute();
+    };
+    ```
+    重点介绍如下 3 个功能函数：
+    - `PrepareForRun` 函数只在第一次运行时执行，主要功能为确定运行所需的参数、kernel 名字、编译 kernel 代码；
+    - `Run` 函数在每次运行时均执行，主要功能为分配/获取 tensor 数据、执行 Metal kernel 函数；
+    - `SaveOutput` 函数用于 Metal 每层结果的输出。
+
+
+- 在 Paddle-Lite/lite/kernels/metal/image_op 目录下新建 argmax_image_compute.mm 文件，主要实现 PrepareForRun、Run 函数，代码如下：
+    ```c++
+    void ArgmaxImageCompute::PrepareForRun() {
+        auto& context = ctx_->As<MTLContext>();
+        metal_context_ = (MetalContext*)context.context();
+
+        const auto& param = this->Param<param_t>();
+        auto output_dims = param.Out->dims();
+
+    #ifdef LITE_WITH_METAL_FULL
+    #else
+        input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+        output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
+            metal_context_, MetalImage::FourDimFrom(output_dims));
+    #endif
+
+        // use mps or not
+        bool should_use_mps = false;
+        if (@available(iOS 12.0, *)) {
+            if (metal_context_->use_mps()) {
+                if( param.Axis == 1) should_use_mps = true;
+            }
+        }
+        use_mps_ = should_use_mps;
+        if (use_mps_) {
+            setup_with_mps();
+        } else {
+            setup_without_mps();
+        }
+    }
+
+    void ArgmaxImageCompute::Run() {
+        @autoreleasepool {
+            if (use_mps_) {
+                run_with_mps();
+            } else {
+                run_without_mps();
+            }
+        }
+    }
+
+    REGISTER_LITE_KERNEL(arg_max,
+        kMetal,
+        kFloat,
+        kMetalTexture2DArray,
+        paddle::lite::kernels::metal::ArgmaxImageCompute,
+        Int32)
+        .BindInput("X",
+            {LiteType::GetTensorTy(TARGET(kMetal),
+                PRECISION(kFloat),
+                DATALAYOUT(kMetalTexture2DArray))})
+        .BindOutput("Out",
+            {LiteType::GetTensorTy(TARGET(kMetal),
+                PRECISION(kInt64),
+                DATALAYOUT(kMetalTexture2DArray))})
+        .Finalize();
+    ```
+    Metal kernel 的实现方式有两种分别为 MPS 和非 MPS，在 PrepareForRun 函数中通过 use_mps_ 来判断具体采用的实现方式。
+
+
+- 在 Paddle-Lite/lite/kernels/metal/CMakeLists.txt 中添加
+    ```add_kernel(argmax_metal_image METAL basic SRCS image_op/argmax_image_compute.mm)```
+
+
 
 ## 4. 添加 Argmax 实现
 ### 4.1 ARM 端
@@ -260,6 +347,36 @@ Paddle Lite 有 Host, ARM, x86, OpenCL, Metal, NNAdapter 等多种后端，同�
 
 ### 4.2 OpenCL 端
 - 在 Paddle-Lite/lite/backends/opencl/cl_kernel/image/ 目录下新建 [argmax_kernel.cl](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/opencl/cl_kernel/image/argmax_kernel.cl) 文件，定义具体的 cl kernel 函数。
+
+### 4.3 Metal 端
+- 在 Paddle-Lite/lite/backends/metal/metal_kernel/texture/ 目录下新建 [MaxKernel.metal](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/metal/metal_kernel/texture/MaxKernel.metal) 文件，定义具体的 arg_max_c 函数，其中输入的数据格式为 texture2d_array 。
+    ```c++
+    kernel void arg_max_c(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+        texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+        constant ArgParam& param[[buffer(0)]],
+        uint3 gid[[thread_position_in_grid]]) {
+        if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+            gid.z >= outTexture.get_array_size())
+            return;
+
+        // dimensions = 4, CPU is NCHW, GPU is NHWC
+        if (param.orank == 4) {
+            int index = max_index(inTexture, gid.xy);
+            outTexture.write(ftype4(index, 0.0, 0.0, 0.0), gid.xy, gid.z);
+        }
+        // dimensions < 4, CPU is NCHW, GPU treat as NHWC
+        else {
+            uint ix = gid.z * 4;
+            uint iy = gid.x;
+            int index_r = max_index(inTexture, uint2(ix, iy));
+            int index_g = max_index(inTexture, uint2(ix + 1, iy));
+            int index_b = max_index(inTexture, uint2(ix + 2, iy));
+            int index_a = max_index(inTexture, uint2(ix + 3, iy));
+
+            outTexture.write(ftype4(index_r, index_g, index_b, index_a), gid.xy, gid.z);
+        }
+    }
+    ```
 
 ## 5. 添加 Argmax 单测
 目前有如下 2 种方式，其中基于 Autoscan 框架实现的 Python 单测代码具有覆盖度高、代码量少、支持与 Paddle 原生精度对齐等优点，因此推荐使用该方式。

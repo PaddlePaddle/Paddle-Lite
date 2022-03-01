@@ -39,23 +39,23 @@ class TestTranspose2Op(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
 
-        # opencl big diff
-        # leave them to opencl classmates
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
         # segmentation fault
         # metal_places = [
@@ -95,15 +95,22 @@ class TestTranspose2Op(AutoScanTest):
             # ToDo : 
             # fp16 can not be verified
 
-        def generate_X_data():
-            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
-
         axis_int32_data = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=3), min_size=4, max_size=4))
+                    min_value=0, max_value=3), min_size=3, max_size=4))
+        if (len(axis_int32_data) == 3):
+            assume(
+                sorted(axis_int32_data) == [0, 1, 2] and
+                axis_int32_data != [0, 1, 2])
+            in_shape = draw(st.sampled_from([[C, H, W]]))
+        elif (len(axis_int32_data) == 4):
+            assume(
+                sorted(axis_int32_data) == [0, 1, 2, 3] and
+                axis_int32_data != [0, 1, 2, 3])
 
-        assume(sorted(axis_int32_data) == [0, 1, 2, 3])
+        def generate_X_data():
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         transpose2_op = OpConfig(
             type="transpose2",
@@ -116,10 +123,9 @@ class TestTranspose2Op(AutoScanTest):
                 "use_mkldnn": use_mkldnn_data,
             })
         transpose2_op.outputs_dtype = {"output_data": in_dtype}
-
         program_config = ProgramConfig(
             ops=[transpose2_op],
-            weights={"XShape_data": TensorConfig(shape=[4])},
+            weights={"XShape_data": TensorConfig(shape=[len(in_shape)])},
             inputs={
                 "X_data": TensorConfig(data_gen=partial(generate_X_data)),
             },

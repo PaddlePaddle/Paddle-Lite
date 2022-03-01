@@ -446,14 +446,14 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "bne 1b\n"
 
 #define STORE_C8_REMAIN                \
-  "str q8, [%[tmp0]]\n"                \
-  "str q9, [%[tmp4]]\n"                \
-  "str q10, [%[tmp2]]\n"               \
-  "str q11, [%[tmp6]]\n"               \
-  "str q12, [%[tmp1]]\n"               \
-  "str q13, [%[tmp5]]\n"               \
-  "str q14, [%[tmp3]]\n"               \
-  "str q15, [%[tmp7]]\n"
+  "str q8,  [%[tmp0]]\n"               \
+  "str q12, [%[tmp0], 0x10]\n"         \
+  "str q10, [%[tmp0], 0x20]\n"         \
+  "str q14, [%[tmp0], 0x30]\n"         \
+  "str q9,  [%[tmp0], 0x40]\n"         \
+  "str q13, [%[tmp0], 0x50]\n"         \
+  "str q11, [%[tmp0], 0x60]\n"         \
+  "str q15, [%[tmp0], 0x70]\n"
 
 #define ASM_PARAM                     \
   :  [doutc0r0] "+r"(doutc0_ptr),    \
@@ -468,13 +468,6 @@ inline void prepack_input_nxwc4(const float16_t* din,
     [din_ptr] "+r"(din_hei_ptr)      \
   : [vbias] "w"(vbias),              \
     [tmp0] "r"(tmp0),                \
-    [tmp1] "r"(tmp1),                \
-    [tmp2] "r"(tmp2),                \
-    [tmp3] "r"(tmp3),                \
-    [tmp4] "r"(tmp4),                \
-    [tmp5] "r"(tmp5),                \
-    [tmp6] "r"(tmp6),                \
-    [tmp7] "r"(tmp7),                \
     [vzero] "w"(vzero),              \
     [valpha] "w"(valpha)             \
   : "cc", "memory", "v0", "v1", "v2", \
@@ -494,13 +487,6 @@ inline void prepack_input_nxwc4(const float16_t* din,
     [din_ptr] "+r"(din_hei_ptr)      \
   : [vbias] "w"(vbias),              \
     [tmp0] "r"(tmp0),                \
-    [tmp1] "r"(tmp1),                \
-    [tmp2] "r"(tmp2),                \
-    [tmp3] "r"(tmp3),                \
-    [tmp4] "r"(tmp4),                \
-    [tmp5] "r"(tmp5),                \
-    [tmp6] "r"(tmp6),                \
-    [tmp7] "r"(tmp7),                \
     [vzero] "w"(vzero),              \
     [voffset] "w"(voffset),          \
     [vthreshold] "w"(vthreshold),    \
@@ -514,13 +500,13 @@ inline void prepack_input_nxwc4(const float16_t* din,
 #define C8_OUT_REMAIN                \
   for (int j = 0; j < remain; j++) { \
     *doutc0_ptr++ = tmp0[j];         \
-    *doutc1_ptr++ = tmp1[j];         \
-    *doutc2_ptr++ = tmp2[j];         \
-    *doutc3_ptr++ = tmp3[j];         \
-    *doutc4_ptr++ = tmp4[j];         \
-    *doutc5_ptr++ = tmp5[j];         \
-    *doutc6_ptr++ = tmp6[j];         \
-    *doutc7_ptr++ = tmp7[j];         \
+    *doutc1_ptr++ = tmp0[j + 8];     \
+    *doutc2_ptr++ = tmp0[j + 16];    \
+    *doutc3_ptr++ = tmp0[j + 24];    \
+    *doutc4_ptr++ = tmp0[j + 32];    \
+    *doutc5_ptr++ = tmp0[j + 40];    \
+    *doutc6_ptr++ = tmp0[j + 48];    \
+    *doutc7_ptr++ = tmp0[j + 56];    \
   }
 #else
 #define INIT_C8                       \
@@ -827,14 +813,7 @@ static void write_to_oc8_fp16(const float16_t* din,
     }
   }
 #ifdef __aarch64__
-  float16_t tmp0[8] = {0.f};
-  float16_t tmp1[8] = {0.f};
-  float16_t tmp2[8] = {0.f};
-  float16_t tmp3[8] = {0.f};
-  float16_t tmp4[8] = {0.f};
-  float16_t tmp5[8] = {0.f};
-  float16_t tmp6[8] = {0.f};
-  float16_t tmp7[8] = {0.f};
+  float16_t tmp0[64] = {0.f};
   float16x8_t voffset = vdupq_n_f16(offset);
   float16x8_t vthreshold = vdupq_n_f16(threshold);
 #else

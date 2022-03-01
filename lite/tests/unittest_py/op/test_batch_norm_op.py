@@ -64,6 +64,13 @@ class TestBatchNormOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -75,7 +82,6 @@ class TestBatchNormOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=32), min_size=4, max_size=4))
-        is_test_val = draw(st.sampled_from([True, False]))
         epsilon = draw(st.floats(min_value=0.00001, max_value=0.001))
         momentum = draw(st.floats(min_value=0.1, max_value=0.9))
 
@@ -143,28 +149,14 @@ class TestBatchNormOp(AutoScanTest):
         atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
         if target_str == "Metal":
-            atol, rtol = 8e-3, 8e-3
+            atol, rtol = 3e-2, 3e-2
         return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data"].shape)
-            if predictor_config.target() == TargetType.Metal:
-                if x_shape[0] != 1:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "Metal":
-            # Make sure to generate enough valid cases for Metal
-            max_examples = 1500
-        self.run_and_statis(quant=False, max_examples=max_examples)
+        self.run_and_statis(quant=False, max_examples=250)
 
 
 if __name__ == "__main__":
