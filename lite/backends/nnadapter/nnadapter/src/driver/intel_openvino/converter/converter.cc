@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include "driver/intel_openvino/converter/converter.h"
 #include <unistd.h>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -69,8 +70,8 @@ std::shared_ptr<OutputNode> Converter::UpdateOutputNodeMap(
     core::Operand* operand, std::shared_ptr<OutputNode> output_node) {
   auto it = output_nodes_->find(operand);
   if (it == output_nodes_->end()) {
-    auto result = output_nodes_->insert(std::make_pair(
-        operand, std::vector<std::shared_ptr<OutputNode>>()));
+    auto result = output_nodes_->insert(
+        std::make_pair(operand, std::vector<std::shared_ptr<OutputNode>>()));
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
@@ -87,16 +88,21 @@ std::shared_ptr<OutputNode> Converter::ConvertToOutputNode(
     }
   }
   if (IsConstantOperand(operand)) {
-    auto constant_node = std::make_shared<default_opset::Constant>(ConvertToOVElementType(operand->type.precision),
-      ConvertToOVShape(dimensions), operand->buffer);
-    std::shared_ptr<OutputNode> output_node = std::make_shared<OutputNode>(constant_node->output(0));
+    auto constant_node = std::make_shared<default_opset::Constant>(
+        ConvertToOVElementType(operand->type.precision),
+        ConvertToOVShape(dimensions),
+        operand->buffer);
+    std::shared_ptr<OutputNode> output_node =
+        std::make_shared<OutputNode>(constant_node->output(0));
     UpdateOutputNodeMap(operand, output_node);
     return output_node;
   } else if (IsModelInputOperand(operand)) {
-    auto parameter_node = std::make_shared<default_opset::Parameter>(ConvertToOVElementType(operand->type.precision),
-      ConvertToOVShape(dimensions));
+    auto parameter_node = std::make_shared<default_opset::Parameter>(
+        ConvertToOVElementType(operand->type.precision),
+        ConvertToOVShape(dimensions));
     parameter_nodes_->push_back(parameter_node);
-    std::shared_ptr<OutputNode> output_node = std::make_shared<OutputNode>(parameter_node->output(0));
+    std::shared_ptr<OutputNode> output_node =
+        std::make_shared<OutputNode>(parameter_node->output(0));
     UpdateOutputNodeMap(operand, output_node);
     return output_node;
   }

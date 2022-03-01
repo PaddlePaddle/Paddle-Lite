@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/mat_mul.h"
 #include "driver/intel_openvino/converter/converter.h"
+#include "operation/mat_mul.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
@@ -33,8 +33,8 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
     y_node = converter->ConvertToOutputNode(y_operand);
   }
   // Create <MatMul> Node for Intel OpenVINO
-  std::shared_ptr<Node> node = std::make_shared<default_opset::MatMul>
-    (*x_node, *y_node, transpose_x, transpose_y);
+  std::shared_ptr<Node> node = std::make_shared<default_opset::MatMul>(
+      *x_node, *y_node, transpose_x, transpose_y);
   auto output_node = std::make_shared<OutputNode>(node->output(0));
   converter->UpdateOutputNodeMap(output_operand, output_node);
   return NNADAPTER_NO_ERROR;

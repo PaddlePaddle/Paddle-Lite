@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ namespace intel_openvino {
 
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  
+
   // Convert operand to Intel OpenVINO's OutputNode
   auto input0_node = converter->GetMappedOutputNode(input0_operand);
   if (!input0_node) {
@@ -35,11 +35,12 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   // Create <ElementWise> Node for Intel OpenVINO
   std::shared_ptr<OutputNode> output_node{nullptr};
   switch (operation->type) {
-#define CONVERT_ELEMENTWISE(type, class_name)                       \
-  case NNADAPTER_##type: {                                          \
-    std::shared_ptr<Node> node = std::make_shared<default_opset::class_name>(*input0_node, *input1_node); \
-    output_node = std::make_shared<OutputNode>(node->output(0)); \
-    converter->UpdateOutputNodeMap(output_operand, output_node); \
+#define CONVERT_ELEMENTWISE(type, class_name)                                 \
+  case NNADAPTER_##type: {                                                    \
+    std::shared_ptr<Node> node = std::make_shared<default_opset::class_name>( \
+        *input0_node, *input1_node);                                          \
+    output_node = std::make_shared<OutputNode>(node->output(0));              \
+    converter->UpdateOutputNodeMap(output_operand, output_node);              \
   } break;
     CONVERT_ELEMENTWISE(ADD, Add);
     CONVERT_ELEMENTWISE(SUB, Subtract);
@@ -61,9 +62,10 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
   case NNADAPTER_FUSED_##type: {                                              \
-    std::shared_ptr<Node> act_node = std::make_shared<default_opset::class_name>(*output_node); \
+    std::shared_ptr<Node> act_node =                                          \
+        std::make_shared<default_opset::class_name>(*output_node);            \
     auto act_output_node = std::make_shared<OutputNode>(act_node->output(0)); \
-    converter->UpdateOutputNodeMap(output_operand, act_output_node);                                    \
+    converter->UpdateOutputNodeMap(output_operand, act_output_node);          \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
 #undef CONVERT_UNARY_ACTIVATION

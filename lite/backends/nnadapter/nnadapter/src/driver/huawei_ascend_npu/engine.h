@@ -60,11 +60,6 @@ class Program {
               uint32_t output_count,
               core::Argument* output_arguments);
 
-  void Init() {
-    static InferenceEngine::Core 
-  }
-    
-
  private:
   void Clear();
   int CheckInputsAndOutputs(uint32_t input_count,

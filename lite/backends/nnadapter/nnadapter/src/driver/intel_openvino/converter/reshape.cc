@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ namespace intel_openvino {
 
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  
+
   // Convert operand to Intel OpenVINO's OutputNode
   auto input_node = converter->GetMappedOutputNode(input_operand);
   if (!input_node) {
@@ -38,13 +38,15 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
       if (shape_data[i] == 0 &&
           input_operand->type.dimensions.data[i] != NNADAPTER_UNKNOWN) {
         shape_data[i] = input_operand->type.dimensions.data[i];
-        
       }
     }
-    auto shape_node = AddConstOutputNode<int32_t>({shape_count}, std::vector<int32_t>(shape_data, shape_data + shape_count));
-    auto node = std::make_shared<default_opset::Reshape>(*input_node, *shape_node, true);
+    auto shape_node = AddConstOutputNode<int32_t>(
+        {shape_count},
+        std::vector<int32_t>(shape_data, shape_data + shape_count));
+    auto node = std::make_shared<default_opset::Reshape>(
+        *input_node, *shape_node, true);
     auto output_node = std::make_shared<OutputNode>(node->output(0));
-    converter->UpdateOutputNodeMap(output_operand, output_node); 
+    converter->UpdateOutputNodeMap(output_operand, output_node);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                          << OperandLifetimeCodeToString(

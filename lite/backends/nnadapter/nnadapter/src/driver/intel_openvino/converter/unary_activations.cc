@@ -30,11 +30,12 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
   }
 
   switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
-  case NNADAPTER_##type: {    \
-    std::shared_ptr<Node> node = std::make_shared<default_opset::class_name>(*input_node); \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                    \
+  case NNADAPTER_##type: {                                            \
+    std::shared_ptr<Node> node =                                      \
+        std::make_shared<default_opset::class_name>(*input_node);     \
     auto output_node = std::make_shared<OutputNode>(node->output(0)); \
-    converter->UpdateOutputNodeMap(output_operand, output_node); \
+    converter->UpdateOutputNodeMap(output_operand, output_node);      \
   } break;
     CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
     CONVERT_UNARY_ACTIVATION(RELU, Relu);

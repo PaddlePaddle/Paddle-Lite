@@ -20,7 +20,8 @@
 namespace nnadapter {
 namespace intel_openvino {
 
-int ConvertBatchNormalization(Converter* converter, core::Operation* operation) {
+int ConvertBatchNormalization(Converter* converter,
+                              core::Operation* operation) {
   BATCH_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert operand to Intel OpenVINO's OutputNode
@@ -33,8 +34,13 @@ int ConvertBatchNormalization(Converter* converter, core::Operation* operation) 
   auto mean_node = converter->ConvertToOutputNode(mean_operand);
   auto variance_node = converter->ConvertToOutputNode(variance_operand);
   // Create <BatchNormInference> Node for Intel OpenVINO
-  std::shared_ptr<Node> node = std::make_shared<default_opset::BatchNormInference>
-    (*input_node, *gamma_node, *beta_node, *mean_node, *variance_node, epsilon);
+  std::shared_ptr<Node> node =
+      std::make_shared<default_opset::BatchNormInference>(*input_node,
+                                                          *gamma_node,
+                                                          *beta_node,
+                                                          *mean_node,
+                                                          *variance_node,
+                                                          epsilon);
   auto output_node = std::make_shared<OutputNode>(node->output(0));
   converter->UpdateOutputNodeMap(output_operand, output_node);
   return NNADAPTER_NO_ERROR;

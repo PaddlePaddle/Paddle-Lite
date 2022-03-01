@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ Context::Context(void* device, const char* properties) : device_(device) {
         GetStringFromEnv(INTEL_OPENVINO_SELECT_DEVICE_NAMES);
   }
   if (!selected_device_names.empty()) {
-    selected_device_names_ = string_split<std::string>(selected_device_names, ",");
+    selected_device_names_ =
+        string_split<std::string>(selected_device_names, ",");
   } else {
     selected_device_names_ = std::vector<std::string>({0});
   }
@@ -56,12 +57,15 @@ Context::Context(void* device, const char* properties) : device_(device) {
 Context::~Context() {}
 
 int Program::Build(core::Model* model, core::Cache* cache) {
-  NNADAPTER_LOG(INFO) << "OpenVINO runtime version - " << ov::get_openvino_version();
+  NNADAPTER_LOG(INFO) << "OpenVINO runtime version - "
+                      << ov::get_openvino_version();
   // Initialize OpenVINO Runtime Core object
   ov_core_ = std::make_shared<ov::Core>();
-  NNADAPTER_LOG(INFO) << "NNAdapter has already loaded the OpenVINO Runtime Core!";
+  NNADAPTER_LOG(INFO)
+      << "NNAdapter has already loaded the OpenVINO Runtime Core!";
   auto device_name = context_->GetFirtSelectedDeviceName();
-  NNADAPTER_LOG(INFO) << device_name << " version - " << ov_core_->get_versions(device_name);
+  NNADAPTER_LOG(INFO) << device_name << " version - "
+                      << ov_core_->get_versions(device_name);
   return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
 }
 
@@ -96,17 +100,18 @@ int Program::BuildFromModel(core::Model* model) {
     const auto& type = operand->type;
     NNADAPTER_CHECK(output_nodes_.find(operand) != output_nodes_.end());
     output_types_[i] = type;
-    auto result_node = std::make_shared<default_opset::Result>(*output_nodes_[operand].back());
+    auto result_node =
+        std::make_shared<default_opset::Result>(*output_nodes_[operand].back());
     result_nodes_.push_back(result_node);
   }
   // Convert a NNAdapter model to an Intel OpenVINO's model
-  std::shared_ptr<ov::Model> ov_model = 
-    std::make_shared<ov::Model>(result_nodes_, parameter_nodes_, "openvino_graph");
-  compiled_ov_model_ = std::make_shared<ov::CompiledModel>(ov_core_->compile_model(ov_model, context_->GetFirtSelectedDeviceName()));
+  std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
+      result_nodes_, parameter_nodes_, "openvino_graph");
+  compiled_ov_model_ = std::make_shared<ov::CompiledModel>(
+      ov_core_->compile_model(ov_model, context_->GetFirtSelectedDeviceName()));
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
-
 
 int Program::CheckInputsAndOutputs(uint32_t input_count,
                                    core::Argument* input_arguments,
@@ -180,5 +185,5 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
-} // namespace intel_openvino
-} // namespace nnadapter
+}  // namespace intel_openvino
+}  // namespace nnadapter

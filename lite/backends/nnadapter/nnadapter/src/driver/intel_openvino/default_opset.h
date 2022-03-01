@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,5 +26,5 @@ using PadType = ov::op::PadType;
 using ElementType = ov::element::Type;
 using Shape = ov::Shape;
 
-} // namespace intel_openvino
-} // namespace nnadapter
+}  // namespace intel_openvino
+}  // namespace nnadapter

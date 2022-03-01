@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ namespace nnadapter {
 namespace intel_openvino {
 
 int OpenDevice(void** device) {
-    auto d = new Device();
-    if (!d) {
-        *device = nullptr;
-        NNADAPTER_LOG(FATAL) << "Failed to open device for intel_openvino.";
-        return NNADAPTER_OUT_OF_MEMORY;
-    }
-    *device = reinterpret_cast<void*>(d);
-    return NNADAPTER_NO_ERROR;
+  auto d = new Device();
+  if (!d) {
+    *device = nullptr;
+    NNADAPTER_LOG(FATAL) << "Failed to open device for intel_openvino.";
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *device = reinterpret_cast<void*>(d);
+  return NNADAPTER_NO_ERROR;
 }
 
 void CloseDevice(void* device) {
@@ -102,8 +102,8 @@ int ExecuteProgram(void* program,
       input_count, input_arguments, output_count, output_arguments);
 }
 
-} // namespace intel_openvino
-} // namespace nnadapter
+}  // namespace intel_openvino
+}  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     NNADAPTER_DEVICE_SYMBOL) = {

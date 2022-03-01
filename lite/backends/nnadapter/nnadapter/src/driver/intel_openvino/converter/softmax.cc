@@ -29,8 +29,8 @@ int ConvertSoftmax(Converter* converter, core::Operation* operation) {
     input_node = converter->ConvertToOutputNode(input_operand);
   }
   // Create <Softmax> Node for Intel OpenVINO
-  std::shared_ptr<Node> node = std::make_shared<default_opset::Softmax>
-    (*input_node, axis);
+  std::shared_ptr<Node> node =
+      std::make_shared<default_opset::Softmax>(*input_node, axis);
   auto output_node = std::make_shared<OutputNode>(node->output(0));
   converter->UpdateOutputNodeMap(output_operand, output_node);
   return NNADAPTER_NO_ERROR;
