@@ -125,18 +125,18 @@ class ConvOpLite : public OpLite {
         param_.activation_param.active_type =
             lite_api::ActivationType::kSigmoid;
         param_.fuse_sigmoid = true;
-      } else if (act_type == "tanh_act") {
+      } else if (act_type == "tanh") {
         param_.activation_param.active_type = lite_api::ActivationType::kTanh;
         param_.fuse_tanh = true;
-      } else if (act_type == "fuse_swish") {
+      } else if (act_type == "swish") {
         param_.activation_param.swish_scale =
             op_desc.GetAttr<float>("swish_scale");
         param_.activation_param.active_type = lite_api::ActivationType::kSwish;
         param_.fuse_swish = true;
-      } else if (act_type == "fuse_exp") {
+      } else if (act_type == "exp") {
         param_.activation_param.active_type = lite_api::ActivationType::kExp;
         param_.fuse_exp = true;
-      } else if (act_type == "fuse_abs") {
+      } else if (act_type == "abs") {
         param_.activation_param.active_type = lite_api::ActivationType::kAbs;
         param_.fuse_abs = true;
       } else if (act_type == "relu6") {
