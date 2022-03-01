@@ -236,6 +236,11 @@ Context::Context(void* device, const char* properties) : device_(device) {
                            << " but the runtime's is "
                            << nnapi()->android_sdk_version;
   }
+  if (key_values.count(ANDROID_NNAPI_GET_SUPPORT_OPS)) {
+    get_nnapi_ops_support_flag_ = true;
+    NNADAPTER_LOG(INFO) << "get_op_support_list: "
+                        << get_nnapi_ops_support_flag_;
+  }
 }
 
 Context::~Context() {}
@@ -367,6 +372,26 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_LOG(FATAL) << "Failed to finish the NNAPI model(" << result
                          << ")!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  // Determine the list of ops the device actually supports
+  if (!context_->selected_devices()->empty()) {
+    const auto nnapi_model_size = model->operations.size();
+    std::unique_ptr<bool[]> nnapi_ops_support_flags(new bool[nnapi_model_size]);
+    if (context_->get_op_support_list()) {
+      result = nnapi()->ANeuralNetworksModel_getSupportedOperationsForDevices(
+          model_,
+          context_->selected_devices()->data(),
+          context_->selected_devices()->size(),
+          nnapi_ops_support_flags.get());
+    } else {
+      NNADAPTER_LOG(FATAL) << "Failed to get supported operations for devices("
+                           << result << ")!";
+    }
+    int nnapi_op_index = 0;
+    for (auto operation : model->operations) {
+      NNADAPTER_LOG(INFO) << OperationTypeToString(operation.type) << "->"
+                          << nnapi_ops_support_flags[nnapi_op_index++];
+    }
   }
   // Build model
   if (!context_->selected_devices()->empty()) {

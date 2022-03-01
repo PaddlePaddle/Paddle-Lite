@@ -50,6 +50,8 @@ namespace android_nnapi {
 // Constants of NNAPI
 #define ANDROID_NNAPI_REFERENCE_DEVICE_NAME "nnapi-reference"
 
+#define ANDROID_NNAPI_GET_SUPPORT_OPS "ANDROID_NNAPI_GET_SUPPORT_OPS"
+
 // Simplify the calls of NNAPI
 inline const NnApi* nnapi() { return NnApiImplementation(); }
 

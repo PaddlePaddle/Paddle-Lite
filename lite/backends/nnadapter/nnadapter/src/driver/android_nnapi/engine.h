@@ -36,6 +36,7 @@ class Context {
   bool relax_fp32_to_fp16() { return relax_fp32_to_fp16_; }
   bool only_use_acc_device() { return only_use_acc_device_; }
   bool disable_cpu_device() { return disable_cpu_device_; }
+  bool get_op_support_list() { return get_nnapi_ops_support_flag_; }
   std::vector<ANeuralNetworksDevice*>* selected_devices() {
     return &selected_devices_;
   }
@@ -45,6 +46,7 @@ class Context {
   void* context_{nullptr};
   bool relax_fp32_to_fp16_{true};
   bool only_use_acc_device_{false};
+  bool get_nnapi_ops_support_flag_{false};
   bool disable_cpu_device_{false};
   std::vector<ANeuralNetworksDevice*> selected_devices_;
 };
