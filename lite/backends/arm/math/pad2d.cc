@@ -133,6 +133,218 @@ void pad_constant(const float* din,
   LITE_PARALLEL_END()
 }
 
+void pad_constant_nhwc(const float* din,
+                       float* dout,
+                       int n,
+                       int h,
+                       int w,
+                       int c,
+                       const int pad_top,
+                       const int pad_bottom,
+                       const int pad_left,
+                       const int pad_right,
+                       const float pad_value) {
+  int h_in = h - pad_top - pad_bottom;
+  int w_in = w - pad_left - pad_right;
+  int cube_size_out = w * h * c;
+  int cube_size_in = h_in * w_in * c;
+  float32x4_t vpad_value = vdupq_n_f32(pad_value);
+
+  LITE_PARALLEL_BEGIN(s, tid, n) {
+    const float* din_s = din + s * cube_size_in;
+    float* dout_s = dout + s * cube_size_out;
+    // up
+    int up_count = pad_top * w * c;
+    int i = 0;
+
+    for (; i + 3 < up_count; i += 4) {
+      vst1q_f32(dout_s, vpad_value);
+      dout_s += 4;
+    }
+    for (; i < up_count; i++) *dout_s++ = pad_value;
+
+    // left, mid, right
+    for (int j = 0; j < h_in; j++) {
+      // left
+      int left_count = pad_left * c;
+      i = 0;
+      for (; i < left_count; i++) *dout_s++ = pad_value;
+
+      // mid
+      int mid_count = w_in * c;
+      i = 0;
+      for (; i < mid_count; i++) *dout_s++ = *din_s++;
+
+      // right
+      int right_count = pad_right * c;
+      i = 0;
+      for (; i < right_count; i++) *dout_s++ = pad_value;
+    }
+
+    // down
+    int down_count = pad_bottom * w * c;
+    i = 0;
+    for (; i + 3 < down_count; i += 4) {
+      vst1q_f32(dout_s, vpad_value);
+      dout_s += 4;
+    }
+    for (; i < down_count; i++) *dout_s++ = pad_value;
+  }
+  LITE_PARALLEL_END()
+}
+
+void pad_reflect_nhwc(const float* din,
+                      float* dout,
+                      int n,
+                      int h,
+                      int w,
+                      int c,
+                      const int pad_top,
+                      const int pad_bottom,
+                      const int pad_left,
+                      const int pad_right) {
+  int h_in = h - pad_top - pad_bottom;
+  int w_in = w - pad_left - pad_right;
+  int cube_size_out = w * h * c;
+  int cube_size_in = h_in * w_in * c;
+
+  LITE_PARALLEL_BEGIN(s, tid, n) {
+    const float* din_s = din + s * cube_size_in;
+    float* dout_s = dout + s * cube_size_out;
+
+    // up
+    const float* din_ss = din_s + pad_top * w_in * c;
+    float* dout_ss = dout_s + pad_left * c;
+    for (int i = 0; i < pad_top; i++) {
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // up - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+      // up - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+      din_ss -= w_in * c;
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+
+    // middle
+    din_ss = din_s;
+    dout_ss = dout_s + pad_top * w * c + pad_left * c;
+    for (int j = 0; j < h_in; j++) {
+      // mid
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // mid - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+      // mid - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+      din_ss += w_in * c;
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+
+    // down
+    din_ss = din_s + (h_in - 2) * w_in * c;
+    dout_ss = dout_s + (h_in + pad_top) * w * c + pad_left * c;
+    for (int i = 0; i < pad_bottom; i++) {
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // down - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+      // down - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+      din_ss -= w_in * c;
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+  }
+  LITE_PARALLEL_END()
+}
+
+void pad_edge_nhwc(const float* din,
+                   float* dout,
+                   int n,
+                   int h,
+                   int w,
+                   int c,
+                   const int pad_top,
+                   const int pad_bottom,
+                   const int pad_left,
+                   const int pad_right) {
+  int h_in = h - pad_top - pad_bottom;
+  int w_in = w - pad_left - pad_right;
+  int cube_size_out = w * h * c;
+  int cube_size_in = h_in * w_in * c;
+
+  LITE_PARALLEL_BEGIN(s, tid, n) {
+    const float* din_s = din + s * cube_size_in;
+    float* dout_s = dout + s * cube_size_out;
+
+    // up
+    const float* din_ss = din_s;
+    float* dout_ss = dout_s + pad_left * c;
+    for (int i = 0; i < pad_top; i++) {
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // up - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+      // up - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+
+    // middle
+    din_ss = din_s;
+    dout_ss = dout_s + pad_top * w * c + pad_left * c;
+    for (int j = 0; j < h_in; j++) {
+      // mid
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // mid - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+      // mid - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+      din_ss += w_in * c;
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+
+    // down
+    din_ss = din_s + (h_in - 1) * w_in * c;
+    dout_ss = dout_s + (h_in + pad_top) * w * c + pad_left * c;
+    for (int i = 0; i < pad_bottom; i++) {
+      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      // down - left
+      for (int j = 1; j <= pad_left; j++)
+        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+      // down - right
+      // make dout_ss -> right valid boundry!
+      dout_ss += (w_in - 1) * c;
+      for (int j = 1; j <= pad_right; j++)
+        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+      dout_ss -= (w_in - 1) * c;
+      dout_ss += w * c;
+    }
+  }
+  LITE_PARALLEL_END()
+}
+
 void pad_edge(const float* din,
               float* dout,
               int n,
@@ -404,6 +616,51 @@ void pad2d_func(const lite::Tensor* input,
              _pad_w[0],
              _pad_w[1],
              _pad_value);
+  } else {
+    LOG(ERROR) << "ERROR: unknown pad mode " << _mode;
+  }
+}
+
+void pad2d_func_nhwc(const lite::Tensor* input,
+                     lite::Tensor* output,
+                     int _mode,
+                     std::vector<int> _pad_h,
+                     std::vector<int> _pad_w,
+                     float _pad_value) {
+  float* dout = output->mutable_data<float>();
+  const float* din = input->data<float>();
+  auto output_dims = output->dims();
+  // nhwc
+  int on = output_dims[0];
+  int oh = output_dims[1];
+  int ow = output_dims[2];
+  int oc = output_dims[3];
+  /////////////////////////////
+  /*     _mode是PadMode
+         typedef enum{
+             PAD_CONSTANT = 0,
+             PAD_EDGE = 1,
+             PAD_REFLECT = 2,
+         } PadMode;   */
+  /////////////////////////
+  if (_mode == 0) {
+    pad_constant_nhwc(din,
+                      dout,
+                      on,
+                      oh,
+                      ow,
+                      oc,
+                      _pad_h[0],
+                      _pad_h[1],
+                      _pad_w[0],
+                      _pad_w[1],
+                      _pad_value);
+  } else if (_mode == 1) {
+    pad_reflect_nhwc(
+        din, dout, on, oh, ow, oc, _pad_h[0], _pad_h[1], _pad_w[0], _pad_w[1]);
+  } else if (_mode == 2) {
+    pad_edge_nhwc(
+        din, dout, on, oh, ow, oc, _pad_h[0], _pad_h[1], _pad_w[0], _pad_w[1]);
   } else {
     LOG(ERROR) << "ERROR: unknown pad mode " << _mode;
   }

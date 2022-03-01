@@ -91,6 +91,7 @@ class TestPad2dOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=4), min_size=4, max_size=4))
+        data_format = draw(st.sampled_from(["NCHW", "NHWC"]))
         for i in range(4):
             assume(padding_data[i] < in_shape[1])
             assume(padding_data[i] < in_shape[2])
@@ -113,7 +114,7 @@ class TestPad2dOp(AutoScanTest):
                 "paddings": padding_data,
                 "mode": mode,
                 "pad_value": value_data,
-                "data_format": "NCHW",
+                "data_format": data_format,
             })
         program_config = ProgramConfig(
             ops=[build_ops],

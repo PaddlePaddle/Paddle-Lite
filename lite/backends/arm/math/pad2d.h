@@ -64,6 +64,12 @@ void pad2d_func(const lite::Tensor* input,
                 std::vector<int> _pad_h,
                 std::vector<int> _pad_w,
                 float _pad_value);
+void pad2d_func_nhwc(const lite::Tensor* input,
+                     lite::Tensor* output,
+                     int _mode,
+                     std::vector<int> _pad_h,
+                     std::vector<int> _pad_w,
+                     float _pad_value);
 
 }  // namespace math
 }  // namespace arm
