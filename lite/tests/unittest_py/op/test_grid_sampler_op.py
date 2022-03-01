@@ -101,15 +101,7 @@ class TestGridSamplerOp(AutoScanTest):
         return self.get_predictor_configs(), ["grid_sampler"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                if program_config.ops[0].attrs["mode"] != "bilinear":
-                    return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
