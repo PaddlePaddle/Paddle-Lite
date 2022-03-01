@@ -24,10 +24,12 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-#define REGISTER_CONVERTER(__op_type__, __func_name__) \
-  extern int __func_name__(Converter* converter, core::Operation* operation);
+#define REGISTER_CONVERTER(                                     \
+    __op_type__, __validate_func_name__, __convert_func_name__) \
+  extern int __convert_func_name__(Converter* converter,        \
+                                   core::Operation* operation);
 #include "driver/android_nnapi/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__
+#undef __NNADAPTER_DRIVER_AMLOGIC_NPU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(core::Model* model) {
@@ -39,9 +41,10 @@ int Converter::Apply(core::Model* model) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     switch (operation->type) {
-#define REGISTER_CONVERTER(__op_type__, __func_name__) \
-  case NNADAPTER_##__op_type__:                        \
-    __func_name__(this, operation);                    \
+#define REGISTER_CONVERTER(                                     \
+    __op_type__, __validate_func_name__, __convert_func_name__) \
+  case NNADAPTER_##__op_type__:                                 \
+    __convert_func_name__(this, operation);                     \
     break;
 #include "driver/android_nnapi/converter/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__

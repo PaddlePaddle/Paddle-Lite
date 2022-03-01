@@ -14,11 +14,16 @@
 
 #include "operation/elementwise.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateElementwise(Validator* validator, core::Operation* operation) {
+  return true;
+}
 
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS

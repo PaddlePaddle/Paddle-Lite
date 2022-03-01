@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::kunlunxin_xtcl::CloseDevice,
     .create_context = nnadapter::kunlunxin_xtcl::CreateContext,
     .destroy_context = nnadapter::kunlunxin_xtcl::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::kunlunxin_xtcl::CreateProgram,
     .destroy_program = nnadapter::kunlunxin_xtcl::DestroyProgram,
     .execute_program = nnadapter::kunlunxin_xtcl::ExecuteProgram,

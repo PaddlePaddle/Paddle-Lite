@@ -14,28 +14,26 @@
 
 #pragma once
 
-#include "core/types.h"
-#include "runtime/context.h"
+#include "driver/android_nnapi/utility.h"
 
 namespace nnadapter {
-namespace runtime {
+namespace android_nnapi {
 
-class Model {
+class Validator {
  public:
-  Model() : completed_{false} {}
-  ~Model();
-  int AddOperand(const NNAdapterOperandType& type, core::Operand** operand);
-  int AddOperation(NNAdapterOperationType type, core::Operation** operation);
-  int IdentifyInputsAndOutputs(uint32_t input_count,
-                               core::Operand** input_operands,
-                               uint32_t output_count,
-                               core::Operand** output_operands);
-  int Finish();
-  int GetSupportedOperations(Context* context, bool* supported_operations);
+  explicit Validator(Context* context) : context_(context) {}
+  ~Validator() {}
 
-  core::Model model_;
-  bool completed_;
+  // Traverse each operation in the model and check if it is supported by the
+  // device, and return a list of whether it is supported or not
+  int Apply(const core::Model* model, bool* supported_operations);
+  // Check each the operation is supported according to the device context and
+  // custom settings
+  Context* context() { return context_; }
+
+ private:
+  Context* context_{nullptr};
 };
 
-}  // namespace runtime
+}  // namespace android_nnapi
 }  // namespace nnadapter

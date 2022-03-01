@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::amlogic_npu::CloseDevice,
     .create_context = nnadapter::amlogic_npu::CreateContext,
     .destroy_context = nnadapter::amlogic_npu::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::amlogic_npu::CreateProgram,
     .destroy_program = nnadapter::amlogic_npu::DestroyProgram,
     .execute_program = nnadapter::amlogic_npu::ExecuteProgram,

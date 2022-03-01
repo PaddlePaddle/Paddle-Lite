@@ -45,6 +45,9 @@ class Device {
   }
   int CreateContext(const char* properties, void** context);
   void DestroyContext(void* context);
+  int ValidateProgram(void* context,
+                      core::Model* model,
+                      bool* supported_operations);
   int CreateProgram(void* context,
                     core::Model* model,
                     core::Cache* cache,

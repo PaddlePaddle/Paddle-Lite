@@ -14,11 +14,16 @@
 
 #include "operation/flatten.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateFlatten(Validator* validator, core::Operation* operation) {
+  return true;
+}
 
 int ConvertFlatten(Converter* converter, core::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS

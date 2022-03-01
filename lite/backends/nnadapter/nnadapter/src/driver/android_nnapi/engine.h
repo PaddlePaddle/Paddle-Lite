@@ -54,6 +54,7 @@ class Program {
   explicit Program(Context* context) : context_(context) {}
   ~Program();
 
+  int Validate(const core::Model* model, bool* supported_operations);
   int Build(core::Model* model, core::Cache* cache);
   int Execute(uint32_t input_count,
               core::Argument* input_arguments,

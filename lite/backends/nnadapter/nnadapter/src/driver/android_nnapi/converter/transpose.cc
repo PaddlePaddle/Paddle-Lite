@@ -14,11 +14,16 @@
 
 #include "operation/transpose.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateTranspose(Validator* validator, core::Operation* operation) {
+  return true;
+}
 
 int ConvertTranspose(Converter* converter, core::Operation* operation) {
   TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS

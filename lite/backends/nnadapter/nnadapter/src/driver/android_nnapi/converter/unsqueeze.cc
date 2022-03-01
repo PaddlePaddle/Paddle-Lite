@@ -14,11 +14,16 @@
 
 #include "operation/unsqueeze.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateUnsqueeze(Validator* validator, core::Operation* operation) {
+  return true;
+}
 
 int ConvertUnsqueeze(Converter* converter, core::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
