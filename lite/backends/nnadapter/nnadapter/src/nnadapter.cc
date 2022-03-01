@@ -291,7 +291,7 @@ NNADAPTER_EXPORT int NNAdapterModel_getSupportedOperations(
   if (!model || !context || !supported_operations) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
+  auto m = reinterpret_cast<const nnadapter::runtime::Model*>(model);
   auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
   return m->GetSupportedOperations(x, supported_operations);
 }

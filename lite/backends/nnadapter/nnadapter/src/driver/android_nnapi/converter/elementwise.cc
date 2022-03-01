@@ -21,7 +21,8 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateElementwise(Validator* validator, core::Operation* operation) {
+bool ValidateElementwise(Validator* validator,
+                         const core::Operation* operation) {
   return true;
 }
 

@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateUnsqueeze(Validator* validator, core::Operation* operation) {
+bool ValidateUnsqueeze(Validator* validator, const core::Operation* operation) {
   return true;
 }
 

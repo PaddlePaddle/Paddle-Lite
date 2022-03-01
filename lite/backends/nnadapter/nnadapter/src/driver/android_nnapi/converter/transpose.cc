@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateTranspose(Validator* validator, core::Operation* operation) {
+bool ValidateTranspose(Validator* validator, const core::Operation* operation) {
   return true;
 }
 

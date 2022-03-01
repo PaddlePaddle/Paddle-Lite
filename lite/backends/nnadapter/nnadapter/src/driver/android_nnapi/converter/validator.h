@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "driver/android_nnapi/utility.h"
+#include "driver/android_nnapi/engine.h"
 
 namespace nnadapter {
 namespace android_nnapi {

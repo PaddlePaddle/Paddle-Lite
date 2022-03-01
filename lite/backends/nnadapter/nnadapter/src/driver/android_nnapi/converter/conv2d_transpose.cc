@@ -23,7 +23,8 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateConv2DTranspose(Validator* validator, core::Operation* operation) {
+bool ValidateConv2DTranspose(Validator* validator,
+                             const core::Operation* operation) {
   return nnapi()->android_sdk_version >= ANEURALNETWORKS_FEATURE_LEVEL_3;
 }
 

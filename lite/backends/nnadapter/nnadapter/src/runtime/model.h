@@ -31,7 +31,8 @@ class Model {
                                uint32_t output_count,
                                core::Operand** output_operands);
   int Finish();
-  int GetSupportedOperations(Context* context, bool* supported_operations);
+  int GetSupportedOperations(Context* context,
+                             bool* supported_operations) const;
 
   core::Model model_;
   bool completed_;

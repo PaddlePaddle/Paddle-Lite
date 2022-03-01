@@ -29,19 +29,18 @@ namespace android_nnapi {
 #define REGISTER_CONVERTER(                                     \
     __op_type__, __validate_func_name__, __convert_func_name__) \
   extern bool __validate_func_name__(Validator* validator,      \
-                                     core::Operation* operation);
+                                     const core::Operation* operation);
 #include "driver/android_nnapi/converter/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 int Validator::Apply(const core::Model* model, bool* supported_operations) {
-  std::unordered_map<core::Operation*, size_t> operation_to_index;
+  std::unordered_map<const core::Operation*, size_t> operation_to_index;
   size_t operation_index = 0;
   for (auto& operation : model->operations) {
     operation_to_index[&operation] = operation_index++;
   }
-  std::vector<core::Operation*> operations =
-      SortOperationsInTopologicalOrder(model);
+  auto operations = SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Validating " << OperationTypeToString(operation->type)
                       << " ...";

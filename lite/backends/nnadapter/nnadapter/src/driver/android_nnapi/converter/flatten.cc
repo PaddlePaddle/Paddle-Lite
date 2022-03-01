@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateFlatten(Validator* validator, core::Operation* operation) {
+bool ValidateFlatten(Validator* validator, const core::Operation* operation) {
   return true;
 }
 

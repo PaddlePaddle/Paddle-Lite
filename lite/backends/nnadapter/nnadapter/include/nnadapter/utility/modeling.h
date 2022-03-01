@@ -195,6 +195,8 @@ core::Operand* InsertRequantOperation(core::Model* model,
                                       void* input_quant_params);
 
 // Sort the operations of the specified model in topological order
+std::vector<const core::Operation*> SortOperationsInTopologicalOrder(
+    const core::Model* model);
 std::vector<core::Operation*> SortOperationsInTopologicalOrder(
     core::Model* model);
 

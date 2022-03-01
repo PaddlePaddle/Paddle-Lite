@@ -822,56 +822,63 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
   return AddRequantOperation(model, output_operand, input_quant_params, false);
 }
 
-NNADAPTER_EXPORT std::vector<core::Operation*> SortOperationsInTopologicalOrder(
-    core::Model* model) {
-  NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
-  NNADAPTER_VLOG(5) << "model input operands: " << model->input_operands.size();
-  NNADAPTER_VLOG(5) << "model output operands: "
-                    << model->output_operands.size();
-  NNADAPTER_VLOG(5) << "model total operations: " << model->operations.size();
-  std::vector<core::Operation*> operations;  // Operations in topological order
-  std::vector<core::Operation*> queue;
-  // Use to find all of adjacent operations according to a given operand.
-  std::multimap<core::Operand*, core::Operation*> map;
-  // The counters of variable inputs for all of operations.
-  std::map<core::Operation*, uint32_t> counts;
-  for (auto& operation : model->operations) {
-    uint32_t count = 0;
-    for (auto operand : operation.input_operands) {
-      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
-      if (operand != nullptr) {
-        lifetime = operand->type.lifetime;
-      }
-      if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
-          lifetime == NNADAPTER_TEMPORARY_SHAPE ||
-          lifetime == NNADAPTER_MODEL_OUTPUT) {
-        count++;
-        map.insert(
-            std::pair<core::Operand*, core::Operation*>(operand, &operation));
-      }
-    }
-    if (count == 0) {
-      // The operation which only depends the model inputs and constants
-      queue.push_back(&operation);
-    }
-    counts[&operation] = count;
+#define SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(T)                               \
+  NNADAPTER_EXPORT std::vector<T core::Operation*>                            \
+  SortOperationsInTopologicalOrder(T core::Model* model) {                    \
+    NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();  \
+    NNADAPTER_VLOG(5) << "model input operands: "                             \
+                      << model->input_operands.size();                        \
+    NNADAPTER_VLOG(5) << "model output operands: "                            \
+                      << model->output_operands.size();                       \
+    NNADAPTER_VLOG(5) << "model total operations: "                           \
+                      << model->operations.size();                            \
+    /* Operations in topological order */                                     \
+    std::vector<T core::Operation*> operations;                               \
+    std::vector<T core::Operation*> queue;                                    \
+    /* Use to find all of adjacent operations according to a given operand.*/ \
+    std::multimap<T core::Operand*, T core::Operation*> map;                  \
+    /* The counters of variable inputs for all of operations. */              \
+    std::map<T core::Operation*, uint32_t> counts;                            \
+    for (auto& operation : model->operations) {                               \
+      uint32_t count = 0;                                                     \
+      for (auto operand : operation.input_operands) {                         \
+        NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};       \
+        if (operand != nullptr) {                                             \
+          lifetime = operand->type.lifetime;                                  \
+        }                                                                     \
+        if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||                       \
+            lifetime == NNADAPTER_TEMPORARY_SHAPE ||                          \
+            lifetime == NNADAPTER_MODEL_OUTPUT) {                             \
+          count++;                                                            \
+          map.insert(std::pair<T core::Operand*, T core::Operation*>(         \
+              operand, &operation));                                          \
+        }                                                                     \
+      }                                                                       \
+      if (count == 0) {                                                       \
+        /* The operation which only depends the model inputs and constants */ \
+        queue.push_back(&operation);                                          \
+      }                                                                       \
+      counts[&operation] = count;                                             \
+    }                                                                         \
+    while (queue.size() > 0) {                                                \
+      auto operation = queue.back();                                          \
+      queue.pop_back();                                                       \
+      operations.push_back(operation);                                        \
+      for (auto operand : operation->output_operands) {                       \
+        auto range = map.equal_range(operand);                                \
+        for (auto i = range.first; i != range.second; i++) {                  \
+          uint32_t& count = counts[i->second];                                \
+          if (--count == 0) {                                                 \
+            queue.push_back(i->second);                                       \
+          }                                                                   \
+        }                                                                     \
+      }                                                                       \
+    }                                                                         \
+    return operations;                                                        \
   }
-  while (queue.size() > 0) {
-    auto operation = queue.back();
-    queue.pop_back();
-    operations.push_back(operation);
-    for (auto operand : operation->output_operands) {
-      auto range = map.equal_range(operand);
-      for (auto i = range.first; i != range.second; i++) {
-        uint32_t& count = counts[i->second];
-        if (--count == 0) {
-          queue.push_back(i->second);
-        }
-      }
-    }
-  }
-  return operations;
-}
+
+SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER()
+SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(const)
 
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY =
     "operands";

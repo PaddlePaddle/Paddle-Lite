@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace android_nnapi {
 
-bool ValidateConcat(Validator* validator, core::Operation* operation) {
+bool ValidateConcat(Validator* validator, const core::Operation* operation) {
   return true;
 }
 

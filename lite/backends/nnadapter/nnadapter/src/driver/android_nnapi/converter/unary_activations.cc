@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace android_nnapi {
 
 bool ValidateUnaryActivations(Validator* validator,
-                              core::Operation* operation) {
+                              const core::Operation* operation) {
   return true;
 }
 

@@ -14,7 +14,7 @@
 
 #include "operation/fully_connected.h"
 #include "driver/android_nnapi/converter/converter.h"
-
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/utility.h"

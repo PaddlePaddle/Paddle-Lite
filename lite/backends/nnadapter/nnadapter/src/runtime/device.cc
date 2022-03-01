@@ -41,9 +41,9 @@ void Device::DestroyContext(void* context) {
 }
 
 int Device::ValidateProgram(void* context,
-                            core::Model* model,
+                            const core::Model* model,
                             bool* supported_operations) {
-  if (device_ && context && model && program) {
+  if (device_ && context && model && supported_operations) {
     if (!device_->second->validate_program) {
       return NNADAPTER_FEATURE_NOT_SUPPORTED;
     }
