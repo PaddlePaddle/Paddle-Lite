@@ -14,59 +14,52 @@
 
 #pragma once
 
-#include <limits.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/huawei_ascend_npu/converter/converter.h"
-#include "driver/huawei_ascend_npu/utility.h"
-#include "op_proto/built-in/inc/all_ops.h"
-#include "utility/string.h"
+#include "driver/intel_openvino/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace intel_openvino {
 
 class Device {
  public:
-  Device();
-  ~Device();
+  Device() {}
+  ~Device() {}
 };
 
 class Context {
  public:
   explicit Context(void* device, const char* properties);
-  int first_device_id() {
-    return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
-  }
-  std::string profiling_file_path() { return profiling_file_path_; }
   ~Context();
+  std::string GetFirtSelectedDeviceName() const {
+    return selected_device_names_[0];
+  }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  std::vector<int> selected_device_ids_;
-  std::string profiling_file_path_ = "";
+  std::vector<std::string> selected_device_names_{};
 };
 
 class Program {
  public:
   explicit Program(Context* context) : context_(context) {}
-  ~Program();
-
+  ~Program() {};
+  
   int Build(core::Model* model, core::Cache* cache);
   int Execute(uint32_t input_count,
               core::Argument* input_arguments,
               uint32_t output_count,
               core::Argument* output_arguments);
 
-  void Init() {
-    static InferenceEngine::Core 
-  }
-    
+  // Build from model or cache
+  int BuildFromModel(core::Model* model);
+  int BuildFromCache(core::Cache* cache);
 
  private:
-  void Clear();
+  void Clear() {};
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
                             uint32_t output_count,
@@ -74,13 +67,14 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to GE operator
-  std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
-  std::shared_ptr<AclModelClient> model_client_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  DynamicShapeMode dynamic_shape_mode_{DYNAMIC_SHAPE_MODE_NONE};
+  std::shared_ptr<ov::Core> ov_core_{nullptr};
+  std::map<core::Operand*, std::vector<std::shared_ptr<OutputNode>>> output_nodes_;
+  std::vector<std::shared_ptr<default_opset::Parameter>> parameter_nodes_;
+  std::vector<std::shared_ptr<Node>> result_nodes_;
+  std::shared_ptr<ov::CompiledModel> compiled_ov_model_{nullptr};
 };
 
-}  // namespace huawei_ascend_npu
-}  // namespace nnadapter
+} // namespace intel_openvino
+} // namespace nnadapter
