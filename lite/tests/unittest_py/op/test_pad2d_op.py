@@ -135,7 +135,17 @@ class TestPad2dOp(AutoScanTest):
         return self.get_predictor_configs(), ["pad2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            data_format = program_config.ops[0].attrs["data_format"]
+            if target_type == TargetType.ARM and predictor_config.precision(
+            ) == PrecisionType.FP16 and data_format == "NHWC":
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "Lite doesn't not support for NHWC pad2d on ARM && fp16, later add it"
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

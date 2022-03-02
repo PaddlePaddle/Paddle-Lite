@@ -32,7 +32,6 @@ bool Pad2dOpLite::CheckShape() const {
 
 bool Pad2dOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
-  std::cout << param_.data_format << std::endl;
   if (param_.data_format == "NCHW") {
     int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
     int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
