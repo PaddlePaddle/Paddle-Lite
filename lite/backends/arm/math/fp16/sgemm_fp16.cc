@@ -39,7 +39,7 @@ void sgemm_fp16(bool is_transA,
                 ARMContext* ctx) {
   // alpha default is 1;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
-  if (N == 1 && !has_alpha) {
+  if (N == 1 && !has_alpha && ldc == N) {
     gemv_fp16(A,
               B,
               C,
@@ -54,7 +54,7 @@ void sgemm_fp16(bool is_transA,
               ctx);
     return;
   }
-  if (M == 1 && !has_alpha) {
+  if (M == 1 && !has_alpha && ldc == N) {
 #ifdef TARGET_IOS
     float16_t* bias_ptr = new float16_t[N];
 #else

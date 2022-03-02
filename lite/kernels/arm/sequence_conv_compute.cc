@@ -140,7 +140,21 @@ void SequenceConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 #ifdef ENABLE_ARM_FP16
 template <>
-void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {}
+void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  // when running op python unit_test, the weight dtype is float
+  auto& param = this->Param<operators::SequenceConvParam>();
+  auto filter_tensor = param.Filter;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
+}
 
 template <>
 void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
@@ -194,11 +208,13 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,
   // kernel_num]
   // = [sequence_len, kernel_num]
+  auto m =
+      static_cast<int>(lod_level_0[static_cast<int>(lod_level_0.size()) - 1]);
   paddle::lite::operators::ActivationParam act_param;
   paddle::lite::arm::math::fp16::sgemm_fp16(false,
-                                            false,         // is_transB,
-                                            sequence_len,  // M
-                                            kernel_num,    // N
+                                            false,       // is_transB,
+                                            m,           // M
+                                            kernel_num,  // N
                                             kernel_size * hidden_dim,  // K
                                             1.0f,                      // alpha
                                             col_data,                  // A

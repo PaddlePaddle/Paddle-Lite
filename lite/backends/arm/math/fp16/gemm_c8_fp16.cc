@@ -1061,8 +1061,6 @@ void gemm_prepack_c8_fp16_small(int M,
         "ldp  q18, q19, [%[a]], #32\n"
         "fmul v8.8h,  v16.8h, v0.h[0] \n"
         "fmul v9.8h,  v16.8h, v1.h[0] \n"
-        /* load b6, b7 */
-        "ldp  q6,  q7,  [%[b]], #32\n"
         "fmul v10.8h, v16.8h, v2.h[0] \n"
         "fmul v11.8h, v16.8h, v3.h[0] \n"
         "sub  %[b],   %[b],   #64     \n"

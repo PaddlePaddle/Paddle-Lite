@@ -14,7 +14,7 @@
 
 #include "operation/unary_activations.h"
 #include "driver/nvidia_tensorrt/converter/converter.h"
-#include "driver/nvidia_tensorrt/plugin/relu.h"
+#include "driver/nvidia_tensorrt/converter/plugin/relu.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
