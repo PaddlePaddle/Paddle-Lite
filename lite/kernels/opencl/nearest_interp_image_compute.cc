@@ -109,6 +109,10 @@ class NearestInterpComputeImageDefault
                       : static_cast<float>(x_dims[3]) / y_dims[3];
       }
     }
+    if (y_dims[3] == x_dims[3] && y_dims[2] == x_dims[2]) {
+      ratio_h = 1.f;
+      ratio_w = 1.f;
+    }
 
     int in_dims_h = x_dims[2];
     int out_dims_h = y_dims[2];
