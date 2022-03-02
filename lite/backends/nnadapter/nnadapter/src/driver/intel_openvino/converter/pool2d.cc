@@ -23,8 +23,8 @@ namespace intel_openvino {
 int ConvertPool2D(Converter* converter, core::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO OutputNode
-  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
@@ -42,7 +42,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
   std::shared_ptr<Node> pool2d_op{nullptr};
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     if (global_pooling) {
-      auto axes_tensor = AddConstOutputNode(
+      auto axes_tensor = converter->AddConstantTensor(
           {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));
@@ -60,7 +60,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     }
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     if (global_pooling) {
-      auto axes_tensor = AddConstOutputNode(
+      auto axes_tensor = converter->AddConstantTensor(
           {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));

@@ -33,7 +33,6 @@ namespace intel_openvino {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(core::Model* model) {
-  // Convert the NNAdapter operations to the aml operators
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -57,30 +56,29 @@ int Converter::Apply(core::Model* model) {
   return NNADAPTER_NO_ERROR;
 }
 
-std::shared_ptr<OutputNode> Converter::GetMappedOutputNode(
-    core::Operand* operand) {
-  auto it = output_nodes_->find(operand);
-  if (it != output_nodes_->end()) {
+std::shared_ptr<Tensor> Converter::GetMappedTensor(core::Operand* operand) {
+  auto it = tensor_map_->find(operand);
+  if (it != tensor_map_->end()) {
     return it->second.back();
   }
   return nullptr;
 }
 
-std::shared_ptr<OutputNode> Converter::UpdateOutputNodeMap(
-    core::Operand* operand, std::shared_ptr<OutputNode> output_node) {
-  auto it = output_nodes_->find(operand);
-  if (it == output_nodes_->end()) {
-    auto result = output_nodes_->insert(
-        std::make_pair(operand, std::vector<std::shared_ptr<OutputNode>>()));
+std::shared_ptr<Tensor> Converter::UpdateTensorMap(
+    core::Operand* operand, std::shared_ptr<Tensor> tensor) {
+  auto it = tensor_map_->find(operand);
+  if (it == tensor_map_->end()) {
+    auto result = tensor_map_->insert(
+        std::make_pair(operand, std::vector<std::shared_ptr<Tensor>>()));
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
-  output_node->set_names({OperandIdToString(operand)});
-  it->second.push_back(output_node);
-  return output_node;
+  tensor->set_names({OperandIdToString(operand)});
+  it->second.push_back(tensor);
+  return tensor;
 }
 
-std::shared_ptr<OutputNode> Converter::ConvertOperand(
+std::shared_ptr<Tensor> Converter::ConvertOperand(
     core::Operand* operand, std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < operand->type.dimensions.count; i++) {
@@ -88,26 +86,24 @@ std::shared_ptr<OutputNode> Converter::ConvertOperand(
     }
   }
   if (IsConstantOperand(operand)) {
-    auto constant_node = std::make_shared<default_opset::Constant>(
+    auto constant_op = std::make_shared<default_opset::Constant>(
         ConvertToOVElementType(operand->type.precision),
         ConvertToOVShape(dimensions),
         operand->buffer);
-    std::shared_ptr<OutputNode> output_node =
-        std::make_shared<OutputNode>(constant_node->output(0));
-    UpdateOutputNodeMap(operand, output_node);
-    return output_node;
+    auto output_tensor = std::make_shared<Tensor>(constant_op->output(0));
+    UpdateTensorMap(operand, output_tensor);
+    return output_tensor;
   } else if (IsModelInputOperand(operand)) {
     auto parameter_node = std::make_shared<default_opset::Parameter>(
         ConvertToOVElementType(operand->type.precision),
         ConvertToOVShape(dimensions));
     parameter_nodes_->push_back(parameter_node);
-    std::shared_ptr<OutputNode> output_node =
-        std::make_shared<OutputNode>(parameter_node->output(0));
-    UpdateOutputNodeMap(operand, output_node);
-    return output_node;
+    auto output_tensor = std::make_shared<Tensor>(parameter_node->output(0));
+    UpdateTensorMap(operand, output_tensor);
+    return output_tensor;
   }
   NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
-                          "converted to OpenVINO OutputNode!";
+                          "converted to OpenVINO Tensor!";
   return nullptr;
 }
 

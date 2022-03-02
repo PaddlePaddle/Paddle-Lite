@@ -24,7 +24,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-  // INTEL_OPENVINO_SELECT_DEVICE_NAME
   std::string selected_device_names;
   if (key_values.count(INTEL_OPENVINO_SELECT_DEVICE_NAMES)) {
     selected_device_names = key_values[INTEL_OPENVINO_SELECT_DEVICE_NAMES];
@@ -59,10 +58,7 @@ Context::~Context() {}
 int Program::Build(core::Model* model, core::Cache* cache) {
   NNADAPTER_LOG(INFO) << "OpenVINO runtime version - "
                       << ov::get_openvino_version();
-  // Initialize OpenVINO Runtime Core object
   runtime_core_ = std::make_shared<ov::Core>();
-  NNADAPTER_LOG(INFO)
-      << "NNAdapter has already loaded the OpenVINO Runtime Core!";
   auto device_name = context_->GetFirtSelectedDeviceName();
   NNADAPTER_LOG(INFO) << device_name << " version - "
                       << runtime_core_->get_versions(device_name);
@@ -76,7 +72,7 @@ int Program::BuildFromCache(core::Cache* cache) {
 
 int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_VLOG(5) << "NNAdapter model:" << std::endl << Visualize(model);
-  Converter converter(&parameter_nodes_, &output_nodes_);
+  Converter converter(&parameter_nodes_, &tensor_map_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
@@ -87,7 +83,7 @@ int Program::BuildFromModel(core::Model* model) {
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
-      NNADAPTER_CHECK(output_nodes_.find(operand) != output_nodes_.end());
+      NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
       input_types_[i] = type;
     }
   }
@@ -98,13 +94,13 @@ int Program::BuildFromModel(core::Model* model) {
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     const auto& type = operand->type;
-    NNADAPTER_CHECK(output_nodes_.find(operand) != output_nodes_.end());
+    NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
     output_types_[i] = type;
     auto result_node =
-        std::make_shared<default_opset::Result>(*output_nodes_[operand].back());
+        std::make_shared<default_opset::Result>(*tensor_map_[operand].back());
     result_nodes_.push_back(result_node);
   }
-  // Convert a NNAdapter model to an Intel OpenVINO's model
+  // Convert NNAdapter model to OpenVINO model
   std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
       result_nodes_, parameter_nodes_, "openvino_graph");
   compiled_model_ =

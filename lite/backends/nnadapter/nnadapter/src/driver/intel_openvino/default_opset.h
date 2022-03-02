@@ -26,5 +26,7 @@ using PadType = ov::op::PadType;
 using ElementType = ov::element::Type;
 using Shape = ov::Shape;
 
+using Tensor = OutputNode;
+using Operator = Node;
 }  // namespace intel_openvino
 }  // namespace nnadapter

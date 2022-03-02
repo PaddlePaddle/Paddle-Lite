@@ -69,10 +69,9 @@ class Program {
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   std::shared_ptr<ov::Core> runtime_core_{nullptr};
-  std::map<core::Operand*, std::vector<std::shared_ptr<OutputNode>>>
-      output_nodes_;
+  std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>> tensor_map_;
   std::vector<std::shared_ptr<default_opset::Parameter>> parameter_nodes_;
-  std::vector<std::shared_ptr<Node>> result_nodes_;
+  std::vector<std::shared_ptr<Operator>> result_nodes_;
   std::shared_ptr<ov::CompiledModel> compiled_model_{nullptr};
 };
 

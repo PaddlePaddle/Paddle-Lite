@@ -64,7 +64,7 @@ int CreateProgram(void* context,
                   core::Model* model,
                   core::Cache* cache,
                   void** program) {
-  NNADAPTER_LOG(INFO) << "Create program for intel_openvino.";
+  NNADAPTER_LOG(INFO) << "Create program for Intel OpenVINO.";
   if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }

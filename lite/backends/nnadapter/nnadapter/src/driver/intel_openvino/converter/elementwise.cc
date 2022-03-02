@@ -23,16 +23,16 @@ namespace intel_openvino {
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO OutputNode
-  auto input0_tensor = converter->GetMappedOutputNode(input0_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
     input0_tensor = converter->ConvertOperand(input0_operand);
   }
-  auto input1_tensor = converter->GetMappedOutputNode(input1_operand);
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
   if (!input1_tensor) {
     input1_tensor = converter->ConvertOperand(input1_operand);
   }
-  std::shared_ptr<OutputNode> output_tensor{nullptr};
+  std::shared_ptr<Tensor> output_tensor{nullptr};
   switch (operation->type) {
 #define CONVERT_ELEMENTWISE(type, class_name)                           \
   case NNADAPTER_##type: {                                              \

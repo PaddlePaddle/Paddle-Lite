@@ -28,8 +28,8 @@ namespace intel_openvino {
 
 // The following environment variables can be used at runtime:
 // Specify the list of device names, such as
-// INTEL_OPENVINO_SELECT_DEVICE_NAMES=cpu,gpu or
-// INTEL_OPENVINO_SELECT_DEVICE_NAMES=cpu
+// INTEL_OPENVINO_SELECT_DEVICE_NAMES=CPU,GPU or
+// INTEL_OPENVINO_SELECT_DEVICE_NAMES=CPU
 #define INTEL_OPENVINO_SELECT_DEVICE_NAMES "INTEL_OPENVINO_SELECT_DEVICE_NAMES"
 
 // Convert NNAdapterAutoPadCode to OpenVINO ov::op::PadType
@@ -46,8 +46,7 @@ Shape ConvertToOVShape(std::vector<T> dimensions) {
   }
   return Shape(ov_shape);
 }
-
-// Convert C/C++ POD types to ElementType
+// Convert C/C++ POD types to OpenVINO ov::element::Type
 template <typename T>
 ElementType GetElementType() {
   NNADAPTER_LOG(FATAL) << "Unable to convert " << typeid(T).name()
@@ -74,15 +73,6 @@ template <>
 ElementType GetElementType<float>();
 template <>
 ElementType GetElementType<double>();
-
-// Add const ov::Node and return ov::Output<ov::Node>
-template <typename T>
-std::shared_ptr<OutputNode> AddConstOutputNode(std::vector<size_t> dimensions,
-                                               std::vector<T> values) {
-  auto constant_op = std::make_shared<default_opset::Constant>(
-      GetElementType<T>(), Shape(dimensions), values);
-  return std::make_shared<OutputNode>(constant_op->output(0));
-}
 
 }  // namespace intel_openvino
 }  // namespace nnadapter

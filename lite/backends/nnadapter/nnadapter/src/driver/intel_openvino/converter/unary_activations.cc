@@ -23,12 +23,11 @@ namespace intel_openvino {
 int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO OutputNode
-  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
   switch (operation->type) {
 #define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
   case NNADAPTER_##type: {                                                    \

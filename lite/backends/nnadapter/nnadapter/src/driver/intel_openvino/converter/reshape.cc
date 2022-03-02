@@ -25,8 +25,8 @@ namespace intel_openvino {
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO OutputNode
-  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
@@ -39,7 +39,7 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
         shape_data[i] = input_operand->type.dimensions.data[i];
       }
     }
-    auto shape_tensor = AddConstOutputNode(
+    auto shape_tensor = converter->AddConstantTensor(
         {shape_count},
         std::vector<int32_t>(shape_data, shape_data + shape_count));
     auto reshape_op = std::make_shared<default_opset::Reshape>(

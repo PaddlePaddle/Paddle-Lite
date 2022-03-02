@@ -41,8 +41,8 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
         &dilation_width);
   }
 
-  // Convert operand to OpenVINO OutputNode
-  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
@@ -58,7 +58,6 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   auto ov_pads_end =
       ov::CoordinateDiff({static_cast<std::ptrdiff_t>(pad_height_bottom),
                           static_cast<std::ptrdiff_t>(pad_width_right)});
-  std::shared_ptr<OutputNode> output_tensor{nullptr};
   auto conv2d_op = std::make_shared<default_opset::Convolution>(*input_tensor,
                                                                 *filter_tensor,
                                                                 ov_strides,
@@ -66,12 +65,13 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
                                                                 ov_pads_end,
                                                                 ov_diliations,
                                                                 ov_auto_pad);
-  output_tensor = MAP_OUTPUT(output_operand, conv2d_op, 0);
+  auto output_tensor = MAP_OUTPUT(output_operand, conv2d_op, 0);
   // Bias
-  auto unsqueeze_output_tensor = converter->AddUnsqueezeOutputNode(
-      bias_operand, std::vector<size_t>({3}), std::vector<int64_t>({0, 2, 3}));
+  auto bias_tensor = converter->ConvertOperand(bias_operand);
+  auto unsqueeze_op = converter->AddUnsqueezeOperator(
+      bias_tensor, std::vector<int64_t>({0, 2, 3}));
   auto add_op = std::make_shared<default_opset::Add>(*output_tensor,
-                                                     *unsqueeze_output_tensor);
+                                                     unsqueeze_op->output(0));
   output_tensor = MAP_OUTPUT(output_operand, add_op, 0);
   // Fuse activation
   switch (fuse_code) {

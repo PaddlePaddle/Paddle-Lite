@@ -24,8 +24,8 @@ int ConvertBatchNormalization(Converter* converter,
                               core::Operation* operation) {
   BATCH_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO OutputNode
-  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  // Convert operand to OpenVINO Tensor
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }

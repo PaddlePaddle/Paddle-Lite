@@ -27,47 +27,51 @@ class Converter {
  public:
   explicit Converter(
       std::vector<std::shared_ptr<default_opset::Parameter>>* paramter_nodes,
-      std::map<core::Operand*, std::vector<std::shared_ptr<OutputNode>>>*
-          output_nodes)
-      : parameter_nodes_(paramter_nodes), output_nodes_(output_nodes) {}
+      std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>*
+          tensor_map)
+      : parameter_nodes_(paramter_nodes), tensor_map_(tensor_map) {}
 
   ~Converter() {}
 
-  // Convert a NNAdapter model to an intel openvino graph
+  // Convert a NNAdapter model to OpenVINO graph
   int Apply(core::Model* model);
 
-  // Convert a NNAdapter operand to an intel openvino OutputNode
-  std::shared_ptr<OutputNode> ConvertOperand(
-      core::Operand* operand, std::vector<int32_t> dimensions = {});
+  // Convert a NNAdapter operand to OpenVINO Tensor
+  std::shared_ptr<Tensor> ConvertOperand(core::Operand* operand,
+                                         std::vector<int32_t> dimensions = {});
 
-  std::shared_ptr<OutputNode> UpdateOutputNodeMap(
-      core::Operand* operand, std::shared_ptr<OutputNode> output_node);
+  std::shared_ptr<Tensor> UpdateTensorMap(core::Operand* operand,
+                                          std::shared_ptr<Tensor> tensor);
 
-  std::shared_ptr<OutputNode> GetMappedOutputNode(core::Operand* operand);
+  std::shared_ptr<Tensor> GetMappedTensor(core::Operand* operand);
 
   template <typename T>
-  std::shared_ptr<OutputNode> AddUnsqueezeOutputNode(
-      core::Operand* operand,
-      std::vector<size_t> dimensions,
-      std::vector<T> axes) {
-    auto axes_node = AddConstOutputNode(dimensions, axes);
-    auto y_node = ConvertOperand(operand);
-    auto unsqueeze_node =
-        std::make_shared<default_opset::Unsqueeze>(*y_node, *axes_node);
-    return std::make_shared<OutputNode>(unsqueeze_node->output(0));
+  std::shared_ptr<Operator> AddUnsqueezeOperator(
+      std::shared_ptr<Tensor> input_tensor, std::vector<T> axes) {
+    auto axes_tensor =
+        AddConstantTensor(std::vector<size_t>({axes.size()}), axes);
+    return std::make_shared<default_opset::Unsqueeze>(*input_tensor,
+                                                      *axes_tensor);
+  }
+
+  template <typename T>
+  std::shared_ptr<Tensor> AddConstantTensor(std::vector<size_t> dimensions,
+                                            std::vector<T> values) {
+    auto constant_op = std::make_shared<default_opset::Constant>(
+        GetElementType<T>(), Shape(dimensions), values);
+    return std::make_shared<Tensor>(constant_op->output(0));
   }
 
  private:
   std::vector<std::shared_ptr<default_opset::Parameter>>* parameter_nodes_;
-  std::map<core::Operand*, std::vector<std::shared_ptr<OutputNode>>>*
-      output_nodes_;
+  std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>* tensor_map_;
 };
 
-#define MAP_OUTPUT(output_operand, op_node, output_index)            \
-  ({                                                                 \
-    auto output_node =                                               \
-        std::make_shared<OutputNode>(op_node->output(output_index)); \
-    converter->UpdateOutputNodeMap(output_operand, output_node);     \
+#define MAP_OUTPUT(output_operand, operator, output_index)         \
+  ({                                                               \
+    converter->UpdateTensorMap(                                    \
+        output_operand,                                            \
+        std::make_shared<Tensor>(operator->output(output_index))); \
   })
 
 }  // namespace intel_openvino
