@@ -35,8 +35,7 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   // Create <MatMul> Node for Intel OpenVINO
   std::shared_ptr<Node> node = std::make_shared<default_opset::MatMul>(
       *x_node, *y_node, transpose_x, transpose_y);
-  auto output_node = std::make_shared<OutputNode>(node->output(0));
-  converter->UpdateOutputNodeMap(output_operand, output_node);
+  MAP_OUTPUT_NODE(output_operand, node, 0);
   return NNADAPTER_NO_ERROR;
 }
 

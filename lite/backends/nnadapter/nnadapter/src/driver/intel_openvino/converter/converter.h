@@ -63,5 +63,12 @@ class Converter {
       output_nodes_;
 };
 
+#define MAP_OUTPUT_NODE(output_operand, op_node, output_index)       \
+  ({                                                                 \
+    auto output_node =                                               \
+        std::make_shared<OutputNode>(op_node->output(output_index)); \
+    converter->UpdateOutputNodeMap(output_operand, output_node);     \
+  })
+
 }  // namespace intel_openvino
 }  // namespace nnadapter

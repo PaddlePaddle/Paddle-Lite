@@ -68,27 +68,22 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
                                                    ov_pads_end,
                                                    ov_diliations,
                                                    ov_auto_pad);
-  auto conv_output_node = std::make_shared<OutputNode>(node->output(0));
-  converter->UpdateOutputNodeMap(output_operand, conv_output_node);
-  output_node = conv_output_node;
+  output_node = MAP_OUTPUT_NODE(output_operand, node, 0);
   NNADAPTER_LOG(INFO) << "Convert conv2d success";
   // Bias
   auto unsqueeze_node = converter->AddUnsqueezeOutputNode(
       bias_operand, std::vector<size_t>({3}), std::vector<int64_t>({0, 2, 3}));
   std::shared_ptr<Node> add_node =
-      std::make_shared<default_opset::Add>(*conv_output_node, *unsqueeze_node);
-  auto add_output_node = std::make_shared<OutputNode>(add_node->output(0));
-  converter->UpdateOutputNodeMap(output_operand, add_output_node);
-  output_node = add_output_node;
+      std::make_shared<default_opset::Add>(*output_node, *unsqueeze_node);
+  output_node = MAP_OUTPUT_NODE(output_operand, add_node, 0);
   NNADAPTER_LOG(INFO) << " Convert conv2d-bias-add success";
   // Fuse activation
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
-  case NNADAPTER_FUSED_##type: {                                              \
-    std::shared_ptr<Node> act_node =                                          \
-        std::make_shared<default_opset::class_name>(*output_node);            \
-    auto act_output_node = std::make_shared<OutputNode>(act_node->output(0)); \
-    converter->UpdateOutputNodeMap(output_operand, act_output_node);          \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                 \
+  case NNADAPTER_FUSED_##type: {                                   \
+    std::shared_ptr<Node> act_node =                               \
+        std::make_shared<default_opset::class_name>(*output_node); \
+    MAP_OUTPUT_NODE(output_operand, act_node, 0);                  \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     NNADAPTER_LOG(INFO) << " Convert conv2d-relu success!";

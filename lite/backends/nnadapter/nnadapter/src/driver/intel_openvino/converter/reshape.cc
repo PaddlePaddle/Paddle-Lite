@@ -45,8 +45,7 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
         std::vector<int32_t>(shape_data, shape_data + shape_count));
     auto node = std::make_shared<default_opset::Reshape>(
         *input_node, *shape_node, true);
-    auto output_node = std::make_shared<OutputNode>(node->output(0));
-    converter->UpdateOutputNodeMap(output_operand, output_node);
+    MAP_OUTPUT_NODE(output_operand, node, 0);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                          << OperandLifetimeCodeToString(

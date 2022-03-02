@@ -82,8 +82,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  auto output_node = std::make_shared<OutputNode>(node->output(0));
-  converter->UpdateOutputNodeMap(output_operand, output_node);
+  MAP_OUTPUT_NODE(output_operand, node, 0);
   return NNADAPTER_NO_ERROR;
 }
 

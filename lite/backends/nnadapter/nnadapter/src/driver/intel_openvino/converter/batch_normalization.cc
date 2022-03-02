@@ -41,8 +41,7 @@ int ConvertBatchNormalization(Converter* converter,
                                                           *mean_node,
                                                           *variance_node,
                                                           epsilon);
-  auto output_node = std::make_shared<OutputNode>(node->output(0));
-  converter->UpdateOutputNodeMap(output_operand, output_node);
+  MAP_OUTPUT_NODE(output_operand, node, 0);
   return NNADAPTER_NO_ERROR;
 }
 

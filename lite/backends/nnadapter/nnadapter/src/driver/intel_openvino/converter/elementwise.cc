@@ -39,8 +39,7 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   case NNADAPTER_##type: {                                                    \
     std::shared_ptr<Node> node = std::make_shared<default_opset::class_name>( \
         *input0_node, *input1_node);                                          \
-    output_node = std::make_shared<OutputNode>(node->output(0));              \
-    converter->UpdateOutputNodeMap(output_operand, output_node);              \
+    output_node = MAP_OUTPUT_NODE(output_operand, node, 0);                   \
   } break;
     CONVERT_ELEMENTWISE(ADD, Add);
     CONVERT_ELEMENTWISE(SUB, Subtract);
@@ -60,12 +59,11 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   }
   // Fuse activation
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
-  case NNADAPTER_FUSED_##type: {                                              \
-    std::shared_ptr<Node> act_node =                                          \
-        std::make_shared<default_opset::class_name>(*output_node);            \
-    auto act_output_node = std::make_shared<OutputNode>(act_node->output(0)); \
-    converter->UpdateOutputNodeMap(output_operand, act_output_node);          \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                 \
+  case NNADAPTER_FUSED_##type: {                                   \
+    std::shared_ptr<Node> act_node =                               \
+        std::make_shared<default_opset::class_name>(*output_node); \
+    MAP_OUTPUT_NODE(output_operand, act_node, 0);                  \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
 #undef CONVERT_UNARY_ACTIVATION
