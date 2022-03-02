@@ -23,19 +23,18 @@ namespace intel_openvino {
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto x_node = converter->GetMappedOutputNode(x_operand);
-  if (!x_node) {
-    x_node = converter->ConvertToOutputNode(x_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto x_tensor = converter->GetMappedOutputNode(x_operand);
+  if (!x_tensor) {
+    x_tensor = converter->ConvertOperand(x_operand);
   }
-  auto y_node = converter->GetMappedOutputNode(y_operand);
-  if (!y_node) {
-    y_node = converter->ConvertToOutputNode(y_operand);
+  auto y_tensor = converter->GetMappedOutputNode(y_operand);
+  if (!y_tensor) {
+    y_tensor = converter->ConvertOperand(y_operand);
   }
-  // Create <MatMul> Node for Intel OpenVINO
-  std::shared_ptr<Node> node = std::make_shared<default_opset::MatMul>(
-      *x_node, *y_node, transpose_x, transpose_y);
-  MAP_OUTPUT_NODE(output_operand, node, 0);
+  auto matmul_op = std::make_shared<default_opset::MatMul>(
+      *x_tensor, *y_tensor, transpose_x, transpose_y);
+  MAP_OUTPUT(output_operand, matmul_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -46,29 +46,43 @@ Shape ConvertToOVShape(std::vector<T> dimensions) {
   }
   return Shape(ov_shape);
 }
+
+// Convert C/C++ POD types to ElementType
+template <typename T>
+ElementType GetElementType() {
+  NNADAPTER_LOG(FATAL) << "Unable to convert " << typeid(T).name()
+                       << " to ElementType";
+  return ov::element::f32;
+}
+template <>
+ElementType GetElementType<int8_t>();
+template <>
+ElementType GetElementType<int16_t>();
+template <>
+ElementType GetElementType<int32_t>();
+template <>
+ElementType GetElementType<int64_t>();
+template <>
+ElementType GetElementType<uint8_t>();
+template <>
+ElementType GetElementType<uint16_t>();
+template <>
+ElementType GetElementType<uint32_t>();
+template <>
+ElementType GetElementType<uint64_t>();
+template <>
+ElementType GetElementType<float>();
+template <>
+ElementType GetElementType<double>();
+
 // Add const ov::Node and return ov::Output<ov::Node>
 template <typename T>
 std::shared_ptr<OutputNode> AddConstOutputNode(std::vector<size_t> dimensions,
                                                std::vector<T> values) {
-  NNADAPTER_LOG(FATAL) << "Unable to add const output node with type "
-                       << typeid(T).name();
-  return nullptr;
+  auto constant_op = std::make_shared<default_opset::Constant>(
+      GetElementType<T>(), Shape(dimensions), values);
+  return std::make_shared<OutputNode>(constant_op->output(0));
 }
-#define FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(type, element_type) \
-  template <>                                                      \
-  std::shared_ptr<OutputNode> AddConstOutputNode<type>(            \
-      std::vector<size_t> dimensions, std::vector<type> values);
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(int8_t, ov::element::i8)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(int16_t, ov::element::i16)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(int32_t, ov::element::i32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(int64_t, ov::element::i64)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(uint8_t, ov::element::u8)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(uint16_t, ov::element::u16)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(uint32_t, ov::element::u32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(uint64_t, ov::element::u64)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(float, ov::element::f32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE(double, ov::element::f64)
-#undef FUNCTION_ADD_CONST_OUTPUT_NODE_DECLARE
 
 }  // namespace intel_openvino
 }  // namespace nnadapter

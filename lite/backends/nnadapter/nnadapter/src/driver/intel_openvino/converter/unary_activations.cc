@@ -23,18 +23,17 @@ namespace intel_openvino {
 int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to intel_openvino Output<Node>
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
 
   switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_##type: {                                        \
-    std::shared_ptr<Node> node =                                  \
-        std::make_shared<default_opset::class_name>(*input_node); \
-    MAP_OUTPUT_NODE(output_operand, node, 0);                     \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
+  case NNADAPTER_##type: {                                                    \
+    auto act_op = std::make_shared<default_opset::class_name>(*input_tensor); \
+    MAP_OUTPUT(output_operand, act_op, 0);                                    \
   } break;
     CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
     CONVERT_UNARY_ACTIVATION(RELU, Relu);

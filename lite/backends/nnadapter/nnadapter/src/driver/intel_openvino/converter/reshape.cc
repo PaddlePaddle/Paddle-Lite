@@ -25,12 +25,11 @@ namespace intel_openvino {
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  // Create <Reshape> Node for Intel OpenVINO
   if (IsConstantOperand(shape_operand)) {
     auto shape_count = shape_operand->length / sizeof(int32_t);
     auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
@@ -40,12 +39,12 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
         shape_data[i] = input_operand->type.dimensions.data[i];
       }
     }
-    auto shape_node = AddConstOutputNode<int32_t>(
+    auto shape_tensor = AddConstOutputNode(
         {shape_count},
         std::vector<int32_t>(shape_data, shape_data + shape_count));
-    auto node = std::make_shared<default_opset::Reshape>(
-        *input_node, *shape_node, true);
-    MAP_OUTPUT_NODE(output_operand, node, 0);
+    auto reshape_op = std::make_shared<default_opset::Reshape>(
+        *input_tensor, *shape_tensor, true);
+    MAP_OUTPUT(output_operand, reshape_op, 0);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                          << OperandLifetimeCodeToString(

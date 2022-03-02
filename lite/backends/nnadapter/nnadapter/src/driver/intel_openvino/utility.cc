@@ -35,56 +35,86 @@ PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code) {
 
 ElementType ConvertToOVElementType(
     const NNAdapterOperandPrecisionCode& precision_code) {
-  std::map<NNAdapterOperandPrecisionCode, ElementType> precision_map{
-      {NNADAPTER_BOOL8, ov::element::boolean},
-      {NNADAPTER_INT8, ov::element::i8},
-      {NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, ov::element::i8},
-      {NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL, ov::element::i8},
-      {NNADAPTER_UINT8, ov::element::u8},
-      {NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER, ov::element::u8},
-      {NNADAPTER_INT16, ov::element::i16},
-      {NNADAPTER_QUANT_INT16_SYMM_PER_LAYER, ov::element::i16},
-      {NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL, ov::element::i16},
-      {NNADAPTER_INT32, ov::element::i32},
-      {NNADAPTER_QUANT_INT32_SYMM_PER_LAYER, ov::element::i32},
-      {NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL, ov::element::i32},
-      {NNADAPTER_UINT32, ov::element::u32},
-      {NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER, ov::element::u32},
-      {NNADAPTER_INT64, ov::element::i64},
-      {NNADAPTER_UINT64, ov::element::u64},
-      {NNADAPTER_FLOAT16, ov::element::f16},
-      {NNADAPTER_FLOAT32, ov::element::f32},
-      {NNADAPTER_FLOAT64, ov::element::f64}};
-  auto it = precision_map.find(precision_code);
-  if (it != precision_map.end()) {
-    return it->second;
+  switch (precision_code) {
+    case NNADAPTER_BOOL8:
+      return ov::element::boolean;
+    case NNADAPTER_INT8:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
+      return ov::element::i8;
+    case NNADAPTER_UINT8:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
+      return ov::element::u8;
+    case NNADAPTER_INT16:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
+      return ov::element::i16;
+    case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
+      return ov::element::i32;
+    case NNADAPTER_UINT32:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
+      return ov::element::u32;
+    case NNADAPTER_INT64:
+      return ov::element::i64;
+    case NNADAPTER_UINT64:
+      return ov::element::u64;
+    case NNADAPTER_FLOAT16:
+      return ov::element::f16;
+    case NNADAPTER_FLOAT32:
+      return ov::element::f32;
+    case NNADAPTER_FLOAT64:
+      return ov::element::f64;
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand precision code("
+          << OperandPrecisionCodeToString(precision_code)
+          << ") to OpenVINO element type !";
   }
-  NNADAPTER_LOG(FATAL)
-      << "Failed to convert the NNAdapter operand precision code("
-      << OperandPrecisionCodeToString(precision_code)
-      << ") to OpenVINO's element type !";
   return ov::element::f32;
 }
 
-#define FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(type, element_type) \
-  template <>                                                     \
-  std::shared_ptr<OutputNode> AddConstOutputNode<type>(           \
-      std::vector<size_t> dimensions, std::vector<type> values) { \
-    auto const_node = std::make_shared<default_opset::Constant>(  \
-        element_type, Shape(dimensions), values);                 \
-    return std::make_shared<OutputNode>(const_node->output(0));   \
-  }
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(int8_t, ov::element::i8)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(int16_t, ov::element::i16)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(int32_t, ov::element::i32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(int64_t, ov::element::i64)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(uint8_t, ov::element::u8)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(uint16_t, ov::element::u16)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(uint32_t, ov::element::u32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(uint64_t, ov::element::u64)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(float, ov::element::f32)
-FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE(double, ov::element::f64)
-#undef FUNCTION_ADD_CONST_OUTPUT_NODE_DEFINE
+template <>
+ElementType GetElementType<int8_t>() {
+  return ov::element::i8;
+}
+template <>
+ElementType GetElementType<int16_t>() {
+  return ov::element::i16;
+}
+template <>
+ElementType GetElementType<int32_t>() {
+  return ov::element::i32;
+}
+template <>
+ElementType GetElementType<int64_t>() {
+  return ov::element::i64;
+}
+template <>
+ElementType GetElementType<uint8_t>() {
+  return ov::element::u8;
+}
+template <>
+ElementType GetElementType<uint16_t>() {
+  return ov::element::u16;
+}
+template <>
+ElementType GetElementType<uint32_t>() {
+  return ov::element::u32;
+}
+template <>
+ElementType GetElementType<uint64_t>() {
+  return ov::element::u64;
+}
+template <>
+ElementType GetElementType<float>() {
+  return ov::element::f32;
+}
+template <>
+ElementType GetElementType<double>() {
+  return ov::element::f64;
+}
 
 }  // namespace intel_openvino
 }  // namespace nnadapter

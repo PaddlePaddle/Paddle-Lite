@@ -23,23 +23,22 @@ namespace intel_openvino {
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input0_node = converter->GetMappedOutputNode(input0_operand);
-  if (!input0_node) {
-    input0_node = converter->ConvertToOutputNode(input0_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input0_tensor = converter->GetMappedOutputNode(input0_operand);
+  if (!input0_tensor) {
+    input0_tensor = converter->ConvertOperand(input0_operand);
   }
-  auto input1_node = converter->GetMappedOutputNode(input1_operand);
-  if (!input1_node) {
-    input1_node = converter->ConvertToOutputNode(input1_operand);
+  auto input1_tensor = converter->GetMappedOutputNode(input1_operand);
+  if (!input1_tensor) {
+    input1_tensor = converter->ConvertOperand(input1_operand);
   }
-  // Create <ElementWise> Node for Intel OpenVINO
-  std::shared_ptr<OutputNode> output_node{nullptr};
+  std::shared_ptr<OutputNode> output_tensor{nullptr};
   switch (operation->type) {
-#define CONVERT_ELEMENTWISE(type, class_name)                                 \
-  case NNADAPTER_##type: {                                                    \
-    std::shared_ptr<Node> node = std::make_shared<default_opset::class_name>( \
-        *input0_node, *input1_node);                                          \
-    output_node = MAP_OUTPUT_NODE(output_operand, node, 0);                   \
+#define CONVERT_ELEMENTWISE(type, class_name)                           \
+  case NNADAPTER_##type: {                                              \
+    auto element_wise_op = std::make_shared<default_opset::class_name>( \
+        *input0_tensor, *input1_tensor);                                \
+    output_tensor = MAP_OUTPUT(output_operand, element_wise_op, 0);     \
   } break;
     CONVERT_ELEMENTWISE(ADD, Add);
     CONVERT_ELEMENTWISE(SUB, Subtract);
@@ -59,11 +58,10 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   }
   // Fuse activation
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                 \
-  case NNADAPTER_FUSED_##type: {                                   \
-    std::shared_ptr<Node> act_node =                               \
-        std::make_shared<default_opset::class_name>(*output_node); \
-    MAP_OUTPUT_NODE(output_operand, act_node, 0);                  \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                             \
+  case NNADAPTER_FUSED_##type: {                                               \
+    auto act_op = std::make_shared<default_opset::class_name>(*output_tensor); \
+    MAP_OUTPUT(output_operand, act_op, 0);                                     \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
 #undef CONVERT_UNARY_ACTIVATION

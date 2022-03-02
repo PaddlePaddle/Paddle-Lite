@@ -80,7 +80,7 @@ std::shared_ptr<OutputNode> Converter::UpdateOutputNodeMap(
   return output_node;
 }
 
-std::shared_ptr<OutputNode> Converter::ConvertToOutputNode(
+std::shared_ptr<OutputNode> Converter::ConvertOperand(
     core::Operand* operand, std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < operand->type.dimensions.count; i++) {
@@ -107,7 +107,7 @@ std::shared_ptr<OutputNode> Converter::ConvertToOutputNode(
     return output_node;
   }
   NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
-                          "converted to Intel OpenVINO OutputNode!";
+                          "converted to OpenVINO OutputNode!";
   return nullptr;
 }
 

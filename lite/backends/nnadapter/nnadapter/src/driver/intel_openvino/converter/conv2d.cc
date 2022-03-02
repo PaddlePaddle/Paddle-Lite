@@ -41,12 +41,12 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
         &dilation_width);
   }
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto filter_node = converter->ConvertToOutputNode(filter_operand);
+  auto filter_tensor = converter->ConvertOperand(filter_operand);
   auto ov_auto_pad = ConvertToOVPadType(auto_pad);
   auto ov_strides = ov::Strides(
       {static_cast<size_t>(stride_height), static_cast<size_t>(stride_width)});
@@ -58,35 +58,29 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   auto ov_pads_end =
       ov::CoordinateDiff({static_cast<std::ptrdiff_t>(pad_height_bottom),
                           static_cast<std::ptrdiff_t>(pad_width_right)});
-  // Create <Convolution> Node for Intel OpenVINO
-  std::shared_ptr<OutputNode> output_node{nullptr};
-  std::shared_ptr<Node> node =
-      std::make_shared<default_opset::Convolution>(*input_node,
-                                                   *filter_node,
-                                                   ov_strides,
-                                                   ov_pads_begin,
-                                                   ov_pads_end,
-                                                   ov_diliations,
-                                                   ov_auto_pad);
-  output_node = MAP_OUTPUT_NODE(output_operand, node, 0);
-  NNADAPTER_LOG(INFO) << "Convert conv2d success";
+  std::shared_ptr<OutputNode> output_tensor{nullptr};
+  auto conv2d_op = std::make_shared<default_opset::Convolution>(*input_tensor,
+                                                                *filter_tensor,
+                                                                ov_strides,
+                                                                ov_pads_begin,
+                                                                ov_pads_end,
+                                                                ov_diliations,
+                                                                ov_auto_pad);
+  output_tensor = MAP_OUTPUT(output_operand, conv2d_op, 0);
   // Bias
-  auto unsqueeze_node = converter->AddUnsqueezeOutputNode(
+  auto unsqueeze_output_tensor = converter->AddUnsqueezeOutputNode(
       bias_operand, std::vector<size_t>({3}), std::vector<int64_t>({0, 2, 3}));
-  std::shared_ptr<Node> add_node =
-      std::make_shared<default_opset::Add>(*output_node, *unsqueeze_node);
-  output_node = MAP_OUTPUT_NODE(output_operand, add_node, 0);
-  NNADAPTER_LOG(INFO) << " Convert conv2d-bias-add success";
+  auto add_op = std::make_shared<default_opset::Add>(*output_tensor,
+                                                     *unsqueeze_output_tensor);
+  output_tensor = MAP_OUTPUT(output_operand, add_op, 0);
   // Fuse activation
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                 \
-  case NNADAPTER_FUSED_##type: {                                   \
-    std::shared_ptr<Node> act_node =                               \
-        std::make_shared<default_opset::class_name>(*output_node); \
-    MAP_OUTPUT_NODE(output_operand, act_node, 0);                  \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                             \
+  case NNADAPTER_FUSED_##type: {                                               \
+    auto act_op = std::make_shared<default_opset::class_name>(*output_tensor); \
+    MAP_OUTPUT(output_operand, act_op, 0);                                     \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    NNADAPTER_LOG(INFO) << " Convert conv2d-relu success!";
 #undef CONVERT_UNARY_ACTIVATION
     case NNADAPTER_FUSED_NONE:
       break;

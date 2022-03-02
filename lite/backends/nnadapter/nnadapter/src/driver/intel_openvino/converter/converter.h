@@ -37,7 +37,7 @@ class Converter {
   int Apply(core::Model* model);
 
   // Convert a NNAdapter operand to an intel openvino OutputNode
-  std::shared_ptr<OutputNode> ConvertToOutputNode(
+  std::shared_ptr<OutputNode> ConvertOperand(
       core::Operand* operand, std::vector<int32_t> dimensions = {});
 
   std::shared_ptr<OutputNode> UpdateOutputNodeMap(
@@ -50,8 +50,8 @@ class Converter {
       core::Operand* operand,
       std::vector<size_t> dimensions,
       std::vector<T> axes) {
-    auto axes_node = AddConstOutputNode<T>(dimensions, axes);
-    auto y_node = ConvertToOutputNode(operand);
+    auto axes_node = AddConstOutputNode(dimensions, axes);
+    auto y_node = ConvertOperand(operand);
     auto unsqueeze_node =
         std::make_shared<default_opset::Unsqueeze>(*y_node, *axes_node);
     return std::make_shared<OutputNode>(unsqueeze_node->output(0));
@@ -63,7 +63,7 @@ class Converter {
       output_nodes_;
 };
 
-#define MAP_OUTPUT_NODE(output_operand, op_node, output_index)       \
+#define MAP_OUTPUT(output_operand, op_node, output_index)            \
   ({                                                                 \
     auto output_node =                                               \
         std::make_shared<OutputNode>(op_node->output(output_index)); \

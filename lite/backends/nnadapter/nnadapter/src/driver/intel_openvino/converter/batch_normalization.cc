@@ -24,24 +24,23 @@ int ConvertBatchNormalization(Converter* converter,
                               core::Operation* operation) {
   BATCH_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto gamma_node = converter->ConvertToOutputNode(scale_operand);
-  auto beta_node = converter->ConvertToOutputNode(bias_operand);
-  auto mean_node = converter->ConvertToOutputNode(mean_operand);
-  auto variance_node = converter->ConvertToOutputNode(variance_operand);
-  // Create <BatchNormInference> Node for Intel OpenVINO
-  std::shared_ptr<Node> node =
-      std::make_shared<default_opset::BatchNormInference>(*input_node,
-                                                          *gamma_node,
-                                                          *beta_node,
-                                                          *mean_node,
-                                                          *variance_node,
+  auto gamma_tensor = converter->ConvertOperand(scale_operand);
+  auto beta_tensor = converter->ConvertOperand(bias_operand);
+  auto mean_tensor = converter->ConvertOperand(mean_operand);
+  auto variance_tensor = converter->ConvertOperand(variance_operand);
+  auto batch_norm_op =
+      std::make_shared<default_opset::BatchNormInference>(*input_tensor,
+                                                          *gamma_tensor,
+                                                          *beta_tensor,
+                                                          *mean_tensor,
+                                                          *variance_tensor,
                                                           epsilon);
-  MAP_OUTPUT_NODE(output_operand, node, 0);
+  MAP_OUTPUT(output_operand, batch_norm_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -60,12 +60,12 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   NNADAPTER_LOG(INFO) << "OpenVINO runtime version - "
                       << ov::get_openvino_version();
   // Initialize OpenVINO Runtime Core object
-  ov_core_ = std::make_shared<ov::Core>();
+  runtime_core_ = std::make_shared<ov::Core>();
   NNADAPTER_LOG(INFO)
       << "NNAdapter has already loaded the OpenVINO Runtime Core!";
   auto device_name = context_->GetFirtSelectedDeviceName();
   NNADAPTER_LOG(INFO) << device_name << " version - "
-                      << ov_core_->get_versions(device_name);
+                      << runtime_core_->get_versions(device_name);
   return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
 }
 
@@ -107,8 +107,9 @@ int Program::BuildFromModel(core::Model* model) {
   // Convert a NNAdapter model to an Intel OpenVINO's model
   std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
       result_nodes_, parameter_nodes_, "openvino_graph");
-  compiled_ov_model_ = std::make_shared<ov::CompiledModel>(
-      ov_core_->compile_model(ov_model, context_->GetFirtSelectedDeviceName()));
+  compiled_model_ =
+      std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
+          ov_model, context_->GetFirtSelectedDeviceName()));
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -148,9 +149,9 @@ int Program::Execute(uint32_t input_count,
   int ret = CheckInputsAndOutputs(
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
-  NNADAPTER_CHECK(compiled_ov_model_);
+  NNADAPTER_CHECK(compiled_model_);
   // Create infer request
-  ov::InferRequest infer_request = compiled_ov_model_->create_infer_request();
+  ov::InferRequest infer_request = compiled_model_->create_infer_request();
   // Set inputs
   for (uint32_t i = 0; i < input_count; i++) {
     auto& arg = input_arguments[i];

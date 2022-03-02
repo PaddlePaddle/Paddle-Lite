@@ -23,15 +23,14 @@ namespace intel_openvino {
 int ConvertSoftmax(Converter* converter, core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  // Create <Softmax> Node for Intel OpenVINO
-  std::shared_ptr<Node> node =
-      std::make_shared<default_opset::Softmax>(*input_node, axis);
-  MAP_OUTPUT_NODE(output_operand, node, 0);
+  auto softmax_op =
+      std::make_shared<default_opset::Softmax>(*input_tensor, axis);
+  MAP_OUTPUT(output_operand, softmax_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 

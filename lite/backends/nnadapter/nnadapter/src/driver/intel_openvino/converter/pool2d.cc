@@ -23,10 +23,10 @@ namespace intel_openvino {
 int ConvertPool2D(Converter* converter, core::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to Intel OpenVINO's OutputNode
-  auto input_node = converter->GetMappedOutputNode(input_operand);
-  if (!input_node) {
-    input_node = converter->ConvertToOutputNode(input_operand);
+  // Convert operand to OpenVINO OutputNode
+  auto input_tensor = converter->GetMappedOutputNode(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   auto ov_auto_pad = ConvertToOVPadType(auto_pad);
   auto ov_pads_begin = Shape({static_cast<size_t>(pad_height_top),
@@ -39,50 +39,49 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
       {static_cast<size_t>(kernel_height), static_cast<size_t>(kernel_width)});
   auto rounding_type =
       ceil_mode ? ov::op::RoundingType::CEIL : ov::op::RoundingType::FLOOR;
-  // Create <Pooling> Node for Intel OpenVINO
-  std::shared_ptr<Node> node{nullptr};
+  std::shared_ptr<Node> pool2d_op{nullptr};
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     if (global_pooling) {
-      auto axes_node = AddConstOutputNode<int64_t>(
+      auto axes_tensor = AddConstOutputNode(
           {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));
-      node = std::make_shared<default_opset::ReduceMean>(
-          *input_node, *axes_node, true);
+      pool2d_op = std::make_shared<default_opset::ReduceMean>(
+          *input_tensor, *axes_tensor, true);
     } else {
-      node = std::make_shared<default_opset::AvgPool>(*input_node,
-                                                      ov_strides,
-                                                      ov_pads_begin,
-                                                      ov_pads_end,
-                                                      ov_kernel,
-                                                      flag,
-                                                      rounding_type,
-                                                      ov_auto_pad);
+      pool2d_op = std::make_shared<default_opset::AvgPool>(*input_tensor,
+                                                           ov_strides,
+                                                           ov_pads_begin,
+                                                           ov_pads_end,
+                                                           ov_kernel,
+                                                           flag,
+                                                           rounding_type,
+                                                           ov_auto_pad);
     }
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     if (global_pooling) {
-      auto axes_node = AddConstOutputNode<int64_t>(
+      auto axes_tensor = AddConstOutputNode(
           {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));
-      node = std::make_shared<default_opset::ReduceMax>(
-          *input_node, *axes_node, true);
+      pool2d_op = std::make_shared<default_opset::ReduceMax>(
+          *input_tensor, *axes_tensor, true);
     } else {
-      node = std::make_shared<default_opset::MaxPool>(*input_node,
-                                                      ov_strides,
-                                                      ov::Strides({1, 1}),
-                                                      ov_pads_begin,
-                                                      ov_pads_end,
-                                                      ov_kernel,
-                                                      rounding_type,
-                                                      ov_auto_pad);
+      pool2d_op = std::make_shared<default_opset::MaxPool>(*input_tensor,
+                                                           ov_strides,
+                                                           ov::Strides({1, 1}),
+                                                           ov_pads_begin,
+                                                           ov_pads_end,
+                                                           ov_kernel,
+                                                           rounding_type,
+                                                           ov_auto_pad);
     }
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  MAP_OUTPUT_NODE(output_operand, node, 0);
+  MAP_OUTPUT(output_operand, pool2d_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 
