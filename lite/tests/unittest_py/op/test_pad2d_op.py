@@ -141,10 +141,13 @@ class TestPad2dOp(AutoScanTest):
             if target_type == TargetType.ARM and predictor_config.precision(
             ) == PrecisionType.FP16 and data_format == "NHWC":
                 return True
+            if target_type in [TargetType.OpenCL, TargetType.Metal
+                               ] and data_format == "NHWC":
+                return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "Lite doesn't not support for NHWC pad2d on ARM && fp16, later add it"
+            "Lite doesn't not support for NHWC pad2d on ARM && fp16, and on Metal and OpenCL"
         )
 
     def test(self, *args, **kwargs):
