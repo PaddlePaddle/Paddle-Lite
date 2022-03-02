@@ -34,6 +34,11 @@ class TestBilinearOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # x86 has diff
         self.enable_testing_on_place(
             TargetType.X86,

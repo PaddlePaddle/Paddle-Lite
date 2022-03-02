@@ -37,6 +37,10 @@ class TestSequenceReshapeOp(AutoScanTest):
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP16],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -120,7 +124,17 @@ class TestSequenceReshapeOp(AutoScanTest):
         return self.get_predictor_configs(), ["sequence_pool"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            pooltype = program_config.ops[0].attrs["pooltype"]
+            if target_type == TargetType.ARM and predictor_config.precision(
+            ) == PrecisionType.FP16 and pooltype == "MAX":
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has diff in a specific case in the 2th output on arm for MAX pooling type. but We needn't fix it."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=500)
