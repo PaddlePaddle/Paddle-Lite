@@ -186,8 +186,7 @@ class TestNearestV2InterpOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
             if predictor_config.target() in [TargetType.ARM]:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
+                return True
 
         def _teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
