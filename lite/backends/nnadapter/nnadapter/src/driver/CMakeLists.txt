@@ -57,3 +57,7 @@ endif()
 if(NNADAPTER_WITH_ANDROID_NNAPI)
   add_subdirectory(android_nnapi)
 endif()
+
+if(NNADAPTER_WITH_INTEL_OPENVINO)
+  add_subdirectory(intel_openvino)
+endif()
