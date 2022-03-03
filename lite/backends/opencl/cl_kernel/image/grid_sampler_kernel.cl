@@ -83,6 +83,22 @@ __kernel void grid_sampler(__read_only image2d_t input,
   grid_y = fmin(fmax(grid_y, 0), y_max);
 #endif
 #endif
+
+#ifdef NEAREST
+  int in_ind_w = round(grid_x);
+  int in_ind_h = round(grid_y);
+  int x_p = out_c * out_width + in_ind_w;
+  int y_p = out_n * out_height + in_ind_h;
+
+  CL_DTYPE4 out_val;
+  if (in_ind_w < 0 || in_ind_w > out_width - 1 || in_ind_h < 0 ||
+      in_ind_h > out_height - 1) {
+    out_val = (CL_DTYPE4)(0.0);
+  } else {
+    out_val = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+  }
+#endif
+#ifdef BILINEAR
   int xw = floor(grid_x);
   int yn = floor(grid_y);
   int x_p = out_c * out_width + xw;
@@ -119,6 +135,7 @@ __kernel void grid_sampler(__read_only image2d_t input,
                       in_ne * (CL_DTYPE4)(dw) * (CL_DTYPE4)(ds) +
                       in_sw * (CL_DTYPE4)(de) * (CL_DTYPE4)(dn) +
                       in_se * (CL_DTYPE4)(dw) * (CL_DTYPE4)(dn);
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, outpoints, out_val);
 
   if (out_hblk_id * 4 + 1 < out_height) {  // y
@@ -168,6 +185,22 @@ __kernel void grid_sampler(__read_only image2d_t input,
     grid_y = fmin(fmax(grid_y, 0), y_max);
 #endif
 #endif
+
+#ifdef NEAREST
+    int in_ind_w = round(grid_x);
+    int in_ind_h = round(grid_y);
+    int x_p = out_c * out_width + in_ind_w;
+    int y_p = out_n * out_height + in_ind_h;
+
+    CL_DTYPE4 out_val;
+    if (in_ind_w < 0 || in_ind_w > out_width - 1 || in_ind_h < 0 ||
+        in_ind_h > out_height - 1) {
+      out_val = (CL_DTYPE4)(0.0);
+    } else {
+      out_val = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+    }
+#endif
+#ifdef BILINEAR
     xw = floor(grid_x);
     yn = floor(grid_y);
     x_p = out_c * out_width + xw;
@@ -202,6 +235,7 @@ __kernel void grid_sampler(__read_only image2d_t input,
               in_ne * (CL_DTYPE4)(dw) * (CL_DTYPE4)(ds) +
               in_sw * (CL_DTYPE4)(de) * (CL_DTYPE4)(dn) +
               in_se * (CL_DTYPE4)(dw) * (CL_DTYPE4)(dn);
+#endif
     WRITE_IMG_TYPE(
         CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y), out_val);
   }
@@ -253,6 +287,22 @@ __kernel void grid_sampler(__read_only image2d_t input,
     grid_y = fmin(fmax(grid_y, 0), y_max);
 #endif
 #endif
+
+#ifdef NEAREST
+    int in_ind_w = round(grid_x);
+    int in_ind_h = round(grid_y);
+    int x_p = out_c * out_width + in_ind_w;
+    int y_p = out_n * out_height + in_ind_h;
+
+    CL_DTYPE4 out_val;
+    if (in_ind_w < 0 || in_ind_w > out_width - 1 || in_ind_h < 0 ||
+        in_ind_h > out_height - 1) {
+      out_val = (CL_DTYPE4)(0.0);
+    } else {
+      out_val = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+    }
+#endif
+#ifdef BILINEAR
     xw = floor(grid_x);
     yn = floor(grid_y);
     x_p = out_c * out_width + xw;
@@ -287,6 +337,7 @@ __kernel void grid_sampler(__read_only image2d_t input,
               in_ne * (CL_DTYPE4)(dw) * (CL_DTYPE4)(ds) +
               in_sw * (CL_DTYPE4)(de) * (CL_DTYPE4)(dn) +
               in_se * (CL_DTYPE4)(dw) * (CL_DTYPE4)(dn);
+#endif
     WRITE_IMG_TYPE(
         CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y), out_val);
   }
@@ -338,6 +389,22 @@ __kernel void grid_sampler(__read_only image2d_t input,
     grid_y = fmin(fmax(grid_y, 0), y_max);
 #endif
 #endif
+
+#ifdef NEAREST
+    int in_ind_w = round(grid_x);
+    int in_ind_h = round(grid_y);
+    int x_p = out_c * out_width + in_ind_w;
+    int y_p = out_n * out_height + in_ind_h;
+
+    CL_DTYPE4 out_val;
+    if (in_ind_w < 0 || in_ind_w > out_width - 1 || in_ind_h < 0 ||
+        in_ind_h > out_height - 1) {
+      out_val = (CL_DTYPE4)(0.0);
+    } else {
+      out_val = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+    }
+#endif
+#ifdef BILINEAR
     xw = floor(grid_x);
     yn = floor(grid_y);
     x_p = out_c * out_width + xw;
@@ -372,6 +439,7 @@ __kernel void grid_sampler(__read_only image2d_t input,
               in_ne * (CL_DTYPE4)(dw) * (CL_DTYPE4)(ds) +
               in_sw * (CL_DTYPE4)(de) * (CL_DTYPE4)(dn) +
               in_se * (CL_DTYPE4)(dw) * (CL_DTYPE4)(dn);
+#endif
     WRITE_IMG_TYPE(
         CL_DTYPE_CHAR, output, (int2)(outpoints.x, outpoints.y), out_val);
   }

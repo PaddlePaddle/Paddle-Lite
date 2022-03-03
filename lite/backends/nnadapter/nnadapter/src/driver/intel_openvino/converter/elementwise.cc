@@ -23,7 +23,7 @@ namespace intel_openvino {
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO Tensor
+  // Convert operand to OpenVINO tensor
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
     input0_tensor = converter->ConvertOperand(input0_operand);

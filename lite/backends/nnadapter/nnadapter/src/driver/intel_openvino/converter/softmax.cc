@@ -23,7 +23,7 @@ namespace intel_openvino {
 int ConvertSoftmax(Converter* converter, core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO Tensor
+  // Convert operand to OpenVINO tensor
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);

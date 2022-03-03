@@ -67,7 +67,7 @@ REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d_transpose,
                    ConvertConv2dTranspose,
                    "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
-                   "timvx,cambricon_mlu,android_nnapi");
+                   "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -300,18 +300,22 @@ REGISTER_CONVERTER(split,
                    "huawei_kirin_npu,huawei_ascend_npu,kunlunxin_xtcl,"
                    "verisilicon_timvx,cambricon_mlu");
 REGISTER_CONVERTER(calib, ConvertCalib, "huawei_ascend_npu,cambricon_mlu");
-REGISTER_CONVERTER(nearest_interp,
-                   ConvertInterpolate,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu");
-REGISTER_CONVERTER(nearest_interp_v2,
-                   ConvertInterpolate,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu");
-REGISTER_CONVERTER(bilinear_interp,
-                   ConvertInterpolate,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu");
-REGISTER_CONVERTER(bilinear_interp_v2,
-                   ConvertInterpolate,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu");
+REGISTER_CONVERTER(
+    nearest_interp,
+    ConvertInterpolate,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_kirin_npu");
+REGISTER_CONVERTER(
+    nearest_interp_v2,
+    ConvertInterpolate,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_kirin_npu");
+REGISTER_CONVERTER(
+    bilinear_interp,
+    ConvertInterpolate,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_kirin_npu");
+REGISTER_CONVERTER(
+    bilinear_interp_v2,
+    ConvertInterpolate,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_kirin_npu");
 REGISTER_CONVERTER(flatten,
                    ConvertFlatten,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"

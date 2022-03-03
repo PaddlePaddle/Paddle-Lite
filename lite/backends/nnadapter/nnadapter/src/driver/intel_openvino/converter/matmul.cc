@@ -23,7 +23,7 @@ namespace intel_openvino {
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO Tensor
+  // Convert operand to OpenVINO tensor
   auto x_tensor = converter->GetMappedTensor(x_operand);
   if (!x_tensor) {
     x_tensor = converter->ConvertOperand(x_operand);

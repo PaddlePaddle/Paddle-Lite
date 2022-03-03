@@ -33,8 +33,6 @@ class ThreadPool {
 
   static void Enqueue(TASK_BASIC&& task);
   static void Enqueue(TASK_COMMON&& task);
-  static void AcquireThreadPool();
-  static void ReleaseThreadPool();
   static int Init(int number);
   static void Destroy();
 
@@ -45,7 +43,6 @@ class ThreadPool {
 
   std::vector<std::thread> workers_;
   std::atomic<bool> stop_{false};
-  bool ready_{true};
   std::pair<TASK, std::vector<std::atomic<bool>*>> tasks_;
   std::condition_variable cv_;
   std::mutex mutex_;

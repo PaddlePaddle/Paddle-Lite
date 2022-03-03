@@ -41,7 +41,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
         &dilation_width);
   }
 
-  // Convert operand to OpenVINO Tensor
+  // Convert operand to OpenVINO tensor
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
