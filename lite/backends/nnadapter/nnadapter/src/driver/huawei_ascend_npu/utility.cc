@@ -286,6 +286,8 @@ bool BuildOMModelToBuffer(
                                     optional_shape_str.data()));
       options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "ND"));
     }
+  } else {
+    options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
   }
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.

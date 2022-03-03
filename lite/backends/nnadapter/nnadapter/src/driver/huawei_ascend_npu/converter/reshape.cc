@@ -37,7 +37,11 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
     auto shape_data = temporary_shape.data;
     for (uint32_t i = 0; i < shape_count; i++) {
       if (shape_data[i] == 0) {
-        shape_data[i] = input_operand->type.dimensions.data[i];
+        if (input_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+          shape_data[i] = -1;
+        } else {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
       }
     }
     shape_operator = converter->AddInt32ConstantOperator(

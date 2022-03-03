@@ -28,7 +28,45 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto shape_tensor = converter->ConvertOperand(shape_operand);
+  std::shared_ptr<Operator> shape_tensor = nullptr;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    auto shape_count = temporary_shape.count;
+    auto shape_data = temporary_shape.data;
+    for (uint32_t i = 0; i < shape_count; i++) {
+      if (shape_data[i] == 0) {
+        if (input_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+          shape_data[i] = -1;
+        } else {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
+      }
+    }
+    shape_tensor = converter->ConvertOperand(
+        shape_operand,
+        std::vector<int64_t>(shape_data, shape_data + shape_count));
+  } else if (IsConstantOperand(shape_operand)) {
+    auto shape_count = shape_operand->length / sizeof(int32_t);
+    auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+    for (uint32_t i = 0; i < shape_count; i++) {
+      if (shape_data[i] == 0) {
+        if (input_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+          shape_data[i] = -1;
+        } else {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
+      }
+    }
+    shape_tensor = converter->ConvertOperand(
+        shape_operand,
+        std::vector<int64_t>(shape_data, shape_data + shape_count));
+  } else {
+    shape_tensor = converter->GetMappedTensor(shape_operand);
+    if (!shape_tensor) {
+      shape_tensor = converter->ConvertOperand(shape_operand);
+    }
+  }
+
   auto reshape_node =
       converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
   NNADAPTER_CHECK(reshape_node) << "Failed to add reshape node.";
