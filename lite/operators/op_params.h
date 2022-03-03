@@ -650,6 +650,15 @@ struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
   int bit_length;
 };
 
+struct QuantizeLinearParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* scale{};
+  const lite::Tensor* zero_point{};
+  lite::Tensor* y{};
+  int quant_axis;
+  int bit_length;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -1057,7 +1066,8 @@ struct SequencePoolParam : ParamBase {
 
 struct SequenceConvParam : ParamBase {
   const lite::Tensor* X{};
-  const lite::Tensor* Filter{};
+  // not const for python unit_test
+  lite::Tensor* Filter{};
   lite::Tensor* Out{};
   int contextStart{0};
   int contextStride{1};

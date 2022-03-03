@@ -195,7 +195,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
-    // FuseMatMulAddIntoFullyConnected(model);
+    FuseMatMulAddIntoFullyConnected(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph

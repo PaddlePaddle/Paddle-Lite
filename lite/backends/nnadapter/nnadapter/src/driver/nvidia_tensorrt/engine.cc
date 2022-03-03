@@ -79,7 +79,8 @@ int Program::BuildFromModel(core::Model* model) {
     NNADAPTER_CHECK(tensors_.count(out_operand));
     network_->markOutput(*tensors_[out_operand].back());
   }
-  // Set config_
+// Set config_
+#if TENSORRT_MAJOR_VERSION >= 8
   // Identify network
   plan_.reset(builder_->buildSerializedNetwork(*network_, *config_));
   NNADAPTER_CHECK(plan_);
@@ -87,6 +88,9 @@ int Program::BuildFromModel(core::Model* model) {
   runtime_.reset(nvinfer1::createInferRuntime(*TrtLogger::Global()));
   NNADAPTER_CHECK(runtime_);
   engine_.reset(runtime_->deserializeCudaEngine(plan_->data(), plan_->size()));
+#else
+  engine_.reset(builder_->buildEngineWithConfig(*network_, *config_));
+#endif
   NNADAPTER_CHECK(engine_);
   nv_context_.reset(engine_->createExecutionContext());
   NNADAPTER_CHECK(nv_context_);

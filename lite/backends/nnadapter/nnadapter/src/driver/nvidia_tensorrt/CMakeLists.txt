@@ -26,8 +26,8 @@ set(DEPS ${NNADAPTER_OPERATIONS}
          ${${DEVICE_NAME}_deps}
          nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
 
-aux_source_directory(plugin PLUGINS)
-cuda_add_library(${DEVICE_NAME}_plugin STATIC ${PLUGINS})
+aux_source_directory(converter/plugin PLUGINS)
+add_library(${DEVICE_NAME}_plugin STATIC ${PLUGINS})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} ${DEVICE_NAME}_plugin "-Wl,--end-group")

@@ -33,7 +33,14 @@ class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~MatMulV2Compute() = default;
 
  private:
-  int m_, n_, k_;
+  int m_{1};
+  int n_{1};
+  int k_{1};
+  int lda_{1};
+  int ldb_{1};
+  int ldc_{1};
+  DDim last_x_shape_;
+  DDim last_y_shape_;
 };
 
 }  // namespace arm
