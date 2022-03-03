@@ -561,7 +561,12 @@ __kernel void mul_groups_cut0_bias(__read_only image2d_t input,
                                    __private const int out_c,
                                    __private const int out_c_align_group4,
                                    __private const int groups,
-                                   __read_only image2d_t prelu_alpha) {
+                                   __read_only image2d_t prelu_alpha
+#ifdef ELT_FUSE
+                                   ,
+                                   __read_only image2d_t second_input_image
+#endif
+                                   ) {
   const int pos_x = get_global_id(0);
   const int pos_y = get_global_id(1);
 
@@ -665,6 +670,10 @@ __kernel void mul_groups_cut0_bias(__read_only image2d_t input,
 
 #ifdef SCALE_ACTIVATION
   out = fuse_scale(out, 1.f, 0.f, 0.f);
+#endif
+
+#ifdef ELT_FUSE
+  elt_fuse_func_wrapper(second_input_image, (int2)(pos_x, pos_y), &out);
 #endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x, pos_y), out);

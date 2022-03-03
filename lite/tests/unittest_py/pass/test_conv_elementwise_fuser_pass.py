@@ -39,8 +39,6 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #some case OpenCL not support 
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -55,7 +53,6 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -208,7 +205,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=200,
+            max_examples=500,
             passes=["lite_conv_elementwise_fuser_pass"])
 
 
