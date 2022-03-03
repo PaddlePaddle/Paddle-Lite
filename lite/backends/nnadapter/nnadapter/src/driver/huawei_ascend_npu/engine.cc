@@ -70,6 +70,78 @@ Context::Context(void* device, const char* properties) : device_(device) {
         GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
   }
   NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
+  // HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH)) {
+    ascend_config_params_.dump_model_path =
+        key_values[HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH];
+  } else {
+    ascend_config_params_.dump_model_path =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH);
+  }
+  NNADAPTER_LOG(INFO) << "dump model path: "
+                      << ascend_config_params_.dump_model_path;
+  // HUAWEI_ASCEND_NPU_PRECISION_MODE
+  if (key_values.count(HUAWEI_ASCEND_NPU_PRECISION_MODE)) {
+    ascend_config_params_.precision_mode =
+        key_values[HUAWEI_ASCEND_NPU_PRECISION_MODE];
+  } else {
+    ascend_config_params_.precision_mode =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_PRECISION_MODE);
+  }
+  NNADAPTER_LOG(INFO) << "precision mode: "
+                      << ascend_config_params_.precision_mode;
+  if (ascend_config_params_.precision_mode == "allow_mix_precision") {
+    // HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH
+    if (key_values.count(HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH)) {
+      ascend_config_params_.modify_mixlist_path =
+          key_values[HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH];
+    } else {
+      ascend_config_params_.modify_mixlist_path =
+          GetStringFromEnv(HUAWEI_ASCEND_NPU_MODIFY_MIXLIST_FILE_PATH);
+    }
+    NNADAPTER_LOG(INFO) << "modify mixlist path: "
+                        << ascend_config_params_.modify_mixlist_path;
+  }
+  // HUAWEI_ASCEND_NPU_OP_SELECT_IMPL_MODE
+  if (key_values.count(HUAWEI_ASCEND_NPU_OP_SELECT_IMPL_MODE)) {
+    ascend_config_params_.op_select_impl_mode =
+        key_values[HUAWEI_ASCEND_NPU_OP_SELECT_IMPL_MODE];
+  } else {
+    ascend_config_params_.op_select_impl_mode =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_OP_SELECT_IMPL_MODE);
+  }
+  NNADAPTER_LOG(INFO) << "op select impl mode: "
+                      << ascend_config_params_.op_select_impl_mode;
+  // HUAWEI_ASCEND_NPU_OPTYPELIST_FOR_IMPLMODE
+  if (key_values.count(HUAWEI_ASCEND_NPU_OPTYPELIST_FOR_IMPLMODE)) {
+    ascend_config_params_.op_type_list_for_impl_mode =
+        key_values[HUAWEI_ASCEND_NPU_OPTYPELIST_FOR_IMPLMODE];
+  } else {
+    ascend_config_params_.op_type_list_for_impl_mode =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_OPTYPELIST_FOR_IMPLMODE);
+  }
+  NNADAPTER_LOG(INFO) << "op type list for impl mode: "
+                      << ascend_config_params_.op_type_list_for_impl_mode;
+  // HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT
+  if (key_values.count(HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT)) {
+    ascend_config_params_.enable_compress_weight =
+        key_values[HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT];
+  } else {
+    ascend_config_params_.enable_compress_weight =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT);
+  }
+  NNADAPTER_LOG(INFO) << "enable compressw weight: "
+                      << ascend_config_params_.enable_compress_weight;
+  // HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE
+  if (key_values.count(HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE)) {
+    ascend_config_params_.auto_tune_mode =
+        key_values[HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE];
+  } else {
+    ascend_config_params_.auto_tune_mode =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE);
+  }
+  NNADAPTER_LOG(INFO) << "auto tune mode: "
+                      << ascend_config_params_.auto_tune_mode;
 }
 
 Context::~Context() {}
@@ -123,7 +195,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
-    FuseMatMulAddIntoFullyConnected(model);
+    // FuseMatMulAddIntoFullyConnected(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
@@ -163,7 +235,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
                               model_buffer,
                               dynamic_shape_info,
                               optional_shape_str,
-                              dynamic_shape_mode_)) {
+                              dynamic_shape_mode_,
+                              context_->ascend_config_params())) {
       NNADAPTER_LOG(FATAL)
           << "Failed to build a CANN OM model and serialize it into a buffer!";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;

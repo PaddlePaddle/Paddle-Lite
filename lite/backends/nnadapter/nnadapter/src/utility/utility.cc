@@ -239,7 +239,9 @@ NNADAPTER_EXPORT int64_t ProductionOfDimensions(
   int64_t production = 1;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
     auto dimension = input_dimensions_data[i];
-    NNADAPTER_CHECK_GT(dimension, 0);
+    if (dimension < 0) {
+      return -1;
+    }
     production *= dimension;
   }
   return production;

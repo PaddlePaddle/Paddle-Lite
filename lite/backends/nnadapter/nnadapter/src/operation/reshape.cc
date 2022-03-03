@@ -51,12 +51,6 @@ int PrepareReshape(core::Operation* operation) {
     NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
   }
   output_type.dimensions.count = shape_count;
-  for (uint32_t i = 0; i < shape_count; i++) {
-    if (shape_data[i] == 0 &&
-        input_type.dimensions.data[i] != NNADAPTER_UNKNOWN) {
-      shape_data[i] = input_type.dimensions.data[i];
-    }
-  }
 
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
                                 uint32_t input_dimensions_count,

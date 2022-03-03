@@ -72,7 +72,7 @@ static void FinalizeGraphBuilder() {
   // ge::aclgrphBuildFinalize();
 }
 
-void InitializeGraphBuilder() {
+void InitializeGraphBuilder(AscendConfigParams* config_params) {
   static std::mutex mtx;
   static bool initialized = false;
   mtx.lock();
@@ -85,9 +85,40 @@ void InitializeGraphBuilder() {
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 3)
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
     global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
     global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
+    auto precision_mode = config_params->precision_mode;
+    if (!precision_mode.empty()) {
+      global_options.insert(
+          std::make_pair(ge::ir_option::PRECISION_MODE,
+                         ge::AscendString(precision_mode.c_str())));
+      if (precision_mode == "allow_mix_precision" &&
+          !config_params->modify_mixlist_path.empty()) {
+        global_options.insert(std::make_pair(
+            ge::ir_option::MODIFY_MIXLIST,
+            ge::AscendString(config_params->modify_mixlist_path.c_str())));
+      }
+    }
+    if (!config_params->op_select_impl_mode.empty() &&
+        !config_params->op_type_list_for_impl_mode.empty()) {
+      global_options.insert(
+          std::make_pair(ge::ir_option::OP_SELECT_IMPL_MODE,
+                         config_params->op_select_impl_mode.c_str()));
+      global_options.insert(
+          std::make_pair(ge::ir_option::OPTYPELIST_FOR_IMPLMODE,
+                         config_params->op_type_list_for_impl_mode.c_str()));
+    }
+    if (!config_params->enable_compress_weight.empty()) {
+      global_options.insert(
+          std::make_pair(ge::ir_option::ENABLE_COMPRESS_WEIGHT,
+                         config_params->enable_compress_weight.c_str()));
+    }
+    if (!config_params->auto_tune_mode.empty()) {
+      global_options.insert(
+          std::make_pair(ge::ir_option::AUTO_TUNE_MODE,
+                         config_params->auto_tune_mode.c_str()));
+    }
 #endif
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
@@ -203,9 +234,10 @@ bool BuildOMModelToBuffer(
     std::vector<uint8_t>* model_buffer,
     const std::vector<std::string>& dynamic_shape_info,
     const std::string& optional_shape_str,
-    const DynamicShapeMode dynamic_shape_mode) {
+    const DynamicShapeMode dynamic_shape_mode,
+    AscendConfigParams* config_params) {
   // Should initialize the GE graph builder before model building
-  InitializeGraphBuilder();
+  InitializeGraphBuilder(config_params);
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1
@@ -225,7 +257,6 @@ bool BuildOMModelToBuffer(
   std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
   options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
-  options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
 
   std::string input_shape_info;
   for (size_t i = 0; i < dynamic_shape_info.size(); i++) {
@@ -245,17 +276,22 @@ bool BuildOMModelToBuffer(
     if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
                                     optional_shape_str.data()));
+      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
     } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
                                     optional_shape_str.data()));
+      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
     } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
                                     optional_shape_str.data()));
+      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "ND"));
     }
   }
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.
-  // ATC_CALL(aclgrphSaveModel("ir_graph_model", om_buffer));
+  if (!config_params->dump_model_path.empty()) {
+    ATC_CALL(aclgrphSaveModel(config_params->dump_model_path, om_buffer));
+  }
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
   memcpy(reinterpret_cast<void*>(model_buffer->data()),
@@ -714,8 +750,14 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
   std::vector<std::string> optional_shape;
   for (auto& input_type : input_types) {
     auto dimensions = input_type.dimensions;
-    std::vector<int32_t> shape(dimensions.data,
-                               dimensions.data + dimensions.count);
+    std::vector<int32_t> shape;
+    for (size_t i = 0; i < dimensions.count; i++) {
+      if (dimensions.data[i] == NNADAPTER_UNKNOWN) {
+        shape.push_back(-1);
+      } else {
+        shape.push_back(dimensions.data[i]);
+      }
+    }
     if (!IsDynamicShapeOperandType(input_type)) {
       dynamic_shape_info->push_back(ShapeToString(shape));
       continue;
