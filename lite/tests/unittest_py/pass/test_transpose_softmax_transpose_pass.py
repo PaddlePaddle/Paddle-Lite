@@ -70,11 +70,6 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # get input&output shape, get op attributes
-        x_shape = list(program_config.inputs["transpose1_input_x"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(x_shape) == 2 or len(x_shape) == 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -193,14 +188,9 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 300
         self.run_and_statis(
             quant=False,
-            max_examples=max_examples,
+            max_examples=50,
             passes=["lite_transpose_softmax_transpose_fuse_pass"])
 
 
