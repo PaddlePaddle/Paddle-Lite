@@ -24,6 +24,9 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+import numpy as np
+from functools import partial
+
 
 class TestPool2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
@@ -119,6 +122,9 @@ class TestPool2dOp(AutoScanTest):
         if paddings == [0, 0] or paddings == [0, 0, 0, 0]:
             assume(ceil_mode == False)
 
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
         build_ops = OpConfig(
             type="pool2d",
             inputs={"X": ["input_data"]},
@@ -142,7 +148,9 @@ class TestPool2dOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input))
+            },
             outputs=["output_data"])
         return program_config
 
@@ -153,19 +161,11 @@ class TestPool2dOp(AutoScanTest):
             if config.precision() in [PrecisionType.FP16]:
                 atol, rtol = 1e-3, 1e-3
             if config.target() in [TargetType.Metal]:
-                atol, rtol = 5e-4, 5e-4
+                atol, rtol = 1e-2, 1e-2
         return self.get_predictor_configs(), ["pool2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
-                if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
-                    or program_config.ops[0].attrs["pooling_type"] == "avg" :
-                    return True
-                strides = program_config.ops[0].attrs["strides"]
-                if program_config.ops[0].attrs["ceil_mode"] == True \
-                    and strides[0] != strides[1]:
-                    return True
             if predictor_config.target() == TargetType.OpenCL:
                 if program_config.ops[0].attrs["adaptive"] == True:
                     return True
@@ -178,7 +178,6 @@ class TestPool2dOp(AutoScanTest):
         def teller2(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data"].shape)
             if predictor_config.target() == TargetType.Metal:
-                return True
                 if program_config.ops[0].attrs["adaptive"] == True \
                     or program_config.ops[0].attrs["ceil_mode"] == True:
                     return True
@@ -211,7 +210,7 @@ class TestPool2dOp(AutoScanTest):
             max_examples = 300
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 500
+            max_examples = 200
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
