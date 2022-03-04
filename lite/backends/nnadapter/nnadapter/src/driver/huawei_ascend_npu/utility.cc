@@ -292,7 +292,8 @@ bool BuildOMModelToBuffer(
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.
   if (!config_params->dump_model_path.empty()) {
-    ATC_CALL(aclgrphSaveModel(config_params->dump_model_path, om_buffer));
+    ATC_CALL(
+        aclgrphSaveModel(config_params->dump_model_path.c_str(), om_buffer));
   }
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);

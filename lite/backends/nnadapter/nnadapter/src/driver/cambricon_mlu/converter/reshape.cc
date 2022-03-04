@@ -28,7 +28,6 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  std::shared_ptr<Operator> shape_tensor = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
     auto& temporary_shape = *(GetTemporaryShape(shape_operand));
     auto shape_count = temporary_shape.count;
@@ -42,9 +41,6 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
         }
       }
     }
-    shape_tensor = converter->ConvertOperand(
-        shape_operand,
-        std::vector<int64_t>(shape_data, shape_data + shape_count));
   } else if (IsConstantOperand(shape_operand)) {
     auto shape_count = shape_operand->length / sizeof(int32_t);
     auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
@@ -57,16 +53,9 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
         }
       }
     }
-    shape_tensor = converter->ConvertOperand(
-        shape_operand,
-        std::vector<int64_t>(shape_data, shape_data + shape_count));
-  } else {
-    shape_tensor = converter->GetMappedTensor(shape_operand);
-    if (!shape_tensor) {
-      shape_tensor = converter->ConvertOperand(shape_operand);
-    }
   }
 
+  auto shape_tensor = converter->ConvertOperand(shape_operand);
   auto reshape_node =
       converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
   NNADAPTER_CHECK(reshape_node) << "Failed to add reshape node.";
