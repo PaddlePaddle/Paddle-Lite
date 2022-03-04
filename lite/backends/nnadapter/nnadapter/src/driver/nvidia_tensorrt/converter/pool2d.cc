@@ -38,15 +38,12 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     pool_type = nvinfer1::PoolingType::kMAX;
   }
   auto pool_layer = converter->network()->addPoolingNd(
-      *input_tensor,
-      pool_type,
-      nvinfer1::Dims2(kernel_height, kernel_width));
+      *input_tensor, pool_type, nvinfer1::Dims2(kernel_height, kernel_width));
   NNADAPTER_CHECK(pool_layer);
   if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {
     pool_layer->setAverageCountExcludesPadding(!flag);
   }
-  pool_layer->setPrePadding(
-      nvinfer1::Dims2(pad_height_top, pad_width_left));
+  pool_layer->setPrePadding(nvinfer1::Dims2(pad_height_top, pad_width_left));
   pool_layer->setPostPadding(
       nvinfer1::Dims2(pad_height_bottom, pad_width_right));
   pool_layer->setStrideNd(nvinfer1::Dims2(stride_height, stride_width));

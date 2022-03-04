@@ -30,5 +30,5 @@ aux_source_directory(converter/plugin PLUGINS)
 add_library(${DEVICE_NAME}_plugin STATIC ${PLUGINS})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
-target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} ${DEVICE_NAME}_plugin "-Wl,--end-group" "-Wl,--rpath='$ORIGIN/',--disable-new-dtags")
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} ${DEVICE_NAME}_plugin "-Wl,--end-group")
 set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")
