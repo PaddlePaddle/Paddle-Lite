@@ -154,8 +154,8 @@ class TestExpandOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on OpenCL. We need to fix it as soon as possible."
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on OpenCL. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
