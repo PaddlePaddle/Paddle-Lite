@@ -477,7 +477,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     atol_ = 1e-1
                     rtol_ = 5.3e-2
                 if quant:
-                    if platform.system() == 'Darwin':
+                    if platform.system() == 'Darwin' or platform.processor() == 'x86_64':
                         # only run in linux
                         continue
                     atol_ = 1e-3
