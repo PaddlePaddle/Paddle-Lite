@@ -70,10 +70,6 @@ class TestConvBnFuse(FusePassAutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         result = True
-        if predictor_config.target() == TargetType.OpenCL:
-            result = result and (
-                program_config.ops[0].attrs["groups"] == 1 and
-                program_config.ops[0].type != "conv2d_transpose")
         if predictor_config.target() == TargetType.ARM:
             result = result and predictor_config.precision(
             ) != PrecisionType.FP16 and predictor_config.precision(

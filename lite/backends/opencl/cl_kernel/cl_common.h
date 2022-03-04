@@ -136,7 +136,8 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
 #endif
 
 #ifdef SIGMOID
-  output = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in))));
+  output =
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in))));
 #endif
 
   return output;
@@ -180,13 +181,13 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 
 #ifdef SIGMOID
   output.x =
-      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.x))));
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.x))));
   output.y =
-      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.y))));
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.y))));
   output.z =
-      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.z))));
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.z))));
   output.w =
-      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.w))));
+      (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.w))));
 #endif
 
   return output;
@@ -203,4 +204,16 @@ inline CL_COMPUTE_DTYPE4 fuse_scale(CL_COMPUTE_DTYPE4 in,
   out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
 #endif
   return out;
+}
+
+// conv1x1 fuse elementwise_add
+inline void elt_fuse_func_wrapper(__read_only image2d_t second_input_image,
+                                  const int2 pos,
+                                  CL_DTYPE4 *value_p) {
+  CL_DTYPE4 second_val =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, pos);
+  *value_p += second_val;
+#ifdef ELT_ACT_FUSE
+  *value_p = fmax(*value_p, (CL_DTYPE4)0);
+#endif
 }
