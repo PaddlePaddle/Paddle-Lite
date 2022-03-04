@@ -66,7 +66,7 @@ class TestSoftmaxOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+            device_names=["kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -76,6 +76,10 @@ class TestSoftmaxOp(AutoScanTest):
         if predictor_config.target() == TargetType.Metal:
             if len(x_shape) != 4 or axis != 1 or x_shape[0] != 1:
                 return False
+        if predictor_config.target() == TargetType.NNAdapter:
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if len(x_shape) < 2:
+                    return False
         return True
 
     def sample_program_configs(self, draw):
@@ -148,6 +152,9 @@ class TestSoftmaxOp(AutoScanTest):
         elif target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 2000
+        elif target_str == "NNAdapter":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 200
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
