@@ -76,10 +76,6 @@ if '${LITE_WITH_NNADAPTER}' == 'ON':
                     continue
                 lib_file_path = os.path.join(driver_hal_lib_path, lib_name)
                 shutil.copy(lib_file_path, LIB_PATH)
-                rpath = os.popen("patchelf --print-rpath " + LIB_PATH + "/" + lib_name).read().strip('\n')
-                command = "patchelf --set-rpath '$ORIGIN/:'" + rpath + " " + LIB_PATH + "/" + lib_name
-                if os.system(command) != 0:
-                    raise Exception("patch nnadapter driver hal so failed, command: %s" % command)
                 PACKAGE_DATA['paddlelite.libs'] += [lib_name]
 
 # link lite.so to paddlelite.libs
