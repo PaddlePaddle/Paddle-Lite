@@ -131,6 +131,7 @@ struct InterpolateParam : ParamBase {
   int out_w{-1};
   bool align_corners{true};
   int align_mode{1};
+  bool version_2{false};
   std::string interp_method{"Nearest"};
   DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
