@@ -15,7 +15,9 @@
 #include "operation/reshape.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
