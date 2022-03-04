@@ -31,11 +31,6 @@ class TestMobileNetV1(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -105,8 +100,7 @@ class TestMobileNetV1(AutoScanTest):
 
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
-        target_str = self.get_target()
-        if target_str == "OpenCL" or target_str == "ARM":
+        if self.args.model_name == "ssdlite_mobilenet_v3_large":
             atol, rtol = 2e-3, 2e-3
         return self.get_predictor_configs(), [""], (atol, rtol)
 
