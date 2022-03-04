@@ -257,11 +257,6 @@ void ConvImageCompute::PrepareForRun() {
                                   tensor_hold_filter_image_->raw_data(),
                                   tensor_hold_filter_image_->memory_size(),
                                   IoDirection::HtoD);
-
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
     } else if (task_size <= threshold_4) {
       CLImageConverterN2Block converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c2");
@@ -281,11 +276,6 @@ void ConvImageCompute::PrepareForRun() {
                                   tensor_hold_filter_image_->raw_data(),
                                   tensor_hold_filter_image_->memory_size(),
                                   IoDirection::HtoD);
-
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
     } else {
       CLImageConverterN2Block converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h2w2c2");
@@ -304,11 +294,6 @@ void ConvImageCompute::PrepareForRun() {
                                   tensor_hold_filter_image_->raw_data(),
                                   tensor_hold_filter_image_->memory_size(),
                                   IoDirection::HtoD);
-
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
     }
     kernel_func_paths_.push_back("image/conv2d_1x1_default_mali_kernel.cl");
     impl_ = &ConvImageCompute::Conv2d1x1opt;
@@ -400,18 +385,20 @@ void ConvImageCompute::PrepareForRun() {
       converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
 
       // for mali
-      w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-      auto* w_gpu_data = w_gpu_t_->mutable_data(
-          TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
-      TargetWrapperCL::MemcpySync(w_gpu_data,
-                                  tensor_hold_filter_image_->raw_data(),
-                                  tensor_hold_filter_image_->memory_size(),
-                                  IoDirection::HtoD);
-
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
+      if (is_mali_) {
+        w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto* w_gpu_data = w_gpu_t_->mutable_data(
+            TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+        TargetWrapperCL::MemcpySync(w_gpu_data,
+                                    tensor_hold_filter_image_->raw_data(),
+                                    tensor_hold_filter_image_->memory_size(),
+                                    IoDirection::HtoD);
+      } else {
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
+      }
     } else if (groups_ == 1) {
       if (is_mali_ && input_tensor_n_ == 1) {
         kernel_func_names_.push_back("conv2d_3x3_opt_mali");
@@ -436,17 +423,20 @@ void ConvImageCompute::PrepareForRun() {
       auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
       converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
 
-      w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-      auto* w_gpu_data = w_gpu_t_->mutable_data(
-          TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
-      TargetWrapperCL::MemcpySync(w_gpu_data,
-                                  tensor_hold_filter_image_->raw_data(),
-                                  tensor_hold_filter_image_->memory_size(),
-                                  IoDirection::HtoD);
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
+      if (is_mali_ && input_tensor_n_ == 1) {
+        w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto* w_gpu_data = w_gpu_t_->mutable_data(
+            TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+        TargetWrapperCL::MemcpySync(w_gpu_data,
+                                    tensor_hold_filter_image_->raw_data(),
+                                    tensor_hold_filter_image_->memory_size(),
+                                    IoDirection::HtoD);
+      } else {
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
+      }
     } else {  // groups_ > 1
       kernel_func_names_.push_back("conv2d_3x3");
       kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
@@ -547,15 +537,20 @@ void ConvImageCompute::PrepareForRun() {
 
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
     converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto* w_gpu_data = w_gpu_t_->mutable_data(
-        TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
-    TargetWrapperCL::MemcpySync(w_gpu_data,
-                                tensor_hold_filter_image_->raw_data(),
-                                tensor_hold_filter_image_->memory_size(),
-                                IoDirection::HtoD);
-    MUTABLE_DATA_GPU(
-        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+    if (is_mali_ && input_tensor_n_ == 1) {
+      w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+      auto* w_gpu_data = w_gpu_t_->mutable_data(
+          TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+      TargetWrapperCL::MemcpySync(w_gpu_data,
+                                  tensor_hold_filter_image_->raw_data(),
+                                  tensor_hold_filter_image_->memory_size(),
+                                  IoDirection::HtoD);
+    } else {
+      MUTABLE_DATA_GPU(filter_gpu_image_,
+                       filter_image_w_,
+                       filter_image_h_,
+                       filter_image_data);
+    }
 
     impl_ = &ConvImageCompute::Conv2d7x7opt;
 #endif
@@ -707,6 +702,15 @@ void ConvImageCompute::PrepareForRun() {
   //   AssignDataFromCPUToGPU(tensor_hold_bias_buffer.get(),
   //                          bias_gpu_buffer_.get());
   // } else if (has_bias_) {
+  bool bias_buffer_flag = false;
+  if (kernel_func_names_[0] == "conv2d_3x3_opt_mali" ||
+      kernel_func_names_[0] == "conv2d_7x7_opt_mali" ||
+      kernel_func_names_[1] == "transform_to_output_mali" ||
+      kernel_func_names_[0] == "conv2d_1x1_mali_h1w2c1" ||
+      kernel_func_names_[0] == "conv2d_1x1_mali_h1w2c2" ||
+      kernel_func_names_[0] == "conv2d_1x1_mali_h2w2c2") {
+    bias_buffer_flag = true;
+  }
   if (has_bias_) {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     CLImageConverterFolder bias_converter;
@@ -722,31 +726,37 @@ void ConvImageCompute::PrepareForRun() {
     bias_converter.NCHWToImage(
         bias_cpu_data, bias_image_data, conv_param_->bias->dims());
 
-    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto* f_gpu_data = bias_gpu_t_->mutable_data(
-        TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
-    TargetWrapperCL::MemcpySync(f_gpu_data,
-                                tensor_hold_bias_image_->raw_data(),
-                                tensor_hold_bias_image_->memory_size(),
-                                IoDirection::HtoD);
-    MUTABLE_DATA_GPU(bias_gpu_image_,
-                     bias_image_dims[0],
-                     bias_image_dims[1],
-                     bias_image_data);
+    if (bias_buffer_flag) {
+      bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+      auto* f_gpu_data = bias_gpu_t_->mutable_data(
+          TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
+      TargetWrapperCL::MemcpySync(f_gpu_data,
+                                  tensor_hold_bias_image_->raw_data(),
+                                  tensor_hold_bias_image_->memory_size(),
+                                  IoDirection::HtoD);
+    } else {
+      MUTABLE_DATA_GPU(bias_gpu_image_,
+                       bias_image_dims[0],
+                       bias_image_dims[1],
+                       bias_image_data);
+    }
   } else {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     CLImageConverterFolder bias_converter;
     tensor_hold_bias_image_->Resize({1, 1, 1, 4});
     auto* bias_image_data = DATA_GPU(tensor_hold_bias_image_);
 
-    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto* f_gpu_data = bias_gpu_t_->mutable_data(
-        TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
-    TargetWrapperCL::MemcpySync(f_gpu_data,
-                                tensor_hold_bias_image_->raw_data(),
-                                tensor_hold_bias_image_->memory_size(),
-                                IoDirection::HtoD);
-    MUTABLE_DATA_GPU(bias_gpu_image_, 1, 1, bias_image_data);
+    if (bias_buffer_flag) {
+      bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+      auto* f_gpu_data = bias_gpu_t_->mutable_data(
+          TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
+      TargetWrapperCL::MemcpySync(f_gpu_data,
+                                  tensor_hold_bias_image_->raw_data(),
+                                  tensor_hold_bias_image_->memory_size(),
+                                  IoDirection::HtoD);
+    } else {
+      MUTABLE_DATA_GPU(bias_gpu_image_, 1, 1, bias_image_data);
+    }
   }
 
   // scale options
