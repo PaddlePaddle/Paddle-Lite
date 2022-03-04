@@ -50,10 +50,18 @@ kernel void buf_to_tex_c_n(const device float* input[[buffer(0)]],
 kernel void buf_h_to_tex_h(const device half* input[[buffer(0)]],
     texture2d_array<half, access::write> outTexture[[texture(0)]],
     uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) {
         return;
     }
+    int gidz = gid.z * 4;
+    int output_size = outTexture.get_width() * outTexture.get_height();
+    int output_index = outTexture.get_width() * gid.y + gid.x;
 
-    half y = input[outTexture.get_width() * gid.y + gid.x];
-    outTexture.write(half4(y, 0.0f, 0.0f, 0.0f), gid.xy, gid.z);
+    half y0 = input[(gidz)*output_size + output_index];
+    half y1 = input[(gidz + 1) * output_size + output_index];
+    half y2 = input[(gidz + 2) * output_size + output_index];
+    half y3 = input[(gidz + 3) * output_size + output_index];
+
+    outTexture.write(half4(y0, y1, y2, y3), gid.xy, gid.z);
 }
