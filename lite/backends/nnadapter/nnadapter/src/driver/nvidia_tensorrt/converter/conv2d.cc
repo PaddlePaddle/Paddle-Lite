@@ -47,17 +47,15 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   auto conv_layer = converter->network()->addConvolutionNd(
       *input_tensor,
       output_channel_size,
-      nvinfer1::Dims{2, {filter_height, filter_width}},
+      nvinfer1::Dims2(filter_height, filter_width),
       weight,
       bias);
   NNADAPTER_CHECK(conv_layer);
-  conv_layer->setStrideNd(nvinfer1::Dims{2, {stride_height, stride_width}});
-  conv_layer->setPrePadding(
-      nvinfer1::Dims{2, {pad_height_top, pad_width_left}});
+  conv_layer->setStrideNd(nvinfer1::Dims2(stride_height, stride_width));
+  conv_layer->setPrePadding(nvinfer1::Dims2(pad_height_top, pad_width_left));
   conv_layer->setPostPadding(
-      nvinfer1::Dims{2, {pad_height_bottom, pad_width_right}});
-  conv_layer->setDilationNd(
-      nvinfer1::Dims{2, {dilation_height, dilation_width}});
+      nvinfer1::Dims2(pad_height_bottom, pad_width_right));
+  conv_layer->setDilationNd(nvinfer1::Dims2(dilation_height, dilation_width));
   conv_layer->setNbGroups(group);
   auto output_tensor = conv_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
