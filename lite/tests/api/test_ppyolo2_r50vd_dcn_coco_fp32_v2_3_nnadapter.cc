@@ -48,8 +48,6 @@ TEST(ppyolo2_r50vd_dcn, test_ppyolo2_r50vd_dcn_coco_fp32_v2_3_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  nnadapter_device_names.emplace_back("cambricon_mlu");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

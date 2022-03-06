@@ -65,10 +65,6 @@ class AclModelClient {
   int device_id_{0};
   aclrtContext context_{nullptr};
   uint32_t model_id_{0};
-  size_t model_memory_size_;
-  size_t model_weight_size_;
-  void* model_memory_ptr_;
-  void* model_weight_ptr_;
   aclmdlDesc* model_desc_{nullptr};
   aclmdlDataset* input_dataset_{nullptr};
   aclmdlDataset* output_dataset_{nullptr};

@@ -89,19 +89,7 @@ bool AclModelClient::LoadModel(const void* data, size_t size) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;
   }
-  ACL_CALL(aclmdlQuerySizeFromMem(
-      data, size, &model_memory_size_, &model_weight_size_));
-  ACL_CALL(aclrtMalloc(
-      &model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST));
-  ACL_CALL(aclrtMalloc(
-      &model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST));
-  ACL_CALL(aclmdlLoadFromMemWithMem(data,
-                                    size,
-                                    &model_id_,
-                                    model_memory_ptr_,
-                                    model_memory_size_,
-                                    model_weight_ptr_,
-                                    model_weight_size_));
+  ACL_CALL(aclmdlLoadFromMem(data, size, &model_id_));
   auto model_desc = aclmdlCreateDesc();
   if (!model_desc) {
     NNADAPTER_LOG(ERROR) << "Failed to create ACL model description!";
@@ -126,16 +114,6 @@ void AclModelClient::UnloadModel() {
     DestroyDataset(&output_dataset_);
   }
   ACL_CALL(aclmdlUnload(model_id_));
-  if (model_memory_ptr_) {
-    ACL_CALL(aclrtFree(model_memory_ptr_));
-    model_memory_ptr_ = nullptr;
-    model_memory_size_ = 0;
-  }
-  if (model_weight_ptr_) {
-    ACL_CALL(aclrtFree(model_weight_ptr_));
-    model_weight_ptr_ = nullptr;
-    model_weight_size_ = 0;
-  }
   ACL_CALL(aclmdlDestroyDesc(model_desc_));
   model_desc_ = nullptr;
   NNADAPTER_VLOG(5) << "Unload a ACL model success(model_id=" << model_id_
@@ -300,6 +278,8 @@ bool AclModelClient::Process(uint32_t input_count,
   }
   NNADAPTER_CHECK_EQ(output_count, aclmdlGetDatasetNumBuffers(output_dataset_));
   // Copy the input data from host to device
+  bool is_dynamic_dims = false;
+  std::vector<int64_t> dynamic_dims;
   for (uint32_t i = 0; i < input_count; i++) {
     auto arg = FindArgumentByIndex(input_arguments, i, input_count);
     NNADAPTER_CHECK(arg) << "Input argument " << i << " does not exist!";
@@ -327,6 +307,7 @@ bool AclModelClient::Process(uint32_t input_count,
       }
       NNADAPTER_VLOG(3) << "The " << j << "th dimension of the " << i
                         << "th input is " << dimension;
+      dynamic_dims.push_back(dimension);
     }
     // Set true dynamic shapes
     if (is_dynamic_shape) {
@@ -343,7 +324,7 @@ bool AclModelClient::Process(uint32_t input_count,
                                  type.dimensions.data[3]);
           break;
         case DYNAMIC_SHAPE_MODE_N_DIMS:
-          aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
+          is_dynamic_dims = true;
           break;
         default:
           NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
@@ -361,6 +342,17 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(device_ptr);
     ACL_CALL(aclrtMemcpy(
         device_ptr, length, host_ptr, length, ACL_MEMCPY_HOST_TO_DEVICE));
+  }
+  // Set dynamic dims
+  if (is_dynamic_dims) {
+    size_t index;
+    aclmdlGetInputIndexByName(model_desc_, ACL_DYNAMIC_TENSOR_NAME, &index);
+    aclmdlIODims dimensions;
+    dimensions.dimCount = dynamic_dims.size();
+    for (size_t i = 0; i < dimensions.dimCount; i++) {
+      dimensions.dims[i] = dynamic_dims[i];
+    }
+    aclmdlSetInputDynamicDims(model_id_, input_dataset_, index, &dimensions);
   }
   // Model execution
   auto start_time = GetCurrentUS();
