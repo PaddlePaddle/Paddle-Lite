@@ -86,6 +86,7 @@ REGISTER_CONVERTER(unsqueeze,
 REGISTER_CONVERTER(unsqueeze2,
                    ConvertUnsqueeze,
                    "huawei_ascend_npu,cambricon_mlu");
+REGISTER_CONVERTER(mul, ConvertMul, "huawei_ascend_npu");
 REGISTER_CONVERTER(lookup_table_v2,
                    ConvertLookupTableV2,
                    "huawei_ascend_npu,huawei_kirin_npu");
