@@ -21,6 +21,16 @@ import paddlelite
 from paddlelite.lite import *
 import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
+import argparse
+import platform
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--server_ip",
+    default="localhost",
+    type=str,
+    help="when rpc is used , the ip address of the server")
+
+args = parser.parse_args()
 
 
 def ParsePlaceInfo(place_str):
@@ -122,5 +132,5 @@ if __name__ == "__main__":
                                         paddle_lite_path)[0]
     rpc_port_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/rpc_service/.port_id"
     port_id = int(open(rpc_port_file).read())
-    server = ThreadedServer(RPCService, port=port_id, hostname='localhost')
+    server = ThreadedServer(RPCService, port=port_id, hostname=args.server_ip)
     server.start()

@@ -18,4 +18,9 @@ RPC_PID=$(lsof -i:$port_id | grep Python | awk -F ' ' '{print $2}')
 if [[ $RPC_PID != "" ]]; then
   kill -9 ${RPC_PID}
 fi
-nohup python3.9 server.py >/dev/null 2>&1 &
+
+if [[ "$#" == "3" ]];then
+  nohup python3.9 server.py --server_ip=$3 >/dev/null 2>&1 &
+else
+  nohup python3.9 server.py >/dev/null 2>&1 &
+fi
