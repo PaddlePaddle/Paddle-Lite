@@ -362,7 +362,7 @@ void OptBase::PrintHelpInfo() {
       "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|"
       "mediatek_apu|huawei_kirin_npu|amlogic_npu|verisilicon_timvx|"
-      "android_nnapi")`"
+      "android_nnapi)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -534,8 +534,8 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                            "华为麒麟NPU",
                                                            "颖脉NNA",
                                                            "晶晨NPU",
-                                                           "芯原TIMVX",
-                                                           "安卓NNAPI"};
+                                                           "TIM-VX",
+                                                           "Android NNAPI"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
