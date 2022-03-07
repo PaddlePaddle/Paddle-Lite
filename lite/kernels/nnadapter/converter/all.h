@@ -215,7 +215,7 @@ REGISTER_CONVERTER(arg_max,
                    ConvertArgMinMax,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
-REGISTER_CONVERTER(assign, ConvertAssign, "huawei_ascend_npu");
+REGISTER_CONVERTER(assign, ConvertAssign, "huawei_ascend_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(
     equal,
     ConvertComparisons,
