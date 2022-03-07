@@ -41,7 +41,7 @@ class AutoScanTest(AutoScanBaseTest):
         port_id = int(open(rpc_port_file).read())
 
         conn = rpyc.connect(server_ip, port_id)
-        conn._config['sync_request_timeout']=2400
+        conn._config['sync_request_timeout'] = 2400
         out, model = conn.root.run_lite_model(model, params, feed_data,
                                               pred_config)
         result_res = copy.deepcopy(out)
