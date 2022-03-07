@@ -27,6 +27,7 @@ REGISTER_CONVERTER(FLATTEN, ValidateFlatten, ConvertFlatten)
 REGISTER_CONVERTER(FULLY_CONNECTED,
                    ValidateFullyConnected,
                    ConvertFullyConnected)
+REGISTER_CONVERTER(MAT_MUL, ValidateMatmul, ConvertMatmul)
 REGISTER_CONVERTER(MAX_POOL_2D, ValidatePool2D, ConvertPool2D)
 REGISTER_CONVERTER(MUL, ValidateElementwise, ConvertElementwise)
 REGISTER_CONVERTER(RELU, ValidateUnaryActivations, ConvertUnaryActivations)

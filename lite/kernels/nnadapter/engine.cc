@@ -141,23 +141,12 @@ bool Program::BuildAndCacheToFile(
   // operations and operands for building NNAdapter model(hardware-indepedent)
   CHECK(!model_cache_token.empty());
   int result = NNAdapterModel_create_invoke(&model_);
-  std::vector<NNAdapterOperand *> input_operands, output_operands;
-  Converter converter(model_);
-  if (converter.Apply(block_idx,
-                      program_desc,
-                      exec_scope,
-                      input_vars,
-                      output_vars,
-                      &input_operands,
-                      &output_operands) != NO_ERROR) {
+  Converter converter(model_, context_);
+  if (converter.Apply(
+          block_idx, program_desc, exec_scope, input_vars, output_vars) !=
+      NO_ERROR) {
     return false;
   }
-  NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
-                                                 input_operands.size(),
-                                                 input_operands.data(),
-                                                 output_operands.size(),
-                                                 output_operands.data());
-  result = NNAdapterModel_finish_invoke(model_);
   // Compiling the model to the device-specific binary program
   result = NNAdapterCompilation_create_invoke(model_,
                                               model_cache_token.c_str(),

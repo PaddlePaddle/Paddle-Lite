@@ -56,9 +56,9 @@ int Validator::Apply(const core::Model* model, bool* supported_operations) {
 #undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
-        NNADAPTER_LOG(FATAL) << "Unsupported operation("
-                             << OperationTypeToString(operation->type)
-                             << ") is found.";
+        NNADAPTER_LOG(WARNING) << "Unsupported operation("
+                               << OperationTypeToString(operation->type)
+                               << ") is found.";
         break;
     }
   }
