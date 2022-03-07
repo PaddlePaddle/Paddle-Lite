@@ -68,7 +68,12 @@ namespace huawei_ascend_npu {
 // Specify AUTO_TUNE_MODE
 #define HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE "HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE"
 
+// Specify ENABLE_DYNAMIC_SHAPE_RANGE
+#define HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE \
+  "HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE"
+
 typedef struct AscendConfigParams {
+  std::string profiling_file_path = "";
   std::string dump_model_path = "";
   std::string precision_mode = "";
   std::string modify_mixlist_path = "";
@@ -76,6 +81,7 @@ typedef struct AscendConfigParams {
   std::string op_type_list_for_impl_mode = "";
   std::string enable_compress_weight = "";
   std::string auto_tune_mode = "";
+  std::string enable_dynamic_shape_range = "";
 } AscendConfigParams;
 
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
@@ -97,7 +103,7 @@ typedef struct AscendConfigParams {
 void InitializeAscendCL();
 // Initialize the resources of the model builder and register the finalizer to
 // be called at normal process termination
-void InitializeGraphBuilder(AscendConfigParams* context);
+void InitializeGraphBuilder(AscendConfigParams* config_params);
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
@@ -116,7 +122,7 @@ const std::string ATCErrorToString(uint32_t error);
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
     const std::vector<uint8_t>& model_buffer,
     int device_id,
-    const std::string& profiling_file_path);
+    AscendConfigParams* config_params);
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
@@ -124,7 +130,7 @@ bool BuildOMModelToBuffer(
     const std::vector<std::string>& dynamic_shape_info,
     const std::string& optional_shape_str,
     const DynamicShapeMode dynamic_shape_mode,
-    AscendConfigParams* context);
+    AscendConfigParams* config_params);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
@@ -186,7 +192,8 @@ std::string MergeOptionalShapInfo(
 void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
                          std::vector<std::string>* dynamic_shape_info,
                          std::string* optional_shape_str,
-                         DynamicShapeMode* dynamic_shape_mode);
+                         DynamicShapeMode* dynamic_shape_mode,
+                         AscendConfigParams* config_params);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

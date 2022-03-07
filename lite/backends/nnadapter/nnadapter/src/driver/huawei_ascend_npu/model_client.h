@@ -28,9 +28,10 @@ namespace huawei_ascend_npu {
 
 typedef enum {
   DYNAMIC_SHAPE_MODE_NONE = -1,
-  DYNAMIC_SHAPE_MODE_BTACH_SIZE = 0,
+  DYNAMIC_SHAPE_MODE_BATCH_SIZE = 0,
   DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH = 1,
   DYNAMIC_SHAPE_MODE_N_DIMS = 2,
+  DYNAMIC_SHAPE_MODE_SHAPE_RANGE = 3,
 } DynamicShapeMode;
 
 class AclModelClient {
@@ -39,7 +40,7 @@ class AclModelClient {
                           const std::string& profiling_file_path);
   ~AclModelClient();
 
-  bool LoadModel(const void* data, size_t size);
+  bool LoadModel(const void* data, size_t size, bool is_dynamic_shape_range);
   void UnloadModel();
   bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
                            std::vector<ge::TensorDesc>* output_tensor_descs);
@@ -56,7 +57,10 @@ class AclModelClient {
   void FinalizeAclClientEnv();
   void InitAclProfilingEnv(const std::string& profiling_file_path);
   void FinalizeAclProfilingEnv();
-  bool CreateModelIODataset();
+  bool CreateModelInputDataset(bool is_dynamic_shape_range,
+                               int64_t buffer_length = -1);
+  bool CreateModelOutputDataset(bool is_dynamic_shape_range,
+                                int64_t buffer_length = -1);
   void DestroyDataset(aclmdlDataset** dataset);
   void ProfilingStart();
   void ProfilingEnd();
@@ -69,6 +73,7 @@ class AclModelClient {
   aclmdlDataset* input_dataset_{nullptr};
   aclmdlDataset* output_dataset_{nullptr};
   aclprofConfig* config_{nullptr};
+  int64_t max_buffer_length_{4 * 3 * 1024 * 1024};
 };
 
 }  // namespace huawei_ascend_npu
