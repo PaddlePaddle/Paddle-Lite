@@ -17,9 +17,6 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/funcs_fp16.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -490,180 +487,6 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   }
 }
 
-#ifdef ENABLE_ARM_FP16
-template <>
-void MatMulCompute<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
-  INIT_PARAM
-  last_x_shape_ = x_dims;
-  last_y_shape_ = y_dims;
-}
-
-template <>
-void MatMulCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
-  auto& param = Param<param_t>();
-
-  const auto* x_data = param.X->data<float16_t>();
-  const auto* y_data = param.Y->data<float16_t>();
-  auto* o_data = param.Out->mutable_data<float16_t>();
-
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  auto o_dims = param.Out->dims();
-  bool x_transpose = param.transpose_X;
-  bool y_transpose = param.transpose_Y;
-  float alpha = param.alpha;
-  auto& ctx = this->ctx_->template As<ARMContext>();
-
-  operators::ActivationParam act_param;
-  act_param.has_active = false;
-
-  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
-      (x_dims.size() != 2 || y_dims.size() != 2)) {
-    // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
-    // x: [B, M, K], y: [K, N], out: [B, M, N]
-    // or
-    // x: [M, K], y: [B, ..., K, N], out: [B, ..., M, N]
-    // x: [M, K], y: [B, K, N], out: [B, M, N]
-    int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];
-    int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];
-    int out_inner = o_dims[o_dims.size() - 2] * o_dims[o_dims.size() - 1];
-    if (x_dims.size() > 2 && y_dims.size() > 2) {
-      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::fp16::sgemm_fp16(x_transpose,
-                                          y_transpose,
-                                          m_,
-                                          n_,
-                                          k_,
-                                          alpha,
-                                          x_data + i * x_inner,
-                                          lda_,
-                                          y_data + i * y_inner,
-                                          ldb_,
-                                          0.f,
-                                          o_data + i * out_inner,
-                                          ldc_,
-                                          nullptr,
-                                          false,
-                                          act_param,
-                                          &ctx);
-      }
-    } else if (x_dims.size() > 2 && y_dims.size() == 2) {
-      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::fp16::sgemm_fp16(x_transpose,
-                                          y_transpose,
-                                          m_,
-                                          n_,
-                                          k_,
-                                          alpha,
-                                          x_data + i * x_inner,
-                                          lda_,
-                                          y_data,
-                                          ldb_,
-                                          0.f,
-                                          o_data + i * out_inner,
-                                          ldc_,
-                                          nullptr,
-                                          false,
-                                          act_param,
-                                          &ctx);
-      }
-    } else if (x_dims.size() == 2 && y_dims.size() > 2) {
-      for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
-        lite::arm::math::fp16::sgemm_fp16(x_transpose,
-                                          y_transpose,
-                                          m_,
-                                          n_,
-                                          k_,
-                                          alpha,
-                                          x_data,
-                                          lda_,
-                                          y_data + i * y_inner,
-                                          ldb_,
-                                          0.f,
-                                          o_data + i * out_inner,
-                                          ldc_,
-                                          nullptr,
-                                          false,
-                                          act_param,
-                                          &ctx);
-      }
-    }
-  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||
-             (x_dims.size() == 2 && y_dims.size() == 1)) {
-    // x: [M, K], y: [K, N], out: [M, N]
-    lite::arm::math::fp16::sgemm_fp16(x_transpose,
-                                      y_transpose,
-                                      m_,
-                                      n_,
-                                      k_,
-                                      alpha,
-                                      x_data,
-                                      lda_,
-                                      y_data,
-                                      ldb_,
-                                      0.f,
-                                      o_data,
-                                      ldc_,
-                                      nullptr,
-                                      false,
-                                      act_param,
-                                      &ctx);
-  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
-    // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::fp16::sgemm_fp16(x_transpose,
-                                      false,
-                                      m_,
-                                      n_,
-                                      k_,
-                                      alpha,
-                                      x_data,
-                                      lda_,
-                                      y_data,
-                                      ldb_,
-                                      0.f,
-                                      o_data,
-                                      ldc_,
-                                      nullptr,
-                                      false,
-                                      act_param,
-                                      &ctx);
-  } else if (x_dims.size() == 1 && y_dims.size() == 1) {
-    // x: [K], y: [K], out: [1]
-    if (x_transpose == false && y_transpose == false) {
-      o_data[0] = 0.;
-      for (size_t i = 0; i < x_dims[0]; ++i) {
-        o_data[0] += x_data[i] * y_data[i] * alpha;
-      }
-    } else if (x_transpose == true && y_transpose == true) {
-      lite::arm::math::fp16::sgemm_fp16(false,
-                                        false,
-                                        m_,
-                                        n_,
-                                        k_,
-                                        alpha,
-                                        x_data,
-                                        lda_,
-                                        y_data,
-                                        ldb_,
-                                        0.f,
-                                        o_data,
-                                        ldc_,
-                                        nullptr,
-                                        false,
-                                        act_param,
-                                        &ctx);
-    } else {
-      LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
-                 << y_dims << ")"
-                 << ", and x_transpose: " << x_transpose
-                 << ", y_transpose: " << y_transpose;
-    }
-  } else {
-    LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-               << ")";
-  }
-}
-#endif
 #undef INIT_PARAM
 }  // namespace arm
 }  // namespace kernels
@@ -677,18 +500,6 @@ typedef paddle::lite::kernels::arm::MatMulCompute<PRECISION(kFloat),
 typedef paddle::lite::kernels::arm::MatMulCompute<PRECISION(kInt8),
                                                   PRECISION(kFloat)>
     Matmul_int8_f32;
-
-#ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::MatMulCompute<PRECISION(kFP16),
-                                                  PRECISION(kFP16)>
-    Matmul_f16_f16;
-
-REGISTER_LITE_KERNEL(matmul, kARM, kFP16, kNCHW, Matmul_f16_f16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .Finalize();
-#endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(matmul, kARM, kFloat, kNCHW, Matmul_f32_f32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
