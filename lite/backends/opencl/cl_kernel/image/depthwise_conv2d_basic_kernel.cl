@@ -222,7 +222,12 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                            __private const int output_height,
                            __private const int filter_width,
                            __private const int filter_height,
-                           __read_only image2d_t prelu_alpha) {
+                           __read_only image2d_t prelu_alpha
+#ifdef ELT_FUSE
+                           ,
+                           __read_only image2d_t second_input_image
+#endif
+                           ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -302,6 +307,10 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
 
 #ifdef SCALE_ACTIVATION
   output = fuse_scale(output, 1.f, 0.f, 0.f);
+#endif
+
+#ifdef ELT_FUSE
+  elt_fuse_func_wrapper(second_input_image, output_pos, &output);
 #endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);

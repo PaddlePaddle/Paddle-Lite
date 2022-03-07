@@ -2267,6 +2267,10 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(19, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
+  if (!fuse_eltwise_op_type_.empty()) {
+    status_ = kernel_.setArg(20, *second_input_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
 }
 
 void ConvImageCompute::Conv2dCommon() {
@@ -2493,7 +2497,9 @@ void ConvImageCompute::Run() {
     const int input_fill0_c4 = (input_tensor_c_ / groups_ + 3) / 4 * groups_;
     const int output_fill0_c4 = (output_tensor_c_ / groups_ + 3) / 4 * groups_;
     input_image_p_ = DATA_GPU(conv_param_->x);
-
+    if (!fuse_eltwise_op_type_.empty()) {
+      second_input_image_p_ = DATA_GPU(conv_param_->second_x);
+    }
     mulgroups_input_fill0_image_p_ =
         MUTABLE_DATA_GPU(mulgroups_in_fill_gpu_image_,
                          input_fill0_c4 * input_tensor_w_,  // img_w
@@ -2634,6 +2640,10 @@ void ConvImageCompute::Run() {
     CL_CHECK_FATAL(status_);
     status_ = kernel_output_cut0_.setArg(idx++, *alpha_image_p_);
     CL_CHECK_FATAL(status_);
+    if (!fuse_eltwise_op_type_.empty()) {
+      status_ = kernel_output_cut0_.setArg(idx++, *second_input_image_p_);
+      CL_CHECK_FATAL(status_);
+    }
 
     if (static_cast<int>(local_work_size_cut0_[0]) != 0) {
       internal_global_work_size[0] =

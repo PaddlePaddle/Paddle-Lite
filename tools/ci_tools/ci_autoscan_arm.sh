@@ -49,6 +49,9 @@ function auto_scan_test {
       python3.8 $test --target=$target_name
     fi
   done
+
+  cd $WORKSPACE/lite/tests/unittest_py/model_test/
+  python3.8 run_model_test.py --target=$target_name
 }
 
 ####################################################################################################

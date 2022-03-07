@@ -107,6 +107,7 @@ class TestNearestV2InterpOp(AutoScanTest):
         assume(scale1 * X_shape[3] > 1.0)
         assume(scale2 * X_shape[2] > 1.0)
         assume(scale2 * X_shape[3] > 1.0)
+        assume(test_case != 2)
 
         if test_case == 1:
             nearest_interp_v2 = OpConfig(
@@ -184,10 +185,8 @@ class TestNearestV2InterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.ARM, TargetType.OpenCL]:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
+            if predictor_config.target() in [TargetType.ARM]:
+                return True
 
         def _teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
@@ -203,7 +202,7 @@ class TestNearestV2InterpOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

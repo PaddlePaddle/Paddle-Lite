@@ -75,17 +75,29 @@ inline void gru_add_with_bias(
 }
 
 template <lite_api::ActivationType Act>
-static void gru_unit_reset_act_impl(float* updata_gate,
+static void gru_unit_reset_act_impl(float* updata_gate_ptr,
                                     int stride_update,
-                                    float* reset_gate,
+                                    float* reset_gate_ptr,
                                     int stride_reset,
-                                    const float* hidden_prev,
+                                    const float* hidden_prev_ptr,
                                     int stride_hidden_prev,
-                                    float* reset_hidden_prev,
+                                    float* reset_hidden_prev_ptr,
                                     int stride_reset_hidden_prev,
                                     int frame_size,
                                     int batch_size) {
+  float* updata_gate = updata_gate_ptr;
+  float* reset_gate = reset_gate_ptr;
+  const float* hidden_prev = hidden_prev_ptr;
+  float* reset_hidden_prev = reset_hidden_prev_ptr;
+
   LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+    updata_gate = updata_gate_ptr + b * stride_update;
+    reset_gate = reset_gate_ptr + b * stride_reset;
+    if (hidden_prev) {
+      hidden_prev = hidden_prev_ptr + b * stride_hidden_prev;
+    }
+    reset_hidden_prev = reset_hidden_prev_ptr + b * stride_reset_hidden_prev;
+
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
@@ -127,30 +139,35 @@ static void gru_unit_reset_act_impl(float* updata_gate,
       }
       reset_hidden_prev[i] = reset_gate[i] * prev;
     }
-
-    updata_gate += stride_update;
-    reset_gate += stride_reset;
-    if (hidden_prev) {
-      hidden_prev += stride_hidden_prev;
-    }
-    reset_hidden_prev += stride_reset_hidden_prev;
   }
   LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
 static void gru_unit_out_act_impl(bool origin_mode,
-                                  float* updata_gate,
+                                  float* updata_gate_ptr,
                                   int stride_update,
-                                  float* cell_state,
+                                  float* cell_state_ptr,
                                   int stride_cell_state,
-                                  const float* hidden_prev,
+                                  const float* hidden_prev_ptr,
                                   int stride_hidden_prev,
-                                  float* hidden,
+                                  float* hidden_ptr,
                                   int stride_hidden,
                                   int frame_size,
                                   int batch_size) {
+  float* updata_gate = updata_gate_ptr;
+  float* cell_state = cell_state_ptr;
+  const float* hidden_prev = hidden_prev_ptr;
+  float* hidden = hidden_ptr;
+
   LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+    updata_gate = updata_gate_ptr + b * stride_update;
+    cell_state = cell_state_ptr + b * stride_cell_state;
+    if (hidden_prev) {
+      hidden_prev = hidden_prev_ptr + b * stride_hidden_prev;
+    }
+    hidden = hidden_ptr + b * stride_hidden;
+
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
@@ -227,12 +244,6 @@ static void gru_unit_out_act_impl(bool origin_mode,
             prev * (1.f - updata_gate[i]) + updata_gate[i] * cell_state[i];
       }
     }
-    updata_gate += stride_update;
-    cell_state += stride_cell_state;
-    if (hidden_prev) {
-      hidden_prev += stride_hidden_prev;
-    }
-    hidden += stride_hidden;
   }
   LITE_PARALLEL_END()
 }

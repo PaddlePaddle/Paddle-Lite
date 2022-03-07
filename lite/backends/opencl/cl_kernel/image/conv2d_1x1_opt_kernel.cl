@@ -1,16 +1,5 @@
 #include <cl_common.h>
 
-inline void elt_fuse_func_wrapper(__read_only image2d_t second_input_image,
-                                  const int2 pos,
-                                  CL_DTYPE4 *value_p) {
-  CL_DTYPE4 second_val =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, pos);
-  *value_p += second_val;
-#ifdef ELT_ACT_FUSE
-  *value_p = fmax(*value_p, (CL_DTYPE4)0);
-#endif
-}
-
 /*
 __kernel void conv2d_1x1_mali(__read_only image2d_t input,
                               __write_only image2d_t output,
