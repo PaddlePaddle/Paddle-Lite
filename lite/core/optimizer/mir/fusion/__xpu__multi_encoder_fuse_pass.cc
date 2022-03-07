@@ -924,7 +924,7 @@ class XPUMultiEncoderFuser {
       max_filter_node->arg()->is_weight = true;
       max_filter_node->arg()->type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      auto* max_filter_tensor = scope->NewTensor(max_name);
+      auto* max_filter_tensor = scope->MutableParent()->NewTensor(max_name);
       max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
       memcpy(max_filter_tensor->mutable_data<float>(),
              &fc_weight_max[0],
