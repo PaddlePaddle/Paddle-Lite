@@ -11,6 +11,8 @@
 
 ### 1.1 Python 单测
 
+Python 单测测试方法：通过 `sample_program_configs` 方法定义 OP 的输入 shape 和属性信息，并构建出一个网络；然后通过 `sample_predictor_configs` 方法确定运行后端的 config 信息；最好通过 `test` 方法，完成单测测试。精度对比方法：将 Paddle Lite 的输出结果和 PaddlePaddle 的输出结果进行比较，判断两者绝对误差和相对误差大小，以确定单测的正确性。
+
 在 Paddle-Lite/lite/tests/unittest_py/op 目录下新建 [test_arg_max_op.py](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tests/unittest_py/op/test_arg_max_op.py) 文件，定义 `TestArgMaxOp` 类，其继承自 `AutoScanTest`，重点介绍如下 4 个方法：
 
 - `__init__` 方法设置 Place 属性，通过调用 `self.enable_testing_on_place` 方法激活特定后端；
@@ -19,6 +21,165 @@
 - `sample_predictor_configs` 方法返回 paddlelite_configs, op_list 和误差阈值；
 - `add_ignore_pass_case` 方法设置一些当前实现运行错误的情况需要跳过的情况;
 - `test` 方法为 unittest 的运行入口函数。
+
+#### 1.1.1 `AutoScanTest` 类 `__init__` 方法
+
+该方法用于初始化设备信息，明确单测在哪个后端运行。通过调用 `self.enable_testing_on_place` 方法激活特定后端，并提供精度信息、layout 信息、线程信息等相关信息的配置。
+
+    ```python
+        # enable_testing_on_place 方法，无返回值
+        def enable_testing_on_place(self,
+                                        target=None,
+                                        precision=None,
+                                        layout=None,
+                                        thread=None,
+                                        places=None) -> None:
+        # 单个 place 设置，默认选择 FP32 kernel 计算
+        self.enable_testing_on_place(TargetType.Host,
+                    PrecisionType.FP32,
+                    DataLayoutType.NCHW,
+                    thread=[1, 4])
+        # 多个 place 设置, kernel 选择根据 arm_place 里的每个place 值进行一一匹配，直到匹配成功为止
+        # 具体来说：如果这个 OP 支持 int8 计算，则优先选用 int8 kernel 计算
+        arm_place = [
+                    Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+                ]
+        self.enable_testing_on_place(places=arm_place)
+    ```
+
+
+#### 1.1.2 `AutoScanTest` 类 `sample_program_configs` 方法
+
+该方法通过设置输入信息（如 OP 属性、输入 shape 等），生成一个网络，用于推理。详细使用方法如下所示：
+
+   ```python
+        # sample_program_configs 方法
+        def sample_program_configs(self, *args, **kwargs):
+        # 返回值：返回一个网络信息 program_config
+
+        # 以 assign OP 为例，根据 assign OP 的属性，构建其需要的输入信息，并生成网络
+        def sample_program_configs(self, *args, **kwargs):
+            # step1. 用函数来定义输入数据
+            def generate_input(*args, **kwargs):
+                return np.random.random(in_shape).astype(np.float32)
+            # Step2. 定义OP, 名称\输入\输出\属性
+            # 通过 import hypothesis.strategies as st 随机生成输入 shape 大小
+            # draw 方法用于采样，选取某些 case 进行测试
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8), max_size=4))
+            # OpConfig 用于创建 OP，完成 OP 的输入、输出和属性的配置
+            assign_op = OpConfig(
+                type = "assign",
+                inputs = {"X" : ["input_data"]},
+                outputs = {"Out": ["output_data"]},
+                attrs = {})
+            # Step3. 将数据和 OP 定义联系起来
+            program_config = ProgramConfig(
+                ops=[assign_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
+                },
+                outputs=["output_data"])
+            yield program_config
+   ```
+
+#### 1.1.3 `AutoScanTest` 类 `is_program_valid` 方法
+
+该方法用于判读当前输入 case 下，这个网络是否有效。
+**注意：**
+>> 不合理的判定标准为：paddle 组网时报错。此外，过滤功能鼓励优先在 `sample_program_config` 函数中使用 assume 接口过滤。
+
+    ```python
+        # is_program_valid 方法
+        def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        # 参数：program_config 存放当前网络结构
+        # 参数：predictor_config 存放当前网络运行后端设备的配置信息
+        # 返回值：True 表示当前网络结构有效；False 表示当前网络结构无效
+
+        # assign OP 中的 is_sparse 属性必须为true，如若出现false，则该网络结构无效
+        # is_sparse is only support False
+        class TestAssignOp(AutoScanTest):
+            def is_program_valid(self, program_config: ProgramConfig) -> bool:
+            if program_config.ops[0].attrs['is_sparse'] == True:
+               return False
+            return True
+    ```
+
+#### 1.1.4 `AutoScanTest` 类 `sample_predictor_configs` 方法
+
+该方法用于配置测试后端 config 信息，确定网络在哪个后端运行。
+
+    ```python
+        # sample_predictor_configs 方法
+        def sample_predictor_configs(self, program_config):
+        # 参数 program_config ：存放当前网络结构
+        # 返回值：运行后端config 信息，OP 名字 和 误差大小list[绝对误差，相对误差]
+
+        # 以 assign OP 为例，让 OP 在 ARM 端运行
+        def sample_program_configs(self, *args, **kwargs):
+            # 方法一：通过 get_predictor_configs 直接获取 __init__ 方法中的place信息，极力推荐
+            return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
+            # 方法二：通过 CXXConfig 手动配置
+            # Step1. 执行后端是arm、线程数 1
+            config = CxxConfig()
+            config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+            config.set_threads(1)
+            # Step2. 相对误差/绝对误差 上限 = (1e-5, 1e-5)
+            yield config, ["assign"], (1e-5, 1e-5)
+   ```
+
+#### 1.1.5 `AutoScanTest` 类 `add_ignore_pass_case` 方法
+
+该方法用于跳过某些测试 case，并完成标记和记录下个版本的修复内容。当前 `IgnoreReasonsBase` 支持以下过滤类型的单测案例：
+
+  - PADDLE_NOT_SUPPORT : 组网成功，但 Paddle 推理过程中报错导致进程退出。即组网成功，Paddle 与 Paddle Lite 均不推理
+
+  - PADDLELITE_NOT_SUPPORT : Paddle Lite 没有对应算子或者 Paddle Lite 推理时报错导致进程退出。即组网成功，Paddle 推理但 Paddle Lite 不推理
+
+  - ACCURACY_ERROR : Paddle 与 Paddle Lite计算结果存在 diff。即组网成功，Paddle 和 Paddle Lite 均推理，但不对比输出结果
+
+```python
+        # add_ignore_pass_case 方法
+        def add_ignore_pass_case(self):
+        # 返回值：True 表示过滤测试 case，不做精度测试，False 表示不过滤，需要完成精度测试
+        # 首先，通过定义 _teller(program_config, predictor_config) 函数，完成过滤 case 的书写
+        # 然后，通过self.add_ignore_check_case(IgnoreReasonsBase, note) 将过滤函数加入过滤集
+
+        # 以 conv2d OP 为例，Metal 不支持 groups !=1 的计算，后续会补充支持
+        def add_ignore_pass_case(self):
+           def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_shape = program_config.inputs["input_data"].shape
+            filter_data = program_config.weights["filter_data"].shape
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.Metal:
+                if groups != 1:
+                    return True
+
+            self.add_ignore_check_case(
+                _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+            )
+   ```
+
+#### 1.1.6 `AutoScanTest` 类 `test` 方法
+
+该方法是 OP 单测方法的测试入口函数，完成 OP 单测测试。
+
+    ```python
+      # test 方法
+      def test(self, *args, **kwargs):
+        self.run_and_statis(quant=False, max_examples=300)
+      # 参数：quant 用于判断是否量化，当前不使用。（单测跟据 predict_config 的 place 信息进行判断）
+      # 参数：max_examples 表示测试次数，即随机采样 max_examples 次数，进行测试
+    ```
 
 ### 1.2 C++ 单测
 
