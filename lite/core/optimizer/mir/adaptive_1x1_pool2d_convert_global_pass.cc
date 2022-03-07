@@ -41,7 +41,7 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
     VLOG(1) << "check global_pooling:" << global_pooling;
     VLOG(1) << "check ksize:" << ksize[0] << "," << ksize[1]
             << " | ksize_one:" << ksize_one;
-    if (adaptive && ksize_one) {
+    if (adaptive && ksize_one && !global_pooling) {
       return true;
     }
     return false;
@@ -74,4 +74,4 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
 
 REGISTER_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass,
                   paddle::lite::mir::Adaptive1x1Pool2dConvertGlobalPass)
-    .BindTargets({TARGET(kOpenCL), TARGET(kARM)});
+    .BindTargets({TARGET(kARM)});
