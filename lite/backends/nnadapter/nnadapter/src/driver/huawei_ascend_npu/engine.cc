@@ -154,6 +154,23 @@ Context::Context(void* device, const char* properties) : device_(device) {
   }
   NNADAPTER_LOG(INFO) << "enable dynamic shape range: "
                       << ascend_config_params_.enable_dynamic_shape_range;
+  // HUAWEI_ASCEND_NPU_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE
+  std::string initial_buffer_length_of_dynamia_shape_range;
+  if (key_values.count(
+          HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE)) {
+    initial_buffer_length_of_dynamia_shape_range = key_values
+        [HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE];
+  } else {
+    initial_buffer_length_of_dynamia_shape_range = GetStringFromEnv(
+        HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE);
+  }
+  if (!initial_buffer_length_of_dynamia_shape_range.empty()) {
+    ascend_config_params_.initial_buffer_length_of_dynamia_shape_range =
+        std::stoll(initial_buffer_length_of_dynamia_shape_range);
+  }
+  NNADAPTER_LOG(INFO)
+      << "initial buffer length of dynamia shape range: "
+      << ascend_config_params_.initial_buffer_length_of_dynamia_shape_range;
 }
 
 Context::~Context() {}
@@ -180,11 +197,13 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   }
   std::vector<std::string> dynamic_shape_info;
   std::string optional_shape_str;
+  if (context_->ascend_config_params()->enable_dynamic_shape_range == "true") {
+    dynamic_shape_mode_ = DYNAMIC_SHAPE_MODE_SHAPE_RANGE;
+  }
   GetDynamicShapeInfo(input_types_,
                       &dynamic_shape_info,
                       &optional_shape_str,
-                      &dynamic_shape_mode_,
-                      context_->ascend_config_params());
+                      &dynamic_shape_mode_);
   for (auto dynamic_shape : dynamic_shape_info) {
     NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
   }

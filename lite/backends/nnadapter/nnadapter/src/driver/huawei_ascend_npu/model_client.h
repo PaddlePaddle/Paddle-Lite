@@ -34,13 +34,27 @@ typedef enum {
   DYNAMIC_SHAPE_MODE_SHAPE_RANGE = 3,
 } DynamicShapeMode;
 
+typedef struct AscendConfigParams {
+  std::string profiling_file_path = "";
+  std::string dump_model_path = "";
+  std::string precision_mode = "";
+  std::string modify_mixlist_path = "";
+  std::string op_select_impl_mode = "";
+  std::string op_type_list_for_impl_mode = "";
+  std::string enable_compress_weight = "";
+  std::string auto_tune_mode = "";
+  std::string enable_dynamic_shape_range = "";
+  int64_t initial_buffer_length_of_dynamia_shape_range = -1;
+} AscendConfigParams;
+
 class AclModelClient {
  public:
-  explicit AclModelClient(int device_id,
-                          const std::string& profiling_file_path);
+  explicit AclModelClient(int device_id, AscendConfigParams* config_params);
   ~AclModelClient();
 
-  bool LoadModel(const void* data, size_t size, bool is_dynamic_shape_range);
+  bool LoadModel(const void* data,
+                 size_t size,
+                 AscendConfigParams* config_params);
   void UnloadModel();
   bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
                            std::vector<ge::TensorDesc>* output_tensor_descs);
@@ -64,6 +78,9 @@ class AclModelClient {
   void DestroyDataset(aclmdlDataset** dataset);
   void ProfilingStart();
   void ProfilingEnd();
+  void SetDynamicShapeRangeInitialBufferLength(int64_t initial_buffer_length) {
+    dynamic_shape_range_initial_buffer_length_ = initial_buffer_length;
+  }
 
  private:
   int device_id_{0};
@@ -73,7 +90,7 @@ class AclModelClient {
   aclmdlDataset* input_dataset_{nullptr};
   aclmdlDataset* output_dataset_{nullptr};
   aclprofConfig* config_{nullptr};
-  int64_t max_buffer_length_{4 * 3 * 1024 * 1024};
+  int64_t dynamic_shape_range_initial_buffer_length_{4 * 3 * 1024 * 1024};
 };
 
 }  // namespace huawei_ascend_npu

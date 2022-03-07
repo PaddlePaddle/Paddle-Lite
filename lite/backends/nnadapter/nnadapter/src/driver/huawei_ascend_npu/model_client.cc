@@ -25,7 +25,7 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 AclModelClient::AclModelClient(int device_id,
-                               const std::string& profiling_file_path) {
+                               AscendConfigParams* config_params) {
   NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
                     << ")";
   uint32_t device_count = 0;
@@ -34,7 +34,7 @@ AclModelClient::AclModelClient(int device_id,
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
   InitAclClientEnv(device_id);
-  InitAclProfilingEnv(profiling_file_path);
+  InitAclProfilingEnv(config_params->profiling_file_path);
 }
 
 AclModelClient::~AclModelClient() {
@@ -86,7 +86,7 @@ void AclModelClient::FinalizeAclProfilingEnv() {
 
 bool AclModelClient::LoadModel(const void* data,
                                size_t size,
-                               bool is_dynamic_shape_range) {
+                               AscendConfigParams* config_params) {
   if (model_desc_) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;
@@ -99,6 +99,13 @@ bool AclModelClient::LoadModel(const void* data,
   }
   ACL_CALL(aclmdlGetDesc(model_desc, model_id_));
   model_desc_ = model_desc;
+  bool is_dynamic_shape_range =
+      config_params->enable_dynamic_shape_range == "true";
+  if (is_dynamic_shape_range &&
+      config_params->initial_buffer_length_of_dynamia_shape_range > 0) {
+    SetDynamicShapeRangeInitialBufferLength(
+        config_params->initial_buffer_length_of_dynamia_shape_range);
+  }
   NNADAPTER_CHECK(CreateModelInputDataset(is_dynamic_shape_range, -1));
   NNADAPTER_CHECK(CreateModelOutputDataset(is_dynamic_shape_range, -1));
   NNADAPTER_VLOG(3) << "Load a ACL model success.";
@@ -182,8 +189,9 @@ bool AclModelClient::CreateModelInputDataset(bool is_dynamic_shape_range,
   for (uint32_t i = 0; i < input_count; i++) {
     int64_t length;
     if (is_dynamic_shape_range) {
-      length = buffer_length > max_buffer_length_ ? buffer_length
-                                                  : max_buffer_length_;
+      length = buffer_length > dynamic_shape_range_initial_buffer_length_
+                   ? buffer_length
+                   : dynamic_shape_range_initial_buffer_length_;
     } else {
       length = aclmdlGetInputSizeByIndex(model_desc_, i);
     }
@@ -216,8 +224,9 @@ bool AclModelClient::CreateModelOutputDataset(bool is_dynamic_shape_range,
   for (uint32_t i = 0; i < output_count; i++) {
     int64_t length;
     if (is_dynamic_shape_range) {
-      length = buffer_length > max_buffer_length_ ? buffer_length
-                                                  : max_buffer_length_;
+      length = buffer_length > dynamic_shape_range_initial_buffer_length_
+                   ? buffer_length
+                   : dynamic_shape_range_initial_buffer_length_;
     } else {
       length = aclmdlGetInputSizeByIndex(model_desc_, i);
     }
@@ -319,7 +328,12 @@ bool AclModelClient::Process(uint32_t input_count,
     // Reallocate dataset memory space in dynamic_shape_range mode if the
     // current buffer length exceeds max_length
     if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
-      if (length > max_buffer_length_) {
+      if (length > dynamic_shape_range_initial_buffer_length_) {
+        NNADAPTER_LOG(WARNING) << "Not enough device memory for the " << i
+                               << "th input tensor, expect >= " << length
+                               << " but recevied "
+                               << dynamic_shape_range_initial_buffer_length_;
+        NNADAPTER_LOG(WARNING) << "Reallocate dataset memory space...";
         CreateModelInputDataset(true, length);
       }
     }
@@ -414,7 +428,12 @@ bool AclModelClient::Process(uint32_t input_count,
     // Reallocate dataset memory space in dynamic_shape_range mode if the
     // current buffer length exceeds max_length
     if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
-      if (length > max_buffer_length_) {
+      if (length > dynamic_shape_range_initial_buffer_length_) {
+        NNADAPTER_LOG(WARNING) << "Not enough device memory for the " << i
+                               << "th output tensor, expect >= " << length
+                               << " but recevied "
+                               << dynamic_shape_range_initial_buffer_length_;
+        NNADAPTER_LOG(WARNING) << "Reallocate dataset memory space...";
         CreateModelOutputDataset(true, length);
       }
     }

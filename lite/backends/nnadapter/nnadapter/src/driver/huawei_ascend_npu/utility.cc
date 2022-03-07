@@ -217,15 +217,13 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
     return nullptr;
   }
   // Create a ACL model client to load the om model
-  auto model_client = std::make_shared<AclModelClient>(
-      device_id, config_params->profiling_file_path);
+  auto model_client =
+      std::make_shared<AclModelClient>(device_id, config_params);
   // Load model from memory
-  bool is_dynamic_shape_range =
-      config_params->enable_dynamic_shape_range == "true";
   if (model_client->LoadModel(
           reinterpret_cast<const void*>(model_buffer.data()),
           model_buffer.size(),
-          is_dynamic_shape_range)) {
+          config_params)) {
     return model_client;
   }
   return nullptr;
@@ -751,8 +749,7 @@ static void UpdateDynamicShapeMode(
 void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
                          std::vector<std::string>* dynamic_shape_info,
                          std::string* optional_shape_str,
-                         DynamicShapeMode* dynamic_shape_mode,
-                         AscendConfigParams* config_params) {
+                         DynamicShapeMode* dynamic_shape_mode) {
   // Get dynamic_shape_mode from all inputs. Rules are as follows:
   // 1. If all shapes are const, dynamic_shape_mode is DYNAMIC_SHAPE_MODE_NONE.
   // 2. If only batch of inputs is unknown, dynamic_shape_mode is
@@ -760,17 +757,13 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
   // 3. If only one 4-D input has dynamic height or weight, dynamic_shape_mode
   // is DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH.
   // 4. Others belong to DYNAMIC_SHAPE_MODE_N_DIMS.
-  *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_NONE;
-  if (config_params->enable_dynamic_shape_range == "true") {
-    *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_SHAPE_RANGE;
-  } else {
+  if (*dynamic_shape_mode != DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
     for (auto& input_type : input_types) {
       if (!IsDynamicShapeOperandType(input_type)) continue;
       UpdateDynamicShapeMode(input_type.dimensions, dynamic_shape_mode);
       if (*dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) break;
     }
   }
-
   // Generate dynamic_shape_info according to dynamic_shape_mode.
   std::vector<std::string> optional_shape;
   for (auto& input_type : input_types) {

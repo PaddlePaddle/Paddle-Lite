@@ -72,17 +72,9 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE \
   "HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE"
 
-typedef struct AscendConfigParams {
-  std::string profiling_file_path = "";
-  std::string dump_model_path = "";
-  std::string precision_mode = "";
-  std::string modify_mixlist_path = "";
-  std::string op_select_impl_mode = "";
-  std::string op_type_list_for_impl_mode = "";
-  std::string enable_compress_weight = "";
-  std::string auto_tune_mode = "";
-  std::string enable_dynamic_shape_range = "";
-} AscendConfigParams;
+// Specify the buffer length initialized of dynamic_shape_range
+#define HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE \
+  "HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE"
 
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
     major, minor, patch)                                         \
@@ -192,8 +184,7 @@ std::string MergeOptionalShapInfo(
 void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
                          std::vector<std::string>* dynamic_shape_info,
                          std::string* optional_shape_str,
-                         DynamicShapeMode* dynamic_shape_mode,
-                         AscendConfigParams* config_params);
+                         DynamicShapeMode* dynamic_shape_mode);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
