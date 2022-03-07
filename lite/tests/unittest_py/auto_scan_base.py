@@ -50,6 +50,15 @@ parser.add_argument(
     ],
     required=True)
 parser.add_argument(
+    "--enforce_rpc", default='off', type=str, help="whther rpc is enforced")
+
+parser.add_argument(
+    "--server_ip",
+    default="localhost",
+    type=str,
+    help="when rpc is used , the ip address of the server")
+
+parser.add_argument(
     "--url",
     type=str,
     help="Address of model download in model test", )
@@ -90,6 +99,8 @@ parser.add_argument(
     default="",
     type=str,
     help="Set nnadapter mixed precision quantization config path")
+args = parser.parse_args()
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
@@ -466,7 +477,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     atol_ = 1e-1
                     rtol_ = 5.3e-2
                 if quant:
-                    if platform.system() == 'Darwin':
+                    if platform.system() == 'Darwin' or platform.processor(
+                    ) == 'x86_64':
                         # only run in linux
                         continue
                     atol_ = 1e-3
@@ -551,7 +563,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     os.mkdir(self.cache_dir)
                 try:
                     result, opt_model_bytes = self.run_lite_config(
-                        model, params, feed_data, pred_config)
+                        model, params, feed_data, pred_config, args.server_ip)
                     results.append(result)
                     # add ignore methods
                     if self.passes is not None:  # pass check
@@ -603,7 +615,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
                 try:
                     result, opt_model_bytes = self.run_lite_config(
-                        model, params, feed_data, pred_config)
+                        model, params, feed_data, pred_config, args.server_ip)
                     results.append(result)
                     self.assert_tensors_near(atol_, rtol_, results[-1],
                                              results[0], flag_precision_fp16)
@@ -790,8 +802,12 @@ class AutoScanBaseTest(unittest.TestCase):
                 assert False
 
     @abc.abstractmethod
-    def run_lite_config(self, model, params, feed_data,
-                        pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self,
+                        model,
+                        params,
+                        feed_data,
+                        pred_config,
+                        server_ip="localhost") -> Dict[str, np.ndarray]:
         raise NotImplementedError
 
     # enable a predictor config

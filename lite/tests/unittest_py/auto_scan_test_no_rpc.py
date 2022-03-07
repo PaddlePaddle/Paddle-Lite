@@ -78,8 +78,12 @@ def ParsePaddleLiteConfig(self, config):
 
 
 class AutoScanTest(AutoScanBaseTest):
-    def run_lite_config(self, model, params, inputs,
-                        pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self,
+                        model,
+                        params,
+                        inputs,
+                        pred_config,
+                        server_ip="localhost") -> Dict[str, np.ndarray]:
         # 1. store original model
         with open(self.cache_dir + "/model", "wb") as f:
             f.write(model)
