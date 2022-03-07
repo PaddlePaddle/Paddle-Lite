@@ -192,8 +192,8 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       build_options_ += " -DOPERATOR(in,bias)=pow(in,bias) ";
     } else if (elementwise_compute_type == "elementwise_mod") {
       build_options_ += " -DOPERATOR(in,bias)=fmod(in,bias) ";
-    }else if(elementwise_compute_type=="elementwise_floordiv"){
-      build_options_+=" -DOPERATOR(in,bias)=(int4)(in/bias) ";
+    } else if (elementwise_compute_type == "elementwise_floordiv") {
+      build_options_ += " -DOPERATOR(in,bias)=(int4)(in/bias) ";
     }
 
     if (ele_param_->fuse_scale) {
@@ -602,10 +602,10 @@ REGISTER_LITE_KERNEL(elementwise_floordiv,
                      kImageDefault,
                      ocl::ElementwiseImageCompute,
                      def)
-.BindInput("X",
-           {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                  PRECISION(kFP16),
-                                  DATALAYOUT(kImageDefault))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
