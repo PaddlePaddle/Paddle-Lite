@@ -74,7 +74,7 @@ void Converter::UpdateTensorMap(core::Operand* operand,
 
 nvinfer1::ITensor* Converter::ConvertOperand(
     core::Operand* operand, const std::vector<int32_t>& dimensions) {
-  NNADAPTER_CHECK(IsModelInputOperand(operand));
+  // Fill dims
   nvinfer1::Dims dims;
   if (dimensions.empty()) {
     dims.nbDims = operand->type.dimensions.count;
@@ -84,10 +84,18 @@ nvinfer1::ITensor* Converter::ConvertOperand(
     dims.nbDims = dimensions.size();
     memcpy(dims.d, dimensions.data(), dims.nbDims * sizeof(int32_t));
   }
-  std::string name = "data" + std::to_string(input_index_);
-  input_index_++;
-  auto precision = ConvertToNVDataType(operand->type.precision);
-  nvinfer1::ITensor* data = network_->addInput(name.c_str(), precision, dims);
+  // Create input tensor or constant tensor
+  nvinfer1::ITensor* data = nullptr;
+  if (IsModelInputOperand(operand)) {
+    std::string name = "data" + std::to_string(input_index_);
+    input_index_++;
+    auto precision = ConvertToNVDataType(operand->type.precision);
+    data = network_->addInput(name.c_str(), precision, dims);
+  } else if (IsConstantOperand(operand)) {
+    data = network_->addConstant(dims, OperandToWeights(operand))->getOutput(0);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Only support input or constant operand.";
+  }
   NNADAPTER_CHECK(data);
   UpdateTensorMap(operand, data);
   return data;

@@ -55,11 +55,6 @@ int32_t ReluPluginDynamic::enqueue(
   return 0;
 }
 
-nvinfer1::IPluginV2* ReluPluginDynamicCreator::deserializePlugin(
-    const char* name, void const* serial_data, size_t serial_length) noexcept {
-  return new ReluPluginDynamic(serial_data, serial_length);
-}
-
 REGISTER_NNADAPTER_TENSORRT_PLUGIN(ReluPluginDynamic,
                                    ReluPluginDynamicCreator,
                                    "relu_plugin_dynamic");

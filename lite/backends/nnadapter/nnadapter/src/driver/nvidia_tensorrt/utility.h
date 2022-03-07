@@ -42,5 +42,25 @@ nvinfer1::DataType ConvertToNVDataType(
 
 uint32_t GetNVTypeSize(nvinfer1::DataType type);
 
+template <typename T>
+size_t SerializedSize(const T value);
+
+template <typename T>
+size_t SerializedSize(const std::vector<T>& value);
+
+template <typename T>
+void Serialize(void** buffer, const T value);
+
+template <typename T>
+void Serialize(void** buffer, const std::vector<T>& value);
+
+template <typename T>
+void Deserialize(const void** buffer, size_t* buffer_size, T* value);
+
+template <typename T>
+void Deserialize(const void** buffer,
+                 size_t* buffer_size,
+                 std::vector<T>* value);
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

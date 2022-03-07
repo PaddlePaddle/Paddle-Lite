@@ -92,5 +92,87 @@ uint32_t GetNVTypeSize(nvinfer1::DataType type) {
   return 0;
 }
 
+template <typename T>
+size_t SerializedSize(const T value) {
+  return sizeof(T);
+}
+template size_t SerializedSize(const int32_t value);
+template size_t SerializedSize(const int64_t value);
+template size_t SerializedSize(const bool value);
+template size_t SerializedSize(const float value);
+
+template <typename T>
+size_t SerializedSize(const std::vector<T>& value) {
+  return sizeof(value.size()) + sizeof(T) * value.size();
+}
+template size_t SerializedSize(const std::vector<int32_t>& value);
+template size_t SerializedSize(const std::vector<int64_t>& value);
+template size_t SerializedSize(const std::vector<float>& value);
+
+template <typename T>
+void Serialize(void** buffer, const T value) {
+  std::memcpy(*buffer, &value, sizeof(T));
+  reinterpret_cast<char*&>(*buffer) += sizeof(T);
+}
+template void Serialize(void** buffer, const int32_t value);
+template void Serialize(void** buffer, const int64_t value);
+template void Serialize(void** buffer, const bool value);
+template void Serialize(void** buffer, const float value);
+
+template <typename T>
+void Serialize(void** buffer, const std::vector<T>& value) {
+  Serialize(buffer, value.size());
+  size_t nbyte = value.size() * sizeof(T);
+  std::memcpy(*buffer, value.data(), nbyte);
+  reinterpret_cast<char*&>(*buffer) += nbyte;
+}
+template void Serialize(void** buffer, const std::vector<int32_t>& value);
+template void Serialize(void** buffer, const std::vector<int64_t>& value);
+template void Serialize(void** buffer, const std::vector<float>& value);
+
+template <typename T>
+void Deserialize(const void** buffer, size_t* buffer_size, T* value) {
+  NNADAPTER_CHECK_GE(*buffer_size, sizeof(T));
+  std::memcpy(value, *buffer, sizeof(T));
+  reinterpret_cast<const char*&>(*buffer) += sizeof(T);
+  *buffer_size -= sizeof(T);
+}
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          int32_t* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          int64_t* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          bool* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          float* value);
+
+template <typename T>
+void Deserialize(const void** buffer,
+                 size_t* buffer_size,
+                 std::vector<T>* value) {
+  NNADAPTER_CHECK_GE(*buffer_size, sizeof(value->size()));
+  size_t size;
+  Deserialize(buffer, buffer_size, &size);
+  size_t nbyte = size * sizeof(T);
+  NNADAPTER_CHECK_GE(*buffer_size, nbyte);
+  value->resize(size);
+  std::memcpy(value->data(), *buffer, nbyte);
+  reinterpret_cast<const char*&>(*buffer) += nbyte;
+  *buffer_size -= nbyte;
+}
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          std::vector<int32_t>* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          std::vector<int64_t>* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          std::vector<float>* value);
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
