@@ -102,9 +102,9 @@ bool AclModelClient::LoadModel(const void* data,
   bool is_dynamic_shape_range =
       config_params->enable_dynamic_shape_range == "true";
   if (is_dynamic_shape_range &&
-      config_params->initial_buffer_length_of_dynamia_shape_range > 0) {
+      config_params->initial_buffer_length_of_dynamic_shape_range > 0) {
     SetDynamicShapeRangeInitialBufferLength(
-        config_params->initial_buffer_length_of_dynamia_shape_range);
+        config_params->initial_buffer_length_of_dynamic_shape_range);
   }
   NNADAPTER_CHECK(CreateModelInputDataset(is_dynamic_shape_range, -1));
   NNADAPTER_CHECK(CreateModelOutputDataset(is_dynamic_shape_range, -1));
@@ -228,7 +228,7 @@ bool AclModelClient::CreateModelOutputDataset(bool is_dynamic_shape_range,
                    ? buffer_length
                    : dynamic_shape_range_initial_buffer_length_;
     } else {
-      length = aclmdlGetInputSizeByIndex(model_desc_, i);
+      length = aclmdlGetOutputSizeByIndex(model_desc_, i);
     }
     NNADAPTER_VLOG(5) << "The buffer length of model output tensor " << i << ":"
                       << length;

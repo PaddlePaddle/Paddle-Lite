@@ -44,7 +44,7 @@ typedef struct AscendConfigParams {
   std::string enable_compress_weight = "";
   std::string auto_tune_mode = "";
   std::string enable_dynamic_shape_range = "";
-  int64_t initial_buffer_length_of_dynamia_shape_range = -1;
+  int64_t initial_buffer_length_of_dynamic_shape_range = -1;
 } AscendConfigParams;
 
 class AclModelClient {
