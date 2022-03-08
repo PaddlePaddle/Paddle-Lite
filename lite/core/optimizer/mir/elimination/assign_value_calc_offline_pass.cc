@@ -36,6 +36,19 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->AsStmt().op_type() != "assign_value") continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(graph, out_link->arg()->name, {"assign_value"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "The output var of op is not supported with multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& assign_value_instruct = node->AsStmt();

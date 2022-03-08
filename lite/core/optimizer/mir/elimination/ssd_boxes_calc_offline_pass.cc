@@ -41,6 +41,20 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     if (node->AsStmt().op_type() != "prior_box" &&
         node->AsStmt().op_type() != "density_prior_box")
       continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(
+              graph, out_link->arg()->name, {"scale", "density_prior_box"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "Unsupported for op output var containing multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& priorbox_instruct = node->AsStmt();

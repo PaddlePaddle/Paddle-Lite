@@ -38,6 +38,20 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     if (node->AsStmt().op_type() != "unsqueeze" &&
         node->AsStmt().op_type() != "unsqueeze2")
       continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(
+              graph, out_link->arg()->name, {"unsqueeze", "unsqueeze2"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "Unsupported for op output var containing multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& unsqueeze_instruct = node->AsStmt();

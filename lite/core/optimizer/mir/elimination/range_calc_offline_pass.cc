@@ -43,6 +43,19 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->AsStmt().op_type() != "range") continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(graph, out_link->arg()->name, {"range"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "Unsupported for op output var containing multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& range_instruct = node->AsStmt();
