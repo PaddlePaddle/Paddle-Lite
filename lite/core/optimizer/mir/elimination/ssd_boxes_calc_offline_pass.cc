@@ -44,8 +44,9 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(
-              graph, out_link->arg()->name, {"scale", "density_prior_box"})) {
+      if (HasExtraProducers(graph,
+                            out_link->arg()->name,
+                            {"prior_box", "density_prior_box"})) {
         has_extra_producers = true;
         break;
       }
