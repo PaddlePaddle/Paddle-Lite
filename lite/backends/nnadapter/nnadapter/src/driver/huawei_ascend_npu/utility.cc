@@ -290,8 +290,15 @@ bool BuildOMModelToBuffer(
   }
 
   if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
     options.insert(std::make_pair(ge::ir_option::INPUT_SHAPE_RANGE,
                                   input_shape_info.data()));
+#else
+    NNADATER_LOG(FATAL)
+        << "The dynamic shape range feature is only supported in CANN 5.1.1 "
+           "and above."
+        << "If you want to use, please upgrade and recompile the library."
+#endif
   } else {
     options.insert(
         std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
