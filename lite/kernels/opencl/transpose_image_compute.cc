@@ -100,12 +100,53 @@ class TransposeComputeFloatImage
       sort(tmp.begin(), tmp.end());
       if (tmp == std::vector<int>({0, 1, 2, 3}) &&
           axis_ != std::vector<int>({0, 1, 2, 3})) {
-        kernel_func_name_ = "transpose_4d_perm";
-        for (int i = 0; i < axis_.size(); ++i) {
-          kernel_func_name_ += std::to_string(axis_[i]);
+        if (axis_[1] == 1) {
+          kernel_func_name_ = "transpose4d_perm_without_chann";
+          build_options_ += " -DNON_CHANNEL_PERMUTATION ";
+          build_options_ += " -DPERM";
+          for (int i = 0; i < axis_.size(); ++i) {
+            build_options_ += std::to_string(axis_[i]);
+          }
+        } else {
+          kernel_func_name_ = "transpose4d_perm_with_channel";
+          if (axis_[0] == 0) {
+            build_options_ += " -DN2N";
+          } else if (axis_[0] == 1) {
+            build_options_ += " -DC2N";
+          } else if (axis_[0] == 2) {
+            build_options_ += " -DH2N";
+          } else if (axis_[0] == 3) {
+            build_options_ += " -DW2N";
+          }
+          if (axis_[2] == 1) {
+            build_options_ += " -DC2H";
+          } else if (axis_[2] == 3) {
+            build_options_ += " -DW2H";
+          } else if (axis_[2] == 0) {
+            build_options_ += " -DN2H";
+          } else if (axis_[2] == 2) {
+            build_options_ += " -DH2H";
+          }
+          if (axis_[1] == 2) {
+            build_options_ += " -DH2C";
+          } else if (axis_[1] == 3) {
+            build_options_ += " -DW2C";
+          } else if (axis_[1] == 0) {
+            build_options_ += " -DN2C";
+          } else if (axis_[1] == 1) {
+            build_options_ += " -DC2C";
+          }
+          if (axis_[3] == 3) {
+            build_options_ += " -DW2W";
+          } else if (axis_[3] == 1) {
+            build_options_ += " -DC2W";
+          } else if (axis_[3] == 2) {
+            build_options_ += " -DH2W";
+          } else if (axis_[3] == 0) {
+            build_options_ += " -DN2W";
+          }
         }
-        kernel_path_ = "image/transpose_fixb" + std::to_string(axis_[0] + 1) +
-                       "_kernel.cl";
+        kernel_path_ = "image/transpose_kernel.cl";
       } else {
         LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
                       "kernel! ";
@@ -116,7 +157,7 @@ class TransposeComputeFloatImage
       if (tmp == std::vector<int>({0, 1}) &&
           axis_ != std::vector<int>({0, 1})) {
         kernel_func_name_ = "transpose_2d";
-        kernel_path_ = "image/transpose_fixb1_kernel.cl";
+        kernel_path_ = "image/transpose_kernel.cl";
       } else {
         LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
                       "kernel! ";
