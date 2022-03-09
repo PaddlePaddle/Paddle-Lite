@@ -208,9 +208,10 @@ REGISTER_CONVERTER(
 REGISTER_CONVERTER(hard_sigmoid,
                    ConvertHardSigmoid,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
-REGISTER_CONVERTER(hard_swish,
-                   ConvertHardSwish,
-                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
+REGISTER_CONVERTER(
+    hard_swish,
+    ConvertHardSwish,
+    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,nvidia_tensorrt");
 REGISTER_CONVERTER(arg_max,
                    ConvertArgMinMax,
                    "huawei_ascend_npu,huawei_kirin_npu");
