@@ -30,6 +30,10 @@ if(NNADAPTER_WITH_ROCKCHIP_NPU)
   add_subdirectory(rockchip_npu)
 endif()
 
+if(NNADAPTER_WITH_EEASYTECH_NPU)
+  add_subdirectory(eeasytech_npu)
+endif()
+
 if(NNADAPTER_WITH_IMAGINATION_NNA)
   add_subdirectory(imagination_nna)
 endif()

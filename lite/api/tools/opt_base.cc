@@ -180,6 +180,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "eeasytech_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -350,7 +355,7 @@ void OptBase::PrintHelpInfo() {
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
       "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|eeasytech_npu|"
       "mediatek_apu|huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
@@ -394,7 +399,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
       "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|eeasytech_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
@@ -413,12 +418,12 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|eeasytech_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|eeasytech_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
@@ -503,6 +508,7 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
                                                   "rockchip_npu",
+                                                  "eeasytech_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
                                                   "amlogic_npu"};
@@ -518,6 +524,7 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                            "华为昇腾NPU",
                                                            "联发科APU",
                                                            "瑞芯微NPU",
+                                                           "亿智NPU",
                                                            "华为麒麟NPU",
                                                            "颖脉NNA",
                                                            "晶晨NPU"};
@@ -644,6 +651,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       }
     }
   }
+
   // 3. Print ops_info of input model and check if this model is supported
   if (print_ops_info) {
     OPT_LOG << "OPs in the input model include:";
@@ -789,6 +797,7 @@ void OptBase::InitSupportedOpInfo() {
                                      "huawei_ascend_npu",
                                      "mediatek_apu",
                                      "rockchip_npu",
+                                     "eeasytech_npu",
                                      "huawei_kirin_npu",
                                      "imagination_nna",
                                      "amlogic_npu",

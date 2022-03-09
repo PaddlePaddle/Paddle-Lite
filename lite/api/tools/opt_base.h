@@ -90,6 +90,7 @@ class LITE_API OptBase {
                          "huawei_ascend_npu",
                          "mediatek_apu",
                          "rockchip_npu",
+                         "eeasytech_npu",
                          "huawei_kirin_npu",
                          "imagination_nna",
                          "amlogic_npu",

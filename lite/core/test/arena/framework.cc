@@ -39,6 +39,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
                                                        {"huawei_kirin_npu"});
 #elif defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"rockchip_npu"});
+#elif defined(NNADAPTER_WITH_EEASYTECH_NPU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"eeasytech_npu"});
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"mediatek_apu"});
 #elif defined(NNADAPTER_WITH_IMAGINATION_NNA)

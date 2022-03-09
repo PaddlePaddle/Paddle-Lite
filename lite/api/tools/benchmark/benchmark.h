@@ -285,6 +285,7 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
   // nnadapter option
   std::vector<std::string> nnadapter_backends = {"imagination_nna",
                                                  "rockchip_npu",
+                                                 "eeasytech_npu",
                                                  "mediatek_apu",
                                                  "huawei_kirin_npu",
                                                  "huawei_ascend_npu",

@@ -28,7 +28,7 @@ REGISTER_CONVERTER(
     "huawei_ascend_npu,cambricon_mlu,verisilicon_timvx,huawei_kirin_npu");
 REGISTER_CONVERTER(conv2d,
                    ConvertConv2D,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "rockchip_npu,eeasytech_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi");
 REGISTER_CONVERTER(depthwise_conv2d,

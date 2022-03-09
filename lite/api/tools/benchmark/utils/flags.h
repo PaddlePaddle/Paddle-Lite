@@ -89,7 +89,7 @@ static const char opencl_tune_mode_msg[] =
     "Set opencl tune option: none, rapid, normal, exhaustive.";
 static const char nnadapter_device_names_msg[] =
     "Set nnadapter device names. "
-    "Should be one of: huawei_kirin_npu|huawei_ascend_npu|rockchip_npu|"
+    "Should be one of: huawei_kirin_npu|huawei_ascend_npu|rockchip_npu|eeasytech_npu|"
     "imagination_nna|mediatek_apu|amlogic_npu|verisilicon_timvx|";
 static const char nnadapter_context_properties_msg[] =
     "Set nnadapter device hardware resources, default to null";
