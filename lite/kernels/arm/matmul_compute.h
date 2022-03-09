@@ -28,7 +28,7 @@ class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::MatMulParam;
 
-  void PrepareForRun() override;
+  void PrepareForRun() { auto& ctx = this->ctx_->template As<ARMContext>(); }
 
   void ReInitWhenNeeded() override;
 
