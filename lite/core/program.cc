@@ -38,6 +38,7 @@ void CheckProgramDescValidity(std::shared_ptr<cpp::ProgramDesc> program_desc,
                               int inst_block_size) {
   CHECK(program_desc) << "Error, program_desc is nullptr";
   auto block_size = program_desc->BlocksSize();
+  int a;
   CHECK_GT(block_size, 0) << "No block exists in current program_desc";
   // TODD(hong19860320) Only support updating the block desc which already
   // exists in the origin program desc
