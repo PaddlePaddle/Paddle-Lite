@@ -2611,7 +2611,7 @@ void gemm_prepack_8x8(bool is_transB,
     }
     int bblocks = (xmax - x0 + NBLOCK_FP16 - 1) / NBLOCK_FP16;
     remain = xmax - x0 - (bblocks - 1) * NBLOCK_FP16;
-    if (remain > 0 && remain != 12) {
+    if (remain > 0 && remain != 8) {
       flag_p_remain = true;
     }
     //! load bpanel
