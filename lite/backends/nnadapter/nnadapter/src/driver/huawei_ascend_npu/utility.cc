@@ -294,7 +294,7 @@ bool BuildOMModelToBuffer(
     options.insert(std::make_pair(ge::ir_option::INPUT_SHAPE_RANGE,
                                   input_shape_info.data()));
 #else
-    NNADATER_LOG(FATAL)
+    NNADAPTER_LOG(FATAL)
         << "The dynamic shape range feature is only supported in CANN 5.1.1 "
            "and above."
         << "If you want to use, please upgrade and recompile the library."
