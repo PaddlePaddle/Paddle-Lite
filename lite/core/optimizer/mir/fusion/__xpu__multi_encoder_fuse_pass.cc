@@ -917,6 +917,7 @@ class XPUMultiEncoderFuser {
                qkv_len * sizeof(float));
       }
 
+<<<<<<< HEAD
       // TODO(mayang02): we could use attr to store FCWeightMax
       std::string max_name = "encoder_max_" + fc_weight_names[0];
       VLOG(3) << "multi-encoder max weight name: " << max_name;
@@ -942,6 +943,32 @@ class XPUMultiEncoderFuser {
       }
       DirectedLink(max_filter_node, first_encoder);
       op_desc.SetInput("FCWeightMax", {max_name});
+=======
+    // TODO(mayang02): we could use attr to store FCWeightMax
+    std::string max_name = "encoder_max_" + fc_weight_names[0];
+    VLOG(3) << "multi-encoder max weight name: " << max_name;
+    auto* max_filter_node = graph->RetrieveArgument(max_name);
+    if (max_filter_node == nullptr) {
+      max_filter_node = graph->NewArgumentNode(max_name);
+      CHECK(max_filter_node != nullptr) << "NewArgumentNode failed";
+      max_filter_node->arg()->is_weight = true;
+      max_filter_node->arg()->type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      auto* max_filter_tensor = scope->MutableParent()->NewTensor(max_name);
+      max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
+      memcpy(max_filter_tensor->mutable_data<float>(),
+             &fc_weight_max[0],
+             sizeof(float) * fc_weight_max.size());
+      max_filter_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+      max_filter_tensor->set_persistable(true);
+    } else {
+      // the weight/bias were used in another multiencoder pattern
+      auto weight_max_tensor_tmp = scope->FindMutableTensor(max_name);
+      CHECK(weight_max_tensor_tmp != nullptr) << "max xpu weight not exist";
+    }
+    DirectedLink(max_filter_node, first_encoder);
+    op_desc.SetInput("FCWeightMax", {max_name});
+>>>>>>> 993dd499e9 ([xpu] NewTensor must use root scope,fixed predictor.clone bug (#8581))
 
       auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
       multi_encoder_op->Attach(op_desc, scope);
