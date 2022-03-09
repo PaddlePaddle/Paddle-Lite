@@ -671,11 +671,12 @@ void ConvImageCompute::PrepareForRun() {
     } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kAbs) {
       build_options_single += " -DABS";
-    } else if (conv_param_->activation_param.active_type ==
+    } /* else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kExp) {
       build_options_single += " -DEXP";
-    } else if (conv_param_->activation_param.active_type ==
-               lite_api::ActivationType::kPRelu) {
+    } */ else if (
+        conv_param_->activation_param.active_type ==
+        lite_api::ActivationType::kPRelu) {
       std::string prelu_mode = conv_param_->activation_param.Prelu_mode;
       build_options_single += " -DPRELU";
       if (prelu_mode == "channel") {
