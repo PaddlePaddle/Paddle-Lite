@@ -1170,7 +1170,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
     max_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     DirectedLink(max_filter_node, matched.at("top_conv"));
-    auto* max_filter_t = scope->NewTensor(max_name);
+    auto* max_filter_t = scope->MutableParent()->NewTensor(max_name);
     max_filter_t->Resize({4});
     float* max_ptr = max_filter_t->mutable_data<float>();
     max_ptr[0] = max_f;
@@ -1206,7 +1206,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
     max_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     DirectedLink(max_filter_node, matched.at("top_conv"));
-    auto* max_filter_t = scope->NewTensor(max_name);
+    auto* max_filter_t = scope->MutableParent()->NewTensor(max_name);
     max_filter_t->Resize({4});
     float* max_ptr = max_filter_t->mutable_data<float>();
     max_ptr[0] = max_f;
@@ -1332,7 +1332,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
       max_filter_node->arg()->type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
       DirectedLink(max_filter_node, matched.at("top_conv"));
-      auto* max_filter_t = scope->NewTensor(max_name);
+      auto* max_filter_t = scope->MutableParent()->NewTensor(max_name);
       max_filter_t->Resize({4});
       float* max_ptr = max_filter_t->mutable_data<float>();
       max_ptr[0] = max_f;

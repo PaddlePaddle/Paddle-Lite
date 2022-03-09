@@ -187,7 +187,7 @@ class XPUMultiSliceSoftmaxFuser {
     concat_output_node->arg()->is_weight = true;
     concat_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->NewTensor(concat_output_name);
+    scope->MutableParent()->NewTensor(concat_output_name);
     op_desc.SetOutput("ConcatOut", {concat_output_name});
 
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
