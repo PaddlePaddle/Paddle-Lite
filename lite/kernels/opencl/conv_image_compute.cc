@@ -30,6 +30,7 @@ namespace opencl {
 void ConvImageCompute::PrepareForRun() {
   ReInitWhenNeeded();
 
+  bool bias_buffer_flag = false;
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   is_mali_ = context.cl_context()->IsArmMali();
@@ -185,6 +186,7 @@ void ConvImageCompute::PrepareForRun() {
     if (task_size <= threshold_2) {
       CLImageConverterNBlock converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c1");
+      bias_buffer_flag = true;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
       filter_image_h_ = filter_image_dims[1];
@@ -204,6 +206,7 @@ void ConvImageCompute::PrepareForRun() {
     } else if (task_size <= threshold_4) {
       CLImageConverterN2Block converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c2");
+      bias_buffer_flag = true;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
       filter_image_h_ = filter_image_dims[1];
@@ -223,6 +226,7 @@ void ConvImageCompute::PrepareForRun() {
     } else {
       CLImageConverterN2Block converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h2w2c2");
+      bias_buffer_flag = true;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
       filter_image_h_ = filter_image_dims[1];
@@ -342,6 +346,7 @@ void ConvImageCompute::PrepareForRun() {
         if (is_mali_) {
           kernel_func_names_.push_back("matrix_inner_product_mali");
           kernel_func_names_.push_back("transform_to_output_mali");
+          bias_buffer_flag = true;
         } else {
           kernel_func_names_.push_back("matrix_inner_product");
           kernel_func_names_.push_back("transform_to_output");
@@ -377,6 +382,7 @@ void ConvImageCompute::PrepareForRun() {
       } else if (groups_ == 1) {
         if (is_mali_ && input_tensor_n_ == 1) {
           kernel_func_names_.push_back("conv2d_3x3_opt_mali");
+          bias_buffer_flag = true;
         } else {
           kernel_func_names_.push_back(input_tensor_n_ > 1
                                            ? "conv2d_3x3_multi_batch"
@@ -510,6 +516,7 @@ void ConvImageCompute::PrepareForRun() {
       // conv2d_7x7
       if (is_mali_ && input_tensor_n_ == 1) {
         kernel_func_names_.push_back("conv2d_7x7_opt_mali");
+        bias_buffer_flag = true;
       } else {
         kernel_func_names_.push_back(
             input_tensor_n_ > 1 ? "conv2d_7x7_multi_batch" : "conv2d_7x7_opt");
@@ -570,7 +577,6 @@ void ConvImageCompute::PrepareForRun() {
   }  // if (is_mali)
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
-
   // build options
   std::string build_options_single{""};
   // relu options
@@ -696,15 +702,6 @@ void ConvImageCompute::PrepareForRun() {
   //   AssignDataFromCPUToGPU(tensor_hold_bias_buffer.get(),
   //                          bias_gpu_buffer_.get());
   // } else if (has_bias_) {
-  bool bias_buffer_flag = false;
-  if (kernel_func_names_[0] == "conv2d_3x3_opt_mali" ||
-      kernel_func_names_[0] == "conv2d_7x7_opt_mali" ||
-      kernel_func_names_[1] == "transform_to_output_mali" ||
-      kernel_func_names_[0] == "conv2d_1x1_mali_h1w2c1" ||
-      kernel_func_names_[0] == "conv2d_1x1_mali_h1w2c2" ||
-      kernel_func_names_[0] == "conv2d_1x1_mali_h2w2c2") {
-    bias_buffer_flag = true;
-  }
   VLOG(3) << "bias init";
   if (has_bias_) {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
