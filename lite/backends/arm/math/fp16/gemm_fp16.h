@@ -31,6 +31,7 @@ const int MBLOCK_FP16 = 8;
 const int NBLOCK_FP16 = 16;
 #else
 const int NBLOCK_FP16 = 12;
+const int NBLOCK_FP16_8 = 8;
 #endif  // __aarch64__
 
 inline int get_hblock_fp16(ARMContext* ctx) { return MBLOCK_FP16; }
