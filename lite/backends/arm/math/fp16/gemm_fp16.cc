@@ -2594,7 +2594,7 @@ void gemm_prepack_8x8(bool is_transB,
   }
   float16_t alpha_ptr[40] = {0.f};
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16_8, KBLOCK_FP16, beta)
+  X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   tail_pre = tail_pre * 8 + flag_act;
   k_pre = k_pre * 32 + tail_pre;
   for (int i = 0; i < 8; i++) {
@@ -2609,8 +2609,8 @@ void gemm_prepack_8x8(bool is_transB,
     if (xmax > N) {
       xmax = N;
     }
-    int bblocks = (xmax - x0 + NBLOCK_FP16_8 - 1) / NBLOCK_FP16_8;
-    remain = xmax - x0 - (bblocks - 1) * NBLOCK_FP16_8;
+    int bblocks = (xmax - x0 + NBLOCK_FP16 - 1) / NBLOCK_FP16;
+    remain = xmax - x0 - (bblocks - 1) * NBLOCK_FP16;
     if (remain > 0 && remain != 12) {
       flag_p_remain = true;
     }
@@ -2639,7 +2639,7 @@ void gemm_prepack_8x8(bool is_transB,
       }
 
       // prepare out data
-      GEMM_PREPARE_C(float16_t, NBLOCK_FP16_8)
+      GEMM_PREPARE_C(float16_t, NBLOCK_FP16)
       const float16_t *a_ptr_l = A_packed + y * K;
       const float16_t *b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
