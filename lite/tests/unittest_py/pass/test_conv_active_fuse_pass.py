@@ -217,7 +217,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                 'sigmoid',
                 'tanh',
                 'swish',
-                'exp',
+                # 'exp',
                 'abs',
             ]))
 
