@@ -76,6 +76,7 @@ void SequenceConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   const auto* in_data = param.X->data<float>();
   const auto* filter_data = param.Filter->data<float>();
   float* out_data = param.Out->mutable_data<float>();
+  memset(out_data, 0, sizeof(float) * param.Out->dims().production());
   int pad_start = param.contextStart;
   int kernel_size = param.contextLength;
   int stride = param.contextStride;
@@ -168,6 +169,7 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   const auto* in_data = param.X->data<float16_t>();
   const auto* filter_data = param.Filter->data<float16_t>();
   float16_t* out_data = param.Out->mutable_data<float16_t>();
+  memset(out_data, 0, sizeof(float16_t) * param.Out->dims().production());
   int pad_start = param.contextStart;
   int kernel_size = param.contextLength;
   int stride = param.contextStride;
