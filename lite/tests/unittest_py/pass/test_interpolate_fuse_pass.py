@@ -289,11 +289,11 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
 class TestInterpolateNearestFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,

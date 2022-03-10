@@ -31,12 +31,14 @@ import hypothesis.strategies as st
 class TestConvActiveFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP16],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
