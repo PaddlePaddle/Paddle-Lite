@@ -60,7 +60,7 @@ function compile_publish_inference_lib {
   rm -rf build.lite.linux.arm.*
 
   # Step1. Compiling python installer
-  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=arm"
+  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=armv8"
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
@@ -158,6 +158,10 @@ function main() {
   # Parse command line.
   for i in "$@"; do
     case $i in
+      --target_list=*)
+        TARGET_LIST="${i#*=}"
+        shift
+        ;;
       --skip_list=*)
         SKIP_LIST="${i#*=}"
         shift
