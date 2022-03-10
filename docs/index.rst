@@ -102,6 +102,7 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/for-developer
   develop_guides/architecture-intro
   develop_guides/add_operation
+  develop_guides/add_unit_test
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
