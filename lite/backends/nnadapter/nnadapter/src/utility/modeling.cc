@@ -529,12 +529,14 @@ NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(
 std::vector<core::Operation*> GetOperandConsumers(core::Model* model,
                                                   core::Operand* operand) {
   std::vector<core::Operation*> consumers;
-  for (auto& operation : model->operations) {
-    auto& input_operands = operation.input_operands;
-    if (std::find(input_operands.begin(), input_operands.end(), operand) ==
-        input_operands.end())
-      continue;
-    consumers.push_back(&operation);
+  if (operand) {
+    for (auto& operation : model->operations) {
+      auto& input_operands = operation.input_operands;
+      if (std::find(input_operands.begin(), input_operands.end(), operand) ==
+          input_operands.end())
+        continue;
+      consumers.push_back(&operation);
+    }
   }
   return consumers;
 }
@@ -542,14 +544,16 @@ std::vector<core::Operation*> GetOperandConsumers(core::Model* model,
 NNADAPTER_EXPORT core::Operation* GetOperandProducer(core::Model* model,
                                                      core::Operand* operand) {
   core::Operation* producer = nullptr;
-  for (auto& operation : model->operations) {
-    auto& output_operands = operation.output_operands;
-    if (std::find(output_operands.begin(), output_operands.end(), operand) ==
-        output_operands.end())
-      continue;
-    // a operand has only one producer
-    NNADAPTER_CHECK(producer == nullptr);
-    producer = &operation;
+  if (operand) {
+    for (auto& operation : model->operations) {
+      auto& output_operands = operation.output_operands;
+      if (std::find(output_operands.begin(), output_operands.end(), operand) ==
+          output_operands.end())
+        continue;
+      // a operand has only one producer
+      NNADAPTER_CHECK(producer == nullptr);
+      producer = &operation;
+    }
   }
   return producer;
 }

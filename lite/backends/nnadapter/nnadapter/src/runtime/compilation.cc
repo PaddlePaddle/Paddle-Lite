@@ -14,6 +14,8 @@
 
 #include "runtime/compilation.h"
 #include <string>
+#include <unordered_set>
+#include "optimizer/partition_model_into_submodels.h"
 #include "utility/cache.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -240,12 +242,37 @@ int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
 // future
 std::vector<std::pair<Context::DeviceContext*, Model*>>
 Compilation::PartitionModel(Context* context, Model* model) {
+  // Only supports heterogeneous computing on two devices, and the second device
+  // name must be 'google_xnnpack' if there is more than one device.
+  auto device_count = context->GetDeviceCount();
+  NNADAPTER_CHECK_GE(device_count, 1) << "No device found.";
+  NNADAPTER_CHECK_LE(device_count, 2)
+      << "Only supports heterogeneous computing on two devices!";
   std::vector<std::pair<Context::DeviceContext*, Model*>> submodels;
-  // Just add the whole model into 'submodels' at this time.
   auto device_context = context->GetDeviceContext(0);
   NNADAPTER_CHECK(device_context) << "No device found.";
-  submodels.push_back(
-      std::pair<Context::DeviceContext*, Model*>(device_context, model));
+  auto operation_count = model->model_.operations.size();
+  if (device_count >= 1) {
+    auto context = device_context->context;
+    NNADAPTER_CHECK(context);
+    auto device = device_context->device;
+    NNADAPTER_CHECK(device);
+    std::unique_ptr<bool[]> flags(new bool[operation_count]);
+    auto result = device->ValidateProgram(context, &model->model_, flags.get());
+    std::unordered_set<core::Operation*> supported_operations;
+    size_t operation_index = 0;
+    for (auto& operation : model->model_.operations) {
+      if (flags[operation_index++]) {
+        supported_operations.insert(&operation);
+      }
+    }
+    PartitionModelIntoSubmodels(&model->model_, supported_operations);
+    // submodels.push_back(std::pair<Context::DeviceContext*,
+    // Model*>(device_context, model));
+  } else {
+    submodels.push_back(
+        std::pair<Context::DeviceContext*, Model*>(device_context, model));
+  }
   return submodels;
 }
 

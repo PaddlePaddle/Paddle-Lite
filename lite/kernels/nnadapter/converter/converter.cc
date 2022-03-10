@@ -15,7 +15,6 @@
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include <memory>
 #include <utility>
-#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/utility.h"
 
 namespace paddle {
@@ -100,22 +99,22 @@ int Converter::Apply(
     input_operands[i] = operand;
   }
   operation_count_ = 0;
-  std::vector<size_t> operation_idx_to_op_idx_mapping;
-  operation_idx_to_op_idx_mapping.reserve(op_count);
+  std::vector<size_t> operation_idx_to_op_idx_map;
+  operation_idx_to_op_idx_map.reserve(op_count);
   for (size_t i = 0; i < op_count; i++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(i);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     auto op_info = std::make_shared<OpInfo>(*op_desc);
     VLOG(5) << "Converting " << op_type << " ...";
-#define REGISTER_CONVERTER(__op_type__, __func_name__, ...)        \
-  if (op_type == #__op_type__) {                                   \
-    __func_name__(this, op_info.get(), exec_scope);                \
-    operation_idx_to_op_idx_mapping.insert(                        \
-        operation_idx_to_op_idx_mapping.end(),                     \
-        operation_count_ - operation_idx_to_op_idx_mapping.size(), \
-        i);                                                        \
-    continue;                                                      \
+#define REGISTER_CONVERTER(__op_type__, __func_name__, ...)    \
+  if (op_type == #__op_type__) {                               \
+    __func_name__(this, op_info.get(), exec_scope);            \
+    operation_idx_to_op_idx_map.insert(                        \
+        operation_idx_to_op_idx_map.end(),                     \
+        operation_count_ - operation_idx_to_op_idx_map.size(), \
+        i);                                                    \
+    continue;                                                  \
   }
 #include "lite/kernels/nnadapter/converter/all.h"  // NOLINT
 #undef __NNADAPTER_CONVERTER_ALL_H__
@@ -176,18 +175,13 @@ int Converter::Apply(
   std::unique_ptr<bool[]> supported_ops(new bool[op_count]);
   std::fill(supported_ops.get(), supported_ops.get() + op_count, true);
   for (size_t i = 0; i < operation_count_; i++) {
-    auto op_idx = operation_idx_to_op_idx_mapping[i];
+    auto op_idx = operation_idx_to_op_idx_map[i];
     CHECK_GE(op_idx, 0);
     CHECK_LT(op_idx, op_count);
     supported_ops[op_idx] &= supported_operations[i];
-  }
-  for (size_t i = 0; i < op_count; i++) {
-    auto op_desc = block_desc->GetOp<cpp::OpDesc>(i);
-    CHECK(op_desc);
-    if (!supported_ops[i]) {
-      LOG(WARNING) << "op " << op_desc->Type() << " is not supported!";
-    } else {
-      LOG(WARNING) << "op " << op_desc->Type() << " OK!";
+    if (!supported_ops[op_idx]) {
+      LOG(FATAL) << "Op " << block_desc->GetOp<cpp::OpDesc>(op_idx)->Type()
+                 << " is not supported!";
     }
   }
   return NO_ERROR;

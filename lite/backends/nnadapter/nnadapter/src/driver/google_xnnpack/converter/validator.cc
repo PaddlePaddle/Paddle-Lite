@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/android_nnapi/converter/validator.h"
+#include "driver/google_xnnpack/converter/validator.h"
 #include <unistd.h>
 #include <algorithm>
 #include <unordered_map>
@@ -24,14 +24,14 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
-namespace android_nnapi {
+namespace google_xnnpack {
 
 #define REGISTER_CONVERTER(                                     \
     __op_type__, __validate_func_name__, __convert_func_name__) \
   extern bool __validate_func_name__(Validator* validator,      \
                                      const core::Operation* operation);
-#include "driver/android_nnapi/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__
+#include "driver/google_xnnpack/converter/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_GOOGLE_XNNPACK_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 int Validator::Apply(const core::Model* model, bool* supported_operations) {
@@ -51,8 +51,8 @@ int Validator::Apply(const core::Model* model, bool* supported_operations) {
   case NNADAPTER_##__op_type__:                                 \
     flag = __validate_func_name__(this, operation);             \
     break;
-#include "driver/android_nnapi/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_ANDROID_NNAPI_CONVERTER_ALL_H__
+#include "driver/google_xnnpack/converter/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_GOOGLE_XNNPACK_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
         NNADAPTER_LOG(WARNING) << "Unsupported operation("
@@ -65,5 +65,5 @@ int Validator::Apply(const core::Model* model, bool* supported_operations) {
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace android_nnapi
+}  // namespace google_xnnpack
 }  // namespace nnadapter

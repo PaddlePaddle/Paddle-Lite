@@ -276,7 +276,7 @@ Engine::Engine(KernelContext* ctx,
   // load the device-specific program from the model or the cache file/buffer.
   const auto& device_names =
       ctx->As<NNAdapterContext>().NNAdapterDeviceNames(exec_scope_);
-  CHECK_GT(device_names.size(), 0) << "No device is specified.";
+  CHECK_GT(device_names.size(), 0) << "No device specified.";
   for (const auto& device_name : device_names) {
     NNAdapterDevice* device = nullptr;
     result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
@@ -292,19 +292,27 @@ Engine::Engine(KernelContext* ctx,
       NNAdapterDevice_getVersion_invoke(device, &version);
       VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
               << " type=" << type << " version=" << version;
+      if (devices_.size() == 1) {
+        if (strcmp(name, "google_xnnpack")) {
+          LOG(FATAL) << "The 2nd device name must be 'google_xnnpack' if there "
+                        "is more than one device!";
+        }
+      } else if (devices_.size() >= 2) {
+        LOG(WARNING) << "Only supports heterogeneous computing on two devices, "
+                        "the rest of the devices will be ignored!";
+        break;
+      }
       devices_.push_back(device);
-      // Only support the first found device.
-      break;
     }
   }
-  CHECK_GT(devices_.size(), 0) << "No device is found.";
+  CHECK_GT(devices_.size(), 0) << "No device found.";
   // Get the context properties from the scope
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
   // Create a context with multiple devices
   NNAdapterContext_create_invoke(
-      &devices_[0], devices_.size(), context_properties.c_str(), &context_);
+      devices_.data(), devices_.size(), context_properties.c_str(), &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
@@ -320,14 +328,7 @@ Engine::~Engine() {
 }
 
 bool Engine::Run() {
-  // Update the input dimensions to generate a key to find a compiled device
-  // program
-  auto input_count = input_vars_.size();
-  std::vector<std::vector<int64_t>> input_dims(input_count);
-  for (size_t i = 0; i < input_count; i++) {
-    input_dims[i] = input_vars_[i].value->dims().Vectorize();
-  }
-  // try to execute all programs.
+  // Try to execute all cached programs.
   for (auto program : programs_) {
     int ret = program->Execute();
     if (ret == NNADAPTER_INVALID_DIMENSIONS) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
 // limitations under the License.
 
 #include "driver/device.h"
-#include "driver/intel_openvino/engine.h"
+#include "driver/google_xnnpack/engine.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
 namespace nnadapter {
-namespace intel_openvino {
+namespace google_xnnpack {
 
 int OpenDevice(void** device) {
   auto d = new Device();
   if (!d) {
     *device = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to open device for intel_openvino.";
+    NNADAPTER_LOG(FATAL) << "Failed to open device for google_xnnpack.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *device = reinterpret_cast<void*>(d);
@@ -46,7 +46,7 @@ int CreateContext(void* device, const char* properties, void** context) {
   auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to create context for intel_openvino.";
+    NNADAPTER_LOG(FATAL) << "Failed to create context for google_xnnpack.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *context = reinterpret_cast<void*>(c);
@@ -60,11 +60,28 @@ void DestroyContext(void* context) {
   }
 }
 
+int ValidateProgram(void* context,
+                    const core::Model* model,
+                    bool* supported_operations) {
+  NNADAPTER_LOG(INFO) << "Validate program for google_xnnpack.";
+  if (!context || !model || !supported_operations) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = reinterpret_cast<Context*>(context);
+  auto p = new Program(c);
+  if (!p) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  int result = p->Validate(model, supported_operations);
+  delete p;
+  return result;
+}
+
 int CreateProgram(void* context,
                   core::Model* model,
                   core::Cache* cache,
                   void** program) {
-  NNADAPTER_LOG(INFO) << "Create program for Intel OpenVINO.";
+  NNADAPTER_LOG(INFO) << "Create program for google_xnnpack.";
   if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -83,7 +100,7 @@ int CreateProgram(void* context,
 
 void DestroyProgram(void* program) {
   if (program) {
-    NNADAPTER_LOG(INFO) << "Destroy program for intel_openvino.";
+    NNADAPTER_LOG(INFO) << "Destroy program for google_xnnpack.";
     auto p = reinterpret_cast<Program*>(program);
     delete p;
   }
@@ -102,21 +119,21 @@ int ExecuteProgram(void* program,
       input_count, input_arguments, output_count, output_arguments);
 }
 
-}  // namespace intel_openvino
+}  // namespace google_xnnpack
 }  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     NNADAPTER_DEVICE_SYMBOL) = {
     .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
-    .vendor = "Intel",
+    .vendor = "Google",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
-    .open_device = nnadapter::intel_openvino::OpenDevice,
-    .close_device = nnadapter::intel_openvino::CloseDevice,
-    .create_context = nnadapter::intel_openvino::CreateContext,
-    .destroy_context = nnadapter::intel_openvino::DestroyContext,
-    .validate_program = 0,
-    .create_program = nnadapter::intel_openvino::CreateProgram,
-    .destroy_program = nnadapter::intel_openvino::DestroyProgram,
-    .execute_program = nnadapter::intel_openvino::ExecuteProgram,
+    .open_device = nnadapter::google_xnnpack::OpenDevice,
+    .close_device = nnadapter::google_xnnpack::CloseDevice,
+    .create_context = nnadapter::google_xnnpack::CreateContext,
+    .destroy_context = nnadapter::google_xnnpack::DestroyContext,
+    .validate_program = nnadapter::google_xnnpack::ValidateProgram,
+    .create_program = nnadapter::google_xnnpack::CreateProgram,
+    .destroy_program = nnadapter::google_xnnpack::DestroyProgram,
+    .execute_program = nnadapter::google_xnnpack::ExecuteProgram,
 };

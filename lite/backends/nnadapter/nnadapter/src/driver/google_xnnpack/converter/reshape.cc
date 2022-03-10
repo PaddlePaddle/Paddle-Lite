@@ -13,36 +13,24 @@
 // limitations under the License.
 
 #include "operation/reshape.h"
-#include "driver/android_nnapi/converter/converter.h"
-#include "driver/android_nnapi/converter/validator.h"
+#include "driver/google_xnnpack/converter/converter.h"
+#include "driver/google_xnnpack/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace android_nnapi {
+namespace google_xnnpack {
 
 bool ValidateReshape(Validator* validator, const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to NNAPI operands and operations
-  auto input_index = converter->GetMappedIndex(input_operand);
-  if (input_index == INVALID_INDEX) {
-    input_index = converter->ConvertOperand(input_operand);
-  }
-  auto shape_index =
-      converter->AddInt32ConstantOperand(output_operand->type.dimensions.data,
-                                         output_operand->type.dimensions.count);
-  auto output_index = converter->ConvertOperand(output_operand);
-  NNADAPTER_CHECK_EQ(
-      converter->AddOperation(
-          ANEURALNETWORKS_RESHAPE, {input_index, shape_index}, {output_index}),
-      ANEURALNETWORKS_NO_ERROR);
+  // Convert to XNNPACK tensor value ids and nodes
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace android_nnapi
+}  // namespace google_xnnpack
 }  // namespace nnadapter
