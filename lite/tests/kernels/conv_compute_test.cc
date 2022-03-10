@@ -516,6 +516,17 @@ TEST(Conv2d, precision) {
   return;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  TestConvKsize(place, abs_error);
+  TestConvGroups(place, abs_error);
+  TestConvDilations(place, abs_error);
+  TestConvStrides(place, abs_error);
+  TestConvPaddings(place, abs_error);
+  TestConvPaddingAlgorithm(place, abs_error);
+  TestConvBias(place, abs_error);
+  TestConvAct(place, abs_error);
+  TestConvDepthwise(place, abs_error);
 #else
   return;
 #endif
