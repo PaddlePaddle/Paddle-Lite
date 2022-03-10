@@ -239,8 +239,11 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, static_cast<int>(exclusive));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, static_cast<int>(adaptive));
-      CL_CHECK_FATAL(status);
+      if (adaptive == true && pooling_type == "max") {
+        status = kernel_.setArg(arg_idx++, static_cast<int>(!adaptive));
+      } else {
+        status = kernel_.setArg(arg_idx++, static_cast<int>(adaptive));
+      }
 
 #ifdef LITE_WITH_LOG
       const std::vector<int>& paddings = *param.paddings;
