@@ -47,12 +47,11 @@ class TestConv2dOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
 
-        # int8 has diff
-        # arm_places = [
-        #     Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
-        #     Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
-        # ]
-        # self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
 
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -119,13 +118,15 @@ class TestConv2dOp(AutoScanTest):
             use_mkldnn = True
 
         def generate_input(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
+            return 0.5 * (
+                -1 + 2 * np.random.random(in_shape).astype(np.float32))
 
         def generate_filter(*args, **kwargs):
-            return np.random.random(weight_shape).astype(np.float32)
+            return 0.5 * (
+                -1 + 2 * np.random.random(weight_shape).astype(np.float32))
 
         def generate_bias(*args, **kwargs):
-            return np.random.random([cout]).astype(np.float32)
+            return 0.5 * (-1 + 2 * np.random.random([cout]).astype(np.float32))
 
         inputs_data = {
             "input_data": TensorConfig(data_gen=partial(generate_input))
