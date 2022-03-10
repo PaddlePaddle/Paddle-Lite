@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-inline CL_DTYPE compute_lrn_square(__read_only image2d_t input,
+inline CL_DTYPE compute_lrn_output(__read_only image2d_t input,
                                    int start,
                                    int end,
                                    int out_w,
@@ -79,25 +79,25 @@ __kernel void lrn(__read_only image2d_t input,
   int end = out_c0 + pad;
   start = start > 0 ? start : 0;
   end = end < out_C - 1 ? end : out_C - 1;
-  out_val.x = compute_lrn_square(
+  out_val.x = compute_lrn_output(
       input, start, end, out_w, out_nh, out_W, in0.x, k, alpha, beta);
 
   if (out_c1 < out_C) {
     start = out_c1 - pad;
     end = out_c1 + pad;
-    out_val.y = compute_lrn_square(
+    out_val.y = compute_lrn_output(
         input, start, end, out_w, out_nh, out_W, in0.y, k, alpha, beta);
   }
   if (out_c2 < out_C) {
     start = out_c2 - pad;
     end = out_c2 + pad;
-    out_val.z = compute_lrn_square(
+    out_val.z = compute_lrn_output(
         input, start, end, out_w, out_nh, out_W, in0.z, k, alpha, beta);
   }
   if (out_c2 < out_C) {
     start = out_c3 - pad;
     end = out_c3 + pad;
-    out_val.w = compute_lrn_square(
+    out_val.w = compute_lrn_output(
         input, start, end, out_w, out_nh, out_W, in0.w, k, alpha, beta);
   }
 
