@@ -83,7 +83,7 @@ uint32_t Converter::UpdateTensorValueIdMap(core::Operand* operand,
 uint32_t Converter::ConvertOperand(core::Operand* operand,
                                    std::vector<int32_t> dimensions) {
   auto& type = operand->type;
-  auto buffer = operand->buffer;
+  // auto buffer = operand->buffer;
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < type.dimensions.count; i++) {
       dimensions.push_back(type.dimensions.data[i]);

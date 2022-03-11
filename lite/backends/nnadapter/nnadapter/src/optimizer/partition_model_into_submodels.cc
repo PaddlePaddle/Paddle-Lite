@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "optimizer/partition_model_into_submodels.h"
+#include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 #include "utility/debug.h"

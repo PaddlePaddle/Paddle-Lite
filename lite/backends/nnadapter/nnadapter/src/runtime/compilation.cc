@@ -252,13 +252,13 @@ Compilation::PartitionModel(Context* context, Model* model) {
   auto device_context = context->GetDeviceContext(0);
   NNADAPTER_CHECK(device_context) << "No device found.";
   auto operation_count = model->model_.operations.size();
-  if (device_count >= 1) {
+  if (device_count > 1) {
     auto context = device_context->context;
     NNADAPTER_CHECK(context);
     auto device = device_context->device;
     NNADAPTER_CHECK(device);
     std::unique_ptr<bool[]> flags(new bool[operation_count]);
-    auto result = device->ValidateProgram(context, &model->model_, flags.get());
+    device->ValidateProgram(context, &model->model_, flags.get());
     std::unordered_set<core::Operation*> supported_operations;
     size_t operation_index = 0;
     for (auto& operation : model->model_.operations) {
