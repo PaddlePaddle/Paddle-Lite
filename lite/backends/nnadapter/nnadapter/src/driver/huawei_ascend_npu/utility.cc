@@ -297,7 +297,8 @@ bool BuildOMModelToBuffer(
     NNADAPTER_LOG(FATAL)
         << "The dynamic shape range feature is only supported in CANN 5.1.1 "
            "and above."
-        << "If you want to use, please upgrade and recompile the library."
+        << "If you want to use, please upgrade CANN version and recompile the "
+           "library.";
 #endif
   } else {
     options.insert(

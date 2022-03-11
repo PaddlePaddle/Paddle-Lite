@@ -371,12 +371,20 @@ bool AclModelClient::Process(uint32_t input_count,
       } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
         is_dynamic_dims = true;
       } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
         auto data_type = aclmdlGetInputDataType(model_desc_, i);
         auto format = aclmdlGetInputFormat(model_desc_, i);
         std::vector<int64_t> input_dims = ConvertACLDimsToGEDims(dimensions);
         auto input_tensor_desc = aclCreateTensorDesc(
             data_type, input_dims.size(), input_dims.data(), format);
         aclmdlSetDatasetTensorDesc(input_dataset_, input_tensor_desc, i);
+#else
+        NNADAPTER_LOG(FATAL)
+            << "The dynamic shape range feature is only supported in CANN "
+               "5.1.1 "
+               "and above."
+            << "If you want to use, please upgrade and recompile the library.";
+#endif
       } else {
         NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
                              << dynamic_shape_mode;
