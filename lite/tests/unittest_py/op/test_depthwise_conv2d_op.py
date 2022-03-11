@@ -170,7 +170,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         def skip_bias_teller(program_config, predictor_config):

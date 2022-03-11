@@ -162,7 +162,7 @@ class TestConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        atol, rtol = 1e-5, 1e-5
+        atol, rtol = 1e-4, 1e-4
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-3, 1e-3
