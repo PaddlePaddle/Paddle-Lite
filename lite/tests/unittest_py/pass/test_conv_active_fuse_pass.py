@@ -318,7 +318,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=300,
+            max_examples=400,
             passes=["lite_conv_active_fuse_pass"])
 
 
