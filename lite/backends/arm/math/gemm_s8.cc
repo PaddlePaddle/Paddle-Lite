@@ -54,8 +54,17 @@ void gemm_s8(bool is_transA,
     for (int i = 0; i < N; i++) {
       scale_ptr[i] = scale[0];
     }
-    gemv_int8(
-        B, A, C, is_transB, N, K, scale_ptr, is_bias, bias_ptr, act_param, ctx);
+    gemv_int8(B,
+              A,
+              C,
+              !is_transB,
+              N,
+              K,
+              scale_ptr,
+              is_bias,
+              bias_ptr,
+              act_param,
+              ctx);
 #ifdef TARGET_IOS
     delete[] bias_ptr;
     delete[] scale_ptr;
