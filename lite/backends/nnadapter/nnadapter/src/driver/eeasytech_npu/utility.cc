@@ -18,7 +18,7 @@
 
 namespace nnadapter {
 namespace eeasytech_npu {
-#if 1
+
 eeasy::nn::PrecisionType ConvertToEznnPrecisionType(
     NNAdapterOperandPrecisionCode input_precision) {
   eeasy::nn::PrecisionType output_precision = eeasy::nn::PrecisionType::UNKNOWN;
@@ -120,9 +120,12 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
   attr->dims = ConvertToEznnDimensions(dimensions_data, dimensions_count);
   attr->precision = precision;
   attr->layout = layout;
-  int pre = (int)precision;
-  NNADAPTER_LOG(ERROR) << "lombo CreateEznnTensor. precision000: " << pre;
-  NNADAPTER_LOG(ERROR) << "lombo CreateEznnTensor. quant_scale000: " << *quant_scale;
+  if(attr->role == eeasy::nn::TensorRole::CONST)
+    NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. TensorRole::CONST\n";
+  else
+    NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. TensorRole::VAR\n";
+  NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. precision111: " << (int)precision;
+  NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. quant_scale111: " << *quant_scale;
   if (quant_scale) {
     // Quantization types
     if (precision == eeasy::nn::PrecisionType::INT8) {
@@ -165,14 +168,15 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < type->dimensions.count; i++) {
       dimensions.push_back(type->dimensions.data[i]);
+      NNADAPTER_LOG(INFO) << "dimensions=" << i << " " << type->dimensions.data[i];
     }
   }
   auto precision = ConvertToEznnPrecisionType(type->precision);
   auto layout = ConvertToEznnDataLayoutType(type->layout);
   const float* quant_scale = nullptr;
   const int32_t* zero_point = nullptr;
-  int pre = (int)type->precision;
-  NNADAPTER_LOG(ERROR) << "lombo CreateEznnTensor. precision: " << pre;
+  NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. precision000: " << (int)type->precision;
+
   switch (type->precision) {
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       quant_scale = &type->asymm_per_layer_params.scale;
@@ -186,7 +190,6 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
       break;
 	case NNADAPTER_FLOAT32:
       quant_scale = &type->symm_per_layer_params.scale;
-	  NNADAPTER_LOG(ERROR) << "lombo CreateEznnTensor. quant_scale: " << *quant_scale;
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can not add a eeasy::nn::Tensor with precision="
@@ -194,6 +197,7 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
                            << " !";
       break;
   }
+  NNADAPTER_LOG(INFO) << "lombo CreateEznnTensor. quant_scale000: " << *quant_scale;
   return CreateEznnTensor(graph,
                           name,
                           dimensions.data(),
@@ -204,6 +208,6 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
                           buffer,
                           layout);
 }
-#endif
+
 }  // namespace eeasytech_npu
 }  // namespace nnadapter

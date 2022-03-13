@@ -41,11 +41,10 @@ class Context {
 
 class Program {
  public:
-  explicit Program(Context* context) : context_(context) {}
+  explicit Program(Context* context) : context_(context) {ezb_cnt_ = 0;}
   ~Program();
 
   int Build(core::Model* model, core::Cache* cache);
-  int BuildFromDir(core::Cache* cache);
   int Execute(uint32_t input_count,
               core::Argument* input_arguments,
               uint32_t output_count,
@@ -72,6 +71,7 @@ class Program {
    std::vector<NNAdapterOperandType> output_types_;
    std::string dump_graph_path_;
    std::vector<uint8_t>* dump_graph_buffer_{nullptr};
+   int ezb_cnt_;
 };
 
 }  // namespace eeasytech_npu

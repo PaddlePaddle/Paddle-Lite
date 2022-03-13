@@ -18,7 +18,7 @@
 REGISTER_CONVERTER(batch_norm,
                    ConvertBatchNorm,
                    "huawei_ascend_npu,verisilicon_"
-                   "timvx,cambricon_mlu,huawei_kirin_npu");
+                   "timvx,cambricon_mlu,huawei_kirin_npu,eeasytech_npu");
 REGISTER_CONVERTER(cast,
                    ConvertCast,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
@@ -44,7 +44,7 @@ REGISTER_CONVERTER(dropout,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
 REGISTER_CONVERTER(pool2d,
                    ConvertPool,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "rockchip_npu,eeasytech_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi");
 REGISTER_CONVERTER(

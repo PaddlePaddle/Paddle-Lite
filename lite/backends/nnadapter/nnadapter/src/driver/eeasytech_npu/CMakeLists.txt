@@ -19,7 +19,8 @@ add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEV
 include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
-set(SRCS utility.cc ${CONVERTERS} engine.cc driver.cc)
+aux_source_directory(optimizer OPTIMIZERS)
+set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} engine.cc driver.cc)
 set(DEPS ${NNADAPTER_OPERATIONS} ${NNADAPTER_UTILITIES} nnadapter_optimizer_convert_quantization_symm_to_asymm nnadapter_optimizer_fuse_matmul_add_into_fully_connected ${${DEVICE_NAME}_deps})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})

@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <vector>
 #include "driver/eeasytech_npu/converter/converter.h"
+#include "driver/eeasytech_npu/optimizer/fix_ops.h"
+#include "driver/eeasytech_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
@@ -36,7 +38,7 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
-  //tensors_.clear();
+  tensors_.clear();
   input_types_.clear();
   output_types_.clear();
   dump_graph_path_ = "";
@@ -45,13 +47,10 @@ void Program::Clear() {
 
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
-  NNADAPTER_LOG(INFO) << "lombo Build.";
-  #if 0
+  NNADAPTER_LOG(INFO) << "eeasytech Build.";
   if (model && cache->dir && cache->token) {
     dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
   }
-  #endif
-  //dump_graph_path_ = "/data/local/tmp/save.ezb";
   dump_graph_buffer_ = &cache->buffer;
   return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
 }
@@ -59,15 +58,14 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 int Program::BuildFromModel(core::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  //UnpackOpFusion(model);
+  UnpackOpFusion(model);
   //FixOps(model);
   //FuseMatMulAddIntoFullyConnected(model);
   //ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  NNADAPTER_LOG(INFO) << "lombo BuildFromModel.";
   
   // Convert a NNAdapter model to a eeasynpu graph
-  graph_ = create_graph();//std::make_shared<eeasy::nn::Graph>();
+  graph_ = create_graph();
   if (!graph_) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
@@ -84,7 +82,6 @@ int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
-  NNADAPTER_LOG(INFO) << "Model input_count: " << input_count;
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
   std::vector<std::shared_ptr<eeasy::nn::Tensor>> input_tensors;
   if (input_count > 0) {
@@ -99,9 +96,7 @@ int Program::BuildFromModel(core::Model* model) {
       input_types_[i] = type;
     }
   }
-  
   auto output_count = model->output_operands.size();
-  NNADAPTER_LOG(INFO) << "Model output: " << output_count;
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
   std::vector<std::shared_ptr<eeasy::nn::Tensor>> output_tensors(output_count);
@@ -116,15 +111,18 @@ int Program::BuildFromModel(core::Model* model) {
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
-  //execution_ = std::make_shared<eeasy::nn::Exection>(graph_.get());
   execution_ = create_exection(graph_);
   execution_->Build();
   NNADAPTER_VLOG(3) << "Build success.";
-  NNADAPTER_LOG(INFO) << "lombo Build success.";
 
-	dump_graph_path_ = "/data/local/tmp/save.ezb";
+#if 1
+  char cpath[128];
 
-    if (!dump_graph_path_.empty()) {
+  sprintf(cpath, "/data/local/tmp/save/graph%d.ezb", ezb_cnt_++);
+  dump_graph_path_ = cpath;
+  //dump_graph_path_ = dump_graph_path_ + 5;
+
+  if (!dump_graph_path_.empty()) {
     if (graph_->EnableCreateCache(dump_graph_path_) == eeasy::nn::EZ_SUCCESS) {
       NNADAPTER_VLOG(3) << "Dump the graph to " << dump_graph_path_
                         << " when the first run";
@@ -132,12 +130,14 @@ int Program::BuildFromModel(core::Model* model) {
       NNADAPTER_LOG(WARNING) << "Failed to dump the graph to "
                              << dump_graph_path_;
     }
+
   }
+#endif
+
   return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  //graph_ = std::make_shared<eeasy::nn::Graph>();
   graph_ = create_graph();
   if (!graph_) {
     return NNADAPTER_OUT_OF_MEMORY;
@@ -150,7 +150,6 @@ int Program::BuildFromCache(core::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   NNADAPTER_VLOG(3) << "Load cache graph from buffer success.";
-  #if 1
   // Indentify the inputs and outputs
   auto input_count = cache->input_types.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
@@ -179,10 +178,8 @@ int Program::BuildFromCache(core::Cache* cache) {
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-specific program.
   execution_ = create_exection(graph_);
-  //execution_ = std::make_shared<eeasy::nn::Exection>(graph_.get());
   execution_->Build();
   NNADAPTER_VLOG(3) << "Build success.";
-  #endif
   return NNADAPTER_NO_ERROR;
 }
 

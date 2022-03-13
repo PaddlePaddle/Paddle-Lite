@@ -30,7 +30,9 @@ class Converter {
       std::map<core::Operand*, std::vector<std::shared_ptr<eeasy::nn::Tensor>>>*
           tensors)
       : graph_(graph), tensors_(tensors) {}
-  ~Converter() {}
+  ~Converter() {
+    ClearOperands();
+  }
 
   // Convert a NNAdapter model to rknn graph and tensors
   int Apply(core::Model* model);
@@ -99,10 +101,14 @@ class Converter {
       void* attrs,
       std::string name = "");
 
+  core::Operand* GetOperand(core::Operand *old_operand, bool const_flag = true);
+  void ClearOperands();
+
  private:
   eeasy::nn::Graph* graph_{nullptr};
   std::map<core::Operand*, std::vector<std::shared_ptr<eeasy::nn::Tensor>>>*
       tensors_{nullptr};
+  std::vector<core::Operand*> operands_;
 };
 
 }  // namespace eeasytech_npu

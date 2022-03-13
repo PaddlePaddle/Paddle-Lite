@@ -108,7 +108,6 @@ int ExecuteProgram(void* program,
   auto p = reinterpret_cast<Program*>(program);
   return p->Execute(
       input_count, input_arguments, output_count, output_arguments);
-  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace eeasytech_npu
