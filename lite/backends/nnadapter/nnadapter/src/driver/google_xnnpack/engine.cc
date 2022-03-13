@@ -30,9 +30,28 @@
 namespace nnadapter {
 namespace google_xnnpack {
 
+Device::Device() {
+  NNADAPTER_CHECK(xnn_initialize(nullptr) == xnn_status_success)
+      << "Failed to initialize XNNPACK library!";
+}
+
+Device::~Device() {
+  NNADAPTER_CHECK(xnn_deinitialize() == xnn_status_success)
+      << "Failed to deinitialize XNNPACK library!";
+}
+
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
+  std::string key_value;
+  auto key_values = GetKeyValues(properties);
+  // GOOGLE_XNNPACK_NUM_THREADS
+  if (key_values.count(GOOGLE_XNNPACK_NUM_THREADS)) {
+    num_threads_ = string_parse<int>(key_values[GOOGLE_XNNPACK_NUM_THREADS]);
+  } else {
+    num_threads_ = GetIntFromEnv(GOOGLE_XNNPACK_NUM_THREADS, 0);
+  }
+  NNADAPTER_LOG(INFO) << "num_threads: " << num_threads_;
 }
 
 Context::~Context() {}
@@ -40,7 +59,9 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
+  tensor_value_ids_.clear();
   if (subgraph_) {
+    xnn_delete_subgraph(subgraph_);
     subgraph_ = nullptr;
   }
   input_types_.clear();
@@ -86,6 +107,12 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   }
   // Convert the NNAdapter model to XNNPACK model
+  xnn_status result = xnn_create_subgraph(0, 0, &subgraph_);
+  if (result != xnn_status_success) {
+    NNADAPTER_LOG(FATAL) << "Failed to create a XNNPACK subgraph(" << result
+                         << ")!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
   Converter converter(subgraph_, &tensor_value_ids_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs

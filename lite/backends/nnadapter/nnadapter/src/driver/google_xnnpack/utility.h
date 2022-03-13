@@ -14,11 +14,17 @@
 
 #pragma once
 
+#include <xnnpack.h>
 #include <vector>
 #include "core/types.h"
 
 namespace nnadapter {
 namespace google_xnnpack {
+
+// The following environment variables can be used at runtime:
+// Specify the number of threads to use in XNNPACK thread pool, no thread
+// pool/single-thread is used as default(default value is 0).
+#define GOOGLE_XNNPACK_NUM_THREADS "GOOGLE_XNNPACK_NUM_THREADS"
 
 // Get the bytes of the data type of XNNPACK
 int XNNOperandDataTypeLength(int data_type);

@@ -28,7 +28,7 @@ const uint32_t INVALID_TENSOR_VALUE_ID = 0xFFFFFFFF;
 class Converter {
  public:
   explicit Converter(
-      void* subgraph,
+      xnn_subgraph_t subgraph,
       std::map<core::Operand*, std::vector<uint32_t>>* tensor_value_ids)
       : subgraph_(subgraph), tensor_value_ids_(tensor_value_ids) {}
   ~Converter() {}
@@ -45,7 +45,7 @@ class Converter {
                           std::vector<int32_t> dimensions = {});
 
  private:
-  void* subgraph_{nullptr};
+  xnn_subgraph_t subgraph_{nullptr};
   std::map<core::Operand*, std::vector<uint32_t>>* tensor_value_ids_{nullptr};
   uint32_t operand_index_{0};
 };

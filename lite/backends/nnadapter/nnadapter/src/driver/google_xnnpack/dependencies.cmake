@@ -23,30 +23,26 @@ if(NOT NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Android")
-  # Get the Android NDK version, refer to https://github.com/Kitware/CMake/blob/d8f95471c7d779c8bb1606fbfff664f1dad6cde1/Modules/Platform/Android-Determine.cmake#L231 for more details.
-  if(CMAKE_ANDROID_NDK AND EXISTS "${CMAKE_ANDROID_NDK}/source.properties")
-    file(READ "${CMAKE_ANDROID_NDK}/source.properties" _ANDROID_NDK_SOURCE_PROPERTIES)
-    set(_ANDROID_NDK_REVISION_REGEX "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta([0-9]+))?")
-    if(NOT _ANDROID_NDK_SOURCE_PROPERTIES MATCHES "${_ANDROID_NDK_REVISION_REGEX}")
-      string(REPLACE "\n" "\n  " _ANDROID_NDK_SOURCE_PROPERTIES "${_ANDROID_NDK_SOURCE_PROPERTIES}")
-      message(FATAL_ERROR "Android: Failed to parse NDK revision from:\n ${CMAKE_ANDROID_NDK}/source.properties\n with content:\n  ${_ANDROID_NDK_SOURCE_PROPERTIES}")
+  if(NOT ANDROID_NDK_REVISION)
+    # Get the Android NDK version, refer to https://github.com/Kitware/CMake/blob/d8f95471c7d779c8bb1606fbfff664f1dad6cde1/Modules/Platform/Android-Determine.cmake#L231 for more details.
+    if(CMAKE_ANDROID_NDK AND EXISTS "${CMAKE_ANDROID_NDK}/source.properties")
+      file(READ "${CMAKE_ANDROID_NDK}/source.properties" ANDROID_NDK_SOURCE_PROPERTIES)
+      set(ANDROID_NDK_REVISION_REGEX "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta([0-9]+))?")
+      if(NOT ANDROID_NDK_SOURCE_PROPERTIES MATCHES "${ANDROID_NDK_REVISION_REGEX}")
+        string(REPLACE "\n" "\n  " ANDROID_NDK_SOURCE_PROPERTIES "${ANDROID_NDK_SOURCE_PROPERTIES}")
+        message(FATAL_ERROR "Android: Failed to parse NDK revision from:\n ${CMAKE_ANDROID_NDK}/source.properties\n with content:\n  ${ANDROID_NDK_SOURCE_PROPERTIES}")
+      endif()
     endif()
+    set(ANDROID_NDK_MAJOR "${CMAKE_MATCH_1}")
+    set(ANDROID_NDK_MINOR "${CMAKE_MATCH_2}")
+    set(ANDROID_NDK_BUILD "${CMAKE_MATCH_3}")
+    set(ANDROID_NDK_BETA "${CMAKE_MATCH_5}")
+    if(ANDROID_NDK_BETA STREQUAL "")
+      set(ANDROID_NDK_BETA "0")
+    endif()
+    set(ANDROID_NDK_REVISION "${ANDROID_NDK_MAJOR}.${ANDROID_NDK_MINOR}.${ANDROID_NDK_BUILD}${CMAKE_MATCH_4}")
   endif()
-  set(_ANDROID_NDK_MAJOR "${CMAKE_MATCH_1}")
-  set(_ANDROID_NDK_MINOR "${CMAKE_MATCH_2}")
-  set(_ANDROID_NDK_BUILD "${CMAKE_MATCH_3}")
-  set(_ANDROID_NDK_BETA "${CMAKE_MATCH_5}")
-  if(_ANDROID_NDK_BETA STREQUAL "")
-    set(_ANDROID_NDK_BETA "0")
-  endif()
-  set(CMAKE_ANDROID_NDK_VERSION "${_ANDROID_NDK_MAJOR}.${_ANDROID_NDK_MINOR}")
-  unset(_ANDROID_NDK_SOURCE_PROPERTIES)
-  unset(_ANDROID_NDK_REVISION_REGEX)
-  unset(_ANDROID_NDK_MAJOR)
-  unset(_ANDROID_NDK_MINOR)
-  unset(_ANDROID_NDK_BUILD)
-  unset(_ANDROID_NDK_BETA)
-  if(CMAKE_ANDROID_NDK_VERSION VERSION_LESS 19)
+  if(ANDROID_NDK_REVISION VERSION_LESS 19)
     message(FATAL_ERROR "Upgrade to a newer Android NDK(r19c or higher), Clang in NDK r18b or before doesn't support the intrinsic functions used in some XNNPACK microkernels, refer to https://github.com/google/XNNPACK/issues/1359 for more details.")
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -74,6 +70,9 @@ set(GOOGLE_XNNPACK_SOURCES_DIR ${THIRD_PARTY_PATH}/xnnpack)
 set(GOOGLE_XNNPACK_INSTALL_DIR ${THIRD_PARTY_PATH}/install/xnnpack)
 set(GOOGLE_XNNPACK_BUILD_COMMAND $(MAKE) -j)
 
+# Hack the XNNPACK and change the symbol visibility from 'internal' to 'default' to fix the compilation error 'internal symbol `xnn_x16_transpose_ukernel__8x8_reuse_dec_zip_neon' isn't defined'
+set(GOOGLE_XNNPACK_PATCH_COMMAND sed -e "s/__attribute__((__visibility__(\"internal\")))/__attribute__((__visibility__(\"default\")))/g" -i src/xnnpack/common.h)
+
 ExternalProject_Add(
   ${GOOGLE_XNNPACK_PROJECT}
   ${EXTERNAL_PROJECT_LOG_ARGS}
@@ -87,19 +86,31 @@ ExternalProject_Add(
   CMAKE_ARGS          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                       -DXNNPACK_BUILD_TESTS=OFF
                       -DXNNPACK_BUILD_BENCHMARKS=OFF
-                      -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+                      -DXNNPACK_LIBRARY_TYPE=static
+                      -DXNNPACK_ENABLE_JIT=ON
                       -DCMAKE_INSTALL_PREFIX=${GOOGLE_XNNPACK_INSTALL_DIR}
                       ${CROSS_COMPILE_CMAKE_ARGS}
 )
 
-set(GOOGLE_XNNPACK_LIBRARY "${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libXNNPACK.a")
+add_library(clog_lib STATIC IMPORTED GLOBAL)
+set_property(TARGET clog_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libclog.a)
+add_dependencies(clog_lib ${GOOGLE_XNNPACK_PROJECT})
 
-add_library(xnnpack_libs STATIC IMPORTED GLOBAL)
-set_property(TARGET xnnpack_libs PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_LIBRARY})
-add_dependencies(xnnpack_libs ${GOOGLE_XNNPACK_PROJECT})
+add_library(cpuinfo_lib STATIC IMPORTED GLOBAL)
+set_property(TARGET cpuinfo_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libcpuinfo.a)
+add_dependencies(cpuinfo_lib ${GOOGLE_XNNPACK_PROJECT})
+
+add_library(pthreadpool_lib STATIC IMPORTED GLOBAL)
+set_property(TARGET pthreadpool_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libpthreadpool.a)
+add_dependencies(pthreadpool_lib ${GOOGLE_XNNPACK_PROJECT})
+
+add_library(xnnpack_lib STATIC IMPORTED GLOBAL)
+set_property(TARGET xnnpack_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libXNNPACK.a)
+add_dependencies(xnnpack_lib ${GOOGLE_XNNPACK_PROJECT})
 
 include_directories(${GOOGLE_XNNPACK_INSTALL_DIR}/include)
 
-set(${DEVICE_NAME}_deps xnnpack_libs)
+set(${DEVICE_NAME}_deps clog_lib cpuinfo_lib pthreadpool_lib xnnpack_lib)

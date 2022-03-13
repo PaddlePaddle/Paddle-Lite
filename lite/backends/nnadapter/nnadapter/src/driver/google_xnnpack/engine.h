@@ -25,17 +25,19 @@ namespace google_xnnpack {
 
 class Device {
  public:
-  Device() {}
-  ~Device() {}
+  Device();
+  ~Device();
 };
 
 class Context {
  public:
   explicit Context(void* device, const char* properties);
+  bool num_threads() { return num_threads_; }
   ~Context();
 
  private:
   void* device_{nullptr};
+  int num_threads_{0};
 };
 
 class Program {
@@ -61,7 +63,7 @@ class Program {
   Context* context_{nullptr};
   // Map NNAdapter operand to XNNPACK tensor value id
   std::map<core::Operand*, std::vector<uint32_t>> tensor_value_ids_;
-  void* subgraph_{nullptr};
+  xnn_subgraph_t subgraph_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
 };
