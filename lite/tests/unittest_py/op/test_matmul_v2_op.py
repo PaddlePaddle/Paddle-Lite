@@ -58,6 +58,8 @@ class TestMatmulV2Op(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -72,7 +74,7 @@ class TestMatmulV2Op(AutoScanTest):
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
             channels = draw(st.integers(min_value=1, max_value=64))
             batch = draw(st.integers(min_value=1, max_value=4))
-        if target_str == "ARM" or target_str == "X86":
+        if target_str == "ARM" or target_str == "X86" or target_str == "NNAdapter":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))
@@ -232,6 +234,20 @@ class TestMatmulV2Op(AutoScanTest):
         self.add_ignore_check_case(
             _teller3, IgnoreReasons.ACCURACY_ERROR,
             "Lite has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
+
+        def _teller4(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data_x"].shape)
+            y_shape = list(program_config.inputs["input_data_y"].shape)
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                if (len(x_shape) == 1 and
+                        len(y_shape) == 1) or len(x_shape) != len(y_shape):
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            " inputs with the same operation must have same number of dimensions."
         )
 
     def test(self, *args, **kwargs):

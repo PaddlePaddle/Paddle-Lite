@@ -194,8 +194,8 @@ class NearestInterpComputeTester : public arena::TestCase {
   float scale_ = -1.f;
   int out_h_ = -1;
   int out_w_ = -1;
-  bool align_corners_ = true;
-  int align_mode_ = 1;
+  bool align_corners_ = false;
+  int align_mode_ = 0;
   bool use_sizetensor_ = false;
   bool use_input_scale_ = false;
   bool use_outsize_ = false;
@@ -209,8 +209,8 @@ class NearestInterpComputeTester : public arena::TestCase {
                              float scale = -1.f,
                              int out_h = -1,
                              int out_w = -1,
-                             bool align_corners = true,
-                             int align_mode = 1,
+                             bool align_corners = false,
+                             int align_mode = 0,
                              bool use_sizetensor = false,
                              bool use_input_scale = false,
                              bool use_outsize = false,
@@ -533,6 +533,12 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
   // TestInterpSizetensor(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  // TestInterpAlignCorners(place, abs_error);
   return;
 #else
   return;

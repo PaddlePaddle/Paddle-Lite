@@ -71,8 +71,9 @@ class TestConcatOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -97,6 +98,10 @@ class TestConcatOp(AutoScanTest):
             globals()[var_name] = copy.deepcopy(input_shape0)
 
         has_axis_tensor = draw(st.booleans())
+
+        nnadapter_device_name = self.get_nnadapter_device_name()
+        if nnadapter_device_name == "nvidia_tensorrt":
+            has_axis_tensor = False
 
         def generate_input(*args, **kwargs):
             i = kwargs["id"]
@@ -168,7 +173,7 @@ class TestConcatOp(AutoScanTest):
         return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller2(program_config, predictor_config):
+        def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data0"].shape
             if target_type == TargetType.Metal:
@@ -176,7 +181,7 @@ class TestConcatOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
 

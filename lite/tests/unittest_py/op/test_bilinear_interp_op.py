@@ -24,6 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import math
 
 
 class TestBilinearOp(AutoScanTest):
@@ -68,8 +69,10 @@ class TestBilinearOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
-        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -85,21 +88,54 @@ class TestBilinearOp(AutoScanTest):
         out_size_shape = draw(st.sampled_from([[1, 2]]))
         align_corners = draw(st.booleans())
         align_mode = draw(st.sampled_from([0, 1]))
-        out_h = draw(st.integers(min_value=3, max_value=50))
-        out_w = draw(st.integers(min_value=3, max_value=50))
+        out_h = draw(st.integers(min_value=1, max_value=50))
+        out_w = draw(st.integers(min_value=1, max_value=50))
         scale = draw(st.floats(min_value=0.1, max_value=0.9))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32) * 10
 
         def generate_out_size(*args, **kwargs):
-            return np.random.randint(1, 100, size=out_size_shape)
+            return np.random.randint(
+                1, 100, size=out_size_shape).astype(np.int32)
 
         def generate_size_tensor(*args, **kwargs):
             return np.random.randint(4, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
-            return np.random.random([1]).astype(np.float32)
+            tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
+            assume(int(tmp * in_shape[2]) > 1)
+            assume(int(tmp * in_shape[3]) > 1)
+            return tmp
+
+        assume(scale * in_shape[2] > 1.0)
+        assume(scale * in_shape[3] > 1.0)
+
+        nnadapter_device_name = self.get_nnadapter_device_name()
+        if nnadapter_device_name == "nvidia_tensorrt":
+            bilinear_interp_op = OpConfig(
+                type="bilinear_interp",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "data_layout": "NCHW",
+                    "out_d": 0,
+                    "out_h": out_h,
+                    "out_w": out_w,
+                    "scale": scale,
+                    "interp_method": "bilinear",
+                    "align_corners": False,
+                    "align_mode": 0
+                })
+            program_config = ProgramConfig(
+                ops=[bilinear_interp_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input))
+                },
+                outputs=["output_data"])
+            return program_config
 
         bilinear_interp_op = OpConfig(
             type="bilinear_interp",
@@ -144,7 +180,15 @@ class TestBilinearOp(AutoScanTest):
         return self.get_predictor_configs(), ["bilinear_interp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
