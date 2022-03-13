@@ -18,8 +18,12 @@
 REGISTER_CONVERTER(batch_norm,
                    ConvertBatchNorm,
                    "huawei_ascend_npu,verisilicon_"
+<<<<<<< HEAD
                    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino,eeasytech_npu");
 
+=======
+                   "timvx,cambricon_mlu,huawei_kirin_npu");
+>>>>>>> parent of 033328663... EZNPU_adapter:add conv2d,pool2d,relu/relu6,eltwise_add,etc.
 REGISTER_CONVERTER(cast,
                    ConvertCast,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
@@ -48,6 +52,21 @@ REGISTER_CONVERTER(dropout,
 
 REGISTER_CONVERTER(pool2d,
                    ConvertPool,
+<<<<<<< HEAD
+=======
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "timvx,kunlunxin_xtcl,android_nnapi");
+REGISTER_CONVERTER(
+    matmul,
+    ConvertMatmul,
+    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,verisilicon_timvx");
+REGISTER_CONVERTER(matmul_v2,
+                   ConvertMatmulV2,
+                   "huawei_ascend_npu,huawei_kirin_npu,imagination_nna");
+REGISTER_CONVERTER(softmax,
+                   ConvertSoftmax,
+>>>>>>> parent of 033328663... EZNPU_adapter:add conv2d,pool2d,relu/relu6,eltwise_add,etc.
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi,eeasytech_npu,nvidia_tensorrt,intel_openvino");
