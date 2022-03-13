@@ -18,18 +18,16 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_data_utility.h"
 #include "lite/tests/api/utility.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 10, "iteration times to run");
+DEFINE_int32(iteration, 1, "iteration times to run");
 
 namespace paddle {
 namespace lite {
 
-TEST(ch_ppocr_mobile_v2_0_det,
-     test_ch_ppocr_mobile_v2_0_det_fp32_v2_0_nnadapter) {
+TEST(stdcseg, test_stdcseg_fp32_v2_3_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -70,64 +68,50 @@ TEST(ch_ppocr_mobile_v2_0_det,
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir =
-      FLAGS_data_dir + std::string("/ICDAR_2015_50/raw_data");
-  std::string out_data_dir =
-      FLAGS_data_dir +
-      std::string("/ICDAR_2015_50/ch_ppocr_mobile_v2_0_out_data");
-  std::string images_shape_path =
-      FLAGS_data_dir + std::string("/ICDAR_2015_50/images_shape.txt");
-
-  auto input_lines = ReadLines(images_shape_path);
-  std::vector<std::string> input_names;
-  std::vector<std::vector<int64_t>> input_shapes;
-  for (auto line : input_lines) {
-    input_names.push_back(Split(line, ":")[0]);
-    input_shapes.push_back(Split<int64_t>(Split(line, ":")[1], " "));
-  }
-
-  std::vector<std::vector<float>> raw_data;
-  std::vector<std::vector<float>> gt_data;
-  for (size_t i = 0; i < FLAGS_iteration; i++) {
-    raw_data.push_back(
-        ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
-  }
+  std::string input_data_dir =
+      FLAGS_data_dir + std::string("/stdcseg_input.txt");
+  std::string output_data_dir =
+      FLAGS_data_dir + std::string("/stdcseg_output.txt");
+  std::vector<std::vector<std::vector<uint8_t>>> input_data_set;
+  std::vector<std::vector<std::vector<int64_t>>> input_data_set_shapes;
+  LoadSpecificData(input_data_dir,
+                   input_data_set,
+                   input_data_set_shapes,
+                   predictor,
+                   "input");
+  std::vector<std::vector<std::vector<uint8_t>>> output_data_set;
+  std::vector<std::vector<std::vector<int64_t>>> output_data_set_shapes;
+  LoadSpecificData(output_data_dir,
+                   output_data_set,
+                   output_data_set_shapes,
+                   predictor,
+                   "output");
 
   FLAGS_warmup = 1;
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
+  for (int i = 0; i < FLAGS_warmup; i++) {
+    FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
     predictor->Run();
   }
 
   double cost_time = 0;
   std::vector<std::vector<float>> results;
-  for (size_t i = 0; i < raw_data.size(); ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+  for (int i = 0; i < FLAGS_iteration; i++) {
+    FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
 
     double start = GetCurrentUS();
     predictor->Run();
     cost_time += (GetCurrentUS() - start);
 
-    auto output_tensor = predictor->GetOutput(0);
-    auto output_shape = output_tensor->shape();
-    auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 4UL);
-
-    int64_t output_size = 1;
-    for (auto dim : output_shape) {
-      output_size *= dim;
-    }
-    std::vector<float> ret(output_size);
-    memcpy(ret.data(), output_data, sizeof(float) * output_size);
-    results.push_back(ret);
-    gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
+    std::vector<float> abs_error;
+    GetModelOutputAndAbsError(
+        predictor, output_data_set[i], output_data_set_shapes[i], abs_error);
+    results.push_back(abs_error);
   }
 
-  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
-    float acc = CalOutAccuracy(results, gt_data, abs_error);
+  for (float abs_error : {1e-0, 1e-1, 1e-2}) {
+    float acc = CalOutAccuracy(results, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    ASSERT_GE(acc, 0.99);
   }
 
   LOG(INFO) << "================== Speed Report ===================";

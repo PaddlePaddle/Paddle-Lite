@@ -15,7 +15,9 @@
 #include "operation/reshape.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
@@ -28,6 +30,33 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    auto shape_count = temporary_shape.count;
+    auto shape_data = temporary_shape.data;
+    for (uint32_t i = 0; i < shape_count; i++) {
+      if (shape_data[i] == 0) {
+        if (input_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+          shape_data[i] = -1;
+        } else {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
+      }
+    }
+  } else if (IsConstantOperand(shape_operand)) {
+    auto shape_count = shape_operand->length / sizeof(int32_t);
+    auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+    for (uint32_t i = 0; i < shape_count; i++) {
+      if (shape_data[i] == 0) {
+        if (input_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+          shape_data[i] = -1;
+        } else {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
+      }
+    }
+  }
+
   auto shape_tensor = converter->ConvertOperand(shape_operand);
   auto reshape_node =
       converter->network()->AddIReshapeNode(input_tensor, shape_tensor);

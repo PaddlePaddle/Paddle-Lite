@@ -110,7 +110,7 @@ int Program::BuildFromModel(core::Model* model) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-      input_tensors[i] = tensors_[operand].back();
+      input_tensors[i] = tensors_[operand].front();
       NNADAPTER_CHECK(input_tensors[i]);
       input_types_[i] = type;
       input_names_[i] = input_tensors[i]->GetTensorName();
@@ -200,12 +200,16 @@ int Program::Execute(uint32_t input_count,
     auto type = input_types_[arg.index];
     auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(type);
-    MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
-    MLU_CNRT_CHECK(
-        cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
     auto tensor_name = input_names_[arg.index];
     auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
+    if (IsDeviceMemory(input_tensor)) {
+      auto length = GetOperandTypeBufferLength(type);
+      MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
+      MLU_CNRT_CHECK(
+          cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
+    } else {
+      ptr = buffer;
+    }
     input_tensor->SetData(ptr);
     input_tensor->SetDimensions(
         ConvertToMagicMindDims(type.dimensions.data, type.dimensions.count));
@@ -235,7 +239,9 @@ int Program::Execute(uint32_t input_count,
   }
 
   for (auto input : inputs) {
-    MLU_CNRT_CHECK(cnrtFree(input->GetMutableData()));
+    if (IsDeviceMemory(input)) {
+      MLU_CNRT_CHECK(cnrtFree(input->GetMutableData()));
+    }
     input->Destroy();
   }
   for (auto output : outputs) {

@@ -54,7 +54,7 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
         } else if (input1_data == 1) {
           output_dimensions_data[i] = input0_data;
         } else {
-          NNADAPTER_LOG(FATAL) << "Cannot broadcast input0: " << input0_data
+          NNADAPTER_LOG(ERROR) << "Cannot broadcast input0: " << input0_data
                                << ", input1: " << input1_data;
         }
       }
@@ -78,6 +78,25 @@ int PrepareElementwise(core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
+  if (IsConstantOperand(input0_operand) && !IsConstantOperand(input1_operand)) {
+    input0_operand->type.dimensions.dynamic_count =
+        input1_operand->type.dimensions.dynamic_count;
+    for (size_t i = 0; i < input0_operand->type.dimensions.dynamic_count; i++) {
+      for (size_t j = 0; j < input1_operand->type.dimensions.count; j++) {
+        input0_operand->type.dimensions.dynamic_data[i][j] = 1;
+      }
+    }
+  } else if (IsConstantOperand(input1_operand) &&
+             !IsConstantOperand(input0_operand)) {
+    input1_operand->type.dimensions.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    for (size_t i = 0; i < input1_operand->type.dimensions.dynamic_count; i++) {
+      for (size_t j = 0; j < input0_operand->type.dimensions.count; j++) {
+        input1_operand->type.dimensions.dynamic_data[i][j] = 1;
+      }
+    }
+  }
+
   CalcEltwiseBinaryOperationsOutputSize(
       input0_operand->type, input1_operand->type, &output_operand->type);
   output_operand->type.precision = input0_operand->type.precision;

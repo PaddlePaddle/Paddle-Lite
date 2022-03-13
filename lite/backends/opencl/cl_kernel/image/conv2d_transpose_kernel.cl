@@ -165,6 +165,35 @@ __kernel void conv2d_transpose(
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out0);
 }
 
+#define COMPUTE_OUTPUT(o, in0)                                                          \
+  if (o == 0) {                                                                         \
+    out0.x = (remain == 0) ? mad(in0, weights0.x, out0.x) : out0.x;                     \
+    out0.x = (remain == 1) ? mad(in0, weights0.y, out0.x) : out0.x;                     \
+    out0.x = (remain == 2) ? mad(in0, weights0.z, out0.x) : out0.x;                     \
+    out0.x = (remain == 3) ? mad(in0, weights0.w, out0.x) : out0.x;                     \
+  } else if (o == 1) {                                                                  \
+    out0.y = (remain == 0) ? mad(in0, weights0.x, out0.y) : out0.y;                     \
+    out0.y = (remain == 1) ? mad(in0, weights0.y, out0.y) : out0.y;                     \
+    out0.y = (remain == 2) ? mad(in0, weights0.z, out0.y) : out0.y;                     \
+    out0.y = (remain == 3) ? mad(in0, weights0.w, out0.y) : out0.y;                     \
+  } else if (o == 2) {                                                                  \
+    out0.z = (remain == 0) ? mad(in0, weights0.x, out0.z) : out0.z;                     \
+    out0.z =                                                         \   
+            (remain == 1)                                                               \
+                                                                         ? mad(in0,     \
+                                                                               weights0 \
+                                                                                   .y,  \
+                                                                               out0.z)  \
+                                                                         : out0.z;      \
+    out0.z = (remain == 2) ? mad(in0, weights0.z, out0.z) : out0.z;                     \
+    out0.z = (remain == 3) ? mad(in0, weights0.w, out0.z) : out0.z;                     \
+  } else if (o == 3) {                                                                  \
+    out0.w = (remain == 0) ? mad(in0, weights0.x, out0.w) : out0.w;                     \
+    out0.w = (remain == 1) ? mad(in0, weights0.y, out0.w) : out0.w;                     \
+    out0.w = (remain == 2) ? mad(in0, weights0.z, out0.w) : out0.w;                     \
+    out0.w = (remain == 3) ? mad(in0, weights0.w, out0.w) : out0.w;                     \
+  }
+
 __kernel void group_conv2d_transpose(
     __private const int global_size_dim0,  // (out_c + 3) / 4
     __private const int global_size_dim1,  // out_w
@@ -251,157 +280,13 @@ __kernel void group_conv2d_transpose(
             weights0 = READ_IMG_TYPE(
                 CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y_0));
             if (ic % 4 == 0) {
-              if (o == 0) {
-                out0.x =
-                    (remain == 0) ? mad(in0.x, weights0.x, out0.x) : out0.x;
-                out0.x =
-                    (remain == 1) ? mad(in0.x, weights0.y, out0.x) : out0.x;
-                out0.x =
-                    (remain == 2) ? mad(in0.x, weights0.z, out0.x) : out0.x;
-                out0.x =
-                    (remain == 3) ? mad(in0.x, weights0.w, out0.x) : out0.x;
-              } else if (o == 1) {
-                out0.y =
-                    (remain == 0) ? mad(in0.x, weights0.x, out0.y) : out0.y;
-                out0.y =
-                    (remain == 1) ? mad(in0.x, weights0.y, out0.y) : out0.y;
-                out0.y =
-                    (remain == 2) ? mad(in0.x, weights0.z, out0.y) : out0.y;
-                out0.y =
-                    (remain == 3) ? mad(in0.x, weights0.w, out0.y) : out0.y;
-              } else if (o == 2) {
-                out0.z =
-                    (remain == 0) ? mad(in0.x, weights0.x, out0.z) : out0.z;
-                out0.z =
-                    (remain == 1) ? mad(in0.x, weights0.y, out0.z) : out0.z;
-                out0.z =
-                    (remain == 2) ? mad(in0.x, weights0.z, out0.z) : out0.z;
-                out0.z =
-                    (remain == 3) ? mad(in0.x, weights0.w, out0.z) : out0.z;
-              } else if (o == 3) {
-                out0.w =
-                    (remain == 0) ? mad(in0.x, weights0.x, out0.w) : out0.w;
-                out0.w =
-                    (remain == 1) ? mad(in0.x, weights0.y, out0.w) : out0.w;
-                out0.w =
-                    (remain == 2) ? mad(in0.x, weights0.z, out0.w) : out0.w;
-                out0.w =
-                    (remain == 3) ? mad(in0.x, weights0.w, out0.w) : out0.w;
-              }
+              COMPUTE_OUTPUT(o, in0.x)
             } else if (ic % 4 == 1) {
-              if (o == 0) {
-                out0.x =
-                    (remain == 0) ? mad(in0.y, weights0.x, out0.x) : out0.x;
-                out0.x =
-                    (remain == 1) ? mad(in0.y, weights0.y, out0.x) : out0.x;
-                out0.x =
-                    (remain == 2) ? mad(in0.y, weights0.z, out0.x) : out0.x;
-                out0.x =
-                    (remain == 3) ? mad(in0.y, weights0.w, out0.x) : out0.x;
-              } else if (o == 1) {
-                out0.y =
-                    (remain == 0) ? mad(in0.y, weights0.x, out0.y) : out0.y;
-                out0.y =
-                    (remain == 1) ? mad(in0.y, weights0.y, out0.y) : out0.y;
-                out0.y =
-                    (remain == 2) ? mad(in0.y, weights0.z, out0.y) : out0.y;
-                out0.y =
-                    (remain == 3) ? mad(in0.y, weights0.w, out0.y) : out0.y;
-              } else if (o == 2) {
-                out0.z =
-                    (remain == 0) ? mad(in0.y, weights0.x, out0.z) : out0.z;
-                out0.z =
-                    (remain == 1) ? mad(in0.y, weights0.y, out0.z) : out0.z;
-                out0.z =
-                    (remain == 2) ? mad(in0.y, weights0.z, out0.z) : out0.z;
-                out0.z =
-                    (remain == 3) ? mad(in0.y, weights0.w, out0.z) : out0.z;
-              } else if (o == 3) {
-                out0.w =
-                    (remain == 0) ? mad(in0.y, weights0.x, out0.w) : out0.w;
-                out0.w =
-                    (remain == 1) ? mad(in0.y, weights0.y, out0.w) : out0.w;
-                out0.w =
-                    (remain == 2) ? mad(in0.y, weights0.z, out0.w) : out0.w;
-                out0.w =
-                    (remain == 3) ? mad(in0.y, weights0.w, out0.w) : out0.w;
-              }
+              COMPUTE_OUTPUT(o, in0.y)
             } else if (ic % 4 == 2) {
-              if (o == 0) {
-                out0.x =
-                    (remain == 0) ? mad(in0.z, weights0.x, out0.x) : out0.x;
-                out0.x =
-                    (remain == 1) ? mad(in0.z, weights0.y, out0.x) : out0.x;
-                out0.x =
-                    (remain == 2) ? mad(in0.z, weights0.z, out0.x) : out0.x;
-                out0.x =
-                    (remain == 3) ? mad(in0.z, weights0.w, out0.x) : out0.x;
-              } else if (o == 1) {
-                out0.y =
-                    (remain == 0) ? mad(in0.z, weights0.x, out0.y) : out0.y;
-                out0.y =
-                    (remain == 1) ? mad(in0.z, weights0.y, out0.y) : out0.y;
-                out0.y =
-                    (remain == 2) ? mad(in0.z, weights0.z, out0.y) : out0.y;
-                out0.y =
-                    (remain == 3) ? mad(in0.z, weights0.w, out0.y) : out0.y;
-              } else if (o == 2) {
-                out0.z =
-                    (remain == 0) ? mad(in0.z, weights0.x, out0.z) : out0.z;
-                out0.z =
-                    (remain == 1) ? mad(in0.z, weights0.y, out0.z) : out0.z;
-                out0.z =
-                    (remain == 2) ? mad(in0.z, weights0.z, out0.z) : out0.z;
-                out0.z =
-                    (remain == 3) ? mad(in0.z, weights0.w, out0.z) : out0.z;
-              } else if (o == 3) {
-                out0.w =
-                    (remain == 0) ? mad(in0.z, weights0.x, out0.w) : out0.w;
-                out0.w =
-                    (remain == 1) ? mad(in0.z, weights0.y, out0.w) : out0.w;
-                out0.w =
-                    (remain == 2) ? mad(in0.z, weights0.z, out0.w) : out0.w;
-                out0.w =
-                    (remain == 3) ? mad(in0.z, weights0.w, out0.w) : out0.w;
-              }
+              COMPUTE_OUTPUT(o, in0.z)
             } else if (ic % 4 == 3) {
-              if (o == 0) {
-                out0.x =
-                    (remain == 0) ? mad(in0.w, weights0.x, out0.x) : out0.x;
-                out0.x =
-                    (remain == 1) ? mad(in0.w, weights0.y, out0.x) : out0.x;
-                out0.x =
-                    (remain == 2) ? mad(in0.w, weights0.z, out0.x) : out0.x;
-                out0.x =
-                    (remain == 3) ? mad(in0.w, weights0.w, out0.x) : out0.x;
-              } else if (o == 1) {
-                out0.y =
-                    (remain == 0) ? mad(in0.w, weights0.x, out0.y) : out0.y;
-                out0.y =
-                    (remain == 1) ? mad(in0.w, weights0.y, out0.y) : out0.y;
-                out0.y =
-                    (remain == 2) ? mad(in0.w, weights0.z, out0.y) : out0.y;
-                out0.y =
-                    (remain == 3) ? mad(in0.w, weights0.w, out0.y) : out0.y;
-              } else if (o == 2) {
-                out0.z =
-                    (remain == 0) ? mad(in0.w, weights0.x, out0.z) : out0.z;
-                out0.z =
-                    (remain == 1) ? mad(in0.w, weights0.y, out0.z) : out0.z;
-                out0.z =
-                    (remain == 2) ? mad(in0.w, weights0.z, out0.z) : out0.z;
-                out0.z =
-                    (remain == 3) ? mad(in0.w, weights0.w, out0.z) : out0.z;
-              } else if (o == 3) {
-                out0.w =
-                    (remain == 0) ? mad(in0.w, weights0.x, out0.w) : out0.w;
-                out0.w =
-                    (remain == 1) ? mad(in0.w, weights0.y, out0.w) : out0.w;
-                out0.w =
-                    (remain == 2) ? mad(in0.w, weights0.z, out0.w) : out0.w;
-                out0.w =
-                    (remain == 3) ? mad(in0.w, weights0.w, out0.w) : out0.w;
-              }
+              COMPUTE_OUTPUT(o, in0.w)
             }
           } else {
             weights0 = (CL_DTYPE4)(0.0f);

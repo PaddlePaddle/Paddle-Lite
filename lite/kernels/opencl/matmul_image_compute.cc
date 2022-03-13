@@ -85,7 +85,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     transpose_x_ = matmul_v2_param_->transpose_X;
     transpose_y_ = matmul_v2_param_->transpose_Y;
     alpha_ = matmul_v2_param_->alpha;
-    CHECK_EQ(alpha_, 1.f) << "Only support alpha == 1.0";
     auto x_dims = matmul_v2_param_->X->dims();
     auto y_t = matmul_v2_param_->Y;
     auto y_dims = y_t->dims();
@@ -456,6 +455,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(arg_idx++, W);
       CL_CHECK_FATAL(status);
     }
+    status = kernel.setArg(arg_idx++, alpha_);
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,

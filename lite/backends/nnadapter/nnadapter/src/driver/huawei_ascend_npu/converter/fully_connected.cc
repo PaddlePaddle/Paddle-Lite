@@ -23,10 +23,21 @@ namespace huawei_ascend_npu {
 
 int ConvertFullyConnected(Converter* converter, core::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  auto batch_size =
-      ProductionOfDimensions(input_operand->type.dimensions.data,
-                             input_operand->type.dimensions.count) /
-      input_size;
+  int64_t input_production = 1;
+  for (uint32_t i = 0; i < input_operand->type.dimensions.count; i++) {
+    auto dimension = input_operand->type.dimensions.data[i];
+    if (dimension < 0) {
+      input_production = -1;
+      break;
+    }
+    input_production *= dimension;
+  }
+  int64_t batch_size;
+  if (input_production < 0) {
+    batch_size = -1;
+  } else {
+    batch_size = input_production / input_size;
+  }
   NNADAPTER_VLOG(5) << "batch_size: " << batch_size;
 
   // Convert to GE operators

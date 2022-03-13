@@ -43,12 +43,11 @@ class TestGruOp(AutoScanTest):
         #     DataLayoutType.NCHW,
         #     thread=[1, 4])
 
-        #all cases have precision diff
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP16,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
         self.enable_testing_on_place(
             TargetType.ARM,
@@ -128,15 +127,12 @@ class TestGruOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
-                if predictor_config.precision() == PrecisionType.FP16:
-                    return True
                 if predictor_config.precision() == PrecisionType.INT8:
                     return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op for precision fp16 and int8 on ARM for now."
-        )
+            "Lite does not support this op for precision int8 on ARM for now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

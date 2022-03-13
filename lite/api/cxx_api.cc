@@ -42,6 +42,8 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
       "fake_quantize_dequantize_abs_max",
       "fake_quantize_dequantize_moving_average_abs_max",
       "fake_channel_wise_quantize_dequantize_abs_max",
+      "quantize_linear",
+      "dequantize_linear",
   };
   const std::vector<std::string> dynamic_quant_op = {"lstm", "gru"};
   bool is_quantized_model = false;
@@ -345,7 +347,6 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-
   Build(program_desc_, valid_places, passes, config);
 }
 

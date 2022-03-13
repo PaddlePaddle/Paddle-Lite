@@ -78,8 +78,9 @@ class TestConv2dOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -179,22 +180,9 @@ class TestConv2dOp(AutoScanTest):
                         0] < 3:
                     return True
 
-        def _teller3(program_config, predictor_config):
-            target_type = predictor_config.target()
-            precision_type = predictor_config.precision()
-            if target_type == TargetType.ARM and (
-                    predictor_config.precision() == PrecisionType.FP16 or
-                    predictor_config.precision() == PrecisionType.INT8):
-                return True
-
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
-        )
-
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "Lite has diff in a specific case on arm. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

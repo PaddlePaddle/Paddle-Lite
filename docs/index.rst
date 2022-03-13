@@ -72,6 +72,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/arm_cpu
   demo_guides/x86
   demo_guides/opencl
+  demo_guides/metal
   demo_guides/fpga
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
@@ -101,6 +102,7 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/for-developer
   develop_guides/architecture-intro
   develop_guides/add_operation
+  develop_guides/add_unit_test
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware

@@ -50,10 +50,18 @@ if(NNADAPTER_WITH_VERISILICON_TIMVX)
   add_subdirectory(verisilicon_timvx)
 endif()
 
+if(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  add_subdirectory(nvidia_tensorrt)
+endif()
+
 if(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   add_subdirectory(kunlunxin_xtcl)
 endif()
 
 if(NNADAPTER_WITH_ANDROID_NNAPI)
   add_subdirectory(android_nnapi)
+endif()
+
+if(NNADAPTER_WITH_INTEL_OPENVINO)
+  add_subdirectory(intel_openvino)
 endif()

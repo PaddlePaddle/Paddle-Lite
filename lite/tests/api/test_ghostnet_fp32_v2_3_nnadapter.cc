@@ -18,21 +18,21 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_data_utility.h"
-#include "lite/tests/api/utility.h"
-#include "lite/utils/string.h"
+#include "lite/tests/api/ILSVRC2012_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 5, "iteration times to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 1, "batch of image");
+DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
 namespace lite {
 
-TEST(ch_ppocr_mobile_v2_0_rec,
-     test_ch_ppocr_mobile_v2_0_rec_fp32_v2_0_nnadapter) {
+TEST(GhostNet, test_ghostnet_fp32_v2_3_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
+  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
@@ -46,6 +46,7 @@ TEST(ch_ppocr_mobile_v2_0_rec,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -71,68 +72,61 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::string out_data_dir =
-      FLAGS_data_dir + std::string("/ch_ppocr_mobile_v2_0_out_data");
-  std::string images_shape_path =
-      FLAGS_data_dir + std::string("/images_shape.txt");
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
-  auto input_lines = ReadLines(images_shape_path);
-  std::vector<std::string> input_names;
-  std::vector<std::vector<int64_t>> input_shapes;
-  for (auto line : input_lines) {
-    input_names.push_back(Split(line, ":")[0]);
-    input_shapes.push_back(Split<int64_t>(Split(line, ":")[1], " "));
+  int input_size = 1;
+  for (auto i : input_shape) {
+    input_size *= i;
   }
 
-  std::vector<std::vector<float>> raw_data;
-  std::vector<std::vector<float>> gt_data;
-  for (size_t i = 0; i < FLAGS_iteration; i++) {
-    raw_data.push_back(
-        ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
-  }
-
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int j = 0; j < input_size; j++) {
+      data[j] = 0.f;
+    }
     predictor->Run();
   }
 
+  std::vector<std::vector<float>> out_rets;
+  out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
-  std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
 
     double start = GetCurrentUS();
     predictor->Run();
-    cost_time += (GetCurrentUS() - start);
+    cost_time += GetCurrentUS() - start;
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 3UL);
+    ASSERT_EQ(output_shape.size(), 2UL);
+    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[1], 1000);
 
-    int64_t output_size = 1;
-    for (auto dim : output_shape) {
-      output_size *= dim;
-    }
-    std::vector<float> ret(output_size);
-    memcpy(ret.data(), output_data, sizeof(float) * output_size);
-    results.push_back(ret);
-    gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
-  }
-
-  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
-    float acc = CalOutAccuracy(results, gt_data, abs_error);
-    LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    int output_size = output_shape[0] * output_shape[1];
+    out_rets[i].resize(output_size);
+    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup
+            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
+
+  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 
 }  // namespace lite

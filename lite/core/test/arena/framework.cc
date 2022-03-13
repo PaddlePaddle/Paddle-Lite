@@ -54,6 +54,9 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"verisilicon_timvx"});
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"nvidia_tensorrt"});
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"kunlunxin_xtcl"});

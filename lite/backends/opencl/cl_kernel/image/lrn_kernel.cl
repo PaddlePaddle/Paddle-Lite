@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +12,44 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#include <cl_common.h>
+
+inline CL_DTYPE compute_lrn_output(__read_only image2d_t input,
+                                   int start,
+                                   int end,
+                                   int out_w,
+                                   int out_nh,
+                                   int out_width,
+                                   CL_DTYPE in,
+                                   float k,
+                                   float alpha,
+                                   float beta) {
+  CL_DTYPE square = CONVERT_TYPE_TO(0.0f, CL_DTYPE);
+  for (int i = start; i <= end; i++) {
+    int input_c = i / 4;
+    int2 input_pos;
+    input_pos.x = input_c * out_width + out_w;
+    input_pos.y = out_nh;
+    CL_DTYPE4 input_data =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    int num = i % 4;
+    switch (num) {
+      case 0:
+        square += input_data.x * input_data.x;
+        break;
+      case 1:
+        square += input_data.y * input_data.y;
+        break;
+      case 2:
+        square += input_data.z * input_data.z;
+        break;
+      case 3:
+        square += input_data.w * input_data.w;
+        break;
+    }
+  }
+  return in / (pow(k + alpha * square, beta));
+}
 
 __kernel void lrn(__read_only image2d_t input,
                   __write_only image2d_t output,
@@ -31,133 +68,38 @@ __kernel void lrn(__read_only image2d_t input,
   const int out_c2 = out_c0 + 2;
   const int out_c3 = out_c0 + 3;
 
-  const int pad = (local_size - 1) / 2;
-  const int start = out_c0 - pad;
-  const int end = out_c0 + pad;
-  start = start > 0 ? start : 0;
-  end = end < out_C - 1 ? end : out_C - 1;
-  float square0 = 0.0;
-  float square1 = 0.0;
-  float square2 = 0.0;
-  float square3 = 0.0;
-  for (int i = start; i <= end; i++) {
-    int input_c0 = i / 4;
-    int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
-    input_pos.y = out_nh;
-    CL_DTYPE4 input_data =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
-    int num = i % 4;
-    switch (num) {
-      case 0:
-        square0 += input_data.x * input_data.x;
-        break;
-      case 1:
-        square0 += input_data.y * input_data.y;
-        break;
-      case 2:
-        square0 += input_data.z * input_data.z;
-        break;
-      case 3:
-        square0 += input_data.w * input_data.w;
-        break;
-    }
-  }
-  start = out_c1 - pad;
-  end = out_c1 + pad;
-  for (int i = start; i <= end; i++) {
-    int input_c0 = i / 4;
-    int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
-    input_pos.y = out_nh;
-    CL_DTYPE4 input_data =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
-    int num = i % 4;
-    switch (num) {
-      case 0:
-        square1 += input_data.x * input_data.x;
-        break;
-      case 1:
-        square1 += input_data.y * input_data.y;
-        break;
-      case 2:
-        square1 += input_data.z * input_data.z;
-        break;
-      case 3:
-        square1 += input_data.w * input_data.w;
-        break;
-    }
-  }
-  start = out_c2 - pad;
-  end = out_c2 + pad;
-  for (int i = start; i <= end; i++) {
-    int input_c0 = i / 4;
-    int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
-    input_pos.y = out_nh;
-    CL_DTYPE4 input_data =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
-    int num = i % 4;
-    switch (num) {
-      case 0:
-        square2 += input_data.x * input_data.x;
-        break;
-      case 1:
-        square2 += input_data.y * input_data.y;
-        break;
-      case 2:
-        square2 += input_data.z * input_data.z;
-        break;
-      case 3:
-        square2 += input_data.w * input_data.w;
-        break;
-    }
-  }
-  start = out_c3 - pad;
-  end = out_c3 + pad;
-  for (int i = start; i <= end; i++) {
-    int input_c0 = i / 4;
-    int2 input_pos;
-    input_pos.x = input_c0 * out_C + out_w;
-    input_pos.y = out_nh;
-    CL_DTYPE4 input_data =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
-    int num = i % 4;
-    switch (num) {
-      case 0:
-        square3 += input_data.x * input_data.x;
-        break;
-      case 1:
-        square3 += input_data.y * input_data.y;
-        break;
-      case 2:
-        square3 += input_data.z * input_data.z;
-        break;
-      case 3:
-        square3 += input_data.w * input_data.w;
-        break;
-    }
-  }
   int2 out_pos;
   out_pos.x = out_c * out_W + out_w;
   out_pos.y = out_nh;
-  CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, out_pos);
+  CL_DTYPE4 in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, out_pos);
+  CL_DTYPE4 out_val;
 
-  float4 out_val;
-  out_val.x = input.x / (pow(k + alpha * (square0), beta));
+  int pad = local_size / 2;
+  int start = out_c0 - pad;
+  int end = out_c0 + pad;
+  start = start > 0 ? start : 0;
+  end = end < out_C - 1 ? end : out_C - 1;
+  out_val.x = compute_lrn_output(
+      input, start, end, out_w, out_nh, out_W, in0.x, k, alpha, beta);
+
   if (out_c1 < out_C) {
-    out_val.y = input.y / (pow(k + alpha * (square1), beta));
+    start = out_c1 - pad;
+    end = out_c1 + pad;
+    out_val.y = compute_lrn_output(
+        input, start, end, out_w, out_nh, out_W, in0.y, k, alpha, beta);
   }
   if (out_c2 < out_C) {
-    out_val.z = input.z / (pow(k + alpha * (square1), beta));
+    start = out_c2 - pad;
+    end = out_c2 + pad;
+    out_val.z = compute_lrn_output(
+        input, start, end, out_w, out_nh, out_W, in0.z, k, alpha, beta);
   }
-  if (out_c3 < out_C) {
-    out_val.w = input.w / (pow(k + alpha * (square1), beta));
+  if (out_c2 < out_C) {
+    start = out_c3 - pad;
+    end = out_c3 + pad;
+    out_val.w = compute_lrn_output(
+        input, start, end, out_w, out_nh, out_W, in0.w, k, alpha, beta);
   }
-#ifdef CL_DTYPE_half
-  CL_DTYPE4 out_data = convert_half4(out_val);
-#else
-  CL_DTYPE4 out_data = out_val;
-#endif
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out_data);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out_val);
 }

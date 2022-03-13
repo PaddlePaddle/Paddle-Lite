@@ -180,6 +180,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int groups_{-1};
   std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
+  bool sigmoid_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
   bool is_wino_{false};

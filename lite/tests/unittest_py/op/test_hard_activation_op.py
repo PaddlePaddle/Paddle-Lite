@@ -41,6 +41,11 @@ class TestHardActivationOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
+        self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -68,6 +73,8 @@ class TestHardActivationOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -124,7 +131,14 @@ class TestHardActivationOp(AutoScanTest):
                                                                           rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.NNAdapter:
+                if program_config.ops[0].type == "hard_sigmoid":
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "NNAdapter tensorrt will support hard_sigmoid later.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

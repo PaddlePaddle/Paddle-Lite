@@ -109,109 +109,89 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
                                     int stride_reset_hidden_prev,
                                     int frame_size,
                                     int batch_size) {
-  int cnt_32 = frame_size >> 5;
-  int rem_32 = frame_size & 31;
-  int cnt_8 = rem_32 >> 3;
-  int rem_8 = rem_32 & 7;
-
   LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float16x8_t vpre0 = vdupq_n_f16(0.f);
     float16x8_t vpre1 = vdupq_n_f16(0.f);
     float16x8_t vpre2 = vdupq_n_f16(0.f);
     float16x8_t vpre3 = vdupq_n_f16(0.f);
     float16_t prev = 0.f;
-    float16_t* updata_gate_ptr = updata_gate;
-    float16_t* reset_gate_ptr = reset_gate;
     const float16_t* hidden_prev_ptr = hidden_prev;
-    float16_t* reset_hidden_prev_ptr = reset_hidden_prev;
-    for (int i = 0; i < cnt_32; i++) {
-      float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
-      float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
-      float16x8_t vu2 = vld1q_f16(updata_gate_ptr + 16);
-      float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
+    float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+    float16_t* reset_gate_ptr = reset_gate + b * stride_reset;
+    if (hidden_prev) {
+      hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+    }
+    float16_t* reset_hidden_prev_ptr =
+        reset_hidden_prev + b * stride_reset_hidden_prev;
 
-      float16x8_t vr0 = vld1q_f16(reset_gate_ptr);
+    int i = 0;
+    for (; i < frame_size - 31; i += 32) {
+      float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
+      float16x8_t vu1 = vld1q_f16(updata_gate_ptr + i + 8);
+      float16x8_t vu2 = vld1q_f16(updata_gate_ptr + i + 16);
+      float16x8_t vu3 = vld1q_f16(updata_gate_ptr + i + 24);
+
+      float16x8_t vr0 = vld1q_f16(reset_gate_ptr + i);
       float16x8_t vau0 = vactive_f16<Act>(vu0);
-      float16x8_t vr1 = vld1q_f16(reset_gate_ptr + 8);
+      float16x8_t vr1 = vld1q_f16(reset_gate_ptr + i + 8);
       float16x8_t vau1 = vactive_f16<Act>(vu1);
-      float16x8_t vr2 = vld1q_f16(reset_gate_ptr + 16);
+      float16x8_t vr2 = vld1q_f16(reset_gate_ptr + i + 16);
       float16x8_t vau2 = vactive_f16<Act>(vu2);
-      float16x8_t vr3 = vld1q_f16(reset_gate_ptr + 24);
+      float16x8_t vr3 = vld1q_f16(reset_gate_ptr + i + 24);
       float16x8_t vau3 = vactive_f16<Act>(vu3);
 
       if (hidden_prev) {
-        vpre0 = vld1q_f16(hidden_prev_ptr);
-        vpre1 = vld1q_f16(hidden_prev_ptr + 8);
-        vpre2 = vld1q_f16(hidden_prev_ptr + 16);
-        vpre3 = vld1q_f16(hidden_prev_ptr + 24);
-        hidden_prev_ptr += 32;
+        vpre0 = vld1q_f16(hidden_prev_ptr + i);
+        vpre1 = vld1q_f16(hidden_prev_ptr + i + 8);
+        vpre2 = vld1q_f16(hidden_prev_ptr + i + 16);
+        vpre3 = vld1q_f16(hidden_prev_ptr + i + 24);
       }
       float16x8_t var0 = vactive_f16<Act>(vr0);
-      vst1q_f16(updata_gate_ptr, vau0);
+      vst1q_f16(updata_gate_ptr + i, vau0);
       float16x8_t var1 = vactive_f16<Act>(vr1);
-      vst1q_f16(updata_gate_ptr + 8, vau1);
+      vst1q_f16(updata_gate_ptr + i + 8, vau1);
       float16x8_t var2 = vactive_f16<Act>(vr2);
-      vst1q_f16(updata_gate_ptr + 16, vau2);
+      vst1q_f16(updata_gate_ptr + i + 16, vau2);
       float16x8_t var3 = vactive_f16<Act>(vr3);
-      vst1q_f16(updata_gate_ptr + 24, vau3);
+      vst1q_f16(updata_gate_ptr + i + 24, vau3);
 
       float16x8_t vres0 = vmulq_f16(vpre0, var0);
-      vst1q_f16(reset_gate_ptr, var0);
+      vst1q_f16(reset_gate_ptr + i, var0);
       float16x8_t vres1 = vmulq_f16(vpre1, var1);
-      vst1q_f16(reset_gate_ptr + 8, var1);
+      vst1q_f16(reset_gate_ptr + i + 8, var1);
       float16x8_t vres2 = vmulq_f16(vpre2, var2);
-      vst1q_f16(reset_gate_ptr + 16, var2);
+      vst1q_f16(reset_gate_ptr + i + 16, var2);
       float16x8_t vres3 = vmulq_f16(vpre3, var3);
-      vst1q_f16(reset_gate_ptr + 24, var3);
+      vst1q_f16(reset_gate_ptr + i + 24, var3);
 
-      updata_gate_ptr += 32;
-
-      vst1q_f16(reset_hidden_prev_ptr, vres0);
-      reset_gate_ptr += 32;
-      vst1q_f16(reset_hidden_prev_ptr + 8, vres1);
-      vst1q_f16(reset_hidden_prev_ptr + 16, vres2);
-      vst1q_f16(reset_hidden_prev_ptr + 24, vres3);
-      reset_hidden_prev_ptr += 32;
+      vst1q_f16(reset_hidden_prev_ptr + i, vres0);
+      vst1q_f16(reset_hidden_prev_ptr + i + 8, vres1);
+      vst1q_f16(reset_hidden_prev_ptr + i + 16, vres2);
+      vst1q_f16(reset_hidden_prev_ptr + i + 24, vres3);
     }
-    for (int i = 0; i < cnt_8; i++) {
-      float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
-      float16x8_t vr0 = vld1q_f16(reset_gate_ptr);
+    for (; i < frame_size - 7; i += 8) {
+      float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
+      float16x8_t vr0 = vld1q_f16(reset_gate_ptr + i);
 
       if (hidden_prev) {
-        vpre0 = vld1q_f16(hidden_prev_ptr);
-        hidden_prev_ptr += 8;
+        vpre0 = vld1q_f16(hidden_prev_ptr + i);
       }
       float16x8_t vau0 = vactive_f16<Act>(vu0);
       float16x8_t var0 = vactive_f16<Act>(vr0);
 
       float16x8_t vres0 = vmulq_f16(vpre0, var0);
-      vst1q_f16(updata_gate_ptr, vau0);
-      vst1q_f16(reset_gate_ptr, var0);
-
-      updata_gate_ptr += 8;
-      vst1q_f16(reset_hidden_prev_ptr, vres0);
-      reset_gate_ptr += 8;
-      reset_hidden_prev_ptr += 8;
+      vst1q_f16(updata_gate_ptr + i, vau0);
+      vst1q_f16(reset_gate_ptr + i, var0);
+      vst1q_f16(reset_hidden_prev_ptr + i, vres0);
     }
-
-    for (int i = 0; i < rem_8; i++) {
-      updata_gate_ptr[0] = active_f16<Act>(*updata_gate_ptr);
-      reset_gate_ptr[0] = active_f16<Act>(*reset_gate_ptr);
+    for (; i < frame_size; i++) {
+      updata_gate_ptr[i] = active_f16<Act>(updata_gate_ptr[i]);
+      reset_gate_ptr[i] = active_f16<Act>(reset_gate_ptr[i]);
       if (hidden_prev) {
-        prev = *hidden_prev_ptr++;
+        prev = hidden_prev_ptr[i];
       }
-      updata_gate_ptr++;
-      reset_gate_ptr++;
-      reset_hidden_prev_ptr[0] = reset_gate_ptr[0] * prev;
-      reset_hidden_prev_ptr++;
+      reset_hidden_prev_ptr[i] = reset_gate_ptr[i] * prev;
     }
-
-    updata_gate += stride_update;
-    reset_gate += stride_reset;
-    if (hidden_prev) {
-      hidden_prev += stride_hidden_prev;
-    }
-    reset_hidden_prev += stride_reset_hidden_prev;
   }
   LITE_PARALLEL_END()
 }
@@ -228,10 +208,6 @@ static void gru_unit_out_act_impl(bool origin_mode,
                                   int stride_hidden,
                                   int frame_size,
                                   int batch_size) {
-  int cnt_32 = frame_size >> 5;
-  int rem_32 = frame_size & 31;
-  int cnt_8 = rem_32 >> 3;
-  int rem_8 = rem_32 & 7;
   if (origin_mode) {
     LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       float16x8_t vpre0 = vdupq_n_f16(0.f);
@@ -239,30 +215,33 @@ static void gru_unit_out_act_impl(bool origin_mode,
       float16x8_t vpre2 = vdupq_n_f16(0.f);
       float16x8_t vpre3 = vdupq_n_f16(0.f);
       const float16_t* hidden_prev_ptr = hidden_prev;
-      float16_t* cell_state_ptr = cell_state;
-      float16_t* updata_gate_ptr = updata_gate;
-      float16_t* hidden_ptr = hidden;
+      float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+      float16_t* cell_state_ptr = cell_state + b * stride_cell_state;
+      if (hidden_prev) {
+        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+      }
+      float16_t* hidden_ptr = hidden + b * stride_hidden;
       float16_t prev = 0.f;
-      for (int i = 0; i < cnt_32; i++) {
-        float16x8_t vc0 = vld1q_f16(cell_state_ptr);
-        float16x8_t vc1 = vld1q_f16(cell_state_ptr + 8);
-        float16x8_t vc2 = vld1q_f16(cell_state_ptr + 16);
-        float16x8_t vc3 = vld1q_f16(cell_state_ptr + 24);
-        float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
+      int i = 0;
+      for (; i < frame_size - 31; i += 32) {
+        float16x8_t vc0 = vld1q_f16(cell_state_ptr + i);
+        float16x8_t vc1 = vld1q_f16(cell_state_ptr + i + 8);
+        float16x8_t vc2 = vld1q_f16(cell_state_ptr + i + 16);
+        float16x8_t vc3 = vld1q_f16(cell_state_ptr + i + 24);
 
+        float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
         float16x8_t vac0 = vactive_f16<Act>(vc0);
-        float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
+        float16x8_t vu1 = vld1q_f16(updata_gate_ptr + i + 8);
         float16x8_t vac1 = vactive_f16<Act>(vc1);
-        float16x8_t vu2 = vld1q_f16(updata_gate_ptr + 16);
+        float16x8_t vu2 = vld1q_f16(updata_gate_ptr + i + 16);
         float16x8_t vac2 = vactive_f16<Act>(vc2);
-        float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
+        float16x8_t vu3 = vld1q_f16(updata_gate_ptr + i + 24);
         float16x8_t vac3 = vactive_f16<Act>(vc3);
         if (hidden_prev) {
-          vpre0 = vld1q_f16(hidden_prev_ptr);
-          vpre1 = vld1q_f16(hidden_prev_ptr + 8);
-          vpre2 = vld1q_f16(hidden_prev_ptr + 16);
-          vpre3 = vld1q_f16(hidden_prev_ptr + 24);
-          hidden_prev_ptr += 32;
+          vpre0 = vld1q_f16(hidden_prev_ptr + i);
+          vpre1 = vld1q_f16(hidden_prev_ptr + i + 8);
+          vpre2 = vld1q_f16(hidden_prev_ptr + i + 16);
+          vpre3 = vld1q_f16(hidden_prev_ptr + i + 24);
         }
 
         float16x8_t vh0 = vfmsq_f16(vac0, vu0, vac0);
@@ -270,58 +249,43 @@ static void gru_unit_out_act_impl(bool origin_mode,
         float16x8_t vh2 = vfmsq_f16(vac1, vu2, vac2);
         float16x8_t vh3 = vfmsq_f16(vac1, vu3, vac3);
 
-        vst1q_f16(cell_state_ptr, vac0);
-
+        vst1q_f16(cell_state_ptr + i, vac0);
         vh0 = vfmaq_f16(vh0, vu0, vpre0);
-        vst1q_f16(cell_state_ptr + 8, vac1);
+        vst1q_f16(cell_state_ptr + i + 8, vac1);
         vh1 = vfmaq_f16(vh1, vu1, vpre1);
-        vst1q_f16(cell_state_ptr + 16, vac2);
+        vst1q_f16(cell_state_ptr + i + 16, vac2);
         vh2 = vfmaq_f16(vh2, vu2, vpre2);
-        vst1q_f16(cell_state_ptr + 24, vac3);
+        vst1q_f16(cell_state_ptr + i + 24, vac3);
         vh3 = vfmaq_f16(vh3, vu3, vpre3);
-        updata_gate_ptr += 32;
-        cell_state_ptr += 32;
 
-        vst1q_f16(hidden_ptr, vh0);
-        vst1q_f16(hidden_ptr + 8, vh1);
-        vst1q_f16(hidden_ptr + 16, vh2);
-        vst1q_f16(hidden_ptr + 32, vh3);
-        hidden_ptr += 32;
+        vst1q_f16(hidden_ptr + i, vh0);
+        vst1q_f16(hidden_ptr + i + 8, vh1);
+        vst1q_f16(hidden_ptr + i + 16, vh2);
+        vst1q_f16(hidden_ptr + i + 24, vh3);
       }
-      for (int i = 0; i < cnt_8; i++) {
-        float16x8_t vc0 = vld1q_f16(cell_state_ptr);
-        float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
+
+      for (; i < frame_size - 7; i += 8) {
+        float16x8_t vc0 = vld1q_f16(cell_state_ptr + i);
+        float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
 
         float16x8_t vac0 = vactive_f16<Act>(vc0);
         if (hidden_prev) {
-          vpre0 = vld1q_f16(hidden_prev_ptr);
-          hidden_prev_ptr += 8;
+          vpre0 = vld1q_f16(hidden_prev_ptr + i);
         }
 
         float16x8_t vh0 = vfmsq_f16(vac0, vu0, vac0);
-        vst1q_f16(cell_state_ptr, vac0);
+        vst1q_f16(cell_state_ptr + i, vac0);
         vh0 = vfmaq_f16(vh0, vu0, vpre0);
-        updata_gate_ptr += 8;
-        cell_state_ptr += 8;
-
-        vst1q_f16(hidden_ptr, vh0);
-        hidden_ptr += 8;
+        vst1q_f16(hidden_ptr + i, vh0);
       }
-      for (int i = 0; i < rem_8; i++) {
+      for (; i < frame_size; i++) {
         if (hidden_prev) {
-          prev = *hidden_prev_ptr++;
+          prev = hidden_prev_ptr[i];
         }
-        cell_state_ptr[0] = active_f16<Act>(*cell_state_ptr);
-        hidden_ptr[0] = cell_state_ptr[0] * (1.f - updata_gate_ptr[0]) +
-                        updata_gate_ptr[0] * prev;
+        cell_state_ptr[i] = active_f16<Act>(cell_state_ptr[i]);
+        hidden_ptr[i] = cell_state_ptr[i] * (1.f - updata_gate_ptr[i]) +
+                        updata_gate_ptr[i] * prev;
       }
-
-      updata_gate += stride_update;
-      cell_state += stride_cell_state;
-      if (hidden_prev) {
-        hidden_prev += stride_hidden_prev;
-      }
-      hidden += stride_hidden;
     }
     LITE_PARALLEL_END()
   } else {
@@ -331,89 +295,75 @@ static void gru_unit_out_act_impl(bool origin_mode,
       float16x8_t vpre2 = vdupq_n_f16(0.f);
       float16x8_t vpre3 = vdupq_n_f16(0.f);
       const float16_t* hidden_prev_ptr = hidden_prev;
-      float16_t* cell_state_ptr = cell_state;
-      float16_t* updata_gate_ptr = updata_gate;
-      float16_t* hidden_ptr = hidden;
+      float16_t* updata_gate_ptr = updata_gate + b * stride_update;
+      float16_t* cell_state_ptr = cell_state + b * stride_cell_state;
+      if (hidden_prev) {
+        hidden_prev_ptr = hidden_prev + b * stride_hidden_prev;
+      }
+      float16_t* hidden_ptr = hidden + b * stride_hidden;
       float16_t prev = 0.f;
-      for (int i = 0; i < cnt_32; i++) {
-        float16x8_t vc0 = vld1q_f16(cell_state_ptr);
-        float16x8_t vc1 = vld1q_f16(cell_state_ptr + 8);
-        float16x8_t vc2 = vld1q_f16(cell_state_ptr + 16);
-        float16x8_t vc3 = vld1q_f16(cell_state_ptr + 24);
-        float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
+      int i = 0;
+      for (; i < frame_size - 31; i += 32) {
+        float16x8_t vc0 = vld1q_f16(cell_state_ptr + i);
+        float16x8_t vc1 = vld1q_f16(cell_state_ptr + i + 8);
+        float16x8_t vc2 = vld1q_f16(cell_state_ptr + i + 16);
+        float16x8_t vc3 = vld1q_f16(cell_state_ptr + i + 24);
+        float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
 
         float16x8_t vac0 = vactive_f16<Act>(vc0);
-        float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
+        float16x8_t vu1 = vld1q_f16(updata_gate_ptr + i + 8);
         float16x8_t vac1 = vactive_f16<Act>(vc1);
-        float16x8_t vu2 = vld1q_f16(updata_gate_ptr + 16);
+        float16x8_t vu2 = vld1q_f16(updata_gate_ptr + i + 16);
         float16x8_t vac2 = vactive_f16<Act>(vc2);
-        float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
+        float16x8_t vu3 = vld1q_f16(updata_gate_ptr + i + 24);
         float16x8_t vac3 = vactive_f16<Act>(vc3);
         if (hidden_prev) {
-          vpre0 = vld1q_f16(hidden_prev_ptr);
-          vpre1 = vld1q_f16(hidden_prev_ptr + 8);
-          vpre2 = vld1q_f16(hidden_prev_ptr + 16);
-          vpre3 = vld1q_f16(hidden_prev_ptr + 24);
-          hidden_prev_ptr += 32;
+          vpre0 = vld1q_f16(hidden_prev_ptr + i);
+          vpre1 = vld1q_f16(hidden_prev_ptr + i + 8);
+          vpre2 = vld1q_f16(hidden_prev_ptr + i + 16);
+          vpre3 = vld1q_f16(hidden_prev_ptr + i + 24);
         }
         float16x8_t vh0 = vfmsq_f16(vpre0, vpre0, vu0);
         float16x8_t vh1 = vfmsq_f16(vpre1, vpre1, vu1);
         float16x8_t vh2 = vfmsq_f16(vpre2, vpre2, vu2);
         float16x8_t vh3 = vfmsq_f16(vpre3, vpre3, vu3);
 
-        vst1q_f16(cell_state_ptr, vac0);
+        vst1q_f16(cell_state_ptr + i, vac0);
         vh0 = vfmaq_f16(vh0, vu0, vac0);
-        vst1q_f16(cell_state_ptr + 8, vac1);
+        vst1q_f16(cell_state_ptr + i + 8, vac1);
         vh1 = vfmaq_f16(vh1, vu1, vac1);
-        vst1q_f16(cell_state_ptr + 16, vac2);
+        vst1q_f16(cell_state_ptr + i + 16, vac2);
         vh2 = vfmaq_f16(vh2, vu2, vac2);
-        vst1q_f16(cell_state_ptr + 24, vac3);
+        vst1q_f16(cell_state_ptr + i + 24, vac3);
         vh3 = vfmaq_f16(vh3, vu3, vac3);
-        updata_gate_ptr += 32;
-        cell_state_ptr += 32;
 
-        vst1q_f16(hidden_ptr, vh0);
-        vst1q_f16(hidden_ptr + 8, vh1);
-        vst1q_f16(hidden_ptr + 16, vh2);
-        vst1q_f16(hidden_ptr + 32, vh3);
-        hidden_ptr += 32;
+        vst1q_f16(hidden_ptr + i, vh0);
+        vst1q_f16(hidden_ptr + i + 8, vh1);
+        vst1q_f16(hidden_ptr + i + 16, vh2);
+        vst1q_f16(hidden_ptr + i + 24, vh3);
       }
-      for (int i = 0; i < cnt_8; i++) {
-        float16x8_t vc0 = vld1q_f16(cell_state_ptr);
-        float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
+      for (; i < frame_size - 7; i += 8) {
+        float16x8_t vc0 = vld1q_f16(cell_state_ptr + i);
+        float16x8_t vu0 = vld1q_f16(updata_gate_ptr + i);
 
         if (hidden_prev) {
-          vpre0 = vld1q_f16(hidden_prev_ptr);
-          hidden_prev_ptr += 8;
+          vpre0 = vld1q_f16(hidden_prev_ptr + i);
         }
         float16x8_t vac0 = vactive_f16<Act>(vc0);
         float16x8_t vh0 = vfmsq_f16(vpre0, vpre0, vu0);
 
-        updata_gate_ptr += 8;
-        vst1q_f16(cell_state_ptr, vac0);
+        vst1q_f16(cell_state_ptr + i, vac0);
         vh0 = vfmaq_f16(vh0, vu0, vac0);
-        cell_state_ptr += 8;
-
-        vst1q_f16(hidden_ptr, vh0);
-        hidden_ptr += 8;
+        vst1q_f16(hidden_ptr + i, vh0);
       }
-      for (int i = 0; i < rem_8; i++) {
-        cell_state_ptr[0] = active_f16<Act>(*cell_state_ptr);
+      for (; i < frame_size; i++) {
+        cell_state_ptr[i] = active_f16<Act>(cell_state_ptr[i]);
         if (hidden_prev) {
-          prev = *hidden_prev_ptr++;
+          prev = hidden_prev_ptr[i];
         }
-        hidden_ptr[0] = prev * (1.f - updata_gate_ptr[0]) +
-                        updata_gate_ptr[0] * cell_state_ptr[0];
-        cell_state_ptr++;
-        updata_gate_ptr++;
-        hidden_ptr++;
+        hidden_ptr[i] = prev * (1.f - updata_gate_ptr[i]) +
+                        updata_gate_ptr[i] * cell_state_ptr[i];
       }
-      updata_gate += stride_update;
-      cell_state += stride_cell_state;
-      if (hidden_prev) {
-        hidden_prev += stride_hidden_prev;
-      }
-      hidden += stride_hidden;
     }
     LITE_PARALLEL_END()
   }
