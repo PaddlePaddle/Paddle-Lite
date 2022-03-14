@@ -40,10 +40,10 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
-  device_data_.clear();
+  device_buffers_.clear();
   tensors_.clear();
-  input_idx_.clear();
-  output_idx_.clear();
+  input_indices_.clear();
+  output_indices_.clear();
   input_types_.clear();
   output_types_.clear();
 }
@@ -112,33 +112,31 @@ void Program::CompleteConfig(core::Model* model) {
 // Malloc gpu memory according to max dims
 static void MallocMaxDeviceMemory(
     NNAdapterOperandType* type,
-    std::vector<std::shared_ptr<void>>* device_data,
+    std::vector<std::shared_ptr<void>>* device_buffers,
     int idx) {
   // Get max tensor size
-  uint32_t size = 1;
+  int64_t size = 1;
   auto& dims = type->dimensions;
   if (dims.dynamic_count == 0) {
-    for (uint32_t j = 0; j < dims.count; j++) {
-      size *= dims.data[j];
-    }
+    size = ProductionOfDimensions(dims.data, dims.count);
   } else {
     NNADAPTER_CHECK_EQ(dims.dynamic_count, 3U);
-    for (uint32_t j = 0; j < dims.count; j++) {
-      size *= dims.dynamic_data[2][j];
-    }
+    size = ProductionOfDimensions(dims.dynamic_data[2], dims.count);
   }
   NNADAPTER_VLOG(5) << "Malloc max gpu memory size: " << size;
   // Malloc gpu memory
-  void* data_ptr;
-  size *= static_cast<uint32_t>(GetOperandPrecisionDataLength(type->precision));
-  cudaMalloc(&data_ptr, size);
-  std::shared_ptr<void> dev_data(data_ptr, [](void* ptr) { cudaFree(ptr); });
-  device_data->at(idx) = std::move(dev_data);
+  void* data_ptr{nullptr};
+  size *= GetOperandPrecisionDataLength(type->precision);
+  NNADAPTER_CHECK_EQ(cudaMalloc(&data_ptr, size), cudaSuccess);
+  std::shared_ptr<void> device_buffer(data_ptr, [](void* ptr) {
+    NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
+  });
+  device_buffers->at(idx) = std::move(device_buffer);
 }
 
 int Program::BuildFromModel(core::Model* model) {
   for (auto operand : model->input_operands) {
-    if (operand->type.dimensions.dynamic_count > 0) {
+    if (IsOperandWithDynamicShape(operand)) {
       with_dynamic_shape_ = true;
       break;
     }
@@ -159,12 +157,11 @@ int Program::BuildFromModel(core::Model* model) {
   Converter converter(network_.get(), &tensors_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Mark output
-  for (size_t i = 0; i < model->output_operands.size(); i++) {
-    auto operand = model->output_operands.at(i);
+  for (auto operand : model->output_operands) {
     NNADAPTER_CHECK(tensors_.count(operand));
-    std::string name = "output_data_" + std::to_string(i);
-    tensors_.at(operand).back()->setName(name.c_str());
-    network_->markOutput(*tensors_.at(operand).back());
+    auto tensor = tensors_.at(operand).back();
+    tensor->setName(OperandToString(operand).c_str());
+    network_->markOutput(*tensor);
   }
   // Create config_ and set options
   CompleteConfig(model);
@@ -182,29 +179,31 @@ int Program::BuildFromModel(core::Model* model) {
   execution_context_.reset(engine_->createExecutionContext());
   NNADAPTER_CHECK(execution_context_);
   // Identify the inputs and outputs
-  int input_count = model->input_operands.size();
+  size_t input_count = model->input_operands.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
   input_types_.resize(input_count);
-  int output_count = model->output_operands.size();
+  size_t output_count = model->output_operands.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   output_types_.resize(output_count);
   NNADAPTER_CHECK_EQ(engine_->getNbBindings(), input_count + output_count);
-  device_data_.resize(input_count + output_count);
-  for (int i = 0; i < input_count; i++) {
+  device_buffers_.resize(input_count + output_count);
+  for (size_t i = 0; i < input_count; i++) {
     auto operand = model->input_operands[i];
     input_types_[i] = operand->type;
     ConvertDynamicDimensions(&input_types_[i]);
-    input_idx_.push_back(
+    input_indices_.push_back(
         engine_->getBindingIndex(tensors_.at(operand).back()->getName()));
-    MallocMaxDeviceMemory(&input_types_[i], &device_data_, input_idx_[i]);
+    MallocMaxDeviceMemory(
+        &input_types_[i], &device_buffers_, input_indices_[i]);
   }
-  for (int i = 0; i < output_count; i++) {
+  for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     output_types_[i] = operand->type;
     ConvertDynamicDimensions(&output_types_[i]);
-    output_idx_.push_back(
+    output_indices_.push_back(
         engine_->getBindingIndex(tensors_.at(operand).back()->getName()));
-    MallocMaxDeviceMemory(&output_types_[i], &device_data_, output_idx_[i]);
+    MallocMaxDeviceMemory(
+        &output_types_[i], &device_buffers_, output_indices_[i]);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -260,13 +259,13 @@ int Program::Execute(uint32_t input_count,
   int ret = CheckInputsAndOutputs(
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
-  std::vector<void*> ptrs;
-  for (auto& item : device_data_) {
-    ptrs.push_back(item.get());
+  std::vector<void*> device_ptrs;
+  for (auto& device_buffer : device_buffers_) {
+    device_ptrs.push_back(device_buffer.get());
   }
   // Feed inputs
   for (uint32_t i = 0; i < input_count; i++) {
-    void* dst_ptr = ptrs[i];
+    void* dst_ptr = device_ptrs[i];
     auto& arg = input_arguments[i];
     auto type = input_types_[arg.index];
     auto buffer = arg.access(arg.memory, &type);
@@ -277,20 +276,20 @@ int Program::Execute(uint32_t input_count,
     nvinfer1::Dims dims;
     dims.nbDims = type.dimensions.count;
     memcpy(dims.d, type.dimensions.data, dims.nbDims * sizeof(int32_t));
-    execution_context_->setBindingDimensions(input_idx_[i], dims);
+    execution_context_->setBindingDimensions(input_indices_[i], dims);
   }
   NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
   // Execute model
-  execution_context_->execute(1, ptrs.data());
+  execution_context_->execute(1, device_ptrs.data());
   // Fetch outputs
   for (uint32_t i = 0; i < output_count; i++) {
     NNAdapterOperandType type = output_types_[i];
-    auto dims = execution_context_->getBindingDimensions(output_idx_.at(i));
+    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
     type.dimensions.count = dims.nbDims;
     memcpy(type.dimensions.data, dims.d, dims.nbDims * sizeof(int32_t));
     auto& arg = output_arguments[i];
     auto buffer = arg.access(arg.memory, &type);
-    void* src_ptr = ptrs.at(output_idx_.at(i));
+    void* src_ptr = device_ptrs.at(output_indices_.at(i));
     auto length = GetOperandTypeBufferLength(type);
     NNADAPTER_CHECK_EQ(
         cudaMemcpy(buffer, src_ptr, length, cudaMemcpyDeviceToHost),

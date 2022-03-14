@@ -84,10 +84,10 @@ class Program {
   std::unique_ptr<nvinfer1::IRuntime, Deleter> runtime_;
   std::unique_ptr<nvinfer1::ICudaEngine, Deleter> engine_;
   std::unique_ptr<nvinfer1::IExecutionContext, Deleter> execution_context_;
-  std::vector<std::shared_ptr<void>> device_data_;
+  std::vector<std::shared_ptr<void>> device_buffers_;
   std::map<core::Operand*, std::vector<nvinfer1::ITensor*>> tensors_;
-  std::vector<int> input_idx_;
-  std::vector<int> output_idx_;
+  std::vector<int> input_indices_;
+  std::vector<int> output_indices_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   Context* context_{nullptr};

@@ -93,10 +93,8 @@ nvinfer1::ITensor* Converter::ConvertOperand(
   nvinfer1::ITensor* data = nullptr;
   if (IsModelInputOperand(operand)) {
     auto precision = ConvertToNVDataType(operand->type.precision);
-    data = network_->addInput(
-        std::to_string(reinterpret_cast<size_t>(operand)).c_str(),
-        precision,
-        dims);
+    data =
+        network_->addInput(OperandIdToString(operand).c_str(), precision, dims);
   } else if (IsConstantOperand(operand)) {
     data = network_->addConstant(dims, OperandToWeights(operand))->getOutput(0);
   } else {
