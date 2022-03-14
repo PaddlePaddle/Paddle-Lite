@@ -45,13 +45,13 @@ class TestLogOp(AutoScanTest):
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
-                TargetType.OpenCL, PrecisionType.FP16,
-                DataLayoutType.ImageFolder),
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
                   DataLayoutType.ImageDefault), Place(
-                TargetType.OpenCL, PrecisionType.Any,
-                DataLayoutType.ImageFolder),
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
