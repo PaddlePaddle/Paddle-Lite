@@ -88,8 +88,8 @@ class TestBilinearOp(AutoScanTest):
         out_size_shape = draw(st.sampled_from([[1, 2]]))
         align_corners = draw(st.booleans())
         align_mode = draw(st.sampled_from([0, 1]))
-        out_h = draw(st.integers(min_value=1, max_value=50))
-        out_w = draw(st.integers(min_value=1, max_value=50))
+        out_h = draw(st.integers(min_value=3, max_value=50))
+        out_w = draw(st.integers(min_value=3, max_value=50))
         scale = draw(st.floats(min_value=0.1, max_value=0.9))
 
         def generate_input(*args, **kwargs):

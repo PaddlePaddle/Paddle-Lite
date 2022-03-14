@@ -106,8 +106,8 @@ class TestBilinearV2Op(AutoScanTest):
             assume(tmp[0] * in_shape[3] > 1.0)
             return tmp
 
-        assume(scale * in_shape[2] > 1.0)
-        assume(scale * in_shape[3] > 1.0)
+        assume(scale[0] * in_shape[2] > 1.0)
+        assume(scale[1] * in_shape[3] > 1.0)
 
         nnadapter_device_name = self.get_nnadapter_device_name()
         if nnadapter_device_name == "nvidia_tensorrt":
