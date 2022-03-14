@@ -140,6 +140,10 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in))));
 #endif
 
+#ifdef GELU
+  output = erf(in);
+#endif
+
 #ifdef TANH
   output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
 #endif
@@ -193,6 +197,13 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
                      (CL_COMPUTE_DTYPE4)HARD_SIGMOID_OFFSET,
                  (CL_COMPUTE_DTYPE4)0.0,
                  (CL_COMPUTE_DTYPE4)1.0);
+#endif
+
+#ifdef GELU
+  output.x = erf(in.x);
+  output.y = erf(in.y);
+  output.z = erf(in.z);
+  output.w = erf(in.w);
 #endif
 
 #ifdef SIGMOID

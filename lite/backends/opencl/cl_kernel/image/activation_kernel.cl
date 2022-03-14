@@ -235,3 +235,16 @@ __kernel void square_func(__read_only image2d_t input,
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
+
+__kernel void gelu(__read_only image2d_t input, __write_only image2d_t output) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+
+  in.x = erf(in.x);
+  in.y = erf(in.y);
+  in.z = erf(in.z);
+  in.w = erf(in.w);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
