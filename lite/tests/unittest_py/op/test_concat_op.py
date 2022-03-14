@@ -99,10 +99,6 @@ class TestConcatOp(AutoScanTest):
 
         has_axis_tensor = draw(st.booleans())
 
-        nnadapter_device_name = self.get_nnadapter_device_name()
-        if nnadapter_device_name == "nvidia_tensorrt":
-            has_axis_tensor = False
-
         def generate_input(*args, **kwargs):
             i = kwargs["id"]
             input_shape = []
@@ -185,9 +181,20 @@ class TestConcatOp(AutoScanTest):
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
 
+        def _teller2(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                if "axis_tensor_data" in program_config.inputs.keys():
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "TensorRT is not supported AxisTensor input. We need to fix it as soon as possible."
+        )
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 50
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 500

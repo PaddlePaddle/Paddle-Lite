@@ -32,14 +32,12 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   if (y_tensor == nullptr) {
     y_tensor = converter->ConvertOperand(y_operand);
   }
-
   nvinfer1::MatrixOperation matrix_operation_x =
       transpose_x ? nvinfer1::MatrixOperation::kTRANSPOSE
                   : nvinfer1::MatrixOperation::kNONE;
   nvinfer1::MatrixOperation matrix_operation_y =
       transpose_y ? nvinfer1::MatrixOperation::kTRANSPOSE
                   : nvinfer1::MatrixOperation::kNONE;
-
   auto matmul_layer = converter->network()->addMatrixMultiply(
       *x_tensor, matrix_operation_x, *y_tensor, matrix_operation_y);
   NNADAPTER_CHECK(matmul_layer);

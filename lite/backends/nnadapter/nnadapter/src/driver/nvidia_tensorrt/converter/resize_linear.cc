@@ -32,50 +32,17 @@ int ConvertResizeLinear(Converter* converter, core::Operation* operation) {
   if (input_tensor == nullptr) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
   auto resize_layer = converter->network()->addResize(*input_tensor);
   NNADAPTER_CHECK(resize_layer);
-
   nvinfer1::Dims output_dims;
-  output_dims.nbDims = 4;
-  output_dims.d[0] = input_operand->type.dimensions.data[0];
-  output_dims.d[1] = input_operand->type.dimensions.data[1];
-  if (scales_operand != nullptr) {
-    NNADAPTER_CHECK(IsConstantOperand(scales_operand))
-        << "scales operands only support constant!";
-    auto scale_data = reinterpret_cast<float*>(scales_operand->buffer);
-    float scale_h = scale_data[0];
-    float scale_w = scale_data[1];
-    if (scale_h > 0 && scale_w > 0) {
-      output_dims.d[2] =
-          static_cast<int>(scale_h * input_operand->type.dimensions.data[2]);
-      output_dims.d[3] =
-          static_cast<int>(scale_w * input_operand->type.dimensions.data[3]);
-      resize_layer->setOutputDimensions(output_dims);
-    } else if (shape_operand != nullptr) {
-      NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-          << "shape operands only support constant!";
-      auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-      output_dims.d[2] = shape_data[0];
-      output_dims.d[3] = shape_data[1];
-      resize_layer->setOutputDimensions(output_dims);
-    } else {
-      NNADAPTER_LOG(WARNING) << "Scale data cannot be less than 0, or shape "
-                                "operand is not nullprt";
-      return NNADAPTER_INVALID_PARAMETER;
-    }
-  } else if (shape_operand != nullptr) {
-    NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-        << "shape operands only support constant!";
-    auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-    output_dims.d[2] = shape_data[0];
-    output_dims.d[3] = shape_data[1];
-    resize_layer->setOutputDimensions(output_dims);
-  } else {
-    NNADAPTER_LOG(WARNING)
-        << "Either shape_operand or scales_operand should be set.";
-    return NNADAPTER_INVALID_PARAMETER;
+  output_dims.nbDims = input_operand->type.dimensions.count;
+  for (int32_t i = 0; i < output_dims.nbDims; i++) {
+    output_dims.d[i] =
+        output_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN
+            ? -1
+            : output_operand->type.dimensions.data[i];
   }
+  resize_layer->setOutputDimensions(output_dims);
   resize_layer->setAlignCorners(align_corners);
   resize_layer->setResizeMode(nvinfer1::ResizeMode::kLINEAR);
   auto output_tensor = resize_layer->getOutput(0);

@@ -33,13 +33,10 @@ int ConvertConcat(Converter* converter, core::Operation* operation) {
     }
     input_itensors.push_back(input_tensor);
   }
-
   auto concat_layer = converter->network()->addConcatenation(
       input_itensors.data(), input_itensors.size());
   NNADAPTER_CHECK(concat_layer);
-  if (axis < 0) {
-    axis += input_operands[0]->type.dimensions.count;
-  }
+  NNADAPTER_CHECK_GE(axis, 0) << "axis cannot be negative";
   concat_layer->setAxis(axis);
   auto output_tensor = concat_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
