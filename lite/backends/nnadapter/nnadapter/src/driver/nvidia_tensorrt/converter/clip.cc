@@ -41,8 +41,7 @@ int ConvertClip(Converter* converter, core::Operation* operation) {
     converter->UpdateTensorMap(output_operand, output_tensor);
     return NNADAPTER_NO_ERROR;
   } else {
-    NNADAPTER_VLOG(5) << "TensorRT doesn't support, need plugin.";
-    return NNADAPTER_INVALID_PARAMETER;
+    NNADAPTER_LOG(FATAL) << "TensorRT doesn't support, need plugin.";
   }
 }
 
