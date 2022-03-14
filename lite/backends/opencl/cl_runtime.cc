@@ -320,34 +320,6 @@ bool CLRuntime::CheckFromSource(const std::string& file_name,
           << " --- ";
 #endif
   BuildProgram(program, build_option);
-
-  // Keep built program binary
-  if (binary_path_name_.size() == 2) {
-    cl_int status{CL_SUCCESS};
-    // 1. Query binary (PTX file) size
-    size_t bin_size;
-    status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
-    CL_CHECK_FATAL_SOLID(status);
-    // 2. Read binary (PTX file) to memory buffer
-    cl::Program::Binaries binary;
-    binary.resize(1);
-    binary[0].resize(bin_size);
-    auto buf = binary[0].data();
-    status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
-    CL_CHECK_FATAL_SOLID(status);
-    programs_precompiled_binary_[program_key] = binary;
-#ifdef LITE_WITH_LOG
-    VLOG(3) << " --- binary size: " << bin_size << " ---";
-#endif
-    if (programs_precompiled_binary_.find(sn_key_) ==
-        programs_precompiled_binary_.end()) {
-      // add identifier
-      std::string sn = GetSN(build_option);
-      std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
-      programs_precompiled_binary_[sn_key_] = {sn_info};
-    }
-  }
-
   programs_[program_key] = std::move(ptr);
 
   return true;
@@ -392,6 +364,35 @@ void CLRuntime::SaveProgram() {
   if (IsFileExists(binary_file)) {
     LOG(INFO) << "OpenCL Program existed:" << binary_file;
   } else {
+    for (auto& program_id : programs_) {
+      // Keep built program binary
+      if (binary_path_name_.size() == 2) {
+        cl_int status{CL_SUCCESS};
+        // 1. Query binary (PTX file) size
+        size_t bin_size;
+        cl::Program program = *(program_id.second);
+        status = program.getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
+        CL_CHECK_FATAL_SOLID(status);
+        // 2. Read binary (PTX file) to memory buffer
+        cl::Program::Binaries binary;
+        binary.resize(1);
+        binary[0].resize(bin_size);
+        auto buf = binary[0].data();
+        status = program.getInfo(CL_PROGRAM_BINARIES, &buf);
+        CL_CHECK_FATAL_SOLID(status);
+        programs_precompiled_binary_[program_id.first] = binary;
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- binary size: " << bin_size << " ---";
+#endif
+        if (programs_precompiled_binary_.find(sn_key_) ==
+            programs_precompiled_binary_.end()) {
+          // add identifier
+          std::string sn = GetSN(program_id.first);
+          std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+          programs_precompiled_binary_[sn_key_] = {sn_info};
+        }
+      }
+    }
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
     if (!ret) {
       LOG(WARNING) << "Serialize failed for opencl binary_file:" << binary_file;
@@ -501,8 +502,8 @@ std::string CLRuntime::GetSN(const std::string options) {
   const std::string driver_version =
       device_->getInfo<CL_DRIVER_VERSION>() + "; ";
   const std::string place_holder{"place_holder"};
-  sn_ss << aarch_info << lite_version << options << platform_info
-        << device_version << driver_version << place_holder;
+  sn_ss << aarch_info << lite_version << platform_info << device_version
+        << driver_version << place_holder;
   return sn_ss.str();
 }
 
