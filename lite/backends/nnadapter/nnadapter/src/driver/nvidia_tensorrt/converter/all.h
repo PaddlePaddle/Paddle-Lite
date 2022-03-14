@@ -39,9 +39,13 @@ REGISTER_CONVERTER(RESHAPE, ConvertReshape)
 REGISTER_CONVERTER(SHAPE, ConvertShape)
 REGISTER_CONVERTER(SIGMOID, ConvertActivations)
 REGISTER_CONVERTER(SOFTMAX, ConvertSoftmax)
+<<<<<<< f8566c79456c1c2eb6aa9d1e0fa32a28599576f6
 REGISTER_CONVERTER(SWISH, ConvertSwish)
 REGISTER_CONVERTER(TANH, ConvertActivations)
 REGISTER_CONVERTER(TRANSPOSE, ConvertTranspose)
 REGISTER_CONVERTER(UNSQUEEZE, ConvertUnsqueeze)
+=======
+REGISTER_CONVERTER(CLIP, ConvertClip)
+>>>>>>> [NNAdaptor] add tensorrt clip op, test=nvidia_tensorrt
 
 #endif  // NOLINT
