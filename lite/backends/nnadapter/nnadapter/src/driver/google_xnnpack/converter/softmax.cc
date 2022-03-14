@@ -29,6 +29,13 @@ int ConvertSoftmax(Converter* converter, core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XNNPACK tensor value ids and nodes
+  auto input_tensor_value_id = converter->GetMappedTensorValueId(input_operand);
+  if (input_tensor_value_id == XNN_INVALID_VALUE_ID) {
+    input_tensor_value_id = converter->ConvertOperand(input_operand);
+  }
+  auto output_tensor_value_id = converter->ConvertOperand(output_operand);
+  ADD_OPERATOR(
+      xnn_define_softmax, input_tensor_value_id, output_tensor_value_id, 0);
   return NNADAPTER_NO_ERROR;
 }
 

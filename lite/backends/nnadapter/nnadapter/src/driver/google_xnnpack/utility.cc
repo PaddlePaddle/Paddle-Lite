@@ -13,38 +13,49 @@
 // limitations under the License.
 
 #include "driver/google_xnnpack/utility.h"
+#include <limits>
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace google_xnnpack {
 
-int XNNOperandDataTypeLength(int data_type) {
+int XNNTensorDataTypeLength(xnn_datatype data_type) {
   switch (data_type) {
+    case xnn_datatype_fp32:
+      return 4;
+    case xnn_datatype_fp16:
+      return 2;
+    case xnn_datatype_qint8:
+    case xnn_datatype_quint8:
+    case xnn_datatype_qcint8:
+      return 1;
+    case xnn_datatype_qint32:
+    case xnn_datatype_qcint32:
+      return 4;
     default:
       NNADAPTER_LOG(FATAL) << "Failed to get the length of XNNPACK data type("
-                           << data_type << ")!";
+                           << static_cast<int>(data_type) << ")!";
       break;
   }
   return 0;
 }
 
-int ConvertToXNNPrecision(NNAdapterOperandPrecisionCode precision_code) {
+xnn_datatype ConvertToXNNDataType(
+    NNAdapterOperandPrecisionCode precision_code) {
   switch (precision_code) {
-    case NNADAPTER_BOOL8:
-      return 0;
     case NNADAPTER_FLOAT32:
-      return 0;
-    case NNADAPTER_INT32:
-      return 0;
-    case NNADAPTER_UINT32:
-      return 0;
+      return xnn_datatype_fp32;
+    case NNADAPTER_FLOAT16:
+      return xnn_datatype_fp16;
     case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
-      return 0;
+      return xnn_datatype_qint8;
     case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
-      return 0;
+      return xnn_datatype_qcint8;
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
-      return 0;
+      return xnn_datatype_quint8;
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
+      return xnn_datatype_qint32;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
@@ -52,13 +63,19 @@ int ConvertToXNNPrecision(NNAdapterOperandPrecisionCode precision_code) {
           << ") to the XNNPACK datatype!";
       break;
   }
-  return 0;
+  return xnn_datatype_invalid;
 }
 
-int ConvertToXNNDataLayout(NNAdapterOperandLayoutCode layout_code) {
-  NNADAPTER_CHECK_EQ(layout_code, NNADAPTER_NHWC)
-      << "XNNPACK only supports NHWC data layout!";
-  return 0;
+void ConvertToXNNDimensions(int32_t* input_dimensions,
+                            uint32_t input_dimensions_count,
+                            size_t* output_dimensions,
+                            size_t* output_dimensions_count) {
+  *output_dimensions_count = input_dimensions_count;
+  for (size_t i = 0; i < input_dimensions_count; i++) {
+    auto dimension = input_dimensions[i];
+    NNADAPTER_CHECK_GE(dimension, 0);
+    output_dimensions[i] = static_cast<size_t>(dimension);
+  }
 }
 
 std::vector<size_t> ConvertToXNNDimensions(int32_t* input_dimensions,
@@ -72,22 +89,31 @@ std::vector<size_t> ConvertToXNNDimensions(int32_t* input_dimensions,
   return output_dimensions;
 }
 
-int32_t ConvertFuseCodeToXNNFuseCode(int32_t fuse_code) {
+bool ConvertFuseCodeToXNNClippingRange(int32_t fuse_code,
+                                       float* clipping_min,
+                                       float* clipping_max) {
   switch (fuse_code) {
     case NNADAPTER_FUSED_NONE:
-      return 0;
+      *clipping_min = -std::numeric_limits<float>::infinity();
+      *clipping_max = std::numeric_limits<float>::infinity();
+      return true;
     case NNADAPTER_FUSED_RELU:
-      return 0;
+      *clipping_min = 0.0f;
+      *clipping_max = std::numeric_limits<float>::infinity();
+      return true;
     case NNADAPTER_FUSED_RELU1:
-      return 0;
+      *clipping_min = 0.0f;
+      *clipping_max = 1.0f;
+      return true;
     case NNADAPTER_FUSED_RELU6:
-      return 0;
+      *clipping_min = 0.0f;
+      *clipping_max = 6.0f;
+      return true;
     default:
-      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
-                           << fuse_code << ") to the XNNPACK fuse code!";
+      NNADAPTER_LOG(FATAL) << "Unhandled case: fuse_code=" << fuse_code;
       break;
   }
-  return 0;
+  return false;
 }
 
 }  // namespace google_xnnpack

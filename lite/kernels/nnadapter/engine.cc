@@ -292,14 +292,9 @@ Engine::Engine(KernelContext* ctx,
       NNAdapterDevice_getVersion_invoke(device, &version);
       VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
               << " type=" << type << " version=" << version;
-      if (devices_.size() == 1) {
-        if (strcmp(name, "google_xnnpack")) {
-          LOG(FATAL) << "The 2nd device name must be 'google_xnnpack' if there "
-                        "is more than one device!";
-        }
-      } else if (devices_.size() >= 2) {
+      if (devices_.size() >= 2) {
         LOG(WARNING) << "Only supports heterogeneous computing on two devices, "
-                        "the rest of the devices will be ignored!";
+                        "the other devices will be ignored!";
         break;
       }
       devices_.push_back(device);

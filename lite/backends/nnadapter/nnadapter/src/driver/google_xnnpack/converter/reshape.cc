@@ -17,6 +17,7 @@
 #include "driver/google_xnnpack/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace google_xnnpack {
@@ -29,6 +30,22 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XNNPACK tensor value ids and nodes
+  auto input_tensor_value_id = converter->GetMappedTensorValueId(input_operand);
+  if (input_tensor_value_id == XNN_INVALID_VALUE_ID) {
+    input_tensor_value_id = converter->ConvertOperand(input_operand);
+  }
+  auto output_tensor_value_id = converter->ConvertOperand(output_operand);
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
+      << "Only supports the constant shape!";
+  auto shape_count = shape_operand->length / sizeof(int32_t);
+  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  std::vector<size_t> shape(shape_data, shape_data + shape_count);
+  ADD_OPERATOR(xnn_define_static_reshape,
+               shape.size(),
+               shape.data(),
+               input_tensor_value_id,
+               output_tensor_value_id,
+               0);
   return NNADAPTER_NO_ERROR;
 }
 

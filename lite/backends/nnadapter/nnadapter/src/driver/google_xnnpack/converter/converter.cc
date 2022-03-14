@@ -33,8 +33,7 @@ namespace google_xnnpack {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(core::Model* model) {
-  operand_index_ = 0;
-  // Convert the NNAdapter operations to the NNAPI operations
+  // Convert the NNAdapter operations to the XNNPACK nodes
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -64,11 +63,11 @@ uint32_t Converter::GetMappedTensorValueId(core::Operand* operand) {
   if (it != tensor_value_ids_->end()) {
     return it->second.back();
   }
-  return INVALID_TENSOR_VALUE_ID;
+  return XNN_INVALID_VALUE_ID;
 }
 
 uint32_t Converter::UpdateTensorValueIdMap(core::Operand* operand,
-                                           uint32_t index) {
+                                           uint32_t tensor_value_id) {
   auto it = tensor_value_ids_->find(operand);
   if (it == tensor_value_ids_->end()) {
     auto result = tensor_value_ids_->insert(
@@ -76,21 +75,229 @@ uint32_t Converter::UpdateTensorValueIdMap(core::Operand* operand,
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
-  it->second.push_back(index);
-  return index;
+  it->second.push_back(tensor_value_id);
+  return tensor_value_id;
+}
+
+uint32_t Converter::AddTensorValue(int32_t* dimensions_data,
+                                   uint32_t dimensions_count,
+                                   xnn_datatype datatype,
+                                   float* quant_scales,
+                                   uint32_t quant_scale_count,
+                                   uint32_t quant_channel_dim,
+                                   void* buffer,
+                                   uint32_t flags) {
+  std::vector<size_t> converted_dimensions;
+  if (dimensions_data && dimensions_count > 0) {
+    converted_dimensions =
+        ConvertToXNNDimensions(dimensions_data, dimensions_count);
+  }
+  uint32_t tensor_value_id = XNN_INVALID_VALUE_ID;
+  if (quant_scales && quant_scale_count > 0) {
+    // Quant type
+    NNADAPTER_CHECK(datatype == xnn_datatype_qint8 ||
+                    datatype == xnn_datatype_qint32);
+    if (quant_scale_count > 1) {
+      // Symmetric per-channel quantization
+      xnn_define_channelwise_quantized_tensor_value(
+          subgraph_,
+          datatype,
+          quant_scales,
+          converted_dimensions.size(),
+          quant_channel_dim,
+          converted_dimensions.data(),
+          buffer,
+          static_cast<uint32_t>(XNN_INVALID_VALUE_ID),
+          flags,
+          &tensor_value_id);
+    } else {
+      // Symmetric per-layer quantization
+      xnn_define_quantized_tensor_value(
+          subgraph_,
+          datatype,
+          0,
+          quant_scales[0],
+          converted_dimensions.size(),
+          converted_dimensions.data(),
+          buffer,
+          static_cast<uint32_t>(XNN_INVALID_VALUE_ID),
+          flags,
+          &tensor_value_id);
+    }
+  } else {
+    // Basic type, without any quantization parameters
+    xnn_define_tensor_value(subgraph_,
+                            datatype,
+                            converted_dimensions.size(),
+                            converted_dimensions.data(),
+                            buffer,
+                            static_cast<uint32_t>(XNN_INVALID_VALUE_ID),
+                            flags,
+                            &tensor_value_id);
+  }
+  NNADAPTER_CHECK(tensor_value_id != XNN_INVALID_VALUE_ID);
+  return tensor_value_id;
+}
+
+uint32_t Converter::AddFloat32ConstantTensorValue(float* values,
+                                                  int32_t* dimensions_data,
+                                                  uint32_t dimensions_count) {
+  return AddTensorValue(dimensions_data,
+                        dimensions_count,
+                        xnn_datatype_fp32,
+                        nullptr,
+                        0,
+                        0,
+                        values);
+}
+
+uint32_t Converter::AddFloat32ConstantTensorValue(float* values,
+                                                  uint32_t num_values) {
+  std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
+  return AddFloat32ConstantTensorValue(
+      values, dimensions.data(), dimensions.size());
+}
+
+uint32_t Converter::AddFloat32ConstantTensorValue(float value) {
+  return AddFloat32ConstantTensorValue(&value, 1);
+}
+
+uint32_t Converter::AddQuant8ConstantTensorValue(int8_t* values,
+                                                 int32_t* dimensions_data,
+                                                 uint32_t dimensions_count,
+                                                 float* quant_scales,
+                                                 uint32_t quant_scale_count,
+                                                 uint32_t quant_channel_dim) {
+  return AddTensorValue(dimensions_data,
+                        dimensions_count,
+                        xnn_datatype_qint8,
+                        quant_scales,
+                        quant_scale_count,
+                        quant_channel_dim,
+                        values);
+}
+
+uint32_t Converter::AddQuant8ConstantTensorValue(int8_t* values,
+                                                 int32_t* dimensions_data,
+                                                 uint32_t dimensions_count,
+                                                 float quant_scale) {
+  return AddQuant8ConstantTensorValue(
+      values, dimensions_data, dimensions_count, &quant_scale, 1, 0);
+}
+
+uint32_t Converter::AddQuant32ConstantTensorValue(int32_t* values,
+                                                  int32_t* dimensions_data,
+                                                  uint32_t dimensions_count,
+                                                  float quant_scale) {
+  return AddTensorValue(dimensions_data,
+                        dimensions_count,
+                        xnn_datatype_qint32,
+                        &quant_scale,
+                        1,
+                        0,
+                        values);
+}
+
+uint32_t Converter::AddFloat32VariableTensorValue(int32_t* dimensions_data,
+                                                  uint32_t dimensions_count,
+                                                  uint32_t flags) {
+  return AddTensorValue(dimensions_data,
+                        dimensions_count,
+                        xnn_datatype_fp32,
+                        nullptr,
+                        0,
+                        0,
+                        nullptr,
+                        flags);
+}
+
+uint32_t Converter::AddQuant8VariableTensorValue(int32_t* dimensions_data,
+                                                 uint32_t dimensions_count,
+                                                 float quant_scale,
+                                                 uint32_t flags) {
+  return AddTensorValue(dimensions_data,
+                        dimensions_count,
+                        xnn_datatype_qint8,
+                        &quant_scale,
+                        1,
+                        0,
+                        nullptr,
+                        flags);
 }
 
 uint32_t Converter::ConvertOperand(core::Operand* operand,
                                    std::vector<int32_t> dimensions) {
   auto& type = operand->type;
-  // auto buffer = operand->buffer;
+  auto buffer = operand->buffer;
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < type.dimensions.count; i++) {
       dimensions.push_back(type.dimensions.data[i]);
     }
   }
-  uint32_t tensor_value_id = 0;
-  NNADAPTER_CHECK_NE(tensor_value_id, INVALID_TENSOR_VALUE_ID);
+  auto is_constant = IsConstantOperandType(type);
+  auto is_model_input = IsModelInputOperandType(type);
+  auto is_model_output = IsModelOutputOperandType(type);
+  uint32_t flags = 0;
+  if (is_model_input) {
+    flags |= XNN_VALUE_FLAG_EXTERNAL_INPUT;
+  }
+  if (is_model_output) {
+    flags |= XNN_VALUE_FLAG_EXTERNAL_OUTPUT;
+  }
+  uint32_t tensor_value_id = XNN_INVALID_VALUE_ID;
+  switch (type.precision) {
+    case NNADAPTER_FLOAT32: {
+      if (is_constant) {
+        tensor_value_id =
+            AddFloat32ConstantTensorValue(reinterpret_cast<float*>(buffer),
+                                          dimensions.data(),
+                                          dimensions.size());
+      } else {
+        tensor_value_id = AddFloat32VariableTensorValue(
+            &dimensions[0], dimensions.size(), flags);
+      }
+    } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
+      if (is_constant) {
+        tensor_value_id =
+            AddQuant8ConstantTensorValue(reinterpret_cast<int8_t*>(buffer),
+                                         dimensions.data(),
+                                         dimensions.size(),
+                                         type.symm_per_layer_params.scale);
+      } else {
+        tensor_value_id =
+            AddQuant8VariableTensorValue(&dimensions[0],
+                                         dimensions.size(),
+                                         type.symm_per_layer_params.scale,
+                                         flags);
+      }
+    } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL: {
+      NNADAPTER_CHECK(is_constant);
+      tensor_value_id = AddQuant8ConstantTensorValue(
+          reinterpret_cast<int8_t*>(buffer),
+          dimensions.data(),
+          dimensions.size(),
+          type.symm_per_channel_params.scales,
+          type.symm_per_channel_params.scale_count,
+          type.symm_per_channel_params.channel_dim);
+    } break;
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
+      // Only for bias
+      NNADAPTER_CHECK(is_constant);
+      tensor_value_id =
+          AddQuant32ConstantTensorValue(reinterpret_cast<int32_t*>(buffer),
+                                        dimensions.data(),
+                                        dimensions.size(),
+                                        type.symm_per_layer_params.scale);
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Missing the processing "
+                           << OperandPrecisionCodeToString(type.precision)
+                           << " for the conversion of XNNPACK tensor value id.";
+      break;
+  }
+  NNADAPTER_CHECK_NE(tensor_value_id, XNN_INVALID_VALUE_ID);
   UpdateTensorValueIdMap(operand, tensor_value_id);
   return tensor_value_id;
 }

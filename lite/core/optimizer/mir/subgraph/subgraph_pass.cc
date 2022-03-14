@@ -143,17 +143,21 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
   std::set<std::string> all_supported_ops;
   std::map<std::string, std::set<std::string>> device_supported_ops;
-#define REGISTER_CONVERTER(__op_type__, __func_name__, __device_names__) \
-  {                                                                      \
-    std::string device_names = __device_names__;                         \
-    device_names.erase(                                                  \
-        std::remove(device_names.begin(), device_names.end(), ' '),      \
-        device_names.end());                                             \
-    auto supported_device_names = Split(device_names, ",");              \
-    for (const auto& support_device_name : supported_device_names) {     \
-      device_supported_ops[support_device_name].insert(#__op_type__);    \
-    }                                                                    \
-    all_supported_ops.insert(#__op_type__);                              \
+#define REGISTER_CONVERTER(__op_type__, __func_name__, __device_names__)     \
+  {                                                                          \
+    std::string device_names = __device_names__;                             \
+    device_names.erase(                                                      \
+        std::remove(device_names.begin(), device_names.end(), ' '),          \
+        device_names.end());                                                 \
+    auto supported_device_names = Split(device_names, ",");                  \
+    for (const auto& selected_device_name : selected_device_names) {         \
+      if (std::find(supported_device_names.begin(),                          \
+                    supported_device_names.end(),                            \
+                    selected_device_name) != supported_device_names.end()) { \
+        device_supported_ops[selected_device_name].insert(#__op_type__);     \
+      }                                                                      \
+    }                                                                        \
+    all_supported_ops.insert(#__op_type__);                                  \
   }
 #include "lite/kernels/nnadapter/converter/all.h"
 #undef __NNADAPTER_CONVERTER_ALL_H__

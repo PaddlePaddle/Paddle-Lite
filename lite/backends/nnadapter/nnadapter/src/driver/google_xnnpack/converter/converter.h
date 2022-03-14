@@ -23,8 +23,6 @@
 namespace nnadapter {
 namespace google_xnnpack {
 
-const uint32_t INVALID_TENSOR_VALUE_ID = 0xFFFFFFFF;
-
 class Converter {
  public:
   explicit Converter(
@@ -33,13 +31,48 @@ class Converter {
       : subgraph_(subgraph), tensor_value_ids_(tensor_value_ids) {}
   ~Converter() {}
 
+  xnn_subgraph_t subgraph() { return subgraph_; }
   // Convert a NNAdapter model to a XNNPACK subgraph and tensor value ids
   int Apply(core::Model* model);
   // Mapping a XNNPACK tensor value id to a NNAdapter operand
   uint32_t GetMappedTensorValueId(core::Operand* operand);
   uint32_t UpdateTensorValueIdMap(core::Operand* operand,
                                   uint32_t tensor_value_id);
-  // Convert a constant and model input operand and map to a XNNPACK tensor
+  uint32_t AddTensorValue(int32_t* dimensions_data,
+                          uint32_t dimensions_count,
+                          xnn_datatype datatype,
+                          float* quant_scales = nullptr,
+                          uint32_t quant_scale_count = 0,
+                          uint32_t quant_channel_dim = 0,
+                          void* buffer = nullptr,
+                          uint32_t flags = 0);
+  uint32_t AddFloat32ConstantTensorValue(float* values,
+                                         int32_t* dimensions_data,
+                                         uint32_t dimensions_count);
+  uint32_t AddFloat32ConstantTensorValue(float* values, uint32_t num_values);
+  uint32_t AddFloat32ConstantTensorValue(float value);
+  uint32_t AddQuant8ConstantTensorValue(int8_t* values,
+                                        int32_t* dimensions_data,
+                                        uint32_t dimensions_count,
+                                        float* quant_scales,
+                                        uint32_t quant_scale_count,
+                                        uint32_t quant_channel_dim);
+  uint32_t AddQuant8ConstantTensorValue(int8_t* values,
+                                        int32_t* dimensions_data,
+                                        uint32_t dimensions_count,
+                                        float quant_scale);
+  uint32_t AddQuant32ConstantTensorValue(int32_t* values,
+                                         int32_t* dimensions_data,
+                                         uint32_t dimensions_count,
+                                         float quant_scale);
+  uint32_t AddFloat32VariableTensorValue(int32_t* dimensions_data,
+                                         uint32_t dimensions_count,
+                                         uint32_t flags = 0);
+  uint32_t AddQuant8VariableTensorValue(int32_t* dimensions_data,
+                                        uint32_t dimensions_count,
+                                        float quant_scale,
+                                        uint32_t flags = 0);
+  // Convert a constant and model input operand, map it to a XNNPACK tensor
   // value id
   uint32_t ConvertOperand(core::Operand* operand,
                           std::vector<int32_t> dimensions = {});
@@ -47,8 +80,15 @@ class Converter {
  private:
   xnn_subgraph_t subgraph_{nullptr};
   std::map<core::Operand*, std::vector<uint32_t>>* tensor_value_ids_{nullptr};
-  uint32_t operand_index_{0};
 };
+
+#define ADD_OPERATOR(__operator__, ...)                                   \
+  {                                                                       \
+    xnn_status status = __operator__(converter->subgraph(), __VA_ARGS__); \
+    NNADAPTER_CHECK(status == xnn_status_success)                         \
+        << "Failed to add a operator into a XNNPACK subgraph(status = "   \
+        << status << ")!";                                                \
+  }
 
 }  // namespace google_xnnpack
 }  // namespace nnadapter

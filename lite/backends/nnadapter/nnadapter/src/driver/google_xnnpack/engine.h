@@ -33,11 +33,13 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   bool num_threads() { return num_threads_; }
+  pthreadpool_t threadpool() { return threadpool_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   int num_threads_{0};
+  pthreadpool_t threadpool_{nullptr};
 };
 
 class Program {
@@ -64,8 +66,10 @@ class Program {
   // Map NNAdapter operand to XNNPACK tensor value id
   std::map<core::Operand*, std::vector<uint32_t>> tensor_value_ids_;
   xnn_subgraph_t subgraph_{nullptr};
+  xnn_runtime_t runtime_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<xnn_external_value> external_values_;
 };
 
 }  // namespace google_xnnpack

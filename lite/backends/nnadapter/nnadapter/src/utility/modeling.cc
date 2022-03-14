@@ -1072,6 +1072,7 @@ NNADAPTER_EXPORT bool DeserializeModel(void* buffer,
       NNADAPTER_CHECK(buffer)
           << "Failed to allocate the buffer for a constant operand!";
       DeserializeData(&value, &offset, buffer, length);
+      operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
       operand->buffer = buffer;
       operand->length = length;
     }

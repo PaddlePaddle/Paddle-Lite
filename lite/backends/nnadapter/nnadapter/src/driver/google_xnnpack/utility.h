@@ -27,14 +27,21 @@ namespace google_xnnpack {
 #define GOOGLE_XNNPACK_NUM_THREADS "GOOGLE_XNNPACK_NUM_THREADS"
 
 // Get the bytes of the data type of XNNPACK
-int XNNOperandDataTypeLength(int data_type);
+int XNNTensorDataTypeLength(xnn_datatype data_type);
 
 // Convert NNAdapter types to XNNPACK types
-int ConvertToXNNPrecision(NNAdapterOperandPrecisionCode precision_code);
-int ConvertToXNNDataLayout(NNAdapterOperandLayoutCode layout_code);
+xnn_datatype ConvertToXNNDataType(NNAdapterOperandPrecisionCode precision_code);
+void ConvertToXNNDimensions(int32_t* input_dimensions,
+                            uint32_t input_dimensions_count,
+                            size_t* output_dimensions,
+                            size_t* output_dimensions_count);
 std::vector<size_t> ConvertToXNNDimensions(int32_t* input_dimensions,
                                            uint32_t input_dimensions_count);
-int32_t ConvertFuseCodeToXNNFuseCode(int32_t fuse_code);
+// Convert the fused activation to the lower and upper bound for clipping output
+// values
+bool ConvertFuseCodeToXNNClippingRange(int32_t fuse_code,
+                                       float* clipping_min,
+                                       float* clipping_max);
 
 }  // namespace google_xnnpack
 }  // namespace nnadapter

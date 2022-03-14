@@ -15,7 +15,11 @@
 #ifndef __NNADAPTER_DRIVER_GOOGLE_XNNPACK_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_DRIVER_GOOGLE_XNNPACK_CONVERTER_ALL_H__
 
+REGISTER_CONVERTER(ADD, ValidateElementwise, ConvertElementwise)
+REGISTER_CONVERTER(DIV, ValidateElementwise, ConvertElementwise)
+REGISTER_CONVERTER(MUL, ValidateElementwise, ConvertElementwise)
 REGISTER_CONVERTER(RESHAPE, ValidateReshape, ConvertReshape)
 REGISTER_CONVERTER(SOFTMAX, ValidateSoftmax, ConvertSoftmax)
+REGISTER_CONVERTER(SUB, ValidateElementwise, ConvertElementwise)
 
 #endif  // NOLINT

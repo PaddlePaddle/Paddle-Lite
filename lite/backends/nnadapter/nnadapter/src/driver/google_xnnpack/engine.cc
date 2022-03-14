@@ -52,20 +52,35 @@ Context::Context(void* device, const char* properties) : device_(device) {
     num_threads_ = GetIntFromEnv(GOOGLE_XNNPACK_NUM_THREADS, 0);
   }
   NNADAPTER_LOG(INFO) << "num_threads: " << num_threads_;
+  if (num_threads_ > 1) {
+    threadpool_ = pthreadpool_create(num_threads_);
+    NNADAPTER_CHECK(threadpool_ != nullptr)
+        << "Failed to create a thread pool for XNNPACK library!";
+  }
 }
 
-Context::~Context() {}
+Context::~Context() {
+  if (threadpool_) {
+    pthreadpool_destroy(threadpool_);
+    threadpool_ = nullptr;
+  }
+}
 
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
   tensor_value_ids_.clear();
+  if (runtime_) {
+    xnn_delete_runtime(runtime_);
+    runtime_ = nullptr;
+  }
   if (subgraph_) {
     xnn_delete_subgraph(subgraph_);
     subgraph_ = nullptr;
   }
   input_types_.clear();
   output_types_.clear();
+  external_values_.clear();
 }
 
 int Program::Validate(const core::Model* model, bool* supported_operations) {
@@ -101,8 +116,6 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     // Convert the data layout and the quantization parameters of the NNAdapter
     // Model
     FuseMatMulAddIntoFullyConnected(model);
-    ConvertQuantizationSymmToAsymm(model);
-    ConvertDataLayoutNCHWToNHWC(model);
     ResolveOperationLiminations(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   }
@@ -127,10 +140,15 @@ int Program::Build(core::Model* model, core::Cache* cache) {
           << "No XNNPACK tensor value id found for input operand @0x"
           << std::hex << reinterpret_cast<int64_t>(operand);
       auto tensor_value_id = tensor_value_ids_[operand].front();
-      NNADAPTER_CHECK_NE(tensor_value_id, INVALID_TENSOR_VALUE_ID);
+      NNADAPTER_CHECK_NE(tensor_value_id, XNN_INVALID_VALUE_ID);
       NNADAPTER_VLOG(5) << "Found a XNNPACK tensor value id " << tensor_value_id
                         << " for input operand @0x" << std::hex
                         << reinterpret_cast<int64_t>(operand);
+      xnn_external_value input_external_value = {0};
+      input_external_value.id = tensor_value_id;
+      input_external_value.data =
+          nullptr;  // The data ptr will be set at the execution time
+      external_values_.push_back(input_external_value);
       input_types_[i] = operand->type;
     }
   }
@@ -143,10 +161,15 @@ int Program::Build(core::Model* model, core::Cache* cache) {
         << "No XNNPACK tensor value id found for output operand @0x" << std::hex
         << reinterpret_cast<int64_t>(operand);
     auto tensor_value_id = tensor_value_ids_[operand].back();
-    NNADAPTER_CHECK_NE(tensor_value_id, INVALID_TENSOR_VALUE_ID);
+    NNADAPTER_CHECK_NE(tensor_value_id, XNN_INVALID_VALUE_ID);
     NNADAPTER_VLOG(5) << "Found a XNNPACK tensor value id " << tensor_value_id
                       << " for output operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
+    xnn_external_value output_external_value = {0};
+    output_external_value.id = tensor_value_id;
+    output_external_value.data =
+        nullptr;  // The data ptr will be set at the execution time
+    external_values_.push_back(output_external_value);
     output_types_[i] = operand->type;
   }
   if (cache->token && cache->dir) {
@@ -160,6 +183,13 @@ int Program::Build(core::Model* model, core::Cache* cache) {
             << "Serialize the optimized core::Model into a buffer success.";
       }
     }
+  }
+  result =
+      xnn_create_runtime_v2(subgraph_, context_->threadpool(), 0, &runtime_);
+  if (result != xnn_status_success) {
+    NNADAPTER_LOG(FATAL) << "Failed to create a XNNPACK runtime(" << result
+                         << ")!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   // Release the restored core::Model
   if (model_from_cache) {
@@ -210,15 +240,8 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
-    // TODO(hong19860320) xxx
-    if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
-      Symm2AsymmData(reinterpret_cast<const int8_t*>(buffer),
-                     length,
-                     type.asymm_per_layer_params.zero_point,
-                     reinterpret_cast<uint8_t*>(buffer));
-    }
+    external_values_[arg.index].data = buffer;
   }
-  std::vector<std::pair<void*, size_t>> output_buffers(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
     auto& arg = output_arguments[i];
     NNADAPTER_CHECK_GE(arg.index, 0);
@@ -232,24 +255,17 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
-    // TODO(hong19860320) xxx
-    output_buffers[arg.index].first = buffer;
-    output_buffers[arg.index].second = length;
+    external_values_[arg.index + input_count].data = buffer;
   }
   auto start_time = GetCurrentUS();
-  // TODO(hong19860320) xxx
+  NNADAPTER_CHECK(xnn_setup_runtime(runtime_,
+                                    external_values_.size(),
+                                    external_values_.data()) ==
+                  xnn_status_success)
+      << "Failed to setup XNNPACK runtime!";
+  NNADAPTER_CHECK(xnn_invoke_runtime(runtime_) == xnn_status_success)
+      << "Failed to invoke XNNPACK runtime!";
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
-  for (uint32_t i = 0; i < output_count; i++) {
-    auto type = &output_types_[i];
-    auto buffer = output_buffers[i].first;
-    auto length = output_buffers[i].second;
-    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
-      Asymm2SymmData(reinterpret_cast<const uint8_t*>(buffer),
-                     length,
-                     type->asymm_per_layer_params.zero_point,
-                     reinterpret_cast<int8_t*>(buffer));
-    }
-  }
   return NNADAPTER_NO_ERROR;
 }
 
