@@ -25,7 +25,7 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 AclModelClient::AclModelClient(int device_id,
-                               const std::string& profiling_file_path) {
+                               AscendConfigParams* config_params) {
   NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
                     << ")";
   uint32_t device_count = 0;
@@ -34,7 +34,7 @@ AclModelClient::AclModelClient(int device_id,
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
   InitAclClientEnv(device_id);
-  InitAclProfilingEnv(profiling_file_path);
+  InitAclProfilingEnv(config_params->profiling_file_path);
 }
 
 AclModelClient::~AclModelClient() {
@@ -84,7 +84,9 @@ void AclModelClient::FinalizeAclProfilingEnv() {
   }
 }
 
-bool AclModelClient::LoadModel(const void* data, size_t size) {
+bool AclModelClient::LoadModel(const void* data,
+                               size_t size,
+                               AscendConfigParams* config_params) {
   if (model_desc_) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;
@@ -97,7 +99,15 @@ bool AclModelClient::LoadModel(const void* data, size_t size) {
   }
   ACL_CALL(aclmdlGetDesc(model_desc, model_id_));
   model_desc_ = model_desc;
-  NNADAPTER_CHECK(CreateModelIODataset());
+  bool is_dynamic_shape_range =
+      config_params->enable_dynamic_shape_range == "true";
+  if (is_dynamic_shape_range &&
+      config_params->initial_buffer_length_of_dynamic_shape_range > 0) {
+    SetDynamicShapeRangeInitialBufferLength(
+        config_params->initial_buffer_length_of_dynamic_shape_range);
+  }
+  NNADAPTER_CHECK(CreateModelInputDataset(is_dynamic_shape_range, -1));
+  NNADAPTER_CHECK(CreateModelOutputDataset(is_dynamic_shape_range, -1));
   NNADAPTER_VLOG(3) << "Load a ACL model success.";
   return true;
 }
@@ -163,7 +173,8 @@ bool AclModelClient::GetModelIOTensorDim(
   return true;
 }
 
-bool AclModelClient::CreateModelIODataset() {
+bool AclModelClient::CreateModelInputDataset(bool is_dynamic_shape_range,
+                                             int64_t buffer_length) {
   if (!model_desc_) {
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
@@ -176,7 +187,14 @@ bool AclModelClient::CreateModelIODataset() {
   auto input_count = aclmdlGetNumInputs(model_desc_);
   NNADAPTER_VLOG(3) << "input_count: " << input_count;
   for (uint32_t i = 0; i < input_count; i++) {
-    auto length = aclmdlGetInputSizeByIndex(model_desc_, i);
+    int64_t length;
+    if (is_dynamic_shape_range) {
+      length = buffer_length > dynamic_shape_range_initial_buffer_length_
+                   ? buffer_length
+                   : dynamic_shape_range_initial_buffer_length_;
+    } else {
+      length = aclmdlGetInputSizeByIndex(model_desc_, i);
+    }
     NNADAPTER_VLOG(5) << "The buffer length of model input tensor " << i << ":"
                       << length;
     void* device_ptr = nullptr;
@@ -186,6 +204,16 @@ bool AclModelClient::CreateModelIODataset() {
         << "Failed to call aclCreateDataBuffer to create a data buffer!";
     ACL_CALL(aclmdlAddDatasetBuffer(input_dataset_, data_buffer));
   }
+  NNADAPTER_VLOG(5) << "Create input dataset success.";
+  return true;
+}
+
+bool AclModelClient::CreateModelOutputDataset(bool is_dynamic_shape_range,
+                                              int64_t buffer_length) {
+  if (!model_desc_) {
+    NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
+    return false;
+  }
   if (output_dataset_) {
     DestroyDataset(&output_dataset_);
   }
@@ -194,7 +222,14 @@ bool AclModelClient::CreateModelIODataset() {
   auto output_count = aclmdlGetNumOutputs(model_desc_);
   NNADAPTER_VLOG(3) << "output_count: " << output_count;
   for (uint32_t i = 0; i < output_count; i++) {
-    auto length = aclmdlGetOutputSizeByIndex(model_desc_, i);
+    int64_t length;
+    if (is_dynamic_shape_range) {
+      length = buffer_length > dynamic_shape_range_initial_buffer_length_
+                   ? buffer_length
+                   : dynamic_shape_range_initial_buffer_length_;
+    } else {
+      length = aclmdlGetOutputSizeByIndex(model_desc_, i);
+    }
     NNADAPTER_VLOG(5) << "The buffer length of model output tensor " << i << ":"
                       << length;
     void* device_ptr = nullptr;
@@ -204,7 +239,7 @@ bool AclModelClient::CreateModelIODataset() {
         << "Failed to call aclCreateDataBuffer to create a data buffer!";
     ACL_CALL(aclmdlAddDatasetBuffer(output_dataset_, data_buffer));
   }
-  NNADAPTER_VLOG(5) << "Create input and output dataset success.";
+  NNADAPTER_VLOG(5) << "Create output dataset success.";
   return true;
 }
 
@@ -271,7 +306,8 @@ bool AclModelClient::Process(uint32_t input_count,
   NNADAPTER_CHECK_EQ(output_types->size(), output_count);
   NNADAPTER_CHECK(input_dataset_);
   NNADAPTER_CHECK(output_dataset_);
-  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_NONE) {
+  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_NONE ||
+      dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
     NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
   } else {
     NNADAPTER_CHECK_LT(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
@@ -289,6 +325,18 @@ bool AclModelClient::Process(uint32_t input_count,
     auto host_ptr = arg->access(arg->memory, &type);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(type);
+    // Reallocate dataset memory space in dynamic_shape_range mode if the
+    // current buffer length exceeds max_length
+    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+      if (length > dynamic_shape_range_initial_buffer_length_) {
+        NNADAPTER_LOG(WARNING) << "Not enough device memory for the " << i
+                               << "th input tensor, expect >= " << length
+                               << " but recevied "
+                               << dynamic_shape_range_initial_buffer_length_;
+        NNADAPTER_LOG(WARNING) << "Reallocate dataset memory space...";
+        CreateModelInputDataset(true, length);
+      }
+    }
     // Query and verify the input dimensions from ACL runtime
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dimensions));
@@ -311,25 +359,35 @@ bool AclModelClient::Process(uint32_t input_count,
     }
     // Set true dynamic shapes
     if (is_dynamic_shape) {
-      switch (dynamic_shape_mode) {
-        case DYNAMIC_SHAPE_MODE_BTACH_SIZE:
-          aclmdlSetDynamicBatchSize(
-              model_id_, input_dataset_, i, type.dimensions.data[0]);
-          break;
-        case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
-          aclmdlSetDynamicHWSize(model_id_,
-                                 input_dataset_,
-                                 i,
-                                 type.dimensions.data[2],
-                                 type.dimensions.data[3]);
-          break;
-        case DYNAMIC_SHAPE_MODE_N_DIMS:
-          is_dynamic_dims = true;
-          break;
-        default:
-          NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
-                               << dynamic_shape_mode;
-          break;
+      if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BATCH_SIZE) {
+        aclmdlSetDynamicBatchSize(
+            model_id_, input_dataset_, i, type.dimensions.data[0]);
+      } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
+        aclmdlSetDynamicHWSize(model_id_,
+                               input_dataset_,
+                               i,
+                               type.dimensions.data[2],
+                               type.dimensions.data[3]);
+      } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
+        is_dynamic_dims = true;
+      } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
+        auto data_type = aclmdlGetInputDataType(model_desc_, i);
+        auto format = aclmdlGetInputFormat(model_desc_, i);
+        std::vector<int64_t> input_dims = ConvertACLDimsToGEDims(dimensions);
+        auto input_tensor_desc = aclCreateTensorDesc(
+            data_type, input_dims.size(), input_dims.data(), format);
+        aclmdlSetDatasetTensorDesc(input_dataset_, input_tensor_desc, i);
+#else
+        NNADAPTER_LOG(FATAL)
+            << "The dynamic shape range feature is only supported in CANN "
+               "5.1.1 "
+               "and above."
+            << "If you want to use, please upgrade and recompile the library.";
+#endif
+      } else {
+        NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
+                             << dynamic_shape_mode;
       }
     }
     auto data_buffer = aclmdlGetDatasetBuffer(input_dataset_, i);
@@ -375,6 +433,18 @@ bool AclModelClient::Process(uint32_t input_count,
     auto host_ptr = arg->access(arg->memory, type);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);
+    // Reallocate dataset memory space in dynamic_shape_range mode if the
+    // current buffer length exceeds max_length
+    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+      if (length > dynamic_shape_range_initial_buffer_length_) {
+        NNADAPTER_LOG(WARNING) << "Not enough device memory for the " << i
+                               << "th output tensor, expect >= " << length
+                               << " but recevied "
+                               << dynamic_shape_range_initial_buffer_length_;
+        NNADAPTER_LOG(WARNING) << "Reallocate dataset memory space...";
+        CreateModelOutputDataset(true, length);
+      }
+    }
     auto data_buffer = aclmdlGetDatasetBuffer(output_dataset_, i);
     auto data_size = aclGetDataBufferSizeV2(data_buffer);
     NNADAPTER_CHECK_LE(length, data_size)
