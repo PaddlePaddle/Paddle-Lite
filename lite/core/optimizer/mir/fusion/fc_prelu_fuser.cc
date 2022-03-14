@@ -23,13 +23,25 @@ namespace fusion {
 
 void FcPreluFuser::BuildPattern() {
   // create nodes
+  // Teller function about fc's inputs:
+  //          the rank of input X 2
+  auto inputs_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_name = op_desc.Input("Input").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+    auto input_shape = scope->FindVar(input_name)->Get<lite::Tensor>().dims();
+    size_t input_rank = input_shape.size();
+    return (input_rank == 2);
+  };
   // fc
   PMNode* input =
       VarNode("input")->assert_is_op_input("fc", "Input")->AsInput();
   PMNode* weights =
       VarNode("weights")->assert_is_op_input("fc", "W")->AsInput();
   PMNode* bias = VarNode("bias")->assert_is_op_input("fc", "Bias")->AsInput();
-  PMNode* fc = OpNode("fc", "fc")->AsIntermediate();
+  PMNode* fc = OpNode("fc", "fc")
+                   ->assert_node_satisfied(inputs_teller)
+                   ->AsIntermediate();
   PMNode* fc_out = VarNode("fc_out")
                        ->assert_is_op_output("fc", "Out")
                        ->assert_is_op_input("prelu", "X")

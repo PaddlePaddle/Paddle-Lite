@@ -39,7 +39,7 @@ void MatMulCompute::Run() {
   auto mat_dim_b = math::CreateMatrixDescriptor(
       math::ColumnMatrixFromVector(y_dims), 0, param.transpose_Y);
 
-  if (x_dims.size() == 3 && y_dims.size() <= 2) {
+  if (x_dims.size() >= 3 && y_dims.size() <= 2) {
     if (!param.transpose_X) {
       mat_dim_a.height_ *= mat_dim_a.batch_size_;
       mat_dim_a.batch_size_ = 0;
@@ -47,7 +47,7 @@ void MatMulCompute::Run() {
       mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
       mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
     }
-  } else if (x_dims.size() <= 2 && y_dims.size() == 3) {
+  } else if (x_dims.size() <= 2 && y_dims.size() >= 3) {
     if (!param.transpose_Y) {
       mat_dim_b.height_ *= mat_dim_b.batch_size_;
       mat_dim_b.batch_size_ = 0;

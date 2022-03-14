@@ -191,9 +191,6 @@ class TestMulOp(AutoScanTest):
         head_number = draw(st.integers(min_value=1, max_value=1))
         force_fp32_output = draw(st.booleans())
 
-        if target_str == "OpenCL":
-            alpha = 1.0
-
         matmul_op = OpConfig(
             type="matmul",
             inputs={"X": ["input_data_x"],

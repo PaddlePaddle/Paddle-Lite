@@ -143,7 +143,7 @@ namespace arm {
     ldc_ = n_;                                                               \
   }
 
-void MatMulV2Compute::PrepareForRun() {
+void MatMulV2Compute::ReInitWhenNeeded() {
   INIT_PARAM
   last_x_shape_ = x_dims;
   last_y_shape_ = y_dims;
