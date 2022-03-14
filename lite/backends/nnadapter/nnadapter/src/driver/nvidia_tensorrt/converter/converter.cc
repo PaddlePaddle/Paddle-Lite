@@ -52,6 +52,23 @@ int Converter::Apply(core::Model* model) {
         break;
     }
   }
+  // Reset input tensors name
+  for (size_t i = 0; i < model->input_operands.size(); i++) {
+    auto& operand = model->input_operands.at(i);
+    NNADAPTER_CHECK(tensors_->count(operand));
+    auto tensor = tensors_->at(operand).back();
+    std::string name = "input" + std::to_string(i);
+    tensor->setName(name.c_str());
+  }
+  // Mark output
+  for (size_t i = 0; i < model->output_operands.size(); i++) {
+    auto& operand = model->output_operands.at(i);
+    NNADAPTER_CHECK(tensors_->count(operand));
+    auto tensor = tensors_->at(operand).back();
+    std::string name = "output" + std::to_string(i);
+    tensor->setName(name.c_str());
+    network_->markOutput(*tensor);
+  }
   return NNADAPTER_NO_ERROR;
 }
 
