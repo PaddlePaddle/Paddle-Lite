@@ -265,14 +265,15 @@ int Program::Execute(uint32_t input_count,
   }
   // Feed inputs
   for (uint32_t i = 0; i < input_count; i++) {
-    void* dst_ptr = device_ptrs[i];
     auto& arg = input_arguments[i];
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto host_ptr = arg.access(arg.memory, &type);
     auto length = GetOperandTypeBufferLength(type);
-    NNADAPTER_CHECK_EQ(
-        cudaMemcpy(dst_ptr, buffer, length, cudaMemcpyHostToDevice),
-        cudaSuccess);
+    NNADAPTER_CHECK_EQ(cudaMemcpy(device_ptrs.at(input_indices_.at(i)),
+                                  host_ptr,
+                                  length,
+                                  cudaMemcpyHostToDevice),
+                       cudaSuccess);
     nvinfer1::Dims dims;
     dims.nbDims = type.dimensions.count;
     memcpy(dims.d, type.dimensions.data, dims.nbDims * sizeof(int32_t));
@@ -288,12 +289,13 @@ int Program::Execute(uint32_t input_count,
     type.dimensions.count = dims.nbDims;
     memcpy(type.dimensions.data, dims.d, dims.nbDims * sizeof(int32_t));
     auto& arg = output_arguments[i];
-    auto buffer = arg.access(arg.memory, &type);
-    void* src_ptr = device_ptrs.at(output_indices_.at(i));
+    auto host_ptr = arg.access(arg.memory, &type);
     auto length = GetOperandTypeBufferLength(type);
-    NNADAPTER_CHECK_EQ(
-        cudaMemcpy(buffer, src_ptr, length, cudaMemcpyDeviceToHost),
-        cudaSuccess);
+    NNADAPTER_CHECK_EQ(cudaMemcpy(host_ptr,
+                                  device_ptrs.at(output_indices_.at(i)),
+                                  length,
+                                  cudaMemcpyDeviceToHost),
+                       cudaSuccess);
   }
   return NNADAPTER_NO_ERROR;
 }
