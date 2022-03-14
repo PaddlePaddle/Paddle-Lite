@@ -57,7 +57,7 @@ class TestAbsOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+                    min_value=2, max_value=8), min_size=1, max_size=4))
 
         abs_op = OpConfig(
             type="abs",
