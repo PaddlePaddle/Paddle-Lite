@@ -140,3 +140,4 @@ REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);
+
