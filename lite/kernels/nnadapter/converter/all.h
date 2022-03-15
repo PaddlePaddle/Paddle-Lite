@@ -220,10 +220,10 @@ REGISTER_CONVERTER(arg_max,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(assign, ConvertAssign, "huawei_ascend_npu,nvidia_tensorrt");
-REGISTER_CONVERTER(
-    equal,
-    ConvertComparisons,
-    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_openvino");
+REGISTER_CONVERTER(equal,
+                   ConvertComparisons,
+                   "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_"
+                   "openvino,nvidia_tensorrt");
 REGISTER_CONVERTER(expand_v2,
                    ConvertExpandV2,
                    "huawei_ascend_npu,cambricon_mlu");
