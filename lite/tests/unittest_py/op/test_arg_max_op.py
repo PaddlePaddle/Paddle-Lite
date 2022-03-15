@@ -23,6 +23,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
 
 class TestArgMaxOp(AutoScanTest):
@@ -56,6 +57,8 @@ class TestArgMaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -71,7 +74,8 @@ class TestArgMaxOp(AutoScanTest):
         in_shape.insert(0, batch)
         axis = draw(st.integers(min_value=-1, max_value=3))
         keepdims = draw(st.booleans())
-        dtype = draw(st.sampled_from([-1, 2, 3]))
+        #dtype = draw(st.sampled_from([-1, 2, 3]))
+        dtype = draw(st.sampled_from([2]))
         assume(axis < len(in_shape))
 
         arg_max_op = OpConfig(
@@ -79,11 +83,13 @@ class TestArgMaxOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
-                "axis": axis,
+                "axis": 0,
                 "keepdims": keepdims,
                 "dtype": dtype,
                 "flatten": False
             })
+        arg_max_op.outputs_dtype = {"output_data": np.int32}
+
         program_config = ProgramConfig(
             ops=[arg_max_op],
             weights={},
