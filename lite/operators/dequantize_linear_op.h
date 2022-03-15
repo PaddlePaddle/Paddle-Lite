@@ -54,7 +54,7 @@ class DequantizeLinearOpLite : public OpLite {
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
 
     param_.y = scope->FindVar(out)->GetMutable<lite::Tensor>();
-    param_.bit_length = op_desc.GetAttr<bool>("bit_length") ? 1 : 0;
+    param_.bit_length = op_desc.GetAttr<bool>("bit_length");
     param_.quant_axis = op_desc.GetAttr<int>("quant_axis");
     return true;
   }
