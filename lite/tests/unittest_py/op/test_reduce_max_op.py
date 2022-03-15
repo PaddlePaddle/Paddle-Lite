@@ -73,8 +73,9 @@ class TestReduceMaxOp(AutoScanTest):
         keep_dim = draw(st.booleans())
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
+        axis_dims = draw(st.booleans())
 
-        if isinstance(axis, int):
+        if axis_dims:
             axis = [axis]
         reduce_all_data = True if axis == None or axis == [] else False
 
@@ -124,7 +125,7 @@ class TestReduceMaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 100
+        max_examples = 300
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 3000
