@@ -674,16 +674,16 @@ REGISTER_LITE_KERNEL(square,
 REGISTER_LITE_KERNEL(
     log,
     kOpenCL,
-    kFloat,
+    kFP16,
     kImageDefault,
     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
+                                      PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();

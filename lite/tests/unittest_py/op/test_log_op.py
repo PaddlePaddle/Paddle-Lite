@@ -52,8 +52,7 @@ class TestLogOp(AutoScanTest):
                   DataLayoutType.ImageDefault), Place(
                       TargetType.OpenCL, PrecisionType.Any,
                       DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=opencl_places)
 
