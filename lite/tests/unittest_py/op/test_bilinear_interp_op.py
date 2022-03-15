@@ -24,7 +24,6 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
-import math
 
 
 class TestBilinearOp(AutoScanTest):
@@ -96,17 +95,13 @@ class TestBilinearOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32) * 10
 
         def generate_out_size(*args, **kwargs):
-            return np.random.randint(
-                1, 100, size=out_size_shape).astype(np.int32)
+            return np.random.randint(1, 100, size=out_size_shape)
 
         def generate_size_tensor(*args, **kwargs):
             return np.random.randint(4, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
-            tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
-            assume(int(tmp * in_shape[2]) > 1)
-            assume(int(tmp * in_shape[3]) > 1)
-            return tmp
+            return np.random.random([1]).astype(np.float32)
 
         assume(scale * in_shape[2] > 1.0)
         assume(scale * in_shape[3] > 1.0)

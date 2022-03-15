@@ -94,17 +94,13 @@ class TestBilinearV2Op(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32)
 
         def generate_out_size(*args, **kwargs):
-            return np.random.randint(
-                1, 100, size=out_size_shape).astype(np.int32)
+            return np.random.randint(1, 100, size=out_size_shape)
 
         def generate_size_tensor(*args, **kwargs):
             return np.random.randint(3, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
-            tmp = np.random.normal(0.1, 10.0, 1).astype(np.float32)
-            assume(tmp[0] * in_shape[2] > 1.0)
-            assume(tmp[0] * in_shape[3] > 1.0)
-            return tmp
+            return np.random.random([1]).astype(np.int32)
 
         assume(scale[0] * in_shape[2] > 1.0)
         assume(scale[1] * in_shape[3] > 1.0)
