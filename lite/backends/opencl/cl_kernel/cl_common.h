@@ -141,7 +141,8 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
 #endif
 
 #ifdef GELU
-  output = erf(in);
+  const float in_f32 = convert_float(in);
+  output = (CL_DTYPE)(0.5f * in_f32 * (1.0f + erf(in_f32 / 1.41421f)));
 #endif
 
 #ifdef TANH
@@ -200,10 +201,11 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #endif
 
 #ifdef GELU
-  output.x = erf(in.x);
-  output.y = erf(in.y);
-  output.z = erf(in.z);
-  output.w = erf(in.w);
+  const float4 in_f32 = convert_float4(in);
+  output.x = (CL_DTYPE)(0.5f * in_f32.x * (1.0f + erf(in_f32.x / 1.41421f)));
+  output.y = (CL_DTYPE)(0.5f * in_f32.y * (1.0f + erf(in_f32.y / 1.41421f)));
+  output.z = (CL_DTYPE)(0.5f * in_f32.z * (1.0f + erf(in_f32.z / 1.41421f)));
+  output.w = (CL_DTYPE)(0.5f * in_f32.w * (1.0f + erf(in_f32.w / 1.41421f)));
 #endif
 
 #ifdef SIGMOID
