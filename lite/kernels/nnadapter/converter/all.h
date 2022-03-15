@@ -186,17 +186,19 @@ REGISTER_CONVERTER(tanh,
 REGISTER_CONVERTER(abs,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
-REGISTER_CONVERTER(exp,
-                   ConvertUnaryActivations,
-                   "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
+REGISTER_CONVERTER(
+    exp,
+    ConvertUnaryActivations,
+    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,nvidia_tensorrt");
 REGISTER_CONVERTER(instance_norm, ConvertInstanceNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(layer_norm,
                    ConvertLayerNorm,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
 REGISTER_CONVERTER(group_norm, ConvertGroupNorm, "huawei_ascend_npu");
-REGISTER_CONVERTER(log,
-                   ConvertUnaryActivations,
-                   "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu");
+REGISTER_CONVERTER(
+    log,
+    ConvertUnaryActivations,
+    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,nvidia_tensorrt");
 REGISTER_CONVERTER(swish,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt");
