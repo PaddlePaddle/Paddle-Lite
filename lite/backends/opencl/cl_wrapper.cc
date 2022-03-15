@@ -76,6 +76,7 @@ bool CLWrapper::InitHandle() {
 #elif defined(__linux__)
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
+    "/usr/lib/libOpenCL.so",
     // Linux OS for intel
     // https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
     "/opt/intel/opencl/linux/compiler/lib/intel64_lin/libOpenCL.so",

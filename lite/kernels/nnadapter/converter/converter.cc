@@ -65,10 +65,6 @@ int Converter::Apply(
     const auto& dynamic_dimensions = input_vars[i].dynamic_dimensions;
     auto dynamic_dimension_count = dynamic_dimensions.size();
     if (dynamic_dimension_count > 0) {
-      CHECK_GE(dynamic_dimension_count, 2)
-          << "The gear count of dynamic dimensions should be greater or equal "
-             "to 2, but recieved "
-          << dynamic_dimension_count;
       // Verify the dynamic dimensions
       std::vector<size_t> dynamic_axes;
       for (size_t k = 0; k < dimension_count; k++) {

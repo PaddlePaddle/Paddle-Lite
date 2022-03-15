@@ -29,8 +29,11 @@ Paddle Lite 同时支持在 Linux x86 环境和 macOS 环境下编译适用于 A
 ./lite/tools/build_android.sh --with_opencl=ON
 # 方式 2：full_publish 方式编译，会生成更多编译产物
 ./lite/tools/build_android.sh --with_opencl=ON full_publish
-# 注：编译帮助请执行: ./lite/tools/build_android.sh help
+# 注：
+#    编译帮助请执行: ./lite/tools/build_android.sh help
+#    为了方便调试，建议在编译时加入选项 --with_log=ON
 ```
+
 
 编译成功后，会在`Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl`目录下生成编译产物，主要目录结构如下：
 
@@ -104,6 +107,7 @@ adb push mobilenetv1_opt_opencl.nb data/local/tmp/opencl/
 
 # 4. 在宿主机上运行
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
+           export GLOG_v=4; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opt_opencl.nb \
            1,3,224,224 \
@@ -134,6 +138,7 @@ adb push mobilenet_v1 /data/local/tmp/opencl/
 
 # 4. 在宿主机上运行
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
+           export GLOG_v=4; \
            /data/local/tmp/opencl/mobilenetv1_full_api \
                --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
                --optimized_model_dir=/data/local/tmp/opencl/mobilenetv1_opt_opencl \
@@ -160,7 +165,9 @@ Paddle Lite 同时支持在 Linux x86 环境下和 ARMLinux 环境下编译适�
 # 方式 2：full_publish 方式编译，会生成更多编译产物
 ./lite/tools/build_linux.sh --with_opencl=ON full_publish
 #
-# 注：编译帮助请执行: ./lite/tools/build_linux.sh help
+# 注：
+#    编译帮助请执行: ./lite/tools/build_linux.sh help
+#    build_linux.sh 脚本中默认已开启 LOG
 ```
 
 编译成功后，会在`Paddle-Lite/build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl`目录下生成编译产物，主要目录结构如下：
@@ -218,6 +225,7 @@ scp -r mobilenetv1_opt_opencl.nb name@ip:~/opencl
 ssh name@ip
 cd ~/opencl
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH; \
+export GLOG_v=4; \
 ./mobilenetv1_light_api \
     mobilenetv1_opt_opencl.nb \
     1,3,224,224 \
@@ -252,6 +260,7 @@ scp -r mobilenet_v1 name@ip:~/opencl
 ssh name@ip
 cd ~/opencl
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH; \
+export GLOG_v=4; \
 ./mobilenetv1_full_api \
     --model_dir=./mobilenet_v1 \
     --optimized_model_dir=mobilenetv1_opt_opencl \
@@ -271,7 +280,10 @@ Paddle Lite 支持在 macOS 环境下编译适用于 macOS 的库。宿主机必
 ./lite/tools/build_macos.sh --with_opencl=ON x86
 # 宿主机是 macOS arm64 环境时
 ./lite/tools/build_macos.sh --with_opencl=ON arm64
-# 注：编译帮助请执行: ./lite/tools/build_macos.sh help
+#
+# 注：
+#    编译帮助请执行: ./lite/tools/build_macos.sh help
+#    build_linux.sh 脚本中默认已开启 LOG
 ```
 
 以宿主机为 macOS x86 环境为例，编译成功后，会在`Paddle-Lite/build.lite.x86.opencl/inference_lite_lib`目录下生成编译产物，主要目录结构如下：
@@ -321,6 +333,7 @@ bash build.sh
 cd -
 
 # 3. 运行
+export GLOG_v=4
 ./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light/mobilenet_light_api \
     ./mobilenetv1_opt_x86_opencl.nb \
     1,3,224,224 \
@@ -341,6 +354,7 @@ bash build.sh
 cd -
 
 # 3. 运行
+export GLOG_v=4
 ./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full/mobilenet_full_api \
     ./mobilenet_v1 \
     1,3,224,224 \
@@ -358,7 +372,9 @@ Paddle Lite 支持在 Windows 环境下编译适用于 Windows 的库。请根�
 
 ```shell
 lite\tools\build_windows.bat with_opencl
-# 注：编译帮助请执行: lite\tools\build_windows.bat help
+# 注：
+#    编译帮助请执行: lite\tools\build_windows.bat help
+#    build_windows.bat 中默认已开启 LOG
 ```
 
 编译成功后，会在`Paddle-Lite\build.lite.x86.opencl\inference_lite_lib`目录下生成编译产物。
@@ -386,6 +402,7 @@ build.bat
 cd -
 
 # 3. 运行
+export GLOG_v=4
 .\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_light\mobilenet_light_api \
     ./mobilenetv1_opt_x86_opencl.nb \
     1,3,224,224 \
@@ -406,6 +423,7 @@ build.bat
 cd -
 
 # 3. 运行
+export GLOG_v=4
 .\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_full\mobilenet_full_api \
     ./mobilenet_v1 \
     1,3,224,224 \
@@ -529,10 +547,11 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 
 ## 9. 常见问题
 
-1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度；
-2. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
-3. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
-4. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
-5. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
-6. Paddle Lite OpenCL 后端代码尚未完全支持动态 shape，因此在运行动态 shape 的模型时可能会报错。
-7. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](./performance/gpu)中的【优化建议】章节。
+1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会会在日志中输出超限提示。
+2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
+3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+5. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+6. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+7. Paddle Lite OpenCL 后端代码尚未完全支持动态 shape，因此在运行动态 shape 的模型时可能会报错。
+8. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](./performance/gpu)中的【优化建议】章节。

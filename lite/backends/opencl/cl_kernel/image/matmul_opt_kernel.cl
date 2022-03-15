@@ -28,7 +28,8 @@ __kernel void matmul(__read_only image2d_t input,
 #endif
                      int M,
                      int k_blks,
-                     int n_blks) {
+                     int n_blks,
+                     float scale) {
   int out_n = get_global_id(0);  // m
   int out_c = get_global_id(2);  // n
   int3 tid = (int3)(get_local_id(2), get_local_id(1), get_local_id(0));
@@ -84,6 +85,9 @@ __kernel void matmul(__read_only image2d_t input,
     out0.z = CONVERT_TYPE_TO(output0.z, CL_DTYPE);
     out0.w = CONVERT_TYPE_TO(output0.w, CL_DTYPE);
 
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos0, out0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                   output,
+                   output_pos0,
+                   out0 * CONVERT_TYPE_TO(scale, CL_DTYPE));
   }
 }
