@@ -226,7 +226,7 @@ class TestMatmulV2Op(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        sample_size = 25
+        sample_size = 100
         target_str = self.get_target()
         if target_str == "OpenCL":
             sample_size = 100
