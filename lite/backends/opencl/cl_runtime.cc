@@ -208,6 +208,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
   // find binary
   std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+  std::string precision_option = (precision_ == lite_api::CL_PRECISION_FP16)
+                                     ? "Precision: FP16; "
+                                     : "Precision: FP32; ";
 
   if (programs_.empty()) {
     // Check whether binary exist.
@@ -245,12 +248,12 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         del_tune_bin_flag_ = true;
         // Jump to build from source
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
-                              GetSN(build_option).data(),
-                              GetSN(build_option).length())) {
+                              GetSN(precision_option).data(),
+                              GetSN(precision_option).length())) {
         std::string sn_str(reinterpret_cast<char*>((sn_iter->second)[0].data()),
                            (sn_iter->second)[0].size());
-        LOG(INFO) << "\nSN required: " << GetSN(build_option)
-                  << "\tsize: " << GetSN(build_option).length()
+        LOG(INFO) << "\nSN required: " << GetSN(precision_option)
+                  << "\tsize: " << GetSN(precision_option).length()
                   << "\nSN in bin file: " << sn_str
                   << "\tsize: " << ((sn_iter->second)[0]).size();
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
@@ -387,7 +390,10 @@ void CLRuntime::SaveProgram() {
         if (programs_precompiled_binary_.find(sn_key_) ==
             programs_precompiled_binary_.end()) {
           // add identifier
-          std::string sn = GetSN(program_id.first);
+          std::string precision_option =
+              (precision_ == lite_api::CL_PRECISION_FP16) ? "Precision: FP16; "
+                                                          : "Precision: FP32; ";
+          std::string sn = GetSN(precision_option);
           std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
           programs_precompiled_binary_[sn_key_] = {sn_info};
         }
@@ -502,8 +508,8 @@ std::string CLRuntime::GetSN(const std::string options) {
   const std::string driver_version =
       device_->getInfo<CL_DRIVER_VERSION>() + "; ";
   const std::string place_holder{"place_holder"};
-  sn_ss << aarch_info << lite_version << platform_info << device_version
-        << driver_version << place_holder;
+  sn_ss << aarch_info << lite_version << options << platform_info
+        << device_version << driver_version << place_holder;
   return sn_ss.str();
 }
 
