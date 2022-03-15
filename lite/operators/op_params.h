@@ -1002,6 +1002,7 @@ struct LayerNormParam : ParamBase {
 struct LogicalParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
+  lite_api::LogicalType logical_type{lite_api::LogicalType::kOr};
   lite::Tensor* Out{};
 };
 

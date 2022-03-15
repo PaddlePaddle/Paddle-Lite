@@ -14,6 +14,7 @@ endif()
 # image kernel      #
 #####################
 # basic
+add_kernel(logical_opencl_image OPENCL basic SRCS logical_image_compute.cc)
 add_kernel(gather_opencl_image OPENCL basic SRCS gather_image_compute.cpp)
 #add_kernel(elementwise_add_opencl_image OPENCL basic SRCS elementwise_add_image_compute.cc)
 #add_kernel(elementwise_sub_opencl_image OPENCL basic SRCS elementwise_sub_image_compute.cc)
@@ -65,6 +66,8 @@ add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 ######################
 #lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
 #             DEPS kernels core)
+#lite_cc_test(test_logical_image_opencl SRCS logical_image_compute_test.cc DEPS kernels core)
+
 
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
              DEPS kernels core)

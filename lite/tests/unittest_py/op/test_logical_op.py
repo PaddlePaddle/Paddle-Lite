@@ -32,10 +32,35 @@ class TestLogicalOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.Host, PrecisionType.Any,
                                      DataLayoutType.NCHW)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if program_config.ops[
+                1].type == "logical_and" and predictor_config.target(
+                ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[
+                1].type == "logical_not" and predictor_config.target(
+                ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[
+                1].type == "logical_or" and predictor_config.target(
+                ) != TargetType.OpenCL:
+            result = False
         return True
 
     def sample_program_configs(self, draw):

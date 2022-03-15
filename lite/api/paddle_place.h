@@ -115,6 +115,8 @@ typedef enum {
 
 typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
 
+enum class LogicalType : int { kXor = 0, kNot = 1, kAnd = 2, kOr = 3 };
+
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,

@@ -45,6 +45,16 @@ bool BinaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc,
   CHECK(param_.X);
   CHECK(param_.Y);
   CHECK(param_.Out);
+  if (opdesc.Type() == "logical_and") {
+    param_.logical_type = lite_api::LogicalType::kAnd;
+  } else if (opdesc.Type() == "logical_xor") {
+    param_.logical_type = lite_api::LogicalType::kXor;
+  } else if (opdesc.Type() == "logical_or") {
+    param_.logical_type = lite_api::LogicalType::kOr;
+  } else if (opdesc.Type() == "logical_not") {
+    param_.logical_type = lite_api::LogicalType::kNot;
+  }
+  VLOG(4) << "opdesc.Type():" << opdesc.Type();
   return true;
 }
 bool UnaryLogicalOp::CheckShape() const {
