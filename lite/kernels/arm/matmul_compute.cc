@@ -325,17 +325,18 @@ void matmul_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
   int n_inner = n - n_tail;
   for (int i = 0; i < m; i++) {
     float* o_m_data = o_data + i * n;
+    float* scale_ptr = scale;
     for (int j = 0; j < n_inner; j += 4) {
       float32x4_t vdin = vld1q_f32(o_m_data);
-      float32x4_t vscale = vld1q_f32(scale);
+      float32x4_t vscale = vld1q_f32(scale_ptr);
       float32x4_t vsum = vmulq_f32(vscale, vdin);
       vst1q_f32(o_m_data, vsum);
       o_m_data += 4;
-      scale += 4;
+      scale_ptr += 4;
     }
     for (int j = n_inner; j < n; j++) {
-      *o_m_data *= *scale;
-      scale++;
+      *o_m_data *= *scale_ptr;
+      scale_ptr++;
       o_m_data++;
     }
   }
