@@ -30,7 +30,6 @@
 #endif
 #include "lite/backends/opencl/cl_utility.h"
 
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -49,14 +48,26 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
     y_dims_ = logical_param_->Y->dims();
     auto& context = ctx_->As<OpenCLContext>();
     act_type_ = static_cast<int>(logical_param_->logical_type);
-    switch (act_type_){
+    switch (act_type_) {
       case 0:
-        kernel_func_name_="xor";
+        kernel_func_name_ = "xor";
+        break;
+      case 1:
+        kernel_func_name_ = "not";
+        break;
+      case 2:
+        kernel_func_name_ = "and";
+        break;
+      case 3:
+        kernel_func_name_ = "or";
         break;
       default:
         LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
         return;
-
+    }
+    if ((kernel_func_name_ != "not") && (x_dims_ != y_dims_)) {
+      LOG(FATAL) << "x_dims_!=y_dims_ ,This situation is not supported";
+      return;
     }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/logical_kernel.cl",
@@ -69,9 +80,8 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void ReInitWhenNeeded() override {
-
     auto x_dims = logical_param_->X->dims();
-    auto out_dim =logical_param_->Out->dims();
+    auto out_dim = logical_param_->Out->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
@@ -79,10 +89,8 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
 
       // compute image shape
       paddle::lite::CLImageConverterDefault default_convertor;
-      x_img_shape_ = default_convertor.InitImageDimInfoWith(
-          x_dims);  // w, h
-      out_img_shape_ = default_convertor.InitImageDimInfoWith(
-          out_dim);  // w, h
+      x_img_shape_ = default_convertor.InitImageDimInfoWith(x_dims);     // w, h
+      out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dim);  // w, h
 
       // compute global work size
       GetGlobalWorkSize();
@@ -130,14 +138,12 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
   }
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch){
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
-    ch->cl_event =
-        event_;
+    ch->cl_event = event_;
   }
 #endif
-  private:
+ private:
   param_t* logical_param_{nullptr};
   DDim last_x_dims_;
   std::string time_stamp_{GetTimeStamp()};
@@ -148,8 +154,8 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDimLite x_dims_{};
   DDimLite y_dims_{};
-  cl::NDRange global_work_size_ = cl::NDRange{
-      static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
@@ -159,83 +165,78 @@ class LogicalImageCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-/*REGISTER_LITE_KERNEL(
-    logical_not,
-    kOpenCL,
-    kBool,
-    kImageDefault,
-    paddle::lite::kernels::opencl::LogicalImageCompute,
-    def)
-.BindInput("X",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.BindOutput("Out",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.Finalize();
+REGISTER_LITE_KERNEL(logical_not,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::LogicalImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(
-    logical_or,
-    kOpenCL,
-    kBool,
-    kImageDefault,
-    paddle::lite::kernels::opencl::LogicalImageCompute,
-    def)
-.BindInput("X",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.BindInput("Y",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.BindOutput("Out",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.Finalize();
+REGISTER_LITE_KERNEL(logical_or,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::LogicalImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(
-    logical_and,
-    kOpenCL,
-    kBool,
-    kImageDefault,
-    paddle::lite::kernels::opencl::LogicalImageCompute,
-    def)
-.BindInput("X",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.BindInput("Y",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.BindOutput("Out",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kBool),
-    DATALAYOUT(kImageDefault))})
-.Finalize();
-*/
-REGISTER_LITE_KERNEL(
-    logical_xor,
-    kOpenCL,
-    kFP16,
-    kImageDefault,
-    paddle::lite::kernels::opencl::LogicalImageCompute,
-    def)
-.BindInput("X",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kFP16),
-    DATALAYOUT(kImageDefault))})
-.BindInput("Y",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kFP16),
-    DATALAYOUT(kImageDefault))})
-.BindOutput("Out",
-{LiteType::GetTensorTy(TARGET(kOpenCL),
-    PRECISION(kFP16),
-    DATALAYOUT(kImageDefault))})
-.Finalize();
+REGISTER_LITE_KERNEL(logical_and,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::LogicalImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 
+REGISTER_LITE_KERNEL(logical_xor,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::LogicalImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
