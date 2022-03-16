@@ -22,6 +22,7 @@
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/ssa_graph_utils.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {

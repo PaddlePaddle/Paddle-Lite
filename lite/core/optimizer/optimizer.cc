@@ -113,22 +113,11 @@ void Optimizer::ApplyPasses(
                 << " because the target or kernel does not match.";
     } else {
       // Check the pass whether it is supported for processing subblocks
-      if (kSubblockUnsupportedPasses.count(pass->name())) {
+      if (kSubblockUnsupportedPasses.count(pass->name()) ||
+          kSubblockSkippedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
-        int graph_idx = 0;
         for (auto& graph : *graphes) {
-          graph_idx += 1;
-          if (graph_idx > 1 &&
-              (pass->name() == "fill_constant_calc_offline_pass" ||
-               pass->name() == "scale_calc_offline_pass" ||
-               pass->name() == "unsqueeze_calc_offline_pass" ||
-               pass->name() == "range_calc_offline_pass" ||
-               pass->name() == "assign_value_calc_offline_pass" ||
-               pass->name() == "ssd_boxes_calc_offline_pass" ||
-               pass->name() == "p_norm_fill_constant_max_div_fuse_pass")) {
-            continue;
-          }
           pass->Apply(graph);
         }
       }

@@ -48,16 +48,12 @@ bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (!param_.tensor_array_copy) {
     auto x = opdesc.Input("Src_LoDTensor").front();
     auto y = opdesc.Input("Dst_LoDTensor").front();
-    CHECK(scope->FindVar(x));
-    CHECK(scope->FindVar(y));
-    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-    param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindMutableTensor(opdesc.Input("Src_LoDTensor").front());
+    param_.y = scope->FindMutableTensor(opdesc.Input("Dst_LoDTensor").front());
     return true;
   } else {
     auto src = opdesc.Input("Src_LoDTensorArray").front();
     auto dst = opdesc.Input("Dst_LoDTensorArray").front();
-    CHECK(scope->FindVar(src));
-    CHECK(scope->FindVar(dst));
     param_.array_x = scope->FindVar(src)->GetMutable<std::vector<Tensor>>();
     param_.array_y = scope->FindVar(dst)->GetMutable<std::vector<Tensor>>();
     return true;
