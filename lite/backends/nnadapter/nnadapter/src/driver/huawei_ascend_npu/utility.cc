@@ -211,18 +211,19 @@ const std::string ATCErrorToString(uint32_t error) {
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
     const std::vector<uint8_t>& model_buffer,
     int device_id,
-    const std::string& profiling_file_path) {
+    AscendConfigParams* config_params) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
   }
   // Create a ACL model client to load the om model
   auto model_client =
-      std::make_shared<AclModelClient>(device_id, profiling_file_path);
+      std::make_shared<AclModelClient>(device_id, config_params);
   // Load model from memory
   if (model_client->LoadModel(
           reinterpret_cast<const void*>(model_buffer.data()),
-          model_buffer.size())) {
+          model_buffer.size(),
+          config_params)) {
     return model_client;
   }
   return nullptr;
@@ -269,11 +270,9 @@ bool BuildOMModelToBuffer(
   }
   NNADAPTER_CHECK(!input_shape_info.empty());
   input_shape_info.pop_back();
-  options.insert(
-      std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
 
   if (!optional_shape_str.empty()) {
-    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
+    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BATCH_SIZE) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
                                     optional_shape_str.data()));
       options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
@@ -289,11 +288,28 @@ bool BuildOMModelToBuffer(
   } else {
     options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
   }
+
+  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
+    options.insert(std::make_pair(ge::ir_option::INPUT_SHAPE_RANGE,
+                                  input_shape_info.data()));
+#else
+    NNADAPTER_LOG(FATAL)
+        << "The dynamic shape range feature is only supported in CANN 5.1.1 "
+           "and above."
+        << "If you want to use, please upgrade CANN version and recompile the "
+           "library.";
+#endif
+  } else {
+    options.insert(
+        std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
+  }
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.
   if (!config_params->dump_model_path.empty()) {
-    ATC_CALL(
-        aclgrphSaveModel(config_params->dump_model_path.c_str(), om_buffer));
+    ATC_CALL(aclgrphSaveModel(
+        std::string(config_params->dump_model_path + "ir_graph_model").c_str(),
+        om_buffer));
   }
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
@@ -547,7 +563,11 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
                                            uint32_t input_dimensions_count) {
   std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
-    output_dimensions.push_back(input_dimensions[i]);
+    if (input_dimensions[i] == NNADAPTER_UNKNOWN) {
+      output_dimensions.push_back(-1);
+    } else {
+      output_dimensions.push_back(input_dimensions[i]);
+    }
   }
   return output_dimensions;
 }
@@ -684,8 +704,9 @@ std::string MergeOptionalShapInfo(
   std::string merged_shape_str;
   switch (dynamic_shape_mode) {
     case DYNAMIC_SHAPE_MODE_NONE:
+    case DYNAMIC_SHAPE_MODE_SHAPE_RANGE:
       break;
-    case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
+    case DYNAMIC_SHAPE_MODE_BATCH_SIZE: {
       for (auto shape_info : optional_shape_info) {
         merged_shape_str += shape_info + ",";
       }
@@ -716,9 +737,9 @@ static void UpdateDynamicShapeMode(
   bool w_unk = dimensions.data[3] == NNADAPTER_UNKNOWN;
   if (is_nchw && b_unk && !c_unk && !h_unk && !w_unk) {
     if (*dynamic_shape_mode == DYNAMIC_SHAPE_MODE_NONE) {
-      *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_BTACH_SIZE;
+      *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_BATCH_SIZE;
     }
-    if (*dynamic_shape_mode != DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
+    if (*dynamic_shape_mode != DYNAMIC_SHAPE_MODE_BATCH_SIZE) {
       *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_N_DIMS;
     }
   } else if (is_nchw && !b_unk && !c_unk && (h_unk || w_unk)) {
@@ -740,14 +761,16 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
   // Get dynamic_shape_mode from all inputs. Rules are as follows:
   // 1. If all shapes are const, dynamic_shape_mode is DYNAMIC_SHAPE_MODE_NONE.
   // 2. If only batch of inputs is unknown, dynamic_shape_mode is
-  // DYNAMIC_SHAPE_MODE_BTACH_SIZE.
+  // DYNAMIC_SHAPE_MODE_BATCH_SIZE.
   // 3. If only one 4-D input has dynamic height or weight, dynamic_shape_mode
   // is DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH.
   // 4. Others belong to DYNAMIC_SHAPE_MODE_N_DIMS.
-  *dynamic_shape_mode = DYNAMIC_SHAPE_MODE_NONE;
-  for (auto& input_type : input_types) {
-    if (!IsDynamicShapeOperandType(input_type)) continue;
-    UpdateDynamicShapeMode(input_type.dimensions, dynamic_shape_mode);
+  if (*dynamic_shape_mode != DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+    for (auto& input_type : input_types) {
+      if (!IsDynamicShapeOperandType(input_type)) continue;
+      UpdateDynamicShapeMode(input_type.dimensions, dynamic_shape_mode);
+      if (*dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) break;
+    }
   }
   // Generate dynamic_shape_info according to dynamic_shape_mode.
   std::vector<std::string> optional_shape;
@@ -769,7 +792,7 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
     NNADAPTER_CHECK_GT(dimensions.dynamic_count, 0U);
     optional_shape.resize(dimensions.dynamic_count);
     switch (*dynamic_shape_mode) {
-      case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
+      case DYNAMIC_SHAPE_MODE_BATCH_SIZE: {
         dynamic_shape_info->push_back(ShapeToString(shape));
         for (size_t i = 0; i < optional_shape.size(); i++) {
           auto& optional_batch_str = optional_shape.at(i);
@@ -805,6 +828,40 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
             optional_ndims_str += std::to_string(dimensions.dynamic_data[i][j]);
           }
         }
+      } break;
+      case DYNAMIC_SHAPE_MODE_SHAPE_RANGE: {
+        std::string shape_range_str;
+        if (optional_shape.size() == 1) {
+          for (size_t i = 0; i < dimensions.count; i++) {
+            shape_range_str +=
+                std::to_string(dimensions.dynamic_data[0][i]) + ",";
+          }
+        } else if (optional_shape.size() == 2) {
+          for (size_t i = 0; i < dimensions.count; i++) {
+            if (dimensions.dynamic_data[0][i] !=
+                dimensions.dynamic_data[1][i]) {
+              NNADAPTER_CHECK_LT(dimensions.dynamic_data[0][i],
+                                 dimensions.dynamic_data[1][i])
+                  << "The value of the maximum gear shape should be greater "
+                     "than the value of the corresponding minimum gear shape.";
+              shape_range_str +=
+                  std::to_string(dimensions.dynamic_data[0][i]) + "~" +
+                  std::to_string(dimensions.dynamic_data[1][i]) + ",";
+            } else {
+              shape_range_str +=
+                  std::to_string(dimensions.dynamic_data[0][i]) + ",";
+            }
+          }
+        } else {
+          NNADAPTER_LOG(FATAL)
+              << "DYNAMIC_SHAPE_MODE_SHAPE_RANGE only supports dynamic "
+                 "dimension count equal to 1 or 2, but the given dynamic "
+                 "dimension count is "
+              << optional_shape.size();
+        }
+        shape_range_str.pop_back();
+        shape_range_str = "[" + shape_range_str + "]";
+        dynamic_shape_info->push_back(shape_range_str);
       } break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported dynamic_shape_mode: "
