@@ -130,9 +130,6 @@ class TestReduceMaxOp(AutoScanTest):
             in_shape = list(program_config.inputs["input_data"].shape)
             axis = program_config.ops[0].attrs["dim"]
             keep_dim = program_config.ops[0].attrs["keep_dim"]
-            if target_type == TargetType.OpenCL:
-                if len(in_shape) < 4:
-                    return True
             if target_type == TargetType.Metal:
                 if keep_dim == False or axis[0] != 1 or in_shape[
                         0] != 1 or len(in_shape) < 4:
@@ -140,7 +137,7 @@ class TestReduceMaxOp(AutoScanTest):
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The op output has diff in a specific case on metal/opencl. We need to fix it as soon as possible."
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
