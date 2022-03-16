@@ -94,7 +94,17 @@ static core::Argument* FindArgumentByIndex(core::Argument* arguments,
   return static_cast<core::Argument*>(nullptr);
 }
 
-Context::Context(void* device, const char* properties) : device_(device) {}
+Context::Context(void* device, const char* properties) : device_(device) {
+  // Extract the runtime parameters from the context properties
+  NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
+  auto key_values = GetKeyValues(properties);
+  // dla core id
+  if (key_values.count(NVIDIA_TENSORRT_DLA_CORE_ID)) {
+    dla_core_id_ = atoi(key_values[NVIDIA_TENSORRT_DLA_CORE_ID].c_str());
+  } else {
+    dla_core_id_ = GetIntFromEnv(NVIDIA_TENSORRT_DLA_CORE_ID, -1);
+  }
+}
 
 Context::~Context() {}
 
@@ -146,6 +156,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 void Program::CompleteConfig(core::Model* model) {
   config_.reset(builder_->createBuilderConfig());
   NNADAPTER_CHECK(config_);
+  // Set dynamic shapes
   if (with_dynamic_shape_) {
     for (auto operand : model->input_operands) {
       auto type = operand->type;
@@ -165,6 +176,20 @@ void Program::CompleteConfig(core::Model* model) {
       memcpy(dims.d, dimensions.dynamic_data[2], sizeof(int32_t) * dims.nbDims);
       profile->setDimensions(name, nvinfer1::OptProfileSelector::kMAX, dims);
       config_->addOptimizationProfile(profile);
+    }
+  }
+  // Set DLA core
+  int dla_core_id = context_->DLACoreId();
+  if (dla_core_id >= 0) {
+    if (builder_->getNbDLACores() > dla_core_id) {
+      config_->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
+      config_->setDefaultDeviceType(nvinfer1::DeviceType::kDLA);
+      config_->setDLACore(dla_core_id);
+      NNADAPTER_VLOG(1) << "Tring to use DLA core " << dla_core_id;
+    } else {
+      NNADAPTER_LOG(WARNING) << "Trying to use DLA core " << dla_core_id
+                             << " failed. The platform only has "
+                             << builder_->getNbDLACores() << " DLA cores.";
     }
   }
 }

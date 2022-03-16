@@ -36,9 +36,12 @@ class Context {
   explicit Context(void* device, const char* properties);
   ~Context();
 
+  int DLACoreId() { return dla_core_id_; }
+
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  int dla_core_id_{-1};
 };
 
 struct Deleter {

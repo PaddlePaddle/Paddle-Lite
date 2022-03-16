@@ -25,6 +25,11 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+// Following environment variables are used to enable tensorrt features.
+// Use which DLA core, for example: "-1", "0", "1", "2",...
+// Negative means not use DLA core.
+#define NVIDIA_TENSORRT_DLA_CORE_ID "NVIDIA_TENSORRT_DLA_CORE_ID"
+
 class TrtLogger : public nvinfer1::ILogger {
  public:
   void log(nvinfer1::ILogger::Severity severity,
