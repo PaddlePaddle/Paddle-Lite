@@ -74,8 +74,7 @@ class TestArgMaxOp(AutoScanTest):
         in_shape.insert(0, batch)
         axis = draw(st.integers(min_value=-1, max_value=3))
         keepdims = draw(st.booleans())
-        #dtype = draw(st.sampled_from([-1, 2, 3]))
-        dtype = draw(st.sampled_from([2]))
+        dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
 
         arg_max_op = OpConfig(
@@ -83,12 +82,15 @@ class TestArgMaxOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
-                "axis": 0,
+                "axis": axis,
                 "keepdims": keepdims,
                 "dtype": dtype,
                 "flatten": False
             })
-        arg_max_op.outputs_dtype = {"output_data": np.int32}
+        if dtype == 2:
+            arg_max_op.outputs_dtype = {"output_data": np.int32}
+        else:
+            arg_max_op.outputs_dtype = {"output_data": np.int64}
 
         program_config = ProgramConfig(
             ops=[arg_max_op],
@@ -101,6 +103,12 @@ class TestArgMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
+        def _teller1(program_config, predictor_config):
+            set_dtype = program_config.ops[0].attrs["dtype"]
+            if predictor_config.target() == TargetType.NNAdapter:
+                if set_dtype != 2:
+                    return True
+
         def _teller2(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data"].shape)
             axis = program_config.ops[0].attrs["axis"]
@@ -115,6 +123,9 @@ class TestArgMaxOp(AutoScanTest):
                 return True
 
         self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite only supports int-precision output on Nvidia.")
+        self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
@@ -125,7 +136,7 @@ class TestArgMaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 200

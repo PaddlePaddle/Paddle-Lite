@@ -72,6 +72,7 @@ __global__ void arg_max_kernel(const InType* input,
       }
       output[idx] = static_cast<OutType>(kv_pair_idx_1);
     }
+    __syncthreads();
   }
 }
 
@@ -95,17 +96,7 @@ int32_t ArgMaxPluginDynamic::enqueue(
   const int block_size = 128;
   const int grid_size = (axis_num + block_size - 1) / block_size;
 
-  if (input_desc[0].type == nvinfer1::DataType::kFLOAT &&
-      output_desc[0].type == nvinfer1::DataType::kFLOAT) {
-    const float* input = static_cast<const float*>(inputs[0]);
-    float* output = static_cast<float*>(outputs[0]);
-    auto init = std::numeric_limits<float>::lowest();
-    arg_max_kernel<float,
-                   float,
-                   block_size><<<grid_size, block_size, 0, stream>>>(
-        input, output, pre, axis_num, post, init);
-  } else if (input_desc[0].type == nvinfer1::DataType::kFLOAT &&
-             output_desc[0].type == nvinfer1::DataType::kINT32) {
+  if (input_desc[0].type == nvinfer1::DataType::kFLOAT) {
     const float* input = static_cast<const float*>(inputs[0]);
     int* output = static_cast<int*>(outputs[0]);
     auto init = std::numeric_limits<float>::lowest();
@@ -113,16 +104,9 @@ int32_t ArgMaxPluginDynamic::enqueue(
                    int,
                    block_size><<<grid_size, block_size, 0, stream>>>(
         input, output, pre, axis_num, post, init);
-  } else if (input_desc[0].type == nvinfer1::DataType::kINT32 &&
-             output_desc[0].type == nvinfer1::DataType::kINT32) {
-    const int* input = static_cast<const int*>(inputs[0]);
-    int* output = static_cast<int*>(outputs[0]);
-    auto init = std::numeric_limits<int>::lowest();
-    arg_max_kernel<int, int, block_size><<<grid_size, block_size, 0, stream>>>(
-        input, output, pre, axis_num, post, init);
   } else {
     NNADAPTER_LOG(FATAL)
-        << "Attribute `dtype` in arg_max op must be int or float.";
+        << "ArgMax only support float-input and int-output for now.";
   }
   return 0;
 }
