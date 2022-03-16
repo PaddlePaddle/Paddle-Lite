@@ -20,15 +20,17 @@ namespace nvidia_tensorrt {
 
 ArgMaxPluginDynamic::ArgMaxPluginDynamic() {}
 
-ArgMaxPluginDynamic::ArgMaxPluginDynamic(int axis) : _axis(axis) {}
+ArgMaxPluginDynamic::ArgMaxPluginDynamic(int axis, bool keepdims)
+    : _axis(axis), _keepdims(keepdims) {}
 
 ArgMaxPluginDynamic::ArgMaxPluginDynamic(const void* serial_data,
                                          size_t serial_length) {
   Deserialize(&serial_data, &serial_length, &_axis);
+  Deserialize(&serial_data, &serial_length, &_keepdims);
 }
 
 nvinfer1::IPluginV2DynamicExt* ArgMaxPluginDynamic::clone() const noexcept {
-  return new ArgMaxPluginDynamic(_axis);
+  return new ArgMaxPluginDynamic(_axis, _keepdims);
 }
 
 template <typename InType, typename OutType, unsigned TPB>
@@ -76,6 +78,39 @@ __global__ void arg_max_kernel(const InType* input,
   }
 }
 
+nvinfer1::DimsExprs ArgMaxPluginDynamic::getOutputDimensions(
+    int32_t output_index,
+    const nvinfer1::DimsExprs* inputs,
+    int32_t nb_inputs,
+    nvinfer1::IExprBuilder& expr_builder) noexcept {
+  NNADAPTER_CHECK_EQ(output_index, 0);
+  NNADAPTER_CHECK(inputs);
+  NNADAPTER_CHECK_GE(nb_inputs, 1);
+  nvinfer1::DimsExprs out_dim{};
+  int64_t i = 0;
+  for (; i < _axis; i++) {
+    out_dim.d[i] = inputs[0].d[i];
+    out_dim.nbDims += 1;
+  }
+  if (_keepdims) {
+    out_dim.d[i] = expr_builder.constant(1);
+    out_dim.nbDims += 1;
+    i++;
+  }
+  for (int64_t j = _axis + 1; j < inputs[0].nbDims; j++) {
+    out_dim.d[i] = inputs[0].d[j];
+    out_dim.nbDims += 1;
+    i++;
+  }
+
+  if (0 == out_dim.nbDims) {
+    out_dim.nbDims = 1;
+    out_dim.d[0] = expr_builder.constant(1);
+  }
+
+  return out_dim;
+}
+
 int32_t ArgMaxPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
@@ -112,11 +147,12 @@ int32_t ArgMaxPluginDynamic::enqueue(
 }
 
 size_t ArgMaxPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(_axis);
+  return SerializedSize(_axis) + SerializedSize(_keepdims);
 }
 
 void ArgMaxPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, _axis);
+  Serialize(&buffer, _keepdims);
 }
 
 REGISTER_NNADAPTER_TENSORRT_PLUGIN(ArgMaxPluginDynamic,

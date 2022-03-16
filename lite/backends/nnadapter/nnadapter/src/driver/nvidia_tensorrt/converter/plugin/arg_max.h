@@ -21,7 +21,7 @@ namespace nvidia_tensorrt {
 class ArgMaxPluginDynamic : public PluginDynamic {
  public:
   ArgMaxPluginDynamic();
-  explicit ArgMaxPluginDynamic(int axis);
+  ArgMaxPluginDynamic(int axis, bool _keepdims);
   ArgMaxPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
@@ -33,9 +33,15 @@ class ArgMaxPluginDynamic : public PluginDynamic {
   const char* getPluginType() const noexcept;
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
+  nvinfer1::DimsExprs getOutputDimensions(
+      int32_t output_index,
+      const nvinfer1::DimsExprs* inputs,
+      int32_t nb_inputs,
+      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
 
  private:
   int _axis;
+  bool _keepdims;
 };
 
 class ArgMaxPluginDynamicCreator : public PluginCreator {
