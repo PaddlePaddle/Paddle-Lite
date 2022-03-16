@@ -17,8 +17,8 @@
 #include "Common.metal"
 using namespace metal;
 
-kernel void pixel_shuffle(texture2d_array<float, access::sample> inTexture[[texture(0)]],
-    texture2d_array<float, access::write> outTexture[[texture(1)]],
+kernel void pixel_shuffle(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
     constant PixelShuffleParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
@@ -30,37 +30,12 @@ kernel void pixel_shuffle(texture2d_array<float, access::sample> inTexture[[text
     int inX = gid.x / upscale_factor;
     int inY = gid.y / upscale_factor;
 
-    float4 res;
+    ftype4 res;
     for (int i = 0; i < 4; i++) {
         int c = gid.z * 4 + i;
         int inC = c * upscale_factor * upscale_factor + (gid.y % upscale_factor) * upscale_factor +
                   gid.x % upscale_factor;
-        float4 input = inTexture.read(uint2(inX, inY), inC / 4);
-        res[i] = input[inC % 4];
-    }
-
-    outTexture.write(res, gid.xy, gid.z);
-}
-
-kernel void pixel_shuffle_half(texture2d_array<half, access::sample> inTexture[[texture(0)]],
-    texture2d_array<half, access::write> outTexture[[texture(1)]],
-    constant PixelShuffleParam& param[[buffer(0)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-
-    int upscale_factor = param.upscale_factor;
-    int inX = gid.x / upscale_factor;
-    int inY = gid.y / upscale_factor;
-
-    half4 res;
-    for (int i = 0; i < 4; i++) {
-        int c = gid.z * 4 + i;
-        int inC = c * upscale_factor * upscale_factor + (gid.y % upscale_factor) * upscale_factor +
-                  gid.x % upscale_factor;
-        half4 input = inTexture.read(uint2(inX, inY), inC / 4);
+        ftype4 input = inTexture.read(uint2(inX, inY), inC / 4);
         res[i] = input[inC % 4];
     }
 
