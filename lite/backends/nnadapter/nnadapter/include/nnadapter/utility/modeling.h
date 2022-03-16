@@ -113,6 +113,10 @@ core::Operand* AddFloat32VariableOperand(
 void TransposeOperand(core::Operand* operand, std::vector<int32_t> permutation);
 // Reshapes the dimensions of a operand, similar to numpy.reshape
 void ReshapeOperand(core::Operand* operand, std::vector<int32_t> dimensions);
+// Copy the operand and its buffer
+void CopyOperand(core::Operand* dst_operand,
+                 core::Operand* src_operand,
+                 bool copy = true);
 // Update the input/output operands of the operations which equal to the
 // old_operand with the new_operand
 // For example:

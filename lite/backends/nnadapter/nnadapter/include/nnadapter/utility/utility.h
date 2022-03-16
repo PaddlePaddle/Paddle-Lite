@@ -255,6 +255,7 @@ uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
 // Get the real path of the path argument
 std::string GetRealPath(const char* path);
 
+// Check whether the data in the buffer is all zero
 bool IsAllZeros(void* buffer, size_t length);
 
 }  // namespace nnadapter

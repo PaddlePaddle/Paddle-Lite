@@ -50,8 +50,12 @@ class Compilation {
               std::vector<core::Argument>* output_arguments);
 
  private:
-  std::vector<std::pair<Context::DeviceContext*, Model*>> PartitionModel(
-      Context* context, Model* model);
+  int PartitionModel(
+      Context* context,
+      Model* model,
+      std::vector<std::pair<Context::DeviceContext*, core::Model*>>* models,
+      std::vector<std::vector<int>>* input_indexes,
+      std::vector<std::vector<int>>* output_indexes);
   // Serialize/deserialize the cached models into/from memory
   bool Serialize(std::vector<uint8_t>* buffer);
   bool Deserialize(void* buffer, uint64_t size);
@@ -64,6 +68,14 @@ class Compilation {
   std::vector<Program> programs_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  // The submodels and the shared operands among the submodels
+  std::vector<std::pair<Context::DeviceContext*, core::Model*>> models_;
+  std::vector<core::Operand*> operands_;
+  // The relationship between the input and output operands of the submodels: a
+  // negative number represents the input index of the entire model, otherwise
+  // represents the index of operand shared between the submodels.
+  std::vector<std::vector<int>> input_indexes_;
+  std::vector<std::vector<int>> output_indexes_;
   Context* context_{nullptr};
   bool completed_{false};
 };

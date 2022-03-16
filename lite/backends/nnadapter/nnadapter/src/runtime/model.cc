@@ -71,6 +71,26 @@ int Model::Finish() {
   return NNADAPTER_NO_ERROR;
 }
 
+int Model::GetSupportedOperations(Context::DeviceContext* device_context,
+                                  bool* supported_operations) const {
+  auto operation_count = model_.operations.size();
+  std::fill(
+      supported_operations, supported_operations + operation_count, false);
+  NNADAPTER_CHECK(device_context);
+  auto context = device_context->context;
+  NNADAPTER_CHECK(context);
+  auto device = device_context->device;
+  NNADAPTER_CHECK(device);
+  auto result = device->ValidateProgram(context, &model_, supported_operations);
+  if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
+    NNADAPTER_LOG(WARNING)
+        << "Failed to get the supported operations for device '"
+        << device->GetName() << "', because the HAL interface "
+                                "'validate_program' is not implemented!";
+  }
+  return result;
+}
+
 int Model::GetSupportedOperations(Context* context,
                                   bool* supported_operations) const {
   auto operation_count = model_.operations.size();
@@ -80,28 +100,14 @@ int Model::GetSupportedOperations(Context* context,
   for (size_t i = 0; i < device_count; i++) {
     auto device_context = context->GetDeviceContext(i);
     NNADAPTER_CHECK(device_context);
-    auto context = device_context->context;
-    NNADAPTER_CHECK(context);
-    auto device = device_context->device;
-    NNADAPTER_CHECK(device);
-    std::unique_ptr<bool[]> flags(new bool[operation_count]);
-    auto result = device->ValidateProgram(context, &model_, flags.get());
-    if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
-      // If the driver does not implement the HAL interface 'validate_program',
-      // we consider that all operations in the model are supported, Because we
-      // assume the model is obtained by the subgraph partition based on
-      // https://github.com/PaddlePaddle/Paddle-
-      // Lite/blob/develop/lite/kernels/nnadapter/converter/all.h
-      std::fill(flags.get(), flags.get() + operation_count, true);
-      NNADAPTER_CHECK_EQ(device_count, 1)
-          << "Multiple devices are not supported when one of the devices does "
-             "not implement the HAL interface 'validate_program'!";
-    } else if (result != NNADAPTER_NO_ERROR) {
+    std::unique_ptr<bool[]> _supported_operations_(new bool[operation_count]);
+    auto result =
+        GetSupportedOperations(device_context, _supported_operations_.get());
+    if (result != NNADAPTER_NO_ERROR) {
       return result;
     }
     for (size_t j = 0; j < operation_count; j++) {
-      // This operation is supported as long as any device supports it
-      supported_operations[j] |= flags[j];
+      supported_operations[j] |= _supported_operations_[j];
     }
   }
   return NNADAPTER_NO_ERROR;

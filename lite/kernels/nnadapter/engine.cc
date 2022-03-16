@@ -292,11 +292,6 @@ Engine::Engine(KernelContext* ctx,
       NNAdapterDevice_getVersion_invoke(device, &version);
       VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
               << " type=" << type << " version=" << version;
-      if (devices_.size() >= 2) {
-        LOG(WARNING) << "Only supports heterogeneous computing on two devices, "
-                        "the other devices will be ignored!";
-        break;
-      }
       devices_.push_back(device);
     }
   }

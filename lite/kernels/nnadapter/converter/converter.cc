@@ -153,13 +153,13 @@ int Converter::Apply(
     NNAdapterModel_destroy_invoke(model_);
     LOG(WARNING) << "Failed to identify the inputs and outputs of the model("
                  << result << ")!";
-    return EXTERNAL_FUNCTION_INVOKE_FAILED;
+    return UNSUPPORTED_FEATURE;
   }
   result = NNAdapterModel_finish_invoke(model_);
   if (result != NNADAPTER_NO_ERROR) {
     NNAdapterModel_destroy_invoke(model_);
     LOG(WARNING) << "Failed to finish the model(" << result << ")!";
-    return EXTERNAL_FUNCTION_INVOKE_FAILED;
+    return UNSUPPORTED_FEATURE;
   }
   std::unique_ptr<bool[]> supported_operations(new bool[operation_count_]);
   std::fill(supported_operations.get(),
@@ -167,22 +167,29 @@ int Converter::Apply(
             false);
   result = NNAdapterModel_getSupportedOperations_invoke(
       model_, context_, supported_operations.get());
-  if (result != NNADAPTER_NO_ERROR) {
-    NNAdapterModel_destroy_invoke(model_);
-    LOG(WARNING) << "Failed to finish the model(" << result << ")!";
-    return EXTERNAL_FUNCTION_INVOKE_FAILED;
-  }
-  std::unique_ptr<bool[]> supported_ops(new bool[op_count]);
-  std::fill(supported_ops.get(), supported_ops.get() + op_count, true);
-  for (size_t i = 0; i < operation_count_; i++) {
-    auto op_idx = operation_idx_to_op_idx_map[i];
-    CHECK_GE(op_idx, 0);
-    CHECK_LT(op_idx, op_count);
-    supported_ops[op_idx] &= supported_operations[i];
-    if (!supported_ops[op_idx]) {
-      LOG(FATAL) << "Op " << block_desc->GetOp<cpp::OpDesc>(op_idx)->Type()
-                 << " is not supported!";
+  if (result == NNADAPTER_NO_ERROR) {
+    std::unique_ptr<bool[]> supported_ops(new bool[op_count]);
+    std::fill(supported_ops.get(), supported_ops.get() + op_count, true);
+    for (size_t i = 0; i < operation_count_; i++) {
+      auto op_idx = operation_idx_to_op_idx_map[i];
+      CHECK_GE(op_idx, 0);
+      CHECK_LT(op_idx, op_count);
+      supported_ops[op_idx] &= supported_operations[i];
+      if (!supported_ops[op_idx]) {
+        LOG(FATAL) << "Op " << block_desc->GetOp<cpp::OpDesc>(op_idx)->Type()
+                   << " is not supported!";
+      }
     }
+  } else if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
+    LOG(WARNING) << "Failed to get the supported operations for the selected "
+                    "devices, one or more of the selected devices are not "
+                    "supported!";
+  } else {
+    NNAdapterModel_destroy_invoke(model_);
+    LOG(FATAL)
+        << "Failed to get the supported operations for the selected devices("
+        << result << ")!";
+    return UNSUPPORTED_FEATURE;
   }
   return NO_ERROR;
 }

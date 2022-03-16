@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace android_nnapi {
 
 bool ValidateReshape(Validator* validator, const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 int ConvertReshape(Converter* converter, core::Operation* operation) {

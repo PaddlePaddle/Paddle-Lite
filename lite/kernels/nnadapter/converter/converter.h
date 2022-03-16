@@ -33,7 +33,6 @@ namespace nnadapter {
 const int NO_ERROR = 0;
 const int PARAMETER_ERROR = 1;
 const int UNSUPPORTED_FEATURE = 2;
-const int EXTERNAL_FUNCTION_INVOKE_FAILED = 3;
 
 class Converter {
  public:

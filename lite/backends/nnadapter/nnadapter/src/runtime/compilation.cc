@@ -14,11 +14,13 @@
 
 #include "runtime/compilation.h"
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include "optimizer/partition_model_into_submodels.h"
 #include "utility/cache.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 #include "utility/string.h"
 #include "utility/utility.h"
 
@@ -28,6 +30,9 @@ namespace runtime {
 static const char* NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION = ".nnc";
 static const char* NNADAPTER_RUNTIME_CACHE_INPUT_TYPES_KEY = "input_types";
 static const char* NNADAPTER_RUNTIME_CACHE_OUTPUT_TYPES_KEY = "output_types";
+static const char* NNADAPTER_RUNTIME_CACHE_INPUT_INDEXES_KEY = "input_indexes";
+static const char* NNADAPTER_RUNTIME_CACHE_OUTPUT_INDEXES_KEY =
+    "output_indexes";
 static const char* NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY = "num_caches";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_DEVICE_NAME_KEY =
     "cache_%d_device_name";
@@ -37,6 +42,32 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY =
     "cache_%d_output_types";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
+
+void* AccessInputOperand(void* memory, NNAdapterOperandType* type) {
+  NNADAPTER_CHECK(memory);
+  NNADAPTER_CHECK(type);
+  auto operand = static_cast<core::Operand*>(memory);
+  CopyOperandType(type, operand->type);
+  return operand->buffer;
+}
+
+void* AccessOutputOperand(void* memory, NNAdapterOperandType* type) {
+  NNADAPTER_CHECK(memory);
+  NNADAPTER_CHECK(type);
+  auto operand = static_cast<core::Operand*>(memory);
+  CopyOperandType(&operand->type, *type);
+  auto length = GetOperandTypeBufferLength(operand->type);
+  if (operand->length < length) {
+    if (operand->buffer) {
+      free(operand->buffer);
+    }
+    operand->buffer = malloc(length);
+    NNADAPTER_CHECK(operand->buffer) << "Failed to allocate " << length
+                                     << " bytes, out of memory!";
+    operand->length = length;
+  }
+  return operand->buffer;
+}
 
 Compilation::Compilation(Model* model,
                          const char* cache_token,
@@ -77,22 +108,77 @@ Compilation::~Compilation() {
     NNADAPTER_CHECK(device_context) << "No device found.";
     device_context->device->DestroyProgram(programs_[i].program);
   }
+  for (size_t i = 0; i < operands_.size(); i++) {
+    auto operand = operands_[i];
+    NNADAPTER_CHECK(operand);
+    if (operand->buffer) {
+      free(operand->buffer);
+    }
+    free(operand);
+  }
+  for (auto& model : models_) {
+    NNADAPTER_CHECK(model.second);
+    nnadapter::ClearModel(model.second);
+    delete model.second;
+  }
 }
 
 int Compilation::Execute(std::vector<core::Argument>* input_arguments,
                          std::vector<core::Argument>* output_arguments) {
+  auto create_program_arguments = [&](
+      std::vector<core::Argument>* args,
+      const std::vector<int>& indexes,
+      std::vector<core::Argument>* arguments,
+      std::vector<core::Operand*>* operands,
+      void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    for (size_t i = 0; i < indexes.size(); i++) {
+      core::Argument arg;
+      arg.index = i;
+      auto pos = indexes[i];
+      if (pos < 0) {
+        pos = -pos - 1;
+        arg.memory = arguments->at(pos).memory;
+        arg.access = arguments->at(pos).access;
+      } else {
+        for (size_t j = operands->size(); j <= pos; j++) {
+          auto operand =
+              static_cast<core::Operand*>(malloc(sizeof(core::Operand)));
+          NNADAPTER_CHECK(operand)
+              << "Failed to allocate memory for a operand, out of memory!";
+          memset(operand, 0, sizeof(core::Operand));
+          operands->push_back(operand);
+        }
+        arg.memory = operands->at(pos);
+        arg.access = access;
+      }
+      args->push_back(arg);
+    }
+  };
   // Executes the compiled programs on the multi-devices asynchronously or
   // synchronously
   // TODO(hong19860320) Supports asynchronously execution in future.
   for (size_t i = 0; i < programs_.size(); i++) {
     auto device_context = programs_[i].device_context;
-    int ret = device_context->device->ExecuteProgram(programs_[i].program,
-                                                     input_arguments->size(),
-                                                     &((*input_arguments)[0]),
-                                                     output_arguments->size(),
-                                                     &((*output_arguments)[0]));
-    if (ret == NNADAPTER_INVALID_DIMENSIONS) return ret;
-    NNADAPTER_CHECK_EQ(ret, NNADAPTER_NO_ERROR)
+    std::vector<core::Argument> program_input_arguments,
+        program_output_arguments;
+    create_program_arguments(&program_input_arguments,
+                             input_indexes_[i],
+                             input_arguments,
+                             &operands_,
+                             AccessInputOperand);
+    create_program_arguments(&program_output_arguments,
+                             output_indexes_[i],
+                             output_arguments,
+                             &operands_,
+                             AccessOutputOperand);
+    auto result =
+        device_context->device->ExecuteProgram(programs_[i].program,
+                                               program_input_arguments.size(),
+                                               program_input_arguments.data(),
+                                               program_output_arguments.size(),
+                                               program_output_arguments.data());
+    if (result == NNADAPTER_INVALID_DIMENSIONS) return result;
+    NNADAPTER_CHECK_EQ(result, NNADAPTER_NO_ERROR)
         << "Failed to Execute a program for " << i
         << "th compiled program on the device '"
         << device_context->device->GetName() << "'";
@@ -137,22 +223,26 @@ int Compilation::Finish() {
     input_types_.clear();
     output_types_.clear();
     caches_.clear();
-    auto submodels = PartitionModel(context_, model_);
-    // Compiles the submodels to the device-specific programs and prepare the
-    // caches
-    auto num_submodels = submodels.size();
-    caches_.resize(num_submodels);
-    programs_.resize(num_submodels);
-    for (size_t i = 0; i < num_submodels; i++) {
-      auto device_context = submodels[i].first;
-      auto submodel = submodels[i].second;
+    int result = PartitionModel(
+        context_, model_, &models_, &input_indexes_, &output_indexes_);
+    if (result != NNADAPTER_NO_ERROR) {
+      return result;
+    }
+    // Compile these submodels into the programs for the devics and encapsulate
+    // the programs into the caches
+    auto model_count = models_.size();
+    caches_.resize(model_count);
+    programs_.resize(model_count);
+    for (size_t i = 0; i < model_count; i++) {
+      auto device_context = models_[i].first;
+      auto model = models_[i].second;
       caches_[i].device_context = device_context;
       caches_[i].cache.token =
           cache_token_.empty() ? nullptr : cache_token_.c_str();
       caches_[i].cache.dir = cache_dir_.empty() ? nullptr : cache_dir_.c_str();
       NNADAPTER_CHECK_EQ(
           device_context->device->CreateProgram(device_context->context,
-                                                &submodel->model_,
+                                                model,
                                                 &caches_[i].cache,
                                                 &programs_[i].program),
           NNADAPTER_NO_ERROR)
@@ -161,18 +251,18 @@ int Compilation::Finish() {
           << "'";
       programs_[i].device_context = device_context;
       // Update the types of the submodel inputs and outputs
-      auto input_count = submodel->model_.input_operands.size();
-      auto output_count = submodel->model_.output_operands.size();
+      auto input_count = model->input_operands.size();
+      auto output_count = model->output_operands.size();
       caches_[i].cache.input_types.resize(input_count);
       caches_[i].cache.output_types.resize(output_count);
       for (size_t j = 0; j < input_count; j++) {
         memcpy(&caches_[i].cache.input_types[j],
-               &submodel->model_.input_operands[j]->type,
+               &model->input_operands[j]->type,
                sizeof(NNAdapterOperandType));
       }
       for (size_t j = 0; j < output_count; j++) {
         memcpy(&caches_[i].cache.output_types[j],
-               &submodel->model_.output_operands[j]->type,
+               &model->output_operands[j]->type,
                sizeof(NNAdapterOperandType));
       }
     }
@@ -238,42 +328,80 @@ int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
   return NNADAPTER_NO_ERROR;
 }
 
-// TODO(hong19860320) Supports the model partition for the multi-devices in
-// future
-std::vector<std::pair<Context::DeviceContext*, Model*>>
-Compilation::PartitionModel(Context* context, Model* model) {
-  // Only supports heterogeneous computing on two devices, and the second device
-  // name must be 'google_xnnpack' if there is more than one device.
+int Compilation::PartitionModel(
+    Context* context,
+    Model* model,
+    std::vector<std::pair<Context::DeviceContext*, core::Model*>>* models,
+    std::vector<std::vector<int>>* input_indexes,
+    std::vector<std::vector<int>>* output_indexes) {
+  // Run the model partition to supports heterogeneous computing on the multiple
+  // devices
+  models->clear();
+  input_indexes->clear();
+  output_indexes->clear();
   auto device_count = context->GetDeviceCount();
   NNADAPTER_CHECK_GE(device_count, 1) << "No device found.";
-  NNADAPTER_CHECK_LE(device_count, 2)
-      << "Only supports heterogeneous computing on two devices!";
-  std::vector<std::pair<Context::DeviceContext*, Model*>> submodels;
-  auto device_context = context->GetDeviceContext(0);
-  NNADAPTER_CHECK(device_context) << "No device found.";
-  auto operation_count = model->model_.operations.size();
   if (device_count > 1) {
-    auto context = device_context->context;
-    NNADAPTER_CHECK(context);
-    auto device = device_context->device;
-    NNADAPTER_CHECK(device);
+    auto operation_count = model->model_.operations.size();
     std::unique_ptr<bool[]> flags(new bool[operation_count]);
-    device->ValidateProgram(context, &model->model_, flags.get());
-    std::unordered_set<core::Operation*> supported_operations;
-    size_t operation_index = 0;
-    for (auto& operation : model->model_.operations) {
-      if (flags[operation_index++]) {
-        supported_operations.insert(&operation);
+    std::fill(flags.get(), flags.get() + operation_count, false);
+    std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
+        supported_operations(device_count);
+    for (size_t i = 0; i < device_count; i++) {
+      auto device_context = context->GetDeviceContext(i);
+      NNADAPTER_CHECK(device_context);
+      std::unique_ptr<bool[]> _flags_(new bool[operation_count]);
+      auto result =
+          model->GetSupportedOperations(device_context, _flags_.get());
+      if (result != NNADAPTER_NO_ERROR) {
+        return result;
+      }
+      supported_operations[i].first = i;
+      size_t operation_index = 0;
+      for (auto& operation : model->model_.operations) {
+        if (_flags_[operation_index] && !flags[operation_index]) {
+          flags[operation_index] = true;
+          // Only the operations which are not supported by the previous devices
+          // are added.
+          supported_operations[i].second.insert(&operation);
+        }
+        operation_index++;
       }
     }
-    PartitionModelIntoSubmodels(&model->model_, supported_operations);
-    // submodels.push_back(std::pair<Context::DeviceContext*,
-    // Model*>(device_context, model));
+    // Check for operators not supported in these devices
+    size_t operation_index = 0;
+    for (auto& operation : model->model_.operations) {
+      if (flags[operation_index++]) continue;
+      NNADAPTER_LOG(FATAL) << "None of these " << device_count
+                           << " devices support "
+                           << OperationTypeToString(operation.type) << "!";
+    }
+    std::vector<std::pair<int, core::Model*>> _models_;
+    PartitionModelIntoSubmodels(&model->model_,
+                                supported_operations,
+                                &_models_,
+                                input_indexes,
+                                output_indexes);
+    for (auto& _model_ : _models_) {
+      auto device_context = context->GetDeviceContext(_model_.first);
+      NNADAPTER_CHECK(device_context) << "No device found.";
+      models->emplace_back(device_context, _model_.second);
+    }
   } else {
-    submodels.push_back(
-        std::pair<Context::DeviceContext*, Model*>(device_context, model));
+    auto device_context = context->GetDeviceContext(0);
+    NNADAPTER_CHECK(device_context) << "No device found.";
+    models->push_back(std::pair<Context::DeviceContext*, core::Model*>(
+        device_context, &model->model_));
+    input_indexes->resize(1);
+    output_indexes->resize(1);
+    for (size_t i = 0; i < model->model_.input_operands.size(); i++) {
+      input_indexes->at(0).push_back(-i - 1);
+    }
+    for (size_t i = 0; i < model->model_.output_operands.size(); i++) {
+      output_indexes->at(0).push_back(-i - 1);
+    }
   }
-  return submodels;
+  return NNADAPTER_NO_ERROR;
 }
 
 bool Compilation::Serialize(std::vector<uint8_t>* buffer) {

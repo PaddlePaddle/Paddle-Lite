@@ -52,11 +52,11 @@ REGISTER_CONVERTER(
 REGISTER_CONVERTER(matmul,
                    ConvertMatmul,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,"
-                   "verisilicon_timvx,intel_openvino");
-REGISTER_CONVERTER(
-    matmul_v2,
-    ConvertMatmulV2,
-    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,intel_openvino");
+                   "verisilicon_timvx,intel_openvino,android_nnapi");
+REGISTER_CONVERTER(matmul_v2,
+                   ConvertMatmulV2,
+                   "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,intel_"
+                   "openvino,android_nnapi");
 REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"

@@ -14,9 +14,9 @@
 
 #include "optimizer/partition_model_into_submodels.h"
 #include <functional>
-#include <map>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -25,36 +25,6 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
-
-class ModelPartitioner {
- public:
-  // This is a simple representation of a model. It holds the pointer of the
-  // Node to avoid changing the graph during the graph partition.
-  struct Node {
-    explicit Node(core::Operation *o) : operation(o) {}
-    core::Operation *operation;
-    bool marked{false};
-    Node *union_find_parent{this};
-    std::vector<Node *> inlinks{};
-    std::vector<Node *> outlinks{};
-    Node *UnionFindAncestor();
-    void UnionFindCombine(Node *candidate);
-  };
-
-  ModelPartitioner() {}
-  ModelPartitioner(const ModelPartitioner &) = delete;
-  ModelPartitioner(ModelPartitioner &&) = default;
-  ModelPartitioner &operator=(const ModelPartitioner &) = delete;
-  virtual ~ModelPartitioner() {}
-
-  std::vector<std::vector<core::Operation *>> Apply(
-      core::Model *model,
-      const std::unordered_set<core::Operation *> &supported_operations);
-  void FlexibleDFS(const std::vector<Node *> &sources,
-                   bool reverse,
-                   const std::function<bool(const Node *)> &enter,
-                   const std::function<bool(const Node *)> &leave);
-};
 
 // Find the ancestor node
 ModelPartitioner::Node *ModelPartitioner::Node::UnionFindAncestor() {
@@ -159,9 +129,11 @@ void ModelPartitioner::FlexibleDFS(
   }
 }
 
-std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
+void ModelPartitioner::Apply(
     core::Model *model,
-    const std::unordered_set<core::Operation *> &supported_operations) {
+    const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
+        &supported_operations,
+    std::vector<std::pair<int, std::vector<core::Operation *>>> *subgraphs) {
   // Create the nodes to represent the origin model and mark the supported
   // operations
   std::vector<std::shared_ptr<Node>> nodes;
@@ -173,8 +145,11 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
       NNADAPTER_CHECK(node)
           << "Failed to allocate node for the model partition, out of memory!";
       nodes.push_back(node);
-      if (supported_operations.count(operation)) {
-        node->marked = true;
+      for (auto &_supported_operations_ : supported_operations) {
+        if (_supported_operations_.second.count(operation)) {
+          node->class_id = _supported_operations_.first;
+          break;
+        }
       }
       operation_to_node_map[operation] = node.get();
     }
@@ -205,9 +180,7 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
     // of the address of the node in graph.
     NNADAPTER_CHECK(operation_to_node_map.count(operation));
     auto node = operation_to_node_map[operation];
-    if (!node->marked) {
-      continue;
-    }
+    if (node->class_id < 0) continue;
     //  Our algorithm must guarantee that:
     //  1. The graph is always directed acyclic graph（DAG）.
     //  2. If there is a path in the subgraph from X to Y (X and Y are both
@@ -225,7 +198,9 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
       std::set<Node *> contract_nodes;
       for (auto output_node : node->outlinks) {
         // Must be an candidate
-        if (!output_node->marked) continue;
+        if (output_node->class_id < 0 ||
+            output_node->class_id != node->class_id)
+          continue;
         // Get the input nodes of the dst_node except the src_node.
         std::vector<Node *> source_nodes;
         for (auto input_node : output_node->inlinks) {
@@ -238,8 +213,8 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
         FlexibleDFS(source_nodes,
                     true,
                     nullptr,
-                    [&have_excess_path, node](const Node *n) {
-                      if (n == node) {
+                    [&have_excess_path, node](const Node *_node_) {
+                      if (_node_ == node) {
                         have_excess_path = true;
                         return false;
                       }
@@ -254,28 +229,40 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
       }
     }
   }
-  std::map<Node * /*ancestor*/, std::vector<core::Operation *>> clusters;
+  Node *ancestor = nullptr;
+  std::unordered_map<Node *, int> indexes;
+  subgraphs->clear();
   for (auto operation : operations) {
-    if (operation_to_node_map[operation]->marked) {
-      clusters[operation_to_node_map[operation]->UnionFindAncestor()].push_back(
-          operation);
+    int index = -1;
+    auto node = operation_to_node_map[operation];
+    if (node->class_id >= 0) {
+      ancestor = node->UnionFindAncestor();
+      if (!indexes.count(ancestor)) {
+        indexes[ancestor] = subgraphs->size();
+        subgraphs->emplace_back(node->class_id,
+                                std::vector<core::Operation *>());
+      }
+      index = indexes[ancestor];
+      ancestor = nullptr;
+    } else {
+      if (!ancestor) {
+        ancestor = node;
+        indexes[ancestor] = subgraphs->size();
+        subgraphs->emplace_back(-1, std::vector<core::Operation *>());
+      }
+      index = indexes[ancestor];
     }
+    subgraphs->at(index).second.push_back(operation);
   }
-  std::vector<std::vector<core::Operation *>> subgraphs;
-  std::for_each(clusters.begin(),
-                clusters.end(),
-                [&](const decltype(clusters)::value_type &it) {
-                  subgraphs.push_back(it.second);
-                });
-  auto subgraph_count = subgraphs.size();
+  auto subgraph_count = subgraphs->size();
   NNADAPTER_VLOG(5) << subgraph_count << " subgraphs detected!";
   for (size_t i = 0; i < subgraph_count; i++) {
-    auto node_count = subgraphs[i].size();
+    auto node_count = subgraphs->at(i).second.size();
     NNADAPTER_VLOG(5) << "#" << i << " subgraph has " << node_count
-                      << " nodes!";
+                      << " nodes for class_id=#" << subgraphs->at(i).first;
     for (size_t j = 0; j < node_count; j++) {
-      NNADAPTER_VLOG(5) << "op "
-                        << OperationTypeToString(subgraphs[i][j]->type);
+      NNADAPTER_VLOG(5) << "op " << OperationTypeToString(
+                                        subgraphs->at(i).second.at(j)->type);
     }
   }
   return subgraphs;
@@ -283,9 +270,116 @@ std::vector<std::vector<core::Operation *>> ModelPartitioner::Apply(
 
 NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
     core::Model *model,
-    const std::unordered_set<core::Operation *> &supported_operations) {
+    const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
+        &supported_operations,
+    std::vector<std::pair<int, core::Model *>> *models,
+    std::vector<std::vector<int>> *input_indexes,
+    std::vector<std::vector<int>> *output_indexes) {
+  // Partition the model into the subgraphs
   ModelPartitioner partitioner;
-  auto submodels = partitioner.Apply(model, supported_operations);
+  std::vector<std::pair<int, std::vector<core::Operation *>>> subgraphs;
+  partitioner.Apply(model, supported_operations, &subgraphs);
+  // Create the submodels from the subgraphs
+  models->clear();
+  auto subgraph_count = subgraphs.size();
+  input_indexes->resize(subgraph_count);
+  output_indexes->resize(subgraph_count);
+  std::map<core::Operand *, int> shared_operand_to_shared_index_map;  // Mapping
+                                                                      // a
+                                                                      // shared
+                                                                      // operand
+                                                                      // to
+                                                                      // share
+                                                                      // index
+  for (auto i = 0; i < subgraph_count; i++) {
+    auto _model_ = new core::Model();
+    NNADAPTER_CHECK(_model_)
+        << "Failed to allocate for a model, out of memory!";
+    auto class_id = subgraphs[i].first;
+    models->emplace_back(class_id, _model_);
+    std::unordered_map<core::Operand *, core::Operand *>
+        old_operand_to_new_operand_map;  // Mapping an old operand to an new
+                                         // operand
+    auto &old_operations = subgraphs[i].second;
+    for (auto old_operation : old_operations) {
+      auto new_operation = AddOperation(_model_);
+      *new_operation = *old_operation;
+      for (auto &old_operand : new_operation->input_operands) {
+        if (!old_operand) continue;
+        core::Operand *new_operand = nullptr;
+        if (old_operand_to_new_operand_map.count(old_operand)) {
+          new_operand = old_operand_to_new_operand_map[old_operand];
+        } else {
+          new_operand = AddOperand(_model_);
+          // The buffer of operand should not be freed when the operand is
+          // deleted.
+          CopyOperand(new_operand, old_operand, false);
+          old_operand_to_new_operand_map[old_operand] = new_operand;
+          if (IsModelInputOperand(new_operand)) {
+            _model_->input_operands.push_back(new_operand);
+            input_indexes->at(i).push_back(
+                -GetModelInputOperandIndex(model, old_operand) - 1);
+          } else if (!IsConstantOperand(new_operand)) {
+            auto prev_operation = GetOperandProducer(model, old_operand);
+            if (prev_operation &&
+                std::find(old_operations.begin(),
+                          old_operations.end(),
+                          prev_operation) == old_operations.end()) {
+              if (!shared_operand_to_shared_index_map.count(old_operand)) {
+                shared_operand_to_shared_index_map[old_operand] =
+                    shared_operand_to_shared_index_map.size();
+              }
+              new_operand->type.lifetime = NNADAPTER_MODEL_INPUT;
+              _model_->input_operands.push_back(new_operand);
+              input_indexes->at(i).push_back(
+                  shared_operand_to_shared_index_map[old_operand]);
+            }
+          }
+        }
+        old_operand = new_operand;
+      }
+      for (auto &old_operand : new_operation->output_operands) {
+        if (!old_operand) continue;
+        core::Operand *new_operand = nullptr;
+        if (old_operand_to_new_operand_map.count(old_operand)) {
+          new_operand = old_operand_to_new_operand_map[old_operand];
+        } else {
+          new_operand = AddOperand(_model_);
+          // The buffer of operand should not be freed when the operand is
+          // deleted.
+          CopyOperand(new_operand, old_operand, false);
+          old_operand_to_new_operand_map[old_operand] = new_operand;
+          if (IsModelOutputOperand(new_operand)) {
+            _model_->output_operands.push_back(new_operand);
+            output_indexes->at(i).push_back(
+                -GetModelOutputOperandIndex(model, old_operand) - 1);
+          } else if (!IsConstantOperand(new_operand)) {
+            bool all_in_subgraph = true;
+            auto next_operations = GetOperandConsumers(model, old_operand);
+            for (auto next_operation : next_operations) {
+              if (std::find(old_operations.begin(),
+                            old_operations.end(),
+                            next_operation) == old_operations.end()) {
+                all_in_subgraph = false;
+                break;
+              }
+            }
+            if (!all_in_subgraph) {
+              if (!shared_operand_to_shared_index_map.count(old_operand)) {
+                shared_operand_to_shared_index_map[old_operand] =
+                    shared_operand_to_shared_index_map.size();
+              }
+              new_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
+              _model_->output_operands.push_back(new_operand);
+              output_indexes->at(i).push_back(
+                  shared_operand_to_shared_index_map[old_operand]);
+            }
+          }
+        }
+        old_operand = new_operand;
+      }
+    }
+  }
 }
 
 }  // namespace nnadapter

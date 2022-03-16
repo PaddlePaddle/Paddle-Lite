@@ -20,6 +20,7 @@
 #include <utility>
 #include "utility/cache.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/utility.h"
@@ -418,6 +419,30 @@ NNADAPTER_EXPORT void TransposeOperand(core::Operand* operand,
   } else {
     // Only transpose the dimensions the non-constant operands
     TransposeDimensions(operand->type.dimensions.data, permutation);
+  }
+}
+
+NNADAPTER_EXPORT void CopyOperand(core::Operand* dst_operand,
+                                  core::Operand* src_operand,
+                                  bool copy) {
+  CopyOperandType(&dst_operand->type, src_operand->type);
+  dst_operand->type.lifetime = src_operand->type.lifetime;
+  if (IsTemporaryShapeOperand(dst_operand)) {
+    SetTemporaryShape(dst_operand, *(GetTemporaryShape(src_operand)));
+  } else if (IsConstantOperand(dst_operand)) {
+    if (copy) {
+      dst_operand->buffer = malloc(src_operand->length);
+      NNADAPTER_CHECK(dst_operand->buffer != nullptr)
+          << "Failed to allocate " << src_operand->length
+          << " bytes for the buffer of an operand, out of memory!";
+      memcpy(dst_operand->buffer, src_operand->buffer, src_operand->length);
+      dst_operand->length = src_operand->length;
+      dst_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+    } else {
+      dst_operand->buffer = src_operand->buffer;
+      dst_operand->length = src_operand->length;
+      dst_operand->type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
+    }
   }
 }
 
