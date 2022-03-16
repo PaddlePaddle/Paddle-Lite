@@ -590,7 +590,7 @@ void conv_3x3s2_depthwise_fp32(const float* i_data,
 
     LITE_PARALLEL_COMMON_BEGIN(c, tid, oc, 0, out_c_block) {
 #ifdef LITE_USE_THREAD_POOL
-      float* pre_din = ptr_write + ow_round + omp_get_thread_num() * prein_size;
+      float* pre_din = ptr_write + ow_round + tid * prein_size;
 #elif ARM_WITH_OMP
       float* pre_din = ptr_write + ow_round + omp_get_thread_num() * prein_size;
 #else

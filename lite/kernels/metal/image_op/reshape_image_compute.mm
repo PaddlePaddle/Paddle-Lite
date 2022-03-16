@@ -109,6 +109,38 @@ ReshapeImageCompute::~ReshapeImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
+REGISTER_LITE_KERNEL(reshape,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReshapeImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reshape,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReshapeImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(reshape2,
     kMetal,
     kFloat,

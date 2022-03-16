@@ -20,7 +20,8 @@ __kernel void matmul_highdim(__read_only image2d_t input,
                              int M,
                              int K,
                              int out_w,
-                             int out_img_width) {
+                             int out_img_width,
+                             float scale) {
   int out_n = get_global_id(2);  // h * N
   int out_c = get_global_id(0);  // n
   int out_cblks = get_global_id(1);
@@ -49,7 +50,10 @@ __kernel void matmul_highdim(__read_only image2d_t input,
   out0.w = CONVERT_TYPE_TO(output0.w, CL_DTYPE);
   int2 output_pos0 = (int2)(out_cblks * out_w + out_c, out_n);
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos0, out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                 output,
+                 output_pos0,
+                 out0 * CONVERT_TYPE_TO(scale, CL_DTYPE));
 }
 
 __kernel void matmul_xdim4_ydim1(__read_only image2d_t input,
@@ -58,7 +62,8 @@ __kernel void matmul_xdim4_ydim1(__read_only image2d_t input,
                                  int M,
                                  int C,
                                  int H,
-                                 int W) {
+                                 int W,
+                                 float scale) {
   int nblk_id = get_global_id(2);  // n
   int h_id = get_global_id(0);     // h --> c
   int cblk_id = get_global_id(1);  // cblk_id
@@ -130,10 +135,11 @@ __kernel void matmul_xdim4_ydim1(__read_only image2d_t input,
   int2 out_pos2 = (int2)(nblk_id * 4 + h_id, cblk_id * 4 + 2);
   int2 out_pos3 = (int2)(nblk_id * 4 + h_id, cblk_id * 4 + 3);
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos0, out0);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos1, out1);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos2, out2);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos3, out3);
+  CL_DTYPE s = CONVERT_TYPE_TO(scale, CL_DTYPE);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos0, out0 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos1, out1 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos2, out2 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos3, out3 * s);
 }
 
 __kernel void matmul_xdim3_ydim1(__read_only image2d_t input,
@@ -142,7 +148,8 @@ __kernel void matmul_xdim3_ydim1(__read_only image2d_t input,
                                  int M,
                                  int C,
                                  int H,
-                                 int W) {
+                                 int W,
+                                 float scale) {
   int hblk_id = get_global_id(0);
   int cblk_id = get_global_id(1);
 
@@ -210,10 +217,11 @@ __kernel void matmul_xdim3_ydim1(__read_only image2d_t input,
   int2 out_pos2 = (int2)(hblk_id, cblk_id * 4 + 2);
   int2 out_pos3 = (int2)(hblk_id, cblk_id * 4 + 3);
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos0, out0);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos1, out1);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos2, out2);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos3, out3);
+  CL_DTYPE s = CONVERT_TYPE_TO(scale, CL_DTYPE);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos0, out0 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos1, out1 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos2, out2 * s);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos3, out3 * s);
 }
 
 __kernel void matmul_highdimx_ydim2(__read_only image2d_t input,
@@ -222,7 +230,8 @@ __kernel void matmul_highdimx_ydim2(__read_only image2d_t input,
                                     int M,
                                     int K,
                                     int out_w,
-                                    int out_img_width) {
+                                    int out_img_width,
+                                    float scale) {
   int out_n = get_global_id(2);  // h * N
   int out_c = get_global_id(0);  // n
   int cblk_id = get_global_id(1);
@@ -246,5 +255,8 @@ __kernel void matmul_highdimx_ydim2(__read_only image2d_t input,
   out0.w = CONVERT_TYPE_TO(output0.w, CL_DTYPE);
   int2 output_pos0 = (int2)(cblk_id * out_w + out_c, out_n);
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos0, out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                 output,
+                 output_pos0,
+                 out0 * CONVERT_TYPE_TO(scale, CL_DTYPE));
 }

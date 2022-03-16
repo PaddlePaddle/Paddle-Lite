@@ -40,6 +40,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
   output_tensor_w_ = output_dims[3];
 
   auto filter_dims = conv_param_->filter->dims();
+  filter_tensor_n_ = filter_dims[0];
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
   filter_tensor_w_ = filter_dims[3];
@@ -109,6 +110,26 @@ void ConvTransposeImageCompute::PrepareForRun() {
                           filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+  } else if (groups_ > 1) {
+    CHECK_EQ(filter_tensor_n_ % groups_, 0);
+    std::string kernel_name = "group_conv2d_transpose";
+    is_group_conv_ = true;
+    kernel_func_names_.push_back(kernel_name);
+
+    DDimLite filter_trans_dims{
+        {filter_dims[0], filter_dims[1], filter_dims[2], filter_dims[3]}};
+    CLImageConverterDefault converter;
+    const DDim& filter_image_dims =
+        converter.InitImageDimInfoWith(filter_trans_dims);
+    filter_image_w_ = filter_image_dims[0];
+    filter_image_h_ = filter_image_dims[1];
+    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
+    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+    converter.NCHWToImage(reinterpret_cast<float*>(filter_cpu),
+                          filter_image_data,
+                          filter_trans_dims);
+    MUTABLE_DATA_GPU(
+        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
     LOG(FATAL)
         << "conv2d_transpose image compute not support this condition yet! "
@@ -159,6 +180,23 @@ void ConvTransposeImageCompute::PrepareForRun() {
     if (conv_param_->activation_param.active_type ==
         lite_api::ActivationType::kRelu) {
       build_options_single += " -DRELU";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kSigmoid) {
+      build_options_single += " -DSIGMOID";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kTanh) {
+      build_options_single += " -DTANH";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kSwish) {
+      std::string scale =
+          std::to_string(conv_param_->activation_param.swish_scale);
+      build_options_single += " -DSWISH -DACT_SCALE=" + scale + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kAbs) {
+      build_options_single += " -DABS";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kExp) {
+      build_options_single += " -DEXP";
     } else if (conv_param_->activation_param.active_type ==
                lite_api::ActivationType::kRelu6) {
       build_options_single += " -DRELU6";
@@ -322,6 +360,16 @@ void ConvTransposeImageCompute::SetArgs() {
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
   CL_CHECK_FATAL(status);
+  if (is_group_conv_) {
+    int in_channels_per_group = input_tensor_c_ / groups_;
+    kernel->setArg(idx++, in_channels_per_group);
+    CL_CHECK_FATAL(status);
+    int out_channels_per_group = output_tensor_c_ / groups_;
+    kernel->setArg(idx++, out_channels_per_group);
+    CL_CHECK_FATAL(status);
+    VLOG(4) << "in_per_group: " << in_channels_per_group
+            << ", out_per_group: " << out_channels_per_group;
+  }
 }
 
 void ConvTransposeImageCompute::Run() {

@@ -63,12 +63,24 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        x_dtype = program_config.inputs["input_data"].dtype
+        target_type = predictor_config.target()
+        if target_type in [TargetType.ARM]:
+            if predictor_config.precision(
+            ) == PrecisionType.FP16 and x_dtype != np.float32:
+                return False
         return True
 
     def sample_program_configs(self, draw):

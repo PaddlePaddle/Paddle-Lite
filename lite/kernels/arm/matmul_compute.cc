@@ -95,14 +95,20 @@ namespace arm {
       ldb_ = k_;                                                             \
     }                                                                        \
     ldc_ = n_;                                                               \
-  } else if (x_dims.size() > 2 && y_dims.size() == 1) {                      \
-    m_ = x_dims.count(0, x_dims.size() - 1);                                 \
+  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {                     \
     n_ = 1;                                                                  \
-    k_ = x_dims[x_dims.size() - 1];                                          \
+    k_ = y_dims[0];                                                          \
+    if (!x_transpose) {                                                      \
+      m_ = x_dims.count(0, x_dims.size() - 1);                               \
+      CHECK_EQ(k_, x_dims[x_dims.size() - 1])                                \
+          << "k_ must be equal x_dims[x_dims.size() - 1]";                   \
+    } else {                                                                 \
+      m_ = x_dims.count(1, x_dims.size() - 1);                               \
+      CHECK_EQ(k_, x_dims[0]) << "k_ must be equal x_dims[0]";               \
+    }                                                                        \
     lda_ = k_;                                                               \
     ldb_ = n_;                                                               \
     ldc_ = n_;                                                               \
-    CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";                 \
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {                     \
     m_ = 1;                                                                  \
     n_ = 1;                                                                  \
@@ -261,9 +267,9 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            false,
                            act_param,
                            &ctx);
-  } else if (x_dims.size() > 2 && y_dims.size() == 1) {
+  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::sgemm(false,
+    lite::arm::math::sgemm(x_transpose,
                            false,
                            m_,
                            n_,
@@ -434,9 +440,9 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              act_param,
                              &ctx);
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
-  } else if (x_dims.size() > 2 && y_dims.size() == 1) {
+  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::gemm_s8(false,
+    lite::arm::math::gemm_s8(x_transpose,
                              false,
                              m_,
                              n_,
@@ -602,9 +608,9 @@ void MatMulCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                       false,
                                       act_param,
                                       &ctx);
-  } else if (x_dims.size() > 2 && y_dims.size() == 1) {
+  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::fp16::sgemm_fp16(false,
+    lite::arm::math::fp16::sgemm_fp16(x_transpose,
                                       false,
                                       m_,
                                       n_,

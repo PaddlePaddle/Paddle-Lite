@@ -4,7 +4,7 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv8 or armv7hf or armv7, default armv8.
+# armv8 or armv7hf or armv7 or x86, default armv8.
 ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
@@ -51,11 +51,17 @@ NNADAPTER_WITH_VERISILICON_TIMVX=OFF
 NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="main"
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz"
+NNADAPTER_WITH_NVIDIA_TENSORRT=OFF
+NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
+NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
 NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
 # bdcentos_x86_64, ubuntu_x86_64 or kylin_aarch64
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
+NNADAPTER_WITH_INTEL_OPENVINO=OFF
+# /opt/intel/openvino_<version>
+NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
 
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
@@ -211,10 +217,15 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+                        -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
+                        -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
+                        -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
                         -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
+                        -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
+                        -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -559,6 +570,18 @@ function main {
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_nvidia_tensorrt=*)
+                NNADAPTER_WITH_NVIDIA_TENSORRT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_nvidia_cuda_root=*)
+                NNADAPTER_NVIDIA_CUDA_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_nvidia_tensorrt_root=*)
+                NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_kunlunxin_xtcl=*)
                 NNADAPTER_WITH_KUNLUNXIN_XTCL="${i#*=}"
                 shift
@@ -574,6 +597,14 @@ function main {
             --nnadapter_kunlunxin_xtcl_sdk_env=*)
                 # bdcentos_x86_64, ubuntu_x86_64, kylin_aarch64
                 NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_intel_openvino=*)
+                NNADAPTER_WITH_INTEL_OPENVINO="${i#*=}"
+                shift
+                ;;
+            --nnadapter_intel_openvino_sdk_root=*)
+                NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

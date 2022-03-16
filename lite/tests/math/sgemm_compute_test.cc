@@ -278,7 +278,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                 for (auto& beta : {0.f, 0.5f}) {
                   for (auto& offset : {0, 10}) {
                     for (auto& has_bias : {false, true}) {
-                      for (auto& flag_act : {0, 1, 2, 10}) {  // act=4
+                      for (auto& flag_act : {0, 1, 2, 4, 10}) {
                         for (auto& th : {1, 2, 4}) {
                           int lda = k + offset;
                           if (tra) {

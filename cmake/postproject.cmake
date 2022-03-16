@@ -123,7 +123,7 @@ if (LITE_ON_TINY_PUBLISH)
     # 2. strip rtti lib to reduce lib size
     #     2.1 replace typeid by fastTypeId
     #     2.2 replace dynamic_cast by static_cast
-    if(NOT LITE_WITH_NNADAPTER)
+    if ((NOT LITE_WITH_NNADAPTER) AND (NOT LITE_WITH_LOG))
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
     endif()
 endif()

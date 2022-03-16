@@ -73,6 +73,8 @@ TEST(Assign, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
 #else
   return;
 #endif

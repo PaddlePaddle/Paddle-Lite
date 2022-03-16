@@ -125,7 +125,8 @@ static void conv_basic(const Dtype1* din,
                       ? dst_data_ref[out_idx]
                       : (Dtype2)(dst_data_ref[out_idx] * leaky_relu_alpha);
             } else {
-              VLOG(4) << "this act type: " << flag_relu << " does not support";
+              // VLOG(4) << "this act type: " << flag_relu << " does not
+              // support";
             }
           }
         }
@@ -1504,7 +1505,7 @@ const int stride = 2;
                 const int oc = 2;
 #else  // big scale with group
   const int stride = 1;
-  const int group = 1;
+  const int group = 2;
   const int batch_size = 1;
   const int ic = 64 / 1;
   const int ih = 54 / 1;
@@ -1512,12 +1513,12 @@ const int stride = 2;
   const int oc = 64 / 1;
 #endif
 
-  const bool bias_flag = false;
-  const std::string relu_flag = "";
+  const bool bias_flag = true;
+  const std::string relu_flag = "relu";
 #endif
               int filter_channel = ic;
               if (group > 1) {
-                filter_channel = 1;
+                filter_channel = ic / group;
               }
 
               const int oh =
@@ -1531,6 +1532,13 @@ const int stride = 2;
                 const bool fp16_flag =
                     (CLRuntime::Global()->get_precision() ==
                      lite_api::CLPrecisionType::CL_PRECISION_FP16);
+// #define USE_TUNE
+#ifdef USE_TUNE
+                const std::string tuned_path = "/data/local/tmp/";
+                const std::string tuned_name = "lite_opencl_tuned.bin";
+                CLRuntime::Global()->set_auto_tune(
+                    paddle::lite_api::CL_TUNE_NORMAL, tuned_path, tuned_name);
+#endif
                 SHADOW_LOG << "to get kernel ...";
                 auto kernels =
                     KernelRegistry::Global().Create("conv2d",
@@ -1646,7 +1654,6 @@ const int stride = 2;
                 for (int i = 0; i < filter_v.size(); ++i) {
                   filter_v[i] = gen(engine);
                 }
-
                 SHADOW_LOG << "after gen input and filter ...";
                 SHADOW_LOG << "input_v.size(): " << input_v.size();
                 SHADOW_LOG << "filter_v.size(): " << filter_v.size();

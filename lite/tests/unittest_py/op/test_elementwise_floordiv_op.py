@@ -41,6 +41,20 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        opencl_valid_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

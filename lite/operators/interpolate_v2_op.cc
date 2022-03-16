@@ -60,23 +60,22 @@ bool InterpolateV2Op::InferShapeImpl() const {
     auto OutSize_data = OutSize->data<int>();
     out_h = OutSize_data[0];
     out_w = OutSize_data[1];
-  } else if (param_.out_h > 0 && param_.out_w > 0) {
-    out_h = param_.out_h;
-    out_w = param_.out_w;
   } else {
-    float scale_w = -1.f;
     float scale_h = -1.f;
+    float scale_w = -1.f;
     if (Scale) {
       auto Scale_dims = Scale->dims();
-      CHECK_EQ(Scale_dims.size(), 1) << "Scale's dimension size must be 1.";
-      out_h = -1;
-      out_w = -1;
+      LOG(INFO) << "Scale->dims() " << Scale->dims();
+      scale_h = Scale->data<float>()[0];
+      scale_w = Scale->data<float>()[1];
+      out_h = static_cast<int>(h * scale_h);
+      out_w = static_cast<int>(w * scale_w);
     } else {
       if (param_.scale_v.size() > 0) {
         scale_h = param_.scale_v[0];
         scale_w = param_.scale_v[1];
-        CHECK_GT(scale_h, 0) << "scale_h must be greaten 0.";
-        CHECK_GT(scale_w, 0) << "scale_w must be greaten 0.";
+        CHECK_GT(scale_h, 0) << "scale_h must be greater 0.";
+        CHECK_GT(scale_w, 0) << "scale_w must be greater 0.";
         out_h = static_cast<int>(h * scale_h);
         out_w = static_cast<int>(w * scale_w);
       } else {
@@ -95,6 +94,7 @@ bool InterpolateV2Op::InferShapeImpl() const {
 
 bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
                                  lite::Scope* scope) {
+  param_.version_2 = true;
   auto X = op_desc.Input("X").front();
   if (op_desc.HasInput("OutSize")) {
     auto out_size_var_names = op_desc.Input("OutSize");

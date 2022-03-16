@@ -47,6 +47,11 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
       for (int64_t i = 0; i < expand_param_->ExpandTimes->numel(); i++) {
         expand_times.push_back(expand_times_data[i]);
       }
+    } else if (!expand_param_->expand_times_tensor.empty()) {
+      for (size_t i = 0; i < expand_param_->expand_times_tensor.size(); i++) {
+        expand_times.push_back(
+            expand_param_->expand_times_tensor[i]->template data<int>()[0]);
+      }
     } else {
       expand_times = expand_param_->expand_times;
     }
@@ -130,11 +135,6 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int in_c_block = in_image_width / x_dims[3];
     int in_nh = x_dims[0] * x_dims[2];
 
-    int expand_times_n = expand_times[0];
-    int expand_times_c = expand_times[1];
-    int expand_times_h = expand_times[2];
-    int expand_times_w = expand_times[3];
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
@@ -164,9 +164,9 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(11, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(12, x_dims[1]);
+    status = kernel.setArg(12, static_cast<int>(x_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, out_dims[1]);
+    status = kernel.setArg(13, static_cast<int>(out_dims[1]));
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -217,6 +217,10 @@ REGISTER_LITE_KERNEL(expand,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_times_tensor",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})

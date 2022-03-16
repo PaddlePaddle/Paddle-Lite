@@ -46,6 +46,32 @@ inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   return vec_new_data;
 }
 
+#define ALPHA_COMPUTE_BOUND                 \
+  int idx = dx * 2;                         \
+  int sx = xofs[idx];                       \
+  int sx1 = xofs[idx + 1];                  \
+  int sxn = xofs[idx + 2];                  \
+  int sxn1 = xofs[idx + 3];                 \
+  float16x4_t _s0s0n;                       \
+  _s0s0n[0] = *(s0 + sx);                   \
+  _s0s0n[1] = *(s0 + sx1);                  \
+  _s0s0n[2] = *(s0 + sxn);                  \
+  _s0s0n[3] = *(s0 + sxn1);                 \
+  float16x4_t _s1s1n;                       \
+  _s1s1n[0] = *(s1 + sx);                   \
+  _s1s1n[1] = *(s1 + sx1);                  \
+  _s1s1n[2] = *(s1 + sxn);                  \
+  _s1s1n[3] = *(s1 + sxn1);                 \
+  float16x4_t _a = vld1_f16(alphap);        \
+  float16x4_t _ms0 = vmul_f16(_s0s0n, _a);  \
+  float16x4_t _ms1 = vmul_f16(_s1s1n, _a);  \
+  float16x4_t _mss = vpadd_f16(_ms0, _ms1); \
+  rows0p[dx] = _mss[0];                     \
+  rows0p[dx + 1] = _mss[1];                 \
+  rows1p[dx] = _mss[2];                     \
+  rows1p[dx + 1] = _mss[3];                 \
+  alphap += 4;
+
 #define ALPHA_COMPUTE                     \
   float16x4_t va = vld1_f16(alphap);      \
   float16x4_t vs0 = vld1_f16(s0p);        \
@@ -105,11 +131,11 @@ void bilinear_interp(const float16_t* src,
   int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
 
   int* xofs = buf;
-  int* yofs = buf + w_out;
+  int* yofs = buf + w_out * 2;
 
-  float16_t* alpha = reinterpret_cast<float16_t*>(buf + w_out + h_out);
+  float16_t* alpha = reinterpret_cast<float16_t*>(buf + 2 * w_out + 2 * h_out);
   float16_t* beta =
-      reinterpret_cast<float16_t*>(buf + w_out + h_out + w_out * 2);
+      reinterpret_cast<float16_t*>(buf + w_out + 2 * h_out + w_out * 2);
 
   float fx = 0.0f;
   float fy = 0.0f;
@@ -123,7 +149,8 @@ void bilinear_interp(const float16_t* src,
       fx = dx * scale_x;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
       alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
     }
@@ -132,7 +159,8 @@ void bilinear_interp(const float16_t* src,
       fy = dy * scale_y;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
       beta[dy * 2 + 1] = static_cast<float16_t>(fy);
     }
@@ -145,7 +173,8 @@ void bilinear_interp(const float16_t* src,
       fx = fx < 0 ? 0.f : fx;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
       alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
     }
@@ -155,7 +184,8 @@ void bilinear_interp(const float16_t* src,
       fy = fy < 0 ? 0.f : fy;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
       beta[dy * 2 + 1] = static_cast<float16_t>(fy);
     }
@@ -181,10 +211,11 @@ void bilinear_interp(const float16_t* src,
   }
   // h_bound loop
   for (int dy = 0; dy < h_bound; dy++) {
-    int sy = yofs[dy];
+    int sy0 = yofs[dy * 2];
+    int sy1 = yofs[dy * 2 + 1];
 
-    const float16_t* s0 = src + sy * w_in;
-    const float16_t* s1 = src + (sy + 1) * w_in;
+    const float16_t* s0 = src + sy0 * w_in;
+    const float16_t* s1 = src + sy1 * w_in;
 
     const float16_t* alphap = alpha;
     float16_t* rows0p = rows0;
@@ -193,41 +224,31 @@ void bilinear_interp(const float16_t* src,
     int dx = 0;
     // w_bound loop
     for (; dx + 1 < w_bound; dx += 2) {
-      int sx = xofs[dx];
-      int sxn = xofs[dx + 1];
-      const float16_t* s0p = s0 + sx;
-      const float16_t* s1p = s1 + sx;
-      const float16_t* s0np = s0 + sxn;
-      const float16_t* s1np = s1 + sxn;
-
-      ALPHA_COMPUTE
-
-      alphap += 4;
+      ALPHA_COMPUTE_BOUND
     }
     // w_bound remain loop
     for (; dx < w_bound; dx++) {
-      int sx = xofs[dx];
-      const float16_t* s0p = s0 + sx;
-      const float16_t* s1p = s1 + sx;
+      auto idx = dx * 2;
+      int sx = xofs[idx];
+      int sx1 = xofs[idx + 1];
 
-      float16_t a0 = alphap[0];
-      float16_t a1 = alphap[1];
-      rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
-      rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
+      rows0p[dx] = s0[sx] * alphap[0] + s0[sx1] * alphap[1];
+      rows1p[dx] = s1[sx] * alphap[0] + s1[sx1] * alphap[1];
 
       alphap += 2;
     }
 
-    const float16_t buffer1[2] = {*(src + sy * w_in + w_in - 1),
-                                  *(src + sy * w_in + w_in - 1)};
-    const float16_t buffer2[2] = {*(src + (sy + 1) * w_in + w_in - 1),
-                                  *(src + (sy + 1) * w_in + w_in - 1)};
+    const float16_t buffer1[2] = {*(src + sy0 * w_in + w_in - 1),
+                                  *(src + sy0 * w_in + w_in - 1)};
+    const float16_t buffer2[2] = {*(src + sy1 * w_in + w_in - 1),
+                                  *(src + sy1 * w_in + w_in - 1)};
     // w_bound - w_out loop
     for (; dx + 1 < w_out; dx += 2) {
       const float16_t* s0p = buffer1;
       const float16_t* s1p = buffer2;
       const float16_t* s0np = buffer1;
       const float16_t* s1np = buffer2;
+
       ALPHA_COMPUTE
 
       alphap += 4;
@@ -286,24 +307,18 @@ void bilinear_interp(const float16_t* src,
     int dx = 0;
     // w_bound loop
     for (; dx + 1 < w_bound; dx += 2) {
-      int sx = xofs[dx];
-      int sxn = xofs[dx + 1];
-      const float16_t* s0p = s0 + sx;
-      const float16_t* s1p = s1 + sx;
-      const float16_t* s0np = s0 + sxn;
-      const float16_t* s1np = s1 + sxn;
-
-      ALPHA_COMPUTE
-
-      alphap += 4;
+      ALPHA_COMPUTE_BOUND
     }
     // w_bound remain loop
     for (; dx < w_bound; dx++) {
-      int sx = xofs[dx];
+      int sx = xofs[dx * 2];
+      int sx1 = xofs[dx * 2 + 1];
+
       const float16_t* s0p = s0 + sx;
+      const float16_t* s1p = s0 + sx1;
       float16_t a0 = alphap[0];
       float16_t a1 = alphap[1];
-      rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+      rows0p[dx] = s0p[0] * a0 + s1p[0] * a1;
       rows1p[dx] = rows0p[dx];
 
       alphap += 2;
@@ -317,6 +332,7 @@ void bilinear_interp(const float16_t* src,
       const float16_t* s1p = buffer1;
       const float16_t* s0np = buffer1;
       const float16_t* s1np = buffer1;
+
       ALPHA_COMPUTE
 
       alphap += 4;
@@ -375,27 +391,21 @@ void nearest_interp(const float16_t* src,
                     float scale_x,
                     float scale_y,
                     bool with_align) {
-  float scale_w_new = (with_align)
-                          ? (static_cast<float>(w_in - 1) / (w_out - 1))
-                          : (static_cast<float>(w_in) / (w_out));
-  float scale_h_new = (with_align)
-                          ? (static_cast<float>(h_in - 1) / (h_out - 1))
-                          : (static_cast<float>(h_in) / (h_out));
   if (with_align) {
     for (int h = 0; h < h_out; ++h) {
       float16_t* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      int near_y = static_cast<int>(scale_y * h + 0.5);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w + 0.5);
+        int near_x = static_cast<int>(scale_x * w + 0.5);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
   } else {
     for (int h = 0; h < h_out; ++h) {
       float16_t* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h);
+      int near_y = static_cast<int>(scale_y * h);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w);
+        int near_x = static_cast<int>(scale_x * w);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
@@ -485,6 +495,13 @@ void interpolate(lite::Tensor* X,
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
 
+  float scale_w_new = (with_align)
+                          ? (static_cast<float>(in_w - 1) / (out_w - 1))
+                          : (static_cast<float>(in_w) / (out_w));
+  float scale_h_new = (with_align)
+                          ? (static_cast<float>(in_h - 1) / (out_h - 1))
+                          : (static_cast<float>(in_h) / (out_h));
+
   if (interpolate_type == "Bilinear") {
     LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
@@ -507,8 +524,8 @@ void interpolate(lite::Tensor* X,
                      dout + spatial_out * i,
                      out_w,
                      out_h,
-                     1.f / width_scale,
-                     1.f / height_scale,
+                     scale_w_new,
+                     scale_h_new,
                      with_align);
     }
     LITE_PARALLEL_END()

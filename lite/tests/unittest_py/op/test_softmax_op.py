@@ -60,8 +60,14 @@ class TestSoftmaxOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -71,6 +77,10 @@ class TestSoftmaxOp(AutoScanTest):
         if predictor_config.target() == TargetType.Metal:
             if len(x_shape) != 4 or axis != 1 or x_shape[0] != 1:
                 return False
+        if predictor_config.target() == TargetType.NNAdapter:
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if len(x_shape) < 2:
+                    return False
         return True
 
     def sample_program_configs(self, draw):
@@ -80,7 +90,7 @@ class TestSoftmaxOp(AutoScanTest):
                     min_value=1, max_value=64), min_size=0, max_size=3))
         in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
-        assume(input_axis < len(in_shape))
+        assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
         def generate_input(*args, **kwargs):
             return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
@@ -143,6 +153,9 @@ class TestSoftmaxOp(AutoScanTest):
         elif target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 2000
+        elif target_str == "NNAdapter":
+            # Make sure to generate enough valid cases for NNAdapter
+            max_examples = 200
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 

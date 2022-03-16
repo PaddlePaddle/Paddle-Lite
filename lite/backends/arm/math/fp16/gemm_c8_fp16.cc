@@ -1061,8 +1061,6 @@ void gemm_prepack_c8_fp16_small(int M,
         "ldp  q18, q19, [%[a]], #32\n"
         "fmul v8.8h,  v16.8h, v0.h[0] \n"
         "fmul v9.8h,  v16.8h, v1.h[0] \n"
-        /* load b6, b7 */
-        "ldp  q6,  q7,  [%[b]], #32\n"
         "fmul v10.8h, v16.8h, v2.h[0] \n"
         "fmul v11.8h, v16.8h, v3.h[0] \n"
         "sub  %[b],   %[b],   #64     \n"
@@ -1359,7 +1357,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "vmla.f16 q9,  q7, d2[3]\n"
         "vmla.f16 q10, q7, d4[3]\n"
         "vmla.f16 q11, q7, d6[3]\n"
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "add  %[b_ptr], %[ldb]\n"
         "vmla.f16 q12, q7, d1[3]\n"
         "vmla.f16 q13, q7, d3[3]\n"
@@ -1447,7 +1445,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "vmla.f16 q9,  q6, d3[2]\n"
         "vmla.f16 q10, q6, d5[2]\n"
         "vmla.f16 q11, q6, d7[2]\n"
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "add  %[b_ptr], %[ldb]\n"
 
         "vmla.f16 q8,  q7, d1[3]\n"
@@ -1501,7 +1499,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "add  %[b_ptr], %[ldb]\n"
         "vld1.16 {d12-d15}, [%[a_ptr]]!\n"
 
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "vmla.f16 q8,  q4, d1[0]\n"
         "vmla.f16 q9,  q5, d1[1]\n"
         "vmla.f16 q10, q6, d1[2]\n"

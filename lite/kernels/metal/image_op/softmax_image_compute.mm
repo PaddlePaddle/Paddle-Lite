@@ -29,6 +29,7 @@ void SoftmaxImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
+    auto input_dims = param.x->dims();
     auto output_dims = param.output->dims();
 
 #ifdef LITE_WITH_METAL_FULL
@@ -37,13 +38,17 @@ void SoftmaxImageCompute::PrepareForRun() {
     output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
+    auto axis = param.axis;
+    if (axis < 0) {
+        axis += input_dims.size();
+    }
     // whether to use mps
     bool should_use_mps = false;
     if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->dim_[3]);
             int output_c = static_cast<int>(output_buffer_->dim_[3]);
-            if (input_c >= 3 && output_c >= 3) {
+            if (input_c >= 3 && output_c >= 3 && input_dims.size() == 4 && axis == 1) {
                 should_use_mps = true;
             }
         }
@@ -86,18 +91,42 @@ void SoftmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
 
-    if (input_dims.size() - param.axis != 3 && input_dims.size() != 2) {
-        LOG(FATAL) << "only support input with rank(dim)=2 or doing softmax in C channel";
+    if (input_dims.size() != 4 && input_dims.size() != 2) {
+        LOG(FATAL) << "only support input with rank(dim)=4 and 2";
         return;
     }
 
-    function_name_ = "softmax";
+    auto axis = param.axis;
+    if (axis < 0) {
+        axis += input_dims.size();
+    }
+
+    std::string function_name = "softmax";
+    if (input_dims.size() == 4) {
+        if (axis == 1) {
+            function_name = "softmax";
+        } else if (axis == 2) {
+            function_name = "softmax_h_d3_common";
+        } else if (axis == 3) {
+            function_name = "softmax_w_d3_common";
+        }
+    }
+    if (input_dims.size() == 2) {
+        function_name = "softmax_dim2_common";
+    }
+
+    function_name_ = function_name;
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 
-    SoftmaxMetalParam metal_param{
-        (int)input_buffer_->tensor_dim_[0], (int)input_buffer_->tensor_dim_[1]};
+    SoftmaxMetalParam2 metal_param{
+        (int)input_buffer_->pad_to_four_dim_[0],
+        (int)input_buffer_->pad_to_four_dim_[1],
+        (int)input_buffer_->pad_to_four_dim_[2],
+        (int)input_buffer_->pad_to_four_dim_[3],
+    };
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 }

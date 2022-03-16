@@ -48,17 +48,13 @@ std::vector<std::vector<T>> ReadRawData(
       std::ifstream fin(raw_data_file_dir, std::ios::in | std::ios::binary);
       CHECK(fin.is_open()) << "failed to open file " << raw_data_file_dir;
       fin.seekg(0, std::ios::end);
-      int file_size = fin.tellg();
       fin.seekg(0, std::ios::beg);
-      CHECK_EQ(static_cast<size_t>(file_size),
-               static_cast<size_t>(image_size) * sizeof(T) / sizeof(char));
-      fin.read(reinterpret_cast<char*>(data), file_size);
+      fin.read(reinterpret_cast<char*>(data), image_size * sizeof(T));
       fin.close();
       data += image_size;
     }
     raw_data.emplace_back(one_iter_raw_data);
   }
-
   return raw_data;
 }
 

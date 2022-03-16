@@ -50,6 +50,15 @@ parser.add_argument(
     ],
     required=True)
 parser.add_argument(
+    "--enforce_rpc", default='off', type=str, help="whther rpc is enforced")
+
+parser.add_argument(
+    "--server_ip",
+    default="localhost",
+    type=str,
+    help="when rpc is used , the ip address of the server")
+
+parser.add_argument(
     "--url",
     type=str,
     help="Address of model download in model test", )
@@ -90,6 +99,8 @@ parser.add_argument(
     default="",
     type=str,
     help="Set nnadapter mixed precision quantization config path")
+args = parser.parse_args()
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
@@ -252,13 +263,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
             # arr=[1, K], base=[k]
             elif base_len < arr_len and (arr_shape[0] == 1 or
                                          arr_shape[-1] == 1):
@@ -280,13 +293,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                                rtol)
                     self.assertTrue(res, "Output has diff. ")
                 else:
+                    diff = abs(base - arr)
                     self.assertTrue(
                         np.allclose(
                             base.flatten(),
                             arr.flatten(),
                             atol=atol,
                             rtol=rtol),
-                        "Output has diff. ")
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
             else:
                 self.assertTrue(
                     base.shape == arr.shape,
@@ -305,10 +320,19 @@ class AutoScanBaseTest(unittest.TestCase):
                 res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
                 self.assertTrue(res, "Output has diff. ")
             else:
-                self.assertTrue(
-                    np.allclose(
-                        base, arr, atol=atol, rtol=rtol),
-                    "Output has diff. ")
+                diff = abs(base - arr)
+                if diff.size != 0:
+                    self.assertTrue(
+                        np.allclose(
+                            base, arr, atol=atol, rtol=rtol),
+                        "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                        format(diff.max(), diff.argmax(), base, arr))
+                else:
+                    self.assertTrue(
+                        np.allclose(
+                            base, arr, atol=atol, rtol=rtol),
+                        "Output has diff,\nbase={}, \narr={}".format(base,
+                                                                     arr))
 
     @abc.abstractmethod
     def assert_tensors_near(self,
@@ -332,15 +356,15 @@ class AutoScanBaseTest(unittest.TestCase):
                                           flag_precision_fp16)
         else:
             for key in tensor:
-                opencl_str = "/target_trans"
-                other_str = "__Mangled_1"
-                index = key.rfind(opencl_str)
+                suffix_str = [
+                    "/target_trans", "__Mangled_1", "/precision_trans"
+                ]
                 paddlekey = key
-                if index > 0:
-                    paddlekey = key[0:index]
-                index = key.rfind(other_str)
-                if index > 0:
-                    paddlekey = key[0:index]
+                for s_str in suffix_str:
+                    index = key.rfind(s_str)
+                    if index > 0:
+                        paddlekey = key[0:index]
+
                 if (paddlekey == "saved_mean" or
                         paddlekey == "saved_variance" or
                         paddlekey == "mean_data" or
@@ -451,9 +475,10 @@ class AutoScanBaseTest(unittest.TestCase):
                 # creat model and prepare feed data
                 if flag_precision_fp16:
                     atol_ = 1e-1
-                    rtol_ = 5e-2
+                    rtol_ = 5.3e-2
                 if quant:
-                    if platform.system() == 'Darwin':
+                    if platform.system() == 'Darwin' or platform.processor(
+                    ) == 'x86_64':
                         # only run in linux
                         continue
                     atol_ = 1e-3
@@ -538,7 +563,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     os.mkdir(self.cache_dir)
                 try:
                     result, opt_model_bytes = self.run_lite_config(
-                        model, params, feed_data, pred_config)
+                        model, params, feed_data, pred_config, args.server_ip)
                     results.append(result)
                     # add ignore methods
                     if self.passes is not None:  # pass check
@@ -584,16 +609,16 @@ class AutoScanBaseTest(unittest.TestCase):
             base_config = self.create_inference_config(ir_optim=False)
             results.append(
                 self.run_test_config(model, params, base_config, feed_data))
-
+            flag_precision_fp16 = False
             for paddlelite_config in paddlelite_configs:
                 pred_config = paddlelite_config.value()
 
                 try:
                     result, opt_model_bytes = self.run_lite_config(
-                        model, params, feed_data, pred_config)
+                        model, params, feed_data, pred_config, args.server_ip)
                     results.append(result)
                     self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
+                                             results[0], flag_precision_fp16)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -777,8 +802,12 @@ class AutoScanBaseTest(unittest.TestCase):
                 assert False
 
     @abc.abstractmethod
-    def run_lite_config(self, model, params, feed_data,
-                        pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self,
+                        model,
+                        params,
+                        feed_data,
+                        pred_config,
+                        server_ip="localhost") -> Dict[str, np.ndarray]:
         raise NotImplementedError
 
     # enable a predictor config

@@ -350,7 +350,7 @@ class XPUConv2dFuser : public FuseBase {
     fusion_bias_node->arg()->is_weight = true;
     fusion_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* fusion_bias_t = scope->NewTensor(fusion_bias_name);
+    auto* fusion_bias_t = scope->MutableParent()->NewTensor(fusion_bias_name);
     fusion_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
 
     op_desc.SetAttr<bool>("has_bias", (with_bn_ || with_conv_bias_));
@@ -486,7 +486,8 @@ class XPUConv2dFuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    auto* max_output_tensor =
+        scope->MutableParent()->NewTensor(max_output_name);
     max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});

@@ -59,9 +59,61 @@ class NearestInterpComputeImageDefault
                                      out_image_shape["width"],
                                      out_image_shape["height"],
                                      nullptr);
+    float align_data = (param.align_corners) ? 0.5 : 0.0f;
+    float ratio_h = 0.f;
+    float ratio_w = 0.f;
 
-    float scale_h = y_dims[2] / x_dims[2];
-    float scale_w = y_dims[3] / x_dims[3];
+    if (param.version_2) {
+      auto SizeTensor = param.SizeTensor;
+      auto OutSize = param.OutSize;
+      auto Scale = param.Scale;
+      float scale_h = -1.f;
+      float scale_w = -1.f;
+      if (!SizeTensor.empty()) {
+      } else if (OutSize) {
+      } else {
+        if (Scale) {
+          scale_h = Scale->data<float>()[0];
+          scale_w = Scale->data<float>()[1];
+        } else {
+          scale_h = param.scale_v[0];
+          scale_w = param.scale_v[1];
+        }
+      }
+
+      if (y_dims[2] > 1) {
+        float new_scale_h = 0.f;
+        new_scale_h = (scale_h > 0) ? static_cast<float>(1. / scale_h)
+                                    : static_cast<float>(x_dims[2]) / y_dims[2];
+        ratio_h = (param.align_corners)
+                      ? static_cast<float>(x_dims[2] - 1) / (y_dims[2] - 1)
+                      : static_cast<float>(new_scale_h);
+      }
+      if (y_dims[3] > 1) {
+        float new_scale_w = 0.f;
+        new_scale_w = (scale_w > 0) ? static_cast<float>(1. / scale_w)
+                                    : static_cast<float>(x_dims[3]) / y_dims[3];
+        ratio_w = (param.align_corners)
+                      ? static_cast<float>(x_dims[3] - 1) / (y_dims[3] - 1)
+                      : static_cast<float>(new_scale_w);
+      }
+    } else {
+      if (y_dims[2] > 1) {
+        ratio_h = (param.align_corners)
+                      ? static_cast<float>(x_dims[2] - 1) / (y_dims[2] - 1)
+                      : static_cast<float>(x_dims[2]) / y_dims[2];
+      }
+      if (y_dims[3] > 1) {
+        ratio_w = (param.align_corners)
+                      ? static_cast<float>(x_dims[3] - 1) / (y_dims[3] - 1)
+                      : static_cast<float>(x_dims[3]) / y_dims[3];
+      }
+    }
+    if (y_dims[3] == x_dims[3] && y_dims[2] == x_dims[2]) {
+      ratio_h = 1.f;
+      ratio_w = 1.f;
+    }
+
     int in_dims_h = x_dims[2];
     int out_dims_h = y_dims[2];
     int in_dims_w = x_dims[3];
@@ -78,9 +130,9 @@ class NearestInterpComputeImageDefault
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_h));
+    status = kernel.setArg(++arg_idx, static_cast<const float>(ratio_h));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const float>(scale_w));
+    status = kernel.setArg(++arg_idx, static_cast<const float>(ratio_w));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_h));
     CL_CHECK_FATAL(status);
@@ -89,6 +141,8 @@ class NearestInterpComputeImageDefault
     status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims_w));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims_w));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, static_cast<const float>(align_data));
     CL_CHECK_FATAL(status);
 
 #ifdef LITE_WITH_LOG

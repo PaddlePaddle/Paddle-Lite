@@ -88,8 +88,11 @@ class TestGridSamplerOp(AutoScanTest):
 
         program_config = ProgramConfig(
             ops=[grid_sampler_op],
-            weights={"grid_data": TensorConfig(shape=in_shape2)},
-            inputs={"input_data": TensorConfig(shape=in_shape1)},
+            weights={},
+            inputs={
+                "input_data": TensorConfig(shape=in_shape1),
+                "grid_data": TensorConfig(shape=in_shape2)
+            },
             outputs=["output_data"])
 
         return program_config
@@ -98,27 +101,7 @@ class TestGridSamplerOp(AutoScanTest):
         return self.get_predictor_configs(), ["grid_sampler"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff on OpenCL. We need to fix it as soon as possible."
-        )
-
-        def teller2(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                if program_config.ops[0].attrs[
-                        "align_corners"] != True or program_config.ops[0].attrs[
-                            "padding_mode"] != "zeros" or program_config.ops[
-                                0].attrs["mode"] != "bilinear":
-                    return True
-
-        self.add_ignore_check_case(
-            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

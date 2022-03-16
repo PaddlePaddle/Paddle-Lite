@@ -42,7 +42,7 @@ void sgemm(bool is_transA,
     sgemv(A, B, C, is_transA, M, K, beta, is_bias, bias, act_param, ctx);
     return;
   }
-  if (M == 1 && !has_alpha && ldc == N) {
+  if (M == 1 && !has_alpha) {
     float bias_ptr[N];  // NOLINT
     if (is_bias) {
       for (int i = 0; i < N; i++) {

@@ -194,6 +194,7 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+
   /// \brief Set path and file name of generated OpenCL compiled kernel binary.
   ///
   /// If you use GPU of specific soc, using OpenCL binary will speed up the
@@ -205,14 +206,41 @@ class LITE_API ConfigBase {
   /// \return void
   void set_opencl_binary_path_name(const std::string& path,
                                    const std::string& name);
-  // set GPU opencl tune
+
+  /// \brief Set path and file name of generated OpenCL algorithm selecting
+  /// file.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// running time in most cases. But the first running for algorithm selecting
+  /// is timg-costing.
+  ///
+  /// \param tune_mode  Set a tune mode:
+  ///        CL_TUNE_NONE: turn off
+  ///        CL_TUNE_RAPID: find the optimal algorithm in a rapid way(less
+  ///        time-cost)
+  ///        CL_TUNE_NORMAL: find the optimal algorithm in a noraml
+  ///        way(suggestion)
+  ///        CL_TUNE_EXHAUSTIVE: find the optimal algorithm in a exhaustive
+  ///        way(most time-costing)
+  /// \param path  Path that OpenCL algorithm selecting file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL algorithm selecting file.
+  /// \param lws_repeats  Repeat number for find the optimal local work size .
+  /// \return void
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
                        const std::string& path = "",
                        const std::string& name = "",
                        size_t lws_repeats = 4);
 
-  // set GPU opencl precision
+  /// \brief Set runtime precision on GPU using OpenCL backend.
+  ///
+  /// \param p
+  ///          CL_PRECISION_AUTO: first fp16 if valid, default
+  ///          CL_PRECISION_FP32: force fp32
+  ///          CL_PRECISION_FP16: force fp16
+  /// \return void
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -427,6 +455,9 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+
+  // XPU set multi_stream
+  void enable_xpu_multi_stream();
 
   // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");

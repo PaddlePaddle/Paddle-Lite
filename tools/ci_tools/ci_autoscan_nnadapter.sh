@@ -10,6 +10,8 @@ ARCH="armv8"
 TOOLCHAIN="gcc"
 NNADAPTER_DEVICE_NAMES=""
 NNADAPTER_CAMBRICON_MLU_SDK_ROOT="/usr/local/neuware"
+NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
+NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
 # Python version
 PYTHON_VERSION=3.7
 # Absolute path of Paddle-Lite source code.
@@ -112,6 +114,9 @@ function build_and_test {
       "cambricon_mlu")
           cmd_line="./lite/tools/build_linux.sh --arch=$ARCH --with_nnadapter=ON --nnadapter_with_cambricon_mlu=ON  --nnadapter_cambricon_mlu_sdk_root=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT --with_python=ON --python_version=$PYTHON_VERSION --with_extra=ON --with_log=ON --with_exception=ON full_publish"
           ;;
+      "nvidia_tensorrt")
+          cmd_line="./lite/tools/build_linux.sh --arch=$ARCH --with_nnadapter=ON --nnadapter_with_nvidia_tensorrt=ON  --nnadapter_nvidia_cuda_root=$NNADAPTER_NVIDIA_CUDA_ROOT --nnadapter_nvidia_tensorrt_root=$NNADAPTER_NVIDIA_TENSORRT_ROOT --with_python=ON --python_version=$PYTHON_VERSION --with_extra=ON --with_log=ON --with_exception=ON full_publish"
+          ;;
       *)
           echo "NNADAPTER_DEVICE_NAMES=$NNADAPTER_DEVICE_NAMES is not support!"
           exit 1
@@ -139,7 +144,9 @@ function build_and_test {
   get_summary
 
   # Step5. run_python_demo
-  run_python_demo
+  if [ $NNADAPTER_DEVICE_NAMES != "nvidia_tensorrt" ]; then
+    run_python_demo
+  fi
 
   # Uninstall paddlelite
   python$PYTHON_VERSION -m pip uninstall -y paddlelite
@@ -186,6 +193,11 @@ function main() {
               NNADAPTER_DEVICE_NAMES="cambricon_mlu"
               shift
               ;;
+          --nnadapter_with_nvidia_tensorrt=*)
+              NNADAPTER_WITH_NVIDIA_TENSORRT="${i#*=}"
+              NNADAPTER_DEVICE_NAMES="nvidia_tensorrt"
+              shift
+              ;;
           --nnadapter_kunlunxin_xtcl_sdk_root=*)
               NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT="${i#*=}"
               shift
@@ -200,6 +212,14 @@ function main() {
               ;;
           --nnadapter_cambricon_mlu_sdk_root=*)
               NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
+              shift
+              ;;
+          --nnadapter_nvidia_cuda_root=*)
+              NNADAPTER_NVIDIA_CUDA_ROOT="${i#*=}"
+              shift
+              ;;
+          --nnadapter_nvidia_tensorrt_root=*)
+              NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
               shift
               ;;
           *)

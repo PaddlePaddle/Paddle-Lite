@@ -1,4 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,25 @@ class TestMobileNetV1(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_model_test(self) -> bool:
         return True
@@ -80,7 +99,10 @@ class TestMobileNetV1(AutoScanTest):
         return inputs
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        if self.args.model_name == "ssdlite_mobilenet_v3_large":
+            atol, rtol = 2e-3, 2e-3
+        return self.get_predictor_configs(), [""], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass

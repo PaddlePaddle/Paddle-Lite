@@ -63,23 +63,19 @@ if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'ON' and os.name != 'nt':
     PACKAGE_DATA['paddlelite.libs'] += ['libiomp5.so']
 
 if '${LITE_WITH_NNADAPTER}' == 'ON':
-    shutil.copy('${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/libnnadapter.so', LIB_PATH)
+    shutil.copy('${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/libnnadapter.so', LIB_PATH)
     PACKAGE_DATA['paddlelite.libs'] += ['libnnadapter.so']
     command = "patchelf --set-rpath '$ORIGIN/' " + LIB_PATH + "/libnnadapter.so"
     if os.system(command) != 0:
         raise Exception("patch libnnadapter.so failed, command: %s" % command)
     for device_name in '${NNADAPTER_DEVICES}'.split(','):
-        driver_hal_lib_path = os.path.join("${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver", device_name)
+        driver_hal_lib_path = os.path.join("${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver", device_name)
         for root, dir, files in os.walk(driver_hal_lib_path):
             for lib_name in files:
                 if not lib_name.endswith(".so"):
                     continue
                 lib_file_path = os.path.join(driver_hal_lib_path, lib_name)
                 shutil.copy(lib_file_path, LIB_PATH)
-                rpath = os.popen("patchelf --print-rpath " + LIB_PATH + "/" + lib_name).read().strip('\n')
-                command = "patchelf --set-rpath '$ORIGIN/:'" + rpath + " " + LIB_PATH + "/" + lib_name
-                if os.system(command) != 0:
-                    raise Exception("patch nnadapter driver hal so failed, command: %s" % command)
                 PACKAGE_DATA['paddlelite.libs'] += [lib_name]
 
 # link lite.so to paddlelite.libs
