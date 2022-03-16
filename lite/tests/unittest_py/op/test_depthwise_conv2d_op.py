@@ -177,22 +177,21 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             if "Bias" in program_config.ops[0].inputs.keys():
                 return True
             return False
-        
+
         def _teller1(program_config, predictor_config):
-             nnadapter_device_name = self.get_nnadapter_device_name()
-             if nnadapter_device_name == "nvidia_tensorrt":
-                 return True
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                return True
 
         self.add_ignore_check_case(
             skip_bias_teller, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "When paddle is opening the use_mkldnn flag, the kernel implementation of depthwise_conv2d is not registered, so depthwise_conv2d will execute on cpu, the kernel of cpu doesn't support bias, need paddle fix!"
         )
-        
+
         self.add_ignore_check_case(
-             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-             "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
-         )
-        
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
