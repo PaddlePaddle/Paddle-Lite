@@ -98,6 +98,7 @@ class TestMatmulV2Op(AutoScanTest):
         if (len_X == 1 and len_Y == 1):
             X_shape = [shape0]
             Y_shape = [shape0]
+            assume(transpose_X == transpose_Y)
         if (len_X == 2 and len_Y == 2):
             if ((not transpose_X) and (not transpose_Y)):
                 X_shape = [shape0, shape1]
@@ -213,29 +214,19 @@ class TestMatmulV2Op(AutoScanTest):
         def _teller2(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data_x"].shape)
             y_shape = list(program_config.inputs["input_data_y"].shape)
+            transpose_X = program_config.ops[0].attrs["trans_x"]
             if predictor_config.target() == TargetType.ARM:
-                if len(x_shape) == 1 and len(y_shape) == 1:
+                if len(x_shape) == 1 and len(
+                        y_shape) == 1 and transpose_X == True:
                     return True
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on arm. We need to fix it as soon as possible."
-        )
-
-        def _teller3(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data_x"].shape)
-            y_shape = list(program_config.inputs["input_data_y"].shape)
-            if predictor_config.target() == TargetType.ARM:
-                if len(x_shape) < 2 or len(y_shape) < 2:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "Lite has diff in a specific case on arm. We need to fix it as soon as possible."
+            "Lite does not support this op in a specific case on arm when x_dims=1 and x_trans=true. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        sample_size = 25
+        sample_size = 100
         target_str = self.get_target()
         if target_str == "OpenCL":
             sample_size = 100
