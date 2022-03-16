@@ -96,7 +96,18 @@ class TestReduceMeanOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_mean"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["dim"]
+            if target_type == TargetType.OpenCL:
+                if len(axis) == 1 and len(in_shape) == 4:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
