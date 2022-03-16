@@ -22,22 +22,19 @@ import unittest
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
+
+from functools import partial
+import numpy as np
 import argparse
 
-import numpy as np
-from functools import partial
 
-
-class TestReduceMinOp(AutoScanTest):
+class TestReduceMeanOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
         self.enable_testing_on_place(
             TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
@@ -51,19 +48,13 @@ class TestReduceMinOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=1, max_size=4))
+                    min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
         axis_type = draw(st.sampled_from(["int", "list"]))
         axis_int = draw(st.integers(min_value=-1, max_value=3))
-        axis_list = [0]
+        axis_list = draw(
+            st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
         assume(axis < len(in_shape))
-        if len(in_shape) == 2:
-            axis_list = draw(st.sampled_from([[0], [1]]))
-        elif len(in_shape) == 3:
-            axis_list = draw(st.sampled_from([[0], [1], [2]]))
-        elif len(in_shape) == 4:
-            axis_list = draw(
-                st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
         if axis_type == "int":
             axis = axis_int
@@ -75,7 +66,7 @@ class TestReduceMinOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32)
 
         build_ops = OpConfig(
-            type="reduce_min",
+            type="reduce_prod",
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
@@ -93,13 +84,13 @@ class TestReduceMinOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["reduce_min"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["reduce_prod"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

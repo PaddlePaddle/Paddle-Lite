@@ -40,7 +40,7 @@ class TestReduceMaxOp(AutoScanTest):
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -74,13 +74,25 @@ class TestReduceMaxOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
+                    min_value=1, max_value=10), min_size=1, max_size=4))
         keep_dim = draw(st.booleans())
-        axis = draw(st.integers(min_value=-1, max_value=3))
+        axis_type = draw(st.sampled_from(["int", "list"]))
+        axis_int = draw(st.integers(min_value=-1, max_value=3))
+        axis_list = [0]
         assume(axis < len(in_shape))
+        if len(in_shape) == 2:
+            axis_list = draw(st.sampled_from([[0], [1]]))
+        elif len(in_shape) == 3:
+            axis_list = draw(st.sampled_from([[0], [1], [2]]))
+        elif len(in_shape) == 4:
+            axis_list = draw(
+                st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
-        if isinstance(axis, int):
-            axis = [axis]
+        if axis_type == "int":
+            axis = axis_int
+        else:
+            axis = axis_list
+
         reduce_all_data = True if axis == None or axis == [] else False
 
         def generate_input(*args, **kwargs):
@@ -118,13 +130,17 @@ class TestReduceMaxOp(AutoScanTest):
             in_shape = list(program_config.inputs["input_data"].shape)
             axis = program_config.ops[0].attrs["dim"]
             keep_dim = program_config.ops[0].attrs["keep_dim"]
+            if target_type == TargetType.OpenCL:
+                if len(in_shape) < 4:
+                    return True
             if target_type == TargetType.Metal:
-                if keep_dim == False or axis[0] != 1 or in_shape[0] != 1:
+                if keep_dim == False or axis[0] != 1 or in_shape[
+                        0] != 1 or len(in_shape) < 4:
                     return True
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+            "The op output has diff in a specific case on metal/opencl. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
