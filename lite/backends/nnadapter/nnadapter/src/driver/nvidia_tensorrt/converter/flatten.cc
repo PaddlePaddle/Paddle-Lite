@@ -35,17 +35,18 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   }
   uint32_t dim_prod = 1;
   nvinfer1::Dims flatten_dim;
-  flatten_dim.nbDims = input_operand->type.dimensions.count - (end_axis - start_axis);
-  for (int i = 0, j = 0; i < input_operand->type.dimensions.count; ++i) {     
-    if (start_axis <= i && i <= end_axis) {  
+  flatten_dim.nbDims =
+      input_operand->type.dimensions.count - (end_axis - start_axis);
+  for (int i = 0, j = 0; i < input_operand->type.dimensions.count; ++i) {
+    if (start_axis <= i && i <= end_axis) {
       int dim_i = input_operand->type.dimensions.data[i];
-      dim_prod *= dim_i;     
-      if (i == end_axis) {     
+      dim_prod *= dim_i;
+      if (i == end_axis) {
         flatten_dim.d[j++] = dim_prod;
-      }      
-    } else {     
-      flatten_dim.d[j++] = input_operand->type.dimensions.data[i];   
-    }  
+      }
+    } else {
+      flatten_dim.d[j++] = input_operand->type.dimensions.data[i];
+    }
   }
   auto flatten_layer = converter->network()->addShuffle(*input_tensor);
   flatten_layer->setReshapeDimensions(flatten_dim);
