@@ -76,10 +76,11 @@ class TestReduceMaxOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=10), min_size=1, max_size=4))
         keep_dim = draw(st.booleans())
-        axis_type = draw(st.sampled_from(["int", "list"]))
-        axis_int = draw(st.integers(min_value=-1, max_value=3))
-        axis_list = [0]
-        assume(axis < len(in_shape))
+        axis_list = [
+            draw(st.integers(
+                min_value=-1, max_value=len(in_shape) - 1))
+        ]
+
         if len(in_shape) == 2:
             axis_list = draw(st.sampled_from([[0], [1]]))
         elif len(in_shape) == 3:
@@ -88,12 +89,7 @@ class TestReduceMaxOp(AutoScanTest):
             axis_list = draw(
                 st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
-        if axis_type == "int":
-            axis = axis_int
-        else:
-            axis = axis_list
-
-        reduce_all_data = True if axis == None or axis == [] else False
+        reduce_all_data = True if axis_list == None or axis_list == [] else False
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -103,7 +99,7 @@ class TestReduceMaxOp(AutoScanTest):
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
-                "dim": axis,
+                "dim": axis_list,
                 "keep_dim": keep_dim,
                 "reduce_all": reduce_all_data,
             })

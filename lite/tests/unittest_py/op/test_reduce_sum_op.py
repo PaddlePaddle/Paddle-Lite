@@ -28,7 +28,7 @@ import numpy as np
 import argparse
 
 
-class TestReduceMeanOp(AutoScanTest):
+class TestReduceSumOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
@@ -50,17 +50,10 @@ class TestReduceMeanOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
-        axis_type = draw(st.sampled_from(["int", "list"]))
-        axis_int = draw(st.integers(min_value=-1, max_value=3))
         axis_list = draw(
             st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
-        assume(axis < len(in_shape))
 
-        if axis_type == "int":
-            axis = axis_int
-        else:
-            axis = axis_list
-        reduce_all_data = True if axis == None or axis == [] else False
+        reduce_all_data = True if axis_list == None or axis_list == [] else False
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -70,9 +63,10 @@ class TestReduceMeanOp(AutoScanTest):
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
-                "dim": axis,
+                "dim": axis_list,
                 "keep_dim": keep_dim,
                 "reduce_all": reduce_all_data,
+                "out_dtype": 5,
             })
         program_config = ProgramConfig(
             ops=[build_ops],
