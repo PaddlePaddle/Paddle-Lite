@@ -68,8 +68,9 @@ class Program {
  private:
   void Clear();
   void CompleteConfig(core::Model* model);
-  // Build from model or cache
+  // Build model and save to plan_
   int BuildFromModel(core::Model* model);
+  // Read model from cache to plan_
   int BuildFromCache(core::Cache* cache);
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
