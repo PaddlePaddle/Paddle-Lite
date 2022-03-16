@@ -59,8 +59,7 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
       input_operand, axes, starts, ends, steps, out_name);
 
   // Use squeeze to process decrease_axis(attr)
-  if (!decrease_axis.empty() &&
-      decrease_axis.size() != input_type->dimensions.count) {
+  if (!decrease_axis.empty()) {
     // Squeeze operation
     converter->AddSqueezeOperation(slice_operand, decrease_axis, out_name);
   }

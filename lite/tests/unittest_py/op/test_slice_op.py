@@ -51,7 +51,7 @@ class TestSliceOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
         '''
         #All of metal inputs error.
         metal_places = [
@@ -87,6 +87,11 @@ class TestSliceOp(AutoScanTest):
             st.sampled_from([[3], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
         infer_flags = draw(st.sampled_from([[1, 1, 1]]))
         input_num = draw(st.sampled_from([0, 1, 2]))
+
+        # nvidia_tensorrt just support all attrs are not from tensor! 
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            input_num = 2
+
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))

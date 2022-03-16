@@ -19,9 +19,10 @@ REGISTER_CONVERTER(batch_norm,
                    ConvertBatchNorm,
                    "huawei_ascend_npu,verisilicon_"
                    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino");
-REGISTER_CONVERTER(cast,
-                   ConvertCast,
-                   "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
+REGISTER_CONVERTER(
+    cast,
+    ConvertCast,
+    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(
     clip,
     ConvertClip,
@@ -267,16 +268,17 @@ REGISTER_CONVERTER(
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu,cambricon_mlu");
-REGISTER_CONVERTER(slice,
-                   ConvertSlice,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu");
+REGISTER_CONVERTER(
+    slice,
+    ConvertSlice,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,nvidia_tensorrt");
 REGISTER_CONVERTER(strided_slice,
                    ConvertStridedSlice,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(squeeze,
                    ConvertSqueeze,
-                   "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl,"
-                   "cambricon_mlu,huawei_kirin_npu");
+                   "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl"
+                   "cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(squeeze2,
                    ConvertSqueeze,
                    "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl,"
@@ -285,7 +287,7 @@ REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant,
                    ConvertFillConstant,
-                   "huawei_ascend_npu,cambricon_mlu");
+                   "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
 REGISTER_CONVERTER(fill_any_like,
                    ConvertFillAnyLike,
                    "huawei_ascend_npu,cambricon_mlu");

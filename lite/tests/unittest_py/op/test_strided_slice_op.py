@@ -36,6 +36,9 @@ class TestStridedSliceOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=host_places, thread=[1, 4])
 
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
+
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
