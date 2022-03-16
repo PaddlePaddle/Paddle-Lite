@@ -29,7 +29,7 @@ int ConvertArgMinMax(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  ArgMaxPluginDynamic arg_max_plugin(axis);
+  ArgMaxPluginDynamic arg_max_plugin(axis, keepdim);
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto layer =
       converter->network()->addPluginV2(tensors.data(), 1, arg_max_plugin);
