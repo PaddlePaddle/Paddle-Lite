@@ -43,6 +43,7 @@ class TestLogicalOp(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any,
                   DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=opencl_places)
 
