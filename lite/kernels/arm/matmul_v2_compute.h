@@ -28,7 +28,7 @@ class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   void PrepareForRun() { auto& ctx = this->ctx_->template As<ARMContext>(); }
 
-   void ReInitWhenNeeded() override;
+  void ReInitWhenNeeded() override;
 
   void Run() override;
 
