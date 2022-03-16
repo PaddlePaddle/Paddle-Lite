@@ -32,6 +32,11 @@ class TestReduceMaxOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -73,7 +78,6 @@ class TestReduceMaxOp(AutoScanTest):
         keep_dim = draw(st.booleans())
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
-        axis_dims = draw(st.booleans())
 
         if isinstance(axis, int):
             axis = [axis]
