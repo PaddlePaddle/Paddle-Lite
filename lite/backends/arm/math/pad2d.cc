@@ -132,9 +132,9 @@ void pad_constant(const float* din,
   }
   LITE_PARALLEL_END()
 }
-
-void pad_constant_nhwc(const float* din,
-                       float* dout,
+template <typename T>
+void pad_constant_nhwc(const T* din,
+                       T* dout,
                        int n,
                        int h,
                        int w,
@@ -143,24 +143,18 @@ void pad_constant_nhwc(const float* din,
                        const int pad_bottom,
                        const int pad_left,
                        const int pad_right,
-                       const float pad_value) {
+                       const T pad_value) {
   int h_in = h - pad_top - pad_bottom;
   int w_in = w - pad_left - pad_right;
   int cube_size_out = w * h * c;
   int cube_size_in = h_in * w_in * c;
-  float32x4_t vpad_value = vdupq_n_f32(pad_value);
 
   LITE_PARALLEL_BEGIN(s, tid, n) {
-    const float* din_s = din + s * cube_size_in;
-    float* dout_s = dout + s * cube_size_out;
+    const T* din_s = din + s * cube_size_in;
+    T* dout_s = dout + s * cube_size_out;
     // up
     int up_count = pad_top * w * c;
     int i = 0;
-
-    for (; i + 3 < up_count; i += 4) {
-      vst1q_f32(dout_s, vpad_value);
-      dout_s += 4;
-    }
     for (; i < up_count; i++) *dout_s++ = pad_value;
 
     // left, mid, right
@@ -184,17 +178,13 @@ void pad_constant_nhwc(const float* din,
     // down
     int down_count = pad_bottom * w * c;
     i = 0;
-    for (; i + 3 < down_count; i += 4) {
-      vst1q_f32(dout_s, vpad_value);
-      dout_s += 4;
-    }
     for (; i < down_count; i++) *dout_s++ = pad_value;
   }
   LITE_PARALLEL_END()
 }
-
-void pad_reflect_nhwc(const float* din,
-                      float* dout,
+template <typename T>
+void pad_reflect_nhwc(const T* din,
+                      T* dout,
                       int n,
                       int h,
                       int w,
@@ -209,22 +199,22 @@ void pad_reflect_nhwc(const float* din,
   int cube_size_in = h_in * w_in * c;
 
   LITE_PARALLEL_BEGIN(s, tid, n) {
-    const float* din_s = din + s * cube_size_in;
-    float* dout_s = dout + s * cube_size_out;
+    const T* din_s = din + s * cube_size_in;
+    T* dout_s = dout + s * cube_size_out;
 
     // up
-    const float* din_ss = din_s + pad_top * w_in * c;
-    float* dout_ss = dout_s + pad_left * c;
+    const T* din_ss = din_s + pad_top * w_in * c;
+    T* dout_ss = dout_s + pad_left * c;
     for (int i = 0; i < pad_top; i++) {
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // up - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(T) * c);
       // up - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(T) * c);
       din_ss -= w_in * c;
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
@@ -235,15 +225,15 @@ void pad_reflect_nhwc(const float* din,
     dout_ss = dout_s + pad_top * w * c + pad_left * c;
     for (int j = 0; j < h_in; j++) {
       // mid
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // mid - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(T) * c);
       // mid - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(T) * c);
       din_ss += w_in * c;
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
@@ -253,15 +243,15 @@ void pad_reflect_nhwc(const float* din,
     din_ss = din_s + (h_in - 2) * w_in * c;
     dout_ss = dout_s + (h_in + pad_top) * w * c + pad_left * c;
     for (int i = 0; i < pad_bottom; i++) {
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // down - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss + j * c, sizeof(T) * c);
       // down - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss - j * c, sizeof(T) * c);
       din_ss -= w_in * c;
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
@@ -269,9 +259,9 @@ void pad_reflect_nhwc(const float* din,
   }
   LITE_PARALLEL_END()
 }
-
-void pad_edge_nhwc(const float* din,
-                   float* dout,
+template <typename T>
+void pad_edge_nhwc(const T* din,
+                   T* dout,
                    int n,
                    int h,
                    int w,
@@ -286,22 +276,22 @@ void pad_edge_nhwc(const float* din,
   int cube_size_in = h_in * w_in * c;
 
   LITE_PARALLEL_BEGIN(s, tid, n) {
-    const float* din_s = din + s * cube_size_in;
-    float* dout_s = dout + s * cube_size_out;
+    const T* din_s = din + s * cube_size_in;
+    T* dout_s = dout + s * cube_size_out;
 
     // up
-    const float* din_ss = din_s;
-    float* dout_ss = dout_s + pad_left * c;
+    const T* din_ss = din_s;
+    T* dout_ss = dout_s + pad_left * c;
     for (int i = 0; i < pad_top; i++) {
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // up - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss, sizeof(T) * c);
       // up - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss, sizeof(T) * c);
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
     }
@@ -311,15 +301,15 @@ void pad_edge_nhwc(const float* din,
     dout_ss = dout_s + pad_top * w * c + pad_left * c;
     for (int j = 0; j < h_in; j++) {
       // mid
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // mid - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss, sizeof(T) * c);
       // mid - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss, sizeof(T) * c);
       din_ss += w_in * c;
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
@@ -329,15 +319,15 @@ void pad_edge_nhwc(const float* din,
     din_ss = din_s + (h_in - 1) * w_in * c;
     dout_ss = dout_s + (h_in + pad_top) * w * c + pad_left * c;
     for (int i = 0; i < pad_bottom; i++) {
-      memcpy(dout_ss, din_ss, sizeof(float) * w_in * c);
+      memcpy(dout_ss, din_ss, sizeof(T) * w_in * c);
       // down - left
       for (int j = 1; j <= pad_left; j++)
-        memcpy(dout_ss - j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss - j * c, dout_ss, sizeof(T) * c);
       // down - right
       // make dout_ss -> right valid boundry!
       dout_ss += (w_in - 1) * c;
       for (int j = 1; j <= pad_right; j++)
-        memcpy(dout_ss + j * c, dout_ss, sizeof(float) * c);
+        memcpy(dout_ss + j * c, dout_ss, sizeof(T) * c);
       dout_ss -= (w_in - 1) * c;
       dout_ss += w * c;
     }
@@ -620,15 +610,15 @@ void pad2d_func(const lite::Tensor* input,
     LOG(ERROR) << "ERROR: unknown pad mode " << _mode;
   }
 }
-
+template <typename T>
 void pad2d_func_nhwc(const lite::Tensor* input,
                      lite::Tensor* output,
                      int _mode,
                      std::vector<int> _pad_h,
                      std::vector<int> _pad_w,
-                     float _pad_value) {
-  float* dout = output->mutable_data<float>();
-  const float* din = input->data<float>();
+                     T _pad_value) {
+  T* dout = output->mutable_data<T>();
+  const T* din = input->data<T>();
   auto output_dims = output->dims();
   // nhwc
   int on = output_dims[0];
@@ -644,27 +634,43 @@ void pad2d_func_nhwc(const lite::Tensor* input,
          } PadMode;   */
   /////////////////////////
   if (_mode == 0) {
-    pad_constant_nhwc(din,
-                      dout,
-                      on,
-                      oh,
-                      ow,
-                      oc,
-                      _pad_h[0],
-                      _pad_h[1],
-                      _pad_w[0],
-                      _pad_w[1],
-                      _pad_value);
+    pad_constant_nhwc<T>(din,
+                         dout,
+                         on,
+                         oh,
+                         ow,
+                         oc,
+                         _pad_h[0],
+                         _pad_h[1],
+                         _pad_w[0],
+                         _pad_w[1],
+                         _pad_value);
   } else if (_mode == 1) {
-    pad_reflect_nhwc(
+    pad_reflect_nhwc<T>(
         din, dout, on, oh, ow, oc, _pad_h[0], _pad_h[1], _pad_w[0], _pad_w[1]);
   } else if (_mode == 2) {
-    pad_edge_nhwc(
+    pad_edge_nhwc<T>(
         din, dout, on, oh, ow, oc, _pad_h[0], _pad_h[1], _pad_w[0], _pad_w[1]);
   } else {
     LOG(ERROR) << "ERROR: unknown pad mode " << _mode;
   }
 }
+
+template void pad2d_func_nhwc<float>(const lite::Tensor* input,
+                                     lite::Tensor* output,
+                                     int _mode,
+                                     std::vector<int> _pad_h,
+                                     std::vector<int> _pad_w,
+                                     float _pad_value);
+
+#ifdef ENABLE_ARM_FP16
+template void pad2d_func_nhwc<float16_t>(const lite::Tensor* input,
+                                         lite::Tensor* output,
+                                         int _mode,
+                                         std::vector<int> _pad_h,
+                                         std::vector<int> _pad_w,
+                                         float16_t _pad_value);
+#endif
 
 }  // namespace math
 }  // namespace arm

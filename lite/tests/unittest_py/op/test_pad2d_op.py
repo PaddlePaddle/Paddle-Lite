@@ -137,9 +137,6 @@ class TestPad2dOp(AutoScanTest):
         def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             data_format = program_config.ops[0].attrs["data_format"]
-            if target_type == TargetType.ARM and predictor_config.precision(
-            ) == PrecisionType.FP16 and data_format == "NHWC":
-                return True
             if target_type in [TargetType.OpenCL, TargetType.Metal
                                ] and data_format == "NHWC":
                 return True
