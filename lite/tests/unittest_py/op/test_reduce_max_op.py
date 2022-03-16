@@ -75,7 +75,7 @@ class TestReduceMaxOp(AutoScanTest):
         assume(axis < len(in_shape))
         axis_dims = draw(st.booleans())
 
-        if axis_dims:
+        if isinstance(axis, int):
             axis = [axis]
         reduce_all_data = True if axis == None or axis == [] else False
 
