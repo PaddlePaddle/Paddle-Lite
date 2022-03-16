@@ -91,6 +91,10 @@ struct Relu6MetalParam {
 struct LeakyReluMetalParam {
     float alpha;
 };
+struct ClipMetalParam {
+    float min;
+    float max;
+};
 
 struct PoolMetalParam {
     int ksizeX;

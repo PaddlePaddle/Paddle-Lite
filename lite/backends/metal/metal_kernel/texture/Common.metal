@@ -192,6 +192,11 @@ struct LeakyReluParam {
     float alpha;
 };
 
+struct ClipParam {
+    float min;
+    float max;
+};
+
 struct HardSigmoidParam {
     float slope;
     float offset;
