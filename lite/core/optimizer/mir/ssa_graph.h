@@ -154,29 +154,6 @@ static void LocalInferenceType(Node *a, Node *b, const std::string &arg_name) {
   }
 }
 
-static bool HasExtraProducers(const std::unique_ptr<mir::SSAGraph> &graph,
-                              const std::string &var_name,
-                              const std::set<std::string> &exclude_op_list,
-                              const std::set<std::string> &candidate = {
-                                  "while", "conditional_block", "increment"}) {
-  for (auto &op_node : graph->StmtTopologicalOrder()) {
-    if (!op_node->IsStmt()) continue;
-    auto op_info = op_node->AsStmt().op_info();
-    auto op_type = op_info->Type();
-    if (exclude_op_list.count(op_type)) continue;
-    if (candidate.empty() || candidate.count(op_type)) {
-      for (auto &var_node : op_node->outlinks) {
-        if (var_name == var_node->AsArg().name ||
-            var_node->AsArg().name.find(std::string(var_name + "__Mangled_")) !=
-                std::string::npos) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

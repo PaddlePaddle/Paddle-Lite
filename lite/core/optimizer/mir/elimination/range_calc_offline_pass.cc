@@ -47,7 +47,7 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(graph, out_link->arg()->name, {"range"})) {
+      if (HasExtraProducers(graph.get(), out_link->arg()->name, {"range"})) {
         has_extra_producers = true;
         break;
       }

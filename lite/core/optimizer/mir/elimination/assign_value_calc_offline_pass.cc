@@ -40,7 +40,8 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(graph, out_link->arg()->name, {"assign_value"})) {
+      if (HasExtraProducers(
+              graph.get(), out_link->arg()->name, {"assign_value"})) {
         has_extra_producers = true;
         break;
       }

@@ -26,7 +26,8 @@ namespace mir {
 bool HasExtraProducers(mir::SSAGraph *graph,
                        const std::string &var_name,
                        const std::set<std::string> &exclude_op_list,
-                       const std::set<std::string> &candidate_op);
+                       const std::set<std::string> &candidate_op = {
+                           "while", "conditional_block", "increment"});
 
 }  // namespace mir
 }  // namespace lite

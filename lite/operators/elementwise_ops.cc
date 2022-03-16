@@ -94,7 +94,6 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.X = GetMutableVar<lite::Tensor>(scope, X_name);
   param_.Y = GetMutableVar<lite::Tensor>(scope, Y_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
-
   param_.axis = opdesc.GetAttr<int>("axis");
   if (opdesc.HasAttr("fuse_scale")) {
     param_.fuse_scale = opdesc.GetAttr<bool>("fuse_scale");

@@ -40,7 +40,7 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(graph, out_link->arg()->name, {"scale"})) {
+      if (HasExtraProducers(graph.get(), out_link->arg()->name, {"scale"})) {
         has_extra_producers = true;
         break;
       }

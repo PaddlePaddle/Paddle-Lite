@@ -42,8 +42,9 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(
-              graph, out_link->arg()->name, {"unsqueeze", "unsqueeze2"})) {
+      if (HasExtraProducers(graph.get(),
+                            out_link->arg()->name,
+                            {"unsqueeze", "unsqueeze2"})) {
         has_extra_producers = true;
         break;
       }

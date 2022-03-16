@@ -21,8 +21,7 @@ namespace mir {
 bool HasExtraProducers(mir::SSAGraph *graph,
                        const std::string &var_name,
                        const std::set<std::string> &exclude_op_list,
-                       const std::set<std::string> &candidate_op = {
-                           "while", "conditional_block", "increment"}) {
+                       const std::set<std::string> &candidate_op) {
   for (auto &op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().op_info();

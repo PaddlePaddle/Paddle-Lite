@@ -49,7 +49,8 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
     auto outlinks = node->outlinks;
     bool has_extra_producers = false;
     for (auto& out_link : outlinks) {
-      if (HasExtraProducers(graph, out_link->arg()->name, {"fill_constant"})) {
+      if (HasExtraProducers(
+              graph.get(), out_link->arg()->name, {"fill_constant"})) {
         has_extra_producers = true;
         break;
       }
