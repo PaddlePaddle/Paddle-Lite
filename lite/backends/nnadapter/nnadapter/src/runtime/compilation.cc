@@ -30,9 +30,6 @@ namespace runtime {
 static const char* NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION = ".nnc";
 static const char* NNADAPTER_RUNTIME_CACHE_INPUT_TYPES_KEY = "input_types";
 static const char* NNADAPTER_RUNTIME_CACHE_OUTPUT_TYPES_KEY = "output_types";
-static const char* NNADAPTER_RUNTIME_CACHE_INPUT_INDEXES_KEY = "input_indexes";
-static const char* NNADAPTER_RUNTIME_CACHE_OUTPUT_INDEXES_KEY =
-    "output_indexes";
 static const char* NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY = "num_caches";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_DEVICE_NAME_KEY =
     "cache_%d_device_name";
@@ -40,6 +37,10 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY =
     "cache_%d_input_types";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY =
     "cache_%d_output_types";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY =
+    "cache_%d_input_indexes";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY =
+    "cache_%d_output_indexes";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
 
@@ -67,6 +68,18 @@ void* AccessOutputOperand(void* memory, NNAdapterOperandType* type) {
     operand->length = length;
   }
   return operand->buffer;
+}
+
+Compilation::Program::~Program() {
+  NNADAPTER_CHECK(device_context) << "No device found.";
+  device_context->device->DestroyProgram(program);
+  if (cache) {
+    delete cache;
+  }
+  if (model) {
+    ClearModel(model);
+    delete model;
+  }
 }
 
 Compilation::Compilation(Model* model,
@@ -103,23 +116,13 @@ Compilation::Compilation(Model* model,
 }
 
 Compilation::~Compilation() {
-  for (size_t i = 0; i < programs_.size(); i++) {
-    auto device_context = programs_[i].device_context;
-    NNADAPTER_CHECK(device_context) << "No device found.";
-    device_context->device->DestroyProgram(programs_[i].program);
-  }
-  for (size_t i = 0; i < operands_.size(); i++) {
-    auto operand = operands_[i];
+  for (auto& operand : operands_) {
     NNADAPTER_CHECK(operand);
+    ClearOperand(operand);
     if (operand->buffer) {
       free(operand->buffer);
     }
-    free(operand);
-  }
-  for (auto& model : models_) {
-    NNADAPTER_CHECK(model.second);
-    nnadapter::ClearModel(model.second);
-    delete model.second;
+    delete operand;
   }
 }
 
@@ -137,12 +140,19 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
       auto pos = indexes[i];
       if (pos < 0) {
         pos = -pos - 1;
-        arg.memory = arguments->at(pos).memory;
-        arg.access = arguments->at(pos).access;
+        bool found = false;
+        for (size_t j = 0; j < arguments->size(); j++) {
+          if (pos == arguments->at(j).index) {
+            arg.memory = arguments->at(j).memory;
+            arg.access = arguments->at(j).access;
+            found = true;
+            break;
+          }
+        }
+        NNADAPTER_CHECK(found) << "No matched argument found!";
       } else {
         for (size_t j = operands->size(); j <= pos; j++) {
-          auto operand =
-              static_cast<core::Operand*>(malloc(sizeof(core::Operand)));
+          auto operand = new core::Operand();
           NNADAPTER_CHECK(operand)
               << "Failed to allocate memory for a operand, out of memory!";
           memset(operand, 0, sizeof(core::Operand));
@@ -159,24 +169,22 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
   // TODO(hong19860320) Supports asynchronously execution in future.
   for (size_t i = 0; i < programs_.size(); i++) {
     auto device_context = programs_[i].device_context;
-    std::vector<core::Argument> program_input_arguments,
-        program_output_arguments;
-    create_program_arguments(&program_input_arguments,
-                             input_indexes_[i],
+    std::vector<core::Argument> input_args, output_args;
+    create_program_arguments(&input_args,
+                             programs_[i].input_indexes,
                              input_arguments,
                              &operands_,
                              AccessInputOperand);
-    create_program_arguments(&program_output_arguments,
-                             output_indexes_[i],
+    create_program_arguments(&output_args,
+                             programs_[i].output_indexes,
                              output_arguments,
                              &operands_,
                              AccessOutputOperand);
-    auto result =
-        device_context->device->ExecuteProgram(programs_[i].program,
-                                               program_input_arguments.size(),
-                                               program_input_arguments.data(),
-                                               program_output_arguments.size(),
-                                               program_output_arguments.data());
+    auto result = device_context->device->ExecuteProgram(programs_[i].program,
+                                                         input_args.size(),
+                                                         input_args.data(),
+                                                         output_args.size(),
+                                                         output_args.data());
     if (result == NNADAPTER_INVALID_DIMENSIONS) return result;
     NNADAPTER_CHECK_EQ(result, NNADAPTER_NO_ERROR)
         << "Failed to Execute a program for " << i
@@ -184,13 +192,14 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         << device_context->device->GetName() << "'";
   }
   // Serialize the cache models into the file or memory at the first iteration
-  if (model_ && !caches_.empty()) {
+  if (model_ && CheckCache()) {
     if (!cache_token_.empty() && !cache_dir_.empty()) {
       bool skip = false;
-      for (size_t i = 0; i < caches_.size(); i++) {
-        if (!caches_[i].cache.buffer.empty()) continue;
+      auto cache_count = programs_.size();
+      for (size_t i = 0; i < cache_count; i++) {
+        if (!programs_[i].cache->buffer.empty()) continue;
         skip = true;
-        auto device_name = caches_[i].device_context->device->GetName();
+        auto device_name = programs_[i].device_context->device->GetName();
         NNADAPTER_LOG(WARNING) << "The " << i << "th device '" << device_name
                                << "' doesn't support model cache!";
         break;
@@ -210,7 +219,7 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         }
       }
     }
-    caches_.clear();  // Clear the caches to reduce memory usage
+    ClearCache();  // Clear the caches to reduce memory usage
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -220,51 +229,57 @@ int Compilation::Finish() {
   completed_ = true;
   programs_.clear();
   if (model_) {
-    input_types_.clear();
-    output_types_.clear();
-    caches_.clear();
-    int result = PartitionModel(
-        context_, model_, &models_, &input_indexes_, &output_indexes_);
+    std::vector<
+        std::pair<Context::DeviceContext*,
+                  std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>
+        models;
+    int result = PartitionModel(context_, model_, &models);
     if (result != NNADAPTER_NO_ERROR) {
       return result;
     }
     // Compile these submodels into the programs for the devics and encapsulate
     // the programs into the caches
-    auto model_count = models_.size();
-    caches_.resize(model_count);
+    auto model_count = models.size();
     programs_.resize(model_count);
     for (size_t i = 0; i < model_count; i++) {
-      auto device_context = models_[i].first;
-      auto model = models_[i].second;
-      caches_[i].device_context = device_context;
-      caches_[i].cache.token =
-          cache_token_.empty() ? nullptr : cache_token_.c_str();
-      caches_[i].cache.dir = cache_dir_.empty() ? nullptr : cache_dir_.c_str();
-      NNADAPTER_CHECK_EQ(
-          device_context->device->CreateProgram(device_context->context,
-                                                model,
-                                                &caches_[i].cache,
-                                                &programs_[i].program),
-          NNADAPTER_NO_ERROR)
+      core::Model* model = nullptr;
+      std::vector<int> input_indexes, output_indexes;
+      std::tie(model, input_indexes, output_indexes) = models[i].second;
+      auto cache = new core::Cache();
+      NNADAPTER_CHECK(cache) << "Failed to allocate a cache for the model #"
+                             << i << ", out of memory!";
+      cache->token = cache_token_.empty() ? nullptr : cache_token_.c_str();
+      cache->dir = cache_dir_.empty() ? nullptr : cache_dir_.c_str();
+      void* program = nullptr;
+      auto device_context = models[i].first;
+      NNADAPTER_CHECK_EQ(device_context->device->CreateProgram(
+                             device_context->context, model, cache, &program),
+                         NNADAPTER_NO_ERROR)
           << "Failed to create a program for " << i
           << "th sub model on the device '" << device_context->device->GetName()
           << "'";
-      programs_[i].device_context = device_context;
       // Update the types of the submodel inputs and outputs
       auto input_count = model->input_operands.size();
       auto output_count = model->output_operands.size();
-      caches_[i].cache.input_types.resize(input_count);
-      caches_[i].cache.output_types.resize(output_count);
+      cache->input_types.resize(input_count);
+      cache->output_types.resize(output_count);
       for (size_t j = 0; j < input_count; j++) {
-        memcpy(&caches_[i].cache.input_types[j],
+        memcpy(&cache->input_types[j],
                &model->input_operands[j]->type,
                sizeof(NNAdapterOperandType));
       }
       for (size_t j = 0; j < output_count; j++) {
-        memcpy(&caches_[i].cache.output_types[j],
+        memcpy(&cache->output_types[j],
                &model->output_operands[j]->type,
                sizeof(NNAdapterOperandType));
       }
+      // Add into programs
+      programs_[i].device_context = device_context;
+      programs_[i].model = model;
+      programs_[i].cache = cache;
+      programs_[i].program = program;
+      programs_[i].input_indexes = input_indexes;
+      programs_[i].output_indexes = output_indexes;
     }
     // Update the types of the model inputs and outputs
     auto input_count = model_->model_.input_operands.size();
@@ -281,17 +296,15 @@ int Compilation::Finish() {
              &model_->model_.output_operands[i]->type,
              sizeof(NNAdapterOperandType));
     }
-  } else if (!caches_.empty()) {
+  } else if (CheckCache()) {
     // Compiles the cache models to the programs for the multi-devices
-    auto num_caches = caches_.size();
-    programs_.resize(num_caches);
-    for (size_t i = 0; i < num_caches; i++) {
-      auto device_context = caches_[i].device_context;
-      programs_[i].device_context = device_context;
+    auto cache_count = programs_.size();
+    for (size_t i = 0; i < cache_count; i++) {
+      auto device_context = programs_[i].device_context;
       NNADAPTER_CHECK_EQ(
           device_context->device->CreateProgram(device_context->context,
                                                 nullptr,
-                                                &caches_[i].cache,
+                                                programs_[i].cache,
                                                 &programs_[i].program),
           NNADAPTER_NO_ERROR)
           << "Failed to create a program for " << i
@@ -328,17 +341,37 @@ int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+bool Compilation::CheckCache() {
+  if (programs_.empty()) return false;
+  bool exists = true;
+  for (auto& program : programs_) {
+    if (!program.cache) {
+      exists = false;
+      break;
+    }
+  }
+  return exists;
+}
+
+void Compilation::ClearCache() {
+  for (auto& program : programs_) {
+    if (program.cache) {
+      delete program.cache;
+      program.cache = nullptr;
+    }
+  }
+}
+
 int Compilation::PartitionModel(
     Context* context,
     Model* model,
-    std::vector<std::pair<Context::DeviceContext*, core::Model*>>* models,
-    std::vector<std::vector<int>>* input_indexes,
-    std::vector<std::vector<int>>* output_indexes) {
+    std::vector<std::pair<
+        Context::DeviceContext*,
+        std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>*
+        models) {
   // Run the model partition to supports heterogeneous computing on the multiple
   // devices
   models->clear();
-  input_indexes->clear();
-  output_indexes->clear();
   auto device_count = context->GetDeviceCount();
   NNADAPTER_CHECK_GE(device_count, 1) << "No device found.";
   if (device_count > 1) {
@@ -376,12 +409,12 @@ int Compilation::PartitionModel(
                            << " devices support "
                            << OperationTypeToString(operation.type) << "!";
     }
-    std::vector<std::pair<int, core::Model*>> _models_;
-    PartitionModelIntoSubmodels(&model->model_,
-                                supported_operations,
-                                &_models_,
-                                input_indexes,
-                                output_indexes);
+    std::vector<
+        std::pair<int,
+                  std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>
+        _models_;
+    PartitionModelIntoSubmodels(
+        &model->model_, supported_operations, &_models_);
     for (auto& _model_ : _models_) {
       auto device_context = context->GetDeviceContext(_model_.first);
       NNADAPTER_CHECK(device_context) << "No device found.";
@@ -390,16 +423,16 @@ int Compilation::PartitionModel(
   } else {
     auto device_context = context->GetDeviceContext(0);
     NNADAPTER_CHECK(device_context) << "No device found.";
-    models->push_back(std::pair<Context::DeviceContext*, core::Model*>(
-        device_context, &model->model_));
-    input_indexes->resize(1);
-    output_indexes->resize(1);
+    std::vector<int> input_indexes, output_indexes;
     for (size_t i = 0; i < model->model_.input_operands.size(); i++) {
-      input_indexes->at(0).push_back(-i - 1);
+      input_indexes.push_back(-i - 1);
     }
     for (size_t i = 0; i < model->model_.output_operands.size(); i++) {
-      output_indexes->at(0).push_back(-i - 1);
+      output_indexes.push_back(-i - 1);
     }
+    models->emplace_back(
+        device_context,
+        std::make_tuple(&model->model_, input_indexes, output_indexes));
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -432,45 +465,60 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
         helper->Set(NNADAPTER_RUNTIME_CACHE_OUTPUT_TYPES_KEY, value));
   }
   // Serialize all of device-specific compiled binary program
-  uint64_t num_caches = caches_.size();
-  NNADAPTER_CHECK(helper->Set(
-      NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY, &num_caches, sizeof(num_caches)));
-  for (uint64_t i = 0; i < num_caches; i++) {
+  uint64_t cache_count = programs_.size();
+  NNADAPTER_CHECK(helper->Set(NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY,
+                              &cache_count,
+                              sizeof(cache_count)));
+  for (uint64_t i = 0; i < cache_count; i++) {
+    auto& program = programs_[i];
     // cache device name
-    auto device_name = caches_[i].device_context->device->GetName();
+    auto device_name = program.device_context->device->GetName();
     NNADAPTER_CHECK(helper->Set(
         string_format(NNADAPTER_RUNTIME_CACHE_CACHE_DEVICE_NAME_KEY, i),
-        device_name,
-        strlen(device_name)));
-    // cache input types
-    auto input_count = caches_[i].cache.input_types.size();
+        device_name));
+    // input types and indexes
+    auto input_count = program.cache->input_types.size();
     if (input_count > 0) {
+      // types
       value.resize(input_count * sizeof(NNAdapterOperandType));
       for (size_t j = 0; j < input_count; j++) {
         memcpy(&value[j * sizeof(NNAdapterOperandType)],
-               &caches_[i].cache.input_types[j],
+               &program.cache->input_types[j],
                sizeof(NNAdapterOperandType));
       }
       NNADAPTER_CHECK(
           helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, value));
+      // indexes
+      NNADAPTER_CHECK_EQ(input_count, program.input_indexes.size());
+      NNADAPTER_CHECK(
+          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY,
+                      program.input_indexes.data(),
+                      input_count * sizeof(int)));
     }
-    // cache output types
-    auto output_count = caches_[i].cache.output_types.size();
+    // output types and indexes
+    auto output_count = program.cache->output_types.size();
     if (output_count > 0) {
+      // types
       value.resize(output_count * sizeof(NNAdapterOperandType));
       for (size_t j = 0; j < output_count; j++) {
         memcpy(&value[j * sizeof(NNAdapterOperandType)],
-               &caches_[i].cache.output_types[j],
+               &program.cache->output_types[j],
                sizeof(NNAdapterOperandType));
       }
       NNADAPTER_CHECK(
           helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, value));
+      // indexes
+      NNADAPTER_CHECK_EQ(output_count, program.output_indexes.size());
+      NNADAPTER_CHECK(
+          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY,
+                      program.output_indexes.data(),
+                      output_count * sizeof(int)));
     }
-    // cache model buffer
-    if (!caches_[i].cache.buffer.empty()) {
+    // model buffer
+    if (!program.cache->buffer.empty()) {
       NNADAPTER_CHECK(helper->Set(
           string_format(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY, i),
-          caches_[i].cache.buffer));
+          program.cache->buffer));
     }
   }
   auto size = helper->GetSerializedSize();
@@ -479,9 +527,9 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
 }
 
 bool Compilation::Deserialize(void* buffer, uint64_t size) {
+  programs_.clear();
   input_types_.clear();
   output_types_.clear();
-  caches_.clear();
   auto helper = std::make_shared<nnadapter::Cache>();
   if (!helper->Deserialize(buffer, size)) {
     return false;
@@ -503,48 +551,75 @@ bool Compilation::Deserialize(void* buffer, uint64_t size) {
         *(reinterpret_cast<NNAdapterOperandType*>(value.data()) + i));
   }
   // Parsing all of device-specific compiled binary program
-  NNADAPTER_CHECK(helper->Get(NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY, &value));
-  NNADAPTER_CHECK_EQ(value.size(), sizeof(uint64_t));
-  auto num_caches = *(reinterpret_cast<uint64_t*>(value.data()));
-  if (num_caches > 0) {
-    caches_.resize(num_caches);
-    for (size_t i = 0; i < num_caches; i++) {
-      caches_[i].cache.token = cache_token_.c_str();
-      caches_[i].cache.dir = cache_dir_.c_str();
-      caches_[i].cache.input_types.clear();
-      caches_[i].cache.output_types.clear();
-      caches_[i].cache.buffer.clear();
-      // cache device name
+  uint64_t cache_count = 0;
+  NNADAPTER_CHECK(helper->Get(
+      NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY, &cache_count, sizeof(uint64_t)));
+  if (cache_count > 0) {
+    programs_.resize(cache_count);
+    for (size_t i = 0; i < cache_count; i++) {
+      auto cache = new core::Cache();
+      NNADAPTER_CHECK(cache) << "Failed to allocate a cache for the model #"
+                             << i << ", out of memory!";
+      cache->token = cache_token_.c_str();
+      cache->dir = cache_dir_.c_str();
+      cache->input_types.clear();
+      cache->output_types.clear();
+      cache->buffer.clear();
+      // device name
+      std::string device_name;
       NNADAPTER_CHECK(helper->Get(
           string_format(NNADAPTER_RUNTIME_CACHE_CACHE_DEVICE_NAME_KEY, i),
-          &value));
-      std::string device_name(
-          reinterpret_cast<char*>(value.data()),
-          reinterpret_cast<char*>(value.data()) + value.size());
-      caches_[i].device_context =
+          &device_name));
+      programs_[i].device_context =
           context_->GetDeviceContext(device_name.c_str());
-      NNADAPTER_CHECK(caches_[i].device_context)
+      NNADAPTER_CHECK(programs_[i].device_context)
           << "Can't find a device named '" << device_name << "'.";
-      // cache input types
+      // input types and indexes
       NNADAPTER_CHECK(
           helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, &value));
       auto input_count = value.size() / sizeof(NNAdapterOperandType);
       for (size_t j = 0; j < input_count; j++) {
-        caches_[i].cache.input_types.push_back(
+        cache->input_types.push_back(
             *(reinterpret_cast<NNAdapterOperandType*>(value.data()) + j));
       }
-      // cache output types
+      programs_[i].input_indexes.resize(input_count);
+      if (!helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY,
+                       programs_[i].input_indexes.data(),
+                       input_count * sizeof(int))) {
+        NNADAPTER_CHECK_EQ(cache_count, 1)
+            << "Only supports missing input indexes for a single model, but "
+               "received "
+            << cache_count << " submodels.";
+        for (size_t j = 0; j < input_count; j++) {
+          programs_[i].input_indexes[j] = -j - 1;
+        }
+      }
+      // output types and indexes
       NNADAPTER_CHECK(
           helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, &value));
       auto output_count = value.size() / sizeof(NNAdapterOperandType);
       for (size_t j = 0; j < output_count; j++) {
-        caches_[i].cache.output_types.push_back(
+        cache->output_types.push_back(
             *(reinterpret_cast<NNAdapterOperandType*>(value.data()) + j));
       }
-      // cache model buffer
+      programs_[i].output_indexes.resize(output_count);
+      if (!helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY,
+                       programs_[i].output_indexes.data(),
+                       output_count * sizeof(int))) {
+        NNADAPTER_CHECK_EQ(cache_count, 1)
+            << "Only supports missing output indexes for a single model, but "
+               "received "
+            << cache_count << " submodels.";
+        for (size_t j = 0; j < output_count; j++) {
+          programs_[i].output_indexes[j] = -j - 1;
+        }
+      }
+      // model buffer
       NNADAPTER_CHECK(helper->Get(
           string_format(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY, i),
-          &caches_[i].cache.buffer));
+          &cache->buffer));
+      // Add into programs
+      programs_[i].cache = cache;
     }
   }
   return true;

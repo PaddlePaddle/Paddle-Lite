@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -59,8 +60,9 @@ void PartitionModelIntoSubmodels(
     core::Model *model,
     const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
         &supported_operations,
-    std::vector<std::pair<int, core::Model *>> *models,
-    std::vector<std::vector<int>> *input_indexes,
-    std::vector<std::vector<int>> *output_indexes);
+    std::vector<std::pair<
+        int,
+        std::tuple<core::Model *, std::vector<int>, std::vector<int>>>>
+        *models);
 
 }  // namespace nnadapter

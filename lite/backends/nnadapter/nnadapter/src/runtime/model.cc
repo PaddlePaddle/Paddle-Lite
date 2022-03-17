@@ -23,7 +23,7 @@
 namespace nnadapter {
 namespace runtime {
 
-Model::~Model() { nnadapter::ClearModel(&model_); }
+Model::~Model() { ClearModel(&model_); }
 
 int Model::AddOperand(const NNAdapterOperandType& type,
                       core::Operand** operand) {

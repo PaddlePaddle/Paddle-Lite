@@ -19,8 +19,10 @@
 
 namespace nnadapter {
 
-// Clear all of buffers in a model
+// Clear the operands and operations of a model
 void ClearModel(core::Model* model);
+// Clear the type and the buffer of a operand
+void ClearOperand(core::Operand* operand);
 // Append a operand into a model
 core::Operand* AddOperand(core::Model* model);
 // Append a operation into a model

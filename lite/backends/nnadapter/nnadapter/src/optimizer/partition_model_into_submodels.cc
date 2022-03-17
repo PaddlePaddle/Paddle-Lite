@@ -272,35 +272,28 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
     core::Model *model,
     const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
         &supported_operations,
-    std::vector<std::pair<int, core::Model *>> *models,
-    std::vector<std::vector<int>> *input_indexes,
-    std::vector<std::vector<int>> *output_indexes) {
+    std::vector<std::pair<
+        int,
+        std::tuple<core::Model *, std::vector<int>, std::vector<int>>>>
+        *models) {
   // Partition the model into the subgraphs
   ModelPartitioner partitioner;
   std::vector<std::pair<int, std::vector<core::Operation *>>> subgraphs;
   partitioner.Apply(model, supported_operations, &subgraphs);
   // Create the submodels from the subgraphs
   models->clear();
-  auto subgraph_count = subgraphs.size();
-  input_indexes->resize(subgraph_count);
-  output_indexes->resize(subgraph_count);
-  std::map<core::Operand *, int> shared_operand_to_shared_index_map;  // Mapping
-                                                                      // a
-                                                                      // shared
-                                                                      // operand
-                                                                      // to
-                                                                      // share
-                                                                      // index
-  for (auto i = 0; i < subgraph_count; i++) {
+  // Mapping a shared operand to share index
+  std::map<core::Operand *, int> shared_operand_to_shared_index_map;
+  for (auto &subgraph : subgraphs) {
     auto _model_ = new core::Model();
     NNADAPTER_CHECK(_model_)
         << "Failed to allocate for a model, out of memory!";
-    auto class_id = subgraphs[i].first;
-    models->emplace_back(class_id, _model_);
+    auto class_id = subgraph.first;
+    std::vector<int> input_indexes, output_indexes;
+    // Mapping an old operand to an new operand
     std::unordered_map<core::Operand *, core::Operand *>
-        old_operand_to_new_operand_map;  // Mapping an old operand to an new
-                                         // operand
-    auto &old_operations = subgraphs[i].second;
+        old_operand_to_new_operand_map;
+    auto &old_operations = subgraph.second;
     for (auto old_operation : old_operations) {
       auto new_operation = AddOperation(_model_);
       *new_operation = *old_operation;
@@ -317,7 +310,7 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
           old_operand_to_new_operand_map[old_operand] = new_operand;
           if (IsModelInputOperand(new_operand)) {
             _model_->input_operands.push_back(new_operand);
-            input_indexes->at(i).push_back(
+            input_indexes.push_back(
                 -GetModelInputOperandIndex(model, old_operand) - 1);
           } else if (!IsConstantOperand(new_operand)) {
             auto prev_operation = GetOperandProducer(model, old_operand);
@@ -331,7 +324,7 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
               }
               new_operand->type.lifetime = NNADAPTER_MODEL_INPUT;
               _model_->input_operands.push_back(new_operand);
-              input_indexes->at(i).push_back(
+              input_indexes.push_back(
                   shared_operand_to_shared_index_map[old_operand]);
             }
           }
@@ -351,7 +344,7 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
           old_operand_to_new_operand_map[old_operand] = new_operand;
           if (IsModelOutputOperand(new_operand)) {
             _model_->output_operands.push_back(new_operand);
-            output_indexes->at(i).push_back(
+            output_indexes.push_back(
                 -GetModelOutputOperandIndex(model, old_operand) - 1);
           } else if (!IsConstantOperand(new_operand)) {
             bool all_in_subgraph = true;
@@ -371,7 +364,7 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
               }
               new_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
               _model_->output_operands.push_back(new_operand);
-              output_indexes->at(i).push_back(
+              output_indexes.push_back(
                   shared_operand_to_shared_index_map[old_operand]);
             }
           }
@@ -379,6 +372,8 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
         old_operand = new_operand;
       }
     }
+    models->emplace_back(
+        class_id, std::make_tuple(_model_, input_indexes, output_indexes));
   }
 }
 

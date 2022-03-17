@@ -168,14 +168,15 @@ int Converter::Apply(
   result = NNAdapterModel_getSupportedOperations_invoke(
       model_, context_, supported_operations.get());
   if (result == NNADAPTER_NO_ERROR) {
-    std::unique_ptr<bool[]> supported_ops(new bool[op_count]);
-    std::fill(supported_ops.get(), supported_ops.get() + op_count, true);
+    std::unique_ptr<bool[]> supported_operators(new bool[op_count]);
+    std::fill(
+        supported_operators.get(), supported_operators.get() + op_count, true);
     for (size_t i = 0; i < operation_count_; i++) {
       auto op_idx = operation_idx_to_op_idx_map[i];
       CHECK_GE(op_idx, 0);
       CHECK_LT(op_idx, op_count);
-      supported_ops[op_idx] &= supported_operations[i];
-      if (!supported_ops[op_idx]) {
+      supported_operators[op_idx] &= supported_operations[i];
+      if (!supported_operators[op_idx]) {
         LOG(FATAL) << "Op " << block_desc->GetOp<cpp::OpDesc>(op_idx)->Type()
                    << " is not supported!";
       }

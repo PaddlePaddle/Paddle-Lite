@@ -29,17 +29,24 @@ namespace nnadapter {
 
 NNADAPTER_EXPORT void ClearModel(core::Model* model) {
   for (auto& operand : model->operands) {
-    if (operand.type.lifetime == NNADAPTER_CONSTANT_COPY && operand.buffer) {
-      free(operand.buffer);
-    }
-    if (IsPerChannelQuantType(operand.type.precision) &&
-        operand.type.symm_per_channel_params.scales) {
-      free(operand.type.symm_per_channel_params.scales);
-    }
-    for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-      if (operand.hints[i].handler) {
-        operand.hints[i].deleter(&operand.hints[i].handler);
-      }
+    ClearOperand(&operand);
+  }
+}
+
+NNADAPTER_EXPORT void ClearOperand(core::Operand* operand) {
+  if (operand->type.lifetime == NNADAPTER_CONSTANT_COPY && operand->buffer) {
+    free(operand->buffer);
+    operand->buffer = nullptr;
+  }
+  if (IsPerChannelQuantType(operand->type.precision) &&
+      operand->type.symm_per_channel_params.scales) {
+    free(operand->type.symm_per_channel_params.scales);
+    operand->type.symm_per_channel_params.scales = nullptr;
+  }
+  for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+    if (operand->hints[i].handler) {
+      operand->hints[i].deleter(&operand->hints[i].handler);
+      operand->hints[i].handler = nullptr;
     }
   }
 }
