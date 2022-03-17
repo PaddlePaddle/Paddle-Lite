@@ -153,9 +153,8 @@ class TestBoxCoderOp(AutoScanTest):
                         return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite is not supported on opencl. We need to fix it as soon as possible."
-        )
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "Lite has little diff in a specific case on arm fp16")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
