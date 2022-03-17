@@ -115,7 +115,6 @@ class TestConv2dOp(AutoScanTest):
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
         data_format = "NCHW"
         use_mkldnn = False
-        #assume(weight_shape[1] != 1)
         if self.target[0] == "X86":
             use_mkldnn = True
 
