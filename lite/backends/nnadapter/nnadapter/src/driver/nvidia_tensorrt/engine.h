@@ -36,12 +36,18 @@ class Context {
   explicit Context(void* device, const char* properties);
   ~Context();
 
-  int DLACoreId() { return dla_core_id_; }
+  nvinfer1::DeviceType DeviceType() { return device_type_; }
+  int DeviceId() { return device_id_; }
+  PrecisionMode Precision() { return precision_; }
+  bool GpuFallback() { return gpu_fallback_; }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  int dla_core_id_{-1};
+  nvinfer1::DeviceType device_type_{nvinfer1::DeviceType::kGPU};
+  int device_id_{0};
+  PrecisionMode precision_{kFloat32};
+  bool gpu_fallback_{true};
 };
 
 struct Deleter {
