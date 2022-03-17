@@ -24,7 +24,7 @@ source ${SHELL_FOLDER}/utils.sh
 ####################################################################################################
 # Functions of operate unit test
 # Arguments:
-#   target_name: can be Host or X86
+#   target_name: can be armv8
 # Globals:
 #   WORKSPACE
 ####################################################################################################
@@ -57,14 +57,14 @@ function compile_publish_inference_lib {
   cd $WORKSPACE
 
   # Remove Compiling Cache
-  rm -rf build.lite.linux.arm.*
+  rm -rf build.lite.linux.armv8.*
 
   # Step1. Compiling python installer
   local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=armv8"
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
-  local whl_path=$(find ./build.lite.linux.arm.* -name *whl)
+  local whl_path=$(find ./build.lite.linux.armv8.* -name *whl)
   if [[ -z "$whl_path" ]]; then
     # Error message.
     echo "**************************************************************************************"

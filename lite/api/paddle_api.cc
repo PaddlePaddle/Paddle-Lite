@@ -580,6 +580,16 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #endif
 }
 
+void CxxConfig::enable_xpu_multi_stream() {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::enable_xpu_multi_stream();
+#else
+  LOG(WARNING)
+      << "The invoking of the function 'enable_xpu_stream_per_thread' is "
+         "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
 void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
