@@ -115,6 +115,7 @@ class TestConv2dOp(AutoScanTest):
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
         data_format = "NCHW"
         use_mkldnn = False
+        #assume(weight_shape[1] != 1)
         if self.target[0] == "X86":
             use_mkldnn = True
 
@@ -168,6 +169,14 @@ class TestConv2dOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
+        def _teller1(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            groups = program_config.ops[0].attrs["groups"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if nnadapter_device_name == "nvidia_tensorrt" and (
+                    filter_shape[0] % groups == 0):
+                return True
+
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data"].shape
@@ -183,6 +192,10 @@ class TestConv2dOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on TensorRT. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

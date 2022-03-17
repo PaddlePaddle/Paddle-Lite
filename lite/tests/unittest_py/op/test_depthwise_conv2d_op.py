@@ -180,7 +180,9 @@ class TestDepthwiseConv2dOp(AutoScanTest):
 
         def _teller1(program_config, predictor_config):
             nnadapter_device_name = self.get_nnadapter_device_name()
-            if nnadapter_device_name == "nvidia_tensorrt":
+            strides = program_config.ops[0].attrs["strides"]
+            if nnadapter_device_name == "nvidia_tensorrt" and strides[
+                    0] != strides[1]:
                 return True
 
         self.add_ignore_check_case(
@@ -190,7 +192,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
+            "The paddle's and trt_layer's results has diff in a specific case on TensorRT. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
