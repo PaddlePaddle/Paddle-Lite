@@ -127,8 +127,9 @@ class TestClipOp(AutoScanTest):
         def _teller1(program_config, predictor_config):
             x_shape = int(len(program_config.inputs))
             if predictor_config.target() == TargetType.NNAdapter:
-                if x_shape == 3:
-                    return True
+                if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                    if x_shape == 3:
+                        return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
