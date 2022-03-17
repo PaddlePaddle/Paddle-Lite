@@ -264,8 +264,6 @@ void TestConvKsize(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 2, 7, 8}, {5, 6, 17, 18}}) {
     for (auto out_channels : {1, 3}) {
       for (auto ksize : {1, 3, 5, 7}) {
-        //  LOG(INFO) << "ksize: " << ksize << ", dims: " << dims[0] << ",
-        //  out_channels: " << out_channels;
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
             place, "def", DDim(dims), out_channels, ksize));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -525,7 +523,6 @@ TEST(Conv2d, precision) {
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  LOG(INFO) << "NNADAPTER_WITH_NVIDIA_TENSORRT";
   abs_error = 2e-5;
 #else
   return;
