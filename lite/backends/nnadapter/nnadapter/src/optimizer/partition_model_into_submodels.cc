@@ -372,9 +372,13 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
         old_operand = new_operand;
       }
     }
+    NNADAPTER_VLOG(6) << "#" << models->size() << " submodel for class_id=#"
+                      << class_id << std::endl
+                      << Visualize(model);
     models->emplace_back(
         class_id, std::make_tuple(_model_, input_indexes, output_indexes));
   }
+  NNADAPTER_VLOG(5) << models->size() << " submodels detected!";
 }
 
 }  // namespace nnadapter

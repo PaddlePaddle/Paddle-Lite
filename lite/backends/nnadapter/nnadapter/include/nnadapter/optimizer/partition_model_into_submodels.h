@@ -57,7 +57,7 @@ class ModelPartitioner {
 };
 
 // Acoording to the supported operations of the multiple devices, the main model
-// is divided into the sub-models associated with the device in topological
+// is divided into the sub-models associated with the device in topological.
 // order.
 // For example:
 // if <model> is shown as below:
