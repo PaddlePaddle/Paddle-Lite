@@ -61,3 +61,7 @@ endif()
 if(NNADAPTER_WITH_INTEL_OPENVINO)
   add_subdirectory(intel_openvino)
 endif()
+
+if(NNADAPTER_WITH_FAKE_DEVICE)
+  add_subdirectory(fake_device)
+endif()
