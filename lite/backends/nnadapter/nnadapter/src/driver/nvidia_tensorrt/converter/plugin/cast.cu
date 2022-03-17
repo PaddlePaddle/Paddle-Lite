@@ -13,11 +13,12 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/converter/plugin/cast.h"
-#include <iostream>
+
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-CastPluginDynamic::CastPluginDynamic(int intype, int outtype) : intype_(intype), outtype_(outtype){}
+CastPluginDynamic::CastPluginDynamic(int intype, int outtype)
+    : intype_(intype), outtype_(outtype) {}
 
 CastPluginDynamic::CastPluginDynamic(const void* serial_data,
                                      size_t serial_length) {
@@ -30,8 +31,7 @@ nvinfer1::IPluginV2DynamicExt* CastPluginDynamic::clone() const noexcept {
 }
 
 template <typename Tin, typename Tout, unsigned TPB>
-__global__ void cast_kernel(
-    int n, const Tin* input, Tout* output) {
+__global__ void cast_kernel(int n, const Tin* input, Tout* output) {
   const int idx = blockIdx.x * TPB + threadIdx.x;
   if (idx < n) {
     output[idx] = static_cast<Tout>(input[idx]);
@@ -53,24 +53,27 @@ int32_t CastPluginDynamic::enqueue(
   const int block_size = 256;
   const int grid_size = (num + block_size - 1) / block_size;
 
-  if (intype_ == 5 && outtype_ == 10) // int32->float32
-  {
+  if (intype_ == 5 && outtype_ == 10) {  // int32->float32
     const int32_t* input = static_cast<const int32_t*>(inputs[0]);
     float* output = static_cast<float*>(outputs[0]);
-    cast_kernel<int32_t, float, block_size><<<grid_size, block_size, 0, stream>>>(num, input, output);
-  }
-  else if(intype_ == 10 && outtype_ == 5) // float32->int32
-  {
+    cast_kernel<int32_t,
+                float,
+                block_size><<<grid_size, block_size, 0, stream>>>(
+        num, input, output);
+  } else if (intype_ == 10 && outtype_ == 5) {  // float32->int32
     const float* input = static_cast<const float*>(inputs[0]);
     int32_t* output = static_cast<int32_t*>(outputs[0]);
-    cast_kernel<float, int32_t, block_size><<<grid_size, block_size, 0, stream>>>(num, input, output);
+    cast_kernel<float,
+                int32_t,
+                block_size><<<grid_size, block_size, 0, stream>>>(
+        num, input, output);
   }
-  
+
   return 0;
 }
 
 size_t CastPluginDynamic::getSerializationSize() const noexcept {
-    return SerializedSize(outtype_) + SerializedSize(intype_);
+  return SerializedSize(outtype_) + SerializedSize(intype_);
 }
 
 void CastPluginDynamic::serialize(void* buffer) const noexcept {
