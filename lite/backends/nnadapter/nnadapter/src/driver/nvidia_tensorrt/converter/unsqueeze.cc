@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "operation/unsqueeze.h"
-#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
