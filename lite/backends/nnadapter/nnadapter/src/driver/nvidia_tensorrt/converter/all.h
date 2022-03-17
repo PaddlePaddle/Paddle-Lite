@@ -18,6 +18,7 @@
 REGISTER_CONVERTER(ADD, ConvertElementwise)
 REGISTER_CONVERTER(AVERAGE_POOL_2D, ConvertPool2D)
 REGISTER_CONVERTER(ASSIGN, ConvertAssign)
+REGISTER_CONVERTER(CLIP, ConvertClip)
 REGISTER_CONVERTER(CONCAT, ConvertConcat)
 REGISTER_CONVERTER(CONV_2D, ConvertConv2D)
 REGISTER_CONVERTER(DIV, ConvertElementwise)
@@ -39,6 +40,7 @@ REGISTER_CONVERTER(RESHAPE, ConvertReshape)
 REGISTER_CONVERTER(SHAPE, ConvertShape)
 REGISTER_CONVERTER(SIGMOID, ConvertActivations)
 REGISTER_CONVERTER(SOFTMAX, ConvertSoftmax)
+<<<<<<< 7ea5b3dce9bbed2e69201670cb9cd7fa62810c74
 <<<<<<< f8566c79456c1c2eb6aa9d1e0fa32a28599576f6
 REGISTER_CONVERTER(SWISH, ConvertSwish)
 REGISTER_CONVERTER(TANH, ConvertActivations)
@@ -47,5 +49,7 @@ REGISTER_CONVERTER(UNSQUEEZE, ConvertUnsqueeze)
 =======
 REGISTER_CONVERTER(CLIP, ConvertClip)
 >>>>>>> [NNAdaptor] add tensorrt clip op, test=nvidia_tensorrt
+=======
+>>>>>>> fix review question, test=nvidia_tensorrt
 
 #endif  // NOLINT

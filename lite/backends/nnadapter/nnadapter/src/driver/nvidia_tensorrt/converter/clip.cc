@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "operation/clip.h"
-#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -24,12 +23,12 @@ namespace nvidia_tensorrt {
 
 int ConvertClip(Converter* converter, core::Operation* operation) {
   CLIP_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
   if (IsConstantOperand(min_operand) && IsConstantOperand(max_operand)) {
     float min_num = *reinterpret_cast<float*>(min_operand->buffer);
     float max_num = *reinterpret_cast<float*>(max_operand->buffer);
