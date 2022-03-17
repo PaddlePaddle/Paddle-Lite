@@ -123,6 +123,10 @@ class SparseConvOp : public OpLite {
     if (op_desc.HasAttr("flag_semi")) {
       param_.flag_semi = op_desc.GetAttr<int>("flag_semi");
     }
+    int op_type = 0;
+    if (op_desc.HasAttr("op_type")) {
+      op_type = op_desc.GetAttr<int>("op_type");
+    }
 
     // For Int8
     const OpInfo* op_info = static_cast<const OpInfo*>(&op_desc);
@@ -131,6 +135,10 @@ class SparseConvOp : public OpLite {
       auto input_scale_name = "Input0_scale";
       auto filter_scale_name = "Filter0_scale";
       auto output_scale_name = "Output0_scale";
+      if (op_type == 1) {
+        filter_scale_name = "W0_scale";
+        output_scale_name = "Out0_scale";
+      }
       if (op_info->HasInputScale(input_scale_name, true))
         param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
       if (op_info->HasInputScale(filter_scale_name, true))
