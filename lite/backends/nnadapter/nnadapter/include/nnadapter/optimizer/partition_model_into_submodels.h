@@ -56,6 +56,38 @@ class ModelPartitioner {
                    const std::function<bool(const Node *)> &leave);
 };
 
+// Acoording to the supported operations of the multiple devices, the main model
+// is divided into the sub-models associated with the device in topological
+// order.
+// For example:
+// if <model> is shown as below:
+//        conv2d_0
+//           |
+//      batch_norm_0
+//           |
+//         relu_0
+//           |
+//        conv2d_1
+//           |
+//       reshape_0
+//           |
+//          fc_0
+//           |
+//       reshape_1
+//           |
+//       softmax_0
+//
+// and the <supported_operations> information:
+//   <device_id=0, [conv2d_0,batch_norm_0,conv2d_1]>
+//   <device_id=1, [relu_0,reshape_0,fc_0,reshape_1]>
+//   <device_id=2, [softmax_0]>
+//
+// After the pass, the following submodels should be obtained:
+//   <device_id=0, [conv2d_0,batch_norm_0]>
+//   <device_id=1, [relu_0]>
+//   <device_id=0, [conv2d_1]>
+//   <device_id=1, [reshape_0,fc_0,reshape_1]>
+//   <device_id=2, [softmax_0]>
 void PartitionModelIntoSubmodels(
     core::Model *model,
     const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
