@@ -227,8 +227,8 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
 int Compilation::Finish() {
   // Start to build program from model or cache
   completed_ = true;
-  programs_.clear();
   if (model_) {
+    programs_.clear();
     std::vector<
         std::pair<Context::DeviceContext*,
                   std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>
@@ -343,14 +343,10 @@ int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
 
 bool Compilation::CheckCache() {
   if (programs_.empty()) return false;
-  bool exists = true;
   for (auto& program : programs_) {
-    if (!program.cache) {
-      exists = false;
-      break;
-    }
+    if (!program.cache) return false;
   }
-  return exists;
+  return true;
 }
 
 void Compilation::ClearCache() {
@@ -466,9 +462,8 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
   }
   // Serialize all of device-specific compiled binary program
   uint64_t cache_count = programs_.size();
-  NNADAPTER_CHECK(helper->Set(NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY,
-                              &cache_count,
-                              sizeof(cache_count)));
+  NNADAPTER_CHECK(helper->Set(
+      NNADAPTER_RUNTIME_CACHE_NUM_CACHES_KEY, &cache_count, sizeof(uint64_t)));
   for (uint64_t i = 0; i < cache_count; i++) {
     auto& program = programs_[i];
     // cache device name
