@@ -106,8 +106,9 @@ class TestArgMaxOp(AutoScanTest):
         def _teller1(program_config, predictor_config):
             set_dtype = program_config.ops[0].attrs["dtype"]
             if predictor_config.target() == TargetType.NNAdapter:
-                if set_dtype != 2:
-                    return True
+                if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                    if set_dtype != 2:
+                        return True
 
         def _teller2(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data"].shape)
