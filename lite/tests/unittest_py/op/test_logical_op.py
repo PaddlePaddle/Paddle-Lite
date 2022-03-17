@@ -34,14 +34,14 @@ class TestLogicalOp(AutoScanTest):
                                      DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault),
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
