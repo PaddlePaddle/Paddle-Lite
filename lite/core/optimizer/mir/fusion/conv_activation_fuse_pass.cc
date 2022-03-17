@@ -69,7 +69,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     act_types.push_back("sigmoid");
     act_types.push_back("tanh");
     act_types.push_back("swish");
-    //    act_types.push_back("exp");
+    act_types.push_back("exp");
     act_types.push_back("abs");
   }
 
