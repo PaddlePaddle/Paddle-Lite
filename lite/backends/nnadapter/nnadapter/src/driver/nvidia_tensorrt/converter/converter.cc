@@ -133,5 +133,9 @@ nvinfer1::Weights Converter::OperandToWeights(core::Operand* operand) {
   return weight;
 }
 
+std::vector<std::vector<float>>* Converter::GetWeightBuffer() {
+  return weight_;
+}
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

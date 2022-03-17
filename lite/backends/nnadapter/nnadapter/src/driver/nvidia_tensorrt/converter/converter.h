@@ -27,8 +27,9 @@ class Converter {
  public:
   explicit Converter(
       nvinfer1::INetworkDefinition* network,
-      std::map<core::Operand*, std::vector<nvinfer1::ITensor*>>* tensors)
-      : network_(network), tensors_(tensors) {}
+      std::map<core::Operand*, std::vector<nvinfer1::ITensor*>>* tensors,
+      std::vector<std::vector<float>>* weight)
+      : network_(network), tensors_(tensors), weight_(weight) {}
   ~Converter() {}
 
   // Convert a NNAdapter model to a trt network
@@ -45,9 +46,12 @@ class Converter {
 
   nvinfer1::Weights OperandToWeights(core::Operand* operand);
 
+  std::vector<std::vector<float>>* GetWeightBuffer();
+
  private:
   nvinfer1::INetworkDefinition* network_{nullptr};
   std::map<core::Operand*, std::vector<nvinfer1::ITensor*>>* tensors_{nullptr};
+  std::vector<std::vector<float>>* weight_{nullptr};
 };
 
 }  // namespace nvidia_tensorrt
