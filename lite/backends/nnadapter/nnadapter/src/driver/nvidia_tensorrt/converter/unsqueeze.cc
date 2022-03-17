@@ -27,30 +27,12 @@ int ConvertUnsqueeze(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
-  auto input_dims_data = input_operand->type.dimensions.data;
-  auto input_dims_count = input_operand->type.dimensions.count;
-  auto output_dims_count = input_dims_count + axes.size();
-  std::vector<int32_t> output_dims(output_dims_count, 0);
-  for (size_t i = 0; i < input_dims_count; i++) {
-    if (input_dims_data[i] != -1) {
-      output_dims[i] = input_dims_data[i];
-    }
-  }
-  uint32_t cur_size = input_dims_count;
-  for (size_t i = 0; i < axes.size(); i++) {
-    int32_t axis = axes[i] < 0 ? axes[i] + cur_size + 1 : axes[i];
-    for (uint32_t j = cur_size; j > axis; j--) {
-      output_dims[j] = output_dims[j - 1];
-    }
-    output_dims[axis] = 1;
-    cur_size++;
-  }
+  auto output_dims_data = output_operand->type.dimensions.data;
+  auto output_dims_count = output_operand->type.dimensions.count;
   auto unsqueeze_layer = converter->network()->addShuffle(*input_tensor);
   nvinfer1::Dims reshape_dims;
   reshape_dims.nbDims = output_dims_count;
-  memcpy(
-      reshape_dims.d, output_dims.data(), sizeof(int32_t) * output_dims_count);
+  memcpy(reshape_dims.d, output_dims_data, sizeof(int32_t) * output_dims_count);
   unsqueeze_layer->setReshapeDimensions(reshape_dims);
   auto output_tensor = unsqueeze_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);

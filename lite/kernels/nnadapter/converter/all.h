@@ -210,10 +210,9 @@ REGISTER_CONVERTER(
     gelu,
     ConvertGelu,
     "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,cambricon_mlu");
-REGISTER_CONVERTER(
-    hard_sigmoid,
-    ConvertHardSigmoid,
-    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,nvidia_tensorrt");
+REGISTER_CONVERTER(hard_sigmoid,
+                   ConvertHardSigmoid,
+                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
 REGISTER_CONVERTER(
     hard_swish,
     ConvertHardSwish,

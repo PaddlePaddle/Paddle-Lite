@@ -57,9 +57,6 @@ class TestUnsqueeze2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.NNAdapter:
-            if "AxesTensor" in program_config.ops[0].inputs:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -134,7 +131,15 @@ class TestUnsqueeze2Op(AutoScanTest):
         return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.NNAdapter:
+                if "AxesTensor" in program_config.ops[0].inputs:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "NNAdapter not support AxesTensor Input now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
