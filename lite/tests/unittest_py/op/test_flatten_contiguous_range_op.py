@@ -36,8 +36,9 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             DataLayoutType.Any,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -62,6 +63,10 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
+        
+        target_str = self.get_target()
+        if target_str == "NNAdapter":
+            assume(input_type != "int64")
 
         start_axis = draw(
             st.integers(
