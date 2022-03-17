@@ -66,6 +66,8 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
           {NNADAPTER_ADD, nvinfer1::ElementWiseOperation::kSUM},
           {NNADAPTER_MUL, nvinfer1::ElementWiseOperation::kPROD},
           {NNADAPTER_SUB, nvinfer1::ElementWiseOperation::kSUB},
+          {NNADAPTER_DIV, nvinfer1::ElementWiseOperation::kDIV},
+          {NNADAPTER_POW, nvinfer1::ElementWiseOperation::kPOW},
       };
   auto operation_type = operation->type;
   NNADAPTER_CHECK(elementwise_type_map.count(operation_type))

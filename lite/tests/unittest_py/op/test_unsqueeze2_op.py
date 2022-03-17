@@ -51,11 +51,15 @@ class TestUnsqueeze2Op(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() == TargetType.NNAdapter:
+            if "AxesTensor" in program_config.ops[0].inputs:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -133,7 +137,12 @@ class TestUnsqueeze2Op(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "NNAdapter":
+            # Make sure to generate enough valid cases for NNAdapter
+            max_examples = 200
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

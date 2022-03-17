@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/converter/plugin/math_function.h"
 #include "driver/nvidia_tensorrt/converter/plugin/swish.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+template <typename T>
+__device__ inline T math_exp(T a);
+
+template <>
+__device__ inline float math_exp<float>(float a) {
+  return expf(a);
+}
 
 template <typename T>
 __global__ void swish_kernel(int num, const T* input, T* output, T beta) {
