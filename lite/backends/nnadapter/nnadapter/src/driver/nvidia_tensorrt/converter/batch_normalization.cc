@@ -15,7 +15,6 @@
 #include "operation/batch_normalization.h"
 #include <cmath>
 #include "driver/nvidia_tensorrt/converter/converter.h"
-#include "lite/core/tensor.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
