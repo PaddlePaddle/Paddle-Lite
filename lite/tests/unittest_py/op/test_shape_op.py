@@ -47,7 +47,8 @@ class TestShapeOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -58,8 +59,10 @@ class TestShapeOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+                    min_value=10, max_value=64),
+                min_size=4,
+                max_size=4))
+        input_type = draw(st.sampled_from(["float32", "int32"]))
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
