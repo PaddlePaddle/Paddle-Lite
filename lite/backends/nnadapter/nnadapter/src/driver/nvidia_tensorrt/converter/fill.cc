@@ -25,13 +25,15 @@
 //   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
 //   // Convert to trt tensors and node
-//   //auto fill_layer = converter->network()->addFill(nvinfer1::Dims3{5,4,4},  nvinfer1::FillOperation::kRANDOM_UNIFORM);
+//   //auto fill_layer = converter->network()->addFill(nvinfer1::Dims3{5,4,4},
+//   nvinfer1::FillOperation::kRANDOM_UNIFORM);
 //   nvinfer1::Weights ws;
 //   float* s = new float[100];
 //   ws.values = s;
 //   ws.count = 1;
 //   ws.type = nvinfer1::DataType::kFLOAT;
-//   auto constant_layer = converter->network()->addConstant(nvinfer1::Dims3{1,1,1}, ws);
+//   auto constant_layer =
+//   converter->network()->addConstant(nvinfer1::Dims3{1,1,1}, ws);
 
 //   auto output_tensor = constant_layer->getOutput(0);
 //   converter->UpdateTensorMap(output_operand, output_tensor);
@@ -40,11 +42,6 @@
 
 // }  // namespace nvidia_tensorrt
 // }  // namespace nnadapter
-
-
-
-
-
 
 // Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
@@ -61,11 +58,11 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/converter/plugin/fill.h"
+#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "operation/fill.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include <iostream>
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -77,20 +74,18 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
     value_tensor = converter->ConvertOperand(value_operand);
   }
 
-  int shape_rank = shape_operand->length / static_cast<int64_t>(sizeof(int64_t));
+  int shape_rank =
+      shape_operand->length / static_cast<int64_t>(sizeof(int64_t));
   auto shape_data = static_cast<int64_t*>(shape_operand->buffer);
   std::vector<int64_t> shape_dims(shape_data, shape_data + shape_rank);
 
   float value;
   bool bool_value_tensor;
   std::vector<nvinfer1::ITensor*> tensors;
-  if (value_operand->buffer)
-  {
+  if (value_operand->buffer) {
     value = *(static_cast<float*>(value_operand->buffer));
     bool_value_tensor = false;
-  }
-  else
-  {
+  } else {
     bool_value_tensor = true;
     tensors.push_back(value_tensor);
   }

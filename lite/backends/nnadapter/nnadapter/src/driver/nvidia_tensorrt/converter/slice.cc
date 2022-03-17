@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "operation/slice.h"
+#include <algorithm>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include <algorithm>
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -28,7 +28,6 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
 
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
@@ -42,32 +41,27 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   new_steps_dims.nbDims = dims_count;
   out_dims.nbDims = dims_count;
   int j = 0;
-  for (int i = 0;i < dims_count; i++)
-  {
-      if(std::find(new_axes.begin(), new_axes.end(), i) == new_axes.end())
-      {
-          new_starts_dims.d[i] = 0;
-          new_ends_dims.d[i] = dims_data[i];
-          new_steps_dims.d[i] = 1;
-      }
-      else
-      {
-          new_starts_dims.d[i] = starts[j] < 0 ? starts[j] + dims_data[i] : starts[j];
-          new_ends_dims.d[i] = ends[j] >= dims_data[i] ? dims_data[i] : ends[j];
-          new_steps_dims.d[i] = steps[j];
-          j++;
-      }
+  for (int i = 0; i < dims_count; i++) {
+    if (std::find(new_axes.begin(), new_axes.end(), i) == new_axes.end()) {
+      new_starts_dims.d[i] = 0;
+      new_ends_dims.d[i] = dims_data[i];
+      new_steps_dims.d[i] = 1;
+    } else {
+      new_starts_dims.d[i] =
+          starts[j] < 0 ? starts[j] + dims_data[i] : starts[j];
+      new_ends_dims.d[i] = ends[j] >= dims_data[i] ? dims_data[i] : ends[j];
+      new_steps_dims.d[i] = steps[j];
+      j++;
+    }
   }
 
-  for (int i = 0; i < dims_count; i++)
-  {
-    out_dims.d[i] = (new_ends_dims.d[i] - new_starts_dims.d[i]) / new_steps_dims.d[i];
+  for (int i = 0; i < dims_count; i++) {
+    out_dims.d[i] =
+        (new_ends_dims.d[i] - new_starts_dims.d[i]) / new_steps_dims.d[i];
   }
 
-  auto slice_layer = converter->network()->addSlice(*input_tensor, 
-  new_starts_dims, 
-  out_dims, 
-  new_steps_dims);
+  auto slice_layer = converter->network()->addSlice(
+      *input_tensor, new_starts_dims, out_dims, new_steps_dims);
   auto output_tensor = slice_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

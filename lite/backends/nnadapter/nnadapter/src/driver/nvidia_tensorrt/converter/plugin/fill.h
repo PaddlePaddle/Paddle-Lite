@@ -32,17 +32,17 @@ class FillPluginDynamic : public PluginDynamic {
   const char* getPluginType() const noexcept;
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
-  bool supportsFormatCombination(
-    int32_t pos,
-    const nvinfer1::PluginTensorDesc* in_out,
-    int32_t nb_inputs,
-    int32_t nb_outputs) noexcept;
-nvinfer1::DimsExprs getOutputDimensions(
-    int32_t output_index,
-    const nvinfer1::DimsExprs* inputs,
-    int32_t nb_inputs,
-    nvinfer1::IExprBuilder& expr_builder) noexcept ;
-  private:
+  bool supportsFormatCombination(int32_t pos,
+                                 const nvinfer1::PluginTensorDesc* in_out,
+                                 int32_t nb_inputs,
+                                 int32_t nb_outputs) noexcept;
+  nvinfer1::DimsExprs getOutputDimensions(
+      int32_t output_index,
+      const nvinfer1::DimsExprs* inputs,
+      int32_t nb_inputs,
+      nvinfer1::IExprBuilder& expr_builder) noexcept;
+
+ private:
   float value_;
   bool bool_value_tensor_;
   std::vector<int64_t> shape_;

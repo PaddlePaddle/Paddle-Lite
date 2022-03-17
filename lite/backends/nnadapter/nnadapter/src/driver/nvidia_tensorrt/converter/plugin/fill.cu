@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/converter/plugin/fill.h"
 #include <iostream>
+#include "driver/nvidia_tensorrt/converter/plugin/fill.h"
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-FillPluginDynamic::FillPluginDynamic(float value, bool bool_value_tensor, std::vector<int64_t> shape) : 
-    value_(value), bool_value_tensor_(bool_value_tensor), shape_(shape){}
+FillPluginDynamic::FillPluginDynamic(float value,
+                                     bool bool_value_tensor,
+                                     std::vector<int64_t> shape)
+    : value_(value), bool_value_tensor_(bool_value_tensor), shape_(shape) {}
 
 FillPluginDynamic::FillPluginDynamic(const void* serial_data,
                                      size_t serial_length) {
   Deserialize(&serial_data, &serial_length, &value_);
   Deserialize(&serial_data, &serial_length, &bool_value_tensor_);
+  for (int i = 0; i < shape_.size(); i++)
+    Deserialize(&serial_data, &serial_length, &shape_[i]);
 }
 
 nvinfer1::IPluginV2DynamicExt* FillPluginDynamic::clone() const noexcept {
@@ -40,16 +44,14 @@ nvinfer1::DimsExprs FillPluginDynamic::getOutputDimensions(
   NNADAPTER_CHECK_GE(nb_inputs, 1);
   nvinfer1::DimsExprs outdims;
   outdims.nbDims = shape_.size();
-  for (int i = 0; i < shape_.size(); i++)
-  {
-      outdims.d[i] = expr_builder.constant(shape_[i]);
+  for (int i = 0; i < shape_.size(); i++) {
+    outdims.d[i] = expr_builder.constant(shape_[i]);
   }
   return outdims;
 }
 
 template <typename T, unsigned TPB>
-__global__ void fill_kernel_value(
-    int n, T* output, T value) {
+__global__ void fill_kernel_value(int n, T* output, T value) {
   const int idx = blockIdx.x * TPB + threadIdx.x;
   if (idx < n) {
     output[idx] = value;
@@ -57,8 +59,7 @@ __global__ void fill_kernel_value(
 }
 
 template <typename T, unsigned TPB>
-__global__ void fill_kernel_value_tensor(
-    int n, T* output, const T* value) {
+__global__ void fill_kernel_value_tensor(int n, T* output, const T* value) {
   const int idx = blockIdx.x * TPB + threadIdx.x;
   if (idx < n) {
     output[idx] = *value;
@@ -82,20 +83,25 @@ int32_t FillPluginDynamic::enqueue(
 
   float* output = static_cast<float*>(outputs[0]);
   if (bool_value_tensor_)
-    fill_kernel_value_tensor<float, block_size><<<grid_size, block_size, 0, stream>>>(num, output, (static_cast<const float*>(inputs[0])));
+    fill_kernel_value_tensor<float,
+                             block_size><<<grid_size, block_size, 0, stream>>>(
+        num, output, (static_cast<const float*>(inputs[0])));
   else
-    fill_kernel_value<float, block_size><<<grid_size, block_size, 0, stream>>>(num, output, value_);
-  
+    fill_kernel_value<float, block_size><<<grid_size, block_size, 0, stream>>>(
+        num, output, value_);
+
   return 0;
 }
 
 size_t FillPluginDynamic::getSerializationSize() const noexcept {
-    return SerializedSize(value_) + SerializedSize(bool_value_tensor_);
+  return SerializedSize(value_) + SerializedSize(bool_value_tensor_) +
+         shape_.size() * sizeof(int64_t);
 }
 
 void FillPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, value_);
   Serialize(&buffer, bool_value_tensor_);
+  for (int i = 0; i < shape_.size(); i++) Serialize(&buffer, shape_[i]);
 }
 
 bool FillPluginDynamic::supportsFormatCombination(

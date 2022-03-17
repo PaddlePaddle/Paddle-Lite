@@ -32,12 +32,12 @@ class CastPluginDynamic : public PluginDynamic {
   const char* getPluginType() const noexcept;
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
-  bool supportsFormatCombination(
-    int32_t pos,
-    const nvinfer1::PluginTensorDesc* in_out,
-    int32_t nb_inputs,
-    int32_t nb_outputs) noexcept;
-  private:
+  bool supportsFormatCombination(int32_t pos,
+                                 const nvinfer1::PluginTensorDesc* in_out,
+                                 int32_t nb_inputs,
+                                 int32_t nb_outputs) noexcept;
+
+ private:
   int intype_;
   int outtype_;
 };

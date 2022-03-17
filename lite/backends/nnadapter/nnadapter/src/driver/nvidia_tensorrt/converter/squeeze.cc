@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "operation/squeeze.h"
+#include <algorithm>
+#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include <iostream>
-#include <algorithm>
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -34,12 +34,10 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
   auto dims_count = input_operand->type.dimensions.count;
   nvinfer1::Dims out_dims;
   out_dims.nbDims = 0;
-  for (int32_t i = 0; i < dims_count; i++)
-  {
-      if(std::find(axes.begin(), axes.end(), i) == axes.end())
-      {
-          out_dims.d[out_dims.nbDims ++] = dims_data[i];
-      }
+  for (int32_t i = 0; i < dims_count; i++) {
+    if (std::find(axes.begin(), axes.end(), i) == axes.end()) {
+      out_dims.d[out_dims.nbDims++] = dims_data[i];
+    }
   }
   squeeze_layer->setReshapeDimensions(out_dims);
   auto output_tensor = squeeze_layer->getOutput(0);

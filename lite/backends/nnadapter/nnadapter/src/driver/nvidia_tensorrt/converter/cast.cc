@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/converter/plugin/cast.h"
+#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "operation/cast.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include <iostream>
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -30,7 +30,8 @@ int ConvertCast(Converter* converter, core::Operation* operation) {
   }
 
   auto input_precision = input_operand->type.precision;
-  CastPluginDynamic cast_plugin(static_cast<int>(input_precision), static_cast<int>(dtype));
+  CastPluginDynamic cast_plugin(static_cast<int>(input_precision),
+                                static_cast<int>(dtype));
 
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto cast_layer =
