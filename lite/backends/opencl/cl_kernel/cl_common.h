@@ -154,7 +154,7 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
 #endif
 
 #ifdef EXP
-  output = exp(in);
+  output = exp(convert_float(in));
 #endif
 
 #ifdef ABS
@@ -228,7 +228,7 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #endif
 
 #ifdef EXP
-  output = exp(in);
+  output = exp(convert_float(in));
 #endif
 
 #ifdef ABS
