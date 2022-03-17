@@ -32,10 +32,15 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
 
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
+  for (int i = 0; i < axes.size(); i++)
+    if (axes[i] < 0) axes[i] += dims_count;
   nvinfer1::Dims out_dims;
   out_dims.nbDims = 0;
   for (int32_t i = 0; i < dims_count; i++) {
-    if (std::find(axes.begin(), axes.end(), i) == axes.end()) {
+    if (std::find(axes.begin(), axes.end(), i) == axes.end() &&
+        axes.size() > 0) {
+      out_dims.d[out_dims.nbDims++] = dims_data[i];
+    } else if (axes.size() == 0 && dims_data[i] > 1) {
       out_dims.d[out_dims.nbDims++] = dims_data[i];
     }
   }
