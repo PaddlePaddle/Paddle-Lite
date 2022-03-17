@@ -228,7 +228,7 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #endif
 
 #ifdef EXP
-  output = exp(convert_float(in));
+  output = exp(convert_float4(in));
 #endif
 
 #ifdef ABS
