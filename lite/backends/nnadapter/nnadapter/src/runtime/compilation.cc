@@ -486,14 +486,15 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
                &program.cache->input_types[j],
                sizeof(NNAdapterOperandType));
       }
-      NNADAPTER_CHECK(
-          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, value));
+      NNADAPTER_CHECK(helper->Set(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, i),
+          value));
       // indexes
       NNADAPTER_CHECK_EQ(input_count, program.input_indexes.size());
-      NNADAPTER_CHECK(
-          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY,
-                      program.input_indexes.data(),
-                      input_count * sizeof(int)));
+      NNADAPTER_CHECK(helper->Set(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY, i),
+          program.input_indexes.data(),
+          input_count * sizeof(int)));
     }
     // output types and indexes
     auto output_count = program.cache->output_types.size();
@@ -505,14 +506,15 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
                &program.cache->output_types[j],
                sizeof(NNAdapterOperandType));
       }
-      NNADAPTER_CHECK(
-          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, value));
+      NNADAPTER_CHECK(helper->Set(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, i),
+          value));
       // indexes
       NNADAPTER_CHECK_EQ(output_count, program.output_indexes.size());
-      NNADAPTER_CHECK(
-          helper->Set(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY,
-                      program.output_indexes.data(),
-                      output_count * sizeof(int)));
+      NNADAPTER_CHECK(helper->Set(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY, i),
+          program.output_indexes.data(),
+          output_count * sizeof(int)));
     }
     // model buffer
     if (!program.cache->buffer.empty()) {
@@ -575,17 +577,28 @@ bool Compilation::Deserialize(void* buffer, uint64_t size) {
       NNADAPTER_CHECK(programs_[i].device_context)
           << "Can't find a device named '" << device_name << "'.";
       // input types and indexes
-      NNADAPTER_CHECK(
-          helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, &value));
+      if (!helper->Get(
+              string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY, i),
+              &value)) {
+        NNADAPTER_CHECK_EQ(cache_count, 1)
+            << "In order to be compatible with the old version of a single "
+               "model, we used the wrong key value to get the input types, but "
+               "now received "
+            << cache_count << " submodels.";
+        NNADAPTER_CHECK(helper->Get(
+            string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_TYPES_KEY),
+            &value));
+      }
       auto input_count = value.size() / sizeof(NNAdapterOperandType);
       for (size_t j = 0; j < input_count; j++) {
         cache->input_types.push_back(
             *(reinterpret_cast<NNAdapterOperandType*>(value.data()) + j));
       }
       programs_[i].input_indexes.resize(input_count);
-      if (!helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY,
-                       programs_[i].input_indexes.data(),
-                       input_count * sizeof(int))) {
+      if (!helper->Get(
+              string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUT_INDEXES_KEY, i),
+              programs_[i].input_indexes.data(),
+              input_count * sizeof(int))) {
         NNADAPTER_CHECK_EQ(cache_count, 1)
             << "Only supports missing input indexes for a single model, but "
                "received "
@@ -595,15 +608,26 @@ bool Compilation::Deserialize(void* buffer, uint64_t size) {
         }
       }
       // output types and indexes
-      NNADAPTER_CHECK(
-          helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, &value));
+      if (!helper->Get(
+              string_format(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY, i),
+              &value)) {
+        NNADAPTER_CHECK_EQ(cache_count, 1)
+            << "In order to be compatible with the old version of a single "
+               "model, we used the wrong key value to get the output types, "
+               "but now received "
+            << cache_count << " submodels.";
+        helper->Get(
+            string_format(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_TYPES_KEY),
+            &value);
+      }
       auto output_count = value.size() / sizeof(NNAdapterOperandType);
       for (size_t j = 0; j < output_count; j++) {
         cache->output_types.push_back(
             *(reinterpret_cast<NNAdapterOperandType*>(value.data()) + j));
       }
       programs_[i].output_indexes.resize(output_count);
-      if (!helper->Get(NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY,
+      if (!helper->Get(string_format(
+                           NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY, i),
                        programs_[i].output_indexes.data(),
                        output_count * sizeof(int))) {
         NNADAPTER_CHECK_EQ(cache_count, 1)
