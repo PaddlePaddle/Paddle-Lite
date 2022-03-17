@@ -265,7 +265,6 @@ void ModelPartitioner::Apply(
                                         subgraphs->at(i).second.at(j)->type);
     }
   }
-  return subgraphs;
 }
 
 NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
