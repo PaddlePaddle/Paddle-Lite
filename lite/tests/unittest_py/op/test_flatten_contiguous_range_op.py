@@ -63,7 +63,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
-        
+
         target_str = self.get_target()
         if target_str == "NNAdapter":
             assume(input_type != "int64")
