@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
