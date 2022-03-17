@@ -150,6 +150,7 @@ void Program::Clear() {
   output_indices_.clear();
   input_types_.clear();
   output_types_.clear();
+  weight_.clear();
 }
 
 int Program::Build(core::Model* model, core::Cache* cache) {
@@ -273,7 +274,7 @@ int Program::BuildFromModel(core::Model* model) {
   network_.reset(builder_->createNetworkV2(1U));
   NNADAPTER_CHECK(network_);
   // Convert a NNAdapter model to a tensorrt network
-  Converter converter(network_.get(), &tensors_);
+  Converter converter(network_.get(), &tensors_, &weight_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Create config_ and set options
   CompleteConfig(model);

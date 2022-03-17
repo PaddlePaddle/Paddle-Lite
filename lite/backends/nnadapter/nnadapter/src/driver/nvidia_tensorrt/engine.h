@@ -100,6 +100,7 @@ class Program {
   std::vector<int> output_indices_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<std::vector<float>> weight_;
   Context* context_{nullptr};
   bool with_dynamic_shape_{false};
 };
