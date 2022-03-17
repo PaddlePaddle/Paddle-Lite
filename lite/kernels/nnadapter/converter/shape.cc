@@ -20,6 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertShape(Converter* converter, OpInfo* op, Scope* scope) {
+  VLOG(5) << " ConvertShap e ConvertShape ";
   auto input_name = op->Input("Input").front();
   auto input_operand = converter->AddInputOperand(scope, input_name);
   auto out_name = op->Output("Out").front();
