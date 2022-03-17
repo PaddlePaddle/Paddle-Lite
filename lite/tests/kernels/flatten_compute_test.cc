@@ -203,7 +203,7 @@ TEST(flatten_contiguous_range, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_err = 1e-5;
+  abs_error = 1e-5;
 #else
   return;
 #endif
