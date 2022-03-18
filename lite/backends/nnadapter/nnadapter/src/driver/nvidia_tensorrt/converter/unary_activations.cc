@@ -14,7 +14,6 @@
 
 #include "operation/unary_activations.h"
 #include "driver/nvidia_tensorrt/converter/converter.h"
-#include "driver/nvidia_tensorrt/converter/plugin/relu.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
@@ -39,11 +38,6 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
       << OperationTypeToString(operation_type);
   auto activation_layer = converter->network()->addActivation(
       *input_tensor, activation_type_map.at(operation_type));
-  // example: how to use relu plugin
-  // ReluPluginDynamic relu_plugin;
-  // std::vector<nvinfer1::ITensor*> tensors{input_tensor};
-  // auto activation_layer =
-  //     converter->network()->addPluginV2(tensors.data(), 1, relu_plugin);
   NNADAPTER_CHECK(activation_layer);
   auto output_tensor = activation_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);

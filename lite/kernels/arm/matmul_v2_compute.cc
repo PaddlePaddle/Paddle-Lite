@@ -143,7 +143,7 @@ namespace arm {
     ldc_ = n_;                                                               \
   }
 
-void MatMulV2Compute::PrepareForRun() {
+void MatMulV2Compute::ReInitWhenNeeded() {
   INIT_PARAM
   last_x_shape_ = x_dims;
   last_y_shape_ = y_dims;
@@ -298,23 +298,35 @@ void MatMulV2Compute::Run() {
                            &ctx);
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
-    lite::arm::math::sgemm(x_transpose,
-                           y_transpose,
-                           m_,
-                           n_,
-                           k_,
-                           alpha,
-                           x_data,
-                           lda_,
-                           y_data,
-                           ldb_,
-                           0.f,
-                           o_data,
-                           ldc_,
-                           nullptr,
-                           false,
-                           act_param,
-                           &ctx);
+    if (x_transpose == false && y_transpose == false) {
+      o_data[0] = 0.;
+      for (size_t i = 0; i < x_dims[0]; ++i) {
+        o_data[0] += x_data[i] * y_data[i] * alpha;
+      }
+    } else if (x_transpose == true && y_transpose == true) {
+      lite::arm::math::sgemm(false,
+                             false,
+                             m_,
+                             n_,
+                             k_,
+                             alpha,
+                             x_data,
+                             lda_,
+                             y_data,
+                             ldb_,
+                             0.f,
+                             o_data,
+                             ldc_,
+                             nullptr,
+                             false,
+                             act_param,
+                             &ctx);
+    } else {
+      LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
+                 << y_dims << ")"
+                 << ", and x_transpose: " << x_transpose
+                 << ", y_transpose: " << y_transpose;
+    }
   } else {
     LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
                << ")";

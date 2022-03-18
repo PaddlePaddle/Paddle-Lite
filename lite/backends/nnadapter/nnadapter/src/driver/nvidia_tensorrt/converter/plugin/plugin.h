@@ -97,9 +97,10 @@ class PluginCreator : public nvinfer1::IPluginCreator {
   const char* plugin_creater_::getPluginName() const noexcept {             \
     return name_;                                                           \
   }                                                                         \
-  nvinfer1::IPluginV2* deserializePlugin(const char* name,                  \
-                                         void const* serial_data,           \
-                                         size_t serial_length) noexcept {   \
+  nvinfer1::IPluginV2* plugin_creater_::deserializePlugin(                  \
+      const char* name,                                                     \
+      void const* serial_data,                                              \
+      size_t serial_length) noexcept {                                      \
     return new plugin_(serial_data, serial_length);                         \
   }                                                                         \
   REGISTER_TENSORRT_PLUGIN(plugin_creater_);

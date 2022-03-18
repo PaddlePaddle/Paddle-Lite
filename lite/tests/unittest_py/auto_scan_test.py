@@ -18,6 +18,15 @@ import platform
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 parser.add_argument(
+    "--enforce_rpc", default='off', type=str, help="whther rpc is enforced")
+
+parser.add_argument(
+    "--server_ip",
+    default="localhost",
+    type=str,
+    help="when rpc is used , the ip address of the server")
+
+parser.add_argument(
     "--url",
     type=str,
     help="Address of model download in model test", )
@@ -61,7 +70,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 if (args.target == "ARM" and platform.system() == 'Darwin') or (
-        args.target == "OpenCL") or (args.target == "Metal"):
+        args.target == "OpenCL") or (
+            args.target == "Metal") or args.enforce_rpc == "on":
     from auto_scan_test_rpc import AutoScanTest
     from auto_scan_test_rpc import FusePassAutoScanTest
 else:

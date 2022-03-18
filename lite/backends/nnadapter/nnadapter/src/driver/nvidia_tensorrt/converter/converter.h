@@ -48,8 +48,6 @@ class Converter {
  private:
   nvinfer1::INetworkDefinition* network_{nullptr};
   std::map<core::Operand*, std::vector<nvinfer1::ITensor*>>* tensors_{nullptr};
-  // Only for generating the unique name for input tensors
-  uint32_t input_index_{0};
 };
 
 }  // namespace nvidia_tensorrt

@@ -115,7 +115,7 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
         graph->NewArgumentNode(embedding_seq_lod_name);
     embedding_seq_lod_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
-    scope->NewTensor(embedding_seq_lod_name);
+    scope->MutableParent()->NewTensor(embedding_seq_lod_name);
     // add new arg pad_seq_len
     std::string embedding_pad_seq_len_name =
         embedding_out_name + "_pad_seq_len";
@@ -123,7 +123,7 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
         graph->NewArgumentNode(embedding_pad_seq_len_name);
     embedding_pad_seq_len_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
-    scope->NewTensor(embedding_pad_seq_len_name);
+    scope->MutableParent()->NewTensor(embedding_pad_seq_len_name);
 
     embedding_op_desc.SetOutput("SeqLod", {embedding_seq_lod_name});
     embedding_op_desc.SetOutput("PadSeqLen", {embedding_pad_seq_len_name});

@@ -37,10 +37,10 @@ __kernel void pool(__read_only image2d_t input,
   int start_h, start_w, end_h, end_w;
   int pool_size = 1;
   if (adaptive == 1) {
-    start_h = floor((out_h * in_height) / (float)out_height);
-    start_w = floor((out_w * in_width) / (float)out_width);
-    end_h = ceil(((out_h + 1) * in_height) / (float)out_height);
-    end_w = ceil(((out_w + 1) * in_width) / (float)out_width);
+    start_h = (out_h * in_height) / out_height;
+    start_w = (out_w * in_width) / out_width;
+    end_h = ((out_h + 1) * in_height + (out_height - 1)) / out_height;
+    end_w = ((out_w + 1) * in_width + (out_width - 1)) / out_width;
   } else {
     start_h = out_h * stride_h - pad_top;
     start_w = out_w * stride_w - pad_left;

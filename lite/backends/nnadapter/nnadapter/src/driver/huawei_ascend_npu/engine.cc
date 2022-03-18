@@ -64,12 +64,14 @@ Context::Context(void* device, const char* properties) : device_(device) {
   }
   // HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
   if (key_values.count(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH)) {
-    profiling_file_path_ = key_values[HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH];
+    ascend_config_params_.profiling_file_path =
+        key_values[HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH];
   } else {
-    profiling_file_path_ =
+    ascend_config_params_.profiling_file_path =
         GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
   }
-  NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
+  NNADAPTER_LOG(INFO) << "profiling path: "
+                      << ascend_config_params_.profiling_file_path;
   // HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH
   if (key_values.count(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH)) {
     ascend_config_params_.dump_model_path =
@@ -142,6 +144,33 @@ Context::Context(void* device, const char* properties) : device_(device) {
   }
   NNADAPTER_LOG(INFO) << "auto tune mode: "
                       << ascend_config_params_.auto_tune_mode;
+  // HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE
+  if (key_values.count(HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE)) {
+    ascend_config_params_.enable_dynamic_shape_range =
+        key_values[HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE];
+  } else {
+    ascend_config_params_.enable_dynamic_shape_range =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE);
+  }
+  NNADAPTER_LOG(INFO) << "enable dynamic shape range: "
+                      << ascend_config_params_.enable_dynamic_shape_range;
+  // HUAWEI_ASCEND_NPU_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE
+  std::string initial_buffer_length_of_dynamic_shape_range;
+  if (key_values.count(
+          HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE)) {
+    initial_buffer_length_of_dynamic_shape_range = key_values
+        [HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE];
+  } else {
+    initial_buffer_length_of_dynamic_shape_range = GetStringFromEnv(
+        HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE);
+  }
+  if (!initial_buffer_length_of_dynamic_shape_range.empty()) {
+    ascend_config_params_.initial_buffer_length_of_dynamic_shape_range =
+        std::stoll(initial_buffer_length_of_dynamic_shape_range);
+  }
+  NNADAPTER_LOG(INFO)
+      << "initial buffer length of dynamic shape range: "
+      << ascend_config_params_.initial_buffer_length_of_dynamic_shape_range;
 }
 
 Context::~Context() {}
@@ -168,6 +197,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   }
   std::vector<std::string> dynamic_shape_info;
   std::string optional_shape_str;
+  if (context_->ascend_config_params()->enable_dynamic_shape_range == "true") {
+    dynamic_shape_mode_ = DYNAMIC_SHAPE_MODE_SHAPE_RANGE;
+  }
   GetDynamicShapeInfo(input_types_,
                       &dynamic_shape_info,
                       &optional_shape_str,
@@ -250,7 +282,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   // client(from CANN service) for inference
   model_client_ = LoadOMModelFromBuffer(*model_buffer,
                                         context_->first_device_id(),
-                                        context_->profiling_file_path());
+                                        context_->ascend_config_params());
   if (!model_client_) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
@@ -340,11 +372,12 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
       }
     }
     if (is_matched) continue;
-    // Chech dynamic dymensions data
+    // Check dynamic dymensions data
     for (uint32_t k = 0; k < src_dimensions.dynamic_count; k++) {
       is_matched = true;
       for (uint32_t j = 0; j < count; j++) {
-        if (data[j] != src_dimensions.dynamic_data[k][j]) {
+        if (data[j] != src_dimensions.dynamic_data[k][j] &&
+            src_dimensions.dynamic_data[k][j] != -1) {
           is_matched = false;
           break;
         }

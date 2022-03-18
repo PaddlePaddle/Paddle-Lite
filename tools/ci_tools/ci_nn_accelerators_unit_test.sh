@@ -716,7 +716,7 @@ function nvidia_tensorrt_build_and_test() {
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
         local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libhuawei_ascend_npu.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libnvidia_tensorrt.so)
         local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
         local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"

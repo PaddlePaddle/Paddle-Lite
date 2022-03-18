@@ -140,6 +140,27 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in))));
 #endif
 
+#ifdef GELU
+  const float in_f32 = convert_float(in);
+  output = (CL_DTYPE)(0.5f * in_f32 * (1.0f + erf(in_f32 / 1.41421f)));
+#endif
+
+#ifdef TANH
+  output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
+#endif
+
+#ifdef SWISH
+  output = in / (1 + exp(-(CL_DTYPE)ACT_SCALE * in));
+#endif
+
+#ifdef EXP
+  output = exp(in);
+#endif
+
+#ifdef ABS
+  output = fabs(in);
+#endif
+
   return output;
 }
 
@@ -179,6 +200,14 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
                  (CL_COMPUTE_DTYPE4)1.0);
 #endif
 
+#ifdef GELU
+  const float4 in_f32 = convert_float4(in);
+  output.x = (CL_DTYPE)(0.5f * in_f32.x * (1.0f + erf(in_f32.x / 1.41421f)));
+  output.y = (CL_DTYPE)(0.5f * in_f32.y * (1.0f + erf(in_f32.y / 1.41421f)));
+  output.z = (CL_DTYPE)(0.5f * in_f32.z * (1.0f + erf(in_f32.z / 1.41421f)));
+  output.w = (CL_DTYPE)(0.5f * in_f32.w * (1.0f + erf(in_f32.w / 1.41421f)));
+#endif
+
 #ifdef SIGMOID
   output.x =
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.x))));
@@ -188,6 +217,22 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.z))));
   output.w =
       (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * convert_float(in.w))));
+#endif
+
+#ifdef TANH
+  output = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
+#endif
+
+#ifdef SWISH
+  output = in / (1 + exp(-(CL_DTYPE)ACT_SCALE * in));
+#endif
+
+#ifdef EXP
+  output = exp(in);
+#endif
+
+#ifdef ABS
+  output = fabs(in);
 #endif
 
   return output;

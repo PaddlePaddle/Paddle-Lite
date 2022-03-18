@@ -60,15 +60,11 @@ namespace lite {
 // We use Types to declare the definition of a kernel, each inputs' and outputs'
 // arguments have a specific Types.
 //
-// REGISTER_LITE_KERNEL(mul, kHost, kFloat,
-//     paddle::lite::kernels::host::MulCompute, def)
-//   .BindInput("X", {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(
-//       TARGET(kHost))})
-//   .BindInput("Y", {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(
-//       TARGET(kHost))})
-//   .BindOutput("Out",
-//   {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(TARGET(kHost))})
-//   .Finalize();
+// REGISTER_LITE_KERNEL(mul, kARM, kInt8, kNCHW, Mul_int8_f32, def)
+//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+//     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+//     .Finalize();
 //
 // The above definition will be used in MIR by Type inference and uncompatible
 // types check.
@@ -116,13 +112,13 @@ class DataType {
 };
 
 /*
- * Datatype with device info considered.
- * NOTE A Type with different device is treated as different DeviceDataType.
+ * Datatype with Place info considered.
+ * NOTE A Type with different Place info is treated as different Type.
  */
 class Type : public DataType {
  public:
   // Can cast to another type. This is heavily used in MIR, by determine whether
-  // is is possible to add a statement to transform a type to another.
+  // is possible to add a statement to transform a type to another.
   virtual bool TypeCastable(const Type& type) const { return id_ == type.id(); }
 
   /// Get a Tensor type.
@@ -259,30 +255,6 @@ struct ParamType {
 };
 
 /*
- * The data types of kernel parameters. It is used to track the type of kernel's
- * inputs and outputs.
- */
-struct ParamTypeRecorder {
-  std::map<std::string, ParamType> inputs;
-  std::map<std::string, ParamType> outputs;
-
-  void RegisterInputType(const std::string& arg_name, const ParamType& type) {
-    Register(&inputs, arg_name, type);
-  }
-
-  void RegisterOutputType(const std::string& arg_name, const ParamType& type) {
-    Register(&outputs, arg_name, type);
-  }
-
- private:
-  void Register(std::map<std::string, ParamType>* ts,
-                const std::string& arg_name,
-                ParamType type) {
-    (*ts)[arg_name] = type;
-  }
-};
-
-/*
  * The ParamTypeRegistry help register the input and output data types for all
  * the kernels. It is made singleton so that all the objects of the same kernel
  * can share the same information.
@@ -296,19 +268,19 @@ struct ParamTypeRecorder {
 class ParamTypeRegistry {
  public:
   enum class IO : int { kInvalid = 0, kInput, kOutput };
-
-  template <TargetType target,
-            PrecisionType precision,
-            DataLayoutType layout = DataLayoutType::kNCHW>
   /*
    * Helper class for registering a ParamType for a Kernel.
    * Usage:
    *
    * NewInstance<TARGET(kHost), PRECISION(kFloat)>("fc")
-   *   .BindInput(0, {typeid(Tensor).hash_code(), {TARGET(kHost)})
-   *   .BindInput(1, {typeid(Tensor).hash_code(), {TARGET(kHost),
-   *                                               PRECISION(kFloat)});
+   *   .BindInput("Input_0", {Type::GetTensorTy(TARGET(kHost),
+   * PRECISION(kInt64))})
+   *   .BindInput("Input_1", {Type::GetTensorTy(TARGET(kHost),
+   * PRECISION(kInt64))});
    */
+  template <TargetType target,
+            PrecisionType precision,
+            DataLayoutType layout = DataLayoutType::kNCHW>
   struct NewInstance {
     explicit NewInstance(const std::string& kernel_type)
         : kernel_type_(kernel_type) {}
