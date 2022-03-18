@@ -84,11 +84,11 @@ class ModelPartitioner {
 //   <device_id=2, [softmax_0]>
 //
 // After the pass, the following submodels should be obtained:
-//   <device_id=0, {[conv2d_0,batch_norm_0], true, [-1], [0]}>>
-//   <device_id=1, {[relu_0], true, [0], [1]>>
-//   <device_id=0, {[conv2d_1], true, [1], [2]}>
-//   <device_id=1, [reshape_0,fc_0,reshape_1], true, [2], [3]>
-//   <device_id=2, [softmax_0], true, [3], [-1]>
+//   <device_id=0, {[conv2d_0,batch_norm_0], false, [-1], [0]}>>
+//   <device_id=1, {[relu_0], false, [0], [1]>>
+//   <device_id=0, {[conv2d_1], false, [1], [2]}>
+//   <device_id=1, [reshape_0,fc_0,reshape_1], false, [2], [3]>
+//   <device_id=2, [softmax_0], false, [3], [-1]>
 void PartitionModelIntoSubmodels(
     core::Model *model,
     const std::vector<std::pair<int, std::unordered_set<core::Operation *>>>
