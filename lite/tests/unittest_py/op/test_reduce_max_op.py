@@ -128,7 +128,7 @@ class TestReduceMaxOp(AutoScanTest):
             keep_dim = program_config.ops[0].attrs["keep_dim"]
             if target_type == TargetType.Metal:
                 if keep_dim == False or axis[0] != 1 or in_shape[
-                        0] != 1 or len(in_shape) < 4:
+                        0] != 1 or len(in_shape) < 4 or len(axis) > 1:
                     return True
 
         self.add_ignore_check_case(
