@@ -76,7 +76,7 @@ Compilation::Program::~Program() {
   if (cache) {
     delete cache;
   }
-  if (model) {
+  if (model && !referenced) {
     ClearModel(model);
     delete model;
   }
@@ -151,7 +151,7 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         }
         NNADAPTER_CHECK(found) << "No matched argument found!";
       } else {
-        for (size_t j = operands->size(); j <= pos; j++) {
+        for (int j = operands->size(); j <= pos; j++) {
           auto operand = new core::Operand();
           NNADAPTER_CHECK(operand)
               << "Failed to allocate memory for a operand, out of memory!";
@@ -229,9 +229,9 @@ int Compilation::Finish() {
   completed_ = true;
   if (model_) {
     programs_.clear();
-    std::vector<
-        std::pair<Context::DeviceContext*,
-                  std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>
+    std::vector<std::pair<
+        Context::DeviceContext*,
+        std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>
         models;
     int result = PartitionModel(context_, model_, &models);
     if (result != NNADAPTER_NO_ERROR) {
@@ -243,8 +243,10 @@ int Compilation::Finish() {
     programs_.resize(model_count);
     for (size_t i = 0; i < model_count; i++) {
       core::Model* model = nullptr;
+      bool referenced = false;
       std::vector<int> input_indexes, output_indexes;
-      std::tie(model, input_indexes, output_indexes) = models[i].second;
+      std::tie(model, referenced, input_indexes, output_indexes) =
+          models[i].second;
       auto cache = new core::Cache();
       NNADAPTER_CHECK(cache) << "Failed to allocate a cache for the model #"
                              << i << ", out of memory!";
@@ -275,9 +277,10 @@ int Compilation::Finish() {
       }
       // Add into programs
       programs_[i].device_context = device_context;
-      programs_[i].model = model;
       programs_[i].cache = cache;
       programs_[i].program = program;
+      programs_[i].model = model;
+      programs_[i].referenced = referenced;
       programs_[i].input_indexes = input_indexes;
       programs_[i].output_indexes = output_indexes;
     }
@@ -363,7 +366,7 @@ int Compilation::PartitionModel(
     Model* model,
     std::vector<std::pair<
         Context::DeviceContext*,
-        std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>*
+        std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>*
         models) {
   // Run the model partition to supports heterogeneous computing on the multiple
   // devices
@@ -405,9 +408,9 @@ int Compilation::PartitionModel(
                            << " devices support "
                            << OperationTypeToString(operation.type) << "!";
     }
-    std::vector<
-        std::pair<int,
-                  std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>
+    std::vector<std::pair<
+        int,
+        std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>
         _models_;
     PartitionModelIntoSubmodels(
         &model->model_, supported_operations, &_models_);
@@ -428,7 +431,7 @@ int Compilation::PartitionModel(
     }
     models->emplace_back(
         device_context,
-        std::make_tuple(&model->model_, input_indexes, output_indexes));
+        std::make_tuple(&model->model_, true, input_indexes, output_indexes));
   }
   return NNADAPTER_NO_ERROR;
 }

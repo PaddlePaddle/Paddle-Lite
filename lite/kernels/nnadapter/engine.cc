@@ -129,21 +129,18 @@ bool Program::LoadFromCache(const std::string& model_cache_token,
   return true;
 }
 
-bool Program::BuildAndCacheToFile(
-    size_t block_idx,
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
-    Scope* exec_scope,
-    const std::vector<Variable>& input_vars,
-    std::vector<Variable>* output_vars,
-    const std::string& model_cache_token,
-    const std::string& model_cache_dir) {
+bool Program::BuildAndCacheToFile(const cpp::BlockDesc* block_desc,
+                                  Scope* exec_scope,
+                                  const std::vector<Variable>& input_vars,
+                                  std::vector<Variable>* output_vars,
+                                  const std::string& model_cache_token,
+                                  const std::string& model_cache_dir) {
   // Converting the PaddlePaddle operators and variables to the NNAdapter
   // operations and operands for building NNAdapter model(hardware-indepedent)
   CHECK(!model_cache_token.empty());
   int result = NNAdapterModel_create_invoke(&model_);
   Converter converter(model_, context_);
-  if (converter.Apply(
-          block_idx, program_desc, exec_scope, input_vars, output_vars) !=
+  if (converter.Apply(block_desc, exec_scope, input_vars, output_vars) !=
       NO_ERROR) {
     return false;
   }
@@ -230,17 +227,13 @@ int Program::Execute() {
 }
 
 Engine::Engine(KernelContext* ctx,
-               size_t block_idx,
-               const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+               const cpp::BlockDesc* block_desc,
                Scope* exec_scope,
                const std::vector<std::string>& input_names,
                const std::vector<std::string>& output_names,
                const std::vector<float>& input_scales,
                const std::vector<float>& output_scales)
-    : ctx_(ctx),
-      block_idx_(block_idx),
-      program_desc_(program_desc),
-      exec_scope_(exec_scope) {
+    : ctx_(ctx), block_desc_(block_desc), exec_scope_(exec_scope) {
   int result;
   // Obtain the same order every time by sorting the input and output names,
   // because the topological order may be different each time of the partition
@@ -354,8 +347,7 @@ bool Engine::Run() {
           model_cache_token, &model_cache_buffer, model_cache_dir_)) {
     // Compile the model online to generate the device program and cache it to
     // the file
-    CHECK(program->BuildAndCacheToFile(block_idx_,
-                                       program_desc_,
+    CHECK(program->BuildAndCacheToFile(block_desc_,
                                        exec_scope_,
                                        input_vars_,
                                        &output_vars_,

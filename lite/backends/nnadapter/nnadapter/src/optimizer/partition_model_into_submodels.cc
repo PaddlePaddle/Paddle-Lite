@@ -273,7 +273,7 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
         &supported_operations,
     std::vector<std::pair<
         int,
-        std::tuple<core::Model *, std::vector<int>, std::vector<int>>>>
+        std::tuple<core::Model *, bool, std::vector<int>, std::vector<int>>>>
         *models) {
   // Partition the model into the subgraphs
   ModelPartitioner partitioner;
@@ -375,7 +375,8 @@ NNADAPTER_EXPORT void PartitionModelIntoSubmodels(
                       << class_id << std::endl
                       << Visualize(model);
     models->emplace_back(
-        class_id, std::make_tuple(_model_, input_indexes, output_indexes));
+        class_id,
+        std::make_tuple(_model_, false, input_indexes, output_indexes));
   }
   NNADAPTER_VLOG(5) << models->size() << " submodels detected!";
 }

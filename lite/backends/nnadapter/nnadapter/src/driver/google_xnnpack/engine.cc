@@ -144,7 +144,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
       NNADAPTER_VLOG(5) << "Found a XNNPACK tensor value id " << tensor_value_id
                         << " for input operand @0x" << std::hex
                         << reinterpret_cast<int64_t>(operand);
-      xnn_external_value input_external_value = {0};
+      xnn_external_value input_external_value;
+      memset(&input_external_value, 0, sizeof(xnn_external_value));
       input_external_value.id = tensor_value_id;
       input_external_value.data =
           nullptr;  // The data ptr will be set at the execution time
@@ -165,7 +166,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Found a XNNPACK tensor value id " << tensor_value_id
                       << " for output operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
-    xnn_external_value output_external_value = {0};
+    xnn_external_value output_external_value;
+    memset(&output_external_value, 0, sizeof(xnn_external_value));
     output_external_value.id = tensor_value_id;
     output_external_value.data =
         nullptr;  // The data ptr will be set at the execution time
@@ -239,7 +241,7 @@ int Program::Execute(uint32_t input_count,
     auto type = input_types_[arg.index];
     auto buffer = arg.access(arg.memory, &type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(type);
+    // auto length = GetOperandTypeBufferLength(type);
     external_values_[arg.index].data = buffer;
   }
   for (uint32_t i = 0; i < output_count; i++) {
@@ -254,7 +256,7 @@ int Program::Execute(uint32_t input_count,
     // and call the 'access' function to re-allocate the host output memory
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
-    auto length = GetOperandTypeBufferLength(*type);
+    // auto length = GetOperandTypeBufferLength(*type);
     external_values_[arg.index + input_count].data = buffer;
   }
   auto start_time = GetCurrentUS();

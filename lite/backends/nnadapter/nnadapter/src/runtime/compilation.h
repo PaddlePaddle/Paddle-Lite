@@ -34,12 +34,16 @@ class Compilation {
 
    public:
     Context::DeviceContext* device_context{nullptr};
-    core::Model* model{nullptr};
     core::Cache* cache{nullptr};
     void* program{nullptr};
+    // The following is the necessary information for the submodel from model
+    // partition
+    core::Model* model{nullptr};
+    // Indicates where the model came from, whether it was externally
+    // referenced, or created after model partition.
+    bool referenced{true};
     // The relationship between the input and output operands of the submodels:
-    // a
-    // negative number represents the input index of the entire model, otherwise
+    // Negative value represents the input index of the entire model, otherwise
     // represents the index of operand shared between the submodels.
     std::vector<int> input_indexes;
     std::vector<int> output_indexes;
@@ -67,7 +71,7 @@ class Compilation {
       Model* model,
       std::vector<std::pair<
           Context::DeviceContext*,
-          std::tuple<core::Model*, std::vector<int>, std::vector<int>>>>*
+          std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>*
           models);
   // Serialize/deserialize the cached models into/from memory
   bool Serialize(std::vector<uint8_t>* buffer);

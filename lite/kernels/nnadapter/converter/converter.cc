@@ -28,20 +28,11 @@ namespace nnadapter {
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
-int Converter::Apply(
-    size_t block_idx,
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
-    Scope* exec_scope,
-    const std::vector<Variable>& input_vars,
-    std::vector<Variable>* output_vars) {
-  CHECK(program_desc.get());
-  CHECK(exec_scope);
-  auto block_count = program_desc->BlocksSize();
-  CHECK_GT(block_count, 0) << "No block found!";
-  CHECK_LT(block_idx, block_count) << "Invalid block index, expected [0,"
-                                   << (block_count - 1) << "] but recieved "
-                                   << block_idx;
-  auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+int Converter::Apply(const cpp::BlockDesc* block_desc,
+                     Scope* exec_scope,
+                     const std::vector<Variable>& input_vars,
+                     std::vector<Variable>* output_vars) {
+  CHECK(block_desc);
   auto op_count = block_desc->OpsSize();
   CHECK_GT(op_count, 0) << "No op found!";
   auto input_count = input_vars.size();
@@ -119,7 +110,7 @@ int Converter::Apply(
 #include "lite/kernels/nnadapter/converter/all.h"  // NOLINT
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
-    LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
+    LOG(FATAL) << "Op converter '" << op_type << "' not found!";
   }
   // Query the output operands, and update if exists the useless output
   // variables such as 'XShape' in reshape2 and transpose2
