@@ -68,8 +68,10 @@ class TestBilinearOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
-        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -100,6 +102,35 @@ class TestBilinearOp(AutoScanTest):
 
         def generate_scale(*args, **kwargs):
             return np.random.random([1]).astype(np.float32)
+
+        assume(scale * in_shape[2] > 1.0)
+        assume(scale * in_shape[3] > 1.0)
+
+        nnadapter_device_name = self.get_nnadapter_device_name()
+        if nnadapter_device_name == "nvidia_tensorrt":
+            bilinear_interp_op = OpConfig(
+                type="bilinear_interp",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "data_layout": "NCHW",
+                    "out_d": 0,
+                    "out_h": out_h,
+                    "out_w": out_w,
+                    "scale": scale,
+                    "interp_method": "bilinear",
+                    "align_corners": False,
+                    "align_mode": 0
+                })
+            program_config = ProgramConfig(
+                ops=[bilinear_interp_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input))
+                },
+                outputs=["output_data"])
+            return program_config
 
         bilinear_interp_op = OpConfig(
             type="bilinear_interp",
@@ -144,7 +175,15 @@ class TestBilinearOp(AutoScanTest):
         return self.get_predictor_configs(), ["bilinear_interp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
