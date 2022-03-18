@@ -22,6 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertLeakyRelu(Converter* converter, core::Operation* operation) {
   LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {

@@ -20,25 +20,31 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-int ConvertUnaryLayers(Converter* converter, core::Operation* operation) {
+int ConvertUnaryOperations(Converter* converter, core::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  std::map<NNAdapterOperationType, nvinfer1::UnaryOperation>
-      unary_operation_map{{NNADAPTER_LOG, nvinfer1::UnaryOperation::kLOG},
-                          {NNADAPTER_EXP, nvinfer1::UnaryOperation::kEXP}};
-  auto operation_type = operation->type;
-  NNADAPTER_CHECK(unary_operation_map.count(operation_type))
-      << "Not support operation_type: "
-      << OperationTypeToString(operation_type);
-  auto unary_layer = converter->network()->addUnary(
-      *input_tensor, unary_operation_map.at(operation_type));
-  NNADAPTER_CHECK(unary_layer);
-  auto output_tensor = unary_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  switch (operation->type) {
+#define CONVERT_UNARY_OPERATION(type, unary_operation_type)             \
+  case NNADAPTER_##type: {                                              \
+    auto unary_layer = converter->network()->addUnary(                  \
+        *input_tensor, nvinfer1::UnaryOperation::unary_operation_type); \
+    auto output_tensor = unary_layer->getOutput(0);                     \
+    converter->UpdateTensorMap(output_operand, output_tensor);          \
+  } break;
+    CONVERT_UNARY_OPERATION(LOG, kLOG);
+    CONVERT_UNARY_OPERATION(EXP, kEXP);
+#undef CONVERT_UNARY_OPERATION
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported unary operation type "
+                           << OperationTypeToString(operation->type)
+                           << " is found.";
+      break;
+  }
   return NNADAPTER_NO_ERROR;
 }
 

@@ -23,6 +23,7 @@ namespace nvidia_tensorrt {
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
+
   // Convert to trt tensors and node
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
