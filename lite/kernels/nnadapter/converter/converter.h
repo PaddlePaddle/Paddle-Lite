@@ -41,7 +41,7 @@ class Converter {
   ~Converter() {}
 
   // Convert a block_desc with tensors to a NNAdapter model
-  int Apply(int block_idx,
+  int Apply(size_t block_idx,
             const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
             Scope* exec_scope,
             const std::vector<Variable>& input_vars,

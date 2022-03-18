@@ -45,7 +45,7 @@ class Program {
   // Build the model online, cache the compiled device program to file if
   // model_cache_dir is provided
   bool BuildAndCacheToFile(
-      int block_idx,
+      size_t block_idx,
       const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
       Scope* exec_scope,
       const std::vector<Variable>& input_vars,
@@ -70,7 +70,7 @@ class Program {
 class Engine {
  public:
   Engine(KernelContext* ctx,
-         int block_idx,
+         size_t block_idx,
          const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
          Scope* exec_scope,
          const std::vector<std::string>& input_names,
@@ -82,7 +82,7 @@ class Engine {
 
  private:
   KernelContext* ctx_{nullptr};
-  int block_idx_{-1};
+  size_t block_idx_{-1};
   const std::shared_ptr<const cpp::ProgramDesc> program_desc_{nullptr};
   Scope* exec_scope_{nullptr};
   std::vector<Variable> input_vars_;

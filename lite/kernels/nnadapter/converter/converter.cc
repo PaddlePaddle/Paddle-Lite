@@ -29,7 +29,7 @@ namespace nnadapter {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(
-    int block_idx,
+    size_t block_idx,
     const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
     Scope* exec_scope,
     const std::vector<Variable>& input_vars,
@@ -37,13 +37,13 @@ int Converter::Apply(
   CHECK(program_desc.get());
   CHECK(exec_scope);
   auto block_count = program_desc->BlocksSize();
-  CHECK(block_count) << "No block found!";
-  CHECK(block_idx >= 0 && block_idx < block_count)
-      << "Invalid block index, expected [0," << (block_count - 1)
-      << "] but recieved " << block_idx;
+  CHECK_GT(block_count, 0) << "No block found!";
+  CHECK_LT(block_idx, block_count) << "Invalid block index, expected [0,"
+                                   << (block_count - 1) << "] but recieved "
+                                   << block_idx;
   auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
   auto op_count = block_desc->OpsSize();
-  CHECK(op_count) << "No op found!";
+  CHECK_GT(op_count, 0) << "No op found!";
   auto input_count = input_vars.size();
   std::vector<NNAdapterOperand*> input_operands(input_count);
   // Prepare the input operands from the input tensors of the current subgraph
@@ -173,7 +173,6 @@ int Converter::Apply(
         supported_operators.get(), supported_operators.get() + op_count, true);
     for (size_t i = 0; i < operation_count_; i++) {
       auto op_idx = operation_idx_to_op_idx_map[i];
-      CHECK_GE(op_idx, 0);
       CHECK_LT(op_idx, op_count);
       supported_operators[op_idx] &= supported_operations[i];
       if (!supported_operators[op_idx]) {

@@ -130,7 +130,7 @@ bool Program::LoadFromCache(const std::string& model_cache_token,
 }
 
 bool Program::BuildAndCacheToFile(
-    int block_idx,
+    size_t block_idx,
     const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
     Scope* exec_scope,
     const std::vector<Variable>& input_vars,
@@ -230,7 +230,7 @@ int Program::Execute() {
 }
 
 Engine::Engine(KernelContext* ctx,
-               int block_idx,
+               size_t block_idx,
                const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
                Scope* exec_scope,
                const std::vector<std::string>& input_names,
