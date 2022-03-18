@@ -99,6 +99,29 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
+bool NNAdapterSubgraphOpTeller(const std::string& device_name,
+                               SSAGraph* graph,
+                               Node* node,
+                               Scope* scope) {
+  auto op_info = node->AsStmt().op_info();
+  auto op_type = op_info->Type();
+  if (device_name == "nvidia_tensorrt") {
+    if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
+      auto filter_name = op_info->Input("Filter").front();
+      auto filter_tensor = scope->FindMutableTensor(filter_name);
+      auto filter_dims = filter_tensor->dims();
+      auto filter_width = filter_dims[3];
+      auto filter_height = filter_dims[2];
+      if (filter_width != filter_height) return false;
+      auto output_channel_size = filter_dims[0];
+      auto groups = op_info->GetAttr<int>("groups");
+      int multiplier = output_channel_size / groups;
+      if (multiplier != 1) return false;
+    }
+  }
+  return true;
+}
+
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Filter the supported operators for the selected devices according to the
   // registered op bridges
@@ -161,8 +184,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    const auto& op_type = stmt.op_type();
+    auto op_info = node->AsStmt().op_info();
+    auto op_type = op_info->Type();
     // As long as a device does not register the supported operators in
     // lite/kernels/nnadapter/converter/all.h, we assume that all operators are
     // supported by default, and subgraph partition will be performed online (or
@@ -173,7 +196,9 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       }
     }
     for (const auto& selected_device_name : selected_device_names) {
-      if (device_supported_ops[selected_device_name].count(op_type) != 0) {
+      if (device_supported_ops[selected_device_name].count(op_type) != 0 &&
+          NNAdapterSubgraphOpTeller(
+              selected_device_name, graph.get(), node, scope)) {
         return true;
       }
     }
