@@ -165,7 +165,7 @@ class ActivationComputeImageDefault
 
       case 15:
         kernel_func_name_ = "log_act";
-
+        break;
       case 18:
         kernel_func_name_ = "gelu";
 
