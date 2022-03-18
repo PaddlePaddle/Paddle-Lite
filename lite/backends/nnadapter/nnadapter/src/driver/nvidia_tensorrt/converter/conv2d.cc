@@ -22,7 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertConv2D(Converter* converter, core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // tensorRT doesn't support output_channel_size % groups != 0 case
+  // TensorRT doesn't support output_channel_size % groups != 0 case
   NNADAPTER_CHECK_EQ((output_channel_size % group), 0);
   operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
                                         filter_height,
