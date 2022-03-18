@@ -44,9 +44,9 @@ int ConvertActivations(Converter* converter, core::Operation* operation) {
     auto output_tensor = activation_layer->getOutput(0);         \
     converter->UpdateTensorMap(output_operand, output_tensor);   \
   } break;
-    CONVERT_ACTIVATION(SIGMOID, kSIGMOID, 0, 0);
     CONVERT_ACTIVATION(RELU, kRELU, 0, 0);
     CONVERT_ACTIVATION(RELU6, kCLIP, 0, 6);
+    CONVERT_ACTIVATION(SIGMOID, kSIGMOID, 0, 0);
     CONVERT_ACTIVATION(TANH, kTANH, 0, 0);
 #undef CONVERT_ACTIVATION
     default:

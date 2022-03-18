@@ -36,8 +36,8 @@ int ConvertUnaryOperations(Converter* converter, core::Operation* operation) {
     auto output_tensor = unary_layer->getOutput(0);                     \
     converter->UpdateTensorMap(output_operand, output_tensor);          \
   } break;
-    CONVERT_UNARY_OPERATION(LOG, kLOG);
     CONVERT_UNARY_OPERATION(EXP, kEXP);
+    CONVERT_UNARY_OPERATION(LOG, kLOG);
 #undef CONVERT_UNARY_OPERATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported unary operation type "
