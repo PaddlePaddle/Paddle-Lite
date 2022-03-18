@@ -125,7 +125,7 @@ bool NNAdapterSubgraphOpTeller(const std::string& device_name,
 
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Filter the supported operators for the selected devices according to the
-  // registered op bridges
+  // registered op converters
   std::string subgraph_partition_configs;
   std::vector<std::string> selected_device_names;
   Scope* scope = nullptr;
