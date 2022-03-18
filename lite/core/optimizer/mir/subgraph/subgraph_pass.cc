@@ -128,14 +128,14 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // registered op bridges
   std::string subgraph_partition_configs;
   std::vector<std::string> selected_device_names;
-#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
-    defined(LITE_WITH_NNADAPTER)
   Scope* scope = nullptr;
   for (auto& any_op_node : graph->StmtTopologicalOrder()) {
     scope = any_op_node->AsStmt().op()->scope();
     if (scope) break;
   }
   CHECK(scope != nullptr);
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
   selected_device_names =
       Context<TargetType::kNNAdapter>::NNAdapterDeviceNames(scope);
   // Load the partition configurations from APIs
