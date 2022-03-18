@@ -105,6 +105,7 @@ bool NNAdapterSubgraphOpTeller(const std::string& device_name,
                                Scope* scope) {
   auto op_info = node->AsStmt().op_info();
   auto op_type = op_info->Type();
+  // Add extra op filter for each device
   if (device_name == "nvidia_tensorrt") {
     if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
       auto filter_name = op_info->Input("Filter").front();
