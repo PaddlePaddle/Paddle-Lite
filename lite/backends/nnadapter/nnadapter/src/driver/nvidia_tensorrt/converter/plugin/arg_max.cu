@@ -128,8 +128,8 @@ int32_t ArgMaxPluginDynamic::enqueue(
   for (int i = _axis + 1; i < input_dims.nbDims; i++) {
     post *= input_dims.d[i];
   }
-  const int block_size = 128;
-  const int grid_size = (axis_num + block_size - 1) / block_size;
+  const int block_size = 256;
+  const int grid_size = (pre * post) > 512 ? 512 : (pre * post);
 
   if (input_desc[0].type == nvinfer1::DataType::kFLOAT) {
     const float* input = static_cast<const float*>(inputs[0]);
