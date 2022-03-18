@@ -22,6 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertStack(Converter* converter, core::Operation* operation) {
   STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   std::vector<nvinfer1::ITensor*> input_tensors;
   if (axis < input_dimensions_count) {
@@ -37,7 +38,6 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
     for (int i = 0; i < input_count - 1; i++) {
       auto input_operand = input_operands[i];
       auto input_operator = converter->GetMappedTensor(input_operand);
-
       if (!input_operator) {
         input_operator = converter->ConvertOperand(input_operand);
       }
