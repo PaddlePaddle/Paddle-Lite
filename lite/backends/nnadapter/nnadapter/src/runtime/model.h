@@ -15,6 +15,7 @@
 #pragma once
 
 #include "core/types.h"
+#include "runtime/context.h"
 
 namespace nnadapter {
 namespace runtime {
@@ -30,6 +31,13 @@ class Model {
                                uint32_t output_count,
                                core::Operand** output_operands);
   int Finish();
+  // Get the supported operations for one device
+  int GetSupportedOperations(Context::DeviceContext* device_context,
+                             bool* supported_operations) const;
+  // Get the supported operations for some devices, this operation is supported
+  // as long as one device supports it.
+  int GetSupportedOperations(Context* context,
+                             bool* supported_operations) const;
 
   core::Model model_;
   bool completed_;

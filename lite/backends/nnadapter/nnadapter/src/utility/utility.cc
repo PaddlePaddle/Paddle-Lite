@@ -119,6 +119,16 @@ NNADAPTER_EXPORT bool IsConstantOperandType(const NNAdapterOperandType& type) {
          type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsModelInputOperandType(
+    const NNAdapterOperandType& type) {
+  return type.lifetime == NNADAPTER_MODEL_INPUT;
+}
+
+NNADAPTER_EXPORT bool IsModelOutputOperandType(
+    const NNAdapterOperandType& type) {
+  return type.lifetime == NNADAPTER_MODEL_OUTPUT;
+}
+
 NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
     const NNAdapterOperandType& type) {
   uint32_t count = type.dimensions.count;

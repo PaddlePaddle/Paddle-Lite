@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 #include "runtime/context.h"
@@ -26,14 +27,27 @@ namespace runtime {
 
 class Compilation {
  public:
-  typedef struct {
-    Context::DeviceContext* device_context;
-    core::Cache cache;
-  } Cache;
-  typedef struct {
-    Context::DeviceContext* device_context;
-    void* program;
-  } Program;
+  class Program {
+   public:
+    Program() {}
+    ~Program();
+
+   public:
+    Context::DeviceContext* device_context{nullptr};
+    core::Cache* cache{nullptr};
+    void* program{nullptr};
+    // The following is the necessary information for the submodel from model
+    // partition
+    core::Model* model{nullptr};
+    // Indicates where the model came from, whether it was externally
+    // referenced, or created after model partition.
+    bool referenced{true};
+    // The relationship between the input and output operands of the submodels:
+    // Negative value represents the input index of the entire model, otherwise
+    // represents the index of operand shared between the submodels.
+    std::vector<int> input_indexes;
+    std::vector<int> output_indexes;
+  };
   Compilation(Model* model,
               const char* cache_token,
               void* cache_buffer,
@@ -50,8 +64,15 @@ class Compilation {
               std::vector<core::Argument>* output_arguments);
 
  private:
-  std::vector<std::pair<Context::DeviceContext*, Model*>> PartitionModel(
-      Context* context, Model* model);
+  bool CheckCache();
+  void ClearCache();
+  int PartitionModel(
+      Context* context,
+      Model* model,
+      std::vector<std::pair<
+          Context::DeviceContext*,
+          std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>*
+          models);
   // Serialize/deserialize the cached models into/from memory
   bool Serialize(std::vector<uint8_t>* buffer);
   bool Deserialize(void* buffer, uint64_t size);
@@ -60,8 +81,9 @@ class Compilation {
   Model* model_{nullptr};
   std::string cache_token_;
   std::string cache_dir_;
-  std::vector<Cache> caches_;
   std::vector<Program> programs_;
+  std::vector<core::Operand*>
+      operands_;  // The shared operands among the submodels
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   Context* context_{nullptr};

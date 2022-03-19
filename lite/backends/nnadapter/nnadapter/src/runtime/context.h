@@ -32,6 +32,7 @@ class Context {
   ~Context();
   DeviceContext* GetDeviceContext(const char* name);
   DeviceContext* GetDeviceContext(int index);
+  size_t GetDeviceCount() { return device_contexts_.size(); }
   const char* GetProperties() { return properties_.c_str(); }
 
  private:
