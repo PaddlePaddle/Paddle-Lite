@@ -64,6 +64,9 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   nnadapter_device_names.emplace_back("android_nnapi");
   out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  nnadapter_device_names.emplace_back("google_xnnpack");
+  out_accuracy_threshold = 0.99f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

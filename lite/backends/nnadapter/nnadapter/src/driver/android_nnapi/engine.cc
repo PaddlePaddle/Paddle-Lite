@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <utility>
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "driver/android_nnapi/optimizer/resolve_operation_liminations.h"
 #include "driver/android_nnapi/optimizer/restrict_input_output_quant_params.h"
 #include "optimizer/convert_datalayout_nchw_to_nhwc.h"
@@ -259,6 +260,11 @@ void Program::Clear() {
   operand_buffers_.clear();
   input_types_.clear();
   output_types_.clear();
+}
+
+int Program::Validate(const core::Model* model, bool* supported_operations) {
+  Validator validator(context_);
+  return validator.Apply(model, supported_operations);
 }
 
 int Program::Build(core::Model* model, core::Cache* cache) {

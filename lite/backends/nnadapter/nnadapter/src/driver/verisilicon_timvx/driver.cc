@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::verisilicon_timvx::CloseDevice,
     .create_context = nnadapter::verisilicon_timvx::CreateContext,
     .destroy_context = nnadapter::verisilicon_timvx::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::verisilicon_timvx::CreateProgram,
     .destroy_program = nnadapter::verisilicon_timvx::DestroyProgram,
     .execute_program = nnadapter::verisilicon_timvx::ExecuteProgram,

@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::nvidia_tensorrt::CloseDevice,
     .create_context = nnadapter::nvidia_tensorrt::CreateContext,
     .destroy_context = nnadapter::nvidia_tensorrt::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::nvidia_tensorrt::CreateProgram,
     .destroy_program = nnadapter::nvidia_tensorrt::DestroyProgram,
     .execute_program = nnadapter::nvidia_tensorrt::ExecuteProgram,

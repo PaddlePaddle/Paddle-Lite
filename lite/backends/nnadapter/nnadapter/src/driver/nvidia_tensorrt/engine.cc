@@ -94,7 +94,50 @@ static core::Argument* FindArgumentByIndex(core::Argument* arguments,
   return static_cast<core::Argument*>(nullptr);
 }
 
-Context::Context(void* device, const char* properties) : device_(device) {}
+Context::Context(void* device, const char* properties) : device_(device) {
+  // Extract the runtime parameters from the context properties
+  NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
+  auto key_values = GetKeyValues(properties);
+  // Device type
+  std::string device_type = key_values.count(NVIDIA_TENSORRT_DEVICE_TYPE)
+                                ? key_values[NVIDIA_TENSORRT_DEVICE_TYPE]
+                                : GetStringFromEnv(NVIDIA_TENSORRT_DEVICE_TYPE);
+  if (!device_type.empty()) {
+    if (device_type == "GPU") {
+      device_type_ = nvinfer1::DeviceType::kGPU;
+    } else if (device_type == "DLA") {
+      device_type_ = nvinfer1::DeviceType::kDLA;
+    } else {
+      NNADAPTER_LOG(FATAL) << "Not support NVIDIA_TENSORRT_DEVICE_TYPE: "
+                           << device_type;
+    }
+  }
+  // Device id
+  device_id_ = key_values.count(NVIDIA_TENSORRT_DEVICE_ID)
+                   ? atoi(key_values[NVIDIA_TENSORRT_DEVICE_ID].c_str())
+                   : GetIntFromEnv(NVIDIA_TENSORRT_DEVICE_ID);
+  device_id_ = device_id_ > 0 ? device_id_ : 0;
+  // Precision
+  std::string precision = key_values.count(NVIDIA_TENSORRT_PRECISION)
+                              ? key_values[NVIDIA_TENSORRT_PRECISION]
+                              : GetStringFromEnv(NVIDIA_TENSORRT_PRECISION);
+  if (!precision.empty()) {
+    if (precision == "float32") {
+      precision_ = kFloat32;
+    } else if (precision == "float16") {
+      precision_ = kFloat16;
+    } else if (precision == "int8") {
+      precision_ = kInt8;
+    } else {
+      NNADAPTER_LOG(FATAL) << "Not support NVIDIA_TENSORRT_PRECISION: "
+                           << precision;
+    }
+  }
+  // Fallback
+  gpu_fallback_ = key_values.count(NVIDIA_TENSORRT_GPU_FALLBACK)
+                      ? key_values[NVIDIA_TENSORRT_GPU_FALLBACK] == "1"
+                      : GetBoolFromEnv(NVIDIA_TENSORRT_GPU_FALLBACK, true);
+}
 
 Context::~Context() {}
 
@@ -146,6 +189,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 void Program::CompleteConfig(core::Model* model) {
   config_.reset(builder_->createBuilderConfig());
   NNADAPTER_CHECK(config_);
+  // Set dynamic shapes
   if (with_dynamic_shape_) {
     for (auto operand : model->input_operands) {
       auto type = operand->type;
@@ -166,6 +210,46 @@ void Program::CompleteConfig(core::Model* model) {
       profile->setDimensions(name, nvinfer1::OptProfileSelector::kMAX, dims);
       config_->addOptimizationProfile(profile);
     }
+  }
+  // Set device_type
+  auto device_type = context_->DeviceType();
+  config_->setDefaultDeviceType(device_type);
+  // Set device_id
+  if (device_type == nvinfer1::DeviceType::kDLA) {
+    int device_id = context_->DeviceId();
+    if (builder_->getNbDLACores() > device_id) {
+      config_->setDLACore(device_id);
+      NNADAPTER_VLOG(1) << "Tring to use DLA core " << device_id;
+    } else {
+      NNADAPTER_LOG(WARNING) << "Trying to use DLA core " << device_id
+                             << " failed. The platform only has "
+                             << builder_->getNbDLACores() << " DLA cores.";
+    }
+  }
+  // Set precision
+  PrecisionMode precision = context_->Precision();
+  switch (precision) {
+    case kFloat32:
+      if (device_type == nvinfer1::DeviceType::kDLA) {
+        NNADAPTER_LOG(WARNING) << "Only support float16 or int8 if device type "
+                                  "is dla. Float16 is selected by default.";
+        config_->setFlag(nvinfer1::BuilderFlag::kFP16);
+      }
+      break;
+    case kFloat16:
+      config_->setFlag(nvinfer1::BuilderFlag::kFP16);
+      break;
+    case kInt8:
+      config_->setFlag(nvinfer1::BuilderFlag::kINT8);
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Not support precisoon mode: "
+                           << static_cast<int>(precision);
+      break;
+  }
+  // Set fallback
+  if (context_->GpuFallback()) {
+    config_->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
   }
 }
 

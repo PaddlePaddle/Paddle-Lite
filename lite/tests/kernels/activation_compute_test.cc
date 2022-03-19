@@ -465,6 +465,8 @@ TEST(Activation_relu, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  abs_error = 5e-2;
 #else
   return;
 #endif
