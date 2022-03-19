@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/converter/converter.h"
+#include <utility>
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -132,6 +133,30 @@ nvinfer1::Weights Converter::OperandToWeights(core::Operand* operand) {
       operand->length / GetOperandPrecisionDataLength(operand->type.precision);
   return weight;
 }
+
+template <typename T>
+nvinfer1::Weights Converter::AddWeights(const T* values, size_t size) {
+  size_t count = size * sizeof(T);
+  auto data = reinterpret_cast<const uint8_t*>(values);
+  std::vector<uint8_t> weight(data, data + count);
+  weights_.push_back(std::move(weight));
+  nvinfer1::Weights nv_weight;
+  nv_weight.type = GetNVDateType<T>();
+  nv_weight.values = weights_.back().data();
+  nv_weight.count = size;
+  return nv_weight;
+}
+
+template nvinfer1::Weights Converter::AddWeights(const float* values,
+                                                 size_t size);
+
+template <typename T>
+nvinfer1::Weights Converter::AddWeights(const std::vector<T>& values) {
+  return AddWeights(values.data(), values.size());
+}
+
+template nvinfer1::Weights Converter::AddWeights(
+    const std::vector<float>& values);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

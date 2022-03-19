@@ -68,6 +68,10 @@ class NNAdapterWrapper final {
       NNAdapterOperand** input_operands,
       uint32_t output_count,
       NNAdapterOperand** output_operands);
+  typedef int (*NNAdapterModel_getSupportedOperations_fn)(
+      const NNAdapterModel* model,
+      NNAdapterContext* context,
+      bool* supported_operations);
   typedef int (*NNAdapterCompilation_create_fn)(
       NNAdapterModel* model,
       const char* cache_token,
@@ -121,6 +125,7 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_getOperandType)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_getSupportedOperations)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_finish)
@@ -250,6 +255,14 @@ inline int NNAdapterModel_identifyInputsAndOutputs_invoke(
     NNAdapterOperand** output_operands) {
   return NNAdapterWrapper::Global().NNAdapterModel_identifyInputsAndOutputs(
       model, input_count, input_operands, output_count, output_operands);
+}
+
+inline int NNAdapterModel_getSupportedOperations_invoke(
+    const NNAdapterModel* model,
+    NNAdapterContext* context,
+    bool* supported_operations) {
+  return NNAdapterWrapper::Global().NNAdapterModel_getSupportedOperations(
+      model, context, supported_operations);
 }
 
 inline int NNAdapterCompilation_create_invoke(

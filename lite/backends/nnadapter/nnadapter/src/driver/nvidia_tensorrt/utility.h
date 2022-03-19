@@ -43,6 +43,9 @@ nvinfer1::DataType ConvertToNVDataType(
 uint32_t GetNVTypeSize(nvinfer1::DataType type);
 
 template <typename T>
+nvinfer1::DataType GetNVDateType();
+
+template <typename T>
 size_t SerializedSize(const T value);
 
 template <typename T>

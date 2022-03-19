@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::rockchip_npu::CloseDevice,
     .create_context = nnadapter::rockchip_npu::CreateContext,
     .destroy_context = nnadapter::rockchip_npu::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::rockchip_npu::CreateProgram,
     .destroy_program = nnadapter::rockchip_npu::DestroyProgram,
     .execute_program = nnadapter::rockchip_npu::ExecuteProgram,
