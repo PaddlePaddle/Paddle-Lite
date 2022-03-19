@@ -282,7 +282,7 @@ REGISTER_CONVERTER(squeeze,
 REGISTER_CONVERTER(squeeze2,
                    ConvertSqueeze,
                    "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl,"
-                   "cambricon_mlu,huawei_kirin_npu");
+                   "cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant,
