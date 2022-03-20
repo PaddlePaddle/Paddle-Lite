@@ -62,6 +62,8 @@ class TestDropoutOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -73,6 +75,9 @@ class TestDropoutOp(AutoScanTest):
         if target_type == TargetType.Metal:
             if in_x_shape[0] != 1 or len(in_x_shape) != 4 \
                 or dropout_implementation != 'downgrade_in_infer':
+                return False
+        if target_type == TargetType.NNAdapter:
+            if "Seed" in program_config.ops[0].inputs:
                 return False
 
         return True
@@ -105,16 +110,21 @@ class TestDropoutOp(AutoScanTest):
                     data_gen=partial(gen_input_data_seed))
             return inputs, inputs_tensor
 
+        def GenOpOutputs():
+            outputs = {"Out": ["output_data"]}
+            outputs_tensor = ["output_data"]
+            if is_test == False:
+                outputs["Mask"] = ["mask_data"]
+                outputs_tensor.append("mask_data")
+            return outputs, outputs_tensor
+
         inputs, inputs_tensor = GenOpInputs()
-        outputs = ["output_data", "mask_data"]
-        if self.get_target() == "Metal":
-            outputs = ["output_data"]
+        outputs, outputs_tensor = GenOpOutputs()
 
         dropout_op = OpConfig(
             type="dropout",
             inputs=inputs,
-            outputs={"Out": ["output_data"],
-                     "Mask": ["mask_data"]},
+            outputs=outputs,
             attrs={
                 "dropout_prob": dropout_prob,
                 "fix_seed": fix_seed,
@@ -126,7 +136,7 @@ class TestDropoutOp(AutoScanTest):
             ops=[dropout_op],
             weights={"mask_data": TensorConfig(shape=input_data_x_shape)},
             inputs=inputs_tensor,
-            outputs=outputs)
+            outputs=outputs_tensor)
         return program_config
 
     def sample_predictor_configs(self):
