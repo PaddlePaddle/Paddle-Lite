@@ -40,6 +40,19 @@ void Device::DestroyContext(void* context) {
   }
 }
 
+int Device::ValidateProgram(void* context,
+                            const core::Model* model,
+                            bool* supported_operations) {
+  if (device_ && context && model && supported_operations) {
+    if (!device_->second->validate_program) {
+      return NNADAPTER_FEATURE_NOT_SUPPORTED;
+    }
+    return device_->second->validate_program(
+        context, model, supported_operations);
+  }
+  return NNADAPTER_INVALID_PARAMETER;
+}
+
 int Device::CreateProgram(void* context,
                           core::Model* model,
                           core::Cache* cache,
@@ -79,15 +92,17 @@ DeviceManager::DeviceManager() {}
 DeviceManager::~DeviceManager() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < devices_.size(); i++) {
-    auto instance = devices_[i].second.first;
-    auto device = devices_[i].second.second;
+    auto device = devices_[i].second;
+    auto handle = device->first;
+    auto driver = device->second;
     if (device) {
-      device->close_device(instance);
+      driver->close_device(handle);
     }
     void* library = devices_[i].first;
     if (library) {
       dlclose(library);
     }
+    delete device;
   }
   devices_.clear();
 }
@@ -100,7 +115,7 @@ size_t DeviceManager::Count() {
 std::pair<void*, driver::Device*>* DeviceManager::At(int index) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (index >= 0 && index < devices_.size()) {
-    return &devices_[index].second;
+    return devices_[index].second;
   }
   return nullptr;
 }
@@ -108,7 +123,7 @@ std::pair<void*, driver::Device*>* DeviceManager::At(int index) {
 std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < devices_.size(); i++) {
-    auto device = &devices_[i].second;
+    auto device = devices_[i].second;
     if (strcmp(device->second->name, name) == 0) {
       return device;
     }
@@ -119,29 +134,31 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
   std::string path = std::string("lib") + name + std::string(".so");
   void* library = dlopen(path.c_str(), RTLD_NOW);
   if (!library) {
-    NNADAPTER_LOG(ERROR)
+    NNADAPTER_LOG(FATAL)
         << "Failed to load the nnadapter device HAL library for '" << name
         << "' from " << path << ", " << dlerror();
     return nullptr;
   }
-  auto device =
+  auto driver =
       reinterpret_cast<driver::Device*>(dlsym(library, symbol.c_str()));
-  if (!device) {
+  if (!driver) {
     dlclose(library);
     NNADAPTER_LOG(ERROR) << "Failed to find the symbol '" << symbol << "' from "
                          << path << ", " << dlerror();
     return nullptr;
   }
-  void* instance = nullptr;
-  int result = device->open_device(&instance);
+  void* handle = nullptr;
+  int result = driver->open_device(&handle);
   if (result != NNADAPTER_NO_ERROR) {
     NNADAPTER_LOG(ERROR) << "Failed to open device '" << symbol
                          << "', result=" << result;
     return nullptr;
   }
-  devices_.emplace_back(library,
-                        std::pair<void*, driver::Device*>(instance, device));
-  return &devices_.back().second;
+  auto device = new std::pair<void*, driver::Device*>(handle, driver);
+  NNADAPTER_CHECK(device) << "Failed to allocate for device '" << name
+                          << "', out of memory!";
+  devices_.emplace_back(library, device);
+  return device;
 }
 
 }  // namespace runtime

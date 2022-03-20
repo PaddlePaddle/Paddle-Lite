@@ -75,6 +75,11 @@ nvinfer1::DataType ConvertToNVDataType(
   return output_precision;
 }
 
+template <>
+nvinfer1::DataType GetNVDateType<float>() {
+  return nvinfer1::DataType::kFLOAT;
+}
+
 uint32_t GetNVTypeSize(nvinfer1::DataType type) {
   switch (type) {
     case nvinfer1::DataType::kINT32:

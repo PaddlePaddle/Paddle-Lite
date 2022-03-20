@@ -52,20 +52,20 @@ void gemm_prepack_8x16(bool is_transB,
                        const operators::ActivationParam act_param,
                        ARMContext *ctx);
 #else
-void gemm_prepack_8x12(bool is_transB,
-                       int M,
-                       int N,
-                       int K,
-                       const float16_t *A_packed,
-                       const float16_t *B,
-                       int ldb,
-                       float16_t beta,
-                       float16_t *C,
-                       int ldc,
-                       const float16_t *bias,
-                       bool has_bias,
-                       const operators::ActivationParam act_param,
-                       ARMContext *ctx);
+void gemm_prepack_8x8(bool is_transB,
+                      int M,
+                      int N,
+                      int K,
+                      const float16_t *A_packed,
+                      const float16_t *B,
+                      int ldb,
+                      float16_t beta,
+                      float16_t *C,
+                      int ldc,
+                      const float16_t *bias,
+                      bool has_bias,
+                      const operators::ActivationParam act_param,
+                      ARMContext *ctx);
 #endif
 
 /**
@@ -159,20 +159,20 @@ void gemm_prepack_fp16(bool is_transB,
                     act_param,
                     ctx);
 #else   // armv7
-  gemm_prepack_8x12(is_transB,
-                    M,
-                    N,
-                    K,
-                    A_packed,
-                    B,
-                    ldb,
-                    beta,
-                    C,
-                    ldc,
-                    bias,
-                    has_bias,
-                    act_param,
-                    ctx);
+  gemm_prepack_8x8(is_transB,
+                   M,
+                   N,
+                   K,
+                   A_packed,
+                   B,
+                   ldb,
+                   beta,
+                   C,
+                   ldc,
+                   bias,
+                   has_bias,
+                   act_param,
+                   ctx);
 #endif  // arm64
 }
 #ifdef __aarch64__
@@ -1311,20 +1311,20 @@ void loadb(float16_t *out,
   uint16_t mask_buffer[4] = {0, 1, 2, 3};
   int x_len = nmax - n0;
   int y_len = kmax - k0;
-  int cnt = x_len / 12;
-  int right_remain = x_len % 12;
+  int cnt = x_len >> 3;
+  int right_remain = x_len & 7;
 
   uint16_t *outptr_row = outptr;
   int rem_cnt = right_remain >> 2;
   int rem_rem = right_remain & 3;
   int cnt_y = 4 * (y_len / 4);
-  int cnt_12 = (cnt > 0) ? 12 : 0;
+  int cnt_8 = (cnt > 0) ? 8 : 0;
   int cnt_4 = (rem_cnt > 0) ? 4 : 0;
   int cnt_1 = (rem_rem > 0) ? 1 : 0;
-  int stride_12 = cnt_12 * y_len;
+  int stride_8 = cnt_8 * y_len;
   int stride_4 = cnt_4 * y_len;
   int stride_1 = cnt_1 * y_len;
-  int stride_w_4 = stride_12 * cnt;
+  int stride_w_4 = stride_8 * cnt;
   int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
 
   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
@@ -1333,32 +1333,24 @@ void loadb(float16_t *out,
     const uint16_t *ptr2 = ptr1 + ldin;
     const uint16_t *ptr3 = ptr2 + ldin;
 
-    uint16_t *outptr_row_col = outptr_row + y * cnt_12;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_8;
     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
     if (cnt > 0) {
       for (int i = 0; i < cnt; i++) {
         uint16x8_t v0 = vld1q_u16(ptr0);
-        uint16x4_t v01 = vld1_u16(ptr0 + 8);
         uint16x8_t v1 = vld1q_u16(ptr1);
-        uint16x4_t v11 = vld1_u16(ptr1 + 8);
         uint16x8_t v2 = vld1q_u16(ptr2);
-        uint16x4_t v21 = vld1_u16(ptr2 + 8);
         vst1q_u16(outptr_row_col, v0);
         uint16x8_t v3 = vld1q_u16(ptr3);
-        vst1_u16(outptr_row_col + 8, v01);
-        uint16x4_t v31 = vld1_u16(ptr3 + 8);
-        vst1q_u16(outptr_row_col + 12, v1);
-        ptr0 += 12;
-        vst1_u16(outptr_row_col + 20, v11);
-        ptr1 += 12;
-        vst1q_u16(outptr_row_col + 24, v2);
-        ptr2 += 12;
-        vst1_u16(outptr_row_col + 32, v21);
-        ptr3 += 12;
-        vst1q_u16(outptr_row_col + 36, v3);
-        vst1_u16(outptr_row_col + 44, v31);
-        outptr_row_col += stride_12;
+        vst1q_u16(outptr_row_col + 8, v1);
+        ptr0 += 8;
+        vst1q_u16(outptr_row_col + 16, v2);
+        ptr1 += 8;
+        ptr2 += 8;
+        vst1q_u16(outptr_row_col + 24, v3);
+        ptr3 += 8;
+        outptr_row_col += stride_8;
       }
     }
     if (rem_cnt > 0) {
@@ -1392,17 +1384,15 @@ void loadb(float16_t *out,
 
   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
     const uint16_t *ptr0 = inptr + y * ldin;
-    uint16_t *outptr_row_col = outptr_row + y * cnt_12;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_8;
     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
     if (cnt > 0) {
       for (int i = 0; i < cnt; i++) {
         uint16x8_t v0 = vld1q_u16(ptr0);
-        uint16x4_t v1 = vld1_u16(ptr0 + 8);
-        ptr0 += 12;
+        ptr0 += 8;
         vst1q_u16(outptr_row_col, v0);
-        vst1_u16(outptr_row_col + 8, v1);
-        outptr_row_col += stride_12;
+        outptr_row_col += stride_8;
       }
     }
     if (rem_cnt > 0) {
@@ -1440,10 +1430,9 @@ void loadb_trans(float16_t *out,
   int remain = x_len & 7;
   int y = n0;
   int y_remain = (nmax - n0) & 3;
-  int stride_w = ldin * 2;
 
-  //! data B is not transposed, transpose B to k * 12
-  for (; y < nmax - 11; y += 12) {
+  //! data B is not transposed, transpose B to k * 8
+  for (; y < nmax - 7; y += 8) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
     const uint16_t *inptr2 = inptr1 + ldin;
@@ -1452,7 +1441,6 @@ void loadb_trans(float16_t *out,
     const uint16_t *inptr5 = inptr4 + ldin;
     const uint16_t *inptr6 = inptr5 + ldin;
     const uint16_t *inptr7 = inptr6 + ldin;
-    const uint16_t *inptr8 = inptr7 + ldin;
 
     //! cope with row index exceed real size, set to zero buffer
     int cnt_col = cnt;
@@ -1473,7 +1461,6 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d2-d3}, [%[inptr1]]!\n"
         "vld1.16 {d4-d5}, [%[inptr2]]!\n"
         "vld1.16 {d6-d7}, [%[inptr3]]!\n"
-        "pld [%[inptr8]]        \n"
         "vld1.16 {d8-d9}, [%[inptr4]]!\n"
         "vld1.16 {d10-d11}, [%[inptr5]]!\n"
         // a0b0a2b2a4b4a6b6
@@ -1482,59 +1469,29 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d14-d15}, [%[inptr7]]!\n"
         // c0d0c2d2c4d4c6d6
         "vtrn.16 q2, q3        \n"
-        "vld1.16 {d16-d17}, [%[inptr8]]\n"
         // e0f0e2f2...
-        "vtrn.16 q4, q5        \n"
-        "add %[inptr8], %[stride_w]\n"
-        "vld1.16 {d18-d19}, [%[inptr8]]\n"
-        "add %[inptr8], %[stride_w]\n"
+        "vtrn.16 q4, q5       \n"
         "vtrn.16 q6, q7       \n"
+        // a0b0c0d0a4b4c4d4 a2-a6
         "vtrn.32 q0, q2       \n"
-        "vld1.16 {d20-d21}, [%[inptr8]]\n"
-        "add %[inptr8], %[stride_w]\n"
         "vtrn.32 q1, q3       \n"
-        "vtrn.16 q8, q9       \n"
-        "vld1.16 {d22-d23}, [%[inptr8]]\n"
-        "sub %[inptr8], %[stride_w]\n"
+        // e0f0g0h0e4f4g4h4
         "vtrn.32 q4, q6       \n"
         "vtrn.32 q5, q7       \n"
-        "sub %[inptr8], %[stride_w]\n"
-        "vtrn.16 q10, q11     \n"
 
         // 0 4
         "vswp d1, d8          \n"
         // 1 5
         "vswp d3, d10         \n"
-        "sub %[inptr8], %[stride_w]\n"
         // 2 6
         "vswp d5, d12         \n"
         // 3 7
         "vswp d7, d14         \n"
-        // a0b0c0d0a4b4c4d4 26
-        "vtrn.32 q8, q10      \n"
-        // 15 37
-        "vtrn.32 q9, q11      \n"
-        "vst1.16 {d0-d1}, [%[outptr]]!\n"
-        "add %[inptr8], #16\n"
-        "vst1.16 {d16}, [%[outptr]]!\n"
-        "vst1.16 {d2-d3}, [%[outptr]]!\n"
-        "vst1.16 {d18}, [%[outptr]]!\n"
-
-        "vst1.16 {d4-d5}, [%[outptr]]!\n"
-        "vst1.16 {d20}, [%[outptr]]!\n"
-        "vst1.16 {d6-d7}, [%[outptr]]!\n"
-        "vst1.16 {d22}, [%[outptr]]!\n"
-
-        "vst1.16 {d8-d9}, [%[outptr]]!\n"
-        "vst1.16 {d17}, [%[outptr]]!\n"
-        "vst1.16 {d10-d11}, [%[outptr]]!\n"
-        "vst1.16 {d19}, [%[outptr]]!\n"
         "subs %[cnt], #1            \n"
-
-        "vst1.16 {d12-d13}, [%[outptr]]!\n"
-        "vst1.16 {d21}, [%[outptr]]!\n"
-        "vst1.16 {d14-d15}, [%[outptr]]!\n"
-        "vst1.16 {d23}, [%[outptr]]!\n"
+        "vst1.16 {d0-d3}, [%[outptr]]!\n"
+        "vst1.16 {d4-d7}, [%[outptr]]!\n"
+        "vst1.16 {d8-d11}, [%[outptr]]!\n"
+        "vst1.16 {d12-d15}, [%[outptr]]!\n"
         "bne 0b                     \n"
         "1:                         \n"
         : [inptr0] "+r"(inptr0),
@@ -1545,10 +1502,9 @@ void loadb_trans(float16_t *out,
           [inptr5] "+r"(inptr5),
           [inptr6] "+r"(inptr6),
           [inptr7] "+r"(inptr7),
-          [inptr8] "+r"(inptr8),
           [outptr] "+r"(outptr),
           [cnt] "+r"(cnt_col)
-        : [stride_w] "r"(stride_w)
+        : 
         : "cc",
           "memory",
           "q0",
@@ -1565,9 +1521,6 @@ void loadb_trans(float16_t *out,
           "q11",
           "q12");
     // clang-format on
-    const uint16_t *inptr9 = inptr8 + ldin;
-    const uint16_t *inptr10 = inptr9 + ldin;
-    const uint16_t *inptr11 = inptr10 + ldin;
     for (int x = 0; x < remain; x++) {
       *outptr++ = *inptr0++;
       *outptr++ = *inptr1++;
@@ -1577,10 +1530,6 @@ void loadb_trans(float16_t *out,
       *outptr++ = *inptr5++;
       *outptr++ = *inptr6++;
       *outptr++ = *inptr7++;
-      *outptr++ = *inptr8++;
-      *outptr++ = *inptr9++;
-      *outptr++ = *inptr10++;
-      *outptr++ = *inptr11++;
     }
   }
 
@@ -2616,20 +2565,20 @@ void gemm_prepack_8x16(bool is_transB,
 #undef FMIN_8
 #undef TRANS_C8
 #else
-void gemm_prepack_8x12(bool is_transB,
-                       int M,
-                       int N,
-                       int K,
-                       const float16_t *A_packed,
-                       const float16_t *B,
-                       int ldb,
-                       float16_t beta,
-                       float16_t *C,
-                       int ldc,
-                       const float16_t *bias,
-                       bool has_bias,
-                       const operators::ActivationParam act_param,
-                       ARMContext *ctx) {
+void gemm_prepack_8x8(bool is_transB,
+                      int M,
+                      int N,
+                      int K,
+                      const float16_t *A_packed,
+                      const float16_t *B,
+                      int ldb,
+                      float16_t beta,
+                      float16_t *C,
+                      int ldc,
+                      const float16_t *bias,
+                      bool has_bias,
+                      const operators::ActivationParam act_param,
+                      ARMContext *ctx) {
   size_t llc_size = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto workspace = ctx->workspace_data<float16_t>();
   int threads = ctx->threads();
@@ -2662,7 +2611,7 @@ void gemm_prepack_8x12(bool is_transB,
     }
     int bblocks = (xmax - x0 + NBLOCK_FP16 - 1) / NBLOCK_FP16;
     remain = xmax - x0 - (bblocks - 1) * NBLOCK_FP16;
-    if (remain > 0 && remain != 12) {
+    if (remain > 0 && remain != 8) {
       flag_p_remain = true;
     }
     //! load bpanel
@@ -3235,153 +3184,88 @@ void gemm_prepack_8x12(bool is_transB,
             "vdup.16  q14, d1[2]       \n"
             "vdup.16  q15, d1[3]       \n"
             "pld    [%[b_ptr], #128]   \n"
-            "vdup.16  d8,  d0[0]       \n"
-            "vdup.16  d9,  d0[1]       \n"
-            "pld    [%[b_ptr], #192]   \n"
-            "vdup.16  d10, d0[2]       \n"
-            "vdup.16  d11, d0[3]       \n"
-            "cmp    %[has_beta], #1    \n"
             "pld    [%[a_ptr], #192]   \n"
-            "vdup.16  d12, d1[0]       \n"
-            "vdup.16  d13, d1[1]       \n"
+            "cmp    %[has_beta], #1    \n"
+            "pld    [%[b_ptr], #192]   \n"
             "pld    [%[b_ptr], #256]   \n"
-            "vdup.16  d14, d1[2]       \n"
-            "vdup.16  d15, d1[3]       \n"
             "blt    1f                 \n"
             "vldr   d0, [%[valpha], #64]\n"
             "vldr   d1, [%[valpha], #72]\n"
-            "vld1.16  {d2-d3},  [%[c_ptr0]]!\n"
-            "vld1.16  {d4-d5},  [%[c_ptr1]]!\n"
-            "vld1.16  {d6-d7},  [%[c_ptr2]]!\n"
+            "vld1.16  {d2-d3},  [%[c_ptr0]]\n"
+            "vld1.16  {d4-d5},  [%[c_ptr1]]\n"
+            "vld1.16  {d6-d7},  [%[c_ptr2]]\n"
             "vmla.f16 q8,    q1,  q0    \n"
-            "vld1.16  {d2-d3},  [%[c_ptr3]]!\n"
+            "vld1.16  {d8-d9},  [%[c_ptr3]]\n"
             "vmla.f16 q9,    q2,  q0    \n"
-            "vld1.16  {d4-d5},  [%[c_ptr4]]!\n"
+            "vld1.16  {d10-d11},  [%[c_ptr4]]\n"
             "vmla.f16 q10,   q3,  q0    \n"
-            "vld1.16  {d6-d7},  [%[c_ptr5]]!\n"
-            "vmla.f16 q11,   q1,  q0    \n"
-            "vld1.16  {d2-d3},  [%[c_ptr6]]!\n"
-            "vmla.f16 q12,   q2,  q0    \n"
-            "vld1.16  {d4-d5},  [%[c_ptr7]]!\n"
-            "vmla.f16 q13,   q3,  q0    \n"
-            "vldr     d6,    [%[c_ptr0]]\n"
-            "sub      %[c_ptr0], #16    \n"
-            "vmla.f16 q14,   q1,  q0    \n"
-            "vld1.16  {d7},    [%[c_ptr1]]\n"
-            "sub      %[c_ptr1], #16    \n"
-            "vmla.f16 q15,   q2,  q0    \n"
-            "vld1.16  {d2},   [%[c_ptr2]]\n"
-            "sub      %[c_ptr2], #16    \n"
-            "vmla.f16 d8,    d6,  d0    \n"
-            "vld1.16  {d3},    [%[c_ptr3]]\n"
-            "sub      %[c_ptr3], #16    \n"
-            "vmla.f16 d9,    d7,  d0    \n"
-            "vld1.16  {d4},    [%[c_ptr4]]\n"
-            "sub      %[c_ptr4], #16    \n"
-            "vmla.f16 d10,   d2,  d0    \n"
-            "vld1.16  {d5},   [%[c_ptr5]]\n"
-            "sub      %[c_ptr5], #16    \n"
-            "vmla.f16 d11,   d3,  d0    \n"
-            "vld1.16  {d6},    [%[c_ptr6]]\n"
-            "sub      %[c_ptr6], #16    \n"
-            "vmla.f16 d12,   d4,  d0    \n"
-            "vld1.16  {d7},    [%[c_ptr7]]\n"
-            "sub      %[c_ptr7], #16    \n"
-            "vmla.f16 d13,   d5,  d0    \n"
-            "vmla.f16 d14,   d6,  d0    \n"
-            "vmla.f16 d15,   d7,  d0    \n"
+            "vld1.16  {d12-d13},  [%[c_ptr5]]\n"
+            "vmla.f16 q11,   q4,  q0    \n"
+            "vld1.16  {d14-d15},  [%[c_ptr6]]\n"
+            "vmla.f16 q12,   q5,  q0    \n"
+            "vld1.16  {d2-d3},  [%[c_ptr7]]\n"
+            "vmla.f16 q13,   q6,  q0    \n"
+            "vmla.f16 q14,   q7,  q0    \n"
+            "vmla.f16 q15,   q1,  q0    \n"
             "1:                        \n"
             "cmp %[cnt], #32           \n"
             "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
-            "vld1.16 {d2-d4}, [%[b_ptr]]!       \n"
+            "vld1.16 {d2-d3}, [%[b_ptr]]!       \n"
             "blt 2f                             \n"
             "0:                                 \n"
             // unrool 0
+            "pld    [%[a_ptr], #64]             \n"
             "vmla.f16 q8,  q1,  d0[0]           \n"
             "vmla.f16 q9,  q1,  d0[1]           \n"
+            "pld    [%[b_ptr], #64]             \n"
             "vmla.f16 q10, q1,  d0[2]           \n"
             "vmla.f16 q11, q1,  d0[3]           \n"
-            "pld    [%[a_ptr], #64]             \n"
+            "vld1.16 {d6-d7}, [%[a_ptr]]!       \n"
+            "vld1.16 {d4-d5}, [%[b_ptr]]!       \n"
             "vmla.f16 q12, q1,  d1[0]           \n"
             "vmla.f16 q13, q1,  d1[1]           \n"
+            "pld    [%[a_ptr], #64]             \n"
             "vmla.f16 q14, q1,  d1[2]           \n"
             "vmla.f16 q15, q1,  d1[3]           \n"
-            "pld    [%[b_ptr], #96]             \n"
-            "vld1.16 {d6-d7}, [%[a_ptr]]!       \n"
-            "vmla.f16 d8,  d4,  d0[0]           \n"
-            "vmla.f16 d9,  d4,  d0[1]           \n"
-            "vmla.f16 d10, d4,  d0[2]           \n"
-            "vmla.f16 d11, d4,  d0[3]           \n"
-            "vld1.16 {d2-d3}, [%[b_ptr]]!       \n"
-            "vmla.f16 d12, d4,  d1[0]           \n"
-            "vmla.f16 d13, d4,  d1[1]           \n"
-            "vmla.f16 d14, d4,  d1[2]           \n"
-            "vmla.f16 d15, d4,  d1[3]           \n"
-            "vld1.16 {d4},    [%[b_ptr]]!       \n"
+            "pld    [%[b_ptr], #64]             \n"
             // unrool 1
-            "vmla.f16 q8,  q1,  d6[0]           \n"
-            "vmla.f16 q9,  q1,  d6[1]           \n"
-            "vmla.f16 q10, q1,  d6[2]           \n"
-            "vmla.f16 q11, q1,  d6[3]           \n"
-            "vmla.f16 q12, q1,  d7[0]           \n"
-            "vmla.f16 q13, q1,  d7[1]           \n"
-            "vmla.f16 q14, q1,  d7[2]           \n"
-            "vmla.f16 q15, q1,  d7[3]           \n"
-            "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
             "sub  %[cnt], #32                   \n"
-            "vmla.f16 d8,  d4,  d6[0]           \n"
-            "vmla.f16 d9,  d4,  d6[1]           \n"
-            "vmla.f16 d10, d4,  d6[2]           \n"
-            "vmla.f16 d11, d4,  d6[3]           \n"
+            "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
+            "vmla.f16 q8,  q2,  d6[0]           \n"
+            "vmla.f16 q9,  q2,  d6[1]           \n"
+            "vmla.f16 q10, q2,  d6[2]           \n"
+            "vmla.f16 q11, q2,  d6[3]           \n"
             "vld1.16 {d2-d3}, [%[b_ptr]]!       \n"
             "cmp %[cnt], #32                    \n"
-            "vmla.f16 d12, d4,  d7[0]           \n"
-            "vmla.f16 d13, d4,  d7[1]           \n"
-            "vmla.f16 d14, d4,  d7[2]           \n"
-            "vmla.f16 d15, d4,  d7[3]           \n"
-            "vld1.16 {d4},    [%[b_ptr]]!       \n"
+            "vmla.f16 q12, q2,  d7[0]           \n"
+            "vmla.f16 q13, q2,  d7[1]           \n"
+            "vmla.f16 q14, q2,  d7[2]           \n"
+            "vmla.f16 q15, q2,  d7[3]           \n"
             "bge 0b                             \n"
             "2:                                 \n"
             "cmp %[cnt], #16                    \n"
             "blt 3f                             \n"
             // tail=2
+            "vld1.16 {d6-d7}, [%[a_ptr]]!       \n"
             "vmla.f16 q8,  q1,  d0[0]           \n"
             "vmla.f16 q9,  q1,  d0[1]           \n"
             "vmla.f16 q10, q1,  d0[2]           \n"
             "vmla.f16 q11, q1,  d0[3]           \n"
+            "vld1.16 {d4-d5}, [%[b_ptr]]!       \n"
             "vmla.f16 q12, q1,  d1[0]           \n"
             "vmla.f16 q13, q1,  d1[1]           \n"
             "vmla.f16 q14, q1,  d1[2]           \n"
             "vmla.f16 q15, q1,  d1[3]           \n"
-            "vld1.16 {d6-d7}, [%[a_ptr]]!       \n"
-            "vmla.f16 d8,  d4,  d0[0]           \n"
-            "vmla.f16 d9,  d4,  d0[1]           \n"
-            "vmla.f16 d10, d4,  d0[2]           \n"
-            "vmla.f16 d11, d4,  d0[3]           \n"
-            "vld1.16 {d2-d3}, [%[b_ptr]]!       \n"
-            "vmla.f16 d12, d4,  d1[0]           \n"
-            "vmla.f16 d13, d4,  d1[1]           \n"
-            "vmla.f16 d14, d4,  d1[2]           \n"
-            "vmla.f16 d15, d4,  d1[3]           \n"
-            "vld1.16 {d4},    [%[b_ptr]]!       \n"
             "sub %[cnt], #16                    \n"
             // unrool 1
-            "vmla.f16 q8,  q1,  d6[0]           \n"
-            "vmla.f16 q9,  q1,  d6[1]           \n"
-            "vmla.f16 q10, q1,  d6[2]           \n"
-            "vmla.f16 q11, q1,  d6[3]           \n"
-            "vmla.f16 q12, q1,  d7[0]           \n"
-            "vmla.f16 q13, q1,  d7[1]           \n"
-            "vmla.f16 q14, q1,  d7[2]           \n"
-            "vmla.f16 q15, q1,  d7[3]           \n"
-            "vmla.f16 d8,  d4,  d6[0]           \n"
-            "vmla.f16 d9,  d4,  d6[1]           \n"
-            "vmla.f16 d10, d4,  d6[2]           \n"
-            "vmla.f16 d11, d4,  d6[3]           \n"
-            "vmla.f16 d12, d4,  d7[0]           \n"
-            "vmla.f16 d13, d4,  d7[1]           \n"
-            "vmla.f16 d14, d4,  d7[2]           \n"
-            "vmla.f16 d15, d4,  d7[3]           \n"
+            "vmla.f16 q8,  q2,  d6[0]           \n"
+            "vmla.f16 q9,  q2,  d6[1]           \n"
+            "vmla.f16 q10, q2,  d6[2]           \n"
+            "vmla.f16 q11, q2,  d6[3]           \n"
+            "vmla.f16 q12, q2,  d7[0]           \n"
+            "vmla.f16 q13, q2,  d7[1]           \n"
+            "vmla.f16 q14, q2,  d7[2]           \n"
+            "vmla.f16 q15, q2,  d7[3]           \n"
             "b 6f                               \n"
             "3:                                 \n"
             // tail = 1
@@ -3394,14 +3278,6 @@ void gemm_prepack_8x12(bool is_transB,
             "vmla.f16 q13, q1,  d1[1]           \n"
             "vmla.f16 q14, q1,  d1[2]           \n"
             "vmla.f16 q15, q1,  d1[3]           \n"
-            "vmla.f16 d8,  d4,  d0[0]           \n"
-            "vmla.f16 d9,  d4,  d0[1]           \n"
-            "vmla.f16 d10, d4,  d0[2]           \n"
-            "vmla.f16 d11, d4,  d0[3]           \n"
-            "vmla.f16 d12, d4,  d1[0]           \n"
-            "vmla.f16 d13, d4,  d1[1]           \n"
-            "vmla.f16 d14, d4,  d1[2]           \n"
-            "vmla.f16 d15, d4,  d1[3]           \n"
             "6:                                 \n"
             "cmp    %[cnt],   #1                \n"
             "vmov.u32 q0, #0                    \n"
@@ -3416,172 +3292,88 @@ void gemm_prepack_8x12(bool is_transB,
             "vldr  d2,  [%[valpha], #16]        \n"
             "vldr  d3,  [%[valpha], #24]        \n"
             "vld1.16 {d4-d5},  [%[valpha]]      \n"
-            "vadd.f16  q3, q8,  q1              \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
+            "vadd.f16  q4, q8,  q1              \n"
+            "vadd.f16  q5, q9,  q1              \n"
+            "vadd.f16  q6, q10, q1              \n"
+            "vadd.f16  q7, q11, q1              \n"
+            "vldr  d6,  [%[valpha], #32]        \n"
+            "vldr  d7,  [%[valpha], #40]        \n"
             "vmul.f16  q8,  q8,  q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q8,  q8,  q3             \n"
-            "vadd.f16  q3, q9,  q1              \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
             "vmul.f16  q9,  q9,  q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q9,  q9,  q3             \n"
-            "vadd.f16  q3,  q10, q1              \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
             "vmul.f16  q10, q10, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q10, q10, q3             \n"
-            "vadd.f16  q3,  q11, q1             \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
             "vmul.f16  q11, q11, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q11, q11, q3             \n"
-            "vadd.f16  q3,  q12, q1             \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
-            "vmul.f16  q12, q12, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q12, q12, q3             \n"
-            "vadd.f16  q3,  q13, q1             \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
-            "vmul.f16  q13, q13, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q13, q13, q3             \n"
-            "vadd.f16  q3,  q14, q1             \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
-            "vmul.f16  q14, q14, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #24]        \n"
-            "vmul.f16  q14, q14, q3             \n"
-            "vadd.f16  q3,  q15, q1             \n"
-            "vldr  d2,  [%[valpha], #32]        \n"
-            "vldr  d3,  [%[valpha], #40]        \n"
-            "vmul.f16  q15, q15, q2             \n"
-            "vmax.f16  q3,  q3,  q0             \n"
-            "vmin.f16  q3,  q3,  q1             \n"
-            "vldr  d2,  [%[valpha], #16]        \n"
-            "vldr  d3,  [%[valpha], #32]        \n"
-            "vmul.f16  q15, q15, q3             \n"
 
-            "vadd.f16  d6,  d8,  d2             \n"
-            "vadd.f16  d7,  d9,  d2             \n"
-            "vmul.f16  d8,  d8,  d4             \n"
-            "vmul.f16  d9,  d9,  d4             \n"
-            "vmax.f16  d6,  d6,  d0             \n"
-            "vmax.f16  d7,  d7,  d0             \n"
-            "vmin.f16  d6,  d6,  d3             \n"
-            "vmin.f16  d7,  d7,  d3             \n"
-            "vmul.f16  d8,  d8,  d6             \n"
-            "vmul.f16  d9,  d9,  d7             \n"
-            "vadd.f16  d6,  d10, d2             \n"
-            "vadd.f16  d7,  d11, d2             \n"
-            "vmul.f16  d10, d10, d4             \n"
-            "vmul.f16  d11, d11, d4             \n"
-            "vmax.f16  d6,  d6,  d0             \n"
-            "vmax.f16  d7,  d7,  d0             \n"
-            "vmin.f16  d6,  d6,  d3             \n"
-            "vmin.f16  d7,  d7,  d3             \n"
-            "vmul.f16  d10, d10, d6             \n"
-            "vmul.f16  d11, d11, d7             \n"
-            "vadd.f16  d6,  d12, d2             \n"
-            "vadd.f16  d7,  d13, d2             \n"
-            "vmul.f16  d12, d12, d4             \n"
-            "vmul.f16  d13, d13, d4             \n"
-            "vmax.f16  d6,  d6,  d0             \n"
-            "vmax.f16  d7,  d7,  d0             \n"
-            "vmin.f16  d6,  d6,  d3             \n"
-            "vmin.f16  d7,  d7,  d3             \n"
-            "vmul.f16  d12, d12, d6             \n"
-            "vmul.f16  d13, d13, d7             \n"
-            "vadd.f16  d6,  d14, d2             \n"
-            "vadd.f16  d7,  d15, d2             \n"
-            "vmul.f16  d14, d14, d4             \n"
-            "vmul.f16  d15, d15, d4             \n"
-            "vmax.f16  d6,  d6,  d0             \n"
-            "vmax.f16  d7,  d7,  d0             \n"
-            "vmin.f16  d6,  d6,  d3             \n"
-            "vmin.f16  d7,  d7,  d3             \n"
-            "vmul.f16  d14, d14, d6             \n"
-            "vmul.f16  d15, d15, d7             \n"
+            "vmax.f16  q4,  q4,  q0             \n"
+            "vmax.f16  q5,  q5,  q0             \n"
+            "vmax.f16  q6,  q6,  q0             \n"
+            "vmax.f16  q7,  q7,  q0             \n"
+
+            "vmin.f16  q4,  q4,  q3             \n"
+            "vmin.f16  q5,  q5,  q3             \n"
+            "vmin.f16  q6,  q6,  q3             \n"
+            "vmin.f16  q7,  q7,  q3             \n"
+
+            "vmul.f16  q8,  q8,  q4             \n"
+            "vmul.f16  q9,  q9,  q5             \n"
+            "vmul.f16  q10, q10, q6             \n"
+            "vmul.f16  q11, q11, q7             \n"
+
+            "vadd.f16  q4, q12, q1              \n"
+            "vadd.f16  q5, q13, q1              \n"
+            "vadd.f16  q6, q14, q1              \n"
+            "vadd.f16  q7, q15, q1              \n"
+            "vmul.f16  q12, q12, q2             \n"
+            "vmul.f16  q13, q13, q2             \n"
+            "vmul.f16  q14, q14, q2             \n"
+            "vmul.f16  q15, q15, q2             \n"
+
+            "vmax.f16  q4,  q4,  q0             \n"
+            "vmax.f16  q5,  q5,  q0             \n"
+            "vmax.f16  q6,  q6,  q0             \n"
+            "vmax.f16  q7,  q7,  q0             \n"
+
+            "vmin.f16  q4,  q4,  q3             \n"
+            "vmin.f16  q5,  q5,  q3             \n"
+            "vmin.f16  q6,  q6,  q3             \n"
+            "vmin.f16  q7,  q7,  q3             \n"
+
+            "vmul.f16  q12, q12, q4             \n"
+            "vmul.f16  q13, q13, q5             \n"
+            "vmul.f16  q14, q14, q6             \n"
+            "vmul.f16  q15, q15, q7             \n"
+
             "b 7f                               \n"
             // leakyRelu
             "8:                                 \n"
             "vld1.16   {d2-d3},  [%[valpha]]    \n"
             "vcge.f16  q2, q8,  q0              \n"
-            "vmul.f16  q3, q8,  q1              \n"
-            "vbif      q8, q3,  q2              \n"
-            "vcge.f16  q2, q9,  q0              \n"
-            "vmul.f16  q3, q9,  q1              \n"
-            "vbif      q9, q3,  q2              \n"
-            "vcge.f16  q2, q10, q0              \n"
-            "vmul.f16  q3, q10, q1              \n"
-            "vbif      q10, q3, q2              \n"
-            "vcge.f16  q2, q11, q0              \n"
-            "vmul.f16  q3, q11, q1              \n"
-            "vbif      q11, q3, q2              \n"
-            "vcge.f16  q2, q12, q0              \n"
-            "vmul.f16  q3, q12, q1              \n"
-            "vbif      q12, q3, q2              \n"
-            "vcge.f16  q2, q13, q0              \n"
-            "vmul.f16  q3, q13, q1              \n"
-            "vbif      q13, q3, q2              \n"
-            "vcge.f16  q2, q14, q0              \n"
-            "vmul.f16  q3, q14, q1              \n"
-            "vbif      q14, q3, q2              \n"
-            "vcge.f16  q2, q15, q0              \n"
-            "vmul.f16  q3, q15, q1              \n"
-            "vbif      q15, q3, q2              \n"
+            "vcge.f16  q4, q9,  q0              \n"
+            "vcge.f16  q6, q10, q0              \n"
 
-            "vcge.f16  d4,  d8,  d0             \n"
-            "vmul.f16  d6,  d8,  d2             \n"
-            "vcge.f16  d5,  d9,  d0             \n"
-            "vmul.f16  d7,  d9,  d2             \n"
-            "vbif      d8,  d6,  d4             \n"
-            "vbif      d9,  d7,  d5             \n"
-            "vcge.f16  d4,  d10, d0             \n"
-            "vmul.f16  d6,  d10, d2             \n"
-            "vcge.f16  d5,  d11, d0             \n"
-            "vmul.f16  d7,  d11, d2             \n"
-            "vbif      d10, d6,  d4             \n"
-            "vbif      d11, d7,  d5             \n"
-            "vcge.f16  d4,  d12, d0             \n"
-            "vmul.f16  d6,  d12, d2             \n"
-            "vcge.f16  d5,  d13, d0             \n"
-            "vmul.f16  d7,  d13, d2             \n"
-            "vbif      d12, d6,  d4             \n"
-            "vbif      d13, d7,  d5             \n"
-            "vcge.f16  d4,  d14, d0             \n"
-            "vmul.f16  d6,  d14, d2             \n"
-            "vcge.f16  d5,  d15, d0             \n"
-            "vmul.f16  d7,  d15, d2             \n"
-            "vbif      d14, d6,  d4             \n"
-            "vbif      d15, d7,  d5             \n"
+            "vmul.f16  q3, q8,  q1              \n"
+            "vmul.f16  q5, q9,  q1              \n"
+            "vmul.f16  q7, q10, q1              \n"
+            "vbif      q8,  q3,  q2             \n"
+            "vbif      q9,  q5,  q4             \n"
+            "vbif      q10, q7,  q6             \n"
+
+            "vcge.f16  q2, q11, q0              \n"
+            "vcge.f16  q4, q12, q0              \n"
+            "vcge.f16  q6, q13, q0              \n"
+
+            "vmul.f16  q3, q11, q1              \n"
+            "vmul.f16  q5, q12, q1              \n"
+            "vmul.f16  q7, q13, q1              \n"
+            "vbif      q11, q3,  q2             \n"
+            "vbif      q12, q5,  q4             \n"
+            "vbif      q13, q7,  q6             \n"
+
+            "vcge.f16  q2, q14, q0              \n"
+            "vcge.f16  q4, q15, q0              \n"
+            "vmul.f16  q3, q14, q1              \n"
+            "vmul.f16  q5, q15, q1              \n"
+            "vbif      q14, q3,  q2             \n"
+            "vbif      q15, q5,  q4             \n"
             "b 7f                               \n"
             // relu
             "4:                                 \n"
@@ -3593,14 +3385,6 @@ void gemm_prepack_8x12(bool is_transB,
             "vmax.f16  q13, q13, q0             \n"
             "vmax.f16  q14, q14, q0             \n"
             "vmax.f16  q15, q15, q0             \n"
-            "vmax.f16  d8,  d8,  d0             \n"
-            "vmax.f16  d9,  d9,  d0             \n"
-            "vmax.f16  d10, d10, d0             \n"
-            "vmax.f16  d11, d11, d0             \n"
-            "vmax.f16  d12, d12, d0             \n"
-            "vmax.f16  d13, d13, d0             \n"
-            "vmax.f16  d14, d14, d0             \n"
-            "vmax.f16  d15, d15, d0             \n"
             "b 7f                               \n"
             // relu6
             "5:                                 \n"
@@ -3613,14 +3397,7 @@ void gemm_prepack_8x12(bool is_transB,
             "vmax.f16  q13, q13, q0             \n"
             "vmax.f16  q14, q14, q0             \n"
             "vmax.f16  q15, q15, q0             \n"
-            "vmax.f16  d8,  d8,  d0             \n"
-            "vmax.f16  d9,  d9,  d0             \n"
-            "vmax.f16  d10, d10, d0             \n"
-            "vmax.f16  d11, d11, d0             \n"
-            "vmax.f16  d12, d12, d0             \n"
-            "vmax.f16  d13, d13, d0             \n"
-            "vmax.f16  d14, d14, d0             \n"
-            "vmax.f16  d15, d15, d0             \n"
+            
             "vmin.f16  q8,  q8,  q1             \n"
             "vmin.f16  q9,  q9,  q1             \n"
             "vmin.f16  q10, q10, q1             \n"
@@ -3629,14 +3406,6 @@ void gemm_prepack_8x12(bool is_transB,
             "vmin.f16  q13, q13, q1             \n"
             "vmin.f16  q14, q14, q1             \n"
             "vmin.f16  q15, q15, q1             \n"
-            "vmin.f16  d8,  d8,  d2             \n"
-            "vmin.f16  d9,  d9,  d2             \n"
-            "vmin.f16  d10, d10, d2             \n"
-            "vmin.f16  d11, d11, d2             \n"
-            "vmin.f16  d12, d12, d2             \n"
-            "vmin.f16  d13, d13, d2             \n"
-            "vmin.f16  d14, d14, d2             \n"
-            "vmin.f16  d15, d15, d2             \n"
             "b 7f                               \n"
             // no relu
             "7:                                 \n"
@@ -3648,14 +3417,6 @@ void gemm_prepack_8x12(bool is_transB,
             "vst1.16 {d26-d27}, [%[c_ptr5]]!    \n"
             "vst1.16 {d28-d29}, [%[c_ptr6]]!    \n"
             "vst1.16 {d30-d31}, [%[c_ptr7]]!    \n"
-            "vst1.16 {d8},      [%[c_ptr0]]!    \n"
-            "vst1.16 {d9},      [%[c_ptr1]]!    \n"
-            "vst1.16 {d10},     [%[c_ptr2]]!    \n"
-            "vst1.16 {d11},     [%[c_ptr3]]!    \n"
-            "vst1.16 {d12},     [%[c_ptr4]]!    \n"
-            "vst1.16 {d13},     [%[c_ptr5]]!    \n"
-            "vst1.16 {d14},     [%[c_ptr6]]!    \n"
-            "vst1.16 {d15},     [%[c_ptr7]]!    \n"
             : [a_ptr] "+r"(a_ptr),
               [b_ptr] "+r"(b_ptr),
               [cnt] "+r"(k),

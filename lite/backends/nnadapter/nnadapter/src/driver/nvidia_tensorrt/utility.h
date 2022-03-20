@@ -25,6 +25,25 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+// Following environment variables are used to enable tensorrt features.
+// Use which type of device to run, for example: "GPU", "DLA"
+#define NVIDIA_TENSORRT_DEVICE_TYPE "NVIDIA_TENSORRT_DEVICE_TYPE"
+
+// Use which device core, for example: "0", "1"
+#define NVIDIA_TENSORRT_DEVICE_ID "NVIDIA_TENSORRT_DEVICE_ID"
+
+// Use which precision, for example: "float32", "float16", "int8"
+#define NVIDIA_TENSORRT_PRECISION "NVIDIA_TENSORRT_PRECISION"
+
+// Whether to allow gpu fallback, for example: "0", "1"
+#define NVIDIA_TENSORRT_GPU_FALLBACK "NVIDIA_TENSORRT_GPU_FALLBACK"
+
+typedef enum {
+  kFloat32 = 0,
+  kFloat16 = 1,
+  kInt8 = 2,
+} PrecisionMode;
+
 class TrtLogger : public nvinfer1::ILogger {
  public:
   void log(nvinfer1::ILogger::Severity severity,
@@ -41,6 +60,9 @@ nvinfer1::DataType ConvertToNVDataType(
     NNAdapterOperandPrecisionCode input_precision);
 
 uint32_t GetNVTypeSize(nvinfer1::DataType type);
+
+template <typename T>
+nvinfer1::DataType GetNVDateType();
 
 template <typename T>
 size_t SerializedSize(const T value);

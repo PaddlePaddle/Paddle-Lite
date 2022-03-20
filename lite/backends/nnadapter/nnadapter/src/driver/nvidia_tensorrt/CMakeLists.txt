@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Enable cuda compile
-project(nnadapter_tensorrt CXX C CUDA)
+enable_language(CUDA)
 
 set(DEVICE_NAME nvidia_tensorrt)
 add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
