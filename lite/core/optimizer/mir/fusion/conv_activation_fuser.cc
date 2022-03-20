@@ -124,9 +124,7 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     float scale = act_op_desc.GetAttr<float>("beta");
     op_desc.SetAttr("swish_scale", scale);
     op_desc.SetAttr("fuse_swish", true);
-  } /*else if (act_type_ == "exp") {
-    op_desc.SetAttr("fuse_exp", true);
-  }*/ else if (act_type_ == "abs") {
+  } else if (act_type_ == "abs") {
     op_desc.SetAttr("fuse_abs", true);
   }
 

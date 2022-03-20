@@ -170,6 +170,8 @@ TEST(Scale, precision) {
   abs_error = 1e-1;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-1;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
 #else
   return;
 #endif

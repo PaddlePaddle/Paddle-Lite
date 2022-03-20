@@ -456,6 +456,9 @@ class LITE_API CxxConfig : public ConfigBase {
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
 
+  // XPU set multi_stream
+  void enable_xpu_multi_stream();
+
   // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
   void set_xpu_multi_encoder_method(const std::string& precision = "int16",

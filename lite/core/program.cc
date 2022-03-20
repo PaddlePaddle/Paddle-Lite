@@ -606,6 +606,8 @@ void Program::PrepareWorkspace(
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+          auto* tensor_array = var->GetMutable<std::vector<lite::Tensor>>();
+          tensor_array->resize(0);
         } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
           var->GetMutable<std::vector<lite::Scope*>>();
         }

@@ -94,7 +94,11 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             attrs={"data_format": 'nchw',
                    "axis": axis})
 
-        act_type = draw(st.sampled_from(['relu']))
+        target_str = self.get_target()
+        act_list = ['relu']
+        if target_str == "OpenCL":
+            act_list.append("gelu")
+        act_type = draw(st.sampled_from(act_list))
 
         def generate_act_attrs(act_type_str):
             attrs = {}

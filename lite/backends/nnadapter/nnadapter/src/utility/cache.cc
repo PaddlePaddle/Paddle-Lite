@@ -53,6 +53,13 @@ bool Cache::Get(const std::string& key, std::vector<uint8_t>* value) {
   return true;
 }
 
+bool Cache::Get(const std::string& key, void* value, uint64_t size) {
+  if (!entries_.count(key)) return false;
+  if (entries_[key].size() != size) return false;
+  memcpy(value, entries_[key].data(), size);
+  return true;
+}
+
 bool Cache::Get(const std::string& key, std::string* value) {
   if (!entries_.count(key)) return false;
   value->assign(entries_[key].begin(), entries_[key].end());
