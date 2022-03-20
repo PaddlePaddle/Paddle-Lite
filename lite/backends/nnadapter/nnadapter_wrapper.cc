@@ -88,6 +88,7 @@ bool NNAdapterWrapper::Initialize() {
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_getOperandType)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_getSupportedOperations)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_create)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_finish)

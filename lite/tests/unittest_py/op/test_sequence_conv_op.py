@@ -39,6 +39,11 @@ class TestSequenceConvOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -113,14 +118,7 @@ class TestSequenceConvOp(AutoScanTest):
         return self.get_predictor_configs(), ["sequence_conv"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

@@ -461,6 +461,8 @@ TEST(Matmul2x2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -504,6 +506,8 @@ TEST(Matmul2x2_y_transpose, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #else
   return;
@@ -608,6 +612,13 @@ TEST(Matmulnxn, precision) {
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   test_matmulnxn(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  test_matmulnxn(place, abs_error);
+  test_matmulnxn_ytranspose(place, abs_error);
   return;
 #else
   return;

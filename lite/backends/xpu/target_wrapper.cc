@@ -129,7 +129,7 @@ void TargetWrapperXPU::FreeL3Cache() {
     }
     l3_planner_->run_autotune(l3_block_dict, local_l3_size);
   } else if (need_l3_mutex && TargetWrapperXPU::IsSharedL3Created()) {
-    XPU_CALL(xpu_wait());
+    XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
     XPU_CALL(tls_raw_ctx_->_l3_mgr.set(nullptr, 0));
     mutex_l3_.unlock();
     l3_planner_->run_autotune(l3_block_dict, shared_l3_size);
@@ -155,6 +155,8 @@ TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
     nullptr};
+// XPU stream
+LITE_THREAD_LOCAL std::shared_ptr<void> TargetWrapperXPU::xpu_stream_{nullptr};
 // multi encoder config
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
@@ -171,6 +173,7 @@ LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};
 size_t TargetWrapperXPU::shared_l3_size{0};
+bool TargetWrapperXPU::enable_multi_stream_{false};
 LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*> TargetWrapperXPU::l3_block_dict;
 // l3 mutex
 std::mutex TargetWrapperXPU::mutex_l3_;
