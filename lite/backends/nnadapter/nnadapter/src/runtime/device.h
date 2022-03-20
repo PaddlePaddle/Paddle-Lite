@@ -45,6 +45,9 @@ class Device {
   }
   int CreateContext(const char* properties, void** context);
   void DestroyContext(void* context);
+  int ValidateProgram(void* context,
+                      const core::Model* model,
+                      bool* supported_operations);
   int CreateProgram(void* context,
                     core::Model* model,
                     core::Cache* cache,
@@ -73,7 +76,7 @@ class DeviceManager {
 
  private:
   std::mutex mutex_;
-  std::vector<std::pair<void*, std::pair<void*, driver::Device*>>> devices_;
+  std::vector<std::pair<void*, std::pair<void*, driver::Device*>*>> devices_;
   DISALLOW_COPY_AND_ASSIGN(DeviceManager);
 };
 

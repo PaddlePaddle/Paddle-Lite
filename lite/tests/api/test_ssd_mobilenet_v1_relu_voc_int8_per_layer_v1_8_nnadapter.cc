@@ -57,6 +57,8 @@ TEST(ssd_mobilentert_v1,
   nnadapter_device_names.emplace_back("verisilicon_timvx");
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   nnadapter_device_names.emplace_back("android_nnapi");
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  nnadapter_device_names.emplace_back("google_xnnpack");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

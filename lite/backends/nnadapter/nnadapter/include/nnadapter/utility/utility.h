@@ -44,6 +44,8 @@ bool IsUInt32AsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
 bool IsConstantOperandType(const NNAdapterOperandType& type);
+bool IsModelInputOperandType(const NNAdapterOperandType& type);
+bool IsModelOutputOperandType(const NNAdapterOperandType& type);
 bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
 int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
@@ -253,6 +255,7 @@ uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
 // Get the real path of the path argument
 std::string GetRealPath(const char* path);
 
+// Check whether the data in the buffer is all zero
 bool IsAllZeros(void* buffer, size_t length);
 
 }  // namespace nnadapter
