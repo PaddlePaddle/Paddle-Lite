@@ -18,6 +18,7 @@
 #include "operation/fill.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 namespace nnadapter {
 namespace nvidia_tensorrt {
 

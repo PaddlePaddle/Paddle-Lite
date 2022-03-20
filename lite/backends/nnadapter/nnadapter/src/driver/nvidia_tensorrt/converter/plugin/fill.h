@@ -43,6 +43,7 @@ class FillPluginDynamic : public PluginDynamic {
       nvinfer1::IExprBuilder& expr_builder) noexcept;
 
  private:
+  int shape_size_for_serial_;  // for deserialize use!
   float value_;
   bool bool_value_tensor_;
   std::vector<int64_t> shape_;
