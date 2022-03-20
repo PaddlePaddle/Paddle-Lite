@@ -50,10 +50,8 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   }
   auto flatten_layer = converter->network()->addShuffle(*input_tensor);
   flatten_layer->setReshapeDimensions(flatten_dim);
-
   auto output_tensor = flatten_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
-
   return NNADAPTER_NO_ERROR;
 }
 
