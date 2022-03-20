@@ -46,9 +46,9 @@ class TestStridedSliceOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         N = draw(st.integers(min_value=1, max_value=4))
-        C = draw(st.integers(min_value=2, max_value=128))
-        H = draw(st.integers(min_value=2, max_value=128))
-        W = draw(st.integers(min_value=2, max_value=128))
+        C = draw(st.integers(min_value=5, max_value=128))
+        H = draw(st.integers(min_value=5, max_value=128))
+        W = draw(st.integers(min_value=5, max_value=128))
         in_shape = draw(st.sampled_from([[N, C, H, W]]))
 
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
@@ -72,6 +72,14 @@ class TestStridedSliceOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=3), min_size=1, max_size=4))
+
+        # nvidia_tensorrt must satisify the followings! 
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            assume(in_dtype != np.int64)
+            assume(len(np.unique(axes_data)) == len(axes_data))
+            assume(sorted(axes_data) == axes_data)
+            assume(in_shape[0] > starts_data[0])
+
         # whether this axis for runtime calculations
         infer_flags_data = draw(
             st.lists(

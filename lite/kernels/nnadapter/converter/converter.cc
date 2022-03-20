@@ -455,7 +455,7 @@ NNAdapterOperand* Converter::AddReshapeOperation(
     const std::vector<float>& output_quant_scales,
     uint32_t output_quant_channel_dim) {
   auto shape_operand = AddConstantOperand(shape);
-  // Copy scales from input in PrepareSqueeze
+  // Copy scales from input in PrepareReshape
   auto output_operand = AddOutputOperand(
       output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(

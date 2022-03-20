@@ -277,9 +277,10 @@ REGISTER_CONVERTER(transpose2,
 REGISTER_CONVERTER(shape,
                    ConvertShape,
                    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
-REGISTER_CONVERTER(slice,
-                   ConvertSlice,
-                   "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,nvidia_tensorrt");
+REGISTER_CONVERTER(
+    slice,
+    ConvertSlice,
+    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,nvidia_tensorrt");
 REGISTER_CONVERTER(strided_slice,
                    ConvertStridedSlice,
                    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt");

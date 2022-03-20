@@ -183,6 +183,8 @@ class Converter {
       const std::string& output_name = "",
       const std::vector<float>& output_quant_scales = {},
       uint32_t output_quant_channel_dim = 0);
+  // Add slice operation with input operand, axes, starts, ends, steps,
+  // output_name, quant_scales
   NNAdapterOperand* AddSliceOperation(
       NNAdapterOperand* input_operand,
       const std::vector<int32_t>& axes,
@@ -192,6 +194,7 @@ class Converter {
       const std::string& output_name = "",
       const std::vector<float>& output_quant_scales = {},
       uint32_t output_quant_channel_dim = 0);
+  // Add reshape operation with input operand, shape, output_name, quant_scales
   NNAdapterOperand* AddReshapeOperation(
       NNAdapterOperand* input_operand,
       const std::vector<int32_t>& shape,
