@@ -66,6 +66,8 @@ class TestSwishOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -79,6 +81,8 @@ class TestSwishOp(AutoScanTest):
         W = draw(st.integers(min_value=1, max_value=128))
         in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
         beta_data = draw(st.floats(min_value=0.0, max_value=1.0))
+        if self.get_target() == "NNAdapter":
+            beta_data = 1.0
         swish_op = OpConfig(
             type="swish",
             inputs={"X": ["input_data"]},
