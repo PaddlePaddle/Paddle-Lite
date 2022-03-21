@@ -15,6 +15,7 @@
 #pragma once
 
 #include "driver/device.h"
+#include "utility/micros.h"
 
 #define GENERIC_DEVICE_NAME generic_device
 
