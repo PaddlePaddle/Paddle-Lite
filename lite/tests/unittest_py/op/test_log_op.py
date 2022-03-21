@@ -60,7 +60,6 @@ class TestLogOp(AutoScanTest):
         self.enable_devices_on_nnadapter(
             device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
-
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
