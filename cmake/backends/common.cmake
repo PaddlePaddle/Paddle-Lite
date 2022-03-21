@@ -57,7 +57,9 @@ if(LITE_WITH_ARM)
 else()
   include(coveralls)
   include(external/gflags)      # download, build, install gflags
-  include(external/glog)        # download, build, install glog
+  if(NOT LITE_WITH_XPU)
+    include(external/glog)        # download, build, install glog
+  endif()
   include(external/gtest)       # download, build, install gtest
   include(external/protobuf)    # download, build, install protobuf
   include(external/openblas)    # download, build, install openblas
