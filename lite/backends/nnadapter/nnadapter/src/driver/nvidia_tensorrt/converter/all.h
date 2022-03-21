@@ -45,5 +45,4 @@ REGISTER_CONVERTER(TANH, ConvertActivations)
 REGISTER_CONVERTER(TRANSPOSE, ConvertTranspose)
 REGISTER_CONVERTER(UNSQUEEZE, ConvertUnsqueeze)
 
-
 #endif  // NOLINT
