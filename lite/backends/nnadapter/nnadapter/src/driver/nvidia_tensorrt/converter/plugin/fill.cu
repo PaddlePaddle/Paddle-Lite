@@ -30,6 +30,7 @@ FillPluginDynamic::FillPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &shape_size_for_serial_);
   Deserialize(&serial_data, &serial_length, &value_);
   Deserialize(&serial_data, &serial_length, &bool_value_tensor_);
+  shape_.resize(shape_size_for_serial_);
   for (int i = 0; i < shape_size_for_serial_; i++)
     Deserialize(&serial_data, &serial_length, &shape_[i]);
 }
