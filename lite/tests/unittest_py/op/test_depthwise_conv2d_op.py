@@ -181,8 +181,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         def _teller1(program_config, predictor_config):
             nnadapter_device_name = self.get_nnadapter_device_name()
             strides = program_config.ops[0].attrs["strides"]
-            if nnadapter_device_name == "nvidia_tensorrt" and strides[
-                    0] != strides[1]:
+            if nnadapter_device_name == "nvidia_tensorrt":
                 return True
 
         self.add_ignore_check_case(
