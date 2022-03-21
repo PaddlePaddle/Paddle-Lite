@@ -14,7 +14,6 @@ about: 您可以提问安装、编译出现报错等问题。 You could use this
     2）Host 环境：请描述 Host 系统类型、OS 版本，如 Mac OS 10.14、Ubuntu 18.04
     3）运行设备环境：请描述运行设备信息，如小米 9、iPhone13
     4）预测后端信息：请描述使用的预测后端信息，如 CPU/GPU/NPU/others 加速器
-
 - 编译/安装方式信息：
     1）pip 安装/docker 安装
     2）本地编译：请提供 cmake 命令，编译命令
