@@ -13,7 +13,7 @@ about: 您可以提问预测中报错、应用等问题。 You could use this te
     2）Host 环境：请描述 Host 系统类型、OS 版本，如 Mac OS 10.14、Ubuntu 18.04
     3）运行设备环境：请描述运行设备信息，如小米 9、iPhone13
     4）预测后端信息：请描述使用的预测后端信息，如 CPU/GPU/NPU/others 加速器  
--预测信息
+- 预测信息
     1）预测 API：C++/JAVA/Python API
     2）预测选项信息：armv7/armv8、单线程/多线程 等
     3）预测库来源：官网下载/源码编译，如果是源码编译，辛苦提供源码编译命令，如 clang/gcc、openmp 等
