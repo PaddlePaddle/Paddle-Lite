@@ -195,9 +195,6 @@ TEST(Subgraph, detect_custom_model) {
 #ifdef LITE_WITH_X86
       Place{TARGET(kX86), PRECISION(kFloat)},
 #endif
-#ifdef LITE_WITH_NPU
-      Place{TARGET(kNPU), PRECISION(kFloat)},
-#endif
   });
   Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());

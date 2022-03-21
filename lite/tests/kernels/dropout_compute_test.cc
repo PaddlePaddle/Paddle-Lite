@@ -106,9 +106,6 @@ TEST(Dropout, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -118,9 +115,6 @@ TEST(Dropout, precision) {
     for (auto dropout_prob : {0., 0.2, 1.}) {
       for (auto dropout_implementation :
            {"downgrade_in_infer", "upscale_in_train"}) {
-#if defined(LITE_WITH_NPU)
-        if (dims.size() < 2) continue;
-#endif
 #if defined(LITE_WITH_NNADAPTER)
 #if (defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
      defined(NNADAPTER_WITH_NVIDIA_TENSORRT))

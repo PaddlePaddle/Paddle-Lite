@@ -707,37 +707,6 @@ function huawei_kirin_npu_prepare_device {
     $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
 }
 
-function huawei_kirin_npu_build_target {
-    local arch=$1
-    local toolchain=$2
-    local sdk_root_dir=$3
-
-    # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DANDROID_STL_TYPE="c++_shared" \
-        -DLITE_WITH_NPU=ON \
-        -DNPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function huawei_kirin_npu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp/ci" adb_device_pick adb_device_check adb_device_run $2 "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device
-}
-
 # Rockchip NPU
 function rockchip_npu_prepare_device {
     local remote_device_name=$1
@@ -1510,18 +1479,6 @@ function main {
                 ;;
             build_test_xpu)
                 build_test_xpu OFF
-                shift
-                ;;
-            huawei_kirin_npu_build_and_test)
-                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
-            rockchip_npu_build_and_test_adb)
-                rockchip_npu_build_and_test_adb $ADB_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
-            rockchip_npu_build_and_test_ssh)
-                rockchip_npu_build_and_test_ssh $SSH_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             armlinux_arm64_build_and_test)

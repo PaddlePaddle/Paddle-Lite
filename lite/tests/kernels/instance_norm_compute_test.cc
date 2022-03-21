@@ -188,10 +188,6 @@ TEST(InstanceNorm, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-  ignored_outs = {"saved_mean", "saved_variance"};
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)

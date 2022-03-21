@@ -398,9 +398,6 @@ TEST(Pool, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif

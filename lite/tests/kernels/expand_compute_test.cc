@@ -166,10 +166,7 @@ void test_expand_4dim(Place place, float abs_error) {
 TEST(Expand, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = Place(TARGET(kHost), PRECISION(kAny));
 #else
   return;
@@ -177,13 +174,6 @@ TEST(Expand, precision) {
 
   test_expand_3dim<float>(place, abs_error);
   test_expand_4dim<float>(place, abs_error);
-#ifndef LITE_WITH_NPU
-  test_expand_3dim<int>(place, abs_error);
-  test_expand_4dim<int>(place, abs_error);
-  test_expand_4dim<float, true>(place, abs_error);
-  test_expand_4dim<float, false, true>(place, abs_error);
-  test_expand_4dim<int, true, true>(place, abs_error);
-#endif
 }
 
 }  // namespace lite

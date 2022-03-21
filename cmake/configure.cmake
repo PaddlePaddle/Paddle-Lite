@@ -170,10 +170,6 @@ if (WITH_ARM_DOTPROD)
     add_definitions("-DWITH_ARM_DOTPROD")
 endif()
 
-if (LITE_WITH_NPU)
-    add_definitions("-DLITE_WITH_NPU")
-endif()
-
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
 endif()

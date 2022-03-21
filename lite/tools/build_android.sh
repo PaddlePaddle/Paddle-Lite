@@ -33,9 +33,6 @@ BUILD_ARM82_FP16=OFF
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 WITH_THREAD_POOL=OFF
-# options of compiling NPU lib.
-WITH_HUAWEI_KIRIN_NPU=OFF
-HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 # options of compiling APU lib.
 WITH_MEDIATEK_APU=OFF
 MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
@@ -240,8 +237,6 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
-      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -328,8 +323,6 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
-      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -409,20 +402,6 @@ function print_usage {
     echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                    |"
     echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                  |"
     echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html           |"
-    echo -e "|                                                                                                                                      |"
-    echo -e "|  arguments of npu library compiling:(armv8, gcc, c++_static)                                                                         |"
-    echo -e "|     ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=YourNpuSdkPath                              |"
-    echo -e "|     --with_huawei_kirin_npu: (OFF|ON); controls whether to compile lib for huawei_kirin_npu, default is OFF                          |"
-    echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
-    echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
-    echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
-    echo -e "|                                                                                                                                      |"
-    echo -e "|  arguments of apu library compiling:(armv8, gcc, c++_static)                                                                         |"
-    echo -e "|     ./lite/tools/build_android.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourApuSdkPath                                      |"
-    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                  |"
-    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek APU SDK file) required when compiling apu library                                     |"
-    echo -e "|             you can download mediatek APU SDK from:  https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz           |"
-    echo -e "|  detailed information about Paddle-Lite APU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html             |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
     echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
@@ -516,15 +495,6 @@ function main {
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on huawei npu.
-            --with_huawei_kirin_npu=*)
-                WITH_HUAWEI_KIRIN_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_kirin_npu_sdk_root=*)
-                HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on mediatek apu.

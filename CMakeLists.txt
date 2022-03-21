@@ -56,7 +56,6 @@ lite_option(LITE_WITH_CUDA                     "Enable CUDA in lite mode"       
 lite_option(LITE_WITH_X86                      "Enable X86 in lite mode"                                              ON)
 lite_option(LITE_WITH_ARM                      "Enable ARM in lite mode"                                              OFF)
 lite_option(LITE_WITH_SW                       "Enable SW in lite mode"                                               OFF)
-lite_option(LITE_WITH_NPU                      "Enable NPU in lite mode"                                              OFF)
 lite_option(LITE_WITH_MLU                      "Enable MLU in lite mode"                                              OFF)
 lite_option(LITE_WITH_NNADAPTER                "Enable NNAdapter in lite mode"                                        OFF)
 lite_option(LITE_WITH_XPU                      "Enable XPU in lite mode"                                              OFF)
