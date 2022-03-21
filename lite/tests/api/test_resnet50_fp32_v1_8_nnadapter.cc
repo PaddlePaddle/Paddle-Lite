@@ -62,6 +62,9 @@ TEST(ResNet50, test_resnet50_fp32_v1_8_nndapter) {
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   nnadapter_device_names.emplace_back("android_nnapi");
   out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  nnadapter_device_names.emplace_back("google_xnnpack");
+  out_accuracy_threshold = 0.99f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

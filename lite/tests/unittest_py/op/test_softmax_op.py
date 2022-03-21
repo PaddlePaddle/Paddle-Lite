@@ -90,7 +90,7 @@ class TestSoftmaxOp(AutoScanTest):
                     min_value=1, max_value=64), min_size=0, max_size=3))
         in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
-        assume(input_axis < len(in_shape))
+        assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
         def generate_input(*args, **kwargs):
             return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)

@@ -69,8 +69,9 @@ class TestScaleOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -80,6 +81,9 @@ class TestScaleOp(AutoScanTest):
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
             ) == PrecisionType.FP16 and x_dtype != np.float32:
+                return False
+        if target_type == TargetType.NNAdapter:
+            if program_config.inputs["input_data"].dtype != np.float32:
                 return False
         return True
 
@@ -193,6 +197,9 @@ class TestScaleOp(AutoScanTest):
         if target_str in ["OpenCL", "Metal"]:
             # Make sure to generate enough valid cases for specific targets
             max_examples = 2000
+        elif target_str in ["NNAdapter"]:
+            # Make sure to generate enough valid cases for specific targets
+            max_examples = 300
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)
 

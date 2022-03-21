@@ -262,6 +262,20 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, array_def)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(
     slice, kARM, kFloat, kNCHW, slice_float, float_i64_starts_ends)
     .BindInput("Input",
@@ -277,10 +291,40 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(
+    slice, kARM, kFloat, kNCHW, slice_float, array_float_i64_starts_ends)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
 using slice_boolean =
     paddle::lite::kernels::arm::SliceCompute<bool, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    slice, kARM, kFloat, kNCHW, slice_boolean, array_bool_slice)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kBool))})
     .BindInput("StartsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("EndsTensor",
@@ -308,12 +352,40 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, array_int32_slice)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
 using slice_int64 =
     paddle::lite::kernels::arm::SliceCompute<int64_t, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, array_def_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensor",

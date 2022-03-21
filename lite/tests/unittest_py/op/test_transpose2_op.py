@@ -40,7 +40,8 @@ class TestTranspose2Op(AutoScanTest):
         ]
         self.enable_testing_on_place(places=arm_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "nvidia_tensorrt"])
 
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -112,11 +113,15 @@ class TestTranspose2Op(AutoScanTest):
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
+        outputs = {"Out": ["output_data"], "XShape": ["XShape_data"]}
+        outputs_data = ["output_data", "XShape_data"]
+        if self.get_target() == "NNAdapter":
+            outputs = {"Out": ["output_data"]}
+            outputs_data = ["output_data"]
         transpose2_op = OpConfig(
             type="transpose2",
             inputs={"X": ["X_data"]},
-            outputs={"Out": ["output_data"],
-                     "XShape": ["XShape_data"]},
+            outputs=outputs,
             attrs={
                 "axis": axis_int32_data,
                 "data_format": "AnyLayout",
@@ -129,7 +134,7 @@ class TestTranspose2Op(AutoScanTest):
             inputs={
                 "X_data": TensorConfig(data_gen=partial(generate_X_data)),
             },
-            outputs=["output_data", "XShape_data"])
+            outputs=outputs_data)
         return program_config
 
     def sample_predictor_configs(self):

@@ -60,7 +60,8 @@ class TestNearestInterpOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -102,6 +103,29 @@ class TestNearestInterpOp(AutoScanTest):
 
         assume(scale * X_shape[2] > 1.0)
         assume(scale * X_shape[3] > 1.0)
+
+        nnadapter_device_name = self.get_nnadapter_device_name()
+        if nnadapter_device_name == "nvidia_tensorrt":
+            nearest_interp = OpConfig(
+                type="nearest_interp",
+                inputs={"X": ["input_data_x"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "data_layout": data_layout,
+                    "scale": scale,
+                    "out_w": out_w,
+                    "out_h": out_h,
+                    "interp_method": interp_method,
+                    "align_corners": False
+                })
+            program_config = ProgramConfig(
+                ops=[nearest_interp],
+                weights={},
+                inputs={
+                    "input_data_x": TensorConfig(data_gen=generate_input1)
+                },
+                outputs={"output_data"})
+            return program_config
 
         if test_case == 1:
             nearest_interp = OpConfig(
@@ -181,9 +205,18 @@ class TestNearestInterpOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
+        def _teller2(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
