@@ -13,9 +13,11 @@ __kernel void xor
               READ_IMG_TYPE(CL_DTYPE_CHAR, input_y, SAMPLER, (int2)(x, y));
           CL_DTYPE4 in;
           CL_DTYPE4 in_ = 0;
+          int4 in_0 = 0;
+          int4 in_1 = 1;
           int4 a = convert_int4(abs(isnotequal(in_x, in_)));
           int4 b = convert_int4(abs(isnotequal(in_y, in_)));
-          a = (a != b) ? 1 : 0;
+          a = (a != b) ? in_1 : in_0;
 #ifdef CL_DTYPE_half
           in = convert_half4(a);
 #else
@@ -33,11 +35,13 @@ __kernel void xor
   CL_DTYPE4 in_x = READ_IMG_TYPE(CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(x, y));
   CL_DTYPE4 in_y = READ_IMG_TYPE(CL_DTYPE_CHAR, input_y, SAMPLER, (int2)(x, y));
   CL_DTYPE4 in;
-  CL_DTYPE4 in_ = 0;
+  CL_DTYPE4 in_;
+  int4 in_0 = 0;
+  int4 in_1 = 1;
   int4 a = convert_int4(abs(isnotequal(in_x, in_)));
   int4 b = convert_int4(abs(isnotequal(in_y, in_)));
   a = a || b;
-  a = (a == 0) ? 0 : 1;
+  a = (a == in_0) ? in_0 : in_1;
 #ifdef CL_DTYPE_half
   in = convert_half4(a);
 #else
@@ -55,10 +59,12 @@ __kernel void and (__read_only image2d_t input_x,
   CL_DTYPE4 in_y = READ_IMG_TYPE(CL_DTYPE_CHAR, input_y, SAMPLER, (int2)(x, y));
   CL_DTYPE4 in;
   CL_DTYPE4 in_ = 0;
+  int4 in_0 = 0;
+  int4 in_1 = 1;
   int4 a = convert_int4(abs(isnotequal(in_x, in_)));
   int4 b = convert_int4(abs(isnotequal(in_y, in_)));
   a = a && b;
-  a = (a == 0) ? 0 : 1;
+  a = (a == in_0) ? in_0 : in_1;
 #ifdef CL_DTYPE_half
   in = convert_half4(a);
 #else
@@ -75,8 +81,10 @@ __kernel void not(__read_only image2d_t input_x,
   CL_DTYPE4 in_x = READ_IMG_TYPE(CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(x, y));
   CL_DTYPE4 in;
   CL_DTYPE4 in_ = 0;
+  int4 in_0 = 0;
+  int4 in_1 = 1;
   int4 a = convert_int4(abs(isnotequal(in_x, in_)));
-  a = (a == 0) ? 1 : 0;
+  a = (a == in_0) ? in_1 : in_0;
 #ifdef CL_DTYPE_half
   in = convert_half4(a);
 #else
