@@ -229,8 +229,9 @@ void LightPredictor::DequantizeWeight() {
         for (auto& input_name : input_names) {
           std::string input_scale_name = input_name + "_quant_scale";
           if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
-            auto input_tensor =
-                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+            Variable* scope_var = scope_->FindVar(input_name);
+            CHECK(scope_var != nullptr);
+            auto input_tensor = scope_var->GetMutable<lite::Tensor>();
             CHECK(input_tensor != nullptr);
             tmp_tensor.CopyDataFrom(*input_tensor);
             auto scale_list =
