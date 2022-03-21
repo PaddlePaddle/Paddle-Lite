@@ -16,8 +16,6 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
-#include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
-#include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"

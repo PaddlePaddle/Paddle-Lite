@@ -59,7 +59,11 @@ namespace arm {
 template <>
 void Pad2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   PAD2D_INIT
-  lite::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);
+  if (data_format_ == "NCHW")
+    lite::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);
+  else if (data_format_ == "NHWC")
+    lite::arm::math::pad2d_func_nhwc<float>(
+        inputs, out, mode_, pad_h_, pad_w_, pad_value_);
   return;
 }
 
@@ -68,8 +72,12 @@ template <>
 void Pad2dCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   PAD2D_INIT
   float16_t pad_val = static_cast<float16_t>(pad_value_);
-  lite::arm::math::fp16::pad2d_func_fp16(
-      inputs, out, mode_, pad_h_, pad_w_, pad_val);
+  if (data_format_ == "NCHW")
+    lite::arm::math::fp16::pad2d_func_fp16(
+        inputs, out, mode_, pad_h_, pad_w_, pad_val);
+  else if (data_format_ == "NHWC")
+    lite::arm::math::pad2d_func_nhwc<float16_t>(
+        inputs, out, mode_, pad_h_, pad_w_, pad_val);
   return;
 }
 #endif

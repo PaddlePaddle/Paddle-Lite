@@ -37,6 +37,7 @@ typedef enum {
   NNADAPTER_INVALID_PARAMETER = 3,
   NNADAPTER_DEVICE_NOT_FOUND = 4,
   NNADAPTER_DEVICE_INTERNAL_ERROR = 5,
+  NNADAPTER_FEATURE_NOT_SUPPORTED = 6
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
@@ -2310,6 +2311,16 @@ int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
                                             NNAdapterOperand** input_operands,
                                             uint32_t output_count,
                                             NNAdapterOperand** output_operands);
+
+/**
+ * Check whether the operations of the target model are supported by the target
+ * devices.
+ *
+ * Available since version 1.
+ */
+int NNAdapterModel_getSupportedOperations(const NNAdapterModel* model,
+                                          NNAdapterContext* context,
+                                          bool* supported_operations);
 
 /**
  * Compile the model to the device-specific binary program or load the cached

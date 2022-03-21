@@ -129,35 +129,21 @@ bool Program::LoadFromCache(const std::string& model_cache_token,
   return true;
 }
 
-bool Program::BuildAndCacheToFile(
-    int block_idx,
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
-    Scope* exec_scope,
-    const std::vector<Variable>& input_vars,
-    std::vector<Variable>* output_vars,
-    const std::string& model_cache_token,
-    const std::string& model_cache_dir) {
+bool Program::BuildAndCacheToFile(const cpp::BlockDesc* block_desc,
+                                  Scope* exec_scope,
+                                  const std::vector<Variable>& input_vars,
+                                  std::vector<Variable>* output_vars,
+                                  const std::string& model_cache_token,
+                                  const std::string& model_cache_dir) {
   // Converting the PaddlePaddle operators and variables to the NNAdapter
   // operations and operands for building NNAdapter model(hardware-indepedent)
   CHECK(!model_cache_token.empty());
   int result = NNAdapterModel_create_invoke(&model_);
-  std::vector<NNAdapterOperand *> input_operands, output_operands;
-  Converter converter(model_);
-  if (converter.Apply(block_idx,
-                      program_desc,
-                      exec_scope,
-                      input_vars,
-                      output_vars,
-                      &input_operands,
-                      &output_operands) != NO_ERROR) {
+  Converter converter(model_, context_);
+  if (converter.Apply(block_desc, exec_scope, input_vars, output_vars) !=
+      NO_ERROR) {
     return false;
   }
-  NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
-                                                 input_operands.size(),
-                                                 input_operands.data(),
-                                                 output_operands.size(),
-                                                 output_operands.data());
-  result = NNAdapterModel_finish_invoke(model_);
   // Compiling the model to the device-specific binary program
   result = NNAdapterCompilation_create_invoke(model_,
                                               model_cache_token.c_str(),
@@ -241,17 +227,13 @@ int Program::Execute() {
 }
 
 Engine::Engine(KernelContext* ctx,
-               int block_idx,
-               const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+               const cpp::BlockDesc* block_desc,
                Scope* exec_scope,
                const std::vector<std::string>& input_names,
                const std::vector<std::string>& output_names,
                const std::vector<float>& input_scales,
                const std::vector<float>& output_scales)
-    : ctx_(ctx),
-      block_idx_(block_idx),
-      program_desc_(program_desc),
-      exec_scope_(exec_scope) {
+    : ctx_(ctx), block_desc_(block_desc), exec_scope_(exec_scope) {
   int result;
   // Obtain the same order every time by sorting the input and output names,
   // because the topological order may be different each time of the partition
@@ -287,7 +269,7 @@ Engine::Engine(KernelContext* ctx,
   // load the device-specific program from the model or the cache file/buffer.
   const auto& device_names =
       ctx->As<NNAdapterContext>().NNAdapterDeviceNames(exec_scope_);
-  CHECK_GT(device_names.size(), 0) << "No device is specified.";
+  CHECK_GT(device_names.size(), 0) << "No device specified.";
   for (const auto& device_name : device_names) {
     NNAdapterDevice* device = nullptr;
     result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
@@ -304,18 +286,16 @@ Engine::Engine(KernelContext* ctx,
       VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
               << " type=" << type << " version=" << version;
       devices_.push_back(device);
-      // Only support the first found device.
-      break;
     }
   }
-  CHECK_GT(devices_.size(), 0) << "No device is found.";
+  CHECK_GT(devices_.size(), 0) << "No device found.";
   // Get the context properties from the scope
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
   // Create a context with multiple devices
   NNAdapterContext_create_invoke(
-      &devices_[0], devices_.size(), context_properties.c_str(), &context_);
+      devices_.data(), devices_.size(), context_properties.c_str(), &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
@@ -331,14 +311,7 @@ Engine::~Engine() {
 }
 
 bool Engine::Run() {
-  // Update the input dimensions to generate a key to find a compiled device
-  // program
-  auto input_count = input_vars_.size();
-  std::vector<std::vector<int64_t>> input_dims(input_count);
-  for (size_t i = 0; i < input_count; i++) {
-    input_dims[i] = input_vars_[i].value->dims().Vectorize();
-  }
-  // try to execute all programs.
+  // Try to execute all cached programs.
   for (auto program : programs_) {
     int ret = program->Execute();
     if (ret == NNADAPTER_INVALID_DIMENSIONS) {
@@ -374,8 +347,7 @@ bool Engine::Run() {
           model_cache_token, &model_cache_buffer, model_cache_dir_)) {
     // Compile the model online to generate the device program and cache it to
     // the file
-    CHECK(program->BuildAndCacheToFile(block_idx_,
-                                       program_desc_,
+    CHECK(program->BuildAndCacheToFile(block_desc_,
                                        exec_scope_,
                                        input_vars_,
                                        &output_vars_,

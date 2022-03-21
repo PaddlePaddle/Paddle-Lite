@@ -42,7 +42,6 @@ class Context {
 
  private:
   void* device_{nullptr};
-  void* context_{nullptr};
   bool relax_fp32_to_fp16_{true};
   bool only_use_acc_device_{false};
   bool disable_cpu_device_{false};
@@ -54,6 +53,7 @@ class Program {
   explicit Program(Context* context) : context_(context) {}
   ~Program();
 
+  int Validate(const core::Model* model, bool* supported_operations);
   int Build(core::Model* model, core::Cache* cache);
   int Execute(uint32_t input_count,
               core::Argument* input_arguments,
