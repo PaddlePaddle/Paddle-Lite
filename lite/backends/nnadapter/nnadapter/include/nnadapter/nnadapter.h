@@ -1954,6 +1954,22 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+
+  /**
+   * Generates YOLO detection boxes from output of YOLOv3 network.
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32 tensor.
+   * * 1: input1, a NNADAPTER_INT32 tensor.
+   *
+   * Outputs:
+   * * 0: output, a Boxes NNADAPTER_FLOAT32 tensor .
+   * * 1: output, a Scores NNADAPTER_FLOAT32 tensor .
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_YOLO_BOX,
 } NNAdapterOperationCode;
 
 /**
