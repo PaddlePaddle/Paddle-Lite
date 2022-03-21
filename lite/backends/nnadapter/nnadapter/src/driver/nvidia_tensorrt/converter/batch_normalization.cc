@@ -47,81 +47,74 @@ int ConvertBatchNormalization(Converter* converter,
   if (!var_tensor) {
     var_tensor = converter->ConvertOperand(variance_operand);
   }
-  if (IsConstantOperand(scale_operand) && IsConstantOperand(bias_operand) &&
-      IsConstantOperand(mean_operand) && IsConstantOperand(variance_operand)) {
-    float* scale_ptr = reinterpret_cast<float*>(scale_operand->buffer);
-    float* bias_ptr = reinterpret_cast<float*>(bias_operand->buffer);
-    float* mean_ptr = reinterpret_cast<float*>(mean_operand->buffer);
-    float* var_ptr = reinterpret_cast<float*>(variance_operand->buffer);
-    NNADAPTER_CHECK(scale_ptr);
-    NNADAPTER_CHECK(bias_ptr);
-    NNADAPTER_CHECK(mean_ptr);
-    NNADAPTER_CHECK(var_ptr);
-    // add suffle op, because scale op need >= 3 dims
-    auto x_dim = input_tensor->getDimensions();
-    nvinfer1::IShuffleLayer* expand_layer = nullptr;
-    nvinfer1::IShuffleLayer* squeeze_layer = nullptr;
-    if (x_dim.nbDims < 4) {
-      nvinfer1::Dims expand_shape;
-      expand_shape.nbDims = 4;
-      for (int i = 0; i < 4; i++) {
-        if (i < x_dim.nbDims) {
-          expand_shape.d[i] = x_dim.d[i] < 0 ? 0 : x_dim.d[i];
-        } else {
-          expand_shape.d[i] = 1;
-        }
+  float* scale_ptr = reinterpret_cast<float*>(scale_operand->buffer);
+  float* bias_ptr = reinterpret_cast<float*>(bias_operand->buffer);
+  float* mean_ptr = reinterpret_cast<float*>(mean_operand->buffer);
+  float* var_ptr = reinterpret_cast<float*>(variance_operand->buffer);
+  NNADAPTER_CHECK(scale_ptr);
+  NNADAPTER_CHECK(bias_ptr);
+  NNADAPTER_CHECK(mean_ptr);
+  NNADAPTER_CHECK(var_ptr);
+  // add suffle op
+  auto x_dim = input_operand->type.dimensions;
+  nvinfer1::IShuffleLayer* expand_layer = nullptr;
+  nvinfer1::IShuffleLayer* squeeze_layer = nullptr;
+  if (x_dim.count < 4) {
+    nvinfer1::Dims expand_shape;
+    expand_shape.nbDims = 4;
+    for (int i = 0; i < 4; i++) {
+      if (i < x_dim.count) {
+        expand_shape.d[i] = x_dim.data[i] < 0 ? 0 : x_dim.data[i];
+      } else {
+        expand_shape.d[i] = 1;
       }
-      expand_layer = converter->network()->addShuffle(*input_tensor);
-      expand_layer->setReshapeDimensions(expand_shape);
-      input_tensor = expand_layer->getOutput(0);
     }
-    // prepare data
-    NNADAPTER_CHECK_EQ(scale_tensor->getDimensions().d[0], x_dim.d[1]);
-    NNADAPTER_CHECK_EQ(bias_tensor->getDimensions().d[0], x_dim.d[1]);
-    NNADAPTER_CHECK_EQ(mean_tensor->getDimensions().d[0], x_dim.d[1]);
-    NNADAPTER_CHECK_EQ(var_tensor->getDimensions().d[0], x_dim.d[1]);
-    auto weight_ptr = converter->GetWeightBuffer();
-    std::vector<float> fuse_scale(x_dim.d[1], 0);
-    std::vector<float> fuse_bias(x_dim.d[1], 0);
-    auto fuse_scale_ptr = fuse_scale.data();
-    auto fuse_bias_ptr = fuse_bias.data();
-    for (int i = 0; i < x_dim.d[1]; i++) {
-      fuse_scale_ptr[i] = scale_ptr[i] / sqrtf(var_ptr[i] + epsilon);
-      fuse_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * fuse_scale_ptr[i];
-      NNADAPTER_VLOG(3) << "fuse_bias_ptr: " << fuse_bias_ptr[i];
-    }
-    weight_ptr->push_back(fuse_scale);
-    weight_ptr->push_back(fuse_bias);
-    // add scale op
-    nvinfer1::Weights scale_w{nvinfer1::DataType::kFLOAT,
-                              static_cast<void*>((*weight_ptr)[0].data()),
-                              x_dim.d[1]};
-    nvinfer1::Weights shift_w{nvinfer1::DataType::kFLOAT,
-                              static_cast<void*>((*weight_ptr)[1].data()),
-                              x_dim.d[1]};
-    nvinfer1::Weights power_w{nvinfer1::DataType::kFLOAT, nullptr, 0};
-    auto layer = converter->network()->addScaleNd(*input_tensor,
-                                                  nvinfer1::ScaleMode::kCHANNEL,
-                                                  shift_w,
-                                                  scale_w,
-                                                  power_w,
-                                                  1);
-    auto output_tensor = layer->getOutput(0);
-    // add suffle op, recover shape
-    if (x_dim.nbDims < 4) {
-      nvinfer1::Dims squeeze_shape;
-      squeeze_shape.nbDims = x_dim.nbDims;
-      for (int i = 0; i < squeeze_shape.nbDims; i++) {
-        squeeze_shape.d[i] = x_dim.d[i] < 0 ? 0 : x_dim.d[i];
-      }
-      squeeze_layer = converter->network()->addShuffle(*(layer->getOutput(0)));
-      squeeze_layer->setReshapeDimensions(squeeze_shape);
-      output_tensor = squeeze_layer->getOutput(0);
-    }
-    converter->UpdateTensorMap(output_operand, output_tensor);
-  } else {
-    NNADAPTER_LOG(FATAL) << "TensorRT doesn't support, need plugin.";
+    expand_layer = converter->network()->addShuffle(*input_tensor);
+    expand_layer->setReshapeDimensions(expand_shape);
+    input_tensor = expand_layer->getOutput(0);
   }
+  // prepare data
+  NNADAPTER_CHECK_EQ(scale_operand->type.dimensions.data[0], x_dim.data[1]);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0], x_dim.data[1]);
+  NNADAPTER_CHECK_EQ(mean_operand->type.dimensions.data[0], x_dim.data[1]);
+  NNADAPTER_CHECK_EQ(variance_operand->type.dimensions.data[0], x_dim.data[1]);
+  std::vector<float> fuse_scale(x_dim.data[1], 0);
+  std::vector<float> fuse_bias(x_dim.data[1], 0);
+  auto fuse_scale_ptr = fuse_scale.data();
+  auto fuse_bias_ptr = fuse_bias.data();
+  for (int i = 0; i < x_dim.data[1]; i++) {
+    fuse_scale_ptr[i] = scale_ptr[i] / sqrtf(var_ptr[i] + epsilon);
+    fuse_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * fuse_scale_ptr[i];
+  }
+  const float* fuse_scale_ptr_const = fuse_scale_ptr;
+  const float* fuse_bias_ptr_const = fuse_bias_ptr;
+  const float* power_ptr = nullptr;
+  // add scale op
+  nvinfer1::Weights scale_w =
+      converter->AddWeights(fuse_scale_ptr_const, x_dim.data[1]);
+  nvinfer1::Weights shift_w =
+      converter->AddWeights(fuse_bias_ptr_const, x_dim.data[1]);
+  nvinfer1::Weights power_w = converter->AddWeights(power_ptr, 0);
+  auto layer = converter->network()->addScaleNd(*input_tensor,
+                                                nvinfer1::ScaleMode::kCHANNEL,
+                                                shift_w,
+                                                scale_w,
+                                                power_w,
+                                                1);
+  auto output_tensor = layer->getOutput(0);
+  // add suffle op, recover shape
+  if (x_dim.count < 4) {
+    nvinfer1::Dims squeeze_shape;
+    squeeze_shape.nbDims = x_dim.count;
+    for (int i = 0; i < squeeze_shape.nbDims; i++) {
+      squeeze_shape.d[i] = x_dim.data[i] < 0 ? 0 : x_dim.data[i];
+    }
+    squeeze_layer = converter->network()->addShuffle(*(layer->getOutput(0)));
+    squeeze_layer->setReshapeDimensions(squeeze_shape);
+    output_tensor = squeeze_layer->getOutput(0);
+  }
+  converter->UpdateTensorMap(output_operand, output_tensor);
+
   return NNADAPTER_NO_ERROR;
 }
 
