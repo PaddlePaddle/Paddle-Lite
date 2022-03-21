@@ -16,7 +16,11 @@ __kernel void xor
           int4 a = convert_int4(abs(isnotequal(in_x, in_)));
           int4 b = convert_int4(abs(isnotequal(in_y, in_)));
           a = (a != b) ? 1 : 0;
+#ifdef CL_DTYPE_half
           in = convert_half4(a);
+#else
+          in = convert_float4(a);
+#endif
           WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
         }
 
@@ -34,7 +38,11 @@ __kernel void xor
   int4 b = convert_int4(abs(isnotequal(in_y, in_)));
   a = a || b;
   a = (a == 0) ? 0 : 1;
+#ifdef CL_DTYPE_half
   in = convert_half4(a);
+#else
+  in = convert_float4(a);
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
@@ -51,7 +59,11 @@ __kernel void and (__read_only image2d_t input_x,
   int4 b = convert_int4(abs(isnotequal(in_y, in_)));
   a = a && b;
   a = (a == 0) ? 0 : 1;
+#ifdef CL_DTYPE_half
   in = convert_half4(a);
+#else
+  in = convert_float4(a);
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
@@ -65,6 +77,10 @@ __kernel void not(__read_only image2d_t input_x,
   CL_DTYPE4 in_ = 0;
   int4 a = convert_int4(abs(isnotequal(in_x, in_)));
   a = (a == 0) ? 1 : 0;
+#ifdef CL_DTYPE_half
   in = convert_half4(a);
+#else
+  in = convert_float4(a);
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
