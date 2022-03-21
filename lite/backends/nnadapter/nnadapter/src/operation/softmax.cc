@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateSoftmax(const core::Operation* operation) { return true; }
+
 int PrepareSoftmax(core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -30,6 +32,8 @@ int PrepareSoftmax(core::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
+
+int ExecuteSoftmax(core::Operation* operation) { return NNADAPTER_NO_ERROR; }
 
 }  // namespace operation
 }  // namespace nnadapter

@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateReduce(const core::Operation* operation) { return false; }
+
 int PrepareReduce(core::Operation* operation) {
   REDUCE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -80,6 +82,10 @@ int PrepareReduce(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteReduce(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

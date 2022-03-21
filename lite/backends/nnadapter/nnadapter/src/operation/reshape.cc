@@ -24,6 +24,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateReshape(const core::Operation* operation) { return false; }
+
 int PrepareReshape(core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -94,6 +96,10 @@ int PrepareReshape(core::Operation* operation) {
   output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteReshape(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

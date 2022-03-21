@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateRange(const core::Operation* operation) { return false; }
+
 int PrepareRange(core::Operation* operation) {
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -47,6 +49,10 @@ int PrepareRange(core::Operation* operation) {
 
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteRange(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

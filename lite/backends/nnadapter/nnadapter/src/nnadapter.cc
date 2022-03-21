@@ -24,8 +24,12 @@
 #include "utility/logging.h"
 #include "utility/micros.h"
 
-#define REGISTER_OPERATION(__op_type__, __func_name__, ...) \
-  extern int __func_name__(nnadapter::core::Operation* operation);
+#define REGISTER_OPERATION(__op_type__,            \
+                           __validate_func_name__, \
+                           __prepare_func_name__,  \
+                           __execute_func_name__,  \
+                           ...)                    \
+  extern int __prepare_func_name__(nnadapter::core::Operation* operation);
 namespace nnadapter {
 namespace operation {
 #include "operation/all.h"  // NOLINT
@@ -252,9 +256,13 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperation(
         reinterpret_cast<nnadapter::core::Operand*>(output_operands[i]);
   }
   switch (type) {
-#define REGISTER_OPERATION(__op_type__, __func_name__) \
-  case NNADAPTER_##__op_type__:                        \
-    nnadapter::operation::__func_name__(o);            \
+#define REGISTER_OPERATION(__op_type__,             \
+                           __validate_func_name__,  \
+                           __prepare_func_name__,   \
+                           __execute_func_name__,   \
+                           ...)                     \
+  case NNADAPTER_##__op_type__:                     \
+    nnadapter::operation::__prepare_func_name__(o); \
     break;
 #include "operation/all.h"  // NOLINT
 #undef __NNADAPTER_CORE_OPERATION_ALL_H__

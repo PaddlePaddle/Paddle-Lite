@@ -49,6 +49,7 @@ TEST(ssd_mobilentert_v1,
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+#if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   nnadapter_device_names.emplace_back("rockchip_npu");
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
@@ -60,7 +61,9 @@ TEST(ssd_mobilentert_v1,
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
 #else
-  LOG(INFO) << "Unsupported NNAdapter device!";
+  nnadapter_device_names.emplace_back("generic_device");
+#endif
+#else
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

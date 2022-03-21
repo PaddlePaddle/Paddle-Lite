@@ -71,6 +71,8 @@ CalcConv2DOutputSize(int32_t input_size,
          1;
 }
 
+bool ValidateConv2D(const core::Operation* operation) { return false; }
+
 int PrepareConv2D(core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -103,6 +105,10 @@ int PrepareConv2D(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteConv2D(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

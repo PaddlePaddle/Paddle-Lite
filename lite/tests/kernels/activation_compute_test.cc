@@ -468,7 +468,8 @@ TEST(Activation_relu, precision) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   abs_error = 5e-2;
 #else
-  return;
+  abs_error = 2e-5;
+#endif
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

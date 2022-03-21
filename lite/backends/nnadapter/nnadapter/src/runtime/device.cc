@@ -15,6 +15,7 @@
 #include "runtime/device.h"
 #include <dlfcn.h>
 #include <stdlib.h>
+#include "runtime/cpu.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
@@ -128,29 +129,34 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
       return device;
     }
   }
-  // Load if the driver of target device is not registered.
-  std::string symbol =
-      std::string(NNADAPTER_AS_STR2(NNADAPTER_DEVICE_SYMBOL_PREFIX)) + name;
-  std::string path = std::string("lib") + name + std::string(".so");
-  void* library = dlopen(path.c_str(), RTLD_NOW);
-  if (!library) {
-    NNADAPTER_LOG(FATAL)
-        << "Failed to load the nnadapter device HAL library for '" << name
-        << "' from " << path << ", " << dlerror();
-    return nullptr;
-  }
-  auto driver =
-      reinterpret_cast<driver::Device*>(dlsym(library, symbol.c_str()));
-  if (!driver) {
-    dlclose(library);
-    NNADAPTER_LOG(ERROR) << "Failed to find the symbol '" << symbol << "' from "
-                         << path << ", " << dlerror();
-    return nullptr;
+  void* library = nullptr;
+  driver::Device* driver = nullptr;
+  if (strcmp(name, NNADAPTER_AS_STR2(GENERIC_DEVICE_NAME))) {
+    driver = &NNADAPTER_AS_SYM2(GENERIC_DEVICE_NAME);
+  } else {
+    // Load if the driver of target device is not registered.
+    std::string symbol =
+        std::string(NNADAPTER_AS_STR2(NNADAPTER_DEVICE_SYMBOL_PREFIX)) + name;
+    std::string path = std::string("lib") + name + std::string(".so");
+    library = dlopen(path.c_str(), RTLD_NOW);
+    if (!library) {
+      NNADAPTER_LOG(FATAL)
+          << "Failed to load the nnadapter device HAL library for '" << name
+          << "' from " << path << ", " << dlerror();
+      return nullptr;
+    }
+    driver = reinterpret_cast<driver::Device*>(dlsym(library, symbol.c_str()));
+    if (!driver) {
+      dlclose(library);
+      NNADAPTER_LOG(ERROR) << "Failed to find the symbol '" << symbol
+                           << "' from " << path << ", " << dlerror();
+      return nullptr;
+    }
   }
   void* handle = nullptr;
   int result = driver->open_device(&handle);
   if (result != NNADAPTER_NO_ERROR) {
-    NNADAPTER_LOG(ERROR) << "Failed to open device '" << symbol
+    NNADAPTER_LOG(ERROR) << "Failed to open device '" << name
                          << "', result=" << result;
     return nullptr;
   }

@@ -74,6 +74,8 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
   }
 }
 
+bool ValidateElementwise(const core::Operation* operation) { return false; }
+
 int PrepareElementwise(core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -102,6 +104,10 @@ int PrepareElementwise(core::Operation* operation) {
   output_operand->type.precision = input0_operand->type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteElementwise(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

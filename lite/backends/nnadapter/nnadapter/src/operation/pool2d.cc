@@ -76,6 +76,8 @@ NNADAPTER_EXPORT int32_t CalPoolOutputSize(int32_t input_size,
   return output_size;
 }
 
+bool ValidatePool2D(const core::Operation* operation) { return false; }
+
 int PreparePool2D(core::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -113,6 +115,10 @@ int PreparePool2D(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecutePool2D(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

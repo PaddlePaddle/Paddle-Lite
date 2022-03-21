@@ -46,6 +46,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+#if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   nnadapter_device_names.emplace_back("rockchip_npu");
   out_accuracy_threshold = 0.76f;
@@ -62,7 +63,10 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
 #else
-  LOG(INFO) << "Unsupported NNAdapter device!";
+  nnadapter_device_names.emplace_back("generic_device");
+  out_accuracy_threshold = 0.99f;
+#endif
+#else
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
