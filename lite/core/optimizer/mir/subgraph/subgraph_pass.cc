@@ -117,7 +117,7 @@ bool NNAdapterSubgraphOpTeller(const std::string& device_name,
       auto output_channel_size = filter_dims[0];
       auto groups = op_info->GetAttr<int>("groups");
       int multiplier = output_channel_size / groups;
-      if (multiplier != 1) return false;
+      if (groups != 1 && multiplier != 1) return false;
     }
   }
   return true;
