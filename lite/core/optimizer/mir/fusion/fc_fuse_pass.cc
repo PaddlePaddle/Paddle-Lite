@@ -23,21 +23,24 @@ namespace lite {
 namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::vector<std::string> mul_types{"mul", "matmul", "matmul_v2"};
+  for (auto op_type : mul_types) {
 #if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA)
 #ifdef LITE_WITH_MLU
-  fusion::FcFuser fuser(false);
-  fuser(graph.get());
+    fusion::FcFuser fuser(op_type, false);
+    fuser(graph.get());
 #else
-  fusion::FcFuser fuser(true);
-  fuser(graph.get());
+    fusion::FcFuser fuser(op_type, true);
+    fuser(graph.get());
 #endif
 #endif
-  fusion::FcFuser fuser2(false);
-  fuser2(graph.get());
+    fusion::FcFuser fuser2(op_type, false);
+    fuser2(graph.get());
 #ifdef LITE_WITH_FPGA
-  fusion::FcFuser fpga_fuser(true);
-  fpga_fuser(graph.get());
+    fusion::FcFuser fpga_fuser(op_type, true);
+    fpga_fuser(graph.get());
 #endif
+  }
 }
 
 }  // namespace mir
