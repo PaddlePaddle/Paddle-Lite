@@ -54,6 +54,59 @@ typedef enum {
   kInt8 = 2,
 } PrecisionMode;
 
+struct TensorrtDeleter {
+  template <typename T>
+  void operator()(T* obj) const {
+#if TENSORRT_MAJOR_VERSION >= 8
+    delete obj;
+#else
+    if (obj) {
+      obj->destroy();
+    }
+#endif
+  }
+};
+
+struct CudaMemoryDeleter {
+  template <typename T>
+  void operator()(T* ptr) const {
+    if (ptr) {
+      NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
+    }
+  }
+};
+
+class Tensor {
+ public:
+  Tensor() {}
+  ~Tensor() {}
+
+  void* Data();
+
+  void Resize(const std::vector<int32_t>& dims) { dims_ = dims; }
+
+  std::vector<int32_t> Dims() { return dims_; }
+
+  uint32_t Length() {
+    if (dims_.empty()) return 0;
+    uint32_t length = 1;
+    for (auto i : dims_) {
+      length *= static_cast<uint32_t>(i);
+    }
+    return length;
+  }
+
+  void SetDateType(nvinfer1::DataType data_type) { data_type_ = data_type; }
+
+  nvinfer1::DataType DateType() { return data_type_; }
+
+ private:
+  std::unique_ptr<void, CudaMemoryDeleter> buffer_;
+  uint32_t buffer_length_{0};
+  nvinfer1::DataType data_type_{nvinfer1::DataType::kFLOAT};
+  std::vector<int32_t> dims_;
+};
+
 class TrtLogger : public nvinfer1::ILogger {
  public:
   void log(nvinfer1::ILogger::Severity severity,

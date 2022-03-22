@@ -18,6 +18,17 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+void* Tensor::Data() {
+  uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
+  if (dst_length > buffer_length_) {
+    void* data{nullptr};
+    NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
+    buffer_.reset(data);
+    buffer_length_ = dst_length;
+  }
+  return buffer_.get();
+}
+
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
                     const char* msg) noexcept {
   switch (severity) {
