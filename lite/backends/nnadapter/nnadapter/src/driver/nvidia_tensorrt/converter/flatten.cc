@@ -16,6 +16,7 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -27,31 +28,18 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  if (start_axis < 0) {
-    start_axis += input_operand->type.dimensions.count;
-  }
-  if (end_axis < 0) {
-    end_axis += input_operand->type.dimensions.count;
-  }
-  uint32_t dim_prod = 1;
-  nvinfer1::Dims flatten_dim;
-  flatten_dim.nbDims =
-      input_operand->type.dimensions.count - (end_axis - start_axis);
-  for (int i = 0, j = 0; i < input_operand->type.dimensions.count; ++i) {
-    if (start_axis <= i && i <= end_axis) {
-      int dim_i = input_operand->type.dimensions.data[i];
-      dim_prod *= dim_i;
-      if (i == end_axis) {
-        flatten_dim.d[j++] = dim_prod;
-      }
-    } else {
-      flatten_dim.d[j++] = input_operand->type.dimensions.data[i];
+  if (!IsOperandWithDynamicShape(input_operand)) {
+    nvinfer1::Dims flatten_dim;
+    for (int i = 0; i < output_operand->type.dimensions.count; ++i) {
+      flatten_dim.d[i] = output_operand->type.dimensions.data[i];
     }
+    auto flatten_layer = converter->network()->addShuffle(*input_tensor);
+    flatten_layer->setReshapeDimensions(flatten_dim);
+    auto output_tensor = flatten_layer->getOutput(0);
+    converter->UpdateTensorMap(output_operand, output_tensor);
+  } else {
+    NNADAPTER_LOG(FATAL) << "flatten dynamic shape will support later";
   }
-  auto flatten_layer = converter->network()->addShuffle(*input_tensor);
-  flatten_layer->setReshapeDimensions(flatten_dim);
-  auto output_tensor = flatten_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 
