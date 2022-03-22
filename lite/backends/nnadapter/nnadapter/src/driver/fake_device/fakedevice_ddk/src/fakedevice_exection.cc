@@ -16,11 +16,11 @@
 #include <string.h>
 #include "fakedevice/fakedevice_pub.h"
 
-namespace fakedevice {
+namespace fake_ddk {
 namespace nn {
 
-#ifndef FALSE   /* in case these macros already exist */
-#define FALSE 0 /* values of boolean */
+#ifndef FALSE   /* In case these macros already exist */
+#define FALSE 0 /* Values of boolean */
 #endif
 #ifndef TRUE
 #define TRUE 1
@@ -38,7 +38,7 @@ extern int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
 extern int CalculateModelbufferSize(fakedevice_nn_graph_t* graph);
 extern void SerializeModelbuffer(fakedevice_nn_graph_t* graph, void* buffer);
 Exection::Exection(Graph* graph) {
-  printf("comein Exection\n ");
+  printf("fake_ddk: Exection\n ");
   graph_ = graph;
 }
 Exection::~Exection() {}
@@ -47,13 +47,12 @@ Exection::~Exection() {}
 *   setup graph and optimize graph
 ************************************************/
 int Exection::Build() {
-  printf("comein Build()\n ");
+  printf("fake_ddk: Build()\n");
   return FAKE_DEVICE_SUCCESS;
 }
 
 int Exection::Build(fakedevice_model_buffer* fm) {
-  printf("comein Build(fm)\n ");
-  printf("NEED model_cache\n ");
+  printf("fake_ddk: NEED model_cache\n");
 
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
@@ -65,52 +64,45 @@ int Exection::Build(fakedevice_model_buffer* fm) {
   return FAKE_DEVICE_SUCCESS;
 }
 
-/** Set model inputs.
- *  When using a quantitative model, the input data must also be the quantized
+/* Set model inputs.
+ * When using a quantitative model, the input data must also be the quantized
  * data.
- *  When calling SetInputs() multiple times in succession, only the last data
+ * When calling SetInputs() multiple times in succession, only the last data
  * takes effect.
  *
- *  @param inputs [in] input data
- *  @return FAKE_DEVICE_SUCCESS when success
+ * @param inputs [in] input data
+ * @return FAKE_DEVICE_SUCCESS when success
  */
 int Exection::SetInputs(std::vector<InputInfo> inputs) {
-  printf("comein SetInputs\n ");
+  printf("fake_ddk: SetInputs\n");
   int i;
-  // printf("\n ddk SetInputs in,and graph_'s addr is %x\n ", graph_);
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
-
-  // printf("type is %d\n",inputs[i].type);
   for (i = 0; i < graph->input_tensors.size(); i++) {
-    printf("comein SetInputs 1\n ");
-    printf("graph->input_tensors[i]->data ===== %x, inputs[i].buf =====%x \n",
-           graph->input_tensors[i]->data,
-           inputs[i].buf);
+    printf(
+        "fake_ddk: graph->input_tensors[i]->data addr = %x, inputs[i].buf addr "
+        "=%x \n",
+        graph->input_tensors[i]->data,
+        inputs[i].buf);
     memcpy(graph->input_tensors[i]->data, inputs[i].buf, inputs[i].size);
-    printf("comein SetInputs 2\n ");
   }
   return FAKE_DEVICE_SUCCESS;
 }
 
-/** Do inference on fake_device .
- *  This function should be called after the SetInputs() function.
+/* Do inference on fake_device .
+ * This function should be called after the SetInputs() function.
  *
- *  @return FAKE_DEVICE_SUCCESS when success
+ * @return FAKE_DEVICE_SUCCESS when success
  */
 int Exection::Run() {
-  printf("comein Run()\n ");
+  printf("fake_ddk: Run()\n");
   int status;
-  // printf("begin to run\n");
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
-  printf("Exection::Run() :graph_ = %x \n", graph_);
-  printf("Exection::Run() :graph_->fakedevice_graph_ = %x \n",
-         graph_->fakedevice_graph_);
   for (int i = 0; i < graph->node_table.size(); i++) {
     fakedevice_nn_node_t* node = graph->node_table[i];
     switch (node->op) {
-      case fakedevice::nn::OperatorType::FAKE_DEVICE_CONV2D:
+      case fake_ddk::nn::OperatorType::FAKE_DEVICE_CONV2D:
         if (i == 0) {  // first node
           status = conv_uint8_fp32_mmad(graph->input_tensors[0],
                                         node->output_tensors[0],
@@ -132,12 +124,12 @@ int Exection::Run() {
         }
         break;
       default:
-        printf("this operator not support yet\n");
+        printf("fake_ddk: this operator not support yet\n");
         break;
     }
   }
   if (status != FAKE_DEVICE_SUCCESS) {
-    printf("process graph fail\n");
+    printf("fake_ddk: process graph fail\n");
     return FAKE_DEVICE_FAILURE;
   }
   return FAKE_DEVICE_SUCCESS;
@@ -150,7 +142,7 @@ int Exection::Run() {
  *  @return FAKE_DEVICE_SUCCESS when success
  */
 int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
-  printf("comein GetOutputs\n ");
+  printf("fake_ddk: GetOutputs\n ");
   int i, j;
   fakedevice_nn_tensor_t* tensor;
   uint32_t sz;
@@ -165,10 +157,9 @@ int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
       sz *= tensor->attr->dims[j];
     }
     memcpy(outputs[i].buf, tensor->data, sizeof(uint8_t) * sz);
-    // for debug, dump ddk output
     /*
     for (j = 0; j < 10; j++) {
-      printf("ddk-output<<[%d:%d]\n", j,
+      printf("fake_ddk: ddk-output<<[%d:%d]\n", j,
     (reinterpret_cast<uint8_t*>((tensor->data)[j])));
     }
     */
@@ -177,4 +168,4 @@ int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
 }
 
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

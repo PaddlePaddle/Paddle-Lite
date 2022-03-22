@@ -62,11 +62,11 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to fakedevice tensor
-  std::map<core::Operand*, std::vector<std::shared_ptr<fakedevice::nn::Tensor>>>
+  // Map NNAdapter operand to fake_ddk tensor
+  std::map<core::Operand*, std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>
       tensors_;
-  std::shared_ptr<fakedevice::nn::Graph> graph_{nullptr};
-  std::shared_ptr<fakedevice::nn::Exection> execution_{nullptr};
+  std::shared_ptr<fake_ddk::nn::Graph> graph_{nullptr};
+  std::shared_ptr<fake_ddk::nn::Exection> execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   std::string dump_graph_path_;

@@ -26,36 +26,34 @@ namespace fake_device {
 class Converter {
  public:
   explicit Converter(
-      fakedevice::nn::Graph* graph,
+      fake_ddk::nn::Graph* graph,
       std::map<core::Operand*,
-               std::vector<std::shared_ptr<fakedevice::nn::Tensor>>>* tensors)
+               std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>* tensors)
       : graph_(graph), tensors_(tensors) {}
   ~Converter() {}
 
-  // Convert a NNAdapter model to fakedevice graph and tensors
+  // Convert a NNAdapter model to fake_ddk graph and tensors
   int Apply(core::Model* model);
-  // Mapping a fakedevice tensor to a NNAdapter operand
+  // Mapping a fake_ddk tensor to a NNAdapter operand
   std::string GetTensorName(core::Operand* operand);
-  std::shared_ptr<fakedevice::nn::Tensor> GetMappedTensor(
-      core::Operand* operand);
-  std::shared_ptr<fakedevice::nn::Tensor> UpdateTensorMap(
-      core::Operand* operand, std::shared_ptr<fakedevice::nn::Tensor> tensor);
-  // Convert a NNAdapter operand to a fakedevice tensor
-  std::shared_ptr<fakedevice::nn::Tensor> ConvertOperand(
+  std::shared_ptr<fake_ddk::nn::Tensor> GetMappedTensor(core::Operand* operand);
+  std::shared_ptr<fake_ddk::nn::Tensor> UpdateTensorMap(
+      core::Operand* operand, std::shared_ptr<fake_ddk::nn::Tensor> tensor);
+  // Convert a NNAdapter operand to a fake_ddk tensor
+  std::shared_ptr<fake_ddk::nn::Tensor> ConvertOperand(
       core::Operand* operand, std::vector<int32_t> dimensions = {});
-  // Add a fakedevice operator into fakedevice graph
+  // Add a fake_ddk operator into fake_ddk graph
   int AddOperator(
-      fakedevice::nn::OperatorType type,
-      std::vector<std::shared_ptr<fakedevice::nn::Tensor>> input_tensors,
-      std::vector<std::shared_ptr<fakedevice::nn::Tensor>> output_tensors,
+      fake_ddk::nn::OperatorType type,
+      std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> input_tensors,
+      std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> output_tensors,
       void* attrs,
       std::string name = "");
 
  private:
-  fakedevice::nn::Graph* graph_{nullptr};
-  std::map<core::Operand*,
-           std::vector<std::shared_ptr<fakedevice::nn::Tensor>>>* tensors_{
-      nullptr};
+  fake_ddk::nn::Graph* graph_{nullptr};
+  std::map<core::Operand*, std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>*
+      tensors_{nullptr};
 };
 
 }  // namespace fake_device

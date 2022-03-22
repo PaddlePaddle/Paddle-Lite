@@ -23,28 +23,27 @@
 namespace nnadapter {
 namespace fake_device {
 
-// Convert NNAdapter types to fakedevice types
-fakedevice::nn::PrecisionType ConvertToFakedevicePrecisionType(
+// Convert NNAdapter types to fake_ddk types
+fake_ddk::nn::PrecisionType ConvertToFakeDevicePrecisionType(
     NNAdapterOperandPrecisionCode input_precision);
-fakedevice::nn::DataLayoutType ConvertToFakedeviceDataLayoutType(
+fake_ddk::nn::DataLayoutType ConvertToFakeDeviceDataLayoutType(
     NNAdapterOperandLayoutCode input_layout);
-std::vector<uint32_t> ConvertToFakedeviceDimensions(
+std::vector<uint32_t> ConvertToFakeDeviceDimensions(
     int32_t* input_dimensions, uint32_t input_dimensions_count);
 
-// Create fakedevice tensor base on NNAdapter types
-std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
-    fakedevice::nn::Graph* graph,
+// Create fake_ddk tensor base on NNAdapter types
+std::shared_ptr<fake_ddk::nn::Tensor> CreateFakeDeviceTensor(
+    fake_ddk::nn::Graph* graph,
     const std::string& name,
     int32_t* dimensions_data,
     uint32_t dimensions_count,
-    fakedevice::nn::PrecisionType precision,
+    fake_ddk::nn::PrecisionType precision,
     const float* quant_scale = nullptr,
     const int32_t* zero_point = nullptr,
     void* buffer = nullptr,
-    fakedevice::nn::DataLayoutType layout =
-        fakedevice::nn::DataLayoutType::NCHW);
-std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
-    fakedevice::nn::Graph* graph,
+    fake_ddk::nn::DataLayoutType layout = fake_ddk::nn::DataLayoutType::NCHW);
+std::shared_ptr<fake_ddk::nn::Tensor> CreateFakeDeviceTensor(
+    fake_ddk::nn::Graph* graph,
     const std::string& name,
     const NNAdapterOperandType* type,
     void* buffer = nullptr,

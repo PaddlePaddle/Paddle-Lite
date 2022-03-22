@@ -108,7 +108,7 @@ int ExecuteProgram(void* program,
 NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     NNADAPTER_DEVICE_SYMBOL) = {
     .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
-    .vendor = "Fakedevice",
+    .vendor = "Paddle",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
     .open_device = nnadapter::fake_device::OpenDevice,

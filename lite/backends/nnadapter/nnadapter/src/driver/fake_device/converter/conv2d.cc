@@ -41,7 +41,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
         &dilation_width);
   }
 
-  // Convert to fakedevice tensors and operators
+  // Convert to fake_ddk tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
@@ -52,7 +52,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
     bias_tensor = converter->ConvertOperand(bias_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  fakedevice::nn::Conv2DAttr attr;
+  fake_ddk::nn::Conv2DAttr attr;
   attr.ksize[0] = filter_width;
   attr.ksize[1] = filter_height;
   attr.stride[0] = stride_width;
@@ -66,7 +66,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   attr.weights = output_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
-  attr.pad_type = fakedevice::nn::PadType::AUTO;
+  attr.pad_type = fake_ddk::nn::PadType::AUTO;
   // fuse RELU ?
   if (fuse_code == NNADAPTER_FUSED_NONE) {
     attr.has_relu = false;
@@ -76,11 +76,11 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
     NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }
-  std::vector<std::shared_ptr<fakedevice::nn::Tensor>> input_tensors = {
+  std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> input_tensors = {
       input_tensor, filter_tensor, bias_tensor};
-  std::vector<std::shared_ptr<fakedevice::nn::Tensor>> output_tensors = {
+  std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> output_tensors = {
       output_tensor};
-  converter->AddOperator(fakedevice::nn::OperatorType::FAKE_DEVICE_CONV2D,
+  converter->AddOperator(fake_ddk::nn::OperatorType::FAKE_DEVICE_CONV2D,
                          input_tensors,
                          output_tensors,
                          &attr);

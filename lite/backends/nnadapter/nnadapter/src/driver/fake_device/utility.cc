@@ -19,85 +19,85 @@
 namespace nnadapter {
 namespace fake_device {
 
-fakedevice::nn::PrecisionType ConvertToFakedevicePrecisionType(
+fake_ddk::nn::PrecisionType ConvertToFakeDevicePrecisionType(
     NNAdapterOperandPrecisionCode input_precision) {
-  fakedevice::nn::PrecisionType output_precision =
-      fakedevice::nn::PrecisionType::UNKNOWN;
+  fake_ddk::nn::PrecisionType output_precision =
+      fake_ddk::nn::PrecisionType::UNKNOWN;
   switch (input_precision) {
     case NNADAPTER_BOOL8:
-      output_precision = fakedevice::nn::PrecisionType::BOOL8;
+      output_precision = fake_ddk::nn::PrecisionType::BOOL8;
       break;
     case NNADAPTER_INT8:
     case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
     case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
-      output_precision = fakedevice::nn::PrecisionType::INT8;
+      output_precision = fake_ddk::nn::PrecisionType::INT8;
       break;
     case NNADAPTER_INT16:
-      output_precision = fakedevice::nn::PrecisionType::INT16;
+      output_precision = fake_ddk::nn::PrecisionType::INT16;
       break;
     case NNADAPTER_INT32:
     case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
-      output_precision = fakedevice::nn::PrecisionType::INT32;
+      output_precision = fake_ddk::nn::PrecisionType::INT32;
       break;
     case NNADAPTER_INT64:
-      output_precision = fakedevice::nn::PrecisionType::INT64;
+      output_precision = fake_ddk::nn::PrecisionType::INT64;
       break;
     case NNADAPTER_UINT8:
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = fakedevice::nn::PrecisionType::UINT8;
+      output_precision = fake_ddk::nn::PrecisionType::UINT8;
       break;
     case NNADAPTER_UINT16:
-      output_precision = fakedevice::nn::PrecisionType::UINT16;
+      output_precision = fake_ddk::nn::PrecisionType::UINT16;
       break;
     case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
     case NNADAPTER_UINT32:
-      output_precision = fakedevice::nn::PrecisionType::UINT32;
+      output_precision = fake_ddk::nn::PrecisionType::UINT32;
       break;
     case NNADAPTER_UINT64:
-      output_precision = fakedevice::nn::PrecisionType::UINT64;
+      output_precision = fake_ddk::nn::PrecisionType::UINT64;
       break;
     case NNADAPTER_FLOAT16:
-      output_precision = fakedevice::nn::PrecisionType::FLOAT16;
+      output_precision = fake_ddk::nn::PrecisionType::FLOAT16;
       break;
     case NNADAPTER_FLOAT32:
-      output_precision = fakedevice::nn::PrecisionType::FLOAT32;
+      output_precision = fake_ddk::nn::PrecisionType::FLOAT32;
       break;
     case NNADAPTER_FLOAT64:
-      output_precision = fakedevice::nn::PrecisionType::FLOAT64;
+      output_precision = fake_ddk::nn::PrecisionType::FLOAT64;
       break;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
           << OperandPrecisionCodeToString(input_precision)
-          << ") to fakedevice::nn::PrecisionType !";
+          << ") to fake_ddk::nn::PrecisionType !";
       break;
   }
   return output_precision;
 }
 
-fakedevice::nn::DataLayoutType ConvertToFakedeviceDataLayoutType(
+fake_ddk::nn::DataLayoutType ConvertToFakeDeviceDataLayoutType(
     NNAdapterOperandLayoutCode input_layout) {
-  fakedevice::nn::DataLayoutType output_layout =
-      fakedevice::nn::DataLayoutType::UNKNOWN;
+  fake_ddk::nn::DataLayoutType output_layout =
+      fake_ddk::nn::DataLayoutType::UNKNOWN;
   switch (input_layout) {
     case NNADAPTER_NCHW:
-      output_layout = fakedevice::nn::DataLayoutType::NCHW;
+      output_layout = fake_ddk::nn::DataLayoutType::NCHW;
       break;
     case NNADAPTER_NHWC:
-      output_layout = fakedevice::nn::DataLayoutType::NHWC;
+      output_layout = fake_ddk::nn::DataLayoutType::NHWC;
       break;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
           << OperandLayoutCodeToString(input_layout)
-          << ") to fakedevice::nn::DataLayoutType !";
+          << ") to fake_ddk::nn::DataLayoutType !";
       break;
   }
   return output_layout;
 }
 
-std::vector<uint32_t> ConvertToFakedeviceDimensions(
+std::vector<uint32_t> ConvertToFakeDeviceDimensions(
     int32_t* input_dimensions, uint32_t input_dimensions_count) {
   std::vector<uint32_t> output_dimensions(input_dimensions_count);
   memcpy(&output_dimensions[0],
@@ -106,41 +106,29 @@ std::vector<uint32_t> ConvertToFakedeviceDimensions(
   return output_dimensions;
 }
 
-std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
-    fakedevice::nn::Graph* graph,
+std::shared_ptr<fake_ddk::nn::Tensor> CreateFakeDeviceTensor(
+    fake_ddk::nn::Graph* graph,
     const std::string& name,
     int32_t* dimensions_data,
     uint32_t dimensions_count,
-    fakedevice::nn::PrecisionType precision,
+    fake_ddk::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point,
     void* buffer,
-    fakedevice::nn::DataLayoutType layout) {
-  auto attr = std::make_shared<fakedevice::nn::TensorAttr>();
+    fake_ddk::nn::DataLayoutType layout) {
+  auto attr = std::make_shared<fake_ddk::nn::TensorAttr>();
   attr->name = name;
-  attr->dims = ConvertToFakedeviceDimensions(dimensions_data, dimensions_count);
+  attr->dims = ConvertToFakeDeviceDimensions(dimensions_data, dimensions_count);
   attr->precision = precision;
   attr->layout = layout;
   if (quant_scale) {
-// Quantization types
-#if 0
-    if (precision == fakedevice::nn::PrecisionType::UINT8) {
-      attr->qntBits = 8;
-    } else if (precision == fakedevice::nn::PrecisionType::INT32) {
-      attr->qntBits = 32;
-    } else {
-      NNADAPTER_LOG(FATAL)
-          << "Only UINT8 and INT32 is supported for quantizaion.";
-    }
-#endif
-    // attr->qntType = fakedevice::nn::QuantizationType::AFFINE_ASYMMETRIC;
+    // Quantization types
     attr->qntParamAffineAsymmetric.scale.resize(1);
     attr->qntParamAffineAsymmetric.scale[0] = *quant_scale;
     if (zero_point) {
       attr->qntParamAffineAsymmetric.zero_point.resize(1);
       attr->qntParamAffineAsymmetric.zero_point[0] = *zero_point;
     }
-
   } else {
     // TODO(hong19860320) Supports the normal types, such as float etc.
     NNADAPTER_LOG(FATAL) << "Only quantizaion types are supported.";
@@ -150,8 +138,8 @@ std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
   return tensor;
 }
 
-std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
-    fakedevice::nn::Graph* graph,
+std::shared_ptr<fake_ddk::nn::Tensor> CreateFakeDeviceTensor(
+    fake_ddk::nn::Graph* graph,
     const std::string& name,
     const NNAdapterOperandType* type,
     void* buffer,
@@ -161,8 +149,8 @@ std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
       dimensions.push_back(type->dimensions.data[i]);
     }
   }
-  auto precision = ConvertToFakedevicePrecisionType(type->precision);
-  auto layout = ConvertToFakedeviceDataLayoutType(type->layout);
+  auto precision = ConvertToFakeDevicePrecisionType(type->precision);
+  auto layout = ConvertToFakeDeviceDataLayoutType(type->layout);
   const float* quant_scale = nullptr;
   const int32_t* zero_point = nullptr;
   switch (type->precision) {
@@ -175,11 +163,11 @@ std::shared_ptr<fakedevice::nn::Tensor> CreateFakedeviceTensor(
       break;
     default:
       NNADAPTER_LOG(FATAL)
-          << "Can not add a fakedevice::nn::Tensor with precision="
+          << "Can not add a fake_ddk::nn::Tensor with precision="
           << OperandPrecisionCodeToString(type->precision) << " !";
       break;
   }
-  return CreateFakedeviceTensor(graph,
+  return CreateFakeDeviceTensor(graph,
                                 name,
                                 dimensions.data(),
                                 dimensions.size(),

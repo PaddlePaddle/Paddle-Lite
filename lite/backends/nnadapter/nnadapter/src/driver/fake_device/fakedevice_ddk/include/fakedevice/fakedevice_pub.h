@@ -13,17 +13,9 @@
 // limitations under the License.
 #pragma once
 
-/**
- * @mainpage Index Page
- *
- * @section Introduction
- *
- * FAKEDEVICE DDK is an example of HOW TO MAKE A NEW NNADAPTER DELEGATE .
- *
- * @section Support platform
- *
- *
-**/
+/*
+ * FAKED_DDK is an example of HOW TO MAKE A NEW NNADAPTER DELEGATE DDK.
+*/
 
 #include "fakedevice/exection.h"
 #include "fakedevice/graph.h"

@@ -16,7 +16,7 @@
 #include <string.h>
 #include "fakedevice/fakedevice_pub.h"
 
-namespace fakedevice {
+namespace fake_ddk {
 namespace nn {
 
 int CalculateModelbufferSize(fakedevice_nn_graph_t *graph) {
@@ -60,7 +60,7 @@ int CalculateModelbufferSize(fakedevice_nn_graph_t *graph) {
     }
   }
   return buffer_size;
-  // only need serialize op's info&tensor, graph's tensor will init in
+  // Only need serialize op's info&tensor, graph's tensor will init in
   // func:SetInputsOutputs
 }
 
@@ -191,7 +191,7 @@ void DeserializeModelbuffer(fakedevice_nn_graph_t *graph, void *buffer) {
       // dims num
       int dims_num = *reinterpret_cast<uint32_t *>(buffer);
       buffer = reinterpret_cast<uint32_t *>(buffer) + 1;
-      auto attr = std::make_shared<fakedevice::nn::TensorAttr>();
+      auto attr = std::make_shared<fake_ddk::nn::TensorAttr>();
       graph->node_table[i]->input_tensors[j]->attr = attr;
       // dims
       for (int k = 0; k < dims_num; k++) {
@@ -236,7 +236,7 @@ void DeserializeModelbuffer(fakedevice_nn_graph_t *graph, void *buffer) {
       // dims num
       int dims_num = *reinterpret_cast<uint32_t *>(buffer);
       buffer = reinterpret_cast<uint32_t *>(buffer) + 1;
-      auto attr = std::make_shared<fakedevice::nn::TensorAttr>();
+      auto attr = std::make_shared<fake_ddk::nn::TensorAttr>();
       graph->node_table[i]->output_tensors[j]->attr = attr;
       // dims
       for (int k = 0; k < dims_num; k++) {
@@ -274,4 +274,4 @@ void DeserializeModelbuffer(fakedevice_nn_graph_t *graph, void *buffer) {
   }
 }
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

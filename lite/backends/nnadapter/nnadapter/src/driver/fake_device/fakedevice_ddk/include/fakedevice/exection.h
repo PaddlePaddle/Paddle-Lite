@@ -13,22 +13,24 @@
 // limitations under the License.
 
 #pragma once
+#include <stdint.h>
 #include <vector>
-namespace fakedevice {
+#include "fakedevice/graph.h"
+namespace fake_ddk {
 namespace nn {
 
 /** Input info used by exector->SetInputs(inputs)
  *
 */
 struct InputInfo {
-  /// the input index, filled by user
+  /// The input index, filled by user
   uint32_t index;
-  /// input buffer, users should manage this buffer by themselves, including
+  /// Input buffer, users should manage this buffer by themselves, including
   /// allocation and release.
   void* buf;
-  /// the size of input buffer, filled by user
+  /// The size of input buffer, filled by user
   uint32_t size;
-  /// precision type of input data, filled by user
+  /// Precision type of input data, filled by user
   int type;
   /** Layout of input data, filled by user.
    *  Currently the internal input format of FAKE_DEVICE is NCHW by default.
@@ -41,14 +43,14 @@ struct InputInfo {
  *
 */
 struct OutputInfo {
-  /// the output index, filled by user
+  /// The output index, filled by user
   uint32_t index;
-  /// output buffer, users should manage this buffer by themselves, including
+  /// Output buffer, users should manage this buffer by themselves, including
   /// allocation and release.
   void* buf;
-  /// the size of output buffer, filled by user
+  /// The size of output buffer, filled by user
   uint32_t size;
-  /// precision type of output data, filled by DDK
+  /// Precision type of output data, filled by DDK
   int type;
   /// Layout of output data, filled by DDK
   int layout;
@@ -78,51 +80,46 @@ struct OutputInfo {
 class Exection {
  private:
   Graph* graph_;
-  /// private data
+  // Private data
   void* device_handle;
 
  public:
   explicit Exection(Graph* graph);
   ~Exection();
 
-  /** Get the graph used by Exection
-   *
-   *  @return the graph
+  /* Get the graph used by Exection
+   * @return the graph
    */
   Graph* GetGraph() { return graph_; }
 
-  /** Create graph on FAKE_DEVICE.
-   *
-   *  @return FAKE_DEVICE_SUCCESS when success
+  /* Create graph on FAKE_DEVICE.
+   * @return FAKE_DEVICE_SUCCESS when success
    */
   int Build();
   int Build(fakedevice_model_buffer* fm);
 
-  /** Set model inputs.
-   *  When using a quantitative model, the input data must also be the quantized
+  /* Set model inputs.
+   * When using a quantitative model, the input data must also be the quantized
    * data.
-   *  When calling SetInputs() multiple times in succession, only the last data
+   * When calling SetInputs() multiple times in succession, only the last data
    * takes effect.
-   *
-   *  @param inputs [in] input data
-   *  @return FAKE_DEVICE_SUCCESS when success
+   * @param inputs [in] input data
+   * @return FAKE_DEVICE_SUCCESS when success
    */
   int SetInputs(std::vector<InputInfo> inputs);
 
-  /** Do inference on FAKE_DEVICE.
-   *  This function should be called after the SetInputs() function.
-   *
-   *  @return FAKE_DEVICE_SUCCESS when success
+  /* Do inference on FAKE_DEVICE.
+   * This function should be called after the SetInputs() function.
+   * @return FAKE_DEVICE_SUCCESS when success
    */
   int Run();
 
-  /** Get model outputs.
-   *  This function should be called after the Run() function.
-   *  If using a quantitative model, the output is quantized data
-   *
-   *  @return FAKE_DEVICE_SUCCESS when success
+  /* Get model outputs.
+   * This function should be called after the Run() function.
+   * If using a quantitative model, the output is quantized data
+   * @return FAKE_DEVICE_SUCCESS when success
    */
   int GetOutputs(std::vector<OutputInfo> outputs);
 };
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

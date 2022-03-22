@@ -19,40 +19,38 @@
 #include <vector>
 #include "fakedevice/types.h"
 
-namespace fakedevice {
+namespace fake_ddk {
 namespace nn {
 
-/** the structure of quantization parameter of Affine Asymmetric
+/* The structure of quantization parameter of Affine Asymmetric
  */
 struct QuantizationParamAffineAsymmetric {
-  std::vector<uint32_t> zero_point;  ///< zero point
-  std::vector<float> scale;          ///< scale
+  std::vector<uint32_t> zero_point;
+  std::vector<float> scale;
 };
 
-/** the structure of quantization parameter of Symmetric
+/* The structure of quantization parameter of Symmetric
  */
 struct QuantizationParamSymmetric {
-  std::vector<float> scale;  ///< scale
+  std::vector<float> scale;
 };
 
-/** the structure of Tensor Attribute
+/* The structure of Tensor Attribute
  */
 struct TensorAttr {
-  std::string name;            ///< name of tensor
-  std::vector<uint32_t> dims;  ///< shape of tensor
-  PrecisionType precision;     ///< precision of tensor
-  DataLayoutType layout;       ///< data layout of tensor
-
-  QuantizationParamAffineAsymmetric
-      qntParamAffineAsymmetric;  ///< Meanful in affine asymmetric
+  std::string name;
+  std::vector<uint32_t> dims;
+  PrecisionType precision;
+  DataLayoutType layout;
+  /* Fake_ddk use affine asymmetric */
+  QuantizationParamAffineAsymmetric qntParamAffineAsymmetric;
 };
 
 typedef struct _fakedevice_nn_tensor {
-  /** Tensor attributes */
+  /* Tensor attributes */
   std::shared_ptr<const TensorAttr> attr;
-  /** tensor data */
   void* data;
 } fakedevice_nn_tensor_t;
 typedef fakedevice_nn_tensor_t Tensor;
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

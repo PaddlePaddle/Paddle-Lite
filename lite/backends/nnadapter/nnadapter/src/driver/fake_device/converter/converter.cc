@@ -32,7 +32,7 @@ namespace fake_device {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(core::Model* model) {
-  // Convert the NNAdapter operations to the fakedevice operators
+  // Convert the NNAdapter operations to the fake_ddk operators
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -66,7 +66,7 @@ std::string Converter::GetTensorName(core::Operand* operand) {
   return operand_id + string_format("_%d", index);
 }
 
-std::shared_ptr<fakedevice::nn::Tensor> Converter::GetMappedTensor(
+std::shared_ptr<fake_ddk::nn::Tensor> Converter::GetMappedTensor(
     core::Operand* operand) {
   auto it = tensors_->find(operand);
   if (it != tensors_->end()) {
@@ -75,12 +75,12 @@ std::shared_ptr<fakedevice::nn::Tensor> Converter::GetMappedTensor(
   return nullptr;
 }
 
-std::shared_ptr<fakedevice::nn::Tensor> Converter::UpdateTensorMap(
-    core::Operand* operand, std::shared_ptr<fakedevice::nn::Tensor> tensor) {
+std::shared_ptr<fake_ddk::nn::Tensor> Converter::UpdateTensorMap(
+    core::Operand* operand, std::shared_ptr<fake_ddk::nn::Tensor> tensor) {
   auto it = tensors_->find(operand);
   if (it == tensors_->end()) {
     auto result = tensors_->insert(std::make_pair(
-        operand, std::vector<std::shared_ptr<fakedevice::nn::Tensor>>()));
+        operand, std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>()));
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
@@ -88,9 +88,9 @@ std::shared_ptr<fakedevice::nn::Tensor> Converter::UpdateTensorMap(
   return tensor;
 }
 
-std::shared_ptr<fakedevice::nn::Tensor> Converter::ConvertOperand(
+std::shared_ptr<fake_ddk::nn::Tensor> Converter::ConvertOperand(
     core::Operand* operand, std::vector<int32_t> dimensions) {
-  auto tensor = CreateFakedeviceTensor(graph_,
+  auto tensor = CreateFakeDeviceTensor(graph_,
                                        GetTensorName(operand),
                                        &operand->type,
                                        operand->buffer,
@@ -101,9 +101,9 @@ std::shared_ptr<fakedevice::nn::Tensor> Converter::ConvertOperand(
 }
 
 int Converter::AddOperator(
-    fakedevice::nn::OperatorType type,
-    std::vector<std::shared_ptr<fakedevice::nn::Tensor>> input_tensors,
-    std::vector<std::shared_ptr<fakedevice::nn::Tensor>> output_tensors,
+    fake_ddk::nn::OperatorType type,
+    std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> input_tensors,
+    std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> output_tensors,
     void* attrs,
     std::string name) {
   return graph_->AddOperator(type, input_tensors, output_tensors, attrs, name);

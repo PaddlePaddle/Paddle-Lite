@@ -17,10 +17,10 @@
 #include <string>
 #include "fakedevice/tensor.h"
 
-namespace fakedevice {
+namespace fake_ddk {
 namespace nn {
 
-/** Supported operator types
+/* Supported operator types
  * <pre>
  * Operator is created by Graph::AddOperator(type, inputs, outputs, attrs, ...)
  * and each Operator has different inputs and outputs, also has different
@@ -31,14 +31,14 @@ namespace nn {
  *    It means that CONV2D needs to set 3 inputs and 1 outputs, and fill the
  * Conv2DAttr structure.
  *    simple code as follow:
- *        std::vector<std::shared_ptr<fakedevice::nn::Tensor>> inputs, outputs;
+ *        std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> inputs, outputs;
  *        inputs.push_back(in);
  *        inputs.push_back(weight);
  *        inputs.push_back(bias);
  *        outputs.push_back(out);
- *        fakedevice::nn::Conv2DAttr attr;
+ *        fake_ddk::nn::Conv2DAttr attr;
  *        ...   // fill attr
- *        graph->AddOperator(fakedevice::nn::OperatorType::CONV2D, inputs,
+ *        graph->AddOperator(fake_ddk::nn::OperatorType::CONV2D, inputs,
  * outputs, (void*)&attr);
  * </pre>
  */
@@ -57,7 +57,7 @@ typedef struct _fakedevice_nn_conv2d_param {
   uint32_t group;
   uint32_t dilation[2];
   int32_t multiplier;
-  bool has_relu;  ///< fuse relu
+  bool has_relu;
 } fakedevice_nn_conv2d_param;
 typedef fakedevice_nn_conv2d_param Conv2DAttr;
 
@@ -65,4 +65,4 @@ typedef union _fakedevice_nn_param {
   fakedevice_nn_conv2d_param conv2d_param;
 } fakedevice_nn_param_t;
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

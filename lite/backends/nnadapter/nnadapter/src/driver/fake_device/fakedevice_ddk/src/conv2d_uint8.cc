@@ -14,9 +14,8 @@
 
 #include <math.h>
 #include "fakedevice/fakedevice_pub.h"
-namespace fakedevice {
+namespace fake_ddk {
 namespace nn {
-
 int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
                          fakedevice_nn_tensor_t* output_tensor,
                          fakedevice_nn_tensor_t* kernel,
@@ -31,19 +30,16 @@ int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
   int output_c = output_tensor->attr->dims[1];
   int output_h = output_tensor->attr->dims[2];
   int output_w = output_tensor->attr->dims[3];
-
   int kernel_size = input_c * conv_param->ksize[0] * conv_param->ksize[1];
   int n, g, c, h, w, kc, kh, kw;
   int input_offset = 0;
   int kernel_offset = 0;
   int output_offset = 0;
-
   uint8_t* input_data = reinterpret_cast<uint8_t*>(input_tensor->data);
   uint8_t* output_data = reinterpret_cast<uint8_t*>(output_tensor->data);
   uint8_t* kernel_data = reinterpret_cast<uint8_t*>(kernel->data);
   int32_t* bias_data = NULL;
-  if (bias != NULL) bias_data = reinterpret_cast<int32_t*> bias->data;
-
+  if (bias != NULL) bias_data = reinterpret_cast<int32_t*>(bias->data);
   float input_scale = input_tensor->attr->qntParamAffineAsymmetric.scale[0];
   float kernel_scale = kernel->attr->qntParamAffineAsymmetric.scale[0];
   float output_scale = output_tensor->attr->qntParamAffineAsymmetric.scale[0];
@@ -58,7 +54,6 @@ int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
   printf(" input_zero %d\n", input_zero);
   printf(" kernel_zero %d\n", kernel_zero);
   printf(" output_zero %d\n", output_zero);
-
   printf(" input_c %d\n", input_c);
   printf(" output_c %d\n", output_c);
   printf(" ksize[0] %d\n", conv_param->ksize[0]);
@@ -75,7 +70,6 @@ int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
   if (conv_param->ksize[0] == 0) conv_param->ksize[0] = 1;
   if (conv_param->ksize[1] == 0) conv_param->ksize[1] = 1;
   if (input_w == 0) input_w = 1;
-
   for (n = 0; n < batch; ++n) {
     for (g = 0; g < group; ++g) {
       for (c = 0; c < output_c; ++c) {
@@ -123,25 +117,21 @@ int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
                           kh * conv_param->ksize[0] * input_c * group +
                           kw * input_c * group + g * input_c + kc;
                     }
-
                     total +=
                         input_data[input_offset] * kernel_data[kernel_offset];
                   }
                 }
               }
             }
-
             if (bias != NULL) total += bias_data[output_c * g + c];
 
             total_fp32 = (static_cast<float>(total) - input_zero) *
                          input_scale * kernel_scale;
-
             if (conv_param->has_relu) {
               if (total_fp32 < 0) {
                 total_fp32 = 0;
               }
             }
-
             int out = round(total_fp32 / output_scale) + output_zero;
             if (out > 255) out = 255;
             if (out < 0) out = 0;
@@ -168,19 +158,16 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
   int output_c = output_tensor->attr->dims[1];
   int output_h = output_tensor->attr->dims[2];
   int output_w = output_tensor->attr->dims[3];
-
   int kernel_size = input_c * conv_param->ksize[0] * conv_param->ksize[1];
   int n, g, c, h, w, kc, kh, kw;
   int input_offset = 0;
   int kernel_offset = 0;
   int output_offset = 0;
-
   uint8_t* input_data = reinterpret_cast<uint8_t*>(input_tensor->data);
   uint8_t* output_data = reinterpret_cast<uint8_t*>(output_tensor->data);
   uint8_t* kernel_data = reinterpret_cast<uint8_t*>(kernel->data);
   int32_t* bias_data = NULL;
   if (bias != NULL) bias_data = reinterpret_cast<int32_t*>(bias->data);
-
   float input_scale = input_tensor->attr->qntParamAffineAsymmetric.scale[0];
   float kernel_scale = kernel->attr->qntParamAffineAsymmetric.scale[0];
   float output_scale = output_tensor->attr->qntParamAffineAsymmetric.scale[0];
@@ -195,7 +182,6 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
   printf(" input_zero %d\n", input_zero);
   printf(" kernel_zero %d\n", kernel_zero);
   printf(" output_zero %d\n", output_zero);
-
   printf(" input_c %d\n", input_c);
   printf(" output_c %d\n", output_c);
   printf(" ksize[0] %d\n", conv_param->ksize[0]);
@@ -216,7 +202,6 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
   for (int i = 0; i < input_size; i++)
     input_fp32[i] =
         (static_cast<float>(input_data[i]) - input_zero) * input_scale;
-
   /* dequant kernel  */
   int kernel_total = group * output_c * kernel_size;
   float* kernel_fp32 =
@@ -224,10 +209,8 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
   for (int i = 0; i < kernel_total; i++)
     kernel_fp32[i] =
         (static_cast<float>(kernel_data[i]) - kernel_zero) * kernel_scale;
-
   /* dequant biases  */
   int bias_size = group * output_c;
-
   float* bias_fp32 = NULL;
   if (bias != NULL) {
     bias_fp32 = reinterpret_cast<float*>(malloc(sizeof(float) * bias_size));
@@ -235,11 +218,9 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
       bias_fp32[i] =
           static_cast<float>(bias_data[i]) * input_scale * kernel_scale;
   }
-
   if (conv_param->ksize[0] == 0) conv_param->ksize[0] = 1;
   if (conv_param->ksize[1] == 0) conv_param->ksize[1] = 1;
   if (input_w == 0) input_w = 1;
-
   for (n = 0; n < batch; ++n) {
     for (g = 0; g < group; ++g) {
       for (c = 0; c < output_c; ++c) {
@@ -286,22 +267,18 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
                           kh * conv_param->ksize[0] * input_c * group +
                           kw * input_c * group + g * input_c + kc;
                     }
-
                     total +=
                         input_fp32[input_offset] * kernel_fp32[kernel_offset];
                   }
                 }
               }
             }
-
             if (bias != NULL) total += bias_fp32[output_c * g + c];
-
             if (conv_param->has_relu) {
               if (total < 0) {
                 total = 0;
               }
             }
-
             int out = round(total / output_scale) + output_zero;
             if (out > 255) out = 255;
             if (out < 0) out = 0;
@@ -319,4 +296,4 @@ int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
   return 0;
 }
 }  // namespace nn
-}  // namespace fakedevice
+}  // namespace fake_ddk

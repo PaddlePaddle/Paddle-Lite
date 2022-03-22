@@ -12,5 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories("fakedevice_ddk/include")
-add_subdirectory(fakedevice_ddk)
+# This an example, so we build fake_device_ddk 
+# Normally, the ddk is provided by hardware vendors
+aux_source_directory(src SRC)
+set(SRCS ${SRC})
+include_directories("./include")
+add_library(fakedevice_ddk SHARED ${SRCS})
+
+add_custom_command(TARGET fakedevice_ddk
+  POST_BUILD
+  COMMAND cp -r "${CMAKE_CURRENT_BINARY_DIR}/libfakedevice_ddk.so" "${CMAKE_CURRENT_BINARY_DIR}/.."
+  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/libfakedevice_ddk.so"
+)
