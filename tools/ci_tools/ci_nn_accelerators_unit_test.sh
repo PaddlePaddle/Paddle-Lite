@@ -533,7 +533,7 @@ function cpu_prepare_device() {
     $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
 }
 
-function cpu_device_build_target() {
+function cpu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -1618,8 +1618,8 @@ function main() {
             armlinux_cpu_build_and_test
             shift
             ;;
-        generic_device_build_and_test)
-            generic_device_build_and_test
+        cpu_build_and_test)
+            cpu_build_and_test
             shift
             ;;
         huawei_kirin_npu_build_and_test)
