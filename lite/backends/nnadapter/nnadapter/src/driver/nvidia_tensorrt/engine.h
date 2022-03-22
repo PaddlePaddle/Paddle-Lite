@@ -108,6 +108,7 @@ class Program {
   std::vector<NNAdapterOperandType> output_types_;
   Context* context_{nullptr};
   bool with_dynamic_shape_{false};
+  // For cuda kernel to support yolo model
 };
 
 }  // namespace nvidia_tensorrt
