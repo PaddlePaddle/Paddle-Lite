@@ -31,6 +31,7 @@
 #include "lite/backends/arm/math/fp16/interpolate_fp16.h"
 #include "lite/backends/arm/math/fp16/pad2d_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
+#include "lite/backends/arm/math/fp16/power_fp16.h"
 #include "lite/backends/arm/math/fp16/sgemm_fp16.h"
 #include "lite/backends/arm/math/fp16/softmax_fp16.h"
 #include "lite/backends/arm/math/fp16/type_trans_fp16.h"
@@ -61,6 +62,57 @@ inline float16x4_t exp_ps_f16(float16x4_t x) {
   float32x4_t vexpa = exp_ps(va);
   float16x4_t vresa = vcvt_f16_f32(vexpa);
   return vresa;
+}
+
+// exp_log = expq_ps_f16(vmulq_f16(b, log_ps(a)))
+inline float16x8_t exp_logq_f16(float16x8_t a, float32x4_t b) {
+  flaot32x4_t vsum_a_low = log_ps(vcvt_f32_f16(vget_low_f16(a)));
+  flaot32x4_t vsum_a_high = log_ps(vcvt_f32_f16(vget_high_f16(a)));
+  float32x4_t vsum_a = vmulq_f32(b, vsum_a_low);
+  float32x4_t vsum_b = vmulq_f32(b, vsum_a_high);
+  float32x4_t vres_a = exp_ps(vsum_a);
+  float32x4_t vres_b = exp_ps(vsum_b);
+  return vcombine_f16(vcvt_f16_f32(vres_b), vcvt_f16_f32(vres_a));
+}
+
+inline float16x4_t exp_logq_f16(float16x4_t a, float32x4_t b) {
+  flaot32x4_t vsum_a_low = log_ps(vcvt_f32_f16(a));
+  float32x4_t vsum_a = vmulq_f32(b, vsum_a_low);
+  float32x4_t vres_a = exp_ps(vsum_a);
+  return vcvt_f16_f32(vres_a);
+}
+
+// pow(x, m) = exp(m * log(x))
+inline float16x8_t powq_ps_f16(float16x8_t a, float32x4_t b) {
+  float16x8_t vone = vdupq_n_f16(1.f);
+  // x < 0
+  for (int i = 0; i < 8; i++) {
+    if (a[i] < 0) {
+      a[i] = -a[i];
+      if (static_cast<int>(b[i % 4]) % 2) {
+        vone[i] = -1.f;
+      }
+    }
+  }
+  // float16x8_t vsum = expq_ps_f16(vmulq_f16(b, log_ps(a)));
+  float16x8_t vsum = exp_logq_f16(a, b);
+  return vmulq_f16(vsum, vone);
+}
+
+inline float16x4_t pow_ps_f16(float16x4_t a, float16x4_t b) {
+  float16x4_t vone = vdup_n_f16(1.f);
+  // x < 0
+  for (int i = 0; i < 4; i++) {
+    if (a[i] < 0) {
+      a[i] = -a[i];
+      if (static_cast<int>(b[i]) % 2) {
+        vone[i] = -1.f;
+      }
+    }
+  }
+  // float16x4_t vsum = expq_ps_f16(vmul_f16(b, log_ps(a)));
+  float16x4_t vsum = exp_log_f16(a, b);
+  return vmul_f16(vsum, vone);
 }
 
 inline float16x8_t divq_ps_f16(float16x8_t a, float16x8_t b) {

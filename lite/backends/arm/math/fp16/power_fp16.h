@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
+namespace fp16 {
 
-template <PrecisionType Ptype, PrecisionType OutType>
-class PowCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  void Run() override;
+void power_fp16(const float16_t* din,
+                float16_t* dout,
+                const int num,
+                float scale_,
+                float shift_,
+                float factor_);
 
-  virtual ~PowCompute() = default;
-};
-
+} /* namespace fp16 */
+} /* namespace math */
 } /* namespace arm */
-} /* namespace kernels */
 } /* namespace lite */
 } /* namespace paddle */
