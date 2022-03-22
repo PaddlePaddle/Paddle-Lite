@@ -499,8 +499,8 @@ function armlinux_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
-# Generic device
-function generic_device_prepare_device() {
+# cpu
+function cpu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -533,7 +533,7 @@ function generic_device_prepare_device() {
     $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
 }
 
-function generic_device_build_target() {
+function cpu_device_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -558,8 +558,8 @@ function generic_device_build_target() {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function generic_device_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE generic_device_build_target generic_device_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+function cpu_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE cpu_build_target cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # Huawei Kirin NPU
