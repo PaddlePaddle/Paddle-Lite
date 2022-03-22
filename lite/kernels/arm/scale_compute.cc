@@ -31,7 +31,7 @@ void ScaleCompute<T, PType>::Run() {
   if (!param.bias_after_scale) {
     bias *= scale;
   }
-  if (isinf(abs(scale))) {
+  if (std::isinf(abs(scale))) {
     scale = 0;
   }
   T alpha = param.alpha;
