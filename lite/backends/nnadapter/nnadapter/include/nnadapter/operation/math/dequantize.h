@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <vector>
+#include "operation/math/utility.h"
 
 namespace nnadapter {
 namespace operation {
