@@ -45,18 +45,39 @@ inline void reduce_one_line_min(const DataType* src, DataType* dst, int size) {
 }
 
 template <typename DataType>
-void reduce_first_of_two(const DataType* src,
-                         DataType* dst,
-                         int first_in,
-                         int second_in,
-                         MaxMinType compare_functor);
-
-template <typename DataType>
 void reduce_second_of_two(const DataType* src,
                           DataType* dst,
                           int first_in,
                           int second_in,
-                          MaxMinType max_min_selector);
+                          MaxMinType max_min_selector) {
+  // max_min_selector == true, do reduce max; else do reduce min
+  for (int j = 0; j < first_in; j++) {
+    dst[j] = src[j * second_in];
+    for (int k = 1; k < second_in; k++) {
+      dst[j] = (src[j * second_in + k] <= dst[j]) ^
+                       static_cast<bool>(max_min_selector)
+                   ? src[j * second_in + k]
+                   : dst[j];
+    }
+  }
+}
+template <typename DataType>
+void reduce_first_of_two(const DataType* src,
+                         DataType* dst,
+                         int first_in,
+                         int second_in,
+                         MaxMinType max_min_selector) {
+  // max_min_selector == true, do reduce max; else do reduce min
+  for (int j = 0; j < second_in; j++) {
+    dst[j] = src[j];
+    for (int k = 1; k < first_in; k++) {
+      dst[j] = (src[k * second_in + j] <= dst[j]) ^
+                       static_cast<bool>(max_min_selector)
+                   ? src[k * second_in + j]
+                   : dst[j];
+    }
+  }
+}
 
 }  // namespace math
 }  // namespace arm
