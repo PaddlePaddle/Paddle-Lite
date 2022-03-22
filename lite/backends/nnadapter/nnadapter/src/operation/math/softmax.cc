@@ -20,31 +20,24 @@ namespace nnadapter {
 namespace operation {
 namespace math {
 
-void softmax(const int8_t* input_data_ptr,
-             const std::vector<int32_t>& input_shape,
-             float* input_scale_ptr,
-             size_t input_scale_count,
-             int32_t axis,
-             int8_t* output_data_ptr,
-             float* output_scale_ptr,
-             size_t output_scale_count) {
-  auto input_data_count = production_of_shape(input_shape);
-  std::vector<float> dequantized_input_data(input_data_count);
-  std::vector<float> dequantized_output_data(input_data_count);
-  dequantize(input_data_ptr,
-             input_shape,
-             input_scale_ptr,
-             input_scale_count,
-             dequantized_input_data.data());
+int softmax(const int8_t* input_data,
+            const std::vector<int32_t>& input_shape,
+            float input_scale,
+            int32_t axis,
+            int8_t* output_data,
+            float output_scale) {
+  auto input_count = production_of_shape(input_shape);
+  std::vector<float> dequantized_input_data(input_count);
+  std::vector<float> dequantized_output_data(input_count);
+  dequantize(
+      input_data, input_shape, {input_scale}, dequantized_input_data.data());
   softmax<float>(dequantized_input_data.data(),
                  input_shape,
                  axis,
                  dequantized_output_data.data());
-  quantize(dequantized_output_data.data(),
-           input_shape,
-           output_scale_ptr,
-           output_scale_count,
-           output_data_ptr);
+  quantize(
+      dequantized_output_data.data(), input_shape, {output_scale}, output_data);
+  return 0;
 }
 
 }  // namespace math

@@ -27,10 +27,10 @@ namespace operation {
 namespace math {
 
 template <typename T>
-static void softmax(const T* input_data_ptr,
-                    const std::vector<int32_t>& input_shape,
-                    int32_t axis,
-                    T* output_data_ptr) {
+static int softmax(const T* input_data,
+                   const std::vector<int32_t>& input_shape,
+                   int axis,
+                   T* output_data) {
   auto input_rank = input_shape.size();
   if (axis < 0) {
     axis += input_rank;
@@ -45,35 +45,34 @@ static void softmax(const T* input_data_ptr,
     auto outer_index = (i / inner_count) * axis_count;
     auto start = outer_index * inner_count + inner_index;
     auto offset = start;
-    auto max_data = std::numeric_limits<T>::lowest();
+    auto max_value = std::numeric_limits<T>::lowest();
     for (int j = 0; j < axis_count; j++) {
-      max_data =
-          input_data_ptr[offset] > max_data ? input_data_ptr[offset] : max_data;
+      max_value =
+          input_data[offset] > max_value ? input_data[offset] : max_value;
       offset += inner_count;
     }
     offset = start;
-    T sum_data = 0;
+    T sum_value = 0;
     for (int j = 0; j < axis_count; j++) {
-      output_data_ptr[offset] = exp(input_data_ptr[offset] - max_data);
-      sum_data += output_data_ptr[offset];
+      output_data[offset] = exp(input_data[offset] - max_value);
+      sum_value += output_data[offset];
       offset += inner_count;
     }
     offset = start;
     for (int j = 0; j < axis_count; j++) {
-      output_data_ptr[offset] /= sum_data;
+      output_data[offset] /= sum_value;
       offset += inner_count;
     }
   }
+  return 0;
 }
 
-void softmax(const int8_t* input_data_ptr,
-             const std::vector<int32_t>& input_shape,
-             float* input_scale_ptr,
-             size_t input_scale_count,
-             int32_t axis,
-             int8_t* output_data_ptr,
-             float* output_scale_ptr,
-             size_t output_scale_count);
+int softmax(const int8_t* input_data,
+            const std::vector<int32_t>& input_shape,
+            float input_scale,
+            int axis,
+            int8_t* output_data,
+            float output_scale);
 
 }  // namespace math
 }  // namespace operation

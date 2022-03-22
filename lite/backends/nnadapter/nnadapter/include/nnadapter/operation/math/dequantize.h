@@ -23,23 +23,23 @@ namespace operation {
 namespace math {
 
 template <typename T>
-static void dequantize(const T* input_data_ptr,
-                       const std::vector<int32_t>& input_shape,
-                       float* input_scale_ptr,
-                       size_t input_scale_count,
-                       float* output_data_ptr) {
-  bool per_layer = input_scale_count == 1;
+static int dequantize(const T* input_data,
+                      const std::vector<int32_t>& input_shape,
+                      const std::vector<float>& input_scales,
+                      float* output_data) {
+  bool per_layer = input_scales.size() == 1;
   int quant_bits = sizeof(T) * 8;
   auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
   auto dtype_min = static_cast<int>(0 - dtype_max);
   auto input_data_count = production_of_shape(input_shape);
   for (int64_t i = 0; i < input_data_count; i++) {
     int scale_index = per_layer ? 0 : i;
-    output_data_ptr[i] =
-        std::min(std::max(static_cast<int>(input_data_ptr[i]), dtype_min),
+    output_data[i] =
+        std::min(std::max(static_cast<int>(input_data[i]), dtype_min),
                  dtype_max) *
-        input_scale_ptr[scale_index];
+        input_scales[scale_index];
   }
+  return 0;
 }
 
 }  // namespace math

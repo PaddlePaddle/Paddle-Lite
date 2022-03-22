@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace android_nnapi {
 
 bool ValidateSoftmax(Validator* validator, const core::Operation* operation) {
-  return true;
+  return false;
 }
 
 int ConvertSoftmax(Converter* converter, core::Operation* operation) {

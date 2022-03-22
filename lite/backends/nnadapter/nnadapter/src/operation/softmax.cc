@@ -38,6 +38,7 @@ int ExecuteSoftmax(core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands
+  int status = 0;
   auto& input_type = input_operand->type;
   auto input_shape = std::vector<int32_t>(
       input_type.dimensions.data,
@@ -48,26 +49,25 @@ int ExecuteSoftmax(core::Operation* operation) {
   auto output_buffer = AllocateOperand(output_operand);
   NNADAPTER_CHECK_EQ(input_type.precision, output_type.precision);
   if (input_type.precision == NNADAPTER_FLOAT32) {
-    const auto input_data_ptr = reinterpret_cast<const float*>(input_buffer);
-    auto output_data_ptr = reinterpret_cast<float*>(output_buffer);
-    math::softmax<float>(input_data_ptr, input_shape, axis, output_data_ptr);
+    const auto input_data = reinterpret_cast<const float*>(input_buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    status = math::softmax<float>(input_data, input_shape, axis, output_data);
   } else if (input_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
-    const auto input_data_ptr = reinterpret_cast<const int8_t*>(input_buffer);
-    auto output_data_ptr = reinterpret_cast<int8_t*>(output_buffer);
-    math::softmax(input_data_ptr,
-                  input_shape,
-                  &input_type.symm_per_layer_params.scale,
-                  1,
-                  axis,
-                  output_data_ptr,
-                  &output_type.symm_per_layer_params.scale,
-                  1);
+    const auto input_data = reinterpret_cast<const int8_t*>(input_buffer);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::softmax(input_data,
+                           input_shape,
+                           input_type.symm_per_layer_params.scale,
+                           axis,
+                           output_data,
+                           output_type.symm_per_layer_params.scale);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported precision code("
                          << OperandPrecisionCodeToString(input_type.precision)
                          << ") for " << OperationTypeToString(operation->type)
                          << " is found!";
   }
+  NNADAPTER_CHECK_EQ(status, 0);
   return NNADAPTER_NO_ERROR;
 }
 

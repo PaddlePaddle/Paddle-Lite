@@ -20,6 +20,14 @@ namespace nnadapter {
 namespace operation {
 namespace math {
 
+// Fused activation function types
+typedef enum {
+  FUSED_NONE = 0,
+  FUSED_RELU = 1,
+  FUSED_RELU1 = 2,
+  FUSED_RELU6 = 3,
+} FuseCode;
+
 // Get the slice of the shape
 std::vector<int32_t> slice_of_shape(const std::vector<int32_t>& input_shape,
                                     int start,
