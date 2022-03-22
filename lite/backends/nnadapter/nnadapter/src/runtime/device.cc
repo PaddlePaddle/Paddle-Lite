@@ -131,8 +131,8 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
   }
   void* library = nullptr;
   driver::Device* driver = nullptr;
-  if (strcmp(name, NNADAPTER_AS_STR2(GENERIC_DEVICE_NAME))) {
-    driver = &NNADAPTER_AS_SYM2(GENERIC_DEVICE_NAME);
+  if (strcmp(name, NNADAPTER_AS_STR2(CPU_DEVICE_NAME)) == 0) {
+    driver = &NNADAPTER_AS_SYM2(CPU_DEVICE_NAME);
   } else {
     // Load if the driver of target device is not registered.
     std::string symbol =

@@ -14,6 +14,7 @@
 
 #include "operation/softmax.h"
 #include "core/types.h"
+#include "operation/math/softmax.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -33,7 +34,42 @@ int PrepareSoftmax(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteSoftmax(core::Operation* operation) { return NNADAPTER_NO_ERROR; }
+int ExecuteSoftmax(core::Operation* operation) {
+  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  auto& input_type = input_operand->type;
+  auto input_shape = std::vector<int32_t>(
+      input_type.dimensions.data,
+      input_type.dimensions.data + input_type.dimensions.count);
+  const auto input_buffer = input_operand->buffer;
+  NNADAPTER_CHECK(input_buffer);
+  auto& output_type = output_operand->type;
+  auto output_buffer = AllocateOperand(output_operand);
+  NNADAPTER_CHECK_EQ(input_type.precision, output_type.precision);
+  if (input_type.precision == NNADAPTER_FLOAT32) {
+    const auto input_data_ptr = reinterpret_cast<const float*>(input_buffer);
+    auto output_data_ptr = reinterpret_cast<float*>(output_buffer);
+    math::softmax<float>(input_data_ptr, input_shape, axis, output_data_ptr);
+  } else if (input_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    const auto input_data_ptr = reinterpret_cast<const int8_t*>(input_buffer);
+    auto output_data_ptr = reinterpret_cast<int8_t*>(output_buffer);
+    math::softmax(input_data_ptr,
+                  input_shape,
+                  &input_type.symm_per_layer_params.scale,
+                  1,
+                  axis,
+                  output_data_ptr,
+                  &output_type.symm_per_layer_params.scale,
+                  1);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported precision code("
+                         << OperandPrecisionCodeToString(input_type.precision)
+                         << ") for " << OperationTypeToString(operation->type)
+                         << " is found!";
+  }
+  return NNADAPTER_NO_ERROR;
+}
 
 }  // namespace operation
 }  // namespace nnadapter

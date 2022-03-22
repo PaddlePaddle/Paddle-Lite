@@ -32,10 +32,14 @@ namespace nnadapter {
   extern bool __validate_func_name__(const core::Operation* operation); \
   extern int __prepare_func_name__(core::Operation* operation);         \
   extern int __execute_func_name__(core::Operation* operation);
+namespace operation {
 #include "operation/all.h"  // NOLINT
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+}  // namespace operation
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
 
-namespace generic_device {
+namespace cpu {
 
 class Device {
  public:
@@ -59,11 +63,11 @@ Context::Context(void* device, const char* properties) : device_(device) {
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string key_value;
   auto key_values = GetKeyValues(properties);
-  // GENERIC_DEVICE_NUM_THREADS
-  if (key_values.count(GENERIC_DEVICE_NUM_THREADS)) {
-    num_threads_ = string_parse<int>(key_values[GENERIC_DEVICE_NUM_THREADS]);
+  // CPU_NUM_THREADS
+  if (key_values.count(CPU_NUM_THREADS)) {
+    num_threads_ = string_parse<int>(key_values[CPU_NUM_THREADS]);
   } else {
-    num_threads_ = GetIntFromEnv(GENERIC_DEVICE_NUM_THREADS, 0);
+    num_threads_ = GetIntFromEnv(CPU_NUM_THREADS, 0);
   }
   NNADAPTER_LOG(INFO) << "num_threads: " << num_threads_;
 }
@@ -88,6 +92,7 @@ class Program {
       model_.first = nullptr;
       model_.second = false;
     }
+    operations_.clear();
   }
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
@@ -112,14 +117,15 @@ int Program::Validate(const core::Model* model, bool* supported_operations) {
                       << " ...";
     bool flag = false;
     switch (operation->type) {
-#define REGISTER_OPERATION(__op_type__,            \
-                           __validate_func_name__, \
-                           __prepare_func_name__,  \
-                           __execute_func_name__)  \
-  case NNADAPTER_##__op_type__:                    \
-    flag = __validate_func_name__(operation);      \
+#define REGISTER_OPERATION(__op_type__,                  \
+                           __validate_func_name__,       \
+                           __prepare_func_name__,        \
+                           __execute_func_name__)        \
+  case NNADAPTER_##__op_type__:                          \
+    flag = operation::__validate_func_name__(operation); \
     break;
 #include "operation/all.h"  // NOLINT
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
       default:
         NNADAPTER_LOG(WARNING) << "Unsupported operation("
@@ -214,15 +220,18 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_VLOG(5) << "Running " << OperationTypeToString(operation->type)
                       << " ...";
     switch (operation->type) {
-#define REGISTER_OPERATION(__op_type__,            \
-                           __validate_func_name__, \
-                           __prepare_func_name__,  \
-                           __execute_func_name__)  \
-  case NNADAPTER_##__op_type__:                    \
-    __prepare_func_name__(operation);              \
-    __execute_func_name__(operation);              \
+#define REGISTER_OPERATION(__op_type__,                            \
+                           __validate_func_name__,                 \
+                           __prepare_func_name__,                  \
+                           __execute_func_name__)                  \
+  case NNADAPTER_##__op_type__:                                    \
+    NNADAPTER_CHECK(operation::__prepare_func_name__(operation) == \
+                    NNADAPTER_NO_ERROR);                           \
+    NNADAPTER_CHECK(operation::__execute_func_name__(operation) == \
+                    NNADAPTER_NO_ERROR);                           \
     break;
 #include "operation/all.h"  // NOLINT
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
       default:
         NNADAPTER_LOG(WARNING) << "Unsupported operation("
@@ -253,7 +262,7 @@ int OpenDevice(void** device) {
   auto d = new Device();
   if (!d) {
     *device = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to open device for generic_device.";
+    NNADAPTER_LOG(FATAL) << "Failed to open device for cpu.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *device = reinterpret_cast<void*>(d);
@@ -275,7 +284,7 @@ int CreateContext(void* device, const char* properties, void** context) {
   auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to create context for generic_device.";
+    NNADAPTER_LOG(FATAL) << "Failed to create context for cpu.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *context = reinterpret_cast<void*>(c);
@@ -292,7 +301,7 @@ void DestroyContext(void* context) {
 int ValidateProgram(void* context,
                     const core::Model* model,
                     bool* supported_operations) {
-  NNADAPTER_LOG(INFO) << "Validate program for generic_device.";
+  NNADAPTER_LOG(INFO) << "Validate program for cpu.";
   if (!context || !model || !supported_operations) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -310,7 +319,7 @@ int CreateProgram(void* context,
                   core::Model* model,
                   core::Cache* cache,
                   void** program) {
-  NNADAPTER_LOG(INFO) << "Create program for generic_device.";
+  NNADAPTER_LOG(INFO) << "Create program for cpu.";
   if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -329,7 +338,7 @@ int CreateProgram(void* context,
 
 void DestroyProgram(void* program) {
   if (program) {
-    NNADAPTER_LOG(INFO) << "Destroy program for generic_device.";
+    NNADAPTER_LOG(INFO) << "Destroy program for cpu.";
     auto p = reinterpret_cast<Program*>(program);
     delete p;
   }
@@ -348,21 +357,21 @@ int ExecuteProgram(void* program,
       input_count, input_arguments, output_count, output_arguments);
 }
 
-}  // namespace generic_device
+}  // namespace cpu
 }  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    GENERIC_DEVICE_NAME) = {
-    .name = NNADAPTER_AS_STR2(GENERIC_DEVICE_NAME),
+    CPU_DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(CPU_DEVICE_NAME),
     .vendor = "Paddle",
     .type = NNADAPTER_CPU,
     .version = 1,
-    .open_device = nnadapter::generic_device::OpenDevice,
-    .close_device = nnadapter::generic_device::CloseDevice,
-    .create_context = nnadapter::generic_device::CreateContext,
-    .destroy_context = nnadapter::generic_device::DestroyContext,
-    .validate_program = nnadapter::generic_device::ValidateProgram,
-    .create_program = nnadapter::generic_device::CreateProgram,
-    .destroy_program = nnadapter::generic_device::DestroyProgram,
-    .execute_program = nnadapter::generic_device::ExecuteProgram,
+    .open_device = nnadapter::cpu::OpenDevice,
+    .close_device = nnadapter::cpu::CloseDevice,
+    .create_context = nnadapter::cpu::CreateContext,
+    .destroy_context = nnadapter::cpu::DestroyContext,
+    .validate_program = nnadapter::cpu::ValidateProgram,
+    .create_program = nnadapter::cpu::CreateProgram,
+    .destroy_program = nnadapter::cpu::DestroyProgram,
+    .execute_program = nnadapter::cpu::ExecuteProgram,
 };

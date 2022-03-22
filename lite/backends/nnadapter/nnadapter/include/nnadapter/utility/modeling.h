@@ -31,6 +31,9 @@ core::Operation* AddOperation(core::Model* model);
 void RemoveOperand(core::Model* model, core::Operand* operand);
 // Remove a operation into a model
 void RemoveOperation(core::Model* model, core::Operation* operation);
+// Allocate memory based on the data type and dimensions for a operand, and do
+// not reallocate if memory is sufficient
+void* AllocateOperand(core::Operand* operand);
 // Add a bool8 scalar constant operand
 core::Operand* AddBool8ConstantOperand(core::Model* model, bool value);
 // Add a int32 scalar constant operand

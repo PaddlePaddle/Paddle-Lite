@@ -48,7 +48,7 @@ void* AccessInputOperand(void* memory, NNAdapterOperandType* type) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto operand = static_cast<core::Operand*>(memory);
-  CopyOperandType(type, operand->type);
+  CopyOperandTypeWithDimensions(type, operand->type);
   return operand->buffer;
 }
 
@@ -56,18 +56,8 @@ void* AccessOutputOperand(void* memory, NNAdapterOperandType* type) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto operand = static_cast<core::Operand*>(memory);
-  CopyOperandType(&operand->type, *type);
-  auto length = GetOperandTypeBufferLength(operand->type);
-  if (operand->length < length) {
-    if (operand->buffer) {
-      free(operand->buffer);
-    }
-    operand->buffer = malloc(length);
-    NNADAPTER_CHECK(operand->buffer) << "Failed to allocate " << length
-                                     << " bytes, out of memory!";
-    operand->length = length;
-  }
-  return operand->buffer;
+  CopyOperandTypeWithDimensions(&operand->type, *type);
+  return AllocateOperand(operand);
 }
 
 Compilation::Program::~Program() {

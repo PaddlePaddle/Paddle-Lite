@@ -18,7 +18,7 @@
 REGISTER_OPERATION(ABS,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
-                   executeUnaryActivations)
+                   ExecuteUnaryActivations)
 REGISTER_OPERATION(ADAPTIVE_AVERAGE_POOL_2D,
                    ValidateAdaptivePool2D,
                    PrepareAdaptivePool2D,

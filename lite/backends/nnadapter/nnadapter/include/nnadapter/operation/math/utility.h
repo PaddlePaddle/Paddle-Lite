@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,14 +14,19 @@
 
 #pragma once
 
-#include "driver/device.h"
-#include "utility/micros.h"
+#include <vector>
 
-#define CPU_DEVICE_NAME cpu
+namespace nnadapter {
+namespace operation {
+namespace math {
 
-// The following environment variables can be used at runtime:
-// Specify the number of threads to use in thread pool, no thread
-// pool/single-thread is used as default(default value is 0).
-#define CPU_NUM_THREADS "CPU_NUM_THREADS"
+// Get the slice of the shape
+std::vector<int32_t> slice_of_shape(const std::vector<int32_t>& input_shape,
+                                    int start,
+                                    int end = -1);
+// Get the production of the shape
+int64_t production_of_shape(const std::vector<int32_t>& input_shape);
 
-extern nnadapter::driver::Device NNADAPTER_AS_SYM2(CPU_DEVICE_NAME);
+}  // namespace math
+}  // namespace operation
+}  // namespace nnadapter
