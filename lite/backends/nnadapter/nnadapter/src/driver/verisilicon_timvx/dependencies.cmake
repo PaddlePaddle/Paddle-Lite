@@ -54,7 +54,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Android")
   set(VERISILICON_TIMVX_PATCH_COMMAND ${VERISILICON_TIMVX_PATCH_COMMAND} && sed -e "s/libArchModelSw/libarchmodelSw/g" -i cmake/local_sdk.cmake)
   # Fix the compilation error: "src/tim/vx/ops/custom_base.cc:165:44: error: variable-sized object may not be initialized"
   # Don't use ";" in command string but use $<SEMICOLON> instead, refer to https://stackoverflow.com/questions/43398478/how-to-print-a-symbol-using-cmake-command for more details
-  set(VERISILICON_TIMVX_PATCH_COMMAND ${VERISILICON_TIMVX_PATCH_COMMAND} && sed -e "s/vsi_nn_kernel_node_param_t node_params\\[param_num\\] = {NULL}$<SEMICOLON>/vsi_nn_kernel_node_param_t node_params[param_num]$<SEMICOLON> memset(node_params, 0, sizeof(vsi_nn_kernel_node_param_t) * param_num)$<SEMICOLON>/g" -i src/tim/vx/ops/custom_base.cc)
+  # set(VERISILICON_TIMVX_PATCH_COMMAND ${VERISILICON_TIMVX_PATCH_COMMAND} && sed -e "s/vsi_nn_kernel_node_param_t node_params\\[param_num\\] = {NULL}$<SEMICOLON>/vsi_nn_kernel_node_param_t node_params[param_num]$<SEMICOLON> memset(node_params, 0, sizeof(vsi_nn_kernel_node_param_t) * param_num)$<SEMICOLON>/g" -i src/tim/vx/ops/custom_base.cc)
 endif()
 
 ExternalProject_Add(
