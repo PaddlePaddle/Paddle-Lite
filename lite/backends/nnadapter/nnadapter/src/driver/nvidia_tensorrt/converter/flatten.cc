@@ -30,6 +30,7 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   }
   if (!IsOperandWithDynamicShape(input_operand)) {
     nvinfer1::Dims flatten_dim;
+    flatten_dim.nbDims = output_operand->type.dimensions.count;
     for (int i = 0; i < output_operand->type.dimensions.count; ++i) {
       flatten_dim.d[i] = output_operand->type.dimensions.data[i];
     }
