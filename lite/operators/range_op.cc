@@ -83,9 +83,9 @@ bool RangeOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto step = opdesc.Input("Step").front();
   auto out = opdesc.Output("Out").front();
 
-  param_.Start = scope->FindTensor(start);
-  param_.End = scope->FindTensor(end);
-  param_.Step = scope->FindTensor(step);
+  param_.Start = scope->FindMutableTensor(start);
+  param_.End = scope->FindMutableTensor(end);
+  param_.Step = scope->FindMutableTensor(step);
   param_.Out = scope->FindMutableTensor(out);
 
   return true;
