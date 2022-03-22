@@ -73,7 +73,7 @@ int conv2d(const T* input_data,
       for (int oc = 0; oc < output_channel_group; oc++) {
         for (int oh = 0; oh < output_height; oh++) {
           for (int ow = 0; ow < output_width; ow++) {
-            int output_idx =
+            int output_index =
                 bs * group * output_channel_group * output_height *
                     output_width +
                 g * output_channel_group * output_height * output_width +
@@ -89,18 +89,18 @@ int conv2d(const T* input_data,
                            kh * dilation_height;
                   if (iw < 0 || iw >= input_width) continue;
                   if (ih < 0 || ih >= input_height) continue;
-                  int input_idx =
+                  int input_index =
                       bs * input_channel_size * input_height * input_width +
                       g * input_channel_group * input_height * input_width +
                       ic * input_height * input_width + ih * input_width + iw;
-                  int filter_idx =
+                  int filter_index =
                       g * output_channel_group * input_channel_group *
                           kernel_height * kernel_width +
                       oc * input_channel_group * kernel_height * kernel_width +
                       ic * kernel_height * kernel_width + kh * kernel_width +
                       kw;
                   output_value +=
-                      input_data[input_idx] * filter_data[filter_idx];
+                      input_data[input_index] * filter_data[filter_index];
                 }
               }
             }
@@ -116,7 +116,7 @@ int conv2d(const T* input_data,
             } else {
               return -1;
             }
-            output_data[output_idx] = output_value;
+            output_data[output_index] = output_value;
           }
         }
       }
