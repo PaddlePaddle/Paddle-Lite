@@ -66,8 +66,8 @@ inline float16x4_t exp_ps_f16(float16x4_t x) {
 
 // exp_log = expq_ps_f16(vmulq_f16(b, log_ps(a)))
 inline float16x8_t exp_logq_f16(float16x8_t a, float32x4_t b) {
-  flaot32x4_t vsum_a_low = log_ps(vcvt_f32_f16(vget_low_f16(a)));
-  flaot32x4_t vsum_a_high = log_ps(vcvt_f32_f16(vget_high_f16(a)));
+  float32x4_t vsum_a_low = log_ps(vcvt_f32_f16(vget_low_f16(a)));
+  float32x4_t vsum_a_high = log_ps(vcvt_f32_f16(vget_high_f16(a)));
   float32x4_t vsum_a = vmulq_f32(b, vsum_a_low);
   float32x4_t vsum_b = vmulq_f32(b, vsum_a_high);
   float32x4_t vres_a = exp_ps(vsum_a);
@@ -75,8 +75,8 @@ inline float16x8_t exp_logq_f16(float16x8_t a, float32x4_t b) {
   return vcombine_f16(vcvt_f16_f32(vres_b), vcvt_f16_f32(vres_a));
 }
 
-inline float16x4_t exp_logq_f16(float16x4_t a, float32x4_t b) {
-  flaot32x4_t vsum_a_low = log_ps(vcvt_f32_f16(a));
+inline float16x4_t exp_log_f16(float16x4_t a, float32x4_t b) {
+  float32x4_t vsum_a_low = log_ps(vcvt_f32_f16(a));
   float32x4_t vsum_a = vmulq_f32(b, vsum_a_low);
   float32x4_t vres_a = exp_ps(vsum_a);
   return vcvt_f16_f32(vres_a);
@@ -99,7 +99,7 @@ inline float16x8_t powq_ps_f16(float16x8_t a, float32x4_t b) {
   return vmulq_f16(vsum, vone);
 }
 
-inline float16x4_t pow_ps_f16(float16x4_t a, float16x4_t b) {
+inline float16x4_t pow_ps_f16(float16x4_t a, float32x4_t b) {
   float16x4_t vone = vdup_n_f16(1.f);
   // x < 0
   for (int i = 0; i < 4; i++) {

@@ -73,8 +73,8 @@ void TanhCompute<PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
-  auto x_data = param.X->data<float>();
-  auto output_data = param.Out->mutable_data<float>();
+  auto x_data = param.X->data<float16_t>();
+  auto output_data = param.Out->mutable_data<float16_t>();
   lite::arm::math::fp16::act_tanh<float16_t>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
@@ -125,7 +125,8 @@ void SigmoidCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
-void TanhCompute::Run() {
+template <>
+void TanhCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -196,7 +197,7 @@ REGISTER_LITE_KERNEL(prelu,
 
 REGISTER_LITE_KERNEL(tanh,
                      kARM,
-                     kFloat,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::arm::TanhCompute<PRECISION(kFP16)>,
                      def)

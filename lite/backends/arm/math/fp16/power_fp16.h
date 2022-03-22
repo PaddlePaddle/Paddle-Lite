@@ -19,7 +19,7 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-
+typedef __fp16 float16_t;
 void power_fp16(const float16_t* din,
                 float16_t* dout,
                 const int num,

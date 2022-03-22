@@ -172,8 +172,8 @@ void TestReluGrad(DDim dims) {
 
 void TestTanhGrad(DDim dims) {
   LOG(INFO) << "Test Tanh grad";
-  std::unique_ptr<ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>>
-      tester(new ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>(
+  std::unique_ptr<ActivationGradTester<arm::TanhCompute<PRECISION(kFloat)>, host::TanhGradCompute>>
+      tester(new ActivationGradTester<arm::TanhCompute<PRECISION(kFloat)>, host::TanhGradCompute>(
           dims));
   tester->prepare_kernel();
   float delta = 0.001;

@@ -356,8 +356,8 @@ void act_tanh<float16_t>(const float16_t* din,
     }
   }
   LITE_PARALLEL_END();
-  float* ptr_out = dout + threads * nums_per_thread;
-  const float* ptr_in = din + threads * nums_per_thread;
+  float16_t* ptr_out = dout + threads * nums_per_thread;
+  const float16_t* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
     ptr_out[0] = (expf(ptr_in[0]) - expf(-ptr_in[0])) /
                  (expf(ptr_in[0]) + expf(-ptr_in[0]));

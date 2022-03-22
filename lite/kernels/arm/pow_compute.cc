@@ -61,7 +61,7 @@ void PowCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 typedef paddle::lite::kernels::arm::PowCompute<PRECISION(kFP16),
                                                PRECISION(kFP16)>
     PowFp16;
-REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PowFp16, def)
+REGISTER_LITE_KERNEL(pow, kARM, kFP16, kNCHW, PowFp16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
