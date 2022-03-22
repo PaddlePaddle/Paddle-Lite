@@ -25,8 +25,8 @@ def get_dirs(root_path):
 
 def get_kernels(root_path):
   kernel_path = os.path.join("lite", "kernels")
-  kernel_suffix = "_compute.h"
-  operator_suffix = "_op.cc"
+  kernel_regex = r"(.+?)_compute.(cc|cu|cpp)"
+  operator_regex = r"(.+?)_op.cc"
   root = os.path.join(root_path, kernel_path)
   kernels_map = {}
   ops_map = {}
@@ -37,8 +37,8 @@ def get_kernels(root_path):
       ops_map[device] = []
       for dirpath, dirnames, filenames in os.walk(os.path.join(root, device)):
         for f in filenames:
-          kernels_map[device].append(re.findall(r"(.+?)" + kernel_suffix, f))
-          ops_map[device].append(re.findall(r"(.+?)" + operator_suffix, f))
+          kernels_map[device] = kernels_map[device] + re.findall(kernel_regex, f)
+          ops_map[device] = ops_map[device] + re.findall(operator_regex, f)
 
   return kernels_map, ops_map
 
@@ -46,7 +46,7 @@ def suffix_filter(root, suffix):
   list = []
   for dirpath, dirnames, filenames in os.walk(root):
     for f in filenames:
-      list.append(re.findall(r"(.+?)" + suffix, f))
+      list = list + re.findall(r"(.+?)" + suffix, f)
   return list
 
 def get_operators(root_path):
