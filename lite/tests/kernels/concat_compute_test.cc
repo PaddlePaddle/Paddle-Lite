@@ -153,6 +153,9 @@ TEST(Concat, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
   use_axis_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  use_axis_tensor = std::vector<bool>{false};
 #else
   return;
 #endif

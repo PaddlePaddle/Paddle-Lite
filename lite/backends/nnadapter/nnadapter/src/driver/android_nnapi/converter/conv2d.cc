@@ -14,11 +14,16 @@
 
 #include "operation/conv2d.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateConv2D(Validator* validator, const core::Operation* operation) {
+  return true;
+}
 
 int ConvertConv2D(Converter* converter, core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS

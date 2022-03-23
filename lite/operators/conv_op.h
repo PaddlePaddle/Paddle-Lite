@@ -133,10 +133,7 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("swish_scale");
         param_.activation_param.active_type = lite_api::ActivationType::kSwish;
         param_.fuse_swish = true;
-      } /* else if (act_type == "exp") {
-        param_.activation_param.active_type = lite_api::ActivationType::kExp;
-        param_.fuse_exp = true;
-      }*/ else if (act_type == "abs") {
+      } else if (act_type == "abs") {
         param_.activation_param.active_type = lite_api::ActivationType::kAbs;
         param_.fuse_abs = true;
       } else if (act_type == "relu6") {
