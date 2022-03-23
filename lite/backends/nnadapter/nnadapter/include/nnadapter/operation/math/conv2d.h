@@ -17,6 +17,7 @@
 #include <math.h>
 #include <algorithm>
 #include <limits>
+#include <utility>
 #include <vector>
 #include "operation/math/dequantize.h"
 #include "operation/math/quantize.h"
@@ -43,7 +44,7 @@ int conv2d(const T* input_data,
            int group,
            FuseCode fuse_code,
            T* output_data) {
-  if (!input_data || !filter_data) {
+  if (!input_data || !filter_data || !output_data) {
     return -1;
   }
   auto input_rank = input_shape.size();
@@ -104,15 +105,15 @@ int conv2d(const T* input_data,
                 }
               }
             }
-            if (fuse_code == FUSED_RELU) {
+            if (fuse_code == FUSE_RELU) {
               output_value = output_value > 0 ? output_value : 0;
-            } else if (fuse_code == FUSED_RELU1) {
+            } else if (fuse_code == FUSE_RELU1) {
               output_value = std::min(std::max(static_cast<T>(0), output_value),
                                       static_cast<T>(1));
-            } else if (fuse_code == FUSED_RELU6) {
+            } else if (fuse_code == FUSE_RELU6) {
               output_value = std::min(std::max(static_cast<T>(0), output_value),
                                       static_cast<T>(6));
-            } else if (fuse_code == FUSED_NONE) {
+            } else if (fuse_code == FUSE_NONE) {
             } else {
               return -1;
             }
@@ -130,7 +131,27 @@ int conv2d(const int8_t* input_data,
            float input_scale,
            const int8_t* filter_data,
            const std::vector<int32_t>& filter_shape,
-           const std::vector<float>& filter_scales,
+           const std::pair<const std::vector<float>, int>& filter_scales,
+           const int32_t* bias_data,
+           int pad_height_top,
+           int pad_height_bottom,
+           int pad_width_left,
+           int pad_width_right,
+           int stride_height,
+           int stride_width,
+           int dilation_height,
+           int dilation_width,
+           int group,
+           FuseCode fuse_code,
+           int8_t* output_data,
+           float output_scale);
+
+int conv2d(const int8_t* input_data,
+           const std::vector<int32_t>& input_shape,
+           float input_scale,
+           const int8_t* filter_data,
+           const std::vector<int32_t>& filter_shape,
+           float filter_scale,
            const int32_t* bias_data,
            int pad_height_top,
            int pad_height_bottom,

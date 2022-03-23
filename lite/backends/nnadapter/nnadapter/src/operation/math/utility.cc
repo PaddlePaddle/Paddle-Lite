@@ -18,18 +18,17 @@ namespace nnadapter {
 namespace operation {
 namespace math {
 
-std::vector<int32_t> slice_of_shape(const std::vector<int32_t>& input_shape,
-                                    int start,
-                                    int end) {
-  auto input_rank = input_shape.size();
-  if (end < 0) {
-    end += input_rank;
-  }
+std::vector<int32_t> shape_slice(const std::vector<int32_t>& input_shape,
+                                 int start,
+                                 int end) {
+  int input_rank = input_shape.size();
+  start = start < 0 ? 0 : (start > input_rank ? input_rank : start);
+  end = end < start ? start : (end > input_rank ? input_rank : end);
   return std::vector<int32_t>(input_shape.data() + start,
                               input_shape.data() + end);
 }
 
-int64_t production_of_shape(const std::vector<int32_t>& input_shape) {
+int64_t shape_production(const std::vector<int32_t>& input_shape) {
   auto input_rank = input_shape.size();
   int64_t production = 1;
   for (size_t i = 0; i < input_rank; i++) {

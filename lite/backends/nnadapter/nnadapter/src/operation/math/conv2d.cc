@@ -25,7 +25,7 @@ int conv2d(const int8_t* input_data,
            float input_scale,
            const int8_t* filter_data,
            const std::vector<int32_t>& filter_shape,
-           const std::vector<float>& filter_scales,
+           const std::pair<const std::vector<float>, int>& filter_scales,
            const int32_t* bias_data,
            int pad_height_top,
            int pad_height_bottom,
@@ -64,32 +64,36 @@ int conv2d(const int8_t* input_data,
   std::vector<int32_t> output_shape = {
       batch_size, output_channel_size, output_height, output_width};
   // Dequantize input data
-  auto input_count = production_of_shape(input_shape);
+  auto input_count = shape_production(input_shape);
   std::vector<float> dequantized_input_data(input_count);
-  dequantize(
-      input_data, input_shape, {input_scale}, dequantized_input_data.data());
+  int status = dequantize(
+      input_data, input_shape, input_scale, dequantized_input_data.data());
+  if (status) return status;
   // Dequantize filter data
-  auto filter_count = production_of_shape(filter_shape);
+  auto filter_count = shape_production(filter_shape);
   std::vector<float> dequantized_filter_data(filter_count);
-  dequantize(
+  status = dequantize(
       filter_data, filter_shape, filter_scales, dequantized_filter_data.data());
+  if (status) return status;
   // Dequantize bias data
   std::vector<float> dequantized_bias_data;
   if (bias_data) {
     std::vector<float> bias_scales;
-    for (auto filter_scale : filter_scales) {
+    for (auto filter_scale : filter_scales.first) {
       bias_scales.push_back(input_scale * filter_scale);
     }
     dequantized_bias_data.resize(output_channel_size);
-    dequantize(bias_data,
-               {output_channel_size},
-               bias_scales,
-               dequantized_bias_data.data());
+    status =
+        dequantize(bias_data,
+                   {output_channel_size},
+                   std::make_pair(bias_scales, bias_scales.size() > 0 ? 0 : -1),
+                   dequantized_bias_data.data());
+    if (status) return status;
   }
   // Prepare dequantized output data
-  auto output_count = production_of_shape(output_shape);
+  auto output_count = shape_production(output_shape);
   std::vector<float> dequantized_output_data(output_count);
-  conv2d<float>(
+  status = conv2d<float>(
       dequantized_input_data.data(),
       input_shape,
       dequantized_filter_data.data(),
@@ -106,12 +110,50 @@ int conv2d(const int8_t* input_data,
       group,
       fuse_code,
       dequantized_output_data.data());
+  if (status) return status;
   // Quantize output data
-  quantize(dequantized_output_data.data(),
-           output_shape,
-           {output_scale},
-           output_data);
-  return 0;
+  return quantize(
+      dequantized_output_data.data(), output_shape, output_scale, output_data);
+}
+
+int conv2d(const int8_t* input_data,
+           const std::vector<int32_t>& input_shape,
+           float input_scale,
+           const int8_t* filter_data,
+           const std::vector<int32_t>& filter_shape,
+           float filter_scale,
+           const int32_t* bias_data,
+           int pad_height_top,
+           int pad_height_bottom,
+           int pad_width_left,
+           int pad_width_right,
+           int stride_height,
+           int stride_width,
+           int dilation_height,
+           int dilation_width,
+           int group,
+           FuseCode fuse_code,
+           int8_t* output_data,
+           float output_scale) {
+  return conv2d(input_data,
+                input_shape,
+                input_scale,
+                filter_data,
+                filter_shape,
+                std::make_pair(std::vector<float>({filter_scale}), -1),
+                bias_data,
+                pad_height_top,
+                pad_height_bottom,
+                pad_width_left,
+                pad_width_right,
+                stride_height,
+                stride_width,
+                dilation_height,
+                dilation_width,
+                group,
+                fuse_code,
+                output_data,
+                output_scale);
 }
 
 }  // namespace math

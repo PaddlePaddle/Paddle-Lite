@@ -23,7 +23,7 @@
 namespace nnadapter {
 namespace operation {
 
-bool ValidateMatMul(const core::Operation* operation) { return false; }
+bool ValidateMatMul(const core::Operation* operation) { return true; }
 
 int PrepareMatMul(core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS

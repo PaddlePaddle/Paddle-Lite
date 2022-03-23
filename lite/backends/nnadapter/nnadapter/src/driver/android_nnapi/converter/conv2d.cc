@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace android_nnapi {
 
 bool ValidateConv2D(Validator* validator, const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 int ConvertConv2D(Converter* converter, core::Operation* operation) {

@@ -95,6 +95,10 @@ REGISTER_OPERATION(FLOOR,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
+REGISTER_OPERATION(FULLY_CONNECTED,
+                   ValidateFullyConnected,
+                   PrepareFullyConnected,
+                   ExecuteFullyConnected)
 REGISTER_OPERATION(GATHER, ValidateGather, PrepareGather, ExecuteGather)
 REGISTER_OPERATION(GELU, ValidateGelu, PrepareGelu, ExecuteGelu)
 REGISTER_OPERATION(GREATER,

@@ -74,7 +74,7 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
   }
 }
 
-bool ValidateElementwise(const core::Operation* operation) { return false; }
+bool ValidateElementwise(const core::Operation* operation) { return true; }
 
 int PrepareElementwise(core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS

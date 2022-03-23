@@ -38,7 +38,7 @@ int ExecuteSoftmax(core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands
-  int status = 0;
+  int status = -1;
   auto& input_type = input_operand->type;
   auto input_shape = std::vector<int32_t>(
       input_type.dimensions.data,

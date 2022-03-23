@@ -31,14 +31,17 @@ static int softmax(const T* input_data,
                    const std::vector<int32_t>& input_shape,
                    int axis,
                    T* output_data) {
+  if (!input_data || !output_data) {
+    return -1;
+  }
   auto input_rank = input_shape.size();
   if (axis < 0) {
     axis += input_rank;
   }
   auto axis_count = input_shape[axis];
-  auto outer_count = production_of_shape(slice_of_shape(input_shape, 0, axis));
+  auto outer_count = shape_production(shape_slice(input_shape, 0, axis));
   auto inner_count =
-      production_of_shape(slice_of_shape(input_shape, axis + 1, input_rank));
+      shape_production(shape_slice(input_shape, axis + 1, input_rank));
   auto compute_count = outer_count * inner_count;
   for (int64_t i = 0; i < compute_count; i++) {
     auto inner_index = i % inner_count;

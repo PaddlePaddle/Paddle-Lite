@@ -48,7 +48,7 @@ endif()
 message(STATUS "NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=${NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT}")
 
 # Remove the -Werror flags to avoid compilation errors 
-set(VERISILICON_TIMVX_PATCH_COMMAND sed -e "s/-Werror//g" -i CMakeLists.txt && sed -e "s/VERSION 3.14/VERSION 3.10/g" -i CMakeLists.txt)
+set(VERISILICON_TIMVX_PATCH_COMMAND sed -e "s/-Werror//g" -i CMakeLists.txt && sed -e "s/3.14/3.10/g" -i CMakeLists.txt)
 if(CMAKE_SYSTEM_NAME MATCHES "Android")
   # Hack the TIM-VX and change the name of lib 'libArchModelSw.so' to 'libarchmodelSw.so' for Android
   set(VERISILICON_TIMVX_PATCH_COMMAND ${VERISILICON_TIMVX_PATCH_COMMAND} && sed -e "s/libArchModelSw/libarchmodelSw/g" -i cmake/local_sdk.cmake)

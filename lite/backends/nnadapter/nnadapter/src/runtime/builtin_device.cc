@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -128,10 +129,12 @@ int Program::Validate(const core::Model* model, bool* supported_operations) {
 #undef __NNADAPTER_CORE_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
       default:
-        NNADAPTER_LOG(WARNING) << "Unsupported operation("
-                               << OperationTypeToString(operation->type)
-                               << ") is found.";
         break;
+    }
+    if (!flag) {
+      NNADAPTER_LOG(WARNING) << "Unsupported operation("
+                             << OperationTypeToString(operation->type)
+                             << ") is found.";
     }
     supported_operations[operation_to_index[operation]] = flag;
   }
@@ -154,6 +157,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Cached model:" << std::endl << Visualize(model);
   } else {
     // Build from model
+    FuseMatMulAddIntoFullyConnected(model);
     model_.second = false;
   }
   model_.first = model;
@@ -234,9 +238,9 @@ int Program::Execute(uint32_t input_count,
 #undef __NNADAPTER_CORE_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
       default:
-        NNADAPTER_LOG(WARNING) << "Unsupported operation("
-                               << OperationTypeToString(operation->type)
-                               << ") is found.";
+        NNADAPTER_LOG(FATAL) << "Unsupported operation("
+                             << OperationTypeToString(operation->type)
+                             << ") is found.";
         break;
     }
   }

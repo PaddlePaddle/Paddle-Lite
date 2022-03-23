@@ -26,18 +26,19 @@ int softmax(const int8_t* input_data,
             int32_t axis,
             int8_t* output_data,
             float output_scale) {
-  auto input_count = production_of_shape(input_shape);
+  auto input_count = shape_production(input_shape);
   std::vector<float> dequantized_input_data(input_count);
   std::vector<float> dequantized_output_data(input_count);
-  dequantize(
-      input_data, input_shape, {input_scale}, dequantized_input_data.data());
-  softmax<float>(dequantized_input_data.data(),
-                 input_shape,
-                 axis,
-                 dequantized_output_data.data());
-  quantize(
-      dequantized_output_data.data(), input_shape, {output_scale}, output_data);
-  return 0;
+  int status = dequantize(
+      input_data, input_shape, input_scale, dequantized_input_data.data());
+  if (status) return status;
+  status = softmax<float>(dequantized_input_data.data(),
+                          input_shape,
+                          axis,
+                          dequantized_output_data.data());
+  if (status) return status;
+  return quantize(
+      dequantized_output_data.data(), input_shape, output_scale, output_data);
 }
 
 }  // namespace math
