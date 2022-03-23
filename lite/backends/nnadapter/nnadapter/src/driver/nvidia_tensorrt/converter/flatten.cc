@@ -39,7 +39,79 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
     auto output_tensor = flatten_layer->getOutput(0);
     converter->UpdateTensorMap(output_operand, output_tensor);
   } else {
-    NNADAPTER_LOG(FATAL) << "flatten dynamic shape will support later";
+    if (start_axis < 0) start_axis += input_operand->type.dimensions.count;
+    if (end_axis < 0) end_axis += input_operand->type.dimensions.count;
+
+    auto shape_layer = converter->network()->addShape(*input_tensor);
+    auto shape_layer_itensor = shape_layer->getOutput(0);
+
+    nvinfer1::Dims start_dim, size_dim, stride_dim;
+    start_dim.nbDims = 1;
+    size_dim.nbDims = 1;
+    stride_dim.nbDims = 1;
+    start_dim.d[0] = start_axis;
+    size_dim.d[0] = end_axis - start_axis + 1;
+    stride_dim.d[0] = 1;
+
+    auto slice_layer = converter->network()->addSlice(
+        *shape_layer_itensor, start_dim, size_dim, stride_dim);
+
+    uint32_t reduce_dim = 1;
+
+    auto reduce_prod_layer =
+        converter->network()->addReduce(*(slice_layer->getOutput(0)),
+                                        nvinfer1::ReduceOperation::kPROD,
+                                        reduce_dim,
+                                        true);
+
+    nvinfer1::ITensor* input_shape = nullptr;
+
+    if (start_axis == 0 &&
+        end_axis == input_operand->type.dimensions.count - 1) {
+      input_shape = reduce_prod_layer->getOutput(0);
+    } else {
+      std::vector<nvinfer1::ITensor*> itensors;
+      if (start_axis > 0) {
+        nvinfer1::Dims left_start_dim, left_size_dim, left_stride_dim;
+        left_start_dim.nbDims = 1;
+        left_size_dim.nbDims = 1;
+        left_stride_dim.nbDims = 1;
+        left_start_dim.d[0] = 0;
+        left_size_dim.d[0] = start_axis;
+        left_stride_dim.d[0] = 1;
+        auto slice_layer_left =
+            converter->network()->addSlice(*shape_layer_itensor,
+                                           left_start_dim,
+                                           left_size_dim,
+                                           left_stride_dim);
+        itensors.push_back(slice_layer_left->getOutput(0));
+      }
+      itensors.push_back(reduce_prod_layer->getOutput(0));
+      if (end_axis < input_operand->type.dimensions.count - 1) {
+        nvinfer1::Dims right_start_dim, right_size_dim, right_stride_dim;
+        right_start_dim.nbDims = 1;
+        right_size_dim.nbDims = 1;
+        right_stride_dim.nbDims = 1;
+        right_start_dim.d[0] = end_axis + 1;
+        right_size_dim.d[0] =
+            input_operand->type.dimensions.count - end_axis - 1;
+        right_stride_dim.d[0] = 1;
+        auto slice_layer_right =
+            converter->network()->addSlice(*shape_layer_itensor,
+                                           right_start_dim,
+                                           right_size_dim,
+                                           right_stride_dim);
+        itensors.push_back(slice_layer_right->getOutput(0));
+      }
+      auto concat_layer = converter->network()->addConcatenation(
+          itensors.data(), itensors.size());
+      concat_layer->setAxis(0);
+      input_shape = concat_layer->getOutput(0);
+    }
+    auto flatten_layer = converter->network()->addShuffle(*input_tensor);
+    flatten_layer->setInput(1, *input_shape);
+    auto output_tensor = flatten_layer->getOutput(0);
+    converter->UpdateTensorMap(output_operand, output_tensor);
   }
   return NNADAPTER_NO_ERROR;
 }
