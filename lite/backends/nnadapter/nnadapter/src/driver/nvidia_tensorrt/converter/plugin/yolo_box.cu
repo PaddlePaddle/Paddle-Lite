@@ -26,8 +26,7 @@ YoloBoxPluginDynamic::YoloBoxPluginDynamic(const std::vector<int32_t>& anchors,
                                            float scale_x_y,
                                            bool iou_aware,
                                            float iou_aware_factor)
-    :  // anchors_size_for_serial_(anchors.size()),
-      anchors_(anchors),
+    : anchors_(anchors),
       class_num_(class_num),
       conf_thresh_(conf_thresh),
       downsample_ratio_(downsample_ratio),
@@ -38,11 +37,7 @@ YoloBoxPluginDynamic::YoloBoxPluginDynamic(const std::vector<int32_t>& anchors,
 
 YoloBoxPluginDynamic::YoloBoxPluginDynamic(const void* serial_data,
                                            size_t serial_length) {
-  Deserialize(&serial_data, &serial_length, &anchors_size_for_serial_);
-  anchors_.resize(anchors_size_for_serial_);
-  for (int i = 0; i < anchors_.size(); i++)
-    Deserialize(&serial_data, &serial_length, &anchors_[i]);
-
+  Deserialize(&serial_data, &serial_length, &anchors_);
   Deserialize(&serial_data, &serial_length, &class_num_);
   Deserialize(&serial_data, &serial_length, &conf_thresh_);
   Deserialize(&serial_data, &serial_length, &downsample_ratio_);
@@ -280,15 +275,13 @@ int32_t YoloBoxPluginDynamic::enqueue(
 }
 
 size_t YoloBoxPluginDynamic::getSerializationSize() const noexcept {
-  return sizeof(anchors_size_for_serial_) + sizeof(int32_t) * anchors_.size() +
-         sizeof(class_num_) + sizeof(conf_thresh_) + sizeof(downsample_ratio_) +
-         sizeof(clip_bbox_) + sizeof(scale_x_y_) + sizeof(iou_aware_) +
-         sizeof(iou_aware_factor_);
+  return SerializedSize(anchors_) + sizeof(class_num_) + sizeof(conf_thresh_) +
+         sizeof(downsample_ratio_) + sizeof(clip_bbox_) + sizeof(scale_x_y_) +
+         sizeof(iou_aware_) + sizeof(iou_aware_factor_);
 }
 
 void YoloBoxPluginDynamic::serialize(void* buffer) const noexcept {
-  Serialize(&buffer, anchors_size_for_serial_);
-  for (int i = 0; i < anchors_.size(); i++) Serialize(&buffer, anchors_[i]);
+  Serialize(&buffer, anchors_);
   Serialize(&buffer, class_num_);
   Serialize(&buffer, conf_thresh_);
   Serialize(&buffer, downsample_ratio_);

@@ -58,7 +58,6 @@ class YoloBoxPluginDynamic : public PluginDynamic {
                                        int32_t nb_inputs) const noexcept;
 
  private:
-  int anchors_size_for_serial_;  // for deserialize use!
   std::vector<int32_t> anchors_;
   int class_num_;
   float conf_thresh_;

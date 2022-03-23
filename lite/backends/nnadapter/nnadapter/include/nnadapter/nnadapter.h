@@ -1963,6 +1963,7 @@ typedef enum {
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32 tensor.
    * * 1: input1, a NNADAPTER_INT32 tensor.
+   * * and other attrs!
    *
    * Outputs:
    * * 0: output, a Boxes NNADAPTER_FLOAT32 tensor .
