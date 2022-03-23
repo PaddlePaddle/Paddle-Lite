@@ -734,7 +734,13 @@ TEST(PriorBox, precision) {
 
 TEST(DensityPriorBox, precision) {
   Place place;
-#if defined(LITE_WITH_X86)
+#if defined(LITE_WITH_NNADAPTER)
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  place = TARGET(kNNAdapter);
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);

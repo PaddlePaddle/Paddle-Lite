@@ -22,10 +22,18 @@ namespace nvidia_tensorrt {
 class PriorBoxPluginDynamic : public PluginDynamic {
  public:
   PriorBoxPluginDynamic();
-  PriorBoxPluginDynamic(const std::vector<float>& aspect_ratios, const std::vector<int32_t>& input_dimension,
-                            const std::vector<int32_t>& image_dimension, float step_w, float step_h, const std::vector<float>& min_sizes,
-                            const std::vector<float>& max_sizes, float offset, bool is_clip, bool is_flip,
-                            bool min_max_aspect_ratios_order, const std::vector<float>& variances);
+  PriorBoxPluginDynamic(const std::vector<float>& aspect_ratios,
+                        const std::vector<int32_t>& input_dimension,
+                        const std::vector<int32_t>& image_dimension,
+                        float step_w,
+                        float step_h,
+                        const std::vector<float>& min_sizes,
+                        const std::vector<float>& max_sizes,
+                        float offset,
+                        bool is_clip,
+                        bool is_flip,
+                        bool min_max_aspect_ratios_order,
+                        const std::vector<float>& variances);
   PriorBoxPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
@@ -37,7 +45,7 @@ class PriorBoxPluginDynamic : public PluginDynamic {
   const char* getPluginType() const noexcept;
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
-  int32_t getNbOutputs() const noexcept;  
+  int32_t getNbOutputs() const noexcept;
   nvinfer1::DimsExprs getOutputDimensions(
       int32_t output_index,
       const nvinfer1::DimsExprs* inputs,
@@ -46,27 +54,29 @@ class PriorBoxPluginDynamic : public PluginDynamic {
   nvinfer1::DataType getOutputDataType(int32_t index,
                                        const nvinfer1::DataType* input_types,
                                        int32_t nb_inputs) const noexcept;
-  void ExpandAspectRatios(std::vector<float>& aspect_ratios_, bool flip, std::vector<float>* output_aspect_ratior) {                                 
+  void ExpandAspectRatios(std::vector<float>& aspect_ratios_,
+                          bool flip,
+                          std::vector<float>* output_aspect_ratior) {
     constexpr float epsilon = 1e-6;
-    output_aspect_ratior->clear();       
-    output_aspect_ratior->push_back(1.0f);      
-    for (size_t i = 0; i < aspect_ratios_.size(); ++i) {       
+    output_aspect_ratior->clear();
+    output_aspect_ratior->push_back(1.0f);
+    for (size_t i = 0; i < aspect_ratios_.size(); ++i) {
       float ar = aspect_ratios_[i];
-      bool already_exist = false;   
-      for (size_t j = 0; j < output_aspect_ratior->size(); ++j) {      
+      bool already_exist = false;
+      for (size_t j = 0; j < output_aspect_ratior->size(); ++j) {
         if (fabs(ar - output_aspect_ratior->at(j)) < epsilon) {
           already_exist = true;
           break;
         }
       }
-      if (!already_exist) {        
+      if (!already_exist) {
         output_aspect_ratior->push_back(ar);
-        if (flip) {        
+        if (flip) {
           output_aspect_ratior->push_back(1.0f / ar);
         }
       }
     }
-  };  
+  };
 
  private:
   std::vector<float> aspect_ratios_;
@@ -80,7 +90,7 @@ class PriorBoxPluginDynamic : public PluginDynamic {
   bool is_clip_;
   bool is_flip_;
   bool min_max_aspect_ratios_order_;
-  std::vector<float> variances_;     
+  std::vector<float> variances_;
 };
 
 class PriorBoxPluginDynamicCreator : public PluginCreator {

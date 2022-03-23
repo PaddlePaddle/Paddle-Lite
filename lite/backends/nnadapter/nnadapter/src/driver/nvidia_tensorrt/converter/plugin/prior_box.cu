@@ -19,14 +19,34 @@ namespace nvidia_tensorrt {
 
 PriorBoxPluginDynamic::PriorBoxPluginDynamic() {}
 
-PriorBoxPluginDynamic::PriorBoxPluginDynamic(const std::vector<float>& aspect_ratios, const std::vector<int32_t>& input_dimension,
-                            const std::vector<int32_t>& image_dimension, float step_w, float step_h, const std::vector<float>& min_sizes,
-                            const std::vector<float>& max_sizes, float offset, bool is_clip, bool is_flip, bool min_max_aspect_ratios_order, const std::vector<float>& variances)
-    : aspect_ratios_(aspect_ratios), input_dimension_(input_dimension), image_dimension_(image_dimension), step_w_(step_w), step_h_(step_h), 
-      min_sizes_(min_sizes), max_sizes_(max_sizes), offset_(offset), is_clip_(is_clip), is_flip_(is_flip), min_max_aspect_ratios_order_(min_max_aspect_ratios_order), variances_(variances){}
+PriorBoxPluginDynamic::PriorBoxPluginDynamic(
+    const std::vector<float>& aspect_ratios,
+    const std::vector<int32_t>& input_dimension,
+    const std::vector<int32_t>& image_dimension,
+    float step_w,
+    float step_h,
+    const std::vector<float>& min_sizes,
+    const std::vector<float>& max_sizes,
+    float offset,
+    bool is_clip,
+    bool is_flip,
+    bool min_max_aspect_ratios_order,
+    const std::vector<float>& variances)
+    : aspect_ratios_(aspect_ratios),
+      input_dimension_(input_dimension),
+      image_dimension_(image_dimension),
+      step_w_(step_w),
+      step_h_(step_h),
+      min_sizes_(min_sizes),
+      max_sizes_(max_sizes),
+      offset_(offset),
+      is_clip_(is_clip),
+      is_flip_(is_flip),
+      min_max_aspect_ratios_order_(min_max_aspect_ratios_order),
+      variances_(variances) {}
 
 PriorBoxPluginDynamic::PriorBoxPluginDynamic(const void* serial_data,
-                                               size_t serial_length) {                                            
+                                             size_t serial_length) {
   Deserialize(&serial_data, &serial_length, &aspect_ratios_);
   Deserialize(&serial_data, &serial_length, &input_dimension_);
   Deserialize(&serial_data, &serial_length, &image_dimension_);
@@ -42,8 +62,18 @@ PriorBoxPluginDynamic::PriorBoxPluginDynamic(const void* serial_data,
 }
 
 nvinfer1::IPluginV2DynamicExt* PriorBoxPluginDynamic::clone() const noexcept {
-  return new PriorBoxPluginDynamic(aspect_ratios_, input_dimension_, image_dimension_, step_w_, step_h_, 
-      min_sizes_, max_sizes_, offset_, is_clip_, is_flip_, min_max_aspect_ratios_order_, variances_);
+  return new PriorBoxPluginDynamic(aspect_ratios_,
+                                   input_dimension_,
+                                   image_dimension_,
+                                   step_w_,
+                                   step_h_,
+                                   min_sizes_,
+                                   max_sizes_,
+                                   offset_,
+                                   is_clip_,
+                                   is_flip_,
+                                   min_max_aspect_ratios_order_,
+                                   variances_);
 }
 
 template <typename T>
@@ -52,25 +82,33 @@ __device__ inline T clip(T in) {
 }
 
 template <typename T, unsigned TPB>
-__global__ void SetVariance(T* out, T* var, int vnum,
-                            int num) {
-  int idx = blockIdx.x * TPB + threadIdx.x;                               
-  if(idx < num) { 
-    out[idx] = var[idx % vnum]; 
+__global__ void SetVariance(T* out, T* var, int vnum, int num) {
+  int idx = blockIdx.x * TPB + threadIdx.x;
+  if (idx < num) {
+    out[idx] = var[idx % vnum];
   }
 }
 
 template <typename T, unsigned TPB>
-__global__ void prior_box_kernel(T* out, const T* aspect_ratios, const int height,
-                            const int width, const int im_height,
-                            const int im_width, const std::size_t as_num,
-                            const T offset, const T step_width,
-                            const T step_height, const T* min_sizes,
-                            const T* max_sizes, const int max_num, const int min_num, bool is_clip,
-                            bool min_max_aspect_ratios_order) {                              
+__global__ void prior_box_kernel(T* out,
+                                 const T* aspect_ratios,
+                                 const int height,
+                                 const int width,
+                                 const int im_height,
+                                 const int im_width,
+                                 const std::size_t as_num,
+                                 const T offset,
+                                 const T step_width,
+                                 const T step_height,
+                                 const T* min_sizes,
+                                 const T* max_sizes,
+                                 const int max_num,
+                                 const int min_num,
+                                 bool is_clip,
+                                 bool min_max_aspect_ratios_order) {
   int num_priors = max_sizes ? as_num * min_num + min_num : as_num * min_num;
   int box_num = height * width * num_priors;
-  int idx = blockIdx.x * TPB + threadIdx.x; 
+  int idx = blockIdx.x * TPB + threadIdx.x;
   if (idx < box_num) {
     int h = idx / (num_priors * width);
     int w = (idx / num_priors) % width;
@@ -119,7 +157,6 @@ __global__ void prior_box_kernel(T* out, const T* aspect_ratios, const int heigh
     out[idx * 4 + 1] = is_clip ? clip<T>(ymin) : ymin;
     out[idx * 4 + 2] = is_clip ? clip<T>(xmax) : xmax;
     out[idx * 4 + 3] = is_clip ? clip<T>(ymax) : ymax;
-    
   }
 }
 nvinfer1::DimsExprs PriorBoxPluginDynamic::getOutputDimensions(
@@ -136,17 +173,23 @@ nvinfer1::DimsExprs PriorBoxPluginDynamic::getOutputDimensions(
   int num_priors = aspect_ratios_vec.size() * min_sizes_.size();
   if (max_sizes_.size() > 0) {
     num_priors += max_sizes_.size();
-  }  
+  }
   outdims.d[0] = expr_builder.constant(input_dimension_[2]);
-  outdims.d[1] = expr_builder.constant(input_dimension_[3]);  
+  outdims.d[1] = expr_builder.constant(input_dimension_[3]);
   outdims.d[2] = expr_builder.constant(num_priors);
   outdims.d[3] = expr_builder.constant(4);
   return outdims;
 }
 
-int32_t PriorBoxPluginDynamic::enqueue(const nvinfer1::PluginTensorDesc* input_desc, const nvinfer1::PluginTensorDesc* output_desc,const void* const* inputs,void* const* outputs,void* workspace,cudaStream_t stream) noexcept {
+int32_t PriorBoxPluginDynamic::enqueue(
+    const nvinfer1::PluginTensorDesc* input_desc,
+    const nvinfer1::PluginTensorDesc* output_desc,
+    const void* const* inputs,
+    void* const* outputs,
+    void* workspace,
+    cudaStream_t stream) noexcept {
   auto height = input_dimension_[2];
-  auto width = input_dimension_[3];  
+  auto width = input_dimension_[3];
   auto in_height = image_dimension_[2];
   auto in_width = image_dimension_[3];
   std::vector<float> aspect_ratios_vec;
@@ -160,7 +203,7 @@ int32_t PriorBoxPluginDynamic::enqueue(const nvinfer1::PluginTensorDesc* input_d
   int box_num = width * height * num_priors;
   const int block_size = 256;
   const int grid_size0 = (box_num + block_size - 1) / block_size;
-  const int grid_size1 = (box_num * 4 + block_size - 1) / block_size;  
+  const int grid_size1 = (box_num * 4 + block_size - 1) / block_size;
   float step_width, step_height;
   if (step_w_ == 0 || step_h_ == 0) {
     step_width = in_width / width;
@@ -168,38 +211,71 @@ int32_t PriorBoxPluginDynamic::enqueue(const nvinfer1::PluginTensorDesc* input_d
   } else {
     step_width = step_w_;
     step_height = step_h_;
-  }  
+  }
   float* aspect_ratios_vec_dev;
-  cudaMalloc(reinterpret_cast<void**>(&aspect_ratios_vec_dev),aspect_ratios_vec.size() * sizeof(float));
-  cudaMemcpy(aspect_ratios_vec_dev,aspect_ratios_vec.data(),aspect_ratios_vec.size() * sizeof(float),cudaMemcpyHostToDevice);
+  cudaMalloc(reinterpret_cast<void**>(&aspect_ratios_vec_dev),
+             aspect_ratios_vec.size() * sizeof(float));
+  cudaMemcpy(aspect_ratios_vec_dev,
+             aspect_ratios_vec.data(),
+             aspect_ratios_vec.size() * sizeof(float),
+             cudaMemcpyHostToDevice);
   float* min_sizes_dev;
-  cudaMalloc(reinterpret_cast<void**>(&min_sizes_dev),min_sizes_.size() * sizeof(float));
-  cudaMemcpy(min_sizes_dev, min_sizes_.data(), min_sizes_.size() * sizeof(float),cudaMemcpyHostToDevice);
+  cudaMalloc(reinterpret_cast<void**>(&min_sizes_dev),
+             min_sizes_.size() * sizeof(float));
+  cudaMemcpy(min_sizes_dev,
+             min_sizes_.data(),
+             min_sizes_.size() * sizeof(float),
+             cudaMemcpyHostToDevice);
   float* max_sizes_dev;
-  cudaMalloc(reinterpret_cast<void**>(&max_sizes_dev),max_sizes_.size() * sizeof(float));
-  cudaMemcpy(max_sizes_dev, max_sizes_.data(), max_sizes_.size() * sizeof(float),cudaMemcpyHostToDevice);
+  cudaMalloc(reinterpret_cast<void**>(&max_sizes_dev),
+             max_sizes_.size() * sizeof(float));
+  cudaMemcpy(max_sizes_dev,
+             max_sizes_.data(),
+             max_sizes_.size() * sizeof(float),
+             cudaMemcpyHostToDevice);
   float* variances_dev;
-  cudaMalloc(reinterpret_cast<void**>(&variances_dev),variances_.size() * sizeof(float));
-  cudaMemcpy(variances_dev, variances_.data(), variances_.size() * sizeof(float),cudaMemcpyHostToDevice);          
+  cudaMalloc(reinterpret_cast<void**>(&variances_dev),
+             variances_.size() * sizeof(float));
+  cudaMemcpy(variances_dev,
+             variances_.data(),
+             variances_.size() * sizeof(float),
+             cudaMemcpyHostToDevice);
   float* output0 = static_cast<float*>(outputs[0]);
   prior_box_kernel<float, block_size><<<grid_size0, block_size, 0, stream>>>(
-      output0, aspect_ratios_vec_dev, height, width, in_height, in_width,
-      aspect_ratios_vec.size(), offset_, step_width, step_height, min_sizes_dev,
-      max_sizes_dev ,max_num ,min_num, is_clip_, min_max_aspect_ratios_order_);
+      output0,
+      aspect_ratios_vec_dev,
+      height,
+      width,
+      in_height,
+      in_width,
+      aspect_ratios_vec.size(),
+      offset_,
+      step_width,
+      step_height,
+      min_sizes_dev,
+      max_sizes_dev,
+      max_num,
+      min_num,
+      is_clip_,
+      min_max_aspect_ratios_order_);
   float* output1 = static_cast<float*>(outputs[1]);
-  SetVariance<float, block_size><<<grid_size1, block_size, 0, stream>>>(output1, variances_dev, (int)variances_.size(), box_num * 4);    
+  SetVariance<float, block_size><<<grid_size1, block_size, 0, stream>>>(
+      output1, variances_dev, (int)variances_.size(), box_num * 4);
   cudaFree(aspect_ratios_vec_dev);
   cudaFree(min_sizes_dev);
   cudaFree(max_sizes_dev);
-  cudaFree(variances_dev);  
+  cudaFree(variances_dev);
   return 0;
 }
 
 size_t PriorBoxPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(aspect_ratios_) + SerializedSize(input_dimension_) + SerializedSize(image_dimension_)
-         + SerializedSize(step_w_) +  SerializedSize(step_h_) + SerializedSize(min_sizes_) + SerializedSize(max_sizes_)
-         + SerializedSize(offset_) + SerializedSize(is_clip_) + SerializedSize(is_flip_) + SerializedSize(min_max_aspect_ratios_order_)
-         + SerializedSize(variances_);
+  return SerializedSize(aspect_ratios_) + SerializedSize(input_dimension_) +
+         SerializedSize(image_dimension_) + SerializedSize(step_w_) +
+         SerializedSize(step_h_) + SerializedSize(min_sizes_) +
+         SerializedSize(max_sizes_) + SerializedSize(offset_) +
+         SerializedSize(is_clip_) + SerializedSize(is_flip_) +
+         SerializedSize(min_max_aspect_ratios_order_) +
+         SerializedSize(variances_);
 }
 
 int32_t PriorBoxPluginDynamic::getNbOutputs() const noexcept { return 2; }
