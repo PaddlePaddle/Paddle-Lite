@@ -22,10 +22,10 @@ REGISTER_CONVERTER(batch_norm,
 REGISTER_CONVERTER(cast,
                    ConvertCast,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
-REGISTER_CONVERTER(
-    clip,
-    ConvertClip,
-    "huawei_ascend_npu,cambricon_mlu,verisilicon_timvx,huawei_kirin_npu");
+REGISTER_CONVERTER(clip,
+                   ConvertClip,
+                   "huawei_ascend_npu,cambricon_mlu,verisilicon_timvx,huawei_"
+                   "kirin_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(
     conv2d,
     ConvertConv2D,
