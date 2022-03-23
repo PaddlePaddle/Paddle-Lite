@@ -64,6 +64,7 @@ class TestFcFuse(FusePassAutoScanTest):
 
     def sample_program_configs(self, draw):
         has_relu = draw(st.sampled_from([True, False]))
+        op_type = draw(st.sampled_from(["mul", "matmul", "matmul_v2"]))
         mul_x_in_shape = draw(
             st.lists(
                 st.integers(
@@ -105,6 +106,24 @@ class TestFcFuse(FusePassAutoScanTest):
                 "x_num_col_dims": x_num_col_dims_data,
                 "y_num_col_dims": 1
             })
+        inputs_data = {
+            "mul_x_data": TensorConfig(shape=mul_x_in_shape),
+            "mul_y_data": TensorConfig(shape=[x1, y1])
+        }
+        if op_type == "matmul" or op_type == "matmul_v2":
+            mul_op = OpConfig(
+                type=op_type,
+                inputs={"X": ["mul_x_data"],
+                        "Y": ["mul_y_data"]},
+                outputs={"Out": ["mul_output_data"]},
+                attrs={"trans_x": False,
+                       "trans_y": False})
+            inputs_data = {
+                "mul_x_data": TensorConfig(
+                    shape=[draw(st.integers(
+                        min_value=2, max_value=100)), x1]),
+                "mul_y_data": TensorConfig(shape=[x1, y1])
+            }
 
         elementwise_add_op = OpConfig(
             type="elementwise_add",

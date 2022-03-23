@@ -41,6 +41,12 @@ void FcFuser::BuildPattern() {
     size_t b_rank = b_shape.size();
     return b_rank == 2 || b_rank == 1;
   };
+  auto input_attr_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("trans_x");
+    bool trans_y = op_desc.GetAttr<bool>("trans_y") return trans_x == false &&
+                   trans_y == false;
+  };
 
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input(op_type_, "X");
@@ -51,6 +57,9 @@ void FcFuser::BuildPattern() {
   auto* add =
       OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
+  if (op_type_ == "matmul" || op_type_ == "matmul_v2") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller);
+  }
 
   // create topology.
   std::vector<PMNode*> mul_inputs{W, x};
