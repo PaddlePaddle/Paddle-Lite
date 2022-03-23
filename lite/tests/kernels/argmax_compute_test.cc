@@ -203,6 +203,9 @@ TEST(Argmax, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   TestArgmax(place, aliases, {2});
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  TestArgmax(place, aliases, {2});
+  return;
 #else
   return;
 #endif

@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "driver/nvidia_tensorrt/calibrator.h"
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/logging.h"
 
@@ -40,6 +41,8 @@ class Context {
   int DeviceId() { return device_id_; }
   PrecisionMode Precision() { return precision_; }
   bool GpuFallback() { return gpu_fallback_; }
+  std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
+  std::string CalibrationTablePath() { return calibration_table_path_; }
 
  private:
   void* device_{nullptr};
@@ -48,6 +51,8 @@ class Context {
   int device_id_{0};
   PrecisionMode precision_{kFloat32};
   bool gpu_fallback_{true};
+  std::string calibration_dataset_path_;
+  std::string calibration_table_path_;
 };
 
 struct Deleter {
@@ -94,6 +99,7 @@ class Program {
   std::unique_ptr<nvinfer1::IRuntime, Deleter> runtime_;
   std::unique_ptr<nvinfer1::ICudaEngine, Deleter> engine_;
   std::unique_ptr<nvinfer1::IExecutionContext, Deleter> execution_context_;
+  std::unique_ptr<Int8EntropyCalibrator> calibrator_;
   std::vector<std::shared_ptr<void>> device_buffers_;
   std::map<core::Operand*, std::vector<nvinfer1::ITensor*>> tensors_;
   std::vector<int> input_indices_;
