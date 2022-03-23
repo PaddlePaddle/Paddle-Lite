@@ -344,6 +344,7 @@ REGISTER_CONVERTER(norm,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
 REGISTER_CONVERTER(pad2d, ConvertPad, "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(pad3d, ConvertPad, "huawei_ascend_npu");
+REGISTER_CONVERTER(prior_box, ConvertPriorBox, "nvidia_tensorrt");
 REGISTER_CONVERTER(gather,
                    ConvertGather,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");

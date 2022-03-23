@@ -1364,6 +1364,35 @@ typedef enum {
   NNADAPTER_POW,
 
   /**
+   * Prior box operator Generate prior boxes for SSD(Single Shot MultiBox
+   * Detector) algorithm.
+   * https://arxiv.org/abs/1512.02325.
+   * Each position of the input produce N prior boxes, N is determined by the
+   * count of min_sizes, max_sizes and aspect_ratios,
+   * The size of the box is in range(min_size, max_size) interval, which is
+   * generated in sequence according to the aspect_ratios.
+   *
+   * Inputs:
+   * * 0: Input, a NNADAPTER_FLOAT32 tensor,
+   * the input feature data of PriorBoxOp, The layout is NCHW.
+   * * 1: Image, a NNADAPTER_FLOAT32 tensor,
+   * the input image data of PriorBoxOp, The layout is NCHW.
+   *
+   * Outputs:
+   * * 0: Boxes, a Boxes NNADAPTER_FLOAT32 tensor .
+   * the output prior boxes of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position.
+   * * 1: Variances, a Variances NNADAPTER_FLOAT32 tensor .
+   * the expanded variances of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position."
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRIOR_BOX,
+
+  /**
    * Applies the prelu activation to the input tensor. The output is calculated
    * using this formula:
    * output = input, if input >=0;

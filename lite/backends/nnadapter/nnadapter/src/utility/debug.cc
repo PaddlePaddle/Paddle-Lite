@@ -508,6 +508,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"condition", "input0", "input1"};
         output_args = {"output"};
         break;
+      case NNADAPTER_PRIOR_BOX:
+        input_args = {"Input", "Image"};
+        output_args = {"Boxes", "Variances"};
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "unsupported op: "
                              << static_cast<int>(operation->type);
@@ -666,6 +670,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
+    NNADAPTER_TYPE_TO_STRING(PRIOR_BOX);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(PRELU);
     NNADAPTER_TYPE_TO_STRING(QUANTIZE);
