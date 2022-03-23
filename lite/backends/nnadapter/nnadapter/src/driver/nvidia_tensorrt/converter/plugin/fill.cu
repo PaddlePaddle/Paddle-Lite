@@ -20,19 +20,13 @@ namespace nvidia_tensorrt {
 FillPluginDynamic::FillPluginDynamic(float value,
                                      bool bool_value_tensor,
                                      std::vector<int64_t> shape)
-    : shape_size_for_serial_(shape.size()),
-      value_(value),
-      bool_value_tensor_(bool_value_tensor),
-      shape_(shape) {}
+    : value_(value), bool_value_tensor_(bool_value_tensor), shape_(shape) {}
 
 FillPluginDynamic::FillPluginDynamic(const void* serial_data,
                                      size_t serial_length) {
-  Deserialize(&serial_data, &serial_length, &shape_size_for_serial_);
   Deserialize(&serial_data, &serial_length, &value_);
   Deserialize(&serial_data, &serial_length, &bool_value_tensor_);
-  shape_.resize(shape_size_for_serial_);
-  for (int i = 0; i < shape_size_for_serial_; i++)
-    Deserialize(&serial_data, &serial_length, &shape_[i]);
+  Deserialize(&serial_data, &serial_length, &shape_);
 }
 
 nvinfer1::IPluginV2DynamicExt* FillPluginDynamic::clone() const noexcept {
@@ -99,15 +93,14 @@ int32_t FillPluginDynamic::enqueue(
 }
 
 size_t FillPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(shape_size_for_serial_) + SerializedSize(value_) +
-         SerializedSize(bool_value_tensor_) + shape_.size() * sizeof(int64_t);
+  return SerializedSize(value_) + SerializedSize(bool_value_tensor_) +
+         SerializedSize(shape_);
 }
 
 void FillPluginDynamic::serialize(void* buffer) const noexcept {
-  Serialize(&buffer, shape_size_for_serial_);
   Serialize(&buffer, value_);
   Serialize(&buffer, bool_value_tensor_);
-  for (int i = 0; i < shape_.size(); i++) Serialize(&buffer, shape_[i]);
+  Serialize(&buffer, shape_);
 }
 
 bool FillPluginDynamic::supportsFormatCombination(

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
 
 namespace nnadapter {
@@ -40,10 +41,9 @@ class FillPluginDynamic : public PluginDynamic {
       int32_t output_index,
       const nvinfer1::DimsExprs* inputs,
       int32_t nb_inputs,
-      nvinfer1::IExprBuilder& expr_builder) noexcept;
+      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
 
  private:
-  int shape_size_for_serial_;  // for deserialize use!
   float value_;
   bool bool_value_tensor_;
   std::vector<int64_t> shape_;
