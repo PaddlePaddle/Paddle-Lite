@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/fill_zeros_like_op.h"
-#include "lite/core/op_registry.h"
+#pragma once
+
+#include <memory>
+#include <set>
+#include <string>
+#include "lite/core/optimizer/mir/ssa_graph.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace mir {
 
-bool FillZerosLikeOp::CheckShape() const {
-  CHECK(param_.Out);
-  return true;
-}
+bool HasExtraProducers(mir::SSAGraph *graph,
+                       const std::string &var_name,
+                       const std::set<std::string> &exclude_op_list,
+                       const std::set<std::string> &candidate_op = {
+                           "while", "conditional_block", "increment"});
 
-bool FillZerosLikeOp::InferShapeImpl() const {
-  param_.Out->Resize(param_.X->dims());
-  param_.Out->set_lod(param_.X->lod());
-  return true;
-}
-
-bool FillZerosLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                 lite::Scope* scope) {
-  param_.X = scope->FindTensor(opdesc.Input("X").front());
-  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
-  return true;
-}
-
-}  // namespace operators
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_OP(fill_zeros_like, paddle::lite::operators::FillZerosLikeOp);

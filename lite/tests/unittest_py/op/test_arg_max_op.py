@@ -23,6 +23,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
 
 class TestArgMaxOp(AutoScanTest):
@@ -56,6 +57,8 @@ class TestArgMaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -84,6 +87,11 @@ class TestArgMaxOp(AutoScanTest):
                 "dtype": dtype,
                 "flatten": False
             })
+        if dtype == 2:
+            arg_max_op.outputs_dtype = {"output_data": np.int32}
+        else:
+            arg_max_op.outputs_dtype = {"output_data": np.int64}
+
         program_config = ProgramConfig(
             ops=[arg_max_op],
             weights={},
@@ -95,19 +103,30 @@ class TestArgMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
+        def _teller1(program_config, predictor_config):
+            set_dtype = program_config.ops[0].attrs["dtype"]
+            if predictor_config.target() == TargetType.NNAdapter:
+                if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                    if set_dtype != 2:
+                        return True
+
         def _teller2(program_config, predictor_config):
+            set_dtype = program_config.ops[0].attrs["dtype"]
             in_shape = list(program_config.inputs["input_data"].shape)
             axis = program_config.ops[0].attrs["axis"]
             keep_dims = program_config.ops[0].attrs["keepdims"]
             if predictor_config.target() == TargetType.Metal:
                 if len(in_shape) != 4 or in_shape[
-                        0] != 1 or axis != 1 or keep_dims == False:
+                        0] != 1 or axis != 1 or keep_dims == False or set_dtype == 2:
                     return True
 
         def _teller3(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite only supports int-precision output on Nvidia.")
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
@@ -119,7 +138,7 @@ class TestArgMaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 200
