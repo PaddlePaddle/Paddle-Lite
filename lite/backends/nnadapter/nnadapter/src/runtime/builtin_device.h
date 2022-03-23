@@ -17,11 +17,11 @@
 #include "driver/device.h"
 #include "utility/micros.h"
 
-#define CPU_DEVICE_NAME cpu
+#define BUILTIN_DEVICE_NAME builtin_device
 
 // The following environment variables can be used at runtime:
 // Specify the number of threads to use in thread pool, no thread
 // pool/single-thread is used as default(default value is 0).
-#define CPU_NUM_THREADS "CPU_NUM_THREADS"
+#define BUILTIN_DEVICE_NUM_THREADS "BUILTIN_DEVICE_NUM_THREADS"
 
-extern nnadapter::driver::Device NNADAPTER_AS_SYM2(CPU_DEVICE_NAME);
+extern nnadapter::driver::Device NNADAPTER_AS_SYM2(BUILTIN_DEVICE_NAME);

@@ -15,7 +15,7 @@
 #include "runtime/device.h"
 #include <dlfcn.h>
 #include <stdlib.h>
-#include "runtime/cpu.h"
+#include "runtime/builtin_device.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
@@ -131,8 +131,8 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
   }
   void* library = nullptr;
   driver::Device* driver = nullptr;
-  if (strcmp(name, NNADAPTER_AS_STR2(CPU_DEVICE_NAME)) == 0) {
-    driver = &NNADAPTER_AS_SYM2(CPU_DEVICE_NAME);
+  if (strcmp(name, NNADAPTER_AS_STR2(BUILTIN_DEVICE_NAME)) == 0) {
+    driver = &NNADAPTER_AS_SYM2(BUILTIN_DEVICE_NAME);
   } else {
     // Load if the driver of target device is not registered.
     std::string symbol =
