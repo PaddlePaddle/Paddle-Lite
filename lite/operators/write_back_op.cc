@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/write_back_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -45,7 +46,7 @@ bool WriteBackOp::InferShapeImpl() const {
 bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("tensor_array_copy")) param_.tensor_array_copy = true;
   if (!param_.tensor_array_copy) {
-    param_.x = scope->FindTensor(opdesc.Input("Src_LoDTensor").front());
+    param_.x = scope->FindMutableTensor(opdesc.Input("Src_LoDTensor").front());
     param_.y = scope->FindMutableTensor(opdesc.Input("Dst_LoDTensor").front());
     return true;
   } else {

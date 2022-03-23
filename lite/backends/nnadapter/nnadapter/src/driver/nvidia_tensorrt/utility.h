@@ -38,6 +38,16 @@ namespace nvidia_tensorrt {
 // Whether to allow gpu fallback, for example: "0", "1"
 #define NVIDIA_TENSORRT_GPU_FALLBACK "NVIDIA_TENSORRT_GPU_FALLBACK"
 
+// Path to calibration dataset, for example: "/home/demo/dataset"
+// The path containers following files: "list.txt", "input0_0",...
+#define NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH \
+  "NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH"
+
+// Path to calibration table, for example:
+// "/home/demo/dataset/calibration_table"
+#define NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH \
+  "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH"
+
 typedef enum {
   kFloat32 = 0,
   kFloat16 = 1,
