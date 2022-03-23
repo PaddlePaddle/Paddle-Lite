@@ -1955,6 +1955,21 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+
+  /**
+   * Performs some preprocess for yolo_box op in Pytorch.
+   * NNADAPTER_YOLO_BOX_HEAD is diffrent from NNADAPTER_YOLO_BOX
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_FLOAT32 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_YOLO_BOX_HEAD,
+  NNADAPTER_YOLO_BOX_PARSER,
 } NNAdapterOperationCode;
 
 /**
