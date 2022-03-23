@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/prior_box.h"
 
 namespace nnadapter {
@@ -260,7 +262,7 @@ int32_t PriorBoxPluginDynamic::enqueue(
       min_max_aspect_ratios_order_);
   float* output1 = static_cast<float*>(outputs[1]);
   SetVariance<float, block_size><<<grid_size1, block_size, 0, stream>>>(
-      output1, variances_dev, (int)variances_.size(), box_num * 4);
+      output1, variances_dev, static_cast<int>(variances_.size()), box_num * 4);
   cudaFree(aspect_ratios_vec_dev);
   cudaFree(min_sizes_dev);
   cudaFree(max_sizes_dev);
