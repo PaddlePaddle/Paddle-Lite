@@ -123,15 +123,13 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         weight_shape = [filter_m, filter_c, filter_h, filter_w]
 
         def generate_input(*args, **kwargs):
-            return 0.5 * (
-                -1 + 2 * np.random.random(in_shape).astype(np.float32))
+            return np.random.random(in_shape).astype(np.float32)
 
         def generate_filter(*args, **kwargs):
-            return 0.5 * (
-                -1 + 2 * np.random.random(weight_shape).astype(np.float32))
+            return np.random.random(weight_shape).astype(np.float32)
 
         def generate_bias(*args, **kwargs):
-            return 0.5 * (-1 + 2 * np.random.random([cout]).astype(np.float32))
+            return np.random.random([filter_m]).astype(np.float32)
 
         inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
         inputs_data = {
@@ -170,7 +168,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-4, 1e-4)
+        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def skip_bias_teller(program_config, predictor_config):

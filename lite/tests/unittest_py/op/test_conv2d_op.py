@@ -118,15 +118,13 @@ class TestConv2dOp(AutoScanTest):
             use_mkldnn = True
 
         def generate_input(*args, **kwargs):
-            return 0.5 * (
-                -1 + 2 * np.random.random(in_shape).astype(np.float32))
+            return np.random.random(in_shape).astype(np.float32)
 
         def generate_filter(*args, **kwargs):
-            return 0.5 * (
-                -1 + 2 * np.random.random(weight_shape).astype(np.float32))
+            return np.random.random(weight_shape).astype(np.float32)
 
         def generate_bias(*args, **kwargs):
-            return 0.5 * (-1 + 2 * np.random.random([cout]).astype(np.float32))
+            return np.random.random([cout]).astype(np.float32)
 
         inputs_data = {
             "input_data": TensorConfig(data_gen=partial(generate_input))
@@ -162,13 +160,26 @@ class TestConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        atol, rtol = 1e-4, 1e-4
+        atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-3, 1e-3
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            precision_type = predictor_config.precision()
+            input_shape = program_config.inputs["input_data"].shape
+            filter_data = program_config.weights["filter_data"].shape
+            stride_data = program_config.attrs["strides"]
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.ARM and precision_type == PrecisionType.INT8:
+                if input_shape[1] > 80 and filter_data[2] == 3 and filter_data[
+                        3] == 3 and groups == 1 and stride_data[
+                            0] == 1 and stride_data[1] == 1:
+                    return True
+
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             input_shape = program_config.inputs["input_data"].shape
@@ -184,6 +195,11 @@ class TestConv2dOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Input data is 0-1, int8 winograd will overflow when input channel is more than 80."
         )
 
     def test(self, *args, **kwargs):
