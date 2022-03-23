@@ -44,8 +44,8 @@ void FcFuser::BuildPattern() {
   auto input_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     bool trans_x = op_desc.GetAttr<bool>("trans_x");
-    bool trans_y = op_desc.GetAttr<bool>("trans_y") return trans_x == false &&
-                   trans_y == false;
+    bool trans_y = op_desc.GetAttr<bool>("trans_y");
+    return trans_x == false && rans_y == false;
   };
 
   // create nodes.
