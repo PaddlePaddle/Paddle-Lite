@@ -41,10 +41,8 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   } else {
     if (start_axis < 0) start_axis += input_operand->type.dimensions.count;
     if (end_axis < 0) end_axis += input_operand->type.dimensions.count;
-
     auto shape_layer = converter->network()->addShape(*input_tensor);
     auto shape_layer_itensor = shape_layer->getOutput(0);
-
     nvinfer1::Dims start_dim, size_dim, stride_dim;
     start_dim.nbDims = 1;
     size_dim.nbDims = 1;
@@ -52,20 +50,15 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
     start_dim.d[0] = start_axis;
     size_dim.d[0] = end_axis - start_axis + 1;
     stride_dim.d[0] = 1;
-
     auto slice_layer = converter->network()->addSlice(
         *shape_layer_itensor, start_dim, size_dim, stride_dim);
-
     uint32_t reduce_dim = 1;
-
     auto reduce_prod_layer =
         converter->network()->addReduce(*(slice_layer->getOutput(0)),
                                         nvinfer1::ReduceOperation::kPROD,
                                         reduce_dim,
                                         true);
-
     nvinfer1::ITensor* input_shape = nullptr;
-
     if (start_axis == 0 &&
         end_axis == input_operand->type.dimensions.count - 1) {
       input_shape = reduce_prod_layer->getOutput(0);
