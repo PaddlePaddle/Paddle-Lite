@@ -468,7 +468,7 @@ TEST(Activation_relu, precision) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   abs_error = 5e-2;
 #else
-  abs_error = 2e-5;
+  return;
 #endif
 #endif
 #elif defined(LITE_WITH_NPU)
