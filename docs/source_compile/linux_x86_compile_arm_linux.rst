@@ -39,13 +39,18 @@ Linux x86 环境下编译适用于 ARM Linux 的库
 环境要求
 ^^^^^^^^
 
-* gcc、g++、git、make、wget、python、scp
-* cmake（建议使用 3.10 或以上版本）
+**参考环境**
+* Ubuntu 系统（参考使用 16.04 版本）
+* 交叉编译工具 （如 aarch64-xxxx-gcc、aarch64-xxxx-g++等 参考使用 5.4.0 版本）
+* python (参考使用 3.7 版本)
+* make （ 参考使用 4.1 版本 ）
+* cmake（参考使用 3.10 或以上版本）
+* git、wget、scp
 
 环境安装命令
 ^^^^^^^^^^^^
 
- 以 Ubuntu 为例介绍安装命令。其它 Linux 发行版安装步骤类似，在此不再赘述。
+ 以 Ubuntu16.04 为例介绍安装命令。其它 Linux 发行版安装步骤类似，在此不再赘述。
  注意需要 root 用户权限执行如下命令。
 
 .. code-block:: shell
@@ -186,3 +191,5 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_rockchip_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst
