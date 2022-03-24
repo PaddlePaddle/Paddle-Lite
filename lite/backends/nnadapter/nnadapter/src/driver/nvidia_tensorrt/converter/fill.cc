@@ -45,7 +45,7 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   float value;
   bool bool_value_tensor;
   std::vector<nvinfer1::ITensor*> tensors;
-  if (value_operand->buffer) {
+  if (IsConstantOperand(value_operand)) {
     value = *(static_cast<float*>(value_operand->buffer));
     bool_value_tensor = false;
   } else {

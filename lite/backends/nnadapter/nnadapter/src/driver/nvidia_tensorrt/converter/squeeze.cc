@@ -30,6 +30,7 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto squeeze_layer = converter->network()->addShuffle(*input_tensor);
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand))
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
   for (int i = 0; i < axes.size(); i++)

@@ -28,6 +28,7 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand))
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
   nvinfer1::Dims new_starts_dims;
