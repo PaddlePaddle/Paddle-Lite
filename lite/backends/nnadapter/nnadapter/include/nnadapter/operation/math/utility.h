@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/cdefs.h>
 #include <vector>
 
 namespace nnadapter {
