@@ -120,6 +120,9 @@ TEST(Clip, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_err = 1e-3;
   use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
 #else
   return;
 #endif
