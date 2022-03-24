@@ -63,8 +63,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
 #else
-  nnadapter_device_names.emplace_back("generic_device");
-  out_accuracy_threshold = 0.99f;
+  return;
 #endif
 #else
   return;

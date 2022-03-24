@@ -67,8 +67,7 @@ TEST(ResNet50, test_resnet50_fp32_v1_8_nndapter) {
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
 #else
-  nnadapter_device_names.emplace_back("generic_device");
-  out_accuracy_threshold = 0.99f;
+  return;
 #endif
 #else
   return;

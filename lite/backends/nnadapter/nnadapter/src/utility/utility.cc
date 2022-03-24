@@ -115,6 +115,24 @@ NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantType(
   return type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
+NNADAPTER_EXPORT bool IsQuant8Type(NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
+         NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
+}
+
+NNADAPTER_EXPORT bool IsQuant16Type(NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_QUANT_INT16_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER ||
+         NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL;
+}
+
+NNADAPTER_EXPORT bool IsQuant32Type(NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER ||
+         NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
+}
+
 NNADAPTER_EXPORT bool IsConstantOperandType(const NNAdapterOperandType& type) {
   return type.lifetime == NNADAPTER_CONSTANT_COPY ||
          type.lifetime == NNADAPTER_CONSTANT_REFERENCE;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_CORE_OPERATION_ALL_H__  // NOLINT
-#define __NNADAPTER_CORE_OPERATION_ALL_H__
+#ifndef __NNADAPTER_OPERATION_ALL_H__  // NOLINT
+#define __NNADAPTER_OPERATION_ALL_H__
 
 REGISTER_OPERATION(ABS,
                    ValidateUnaryActivations,

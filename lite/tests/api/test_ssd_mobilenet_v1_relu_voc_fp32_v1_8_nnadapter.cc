@@ -60,7 +60,7 @@ TEST(ssd_mobilentert_v1, test_ssd_mobilenet_v1_relu_voc_fp32_v1_8_nnadapter) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
 #else
-  nnadapter_device_names.emplace_back("generic_device");
+  return;
 #endif
 #else
   return;

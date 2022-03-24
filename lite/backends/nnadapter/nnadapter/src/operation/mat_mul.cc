@@ -125,6 +125,8 @@ int PrepareMatMul(core::Operation* operation) {
 }
 
 int ExecuteMatMul(core::Operation* operation) {
+  NNADAPTER_LOG(FATAL) << OperationTypeToString(operation->type)
+                       << " is not implemented!";
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

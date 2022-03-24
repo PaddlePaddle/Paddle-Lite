@@ -33,7 +33,7 @@
 namespace nnadapter {
 namespace operation {
 #include "operation/all.h"  // NOLINT
-#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+#undef __NNADAPTER_OPERATION_ALL_H__
 }  // namespace operation
 }  // namespace nnadapter
 #undef REGISTER_OPERATION
@@ -265,7 +265,7 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperation(
     nnadapter::operation::__prepare_func_name__(o); \
     break;
 #include "operation/all.h"  // NOLINT
-#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+#undef __NNADAPTER_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
     default:
       NNADAPTER_LOG(WARNING) << "Unsupported operation("

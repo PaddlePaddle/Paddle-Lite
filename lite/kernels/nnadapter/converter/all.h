@@ -29,13 +29,13 @@ REGISTER_CONVERTER(clip,
 REGISTER_CONVERTER(
     conv2d,
     ConvertConv2D,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "generic_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(
     depthwise_conv2d,
     ConvertConv2D,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "generic_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
     "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt");
 REGISTER_CONVERTER(deformable_conv,
@@ -48,7 +48,7 @@ REGISTER_CONVERTER(
 REGISTER_CONVERTER(
     pool2d,
     ConvertPool,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "generic_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(matmul,
@@ -62,7 +62,7 @@ REGISTER_CONVERTER(matmul_v2,
 REGISTER_CONVERTER(
     softmax,
     ConvertSoftmax,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "generic_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_"
     "openvino,google_xnnpack");
@@ -347,7 +347,7 @@ REGISTER_CONVERTER(flatten_contiguous_range,
 REGISTER_CONVERTER(
     fc,
     ConvertFC,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "generic_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(norm,

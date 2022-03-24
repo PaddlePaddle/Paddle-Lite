@@ -61,7 +61,7 @@ TEST(ssd_mobilentert_v1,
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
 #else
-  nnadapter_device_names.emplace_back("generic_device");
+  return;
 #endif
 #else
   return;
