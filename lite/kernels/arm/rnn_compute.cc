@@ -801,11 +801,9 @@ void RnnCompute::Run() {
     }
   }
 
-  lite::arm::math::concat_func<float>(
-      last_h_unbind_t, stride1.size(), state[0]);
+  lite::arm::math::concat_func<float>(last_h_unbind_t, 0, state[0]);
   if ("LSTM" == mode) {
-    lite::arm::math::concat_func<float>(
-        last_c_unbind_t, stride2.size(), state[1]);
+    lite::arm::math::concat_func<float>(last_c_unbind_t, 0, state[1]);
   }
 
   // output_holder != output
