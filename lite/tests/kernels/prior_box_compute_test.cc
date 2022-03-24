@@ -736,7 +736,7 @@ TEST(PriorBox, precision) {
   return;
 #endif
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
-  place = TARGET(kHost));
+  place = TARGET(kHost);
 #endif
   test_prior_box(place);
 }
