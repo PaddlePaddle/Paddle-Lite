@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::intel_openvino::CloseDevice,
     .create_context = nnadapter::intel_openvino::CreateContext,
     .destroy_context = nnadapter::intel_openvino::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::intel_openvino::CreateProgram,
     .destroy_program = nnadapter::intel_openvino::DestroyProgram,
     .execute_program = nnadapter::intel_openvino::ExecuteProgram,

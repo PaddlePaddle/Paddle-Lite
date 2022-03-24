@@ -32,10 +32,15 @@ class TestReduceMaxOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -69,14 +74,22 @@ class TestReduceMaxOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
+                    min_value=1, max_value=10), min_size=1, max_size=4))
         keep_dim = draw(st.booleans())
-        axis = draw(st.integers(min_value=-1, max_value=3))
-        assume(axis < len(in_shape))
+        axis_list = [
+            draw(st.integers(
+                min_value=-1, max_value=len(in_shape) - 1))
+        ]
 
-        if isinstance(axis, int):
-            axis = [axis]
-        reduce_all_data = True if axis == None or axis == [] else False
+        if len(in_shape) == 2:
+            axis_list = draw(st.sampled_from([[0], [1]]))
+        elif len(in_shape) == 3:
+            axis_list = draw(st.sampled_from([[0], [1], [2]]))
+        elif len(in_shape) == 4:
+            axis_list = draw(
+                st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
+
+        reduce_all_data = True if axis_list == None or axis_list == [] else False
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -86,7 +99,7 @@ class TestReduceMaxOp(AutoScanTest):
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
-                "dim": axis,
+                "dim": axis_list,
                 "keep_dim": keep_dim,
                 "reduce_all": reduce_all_data,
             })
@@ -114,7 +127,8 @@ class TestReduceMaxOp(AutoScanTest):
             axis = program_config.ops[0].attrs["dim"]
             keep_dim = program_config.ops[0].attrs["keep_dim"]
             if target_type == TargetType.Metal:
-                if keep_dim == False or axis[0] != 1 or in_shape[0] != 1:
+                if keep_dim == False or axis[0] != 1 or in_shape[
+                        0] != 1 or len(in_shape) < 4 or len(axis) > 1:
                     return True
 
         self.add_ignore_check_case(
@@ -124,7 +138,7 @@ class TestReduceMaxOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 100
+        max_examples = 300
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 3000

@@ -284,6 +284,18 @@ NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
   return m->IdentifyInputsAndOutputs(input_count, is, output_count, os);
 }
 
+NNADAPTER_EXPORT int NNAdapterModel_getSupportedOperations(
+    const NNAdapterModel* model,
+    NNAdapterContext* context,
+    bool* supported_operations) {
+  if (!model || !context || !supported_operations) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto m = reinterpret_cast<const nnadapter::runtime::Model*>(model);
+  auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
+  return m->GetSupportedOperations(x, supported_operations);
+}
+
 NNADAPTER_EXPORT int NNAdapterCompilation_create(
     NNAdapterModel* model,
     const char* cache_token,

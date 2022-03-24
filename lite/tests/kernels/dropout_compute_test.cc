@@ -101,6 +101,8 @@ TEST(Dropout, precision) {
   abs_error = 2e-1;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -119,12 +121,15 @@ TEST(Dropout, precision) {
 #if defined(LITE_WITH_NPU)
         if (dims.size() < 2) continue;
 #endif
-#if (defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU))
+#if defined(LITE_WITH_NNADAPTER)
+#if (defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+     defined(NNADAPTER_WITH_NVIDIA_TENSORRT))
         const double eps = 1e-6;
         if (fabs(dropout_prob - 0.0) < eps || fabs(dropout_prob - 1.0) < eps ||
             strcmp(dropout_implementation, "upscale_in_train") == 0) {
           continue;
         }
+#endif
 #endif
         std::unique_ptr<arena::TestCase> tester(new DropoutComputeTester(
             place, "def", DDim(dims), dropout_prob, dropout_implementation));

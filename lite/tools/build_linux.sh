@@ -62,6 +62,8 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 NNADAPTER_WITH_INTEL_OPENVINO=OFF
 # /opt/intel/openvino_<version>
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
+NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
@@ -228,6 +230,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
                         -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
+                        -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -615,6 +619,14 @@ function main {
                 ;;
             --nnadapter_intel_openvino_sdk_root=*)
                 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_google_xnnpack=*)
+                NNADAPTER_WITH_GOOGLE_XNNPACK="${i#*=}"
+                shift
+                ;;
+            --nnadapter_google_xnnpack_src_git_tag=*)
+                NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

@@ -12,36 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/unary_activations.h"
+#include "operation/clip.h"
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
-  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertClip(Converter* converter, core::Operation* operation) {
+  CLIP_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  std::map<NNAdapterOperationType, nvinfer1::ActivationType>
-      activation_type_map{
-          {NNADAPTER_RELU, nvinfer1::ActivationType::kRELU},
-          {NNADAPTER_SIGMOID, nvinfer1::ActivationType::kSIGMOID},
-      };
-  auto operation_type = operation->type;
-  NNADAPTER_CHECK(activation_type_map.count(operation_type))
-      << "Not support operation_type: "
-      << OperationTypeToString(operation_type);
-  auto activation_layer = converter->network()->addActivation(
-      *input_tensor, activation_type_map.at(operation_type));
-  NNADAPTER_CHECK(activation_layer);
-  auto output_tensor = activation_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
-  return NNADAPTER_NO_ERROR;
+  if (IsConstantOperand(min_operand) && IsConstantOperand(max_operand)) {
+    float min_num = *reinterpret_cast<float*>(min_operand->buffer);
+    float max_num = *reinterpret_cast<float*>(max_operand->buffer);
+    auto clip_layer = converter->network()->addActivation(
+        *input_tensor, nvinfer1::ActivationType::kCLIP);
+    clip_layer->setAlpha(min_num);
+    clip_layer->setBeta(max_num);
+    auto output_tensor = clip_layer->getOutput(0);
+    converter->UpdateTensorMap(output_operand, output_tensor);
+    return NNADAPTER_NO_ERROR;
+  } else {
+    NNADAPTER_LOG(FATAL) << "TensorRT doesn't support, need plugin.";
+  }
 }
 
 }  // namespace nvidia_tensorrt

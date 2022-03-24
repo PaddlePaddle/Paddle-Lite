@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "runtime/model.h"
+#include <memory>
+#include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -21,7 +23,7 @@
 namespace nnadapter {
 namespace runtime {
 
-Model::~Model() { nnadapter::ClearModel(&model_); }
+Model::~Model() { ClearModel(&model_); }
 
 int Model::AddOperand(const NNAdapterOperandType& type,
                       core::Operand** operand) {
@@ -66,6 +68,48 @@ int Model::IdentifyInputsAndOutputs(uint32_t input_count,
 int Model::Finish() {
   // TODO(hong19860320) model validation
   completed_ = true;
+  return NNADAPTER_NO_ERROR;
+}
+
+int Model::GetSupportedOperations(Context::DeviceContext* device_context,
+                                  bool* supported_operations) const {
+  auto operation_count = model_.operations.size();
+  std::fill(
+      supported_operations, supported_operations + operation_count, false);
+  NNADAPTER_CHECK(device_context);
+  auto context = device_context->context;
+  NNADAPTER_CHECK(context);
+  auto device = device_context->device;
+  NNADAPTER_CHECK(device);
+  auto result = device->ValidateProgram(context, &model_, supported_operations);
+  if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
+    NNADAPTER_LOG(WARNING)
+        << "Failed to get the supported operations for device '"
+        << device->GetName() << "', because the HAL interface "
+                                "'validate_program' is not implemented!";
+  }
+  return result;
+}
+
+int Model::GetSupportedOperations(Context* context,
+                                  bool* supported_operations) const {
+  auto operation_count = model_.operations.size();
+  std::fill(
+      supported_operations, supported_operations + operation_count, false);
+  auto device_count = context->GetDeviceCount();
+  for (size_t i = 0; i < device_count; i++) {
+    auto device_context = context->GetDeviceContext(i);
+    NNADAPTER_CHECK(device_context);
+    std::unique_ptr<bool[]> _supported_operations_(new bool[operation_count]);
+    auto result =
+        GetSupportedOperations(device_context, _supported_operations_.get());
+    if (result != NNADAPTER_NO_ERROR) {
+      return result;
+    }
+    for (size_t j = 0; j < operation_count; j++) {
+      supported_operations[j] |= _supported_operations_[j];
+    }
+  }
   return NNADAPTER_NO_ERROR;
 }
 
