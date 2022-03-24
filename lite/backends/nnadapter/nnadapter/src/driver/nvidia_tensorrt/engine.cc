@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include "driver/nvidia_tensorrt/converter/converter.h"
+#include "driver/nvidia_tensorrt/optimizer/fuse_yolo_box.h"
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
@@ -292,6 +293,8 @@ int Program::BuildFromModel(core::Model* model) {
   UnpackOpFusion(model);
   FuseMatMulAddIntoFullyConnected(model);
   RemoveReshapeBeforeFullyConnected(model);
+  // parse yolo_box
+  FindYoloBoxPattern(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // 2. Build model, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));

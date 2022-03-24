@@ -1955,6 +1955,109 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+  /**
+   * yolo_box introduction:
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   *
+   * Inputs:
+   * * 0: x, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   * * 1: image_size, a NNADAPTER_FP32 tensor, [N, 2].
+   * * 2: anchors, a list, [?, 2].
+   * * 3: class_num, int.
+   * * 4: conf_thresh, float.
+   * * 5: downsample_ratio, int, value=[32, 16, 8].
+   * * 6: clip_bbox, bool, optional.
+   * * 7: scale_x_y, int, optional, default=1.
+   *
+   * Outputs:
+   * * 0: box, a NNADAPTER_FP32 tensor, [N, M, 4].
+   * * 1: score, a NNADAPTER_FP32 tensor, [N, M, class_num].
+   */
+  NNADAPTER_YOLO_BOX,
+  /**
+   * multiclass_nms introduction:
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/fluid/layers/multiclass_nms_cn.html
+   *
+   * Inputs:
+   * * 0: box, a NNADAPTER_FP32 tensor, [N, M, 4/8/16/32] or [M, C, 4]
+   * Lod_tensor.
+   * * 1: scores, a NNADAPTER_FP32 tensor, [N, C, M] or [M, C] Lod_tensor.
+   * * 2: background_label, int, default=1.
+   * * 3: score_threshold, float.
+   * * 4: nms_top_k, int.
+   * * 5: nms_threshold, float.
+   * * 6: nms_eta, float, default=1.
+   * * 7: keep_top_k, int.
+   * * 8: normalized, bool,  default=true.
+   *
+   * Outputs:
+   * * 0: box_res, a NNADAPTER_FP32 tensor, [?, 6].
+   * * 1: index, a NNADAPTER_INT32 tensor, [?], optional.
+   * * 2: nms_rois_num, a NNADAPTER_INT32 tensor, [?].
+   */
+  NNADAPTER_MULTICLASS_NMS,
+  /**
+   * yolo_box_parser introduction:
+   * it finish box calculate, sigmoid and exp.
+   *
+   * Inputs:
+   * * 0: x, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   * * 1: anchors, a list, [?, 2].
+   * * 2: class_num, int.
+   * * 3: conf_thresh, float.
+   * * 4: downsample_ratio, int, value=[32, 16, 8].
+   * * 5: clip_bbox, bool, optional.
+   * * 6: scale_x_y, int, optional, default=1.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   */
+  NNADAPTER_YOLO_BOX_HEAD,
+  /**
+   * yolo_box_parser introduction:
+   * it finish box parser and filter box according to score_threshold
+   *
+   * Inputs:
+   * * 0: box0, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   * * 1: box1, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   * * 2: box2, a NNADAPTER_FP32 tensor, [N, C, H, W].
+   * * 3: image_shape, a NNADAPTER_FP32 tensor, [N, 2].
+   * * 4: image_scale, a NNADAPTER_FP32 tensor, [N, 2].
+   * * 5: anchors0, a list, [?, 2].
+   * * 6: anchors1, a list, [?, 2].
+   * * 7: anchors2, a list, [?, 2].
+   * * 8: class_num, int.
+   * * 9: conf_thresh, float.
+   * * 10: downsample_ratio0, int.
+   * * 11: downsample_ratio1, int.
+   * * 12: downsample_ratio2, int.
+   * * 13: clip_bbox, bool, optional.
+   * * 14: scale_x_y, int, optional, default=1.
+   *
+   * Outputs:
+   * * 0: boxes_scores, a NNADAPTER_FP32 tensor, [N, M, 4 + class_num].
+   */
+  NNADAPTER_YOLO_BOX_PARSER,
+  /**
+   * multiclass_nms introduction:
+   * do nms sort process and filter according to nms_threshold
+   *
+   * Inputs:
+   * * 0: box, a NNADAPTER_FP32 tensor, [N, M, 4 + class_num].
+   * * 1: background_label, int, default=1.
+   * * 2: score_threshold, float.
+   * * 3: nms_top_k, int.
+   * * 4: nms_threshold, float.
+   * * 5: nms_eta, float, default=1.
+   * * 6: keep_top_k, int.
+   * * 7: normalized, bool,  default=true.
+   *
+   * Outputs:
+   * * 0: box_res, a NNADAPTER_FP32 tensor, [?, 6].
+   * * 1: index, a NNADAPTER_INT32 tensor, [?], optional.
+   * * 2: NmsRoisNum, a NNADAPTER_INT32 tensor, [?].
+   */
+  NNADAPTER_YOLO_BOX_NMS,
 } NNAdapterOperationCode;
 
 /**
