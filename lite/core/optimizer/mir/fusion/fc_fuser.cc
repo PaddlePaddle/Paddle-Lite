@@ -43,6 +43,12 @@ void FcFuser::BuildPattern() {
   };
   auto input_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("transpose_X");
+    bool trans_y = op_desc.GetAttr<bool>("transpose_Y");
+    return trans_x == false && trans_y == false;
+  };
+  auto input_attr_teller_v2 = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     bool trans_x = op_desc.GetAttr<bool>("trans_x");
     bool trans_y = op_desc.GetAttr<bool>("trans_y");
     return trans_x == false && trans_y == false;
@@ -57,8 +63,10 @@ void FcFuser::BuildPattern() {
   auto* add =
       OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
-  if (op_type_ == "matmul" || op_type_ == "matmul_v2") {
+  if (op_type_ == "matmul") {
     mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller);
+  } else if (op_type_ == "matmul_v2") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller_v2);
   }
 
   // create topology.
