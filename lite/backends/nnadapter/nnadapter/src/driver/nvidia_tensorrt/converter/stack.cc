@@ -16,6 +16,7 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -36,12 +37,12 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
     }
   } else {
     for (int i = 0; i < input_count - 1; i++) {
+      nvinfer1::Dims reshape_dim;
       auto input_operand = input_operands[i];
       auto input_operator = converter->GetMappedTensor(input_operand);
       if (!input_operator) {
         input_operator = converter->ConvertOperand(input_operand);
       }
-      nvinfer1::Dims reshape_dim;
       reshape_dim.nbDims = input_dimensions_count + 1;
       reshape_dim.d[input_dimensions_count] = 1;
       auto reshape_layer = converter->network()->addShuffle(*input_operator);
@@ -56,6 +57,7 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
   stack_layer->setAxis(axis);
   auto stack_output_tensor = stack_layer->getOutput(0);
   nvinfer1::Dims reshape_dim;
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operands[0]));
   reshape_dim.nbDims = output_operand->type.dimensions.count;
   for (int i = 0; i < reshape_dim.nbDims; i++) {
     reshape_dim.d[i] = output_operand->type.dimensions.data[i];
