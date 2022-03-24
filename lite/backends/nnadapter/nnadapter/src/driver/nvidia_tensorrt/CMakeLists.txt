@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+enable_language(CUDA)
+
 set(DEVICE_NAME nvidia_tensorrt)
 add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
 add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
@@ -20,15 +22,13 @@ include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
-set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} driver.cc)
+aux_source_directory(converter/plugin PLUGINS)
+set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc calibrator.cc)
 set(DEPS ${NNADAPTER_OPERATIONS}
          ${NNADAPTER_UTILITIES}
          ${${DEVICE_NAME}_deps}
          nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
 
-aux_source_directory(converter/plugin PLUGINS)
-add_library(${DEVICE_NAME}_plugin STATIC ${PLUGINS})
-
 add_library(${DEVICE_NAME} SHARED ${SRCS})
-target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} ${DEVICE_NAME}_plugin "-Wl,--end-group")
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")
 set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

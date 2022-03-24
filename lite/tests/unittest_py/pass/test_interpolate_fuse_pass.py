@@ -264,10 +264,6 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        cast_intype = program_config.ops[2].attrs["in_dtype"]
-        if cast_intype != 2 and cast_intype != 3:
-            print("The cast only support in_dtype 2, 3. Skip!")
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -289,11 +285,11 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
 class TestInterpolateNearestFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,

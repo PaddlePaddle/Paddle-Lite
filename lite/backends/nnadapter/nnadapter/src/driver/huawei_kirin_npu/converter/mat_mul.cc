@@ -22,11 +22,7 @@ namespace huawei_kirin_npu {
 
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // TODO(shentanyue) Support BatchMatMul later.
-  NNADAPTER_CHECK_EQ(x_operand->type.dimensions.count, 2)
-      << "Only support the dimension of x is 2 now.";
-  NNADAPTER_CHECK_EQ(y_operand->type.dimensions.count, 2)
-      << "Only support the dimension of y is 2 now.";
+  NNADAPTER_CHECK_EQ(transpose_x, false) << "HiAI not support transpose x.";
 
   // Convert to GE operators
   auto x_operator = converter->GetMappedOperator(x_operand);
@@ -37,12 +33,23 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   if (y_operator == nullptr) {
     y_operator = converter->ConvertOperand(y_operand);
   }
-  auto mat_mul_op = converter->AddOperator<hiai::op::MatMul>(output_operand);
-  mat_mul_op->set_attr_transpose_x1(transpose_x);
-  mat_mul_op->set_attr_transpose_x2(transpose_y);
-  SET_INPUT(mat_mul_op, x1, x_operator);
-  SET_INPUT(mat_mul_op, x2, y_operator);
-  MAP_OUTPUT(mat_mul_op, y, output_operand);
+  if (x_operand->type.dimensions.count == 2 &&
+      y_operand->type.dimensions.count == 2) {
+    auto mat_mul_op = converter->AddOperator<hiai::op::MatMul>(output_operand);
+    mat_mul_op->set_attr_transpose_x1(transpose_x);
+    mat_mul_op->set_attr_transpose_x2(transpose_y);
+    SET_INPUT(mat_mul_op, x1, x_operator);
+    SET_INPUT(mat_mul_op, x2, y_operator);
+    MAP_OUTPUT(mat_mul_op, y, output_operand);
+  } else {
+    auto mat_mul_op =
+        converter->AddOperator<hiai::op::BatchMatMul>(output_operand);
+    mat_mul_op->set_attr_adj_x1(transpose_x);
+    mat_mul_op->set_attr_adj_x2(transpose_y);
+    SET_INPUT(mat_mul_op, x1, x_operator);
+    SET_INPUT(mat_mul_op, x2, y_operator);
+    MAP_OUTPUT(mat_mul_op, y, output_operand);
+  }
   return NNADAPTER_NO_ERROR;
 }
 

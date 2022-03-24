@@ -191,16 +191,28 @@ class TestConv2dOp(AutoScanTest):
                 if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[
                         0] < 3:
                     return True
-
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
-        )
-
+        
+        def _teller3(program_config, predictor_config): 
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            groups = program_config.ops[0].attrs["groups"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if nnadapter_device_name == "nvidia_tensorrt" and (
+                    filter_shape[0] % groups == 0):
+                return True
+                  
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Input data is 0-1, int8 winograd will overflow when input channel is more than 80."
         )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on TensorRT. We need to fix it as soon as possible."
+        )
+
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

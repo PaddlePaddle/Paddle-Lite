@@ -29,6 +29,11 @@ void TileCompute<T, PType>::Run() {
     for (int64_t i = 0; i < repeat_times_size; i++) {
       repeat_times.push_back(param.RepeatTimes->template data<int>()[i]);
     }
+  } else if (param.repeat_times_tensor.size() != 0) {
+    for (int i = 0; i < param.repeat_times_tensor.size(); i++) {
+      auto temp = param.repeat_times_tensor[i];
+      repeat_times.push_back(*(temp->template data<int>()));
+    }
   }
   auto in_dims = param.X->dims();
   auto vec_in_dims = in_dims.Vectorize();

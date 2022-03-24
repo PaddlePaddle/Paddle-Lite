@@ -194,9 +194,6 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
           op_desc.GetAttr<float>("swish_scale");
       param_.activation_param.active_type = lite_api::ActivationType::kSwish;
       param_.fuse_swish = true;
-    } else if (act_type == "exp") {
-      param_.activation_param.active_type = lite_api::ActivationType::kExp;
-      param_.fuse_exp = true;
     } else if (act_type == "abs") {
       param_.activation_param.active_type = lite_api::ActivationType::kAbs;
       param_.fuse_abs = true;

@@ -116,6 +116,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::cambricon_mlu::CloseDevice,
     .create_context = nnadapter::cambricon_mlu::CreateContext,
     .destroy_context = nnadapter::cambricon_mlu::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::cambricon_mlu::CreateProgram,
     .destroy_program = nnadapter::cambricon_mlu::DestroyProgram,
     .execute_program = nnadapter::cambricon_mlu::ExecuteProgram,

@@ -31,7 +31,7 @@ void MultiSoftmaxCompute::PrepareForRun() {
                       param.lod.data(),
                       param.lod.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   query_lod = {param.lod.data(),
                static_cast<int>(param.lod.size()),
                reinterpret_cast<int*>(xpu_lod_guard_->addr_)};
