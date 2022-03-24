@@ -38,10 +38,10 @@ int ConvertClip(Converter* converter, core::Operation* operation) {
     clip_layer->setBeta(max_num);
     auto output_tensor = clip_layer->getOutput(0);
     converter->UpdateTensorMap(output_operand, output_tensor);
-    return NNADAPTER_NO_ERROR;
   } else {
     NNADAPTER_LOG(FATAL) << "TensorRT doesn't support, need plugin.";
   }
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace nvidia_tensorrt
