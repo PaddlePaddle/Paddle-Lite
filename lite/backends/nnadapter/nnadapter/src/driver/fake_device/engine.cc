@@ -97,7 +97,7 @@ int Program::BuildFromModel(core::Model* model, core::Cache* cache) {
   // Create an execution to build the graph to the device-related program.
   execution_ = std::make_shared<fake_ddk::nn::Exection>(graph_.get());
   if ((cache->token && cache->dir)) {
-    if (graph_->EnableCache() == fake_ddk::nn::FAKE_DEVICE_SUCCESS) {
+    if (graph_->EnableCache() == fake_ddk::nn::FAKE_DDK_SUCCESS) {
       std::vector<uint8_t>* model_buffer = nullptr;
       fake_ddk::nn::fakedevice_model_buffer* fm;
       model_buffer = &cache->buffer;
@@ -127,7 +127,7 @@ int Program::BuildFromCache(core::Cache* cache) {
   // Load graph from cache buffer
   if (graph_->LoadCache(reinterpret_cast<char*>(cache->buffer.data()),
                         cache->buffer.size()) !=
-      fake_ddk::nn::FAKE_DEVICE_SUCCESS) {
+      fake_ddk::nn::FAKE_DDK_SUCCESS) {
     NNADAPTER_LOG(FATAL) << "Failed to load cache graph from buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
@@ -254,10 +254,10 @@ int Program::Execute(uint32_t input_count,
   }
   auto start_time = GetCurrentUS();
   NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info),
-                     fake_ddk::nn::FAKE_DEVICE_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->Run(), fake_ddk::nn::FAKE_DEVICE_SUCCESS);
+                     fake_ddk::nn::FAKE_DDK_SUCCESS);
+  NNADAPTER_CHECK_EQ(execution_->Run(), fake_ddk::nn::FAKE_DDK_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info),
-                     fake_ddk::nn::FAKE_DEVICE_SUCCESS);
+                     fake_ddk::nn::FAKE_DDK_SUCCESS);
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   for (uint32_t i = 0; i < output_count; i++) {
     auto type = &output_types_[i];

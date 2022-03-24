@@ -17,8 +17,8 @@
  * FAKED_DDK is an example of HOW TO MAKE A NEW NNADAPTER DELEGATE DDK.
 */
 
-#include "fakedevice/exection.h"
-#include "fakedevice/graph.h"
-#include "fakedevice/operator.h"
-#include "fakedevice/tensor.h"
-#include "fakedevice/types.h"
+#include "fake_ddk/exection.h"
+#include "fake_ddk/graph.h"
+#include "fake_ddk/operator.h"
+#include "fake_ddk/tensor.h"
+#include "fake_ddk/types.h"

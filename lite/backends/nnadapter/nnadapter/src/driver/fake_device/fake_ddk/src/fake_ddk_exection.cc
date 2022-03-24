@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "fakedevice/fakedevice_pub.h"
+#include "fake_ddk/fake_ddk_pub.h"
 
 namespace fake_ddk {
 namespace nn {
@@ -43,12 +43,10 @@ Exection::Exection(Graph* graph) {
 }
 Exection::~Exection() {}
 
-/************************************************
-*   setup graph and optimize graph
-************************************************/
+/* setup graph and optimize graph */
 int Exection::Build() {
   printf("fake_ddk: Build()\n");
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 int Exection::Build(fakedevice_model_buffer* fm) {
@@ -61,7 +59,7 @@ int Exection::Build(fakedevice_model_buffer* fm) {
   SerializeModelbuffer(graph, buffer);
   fm->length = buffer_length;
   fm->data = buffer;
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 /* Set model inputs.
@@ -71,7 +69,7 @@ int Exection::Build(fakedevice_model_buffer* fm) {
  * takes effect.
  *
  * @param inputs [in] input data
- * @return FAKE_DEVICE_SUCCESS when success
+ * @return FAKE_DDK_SUCCESS when success
  */
 int Exection::SetInputs(std::vector<InputInfo> inputs) {
   printf("fake_ddk: SetInputs\n");
@@ -86,13 +84,13 @@ int Exection::SetInputs(std::vector<InputInfo> inputs) {
         inputs[i].buf);
     memcpy(graph->input_tensors[i]->data, inputs[i].buf, inputs[i].size);
   }
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 /* Do inference on fake_device .
  * This function should be called after the SetInputs() function.
  *
- * @return FAKE_DEVICE_SUCCESS when success
+ * @return FAKE_DDK_SUCCESS when success
  */
 int Exection::Run() {
   printf("fake_ddk: Run()\n");
@@ -128,18 +126,18 @@ int Exection::Run() {
         break;
     }
   }
-  if (status != FAKE_DEVICE_SUCCESS) {
+  if (status != FAKE_DDK_SUCCESS) {
     printf("fake_ddk: process graph fail\n");
-    return FAKE_DEVICE_FAILURE;
+    return FAKE_DDK_FAILURE;
   }
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
-/** Get model outputs.
+/* Get model outputs.
  *  This function should be called after the Run() function.
  *  If using a quantitative model, the output is quantized data
  *
- *  @return FAKE_DEVICE_SUCCESS when success
+ *  @return FAKE_DDK_SUCCESS when success
  */
 int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
   printf("fake_ddk: GetOutputs\n ");
@@ -164,7 +162,7 @@ int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
     }
     */
   }
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 }  // namespace nn

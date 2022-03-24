@@ -15,7 +15,7 @@
 #pragma once
 
 #include <string>
-#include "fakedevice/tensor.h"
+#include "fake_ddk/tensor.h"
 
 namespace fake_ddk {
 namespace nn {
@@ -41,7 +41,7 @@ namespace nn {
  *        graph->AddOperator(fake_ddk::nn::OperatorType::CONV2D, inputs,
  * outputs, (void*)&attr);
  * </pre>
- */
+*/
 
 typedef enum { FAKE_DEVICE_CONV2D, FAKE_DEVICE_RELU } fakedevice_nn_op_t;
 typedef fakedevice_nn_op_t OperatorType;

@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "fakedevice/fakedevice_pub.h"
+#include "fake_ddk/fake_ddk_pub.h"
 
 namespace fake_ddk {
 namespace nn {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <math.h>
-#include "fakedevice/fakedevice_pub.h"
+#include "fake_ddk/fake_ddk_pub.h"
 namespace fake_ddk {
 namespace nn {
 int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,

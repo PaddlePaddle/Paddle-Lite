@@ -15,48 +15,50 @@
 #pragma once
 #include <stdint.h>
 #include <vector>
-#include "fakedevice/graph.h"
+#include "fake_ddk/graph.h"
 namespace fake_ddk {
 namespace nn {
 
-/** Input info used by exector->SetInputs(inputs)
+/* Input info used by exector->SetInputs(inputs)
  *
 */
 struct InputInfo {
-  /// The input index, filled by user
+  /* The input index, filled by user */
   uint32_t index;
-  /// Input buffer, users should manage this buffer by themselves, including
-  /// allocation and release.
+  /* Input buffer, users should manage this buffer by themselves, including
+   * allocation and release.
+  */
   void* buf;
-  /// The size of input buffer, filled by user
+  /* The size of input buffer, filled by user */
   uint32_t size;
-  /// Precision type of input data, filled by user
+  /* Precision type of input data, filled by user */
   int type;
-  /** Layout of input data, filled by user.
-   *  Currently the internal input format of FAKE_DEVICE is NCHW by default.
-   *  so entering NCHW data can avoid the format conversion in the driver.
+  /* Layout of input data, filled by user.
+   * Currently the internal input format of FAKE_DDK is NCHW by default.
+   * so entering NCHW data can avoid the format conversion in the driver.
   */
   int layout;
 };
 
-/** Output info used by exector->GetOutputs(outputs)
+/* Output info used by exector->GetOutputs(outputs)
  *
 */
 struct OutputInfo {
-  /// The output index, filled by user
+  /* The output index, filled by user */
   uint32_t index;
-  /// Output buffer, users should manage this buffer by themselves, including
-  /// allocation and release.
+  /* Output buffer, users should manage this buffer by themselves, including
+   * allocation and release.
+  */
   void* buf;
-  /// The size of output buffer, filled by user
+  /* The size of output buffer, filled by user */
   uint32_t size;
-  /// Precision type of output data, filled by DDK
+  /* Precision type of output data, filled by DDK */
   int type;
-  /// Layout of output data, filled by DDK
+  /* Layout of output data, filled by DDK */
   int layout;
 };
 
-/** Create a exection on device
+/* Create a exection on device
  *  You need a graph before you create a exection.
  *  The overall process is as follows:
  *  <pre>
@@ -75,12 +77,10 @@ struct OutputInfo {
  *    exector->GetOutputs(outputs);
  *  }
  * </pre>
- *
- */
+*/
 class Exection {
  private:
   Graph* graph_;
-  // Private data
   void* device_handle;
 
  public:
@@ -93,7 +93,7 @@ class Exection {
   Graph* GetGraph() { return graph_; }
 
   /* Create graph on FAKE_DEVICE.
-   * @return FAKE_DEVICE_SUCCESS when success
+   * @return FAKE_DDK_SUCCESS when success
    */
   int Build();
   int Build(fakedevice_model_buffer* fm);
@@ -104,20 +104,20 @@ class Exection {
    * When calling SetInputs() multiple times in succession, only the last data
    * takes effect.
    * @param inputs [in] input data
-   * @return FAKE_DEVICE_SUCCESS when success
+   * @return FAKE_DDK_SUCCESS when success
    */
   int SetInputs(std::vector<InputInfo> inputs);
 
   /* Do inference on FAKE_DEVICE.
    * This function should be called after the SetInputs() function.
-   * @return FAKE_DEVICE_SUCCESS when success
+   * @return FAKE_DDK_SUCCESS when success
    */
   int Run();
 
   /* Get model outputs.
    * This function should be called after the Run() function.
    * If using a quantitative model, the output is quantized data
-   * @return FAKE_DEVICE_SUCCESS when success
+   * @return FAKE_DDK_SUCCESS when success
    */
   int GetOutputs(std::vector<OutputInfo> outputs);
 };

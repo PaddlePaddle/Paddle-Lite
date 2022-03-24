@@ -17,26 +17,23 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "fakedevice/types.h"
+#include "fake_ddk/types.h"
 
 namespace fake_ddk {
 namespace nn {
 
-/* The structure of quantization parameter of Affine Asymmetric
- */
+/* The structure of quantization parameter of Affine Asymmetric */
 struct QuantizationParamAffineAsymmetric {
   std::vector<uint32_t> zero_point;
   std::vector<float> scale;
 };
 
-/* The structure of quantization parameter of Symmetric
- */
+/* The structure of quantization parameter of Symmetric */
 struct QuantizationParamSymmetric {
   std::vector<float> scale;
 };
 
-/* The structure of Tensor Attribute
- */
+/* The structure of Tensor Attribute */
 struct TensorAttr {
   std::string name;
   std::vector<uint32_t> dims;

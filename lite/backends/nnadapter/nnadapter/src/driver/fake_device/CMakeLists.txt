@@ -16,8 +16,6 @@ set(DEVICE_NAME fake_device)
 add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
 add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
 
-# Normally, the ddk is provided by hardware vendors, so it will be external
-# If the DDK is external, include dependencies_external.cmake
 include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
@@ -25,5 +23,5 @@ set(SRCS utility.cc ${CONVERTERS} engine.cc driver.cc)
 set(DEPS ${NNADAPTER_OPERATIONS} ${NNADAPTER_UTILITIES} nnadapter_optimizer_convert_quantization_symm_to_asymm ${${DEVICE_NAME}_deps})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
-target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} fakedevice_ddk "-Wl,--end-group")
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} fake_ddk "-Wl,--end-group")
 set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

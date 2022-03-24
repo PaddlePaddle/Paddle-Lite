@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "core/types.h"
-#include "fakedevice/fakedevice_pub.h"
+#include "fake_ddk/fake_ddk_pub.h"
 
 namespace nnadapter {
 namespace fake_device {

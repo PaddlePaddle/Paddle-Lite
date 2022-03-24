@@ -17,8 +17,8 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "fakedevice/operator.h"
-#include "fakedevice/tensor.h"
+#include "fake_ddk/operator.h"
+#include "fake_ddk/tensor.h"
 
 namespace fake_ddk {
 namespace nn {
@@ -96,18 +96,18 @@ class Graph {
   /* Set the input and output tensor of the graph.
    * @param input_tensors [in] input tensors
    * @param output_tensors [in] output tensors
-   * @return FAKE_DEVICE_SUCCESS when success
+   * @return FAKE_DDK_SUCCESS when success
   */
   int SetInputsOutputs(std::vector<std::shared_ptr<Tensor>> input_tensors,
                        std::vector<std::shared_ptr<Tensor>> output_tensors);
   /* Enable model cache.
-   * @return FAKE_DEVICE_SUCCESS when the ddk support it
+   * @return FAKE_DDK_SUCCESS when the ddk support it
   */
   int EnableCache();
 
   int DisableCache();
   /* Load model cache. Deserialize cache buffer to fake_ddk's grpah
-   * @return FAKE_DEVICE_SUCCESS when the ddk support it
+   * @return FAKE_DDK_SUCCESS when the ddk support it
   */
   int LoadCache(char* cache_buffer, int size);
 };

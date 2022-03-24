@@ -20,26 +20,23 @@
 namespace fake_ddk {
 namespace nn {
 
-// error code
+/* error code */
 enum {
-  FAKE_DEVICE_SUCCESS = 0,
-  FAKE_DEVICE_FAILURE = -1,
-  FAKE_DEVICE_INVALID_INPUTS =
-      -2,  // Invalid inputs, such as input number mismatch with model
-  FAKE_DEVICE_INVALID_OUTPUTS =
-      -3,  // Invalid outputs, such as output number mismatch with model
-  FAKE_DEVICE_INVALID_MODEL = -4,       // Invalid model, Exection::Build() fail
-  FAKE_DEVICE_INVALID_PARAM = -5,       // Invalid parameter
-  FAKE_DEVICE_NO_MEMORY = -6,           // Memory malloc fail
-  FAKE_DEVICE_DEVICE_UNAVAILABLE = -7,  // Device is unavailable.
-  FAKE_DEVICE_INVALID_TENSOR = -8,      // Invalid tensor
-  FAKE_DEVICE_INVALID_OP =
-      -9,  // Operater does not support or is not implemented
+  FAKE_DDK_SUCCESS = 0,
+  FAKE_DDK_FAILURE = -1,
+  FAKE_DDK_INVALID_INPUTS = -2,
+  FAKE_DDK_INVALID_OUTPUTS = -3,
+  FAKE_DDK_INVALID_MODEL = -4,
+  FAKE_DDK_INVALID_PARAM = -5,
+  FAKE_DDK_NO_MEMORY = -6,
+  FAKE_DDK_DEVICE_UNAVAILABLE = -7,
+  FAKE_DDK_INVALID_TENSOR = -8,
+  FAKE_DDK_INVALID_OP = -9,
 };
 
-// The precision of Tensor
+/* The precision of Tensor */
 enum class PrecisionType : int {
-  UNKNOWN = 0,  // Unknown precision
+  UNKNOWN = 0,
   INT8 = 1,
   INT16,
   INT32,
@@ -54,24 +51,24 @@ enum class PrecisionType : int {
   BOOL8 = 12,
 };
 
-// The data layout of Tensor
+/* The data layout of Tensor */
 enum class DataLayoutType : int {
-  UNKNOWN = 0,  // Unknown layout
+  UNKNOWN = 0,
   NCHW = 1,
   NHWC = 2,
-  ANY = 3,  // Any data layout
-  NUM = 4,  // Number of fields.
+  ANY = 3, /* Any data layout */
+  NUM = 4, /* Number of fields */
 };
 
-// Pad type enum
+/* Pad type enum */
 enum class PadType : int {
-  AUTO = 0,  // Decide by driver
-             /*
-              * VALID Padding: it means no padding and it assumes that all the dimensions
-              * are valid
-              * So that the input image gets fully covered by a filter and the stride
-              * specified by you.
-             */
+  AUTO = 0, /* Decide by driver */
+            /*
+             * VALID Padding: it means no padding and it assumes that all the dimensions
+             * are valid
+             * So that the input image gets fully covered by a filter and the stride
+             * specified by you.
+            */
   VALID,
   /*
    * SAME Padding: it applies padding to the input image so that the input image

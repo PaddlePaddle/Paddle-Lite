@@ -16,7 +16,7 @@
 #include <string.h>
 #include <cmath>
 #include <iostream>
-#include "fakedevice/fakedevice_pub.h"
+#include "fake_ddk/fake_ddk_pub.h"
 
 namespace fake_ddk {
 namespace nn {
@@ -93,7 +93,7 @@ static int AddOperatorConv2d(
     node->output_tensors.push_back(outputs[i].get());
   }
   printf("fake_ddk: addOperator_CONV2D finished\n ");
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 int AddOperatorRelu(std::vector<std::shared_ptr<Tensor>> inputs,
@@ -117,9 +117,9 @@ int Graph::AddOperator(OperatorType type,
       break;
     default:
       printf("fake_ddk: this operator not support yet\n");
-      return FAKE_DEVICE_FAILURE;
+      return FAKE_DDK_FAILURE;
   }
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 int Graph::SetInputsOutputs(
@@ -167,21 +167,21 @@ int Graph::SetInputsOutputs(
         "fake_ddk: malloc output Tensor  graph->output_tensors[i].data = %x\n",
         graph->output_tensors[i]->data);
   }
-  return FAKE_DEVICE_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 int Graph::EnableCache() {
-  int ret = FAKE_DEVICE_SUCCESS;
-  return FAKE_DEVICE_SUCCESS;
+  int ret = FAKE_DDK_SUCCESS;
+  return FAKE_DDK_SUCCESS;
 }
 
 int Graph::DisableCache() {
-  int ret = FAKE_DEVICE_SUCCESS;
+  int ret = FAKE_DDK_SUCCESS;
   return ret;
 }
 
 int Graph::LoadCache(char *cache_buffer, int size) {
-  int ret = FAKE_DEVICE_SUCCESS;
+  int ret = FAKE_DDK_SUCCESS;
   DeserializeModelbuffer(
       reinterpret_cast<fakedevice_nn_graph_t *>(fakedevice_graph_),
       reinterpret_cast<void *>(cache_buffer));
