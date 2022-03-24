@@ -247,25 +247,25 @@ static void DelOperation(core::Model* model,
   // remove yolo_box operation
   RemoveOperation(model, operation);
 }
+// clang-format off
 /*
-* x0  y0           input0            input1          input2
-* input0            input1          input2
-* |   |
+* x0  y0    input0        input1      input2                   input0     input1          input2
+* |   |                                                           |         |               |
 *   |
 * elementwise_div
 *   |
-*   cast                                                             ===>
-* yolov3_head  yolov3_head()  yolov3_head x0   y0
-*    | |          |            |        |   |
-*                      |                    |                | yolo_box_parse()
-*                   yolo_box            yolo_box           yolo_box |
-*                   |     |0             |1   |             |2     | yolo_nms()
-*            transpose   concat0(0/1/2)     transpose             transpose
-*                 |0                          |1                      |2
+*   cast                                              ===>   yolo_head    yolo_head     yolo_head   x0     y0
+*    |0       |      |1    |         |2   |                     |             |             |         |     |
+*          |             |                |                                     yolo_box_parse
+*      yolo_box          yolo_box           yolo_box                                 |
+*       |     |0        |1       |          |2     |                             yolo_nms()
+*  transpose   concat0(0/1/2) transpose          transpose
+*  |0                           |1                  |2
 *                      concat0(0/1/2)              concat1(0/1/2)
 *                               |                    |
 *                                       nms
 */
+// clang-format on
 void FuseYoloBox(core::Model* model) {
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
