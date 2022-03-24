@@ -30,7 +30,6 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   if (!value_tensor) {
     value_tensor = converter->ConvertOperand(value_operand);
   }
-
   std::vector<int64_t> shape_dims;
   if (IsConstantOperand(shape_operand)) {
     int shape_rank =

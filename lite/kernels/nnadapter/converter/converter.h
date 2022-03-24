@@ -201,7 +201,6 @@ class Converter {
       const std::string& output_name = "",
       const std::vector<float>& output_quant_scales = {},
       uint32_t output_quant_channel_dim = 0);
-
   // Add flatten operation with input operand, start, end, output_name
   NNAdapterOperand* AddFlattenOperation(
       NNAdapterOperand* input_operand,
