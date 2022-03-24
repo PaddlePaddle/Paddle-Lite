@@ -728,11 +728,6 @@ void test_prior_box(Place place) {
 }
 
 TEST(PriorBox, precision) {
-  Place place(TARGET(kHost));
-  test_prior_box(place);
-}
-
-TEST(DensityPriorBox, precision) {
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
@@ -740,7 +735,15 @@ TEST(DensityPriorBox, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_X86)
+#elif defined(LITE_WITH_X86 || LITE_WITH_ARM)
+  place = TARGET(kHost));
+#endif
+  test_prior_box(place);
+}
+
+TEST(DensityPriorBox, precision) {
+  Place place;
+#if defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
