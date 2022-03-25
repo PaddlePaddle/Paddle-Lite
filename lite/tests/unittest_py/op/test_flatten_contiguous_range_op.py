@@ -63,10 +63,6 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
-        target_str = self.get_target()
-        if target_str == "NNAdapter":
-            assume(input_type != "int64")
-
         start_axis = draw(
             st.integers(
                 min_value=0, max_value=len(in_shape) - 1))
