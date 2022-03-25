@@ -1964,13 +1964,13 @@ typedef enum {
    * * 0: input0, a NNADAPTER_FLOAT32 tensor.
    * * 1: input1, imgsize, a NNADAPTER_INT32 tensor.
    * * 2: anchors, vector of int32.
-   * * 2: class nums, int32.
-   * * 3: conf_thresh, confidence threshold, float32.
-   * * 4: downsample_ratio, int32.
-   * * 5: clip_bbox, default true.
-   * * 6: scale_x_y, float32, default 1.
-   * * 7: iou_aware, bool, default false.
-   * * 8: iou_aware_factor, float32, default 0.5
+   * * 3: class nums, int32.
+   * * 4: conf_thresh, confidence threshold, float32.
+   * * 5: downsample_ratio, int32.
+   * * 6: clip_bbox, default true.
+   * * 7: scale_x_y, float32, default 1.
+   * * 8: iou_aware, bool, default false.
+   * * 9: iou_aware_factor, float32, default 0.5
    *
    * Outputs:
    * * 0: boxes, a NNADAPTER_FLOAT32 tensor.
