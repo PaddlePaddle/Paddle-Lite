@@ -30,13 +30,12 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   if (!value_tensor) {
     value_tensor = converter->ConvertOperand(value_operand);
   }
-  std::vector<int64_t> shape_dims;
+  std::vector<int32_t> shape_dims;
   if (IsConstantOperand(shape_operand)) {
-    int shape_rank =
-        shape_operand->length / static_cast<int64_t>(sizeof(int64_t));
+    int shape_rank = output_operand->type.dimensions.count;
     shape_dims.resize(shape_rank);
-    auto shape_data = static_cast<int64_t*>(shape_operand->buffer);
-    memcpy(&shape_dims[0], shape_data, sizeof(int64_t) * shape_rank);
+    auto shape_data = output_operand->type.dimensions.data;
+    memcpy(&shape_dims[0], shape_data, sizeof(int32_t) * shape_rank);
   } else {
     NNADAPTER_LOG(FATAL)
         << "fill nvidia_tensorrt doesn't support shape is from tensor now\n";

@@ -23,7 +23,7 @@ namespace nvidia_tensorrt {
 
 class CastPluginDynamic : public PluginDynamic {
  public:
-  CastPluginDynamic(int intype, int outype);
+  CastPluginDynamic(nvinfer1::DataType intype, nvinfer1::DataType outype);
   CastPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
@@ -41,8 +41,8 @@ class CastPluginDynamic : public PluginDynamic {
                                  int32_t nb_outputs) noexcept;
 
  private:
-  int intype_;
-  int outtype_;
+  nvinfer1::DataType intype_;
+  nvinfer1::DataType outtype_;
 };
 
 class CastPluginDynamicCreator : public PluginCreator {

@@ -17,7 +17,8 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-CastPluginDynamic::CastPluginDynamic(int intype, int outtype)
+CastPluginDynamic::CastPluginDynamic(nvinfer1::DataType intype,
+                                     nvinfer1::DataType outtype)
     : intype_(intype), outtype_(outtype) {}
 
 CastPluginDynamic::CastPluginDynamic(const void* serial_data,
@@ -53,20 +54,24 @@ int32_t CastPluginDynamic::enqueue(
   const int block_size = 256;
   const int grid_size = (num + block_size - 1) / block_size;
 
-  if (intype_ == 5 && outtype_ == 10) {  // int32->float32
+  if (intype_ == nvinfer1::DataType::kINT32 &&
+      outtype_ == nvinfer1::DataType::kFLOAT) {  // int32->float32
     const int32_t* input = static_cast<const int32_t*>(inputs[0]);
     float* output = static_cast<float*>(outputs[0]);
     cast_kernel<int32_t,
                 float,
                 block_size><<<grid_size, block_size, 0, stream>>>(
         num, input, output);
-  } else if (intype_ == 10 && outtype_ == 5) {  // float32->int32
+  } else if (intype_ == nvinfer1::DataType::kFLOAT &&
+             outtype_ == nvinfer1::DataType::kINT32) {  // float32->int32
     const float* input = static_cast<const float*>(inputs[0]);
     int32_t* output = static_cast<int32_t*>(outputs[0]);
     cast_kernel<float,
                 int32_t,
                 block_size><<<grid_size, block_size, 0, stream>>>(
         num, input, output);
+  } else {
+    NNADAPTER_LOG(FATAL) << "cast nvidia_tensorrt doesn't support this cast \n";
   }
 
   return 0;

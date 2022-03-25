@@ -18,6 +18,7 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -30,21 +31,12 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto squeeze_layer = converter->network()->addShuffle(*input_tensor);
-  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand))
-  auto dims_data = input_operand->type.dimensions.data;
-  auto dims_count = input_operand->type.dimensions.count;
-  for (int i = 0; i < axes.size(); i++)
-    if (axes[i] < 0) axes[i] += dims_count;
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
   nvinfer1::Dims out_dims;
-  out_dims.nbDims = 0;
-  for (int32_t i = 0; i < dims_count; i++) {
-    if (std::find(axes.begin(), axes.end(), i) == axes.end() &&
-        axes.size() > 0) {
-      out_dims.d[out_dims.nbDims++] = dims_data[i];
-    } else if (axes.size() == 0 && dims_data[i] > 1) {
-      out_dims.d[out_dims.nbDims++] = dims_data[i];
-    }
-  }
+  out_dims.nbDims = output_operand->type.dimensions.count;
+  memcpy(&out_dims.d[0],
+         output_operand->type.dimensions.data,
+         sizeof(int32_t) * out_dims.nbDims);
   squeeze_layer->setReshapeDimensions(out_dims);
   auto output_tensor = squeeze_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);

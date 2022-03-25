@@ -21,7 +21,7 @@ namespace nvidia_tensorrt {
 
 class FillPluginDynamic : public PluginDynamic {
  public:
-  FillPluginDynamic(float value, bool value_tensor, std::vector<int64_t> shape);
+  FillPluginDynamic(float value, bool value_tensor, std::vector<int32_t> shape);
   FillPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
@@ -45,8 +45,8 @@ class FillPluginDynamic : public PluginDynamic {
 
  private:
   float value_;
-  bool bool_value_tensor_;
-  std::vector<int64_t> shape_;
+  bool is_value_tensor_;
+  std::vector<int32_t> shape_;
 };
 
 class FillPluginDynamicCreator : public PluginCreator {

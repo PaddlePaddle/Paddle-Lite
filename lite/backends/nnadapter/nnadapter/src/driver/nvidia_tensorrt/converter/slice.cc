@@ -17,6 +17,8 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
@@ -28,7 +30,7 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand))
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
   nvinfer1::Dims new_starts_dims;
@@ -54,11 +56,9 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
       j++;
     }
   }
-
-  for (int i = 0; i < dims_count; i++) {
-    out_dims.d[i] =
-        (new_ends_dims.d[i] - new_starts_dims.d[i]) / new_steps_dims.d[i];
-  }
+  memcpy(&out_dims.d[0],
+         output_operand->type.dimensions.data,
+         sizeof(int32_t) * out_dims.nbDims);
 
   auto slice_layer = converter->network()->addSlice(
       *input_tensor, new_starts_dims, out_dims, new_steps_dims);

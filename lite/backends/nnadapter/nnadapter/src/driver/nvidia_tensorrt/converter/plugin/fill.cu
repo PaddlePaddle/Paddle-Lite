@@ -18,19 +18,19 @@ namespace nnadapter {
 namespace nvidia_tensorrt {
 
 FillPluginDynamic::FillPluginDynamic(float value,
-                                     bool bool_value_tensor,
-                                     std::vector<int64_t> shape)
-    : value_(value), bool_value_tensor_(bool_value_tensor), shape_(shape) {}
+                                     bool is_value_tensor,
+                                     std::vector<int32_t> shape)
+    : value_(value), is_value_tensor_(is_value_tensor), shape_(shape) {}
 
 FillPluginDynamic::FillPluginDynamic(const void* serial_data,
                                      size_t serial_length) {
   Deserialize(&serial_data, &serial_length, &value_);
-  Deserialize(&serial_data, &serial_length, &bool_value_tensor_);
+  Deserialize(&serial_data, &serial_length, &is_value_tensor_);
   Deserialize(&serial_data, &serial_length, &shape_);
 }
 
 nvinfer1::IPluginV2DynamicExt* FillPluginDynamic::clone() const noexcept {
-  return new FillPluginDynamic(value_, bool_value_tensor_, shape_);
+  return new FillPluginDynamic(value_, is_value_tensor_, shape_);
 }
 
 nvinfer1::DimsExprs FillPluginDynamic::getOutputDimensions(
@@ -81,7 +81,7 @@ int32_t FillPluginDynamic::enqueue(
   const int grid_size = (num + block_size - 1) / block_size;
 
   float* output = static_cast<float*>(outputs[0]);
-  if (bool_value_tensor_)
+  if (is_value_tensor_)
     fill_kernel_value_tensor<float,
                              block_size><<<grid_size, block_size, 0, stream>>>(
         num, output, (static_cast<const float*>(inputs[0])));
@@ -93,13 +93,13 @@ int32_t FillPluginDynamic::enqueue(
 }
 
 size_t FillPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(value_) + SerializedSize(bool_value_tensor_) +
+  return SerializedSize(value_) + SerializedSize(is_value_tensor_) +
          SerializedSize(shape_);
 }
 
 void FillPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, value_);
-  Serialize(&buffer, bool_value_tensor_);
+  Serialize(&buffer, is_value_tensor_);
   Serialize(&buffer, shape_);
 }
 

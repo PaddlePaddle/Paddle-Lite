@@ -30,8 +30,8 @@ int ConvertCast(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto input_precision = input_operand->type.precision;
-  CastPluginDynamic cast_plugin(static_cast<int>(input_precision),
-                                static_cast<int>(dtype));
+  CastPluginDynamic cast_plugin(ConvertToNVDataType(input_precision),
+                                ConvertToNVDataType(dtype));
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto cast_layer =
       converter->network()->addPluginV2(tensors.data(), 1, cast_plugin);
