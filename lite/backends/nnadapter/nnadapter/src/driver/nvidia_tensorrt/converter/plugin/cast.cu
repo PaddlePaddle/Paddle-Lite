@@ -71,7 +71,7 @@ int32_t CastPluginDynamic::enqueue(
                 block_size><<<grid_size, block_size, 0, stream>>>(
         num, input, output);
   } else {
-    NNADAPTER_LOG(FATAL) << "cast nvidia_tensorrt doesn't support this cast \n";
+    NNADAPTER_LOG(FATAL) << "cast nvidia_tensorrt doesn't support this cast";
   }
 
   return 0;
