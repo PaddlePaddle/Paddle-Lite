@@ -219,6 +219,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+                        -DNNADAPTER_WITH_FAKE_DEVICE=$NNADAPTER_WITH_FAKE_DEVICE \
+                        -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
                         -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
                         -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
@@ -572,6 +574,14 @@ function main {
                 ;;
             --nnadapter_verisilicon_timvx_viv_sdk_url=*)
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_fake_device=*)
+                NNADAPTER_WITH_FAKE_DEVICE="${i#*=}"
+                shift
+                ;;
+            --nnadapter_fake_device_sdk_root=*)
+                NNADAPTER_FAKE_DEVICE_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_nvidia_tensorrt=*)
