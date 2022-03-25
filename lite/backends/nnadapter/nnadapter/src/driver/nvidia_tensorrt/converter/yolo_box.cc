@@ -29,12 +29,10 @@ int ConvertYoloBox(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
   auto imgsize_tensor = converter->GetMappedTensor(imgsize_operand);
   if (!imgsize_tensor) {
     imgsize_tensor = converter->ConvertOperand(imgsize_operand);
   }
-
   YoloBoxPluginDynamic yolo_box_plugin(anchors,
                                        class_num,
                                        conf_thresh,
@@ -52,7 +50,6 @@ int ConvertYoloBox(Converter* converter, core::Operation* operation) {
   auto scores_tensor = yolo_box_layer->getOutput(1);
   converter->UpdateTensorMap(boxes_operand, boxes_tensor);
   converter->UpdateTensorMap(scores_operand, scores_tensor);
-
   return NNADAPTER_NO_ERROR;
 }
 

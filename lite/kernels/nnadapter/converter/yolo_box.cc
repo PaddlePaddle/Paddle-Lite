@@ -28,7 +28,6 @@ int ConvertYoloBox(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-
   // ImgSize operand
   NNAdapterOperand* imgsize_operand = nullptr;
   auto imgsize_scale_name = "Y0_scale";
@@ -74,13 +73,11 @@ int ConvertYoloBox(Converter* converter, OpInfo* op, Scope* scope) {
   auto iou_aware_operand = converter->AddConstantOperand(iou_aware);
   auto iou_aware_factor_operand =
       converter->AddConstantOperand(iou_aware_factor);
-
   // Output operand
   auto boxes_name = op->Output("Boxes").front();
   auto boxes_operand = converter->AddOutputOperand(boxes_name);
   auto scores_name = op->Output("Scores").front();
   auto scores_operand = converter->AddOutputOperand(scores_name);
-
   converter->AddOperation(NNADAPTER_YOLO_BOX,
                           {input_operand,
                            imgsize_operand,

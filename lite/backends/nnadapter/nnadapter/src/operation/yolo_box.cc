@@ -31,20 +31,30 @@ int PrepareYoloBox(core::Operation* operation) {
   auto& scores_type = scores_operand->type;
   boxes_type.dimensions.count = 3;
   scores_type.dimensions.count = 3;
-  NNADAPTER_CHECK(IsTemporaryShapeOperand(input_operand));
-  NNADAPTER_CHECK(IsTemporaryShapeOperand(imgsize_operand));
-  int* x_dims = input_operand->type.dimensions.data;
-  int box_num = anchors.size() / 2 * x_dims[2] * x_dims[3];
-  boxes_type.dimensions.data[0] = x_dims[0];
-  boxes_type.dimensions.data[1] = box_num;
-  boxes_type.dimensions.data[2] = 4;
-  scores_type.dimensions.data[0] = x_dims[0];
-  scores_type.dimensions.data[1] = box_num;
-  scores_type.dimensions.data[2] = class_num;
+
+  auto infer_output_shape = [&](
+      int* x_dims, int32_t* boxes_dims, int32_t* scores_dims) {
+    int box_num = anchors.size() / 2 * x_dims[2] * x_dims[3];
+    boxes_dims[0] = x_dims[0];
+    boxes_dims[1] = box_num;
+    boxes_dims[2] = 4;
+    scores_dims[0] = x_dims[0];
+    scores_dims[1] = box_num;
+    scores_dims[2] = class_num;
+  };
+
+  infer_output_shape(input_operand->type.dimensions.data,
+                     scores_operand->type.dimensions.data,
+                     boxes_operand->type.dimensions.data);
+  for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
+                       scores_operand->type.dimensions.dynamic_data[i],
+                       boxes_operand->type.dimensions.dynamic_data[i]);
+  }
   CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
   CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
-  NNADAPTER_VLOG(5) << "output0: " << OperandToString(boxes_operand);
-  NNADAPTER_VLOG(5) << "output1: " << OperandToString(scores_operand);
+  NNADAPTER_VLOG(5) << "boxes: " << OperandToString(boxes_operand);
+  NNADAPTER_VLOG(5) << "scores: " << OperandToString(scores_operand);
   return NNADAPTER_NO_ERROR;
 }
 
