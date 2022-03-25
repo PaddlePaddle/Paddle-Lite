@@ -57,7 +57,7 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
   stack_layer->setAxis(axis);
   auto stack_output_tensor = stack_layer->getOutput(0);
   nvinfer1::Dims reshape_dim;
-  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operands[0]));
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
   reshape_dim.nbDims = output_operand->type.dimensions.count;
   for (int i = 0; i < reshape_dim.nbDims; i++) {
     reshape_dim.d[i] = output_operand->type.dimensions.data[i];
