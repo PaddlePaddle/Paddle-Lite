@@ -79,7 +79,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         input_w = draw(st.integers(min_value=1, max_value=128))
         filter_m = input_c
         filter_c = 1
-        filter_h = draw(st.sampled_from([[3, 3], [5, 5]]))
+        filter_h = draw(st.sampled_from([3, 5]))
         filter_w = filter_h
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
