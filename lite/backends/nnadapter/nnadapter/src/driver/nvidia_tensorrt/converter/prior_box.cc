@@ -33,26 +33,6 @@ int ConvertPriorBox(Converter* converter, core::Operation* operation) {
   if (!image_tensor) {
     image_tensor = converter->ConvertOperand(image_operand);
   }
-  auto input_dimension = input_operand->type.dimensions.data;
-  auto image_dimension = image_operand->type.dimensions.data;
-  std::vector<int32_t> input_dimension_vec(input_dimension,
-                                           input_dimension + 4);
-  std::vector<int32_t> image_dimension_vec(image_dimension,
-                                           image_dimension + 4);
-  float* aspect_ratios_data =
-      reinterpret_cast<float*>(aspect_ratios_operand->buffer);
-  uint32_t aspect_ratios_size = aspect_ratios_operand->length / sizeof(float);
-  std::vector<float> aspect_ratios(aspect_ratios_data,
-                                   aspect_ratios_data + aspect_ratios_size);
-  float* min_sizes_data = reinterpret_cast<float*>(min_sizes_operand->buffer);
-  uint32_t min_sizes_size = min_sizes_operand->length / sizeof(float);
-  std::vector<float> min_sizes(min_sizes_data, min_sizes_data + min_sizes_size);
-  float* max_sizes_data = reinterpret_cast<float*>(max_sizes_operand->buffer);
-  uint32_t max_sizes_size = max_sizes_operand->length / sizeof(float);
-  std::vector<float> max_sizes(max_sizes_data, max_sizes_data + max_sizes_size);
-  float* variances_data = reinterpret_cast<float*>(variances_operand->buffer);
-  uint32_t variances_size = variances_operand->length / sizeof(float);
-  std::vector<float> variances(variances_data, variances_data + variances_size);
   PriorBoxPluginDynamic prior_box_plugin(
       aspect_ratios,
       input_dimension_vec,
