@@ -31,7 +31,7 @@ namespace nvidia_tensorrt {
 class Program {
  public:
   explicit Program(Context* context) : context_(context) {}
-  ~Program() { Clear(); }
+  ~Program() {}
 
   int Build(core::Model* model, core::Cache* cache);
   int Execute(uint32_t input_count,
@@ -41,10 +41,6 @@ class Program {
 
  private:
   void Clear();
-  // Build model and save to plan_
-  int BuildFromModel(core::Model* model);
-  // Read model from cache to plan_
-  int BuildFromCache(core::Cache* cache);
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
                             uint32_t output_count,

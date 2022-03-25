@@ -14,9 +14,9 @@
 
 #include "driver/nvidia_tensorrt/engine.h"
 #include <algorithm>
-#include <tuple>
 #include <unordered_set>
 #include "utility/debug.h"
+#include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/string.h"
 #include "utility/utility.h"
@@ -24,36 +24,45 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-static core::Argument* FindArgumentByIndex(core::Argument* arguments,
-                                           int index,
-                                           uint32_t count) {
-  for (uint32_t i = 0; i < count; i++) {
-    if (arguments[i].index == index) {
-      return &arguments[i];
-    }
-  }
-  return static_cast<core::Argument*>(nullptr);
+void Program::Clear() {
+  sub_models_.clear();
+  sub_programs_.clear();
+  input_tensors_.clear();
+  temporary_tensors_.clear();
+  output_tensors_.clear();
+  input_types_.clear();
+  output_types_.clear();
 }
-
-void Program::Clear() {}
 
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
-  for (auto& operand : model->input_operands) {
-    input_types_.push_back(operand->type);
+  if (cache->buffer.empty()) {
+    for (auto& operand : model->input_operands) {
+      input_types_.push_back(operand->type);
+    }
+    for (auto& operand : model->output_operands) {
+      output_types_.push_back(operand->type);
+    }
+  } else {
+    input_types_ = cache->input_types;
+    output_types_ = cache->output_types;
   }
-  for (auto& operand : model->output_operands) {
-    output_types_.push_back(operand->type);
+  for (auto& type : input_types_) {
+    ConvertDynamicDimensions(&type.back());
+  }
+  for (auto& type : output_types_) {
+    ConvertDynamicDimensions(&type.back());
   }
   // Partion model
   std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
       supported_operations{{0, {}}, {1, {}}};
   for (auto& operation : model->operations) {
-    if (operation.type == NNADAPTER_SOFTMAX) {
-      supported_operations[1].second.insert(&operation);
-    } else {
-      supported_operations[0].second.insert(&operation);
-    }
+    // // Set softmax to cuda device
+    // if (operation.type == NNADAPTER_SOFTMAX) {
+    //   supported_operations[1].second.insert(&operation);
+    //   continue;
+    // }
+    supported_operations[0].second.insert(&operation);
   }
   PartitionModelIntoSubmodels(model, supported_operations, &sub_models_);
   NNADAPTER_CHECK(!sub_models_.empty());
@@ -70,46 +79,42 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
-int Program::BuildFromModel(core::Model* model) { return NNADAPTER_NO_ERROR; }
-
-int Program::BuildFromCache(core::Cache* cache) { return NNADAPTER_NO_ERROR; }
-
 int Program::CheckInputsAndOutputs(uint32_t input_count,
                                    core::Argument* input_arguments,
                                    uint32_t output_count,
                                    core::Argument* output_arguments) {
-  // // Check inputs
-  // for (uint32_t i = 0; i < input_count; i++) {
-  //   // Get actual type
-  //   auto arg = FindArgumentByIndex(input_arguments, i, input_count);
-  //   NNAdapterOperandType type;
-  //   arg->access(arg->memory, &type);
-  //   // Check dimensions count
-  //   uint32_t count = type.dimensions.count;
-  //   auto& src_dimensions = input_types_.at(i).dimensions;
-  //   if (count != src_dimensions.count) {
-  //     return NNADAPTER_INVALID_DIMENSIONS;
-  //   }
-  //   // Check dimensions data
-  //   bool is_matched = true;
-  //   int32_t* data = type.dimensions.data;
-  //   int32_t* src_data = src_dimensions.data;
-  //   for (uint32_t j = 0; j < count; j++) {
-  //     if (data[j] != src_data[j]) {
-  //       is_matched = false;
-  //       break;
-  //     }
-  //   }
-  //   if (is_matched) continue;
-  //   // Check dynamic dymensions data
-  //   NNADAPTER_CHECK_EQ(src_dimensions.dynamic_count, 3U);
-  //   for (uint32_t j = 0; j < count; j++) {
-  //     if (data[j] < src_dimensions.dynamic_data[1][j] ||
-  //         data[j] > src_dimensions.dynamic_data[2][j]) {
-  //       return NNADAPTER_INVALID_DIMENSIONS;
-  //     }
-  //   }
-  // }
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto arg = FindArgumentByIndex(input_arguments, i, input_count);
+    NNAdapterOperandType type;
+    arg->access(arg->memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    auto& src_dimensions = input_types_.at(i).dimensions;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    bool is_matched = true;
+    int32_t* data = type.dimensions.data;
+    int32_t* src_data = src_dimensions.data;
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        is_matched = false;
+        break;
+      }
+    }
+    if (is_matched) continue;
+    // Check dynamic dymensions data
+    NNADAPTER_CHECK_EQ(src_dimensions.dynamic_count, 3U);
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] < src_dimensions.dynamic_data[1][j] ||
+          data[j] > src_dimensions.dynamic_data[2][j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
   return NNADAPTER_NO_ERROR;
 }
 

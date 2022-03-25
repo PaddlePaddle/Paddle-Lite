@@ -147,5 +147,12 @@ void Deserialize(const void** buffer,
                  size_t* buffer_size,
                  std::vector<T>* value);
 
+// Only remain min/opt/max shapes
+void ConvertDynamicDimensions(NNAdapterOperandType* type);
+
+core::Argument* FindArgumentByIndex(core::Argument* arguments,
+                                    int index,
+                                    uint32_t count);
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
