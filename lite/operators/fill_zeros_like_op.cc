@@ -19,6 +19,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+bool FillZerosLikeOp::CheckShape() const {
+  CHECK(param_.Out);
+  return true;
+}
+
 bool FillZerosLikeOp::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
   param_.Out->set_lod(param_.X->lod());
