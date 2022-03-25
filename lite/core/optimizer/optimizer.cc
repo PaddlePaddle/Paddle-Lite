@@ -52,7 +52,6 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
 
   SpecifyKernelPickTactic(kernel_pick_factor_);
   InitTargetTypeTransformPass();
-  InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
 
   ApplyPasses(&graphs_);
@@ -76,16 +75,6 @@ void Optimizer::InitTargetTypeTransformPass() {
   CHECK(pass);
   CHECK(!valid_places_.empty());
   pass->SetValidPlaces(valid_places_);
-}
-
-void Optimizer::InitControlFlowOpUnusedInputsAndOutputsEliminatePass() {
-  auto* pass =
-      mir::PassManager::Global()
-          .LookUp<mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass>(
-              "control_flow_op_unused_inputs_and_outputs_eliminate_pass");
-  CHECK(pass);
-  CHECK(!graphs_.empty());
-  pass->SetAllGraphs(&graphs_);
 }
 
 void Optimizer::InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass() {
@@ -113,7 +102,8 @@ void Optimizer::ApplyPasses(
                 << " because the target or kernel does not match.";
     } else {
       // Check the pass whether it is supported for processing subblocks
-      if (kSubblockUnsupportedPasses.count(pass->name())) {
+      if (kSubblockUnsupportedPasses.count(pass->name()) ||
+          kSubblockSkippedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
         for (auto& graph : *graphes) {
@@ -218,7 +208,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "bm_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
-       "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 
        "remove_tf_redundant_ops_pass",

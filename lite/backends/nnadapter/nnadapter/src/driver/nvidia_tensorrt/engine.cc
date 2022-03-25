@@ -137,6 +137,23 @@ Context::Context(void* device, const char* properties) : device_(device) {
   gpu_fallback_ = key_values.count(NVIDIA_TENSORRT_GPU_FALLBACK)
                       ? key_values[NVIDIA_TENSORRT_GPU_FALLBACK] == "1"
                       : GetBoolFromEnv(NVIDIA_TENSORRT_GPU_FALLBACK, true);
+  // Calibration dataset
+  calibration_dataset_path_ =
+      key_values.count(NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH)
+          ? key_values[NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH]
+          : GetStringFromEnv(NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH);
+  // Calibration table
+  calibration_table_path_ =
+      key_values.count(NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH)
+          ? key_values[NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH]
+          : GetStringFromEnv(NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH);
+  if (precision_ == kInt8) {
+    NNADAPTER_CHECK(!calibration_dataset_path_.empty() ||
+                    !calibration_table_path_.empty())
+        << "Either NVIDIA_TENSORRT_CALIBRATION_DATASET_PATH or "
+           "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH should be set if precision "
+           "is int8.";
+  }
 }
 
 Context::~Context() {}
@@ -232,7 +249,7 @@ void Program::CompleteConfig(core::Model* model) {
     case kFloat32:
       if (device_type == nvinfer1::DeviceType::kDLA) {
         NNADAPTER_LOG(WARNING) << "Only support float16 or int8 if device type "
-                                  "is dla. Float16 is selected by default.";
+                                  "is DLA. Float16 is selected by default.";
         config_->setFlag(nvinfer1::BuilderFlag::kFP16);
       }
       break;
@@ -243,13 +260,23 @@ void Program::CompleteConfig(core::Model* model) {
       config_->setFlag(nvinfer1::BuilderFlag::kINT8);
       break;
     default:
-      NNADAPTER_LOG(FATAL) << "Not support precisoon mode: "
+      NNADAPTER_LOG(FATAL) << "Not support precision mode: "
                            << static_cast<int>(precision);
       break;
   }
   // Set fallback
   if (context_->GpuFallback()) {
     config_->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
+  }
+  // Calibration
+  if (precision == kInt8) {
+    NNADAPTER_CHECK(!with_dynamic_shape_)
+        << "Int8 and dynamic shape is incompatible.";
+    calibrator_.reset(new Int8EntropyCalibrator(
+        model->input_operands.at(0)->type.dimensions.data[0],
+        context_->CalibrationDatasetPath(),
+        context_->CalibrationTablePath()));
+    config_->setInt8Calibrator(calibrator_.get());
   }
 }
 
@@ -269,8 +296,13 @@ int Program::BuildFromModel(core::Model* model) {
   // 2. Build model, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));
   NNADAPTER_CHECK(builder_);
-  // TODO(zhupengyang): dynamic batch
-  network_.reset(builder_->createNetworkV2(1U));
+  if (context_->Precision() == kInt8) {
+    network_.reset(builder_->createNetworkV2(0U));
+  } else {
+    network_.reset(builder_->createNetworkV2(
+        1U << static_cast<int>(
+            nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
+  }
   NNADAPTER_CHECK(network_);
   // Convert a NNAdapter model to a tensorrt network
   Converter converter(network_.get(), &tensors_);

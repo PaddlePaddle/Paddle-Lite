@@ -279,7 +279,8 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
-    defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+    defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU) ||  \
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -408,7 +409,8 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
                                 "relu"));
       arena::Arena arena0(std::move(tester0), place, abs_error);
       arena0.TestPrecision();
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
       continue;
 #endif
       std::unique_ptr<arena::TestCase> tester1(
@@ -445,6 +447,10 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
             for (auto pad : {0, 1}) {
               for (auto bias : {false, true}) {
                 for (auto act : {"hard_swish", "relu", "relu6", "leaky_relu"}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+                  if (strcmp(act, "hard_swish") || strcmp(act, "leaky_relu"))
+                    continue;
+#endif
 #if defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
                   if (act == "hard_swish") continue;
 #endif
@@ -516,6 +522,8 @@ TEST(Conv2d, precision) {
   return;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -527,7 +535,6 @@ TEST(Conv2d, precision) {
 #else
   return;
 #endif
-
   TestConvKsize(place, abs_error);
   TestConvGroups(place, abs_error);
   TestConvDilations(place, abs_error);

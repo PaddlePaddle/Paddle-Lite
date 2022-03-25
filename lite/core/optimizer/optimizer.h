@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 #include "lite/core/optimizer/mir/control_flow_op_shared_inputs_and_outputs_place_sync_pass.h"
-#include "lite/core/optimizer/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
 #include "lite/core/optimizer/mir/fp16_attribute_pass.h"
 #include "lite/core/optimizer/mir/generate_program_pass.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
@@ -40,6 +39,15 @@ namespace lite {
 // TODO(hong1986032) Support the following passes for the subblocks
 const std::set<std::string> kSubblockUnsupportedPasses(
     {"memory_optimize_pass", "xpu_memory_optimize_pass"});
+
+const std::set<std::string> kSubblockSkippedPasses(
+    {"fill_constant_calc_offline_pass",
+     "scale_calc_offline_pass",
+     "unsqueeze_calc_offline_pass",
+     "range_calc_offline_pass",
+     "assign_value_calc_offline_pass",
+     "ssd_boxes_calc_offline_pass",
+     "p_norm_fill_constant_max_div_fuse_pass"});
 
 /*
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
@@ -74,7 +82,6 @@ class Optimizer {
       std::vector<std::unique_ptr<mir::SSAGraph>>* graphs);
 
   void InitTargetTypeTransformPass();
-  void InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   void InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
   Scope* exec_scope() { return exec_scope_; }

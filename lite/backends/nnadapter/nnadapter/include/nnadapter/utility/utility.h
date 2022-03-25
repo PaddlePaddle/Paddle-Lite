@@ -223,6 +223,13 @@ bool ReadFile(const std::string& path, std::vector<uint8_t>* buffer);
 // Write an uint8_t array to a file
 bool WriteFile(const std::string& path, const std::vector<uint8_t>& buffer);
 
+// Read string line by ling from a file
+std::vector<std::string> ReadLines(const std::string& filename);
+
+// Write string line by ling to a file
+void WriteLines(const std::vector<std::string>& lines,
+                const std::string& filename);
+
 inline int64_t GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
