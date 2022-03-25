@@ -98,7 +98,6 @@ int ConvertBatchNormalization(Converter* converter,
     output_tensor = squeeze_layer->getOutput(0);
   }
   converter->UpdateTensorMap(output_operand, output_tensor);
-
   return NNADAPTER_NO_ERROR;
 }
 
