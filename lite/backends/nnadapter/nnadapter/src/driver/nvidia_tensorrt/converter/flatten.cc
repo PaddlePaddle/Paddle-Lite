@@ -58,10 +58,10 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
                                         nvinfer1::ReduceOperation::kPROD,
                                         reduce_dim,
                                         true);
-    nvinfer1::ITensor* input_shape = nullptr;
+    nvinfer1::ITensor* output_shape_tensor = nullptr;
     if (start_axis == 0 &&
         end_axis == input_operand->type.dimensions.count - 1) {
-      input_shape = reduce_prod_layer->getOutput(0);
+      output_shape_tensor = reduce_prod_layer->getOutput(0);
     } else {
       std::vector<nvinfer1::ITensor*> itensors;
       if (start_axis > 0) {
@@ -102,7 +102,7 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
       input_shape = concat_layer->getOutput(0);
     }
     auto flatten_layer = converter->network()->addShuffle(*input_tensor);
-    flatten_layer->setInput(1, *input_shape);
+    flatten_layer->setInput(1, *output_shape_tensor);
     auto output_tensor = flatten_layer->getOutput(0);
     converter->UpdateTensorMap(output_operand, output_tensor);
   }
