@@ -70,10 +70,10 @@ int ConvertPriorBox(Converter* converter, core::Operation* operation) {
   auto prior_box_layer =
       converter->network()->addPluginV2(tensors.data(), 2, prior_box_plugin);
   NNADAPTER_CHECK(prior_box_layer);
-  auto output_tensor0 = prior_box_layer->getOutput(0);
-  converter->UpdateTensorMap(boxes_operand, output_tensor0);
-  auto output_tensor1 = prior_box_layer->getOutput(1);
-  converter->UpdateTensorMap(Variances_operand, output_tensor1);
+  auto boxes_tensor = prior_box_layer->getOutput(0);
+  converter->UpdateTensorMap(boxes_operand, boxes_tensor);
+  auto Variances_tensor = prior_box_layer->getOutput(1);
+  converter->UpdateTensorMap(Variances_operand, Variances_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

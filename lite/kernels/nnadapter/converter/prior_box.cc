@@ -72,7 +72,6 @@ int ConvertPriorBox(Converter* converter, OpInfo* op, Scope* scope) {
                            offset_operand,
                            min_max_aspect_ratios_order_operand},
                           {boxes_operand, Variances_operand});
-
   return NO_ERROR;
 }
 
