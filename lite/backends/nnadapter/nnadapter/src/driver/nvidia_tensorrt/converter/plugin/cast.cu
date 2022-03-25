@@ -23,8 +23,11 @@ CastPluginDynamic::CastPluginDynamic(nvinfer1::DataType intype,
 
 CastPluginDynamic::CastPluginDynamic(const void* serial_data,
                                      size_t serial_length) {
-  Deserialize(&serial_data, &serial_length, &intype_);
-  Deserialize(&serial_data, &serial_length, &outtype_);
+  int intype, outtype;
+  Deserialize(&serial_data, &serial_length, &intype);
+  Deserialize(&serial_data, &serial_length, &outtype);
+  intype_ = (nvinfer1::DataType)(intype);
+  outtype_ = (nvinfer1::DataType)(outtype);
 }
 
 nvinfer1::IPluginV2DynamicExt* CastPluginDynamic::clone() const noexcept {
@@ -78,12 +81,12 @@ int32_t CastPluginDynamic::enqueue(
 }
 
 size_t CastPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(outtype_) + SerializedSize(intype_);
+  return SerializedSize((int)(outtype_)) + SerializedSize((int)(intype_));
 }
 
 void CastPluginDynamic::serialize(void* buffer) const noexcept {
-  Serialize(&buffer, outtype_);
-  Serialize(&buffer, intype_);
+  Serialize(&buffer, (int)(outtype_));
+  Serialize(&buffer, (int)(intype_));
 }
 
 bool CastPluginDynamic::supportsFormatCombination(
