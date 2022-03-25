@@ -174,7 +174,6 @@ __global__ void yolobox_kernel_value(int n,
                                      bool iou_aware,
                                      float iou_aware_factor) {
   int idx = blockIdx.x * TPB + threadIdx.x;
-
   T bias = static_cast<T>(-0.5 * (scale_x_y - 1.));
   const int b_num = anchor_size / 2 * h * w;
   const int an_num = anchor_size / 2;
@@ -190,16 +189,13 @@ __global__ void yolobox_kernel_value(int n,
     int j = (idx % b_num) / (h * w);        // anchor id
     int k = ((idx % b_num) % (h * w)) / w;  // h id
     int l = ((idx % b_num) % (h * w)) % w;  // w id
-
     int img_height = imgsize_data[2 * i];
     int img_width = imgsize_data[2 * i + 1];
     int obj_idx = GetEntryIndex(i, j, k * w + l, an_num, an_stride, stride, 4);
     T conf = Sigmoid(input_data[obj_idx]);
-
     if (conf < conf_thresh) {
       return;
     }
-
     int box_idx = GetEntryIndex(i, j, k * w + l, an_num, an_stride, stride, 0);
     GetYoloBox(box,
                input_data,
