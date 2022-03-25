@@ -1378,27 +1378,34 @@ typedef enum {
    * the input feature data of PriorBoxOp, The layout is NCHW.
    * * 1: Image, a NNADAPTER_FLOAT32 tensor,
    * the input image data of PriorBoxOp, The layout is NCHW.
-   * * 2: min_sizes, (vector<float>) List of min sizes of generated prior boxes.
-   * * 3: max_sizes, (vector<float>) List of max sizes of generated prior boxes,
-   * Default is std::vector<float>{}.
-   * * 4: aspect_ratios, (vector<float>) List of aspect ratios of generated
+   * * 2: min_sizes, a NNADAPTER_FLOAT32 tensor, List of min sizes of generated
    * prior boxes.
-   * * 5: variances, (vector<float>) List of variances to be encoded in prior
+   * * 3: max_sizes, a NNADAPTER_FLOAT32 tensor, List of max sizes of generated
+   * prior boxes.
+   * * 4: aspect_ratios, a NNADAPTER_FLOAT32 tensor, List of aspect ratios of
+   * generated
+   * prior boxes.
+   * * 5: variances, a NNADAPTER_FLOAT32 tensor, List of variances to be encoded
+   * in prior
    * boxes.
-   * * 6: flip, (bool) Whether to flip aspect ratios, Default is true.
-   * * 7: clip, (bool) Whether to clip out-of-boundary boxes, Default is true.
-   * * 8: step_w, (float) Prior boxes step across width, 0.0 for auto
-   * calculation,
-   * Default is 0.0.
-   * * 9: step_h, (float) Prior boxes step across height, 0.0 for auto
-   * calculation,
-   * Default is 0.0.
-   * * 10: offset, (float) Prior boxes center offset, Default is 0.5.
-   * * 11: min_max_aspect_ratios_order, (bool) If set True, the output prior box
-   * is in order of
-   * [min, max, aspect_ratios], which is consistent with Caffe.Please note,
+   * * 6: flip, a NNADAPTER_BOOL scalar, Whether to flip aspect ratios, Default
+   * is True.
+   * * 7: clip, a NNADAPTER_BOOL scalar, Whether to clip out-of-boundary boxes,
+   * Default is True.
+   * * 8: step_w, a NNADAPTER_FLOAT32 scalar, Prior boxes step across width, 0.0
+   * for auto
+   * calculation, Default is 0.0.
+   * * 9: step_h, a NNADAPTER_FLOAT32 scalar, Prior boxes step across height,
+   * 0.0 for auto
+   * calculation, Default is 0.0.
+   * * 10: offset, a NNADAPTER_FLOAT32 scalar, Prior boxes center offset,
+   * Default is 0.5.
+   * * 11: min_max_aspect_ratios_order, a NNADAPTER_BOOL scalar, If set True,
+   * the output prior box
+   * is in order of [min, max, aspect_ratios], which is consistent with
+   * Caffe.Please note,
    * this order affects the weights order of convolution layer followed by and
-   * does not affect the final detection results, Default is false.
+   * does not affect the final detection results, Default is False.
    *
    * Outputs:
    * * 0: Boxes, a Boxes NNADAPTER_FLOAT32 tensor .
