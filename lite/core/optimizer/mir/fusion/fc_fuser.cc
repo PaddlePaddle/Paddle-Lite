@@ -153,6 +153,7 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   } else {
     op_desc.SetAttr("in_num_col_dims", 1);
   }
+  op_desc.SetAttr("op_type", op_type_);
 
   if (with_relu_) {
     op_desc.SetAttr("activation_type", std::string{"relu"});

@@ -39,9 +39,15 @@ bool FcOpLite::CheckShape() const {
       CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
-
-  CHECK_GT_OR_FALSE(input_dims.size(),
-                    static_cast<size_t>(param_.in_num_col_dims));
+  std::string op_type = param_.op_type;
+  if (op_type == "matmul" || op_type == "matmul_v2") {
+    CHECK_GE_OR_FALSE(input_dims.size(),
+                      static_cast<size_t>(param_.in_num_col_dims));
+    CHECK_EQ_OR_FALSE(w_dims[0], input_dims[input_dims.size() - 1]);
+  } else {
+    CHECK_GT_OR_FALSE(input_dims.size(),
+                      static_cast<size_t>(param_.in_num_col_dims));
+  }
   param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
   // CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
 
@@ -59,6 +65,10 @@ bool FcOpLite::InferShapeImpl() const {
     w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
   }
   int in_num_col_dims = param_.in_num_col_dims;
+  std::string op_type = param_.op_type;
+  if (op_type == "matmul" || op_type == "matmul_v2") {
+    in_num_col_dims = input_dims.size() - 1;
+  }
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -130,6 +140,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (op_info->HasOutputScale(out_scale_name, true))
       param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
+  param_.op_type = op_desc.GetAttr<std::string>("op_type");
 
 #ifdef LITE_WITH_FPGA
   if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
