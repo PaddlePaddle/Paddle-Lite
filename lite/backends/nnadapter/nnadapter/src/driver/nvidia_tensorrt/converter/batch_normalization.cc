@@ -31,22 +31,6 @@ int ConvertBatchNormalization(Converter* converter,
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto scale_tensor = converter->GetMappedTensor(scale_operand);
-  if (!scale_tensor) {
-    scale_tensor = converter->ConvertOperand(scale_operand);
-  }
-  auto bias_tensor = converter->GetMappedTensor(bias_operand);
-  if (!bias_tensor) {
-    bias_tensor = converter->ConvertOperand(bias_operand);
-  }
-  auto mean_tensor = converter->GetMappedTensor(mean_operand);
-  if (!mean_tensor) {
-    mean_tensor = converter->ConvertOperand(mean_operand);
-  }
-  auto var_tensor = converter->GetMappedTensor(variance_operand);
-  if (!var_tensor) {
-    var_tensor = converter->ConvertOperand(variance_operand);
-  }
   float* scale_ptr = reinterpret_cast<float*>(scale_operand->buffer);
   float* bias_ptr = reinterpret_cast<float*>(bias_operand->buffer);
   float* mean_ptr = reinterpret_cast<float*>(mean_operand->buffer);
