@@ -99,7 +99,7 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
       auto concat_layer = converter->network()->addConcatenation(
           itensors.data(), itensors.size());
       concat_layer->setAxis(0);
-      input_shape = concat_layer->getOutput(0);
+      output_shape_tensor = concat_layer->getOutput(0);
     }
     auto flatten_layer = converter->network()->addShuffle(*input_tensor);
     flatten_layer->setInput(1, *output_shape_tensor);
