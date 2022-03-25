@@ -70,7 +70,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
   out_accuracy_threshold = 0.99f;
 #else
   nnadapter_device_names.emplace_back("generic_device");
-  out_accuracy_threshold = 0.78f;
+  out_accuracy_threshold = 0.61f;
 #endif
 #else
   return;
