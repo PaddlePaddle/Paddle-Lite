@@ -26,7 +26,7 @@ namespace operation {
   auto output_count = output_operands.size();                                 \
   NNADAPTER_CHECK_EQ(input_count, 10);                                        \
   NNADAPTER_CHECK_EQ(output_count, 2);                                        \
-  /* Input */                                                                 \
+  /* Inputs */                                                                \
   auto input_operand = input_operands[0];                                     \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
   auto imgsize_operand = input_operands[1];                                   \

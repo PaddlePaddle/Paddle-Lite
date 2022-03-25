@@ -48,7 +48,6 @@ int ConvertYoloBox(Converter* converter, OpInfo* op, Scope* scope) {
   float scale_x_y = 1.f;
   bool iou_aware = false;
   float iou_aware_factor = 0.5;
-
   anchors = op->GetAttr<std::vector<int>>("anchors");
   class_num = op->GetAttr<int>("class_num");
   conf_thresh = op->GetAttr<float>("conf_thresh");

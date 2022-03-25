@@ -29,35 +29,29 @@ int PrepareYoloBox(core::Operation* operation) {
   // Infer the shape of boxes and scores
   auto& boxes_type = boxes_operand->type;
   auto& scores_type = scores_operand->type;
-
   boxes_type.dimensions.count = 3;
   scores_type.dimensions.count = 3;
+  NNADAPTER_CHECK(IsTemporaryShapeOperand(input_operand));
+  NNADAPTER_CHECK(IsTemporaryShapeOperand(imgsize_operand));
   int* x_dims = input_operand->type.dimensions.data;
   int box_num = anchors.size() / 2 * x_dims[2] * x_dims[3];
-
   boxes_type.dimensions.data[0] = x_dims[0];
   boxes_type.dimensions.data[1] = box_num;
   boxes_type.dimensions.data[2] = 4;
-
   scores_type.dimensions.data[0] = x_dims[0];
   scores_type.dimensions.data[1] = box_num;
   scores_type.dimensions.data[2] = class_num;
-  class_num = class_num;
+
   conf_thresh = conf_thresh;
   downsample_ratio = downsample_ratio;
   clip_bbox = clip_bbox;
   scale_x_y = scale_x_y;
   iou_aware = iou_aware;
   iou_aware_factor = iou_aware_factor;
-
-  boxes_type.precision = input_operand->type.precision;
-  boxes_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
-  scores_type.precision = input_operand->type.precision;
-  scores_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
-
+  CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
+  CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(boxes_operand);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(scores_operand);
-
   return NNADAPTER_NO_ERROR;
 }
 
