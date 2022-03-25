@@ -43,13 +43,20 @@ namespace operation {
   }                                                                           \
   /* various attrs */                                                         \
   auto class_num = *reinterpret_cast<int*>(input_operands[3]->buffer);        \
+  NNADAPTER_VLOG(5) << "class_num: " << class_num;                            \
   auto conf_thresh = *reinterpret_cast<float*>(input_operands[4]->buffer);    \
+  NNADAPTER_VLOG(5) << "conf_thresh: " << conf_thresh;                        \
   auto downsample_ratio = *reinterpret_cast<int*>(input_operands[5]->buffer); \
+  NNADAPTER_VLOG(5) << "downsample_ratio: " << downsample_ratio;              \
   auto clip_bbox = *reinterpret_cast<bool*>(input_operands[6]->buffer);       \
+  NNADAPTER_VLOG(5) << "clip_bbox: " << clip_bbox;                            \
   auto scale_x_y = *reinterpret_cast<float*>(input_operands[7]->buffer);      \
+  NNADAPTER_VLOG(5) << "scale_x_y: " << scale_x_y;                            \
   auto iou_aware = *reinterpret_cast<bool*>(input_operands[8]->buffer);       \
+  NNADAPTER_VLOG(5) << "iou_aware: " << iou_aware;                            \
   auto iou_aware_factor =                                                     \
       *reinterpret_cast<float*>(input_operands[9]->buffer);                   \
+  NNADAPTER_VLOG(5) << "iou_aware_factor: " << iou_aware_factor;              \
   /* Output */                                                                \
   auto boxes_operand = output_operands[0];                                    \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(boxes_operand);          \

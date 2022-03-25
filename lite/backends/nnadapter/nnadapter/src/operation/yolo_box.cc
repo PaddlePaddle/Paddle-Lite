@@ -41,17 +41,10 @@ int PrepareYoloBox(core::Operation* operation) {
   scores_type.dimensions.data[0] = x_dims[0];
   scores_type.dimensions.data[1] = box_num;
   scores_type.dimensions.data[2] = class_num;
-
-  conf_thresh = conf_thresh;
-  downsample_ratio = downsample_ratio;
-  clip_bbox = clip_bbox;
-  scale_x_y = scale_x_y;
-  iou_aware = iou_aware;
-  iou_aware_factor = iou_aware_factor;
   CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
   CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(boxes_operand);
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(scores_operand);
+  NNADAPTER_VLOG(5) << "output0: " << OperandToString(boxes_operand);
+  NNADAPTER_VLOG(5) << "output1: " << OperandToString(scores_operand);
   return NNADAPTER_NO_ERROR;
 }
 
