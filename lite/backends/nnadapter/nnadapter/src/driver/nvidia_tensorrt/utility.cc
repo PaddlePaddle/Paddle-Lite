@@ -132,6 +132,7 @@ void Serialize(void** buffer, const T value) {
 }
 template void Serialize(void** buffer, const int32_t value);
 template void Serialize(void** buffer, const int64_t value);
+template void Serialize(void** buffer, const size_t value);
 template void Serialize(void** buffer, const bool value);
 template void Serialize(void** buffer, const float value);
 
@@ -142,6 +143,7 @@ void Serialize(void** buffer, const std::vector<T>& value) {
   std::memcpy(*buffer, value.data(), nbyte);
   reinterpret_cast<char*&>(*buffer) += nbyte;
 }
+template void Serialize(void** buffer, const std::vector<uint8_t>& value);
 template void Serialize(void** buffer, const std::vector<int32_t>& value);
 template void Serialize(void** buffer, const std::vector<int64_t>& value);
 template void Serialize(void** buffer, const std::vector<float>& value);
@@ -159,6 +161,9 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           int64_t* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          size_t* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           bool* value);
@@ -180,6 +185,9 @@ void Deserialize(const void** buffer,
   reinterpret_cast<const char*&>(*buffer) += nbyte;
   *buffer_size -= nbyte;
 }
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          std::vector<uint8_t>* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           std::vector<int32_t>* value);

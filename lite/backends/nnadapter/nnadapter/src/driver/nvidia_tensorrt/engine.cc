@@ -37,45 +37,67 @@ void Program::Clear() {
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
   if (cache->buffer.empty()) {
-    for (auto& operand : model->input_operands) {
-      input_types_.push_back(operand->type);
-    }
-    for (auto& operand : model->output_operands) {
-      output_types_.push_back(operand->type);
-    }
+    NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
   } else {
-    input_types_ = cache->input_types;
-    output_types_ = cache->output_types;
+    NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
+  }
+  // Create sub_model
+  for (size_t i = 0; i < sub_models_.size(); i++) {
+    auto& sub_model = sub_models_.at(i);
+    if (sub_model.first == 0) {
+      sub_programs_.emplace_back(new TensorrtProgram(
+          context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+    } else {
+      sub_programs_.emplace_back(new CudaProgram(
+          context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+    }
+  }
+  // Build sub_model
+  for (auto& sub_program : sub_programs_) {
+    NNADAPTER_CHECK_EQ(sub_program->Build(), NNADAPTER_NO_ERROR);
+  }
+  if (cache->buffer.empty()) {
+    NNADAPTER_CHECK_EQ(SerializeToCache(&cache->buffer), NNADAPTER_NO_ERROR);
   }
   for (auto& type : input_types_) {
-    ConvertDynamicDimensions(&type.back());
+    ConvertDynamicDimensions(&type);
   }
   for (auto& type : output_types_) {
-    ConvertDynamicDimensions(&type.back());
+    ConvertDynamicDimensions(&type);
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::BuildFromModel(core::Model* model) {
+  for (auto& operand : model->input_operands) {
+    input_types_.push_back(operand->type);
+  }
+  for (auto& operand : model->output_operands) {
+    output_types_.push_back(operand->type);
   }
   // Partion model
   std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
       supported_operations{{0, {}}, {1, {}}};
+  auto cuda_operations = context_->CudaOperations();
   for (auto& operation : model->operations) {
-    // // Set softmax to cuda device
-    // if (operation.type == NNADAPTER_SOFTMAX) {
-    //   supported_operations[1].second.insert(&operation);
-    //   continue;
-    // }
-    supported_operations[0].second.insert(&operation);
+    if (std::find(cuda_operations.begin(),
+                  cuda_operations.end(),
+                  operation.type) == cuda_operations.end()) {
+      supported_operations[0].second.insert(&operation);
+    } else {
+      supported_operations[1].second.insert(&operation);
+    }
   }
   PartitionModelIntoSubmodels(model, supported_operations, &sub_models_);
   NNADAPTER_CHECK(!sub_models_.empty());
-  for (auto& sub_model : sub_models_) {
-    if (sub_model.first == 0) {
-      sub_programs_.emplace_back(
-          new TensorrtProgram(context_, std::get<0>(sub_model.second), cache));
-    } else {
-      sub_programs_.emplace_back(
-          new CudaProgram(context_, std::get<0>(sub_model.second), cache));
-    }
-    sub_programs_.back()->Build();
-  }
+  sub_caches_.resize(sub_models_.size());
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::BuildFromCache(core::Cache* cache) {
+  DeserializeFromCache(&cache->buffer);
+  input_types_ = cache->input_types;
+  output_types_ = cache->output_types;
   return NNADAPTER_NO_ERROR;
 }
 
@@ -148,7 +170,7 @@ int Program::Execute(uint32_t input_count,
     auto host_ptr = arg->access(arg->memory, &type);
     NNADAPTER_CHECK(host_ptr);
     // Fill input tensor
-    int index = static_cast<int>(i) - static_cast<int>(input_types_.size());
+    int index = -static_cast<int>(i) - 1;
     if (!input_tensors_.count(index)) {
       input_tensors_[index] = std::shared_ptr<Tensor>(new Tensor());
     }
@@ -156,12 +178,12 @@ int Program::Execute(uint32_t input_count,
   }
   // 2. Execute sub_programs_ in order
   for (size_t i = 0; i < sub_programs_.size(); i++) {
+    std::vector<std::shared_ptr<Tensor>> input_tensors;
+    std::vector<std::shared_ptr<Tensor>> output_tensors;
     auto input_indexes = std::get<2>(sub_models_.at(i).second);
     std::sort(input_indexes.begin(), input_indexes.end());
     auto output_indexes = std::get<3>(sub_models_.at(i).second);
     std::sort(output_indexes.begin(), output_indexes.end());
-    std::vector<std::shared_ptr<Tensor>> input_tensors;
-    std::vector<std::shared_ptr<Tensor>> output_tensors;
     // Find inputs
     for (auto input_index : input_indexes) {
       if (input_index < 0) {
@@ -187,13 +209,14 @@ int Program::Execute(uint32_t input_count,
         output_tensors.push_back(temporary_tensors_[output_index]);
       }
     }
+
     sub_programs_[i]->Execute(&input_tensors, &output_tensors);
   }
   // 3. Fetch outputs
   for (size_t i = 0; i < output_types_.size(); i++) {
     auto arg = FindArgumentByIndex(output_arguments, i, output_count);
     NNADAPTER_CHECK(arg) << "Output argument " << i << " does not exist!";
-    int index = static_cast<int>(i) - static_cast<int>(output_types_.size());
+    int index = -static_cast<int>(i) - 1;
     auto dims = output_tensors_.at(index)->Dims();
     NNAdapterOperandType type = output_types_.at(i);
     type.dimensions.count = dims.size();
@@ -206,6 +229,62 @@ int Program::Execute(uint32_t input_count,
                                   cudaMemcpyDeviceToHost),
                        cudaSuccess);
   }
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::SerializeToCache(std::vector<uint8_t>* buffer) {
+  size_t size = sizeof(size_t);
+  std::vector<std::vector<uint8_t>> model_buffers(sub_models_.size());
+  for (size_t i = 0; i < sub_models_.size(); i++) {
+    SerializeModel(std::get<0>(sub_models_.at(i).second), &model_buffers.at(i));
+    size += sizeof(int32_t) + sizeof(bool) + sizeof(size_t) * 4 +
+            model_buffers.at(i).size() +
+            std::get<2>(sub_models_.at(i).second).size() * sizeof(int32_t) +
+            std::get<3>(sub_models_.at(i).second).size() * sizeof(int32_t) +
+            sub_caches_.at(i).size();
+  }
+  buffer->resize(size);
+  void* ptr = reinterpret_cast<void*>(buffer->data());
+  Serialize(&ptr, sub_models_.size());
+  for (size_t i = 0; i < sub_models_.size(); i++) {
+    Serialize(&ptr, sub_models_.at(i).first);
+    Serialize(&ptr, model_buffers.at(i));
+    Serialize(&ptr, std::get<1>(sub_models_.at(i).second));
+    Serialize(&ptr, std::get<2>(sub_models_.at(i).second));
+    Serialize(&ptr, std::get<3>(sub_models_.at(i).second));
+    Serialize(&ptr, sub_caches_.at(i));
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::DeserializeFromCache(std::vector<uint8_t>* buffer) {
+  const void* ptr = reinterpret_cast<void*>(buffer->data());
+  size_t buffer_size = buffer->size();
+  size_t sub_model_size;
+  Deserialize(&ptr, &buffer_size, &sub_model_size);
+  for (size_t i = 0; i < sub_model_size; i++) {
+    int device_id;
+    std::vector<uint8_t> model_buffer;
+    // How to delete?
+    core::Model* model;
+    bool bool_value;
+    std::vector<int> input_indexes;
+    std::vector<int> output_indexes;
+    std::vector<uint8_t> sub_cache;
+    Deserialize(&ptr, &buffer_size, &device_id);
+    Deserialize(&ptr, &buffer_size, &model_buffer);
+    NNADAPTER_CHECK(
+        DeserializeModel(model_buffer.data(), model_buffer.size(), &model));
+    Deserialize(&ptr, &buffer_size, &bool_value);
+    Deserialize(&ptr, &buffer_size, &input_indexes);
+    Deserialize(&ptr, &buffer_size, &output_indexes);
+    Deserialize(&ptr, &buffer_size, &sub_cache);
+    sub_models_.emplace_back(
+        device_id,
+        std::make_tuple(model, bool_value, input_indexes, output_indexes));
+    sub_caches_.emplace_back(sub_cache);
+  }
+  NNADAPTER_CHECK_EQ(buffer_size, 0UL);
   return NNADAPTER_NO_ERROR;
 }
 

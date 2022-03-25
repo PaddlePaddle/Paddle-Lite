@@ -45,6 +45,9 @@ class Context {
   bool GpuFallback() { return gpu_fallback_; }
   std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
   std::string CalibrationTablePath() { return calibration_table_path_; }
+  std::vector<NNAdapterOperationCode> CudaOperations() {
+    return cuda_operations_;
+  }
 
  private:
   void* device_{nullptr};
@@ -55,6 +58,7 @@ class Context {
   bool gpu_fallback_{true};
   std::string calibration_dataset_path_;
   std::string calibration_table_path_;
+  std::vector<NNAdapterOperationCode> cuda_operations_;
 };
 
 class ProgramBase {
@@ -71,7 +75,7 @@ class TensorrtProgram : public ProgramBase {
  public:
   explicit TensorrtProgram(Context* context,
                            core::Model* model,
-                           core::Cache* cache)
+                           std::vector<uint8_t>* cache)
       : context_(context), model_(model), cache_(cache) {}
   ~TensorrtProgram() { Clear(); }
 
@@ -90,7 +94,7 @@ class TensorrtProgram : public ProgramBase {
  private:
   Context* context_{nullptr};
   core::Model* model_{nullptr};
-  core::Cache* cache_{nullptr};
+  std::vector<uint8_t>* cache_{nullptr};
   std::unique_ptr<nvinfer1::IBuilder, TensorrtDeleter> builder_;
   std::unique_ptr<nvinfer1::INetworkDefinition, TensorrtDeleter> network_;
   std::unique_ptr<nvinfer1::IBuilderConfig, TensorrtDeleter> config_;
@@ -110,7 +114,9 @@ class TensorrtProgram : public ProgramBase {
 
 class CudaProgram : public ProgramBase {
  public:
-  explicit CudaProgram(Context* context, core::Model* model, core::Cache* cache)
+  explicit CudaProgram(Context* context,
+                       core::Model* model,
+                       std::vector<uint8_t>* cache)
       : context_(context), model_(model), cache_(cache) {}
   ~CudaProgram() { Clear(); }
 
@@ -126,7 +132,7 @@ class CudaProgram : public ProgramBase {
  private:
   Context* context_{nullptr};
   core::Model* model_{nullptr};
-  core::Cache* cache_{nullptr};
+  std::vector<uint8_t>* cache_{nullptr};
   std::vector<core::Operation*> operations_;
   std::vector<std::shared_ptr<KernelBase>> kernels_;
   std::map<core::Operand*, std::shared_ptr<Tensor>> operand_map_;

@@ -48,6 +48,11 @@ namespace nvidia_tensorrt {
 #define NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH \
   "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH"
 
+// Operations to run with cuda, for example:
+// "NNADAPTER_SOFTMAX,NNADAPTER_YOLO_BOX"
+#define NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST \
+  "NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST"
+
 typedef enum {
   kFloat32 = 0,
   kFloat16 = 1,

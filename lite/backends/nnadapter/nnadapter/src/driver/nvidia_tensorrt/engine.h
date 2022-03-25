@@ -41,10 +41,14 @@ class Program {
 
  private:
   void Clear();
+  int BuildFromModel(core::Model* model);
+  int BuildFromCache(core::Cache* cache);
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
                             uint32_t output_count,
                             core::Argument* output_arguments);
+  int SerializeToCache(std::vector<uint8_t>* buffer);
+  int DeserializeFromCache(std::vector<uint8_t>* buffer);
 
  private:
   Context* context_;
@@ -52,6 +56,7 @@ class Program {
       int,
       std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>
       sub_models_;
+  std::vector<std::vector<uint8_t>> sub_caches_;
   std::vector<std::shared_ptr<ProgramBase>> sub_programs_;
   std::map<int, std::shared_ptr<Tensor>> input_tensors_;
   std::map<int, std::shared_ptr<Tensor>> temporary_tensors_;

@@ -111,6 +111,21 @@ Context::Context(void* device, const char* properties) : device_(device) {
            "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH should be set if precision "
            "is int8.";
   }
+  // Cuda operations list
+  auto operations_str =
+      key_values.count(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST)
+          ? key_values[NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST]
+          : GetStringFromEnv(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST);
+  if (!operations_str.empty()) {
+    auto operations = string_split(operations_str, ",");
+    for (auto operation : operations) {
+      if (operation == "NNADAPTER_SOFTMAX") {
+        cuda_operations_.push_back(NNADAPTER_SOFTMAX);
+      } else {
+        NNADAPTER_LOG(FATAL) << "Not support.";
+      }
+    }
+  }
 }
 
 void TensorrtProgram::Clear() {
@@ -124,20 +139,34 @@ void TensorrtProgram::Clear() {
 int TensorrtProgram::Build() {
   Clear();
   // 1. Build model_ to engine_
-  if (cache_->buffer.empty()) {
+  if (cache_->empty()) {
     NNADAPTER_CHECK_EQ(BuildFromModel(), NNADAPTER_NO_ERROR);
-    cache_->buffer.resize(plan_->size());
-    memcpy(
-        cache_->buffer.data(), plan_->data(), sizeof(int8_t) * plan_->size());
+    cache_->resize(plan_->size());
+    memcpy(cache_->data(), plan_->data(), sizeof(int8_t) * plan_->size());
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(), NNADAPTER_NO_ERROR);
   }
-  // 2. Create execution_context_
+  // 2. Identify the inputs and outputs
+  size_t input_count = model_->input_operands.size();
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  input_types_.resize(input_count);
+  size_t output_count = model_->output_operands.size();
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  output_types_.resize(output_count);
+  for (size_t i = 0; i < input_count; i++) {
+    auto operand = model_->input_operands.at(i);
+    input_types_.at(i) = operand->type;
+    ConvertDynamicDimensions(&input_types_.at(i));
+  }
+  for (size_t i = 0; i < output_count; i++) {
+    auto operand = model_->output_operands.at(i);
+    output_types_.at(i) = operand->type;
+    ConvertDynamicDimensions(&output_types_.at(i));
+  }
+  // 3. Create execution_context_
   execution_context_.reset(engine_->createExecutionContext());
   NNADAPTER_CHECK(execution_context_);
-  // 3. Prepare input/output indexes
-  size_t input_count = input_types_.size();
-  size_t output_count = output_types_.size();
+  // 4. Prepare input/output indexes
   NNADAPTER_CHECK_EQ(static_cast<size_t>(engine_->getNbBindings()),
                      input_count + output_count);
   for (size_t i = 0; i < input_count; i++) {
@@ -271,42 +300,15 @@ int TensorrtProgram::BuildFromModel() {
   plan_.reset(engine_->serialize());
   NNADAPTER_CHECK(plan_);
 #endif
-  // 3. Identify the inputs and outputs
-  size_t input_count = model_->input_operands.size();
-  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  input_types_.resize(input_count);
-  size_t output_count = model_->output_operands.size();
-  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
-  output_types_.resize(output_count);
-  for (size_t i = 0; i < input_count; i++) {
-    auto operand = model_->input_operands.at(i);
-    input_types_.at(i) = operand->type;
-    ConvertDynamicDimensions(&input_types_.at(i));
-  }
-  for (size_t i = 0; i < output_count; i++) {
-    auto operand = model_->output_operands.at(i);
-    output_types_.at(i) = operand->type;
-    ConvertDynamicDimensions(&output_types_.at(i));
-  }
   return NNADAPTER_NO_ERROR;
 }
 
 int TensorrtProgram::BuildFromCache() {
-  // 1. Create engine_
   runtime_.reset(nvinfer1::createInferRuntime(*TrtLogger::Global()));
   NNADAPTER_CHECK(runtime_);
   engine_.reset(runtime_->deserializeCudaEngine(
-      reinterpret_cast<void*>(cache_->buffer.data()), cache_->buffer.size()));
+      reinterpret_cast<void*>(cache_->data()), cache_->size()));
   NNADAPTER_CHECK(engine_);
-  // 2. Identify the inputs and outputs
-  input_types_ = cache_->input_types;
-  for (size_t i = 0; i < input_types_.size(); i++) {
-    ConvertDynamicDimensions(&input_types_.at(i));
-  }
-  output_types_ = cache_->output_types;
-  for (size_t i = 0; i < output_types_.size(); i++) {
-    ConvertDynamicDimensions(&output_types_.at(i));
-  }
   return NNADAPTER_NO_ERROR;
 }
 
