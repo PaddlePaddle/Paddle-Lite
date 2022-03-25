@@ -105,6 +105,7 @@ template size_t SerializedSize(const int32_t value);
 template size_t SerializedSize(const int64_t value);
 template size_t SerializedSize(const bool value);
 template size_t SerializedSize(const float value);
+template size_t SerializedSize(const nvinfer1::DataType value);
 
 template <typename T>
 size_t SerializedSize(const std::vector<T>& value) {
@@ -123,6 +124,7 @@ template void Serialize(void** buffer, const int32_t value);
 template void Serialize(void** buffer, const int64_t value);
 template void Serialize(void** buffer, const bool value);
 template void Serialize(void** buffer, const float value);
+template void Serialize(void** buffer, const nvinfer1::DataType value);
 
 template <typename T>
 void Serialize(void** buffer, const std::vector<T>& value) {
@@ -154,6 +156,9 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           float* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          nvinfer1::DataType* value);
 
 template <typename T>
 void Deserialize(const void** buffer,

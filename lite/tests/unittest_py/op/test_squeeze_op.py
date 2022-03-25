@@ -67,7 +67,7 @@ class TestSqueezeOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=32), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["float32"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
         input_axis = draw(st.sampled_from([[0, 1], [2, 3]]))
         assume(len(input_axis) <= len(in_shape))
         if len(input_axis) > 0:
@@ -111,7 +111,6 @@ class TestSqueezeOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         pass
-
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
 
