@@ -32,6 +32,7 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   }
   std::vector<int32_t> shape_dims;
   if (IsConstantOperand(shape_operand)) {
+    NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
     int shape_rank = output_operand->type.dimensions.count;
     shape_dims.resize(shape_rank);
     auto shape_data = output_operand->type.dimensions.data;

@@ -56,6 +56,7 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
       j++;
     }
   }
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
   memcpy(&out_dims.d[0],
          output_operand->type.dimensions.data,
          sizeof(int32_t) * out_dims.nbDims);
