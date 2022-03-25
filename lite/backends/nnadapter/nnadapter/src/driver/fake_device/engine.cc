@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include "driver/fake_device/converter/converter.h"
+#include "driver/fake_device/converter/validator.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
@@ -42,6 +43,11 @@ void Program::Clear() {
   output_types_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
+}
+
+int Program::Validate(const core::Model* model, bool* supported_operations) {
+  Validator validator(context_);
+  return validator.Apply(model, supported_operations);
 }
 
 int Program::Build(core::Model* model, core::Cache* cache) {

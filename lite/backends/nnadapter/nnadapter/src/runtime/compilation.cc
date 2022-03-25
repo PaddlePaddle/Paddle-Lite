@@ -55,12 +55,16 @@ void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
          dimension_count * sizeof(int32_t));
   type->dimensions.count = dimension_count;
   NNADAPTER_CHECK(buffer->data);
+  NNADAPTER_VLOG(5) << "Model input type:" << std::endl
+                    << OperandTypeToString(type);
   return buffer->data;
 }
 
 void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
+  NNADAPTER_VLOG(5) << "Model output type:" << std::endl
+                    << OperandTypeToString(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
   auto dimension_count = type->dimensions.count;
   NNADAPTER_CHECK_GT(dimension_count, 0);
