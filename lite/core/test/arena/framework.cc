@@ -67,7 +67,7 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
                                                        {"google_xnnpack"});
 #else
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
-                                                       {"generic_device"});
+                                                       {"builtin_device"});
 #endif
 #endif
   // Create a new block desc to wrap the original op desc

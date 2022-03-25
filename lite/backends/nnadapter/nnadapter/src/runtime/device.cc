@@ -25,12 +25,12 @@
 #include "utility/string.h"
 #include "utility/utility.h"
 
-#define GENERIC_DEVICE_NAME generic_device
+#define BUILTIN_DEVICE_NAME builtin_device
 
 // The following environment variables can be used at runtime:
 // Specify the number of threads to use in thread pool, no thread
 // pool/single-thread is used as default(default value is 0).
-#define GENERIC_DEVICE_NUM_THREADS "GENERIC_DEVICE_NUM_THREADS"
+#define BUILTIN_DEVICE_NUM_THREADS "BUILTIN_DEVICE_NUM_THREADS"
 
 #define REGISTER_OPERATION(__op_type__,                                    \
                            __validate_func_name__,                         \
@@ -50,7 +50,7 @@ namespace operation {
 #undef REGISTER_OPERATION
 
 namespace nnadapter {
-namespace generic_device {
+namespace builtin_device {
 
 class Device {
  public:
@@ -74,11 +74,11 @@ Context::Context(void* device, const char* properties) : device_(device) {
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string key_value;
   auto key_values = GetKeyValues(properties);
-  // GENERIC_DEVICE_NUM_THREADS
-  if (key_values.count(GENERIC_DEVICE_NUM_THREADS)) {
-    num_threads_ = string_parse<int>(key_values[GENERIC_DEVICE_NUM_THREADS]);
+  // BUILTIN_DEVICE_NUM_THREADS
+  if (key_values.count(BUILTIN_DEVICE_NUM_THREADS)) {
+    num_threads_ = string_parse<int>(key_values[BUILTIN_DEVICE_NUM_THREADS]);
   } else {
-    num_threads_ = GetIntFromEnv(GENERIC_DEVICE_NUM_THREADS, 0);
+    num_threads_ = GetIntFromEnv(BUILTIN_DEVICE_NUM_THREADS, 0);
   }
   NNADAPTER_LOG(INFO) << "num_threads: " << num_threads_;
 }
@@ -276,7 +276,7 @@ int OpenDevice(void** device) {
   auto d = new Device();
   if (!d) {
     *device = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to open device for generic_device.";
+    NNADAPTER_LOG(FATAL) << "Failed to open device for builtin_device.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *device = reinterpret_cast<void*>(d);
@@ -298,7 +298,7 @@ int CreateContext(void* device, const char* properties, void** context) {
   auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
-    NNADAPTER_LOG(FATAL) << "Failed to create context for generic_device.";
+    NNADAPTER_LOG(FATAL) << "Failed to create context for builtin_device.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *context = reinterpret_cast<void*>(c);
@@ -315,7 +315,7 @@ void DestroyContext(void* context) {
 int ValidateProgram(void* context,
                     const core::Model* model,
                     bool* supported_operations) {
-  NNADAPTER_LOG(INFO) << "Validate program for generic_device.";
+  NNADAPTER_LOG(INFO) << "Validate program for builtin_device.";
   if (!context || !model || !supported_operations) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -333,7 +333,7 @@ int CreateProgram(void* context,
                   core::Model* model,
                   core::Cache* cache,
                   void** program) {
-  NNADAPTER_LOG(INFO) << "Create program for generic_device.";
+  NNADAPTER_LOG(INFO) << "Create program for builtin_device.";
   if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -352,7 +352,7 @@ int CreateProgram(void* context,
 
 void DestroyProgram(void* program) {
   if (program) {
-    NNADAPTER_LOG(INFO) << "Destroy program for generic_device.";
+    NNADAPTER_LOG(INFO) << "Destroy program for builtin_device.";
     auto p = reinterpret_cast<Program*>(program);
     delete p;
   }
@@ -371,22 +371,22 @@ int ExecuteProgram(void* program,
       input_count, input_arguments, output_count, output_arguments);
 }
 
-}  // namespace generic_device
+}  // namespace builtin_device
 }  // namespace nnadapter
 
-nnadapter::driver::Device NNADAPTER_AS_SYM2(GENERIC_DEVICE_NAME) = {
-    .name = NNADAPTER_AS_STR2(GENERIC_DEVICE_NAME),
+nnadapter::driver::Device NNADAPTER_AS_SYM2(BUILTIN_DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(BUILTIN_DEVICE_NAME),
     .vendor = "Paddle",
     .type = NNADAPTER_CPU,
     .version = 1,
-    .open_device = nnadapter::generic_device::OpenDevice,
-    .close_device = nnadapter::generic_device::CloseDevice,
-    .create_context = nnadapter::generic_device::CreateContext,
-    .destroy_context = nnadapter::generic_device::DestroyContext,
-    .validate_program = nnadapter::generic_device::ValidateProgram,
-    .create_program = nnadapter::generic_device::CreateProgram,
-    .destroy_program = nnadapter::generic_device::DestroyProgram,
-    .execute_program = nnadapter::generic_device::ExecuteProgram,
+    .open_device = nnadapter::builtin_device::OpenDevice,
+    .close_device = nnadapter::builtin_device::CloseDevice,
+    .create_context = nnadapter::builtin_device::CreateContext,
+    .destroy_context = nnadapter::builtin_device::DestroyContext,
+    .validate_program = nnadapter::builtin_device::ValidateProgram,
+    .create_program = nnadapter::builtin_device::CreateProgram,
+    .destroy_program = nnadapter::builtin_device::DestroyProgram,
+    .execute_program = nnadapter::builtin_device::ExecuteProgram,
 };
 
 namespace nnadapter {
@@ -501,8 +501,8 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
   }
   void* library = nullptr;
   driver::Device* driver = nullptr;
-  if (strcmp(name, NNADAPTER_AS_STR2(GENERIC_DEVICE_NAME)) == 0) {
-    driver = &::NNADAPTER_AS_SYM2(GENERIC_DEVICE_NAME);
+  if (strcmp(name, NNADAPTER_AS_STR2(BUILTIN_DEVICE_NAME)) == 0) {
+    driver = &::NNADAPTER_AS_SYM2(BUILTIN_DEVICE_NAME);
   } else {
     // Load if the driver of target device is not registered.
     std::string symbol =

@@ -64,7 +64,7 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
 #else
-  nnadapter_device_names.emplace_back("generic_device");
+  nnadapter_device_names.emplace_back("builtin_device");
   out_accuracy_threshold = 0.79f;
 #endif
 #else

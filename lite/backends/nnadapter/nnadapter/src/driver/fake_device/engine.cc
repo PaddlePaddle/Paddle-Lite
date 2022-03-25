@@ -60,6 +60,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 int Program::BuildFromModel(core::Model* model, core::Cache* cache) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  FuseMatMulAddIntoFullyConnected(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a fake_ddk graph
@@ -120,7 +121,6 @@ int Program::BuildFromModel(core::Model* model, core::Cache* cache) {
   } else {
     execution_->Build();
   }
-
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -178,23 +178,18 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
                                    core::Argument* output_arguments) {
   // Check inputs
   for (uint32_t i = 0; i < input_count; i++) {
-    // Get actual type
+    // Get the new dimensions
     auto& arg = input_arguments[i];
-    NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
-    // Check dimensions count
-    uint32_t count = type.dimensions.count;
-    int32_t* data = type.dimensions.data;
-    auto& src_dimensions = input_types_[i].dimensions;
-    int32_t* src_data = src_dimensions.data;
-    if (count != src_dimensions.count) {
+    NNAdapterOperandType new_type;
+    arg.access(arg.memory, &new_type);
+    // Check whether the count and data of dimensions have been changed
+    const NNAdapterOperandType& old_type = input_types_[arg.index];
+    bool matched = MatchDimensions(new_type.dimensions.data,
+                                   new_type.dimensions.count,
+                                   old_type.dimensions.data,
+                                   old_type.dimensions.count);
+    if (!matched) {
       return NNADAPTER_INVALID_DIMENSIONS;
-    }
-    // Check dimensions data
-    for (uint32_t j = 0; j < count; j++) {
-      if (data[j] != src_data[j]) {
-        return NNADAPTER_INVALID_DIMENSIONS;
-      }
     }
   }
   return NNADAPTER_NO_ERROR;

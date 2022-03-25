@@ -44,7 +44,7 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY =
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
 
-void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelInput(void* memory, NNAdapterOperandType* type) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
@@ -60,7 +60,7 @@ void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
   return buffer->data;
 }
 
-void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelOutput(void* memory, NNAdapterOperandType* type) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   NNADAPTER_VLOG(5) << "Model output type:" << std::endl
@@ -178,12 +178,12 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
                              programs_[i].input_indexes,
                              input_arguments,
                              &buffers_,
-                             AccessModelInput);
+                             AccessSubmodelInput);
     create_program_arguments(&output_args,
                              programs_[i].output_indexes,
                              output_arguments,
                              &buffers_,
-                             AccessModelOutput);
+                             AccessSubmodelOutput);
     auto result = device_context->device->ExecuteProgram(programs_[i].program,
                                                          input_args.size(),
                                                          input_args.data(),
@@ -320,8 +320,8 @@ int Compilation::Finish() {
           << device_context->device->GetName() << "'";
     }
   } else {
-    NNADAPTER_LOG(WARNING)
-        << "Failed to create a program, No model and cache is provided.";
+    NNADAPTER_LOG(WARNING) << "Warning: Failed to create a program, No model "
+                              "and cache is provided.";
     return NNADAPTER_INVALID_PARAMETER;
   }
   return NNADAPTER_NO_ERROR;
