@@ -47,7 +47,7 @@ __kernel void layer_norm_batch(__read_only image2d_t input,
   avg /= feature_size;
   var = var / feature_size - avg * avg;
 
-  var = sqrt(var + epsilon);
+  var = sqrt(var + CONVERT_TYPE_TO(epsilon, CL_DTYPE));
   int2 pos;
   pos.x = out_c * width + out_w;
   pos.y = out_nh;
@@ -112,7 +112,7 @@ __kernel void layer_norm_chann(__read_only image2d_t input,
   }
   avg /= feature_size;
   var = var / feature_size - avg * avg;
-  var = sqrt(var + epsilon);
+  var = sqrt(var + CONVERT_TYPE_TO(epsilon, CL_DTYPE));
   int2 pos;
   pos.x = out_c * width + out_w;
   pos.y = out_nh;

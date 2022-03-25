@@ -150,7 +150,7 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, height);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, y_image_shape["width"]);
+    status = kernel.setArg(arg_idx++, static_cast<int>(y_image_shape["width"]));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, width);
     CL_CHECK_FATAL(status);
