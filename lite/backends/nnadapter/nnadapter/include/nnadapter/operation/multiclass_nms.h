@@ -31,7 +31,7 @@ namespace operation {
   auto scores_operand = input_operands[1];                                    \
   NNADAPTER_VLOG(5) << "scores: " << OperandToString(scores_operand);         \
   /* background_label */                                                      \
-  auto background_label = input_operands[2];                                  \
+  auto background_label_operand = input_operands[2];                          \
   NNADAPTER_VLOG(5) << "background_label: "                                   \
                     << OperandToString(background_label_operand);             \
   /* score_threshold */                                                       \

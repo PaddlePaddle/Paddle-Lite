@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,20 +31,13 @@ int PrepareMulticlassNMS(core::Operation* operation) {
   auto input_dims = input_operands[0]->type.dimensions.count;
   auto input_dims_ptr = input_operands[0]->type.dimensions.data;
   NNADAPTER_CHECK_EQ(input_dims, 3) << "Box dims should be 3D.";
-  output_shape.push_back(input_dims_ptr[0] * input_dims_ptr[1]);
+  auto N = input_dims_ptr[0];
+  auto M = input_dims_ptr[1];
+  auto size = N * M;
+  output_shape.push_back(size);
   output_shape.push_back(6);
-  output_operand->type.dimensions.data[0] = output_shape[0];
-  output_operand->type.dimensions.data[1] = output_shape[1];
-
-  // Dynamic shape
-  if (input_operands[0]->type.dimensions.dynamic_count != 0) {
-    auto input_dims_ptr_dy = input_operands[0]->type.dimensions.dynamic_data;
-    std::vector<int> output_shape_1;
-    output_shape_1.push_back(input_dims_ptr_dy[0] * input_dims_ptr_dy[1]);
-    output_shape_1.push_back(6);
-    output_operand->type.dimensions.dynamic_data[0] = output_shape_1[0];
-    output_operand->type.dimensions.dynamic_data[1] = output_shape_1[1];
-  }
+  output_box_operand->type.dimensions.data[0] = output_shape[0];
+  output_box_operand->type.dimensions.data[1] = output_shape[1];
   return NNADAPTER_NO_ERROR;
 }
 
