@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateRoiAlign(const core::Operation* operation) { return false; }
+
 int PrepareRoiAlign(core::Operation* operation) {
   ROI_ALIGN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -51,6 +53,10 @@ int PrepareRoiAlign(core::Operation* operation) {
 
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteRoiAlign(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

@@ -55,10 +55,12 @@ int Validator::Apply(const core::Model* model, bool* supported_operations) {
 #undef __NNADAPTER_DRIVER_GOOGLE_XNNPACK_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
-        NNADAPTER_LOG(WARNING) << "Unsupported operation("
-                               << OperationTypeToString(operation->type)
-                               << ") is found.";
         break;
+    }
+    if (!flag) {
+      NNADAPTER_LOG(WARNING) << "Unsupported operation("
+                             << OperationTypeToString(operation->type)
+                             << ") is found.";
     }
     supported_operations[operation_to_index[operation]] = flag;
   }

@@ -23,11 +23,11 @@ namespace operation {
 namespace math {
 
 template <typename T>
-static void concat(const std::vector<T*>& input_data_ptrs,
-                   const std::vector<std::vector<int32_t>>& input_shapes,
-                   const int axis,
-                   T* output_data_ptr) {
-  size_t num = input_data_ptrs.size();
+static int concat(const std::vector<T*>& input_datas,
+                  const std::vector<std::vector<int32_t>>& input_shapes,
+                  const int axis,
+                  T* output_data) {
+  size_t num = input_datas.size();
   auto input_dim_0 = input_shapes[0];
   int64_t input_size = 1;
   int64_t num_cancats = 1;
@@ -46,13 +46,13 @@ static void concat(const std::vector<T*>& input_data_ptrs,
       }
     }
   }
-  auto* dst_ptr = output_data_ptr;
+  auto* dst_ptr = output_data;
   const int out_axis = output_dims[axis];
   int64_t offset_axis = 0;
   int64_t out_sum = out_axis * input_size;
   for (int n = 0; n < num; n++) {
     auto dims = input_shapes[n];
-    auto* src_ptr = input_data_ptrs[n];
+    auto* src_ptr = input_datas[n];
     int64_t in_axis = dims[axis];
     auto* dout_ptr = dst_ptr + offset_axis * input_size;
     int64_t in_sum = in_axis * input_size;
@@ -63,6 +63,7 @@ static void concat(const std::vector<T*>& input_data_ptrs,
     }
     offset_axis += in_axis;
   }
+  return 0;
 }
 
 }  // namespace math

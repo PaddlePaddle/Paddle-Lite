@@ -27,6 +27,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateSlice(const core::Operation* operation) { return false; }
+
 int PrepareSlice(core::Operation* operation) {
   SLICE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -81,6 +83,10 @@ int PrepareSlice(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteSlice(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
