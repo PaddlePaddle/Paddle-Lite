@@ -14,6 +14,7 @@
 
 #include "operation/conv2d.h"
 #include "core/types.h"
+#include "operation/math/conv2d.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
@@ -71,6 +72,8 @@ CalcConv2DOutputSize(int32_t input_size,
          1;
 }
 
+bool ValidateConv2D(const core::Operation* operation) { return true; }
+
 int PrepareConv2D(core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -102,6 +105,94 @@ int PrepareConv2D(core::Operation* operation) {
                        output_operand->type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteConv2D(core::Operation* operation) {
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto& input_type = input_operand->type;
+  auto input_shape = std::vector<int32_t>(
+      input_type.dimensions.data,
+      input_type.dimensions.data + input_type.dimensions.count);
+  const auto input_buffer = input_operand->buffer;
+  NNADAPTER_CHECK(input_buffer);
+  auto& filter_type = filter_operand->type;
+  auto filter_shape = std::vector<int32_t>(
+      filter_type.dimensions.data,
+      filter_type.dimensions.data + filter_type.dimensions.count);
+  const auto filter_buffer = filter_operand->buffer;
+  NNADAPTER_CHECK(filter_buffer);
+  const auto bias_buffer = bias_operand->buffer;
+  NNADAPTER_CHECK(bias_buffer);
+  auto& output_type = output_operand->type;
+  auto output_buffer = AllocateOperand(output_operand);
+  NNADAPTER_CHECK_EQ(input_type.precision, output_type.precision);
+  if (input_type.precision == NNADAPTER_FLOAT32) {
+    const auto input_data = reinterpret_cast<const float*>(input_buffer);
+    const auto filter_data = reinterpret_cast<const float*>(filter_buffer);
+    const auto bias_data = reinterpret_cast<const float*>(bias_buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    status = math::conv2d<float>(input_data,
+                                 input_shape,
+                                 filter_data,
+                                 filter_shape,
+                                 bias_data,
+                                 pad_height_top,
+                                 pad_height_bottom,
+                                 pad_width_left,
+                                 pad_width_right,
+                                 stride_height,
+                                 stride_width,
+                                 dilation_height,
+                                 dilation_width,
+                                 group,
+                                 static_cast<math::FuseCode>(fuse_code),
+                                 output_data);
+  } else if (input_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             (filter_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
+              filter_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL)) {
+    const auto input_data = reinterpret_cast<const int8_t*>(input_buffer);
+    const auto filter_data = reinterpret_cast<const int8_t*>(filter_buffer);
+    const auto bias_data = reinterpret_cast<const int32_t*>(bias_buffer);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    auto filter_scales = std::make_pair(
+        std::vector<float>({filter_type.symm_per_layer_params.scale}), -1);
+    if (filter_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL) {
+      filter_scales.first = std::vector<float>(
+          filter_type.symm_per_channel_params.scales,
+          filter_type.symm_per_channel_params.scales +
+              filter_type.symm_per_channel_params.scale_count);
+      filter_scales.second = filter_type.symm_per_channel_params.channel_dim;
+    }
+    status = math::conv2d(input_data,
+                          input_shape,
+                          input_type.symm_per_layer_params.scale,
+                          filter_data,
+                          filter_shape,
+                          filter_scales,
+                          bias_data,
+                          pad_height_top,
+                          pad_height_bottom,
+                          pad_width_left,
+                          pad_width_right,
+                          stride_height,
+                          stride_width,
+                          dilation_height,
+                          dilation_width,
+                          group,
+                          static_cast<math::FuseCode>(fuse_code),
+                          output_data,
+                          output_type.symm_per_layer_params.scale);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported precision code("
+                         << OperandPrecisionCodeToString(input_type.precision)
+                         << ") for " << OperationTypeToString(operation->type)
+                         << " is found!";
+  }
+  NNADAPTER_CHECK_EQ(status, 0);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -84,7 +84,7 @@ int Model::GetSupportedOperations(Context::DeviceContext* device_context,
   auto result = device->ValidateProgram(context, &model_, supported_operations);
   if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
     NNADAPTER_LOG(WARNING)
-        << "Failed to get the supported operations for device '"
+        << "Warning: Failed to get the supported operations for device '"
         << device->GetName() << "', because the HAL interface "
                                 "'validate_program' is not implemented!";
   }

@@ -29,18 +29,18 @@ int ConvertClip(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  if (IsConstantOperand(min_operand) && IsConstantOperand(max_operand)) {
-    float min_num = *reinterpret_cast<float*>(min_operand->buffer);
-    float max_num = *reinterpret_cast<float*>(max_operand->buffer);
-    auto clip_layer = converter->network()->addActivation(
-        *input_tensor, nvinfer1::ActivationType::kCLIP);
-    clip_layer->setAlpha(min_num);
-    clip_layer->setBeta(max_num);
-    auto output_tensor = clip_layer->getOutput(0);
-    converter->UpdateTensorMap(output_operand, output_tensor);
-  } else {
-    NNADAPTER_LOG(FATAL) << "TensorRT doesn't support, need plugin.";
-  }
+  NNADAPTER_CHECK(IsConstantOperand(min_operand))
+      << "'min' should be a constant operand!";
+  NNADAPTER_CHECK(IsConstantOperand(max_operand))
+      << "'max' should be a constant operand!";
+  auto min_value = *reinterpret_cast<float*>(min_operand->buffer);
+  auto max_value = *reinterpret_cast<float*>(max_operand->buffer);
+  auto clip_layer = converter->network()->addActivation(
+      *input_tensor, nvinfer1::ActivationType::kCLIP);
+  clip_layer->setAlpha(min_value);
+  clip_layer->setBeta(max_value);
+  auto output_tensor = clip_layer->getOutput(0);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

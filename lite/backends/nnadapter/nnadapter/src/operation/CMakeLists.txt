@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+aux_source_directory(math MATH)
 aux_source_directory(. OPERATIONS)
-add_library(nnadapter_operations STATIC ${OPERATIONS})
+add_library(nnadapter_operations STATIC ${MATH} ${OPERATIONS})
 
 set(NNADAPTER_OPERATIONS nnadapter_operations CACHE INTERNAL "")

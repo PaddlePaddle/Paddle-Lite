@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateMeshgrid(const core::Operation* operation) { return false; }
+
 int PrepareMeshgrid(core::Operation* operation) {
   MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
   for (auto output_operand : output_operands) {
@@ -64,6 +66,10 @@ int PrepareMeshgrid(core::Operation* operation) {
                       << OperandToString(output_operands[i]);
   }
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteMeshgrid(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
