@@ -25,7 +25,18 @@ namespace nnadapter {
 namespace nvidia_tensorrt {
 
 void Program::Clear() {
+  if (is_sub_model_from_cache_) {
+    for (size_t i = 0; i < sub_models_.size(); i++) {
+      auto& model = std::get<0>(sub_models_.at(i).second);
+      if (model) {
+        ClearModel(model);
+        delete model;
+        model = nullptr;
+      }
+    }
+  }
   sub_models_.clear();
+  sub_caches_.clear();
   sub_programs_.clear();
   input_tensors_.clear();
   temporary_tensors_.clear();
@@ -284,6 +295,7 @@ int Program::DeserializeFromCache(std::vector<uint8_t>* buffer) {
         std::make_tuple(model, bool_value, input_indexes, output_indexes));
     sub_caches_.emplace_back(sub_cache);
   }
+  is_sub_model_from_cache_ = true;
   NNADAPTER_CHECK_EQ(buffer_size, 0UL);
   return NNADAPTER_NO_ERROR;
 }

@@ -63,6 +63,7 @@ class Program {
   std::map<int, std::shared_ptr<Tensor>> output_tensors_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  bool is_sub_model_from_cache_{false};
 };
 
 }  // namespace nvidia_tensorrt
