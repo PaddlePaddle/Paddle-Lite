@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateCast(const core::Operation* operation) { return false; }
+
 int PrepareCast(core::Operation* operation) {
   CAST_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -32,6 +34,10 @@ int PrepareCast(core::Operation* operation) {
   SetTemporaryShape(output_operand, input_operand->type.dimensions);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteCast(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateChannelShuffle(const core::Operation* operation) { return false; }
+
 int PrepareChannelShuffle(core::Operation* operation) {
   CHANNEL_SHUFFLE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +31,10 @@ int PrepareChannelShuffle(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteChannelShuffle(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
