@@ -17,10 +17,10 @@ limitations under the License. */
 __kernel void layer_norm_batch(__read_only image2d_t input,
                                __write_only image2d_t output,
 #ifdef SCALE
-                               __global const CL_DTYPE* scale,
+                               __global const float* scale,
 #endif
 #ifdef BIAS
-                               __global const CL_DTYPE* bias,
+                               __global const float* bias,
 #endif
                                __private const int batch_size,
                                __private const int feature_size,
@@ -47,7 +47,7 @@ __kernel void layer_norm_batch(__read_only image2d_t input,
   avg /= feature_size;
   var = var / feature_size - avg * avg;
 
-  var = sqrt(var + epsilon);
+  var = sqrt(var + CONVERT_TYPE_TO(epsilon, CL_DTYPE));
   int2 pos;
   pos.x = out_c * width + out_w;
   pos.y = out_nh;
@@ -74,10 +74,10 @@ __kernel void layer_norm_batch(__read_only image2d_t input,
 __kernel void layer_norm_chann(__read_only image2d_t input,
                                __write_only image2d_t output,
 #ifdef SCALE
-                               __global const CL_DTYPE* scale,
+                               __global const float* scale,
 #endif
 #ifdef BIAS
-                               __global const CL_DTYPE* bias,
+                               __global const float* bias,
 #endif
                                __private const int batch_size,
                                __private const int feature_size,
@@ -112,7 +112,7 @@ __kernel void layer_norm_chann(__read_only image2d_t input,
   }
   avg /= feature_size;
   var = var / feature_size - avg * avg;
-  var = sqrt(var + epsilon);
+  var = sqrt(var + CONVERT_TYPE_TO(epsilon, CL_DTYPE));
   int2 pos;
   pos.x = out_c * width + out_w;
   pos.y = out_nh;
@@ -123,6 +123,57 @@ __kernel void layer_norm_chann(__read_only image2d_t input,
 #endif
 #ifdef BIAS
   out += (CL_DTYPE4)(bias[out_h * width + out_w]);
+#endif
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, pos, out);
+}
+
+__kernel void layer_norm_width(__read_only image2d_t input,
+                               __write_only image2d_t output,
+#ifdef SCALE
+                               __global const float* scale,
+#endif
+#ifdef BIAS
+                               __global const float* bias,
+#endif
+                               __private const int batch_size,
+                               __private const int feature_size,
+                               __private const int height,
+                               __private const int image_w,
+                               __private const int width,
+                               __private const float epsilon) {
+  const int out_c = get_global_id(0);
+  const int out_w = get_global_id(1);
+  const int out_nh = get_global_id(2);
+
+  int out_h = out_nh % height;
+  int out_n = out_nh / height;
+  CL_DTYPE4 avg = (CL_DTYPE4)(0.0f);
+  CL_DTYPE4 var = (CL_DTYPE4)(0.0f);
+  for (int w = 0; w < width; ++w) {
+    CL_DTYPE4 in = READ_IMG_TYPE(
+        CL_DTYPE_CHAR, input, SAMPLER, (int2)(out_c * width + w, out_nh));
+    avg.x += in.x;
+    avg.y += in.y;
+    avg.z += in.z;
+    avg.w += in.w;
+    var.x += in.x * in.x;
+    var.y += in.y * in.y;
+    var.z += in.z * in.z;
+    var.w += in.w * in.w;
+  }
+  avg /= feature_size;
+  var = var / feature_size - avg * avg;
+  var = sqrt(var + CONVERT_TYPE_TO(epsilon, CL_DTYPE));
+  int2 pos;
+  pos.x = out_c * width + out_w;
+  pos.y = out_nh;
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, pos);
+  CL_DTYPE4 out = (in - avg) / var;
+#ifdef SCALE
+  out *= (CL_DTYPE4)(scale[out_w]);
+#endif
+#ifdef BIAS
+  out += (CL_DTYPE4)(bias[out_w]);
 #endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, pos, out);
 }
