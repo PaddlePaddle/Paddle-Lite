@@ -38,6 +38,23 @@ int PrepareMulticlassNMS(core::Operation* operation) {
   output_shape.push_back(6);
   output_box_operand->type.dimensions.data[0] = output_shape[0];
   output_box_operand->type.dimensions.data[1] = output_shape[1];
+
+  // Dynamic shape
+  auto input_count = input_operands.size();
+  if (input_operands[0]->type.dimensions.dynamic_count != 0) {
+    for (uint32_t i = 0; i < input_operands[0]->type.dimensions.dynamic_count;
+         i++) {
+      std::vector<int> output_shape(input_count, 0);
+      for (size_t j = 0; j < input_count; j++) {
+        output_shape[i] = input_operands[i]->type.dimensions.dynamic_data[i][0];
+      }
+      for (auto output_operand : output_operands) {
+        for (int j = 0; j < input_count; j++) {
+          output_operand->type.dimensions.dynamic_data[i][j] = output_shape[j];
+        }
+      }
+    }
+  }
   return NNADAPTER_NO_ERROR;
 }
 
