@@ -342,7 +342,7 @@ REGISTER_CONVERTER(flatten_contiguous_range,
                    ConvertFlattenContiguousRange,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
-                   "mlu,android_nnapi");
+                   "mlu,android_nnapi,nvidia_tensorrt");
 REGISTER_CONVERTER(
     fc,
     ConvertFC,
