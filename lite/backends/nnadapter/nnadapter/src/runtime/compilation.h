@@ -27,6 +27,20 @@ namespace runtime {
 
 class Compilation {
  public:
+  class Buffer {
+   public:
+    Buffer() {}
+    ~Buffer() {
+      if (data) {
+        free(data);
+      }
+    }
+
+   public:
+    void* data{nullptr};
+    uint32_t size{0};
+    std::vector<int32_t> dimensions;
+  };
   class Program {
    public:
     Program() {}
@@ -54,7 +68,7 @@ class Compilation {
               uint32_t cache_length,
               const char* cache_dir,
               Context* context);
-  ~Compilation();
+  ~Compilation() {}
   int Finish();
   int QueryInputsAndOutputs(uint32_t* input_count,
                             NNAdapterOperandType** input_types,
@@ -82,8 +96,8 @@ class Compilation {
   std::string cache_token_;
   std::string cache_dir_;
   std::vector<Program> programs_;
-  std::vector<core::Operand*>
-      operands_;  // The shared operands among the submodels
+  std::vector<std::shared_ptr<Buffer>>
+      buffers_;  // The shared buffers among the submodels
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   Context* context_{nullptr};

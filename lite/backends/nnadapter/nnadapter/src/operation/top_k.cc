@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateTopK(const core::Operation* operation) { return false; }
+
 int PrepareTopK(core::Operation* operation) {
   TOP_K_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -42,6 +44,10 @@ int PrepareTopK(core::Operation* operation) {
       static_cast<NNAdapterOperandPrecisionCode>(return_indices_dtype);
   NNADAPTER_VLOG(5) << "indices: " << OperandToString(indices_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteTopK(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

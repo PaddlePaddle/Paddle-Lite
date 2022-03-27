@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateSoftplus(const core::Operation* operation) { return false; }
+
 int PrepareSoftplus(core::Operation* operation) {
   SOFTPLUS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +31,10 @@ int PrepareSoftplus(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteSoftplus(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
