@@ -117,8 +117,8 @@ int Converter::Apply(const cpp::BlockDesc* block_desc,
     const auto& name = output_vars->at(i).name;
     auto operand = GetMappedOperand(name);
     if (!operand) {
-      LOG(WARNING) << "No operand found for " << i << "th output '" << name
-                   << "'!";
+      LOG(WARNING) << "Warning: No operand found for " << i << "th output '"
+                   << name << "'!";
       continue;
     }
     output_operands.push_back(operand);
@@ -138,14 +138,14 @@ int Converter::Apply(const cpp::BlockDesc* block_desc,
                                                      output_operands.data());
   if (result != NNADAPTER_NO_ERROR) {
     NNAdapterModel_destroy_invoke(model_);
-    LOG(WARNING) << "Failed to identify the inputs and outputs of the model("
-                 << result << ")!";
+    LOG(FATAL) << "Failed to identify the inputs and outputs of the model("
+               << result << ")!";
     return UNSUPPORTED_FEATURE;
   }
   result = NNAdapterModel_finish_invoke(model_);
   if (result != NNADAPTER_NO_ERROR) {
     NNAdapterModel_destroy_invoke(model_);
-    LOG(WARNING) << "Failed to finish the model(" << result << ")!";
+    LOG(FATAL) << "Failed to finish the model(" << result << ")!";
     return UNSUPPORTED_FEATURE;
   }
   std::unique_ptr<bool[]> supported_operations(new bool[operation_count_]);
@@ -168,9 +168,10 @@ int Converter::Apply(const cpp::BlockDesc* block_desc,
       }
     }
   } else if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
-    LOG(WARNING) << "Failed to get the supported operations for the selected "
-                    "devices, one or more of the selected devices are not "
-                    "supported!";
+    LOG(WARNING)
+        << "Warning: Failed to get the supported operations for the selected "
+           "devices, one or more of the selected devices are not "
+           "supported!";
   } else {
     NNAdapterModel_destroy_invoke(model_);
     LOG(FATAL)

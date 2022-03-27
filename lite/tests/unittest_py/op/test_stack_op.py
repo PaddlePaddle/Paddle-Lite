@@ -32,6 +32,8 @@ class TestStackOp(AutoScanTest):
             TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -43,10 +45,13 @@ class TestStackOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
         input_axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         axis = input_axis if input_axis >= 0 else input_axis + len(in_shape)
         assume(axis < len(in_shape))
+        target_str = self.get_target()
+        if target_str == "NNAdapter":
+            assume(input_type != "int64")
 
         def generate_input1(*args, **kwargs):
             if input_type == "float32":

@@ -46,11 +46,15 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_channel_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+#if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.push_back("mediatek_apu");
   out_accuracy_threshold = 0.79f;
 #else
-  LOG(INFO) << "Unsupported NNAdapter device!";
+  nnadapter_device_names.emplace_back("builtin_device");
+  out_accuracy_threshold = 0.63f;
+#endif
+#else
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

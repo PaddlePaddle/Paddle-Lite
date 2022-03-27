@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateBinaryLogicalOp(const core::Operation* operation) { return false; }
+
 int PrepareBinaryLogicalOp(core::Operation* operation) {
   BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -32,6 +34,10 @@ int PrepareBinaryLogicalOp(core::Operation* operation) {
       input0_operand->type, input1_operand->type, &output_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteBinaryLogicalOp(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

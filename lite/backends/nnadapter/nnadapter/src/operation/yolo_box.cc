@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateYoloBox(const core::Operation* operation) { return false; }
+
 int PrepareYoloBox(core::Operation* operation) {
   YOLO_BOX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -56,6 +58,10 @@ int PrepareYoloBox(core::Operation* operation) {
   NNADAPTER_VLOG(5) << "boxes: " << OperandToString(boxes_operand);
   NNADAPTER_VLOG(5) << "scores: " << OperandToString(scores_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteYoloBox(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

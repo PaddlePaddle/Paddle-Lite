@@ -24,6 +24,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateSqueeze(const core::Operation* operation) { return false; }
+
 int PrepareSqueeze(core::Operation* operation) {
   SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -81,6 +83,10 @@ int PrepareSqueeze(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteSqueeze(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

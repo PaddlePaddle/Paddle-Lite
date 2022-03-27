@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidatePad(const core::Operation* operation) { return false; }
+
 int PreparePad(core::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(IsConstantOperand(pads_operand))
@@ -56,6 +58,10 @@ int PreparePad(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecutePad(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

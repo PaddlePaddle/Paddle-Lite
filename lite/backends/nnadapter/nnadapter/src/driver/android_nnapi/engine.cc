@@ -431,6 +431,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   // Release the restored core::Model
   if (model_from_cache) {
     nnadapter::ClearModel(model);
+    delete model;
   }
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
