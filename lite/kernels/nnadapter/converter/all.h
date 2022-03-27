@@ -38,7 +38,7 @@ REGISTER_CONVERTER(
     ConvertConv2D,
     "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
-    "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt");
+    "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,fake_device");
 REGISTER_CONVERTER(deformable_conv,
                    ConvertDeformableConv,
                    "huawei_ascend_npu,cambricon_mlu");

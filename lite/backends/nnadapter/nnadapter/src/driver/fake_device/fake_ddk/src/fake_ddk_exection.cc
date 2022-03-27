@@ -25,32 +25,27 @@ namespace nn {
 #ifndef TRUE
 #define TRUE 1
 #endif
-extern int conv_uint8_fp32_mmad(fakedevice_nn_tensor_t* input_tensor,
-                                fakedevice_nn_tensor_t* output_tensor,
-                                fakedevice_nn_tensor_t* kernel,
-                                fakedevice_nn_tensor_t* bias,
-                                fakedevice_nn_conv2d_param* conv_param);
-extern int conv_uint8_8bit_mmad(fakedevice_nn_tensor_t* input_tensor,
-                                fakedevice_nn_tensor_t* output_tensor,
-                                fakedevice_nn_tensor_t* kernel,
-                                fakedevice_nn_tensor_t* bias,
-                                fakedevice_nn_conv2d_param* conv_param);
+extern int conv_uint8_compute(fakedevice_nn_tensor_t* input_tensor,
+                              fakedevice_nn_tensor_t* output_tensor,
+                              fakedevice_nn_tensor_t* kernel,
+                              fakedevice_nn_tensor_t* bias,
+                              fakedevice_nn_conv2d_param* conv_param);
 extern int CalculateModelbufferSize(fakedevice_nn_graph_t* graph);
 extern void SerializeModelbuffer(fakedevice_nn_graph_t* graph, void* buffer);
 Exection::Exection(Graph* graph) {
-  printf("fake_ddk: Exection\n ");
+  fprintf(stderr, "fake_ddk: Exection\n");
   graph_ = graph;
 }
 Exection::~Exection() {}
 
 /* setup graph and optimize graph */
 int Exection::Build() {
-  printf("fake_ddk: Build()\n");
+  fprintf(stderr, "fake_ddk: Build()\n");
   return FAKE_DDK_SUCCESS;
 }
 
 int Exection::Build(fakedevice_model_buffer* fm) {
-  printf("fake_ddk: NEED model_cache\n");
+  fprintf(stderr, "fake_ddk: NEED model_cache\n");
 
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
@@ -72,16 +67,11 @@ int Exection::Build(fakedevice_model_buffer* fm) {
  * @return FAKE_DDK_SUCCESS when success
  */
 int Exection::SetInputs(std::vector<InputInfo> inputs) {
-  printf("fake_ddk: SetInputs\n");
+  fprintf(stderr, "fake_ddk: SetInputs\n");
   int i;
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
   for (i = 0; i < graph->input_tensors.size(); i++) {
-    printf(
-        "fake_ddk: graph->input_tensors[i]->data addr = %x, inputs[i].buf addr "
-        "=%x \n",
-        graph->input_tensors[i]->data,
-        inputs[i].buf);
     memcpy(graph->input_tensors[i]->data, inputs[i].buf, inputs[i].size);
   }
   return FAKE_DDK_SUCCESS;
@@ -93,7 +83,7 @@ int Exection::SetInputs(std::vector<InputInfo> inputs) {
  * @return FAKE_DDK_SUCCESS when success
  */
 int Exection::Run() {
-  printf("fake_ddk: Run()\n");
+  fprintf(stderr, "fake_ddk: Run()\n");
   int status;
   fakedevice_nn_graph_t* graph =
       static_cast<fakedevice_nn_graph_t*>(graph_->fakedevice_graph_);
@@ -102,32 +92,32 @@ int Exection::Run() {
     switch (node->op) {
       case fake_ddk::nn::OperatorType::FAKE_DEVICE_CONV2D:
         if (i == 0) {  // first node
-          status = conv_uint8_fp32_mmad(graph->input_tensors[0],
-                                        node->output_tensors[0],
-                                        node->input_tensors[1],
-                                        node->input_tensors[2],
-                                        &(node->nn_param.conv2d_param));
+          status = conv_uint8_compute(graph->input_tensors[0],
+                                      node->output_tensors[0],
+                                      node->input_tensors[1],
+                                      node->input_tensors[2],
+                                      &(node->nn_param.conv2d_param));
         } else if (i == graph->node_table.size() - 1) {  // last node
-          status = conv_uint8_fp32_mmad(node->input_tensors[0],
-                                        graph->output_tensors[0],
-                                        node->input_tensors[1],
-                                        node->input_tensors[2],
-                                        &(node->nn_param.conv2d_param));
+          status = conv_uint8_compute(node->input_tensors[0],
+                                      graph->output_tensors[0],
+                                      node->input_tensors[1],
+                                      node->input_tensors[2],
+                                      &(node->nn_param.conv2d_param));
         } else {
-          status = conv_uint8_fp32_mmad(node->input_tensors[0],
-                                        node->output_tensors[0],
-                                        node->input_tensors[1],
-                                        node->input_tensors[2],
-                                        &(node->nn_param.conv2d_param));
+          status = conv_uint8_compute(node->input_tensors[0],
+                                      node->output_tensors[0],
+                                      node->input_tensors[1],
+                                      node->input_tensors[2],
+                                      &(node->nn_param.conv2d_param));
         }
         break;
       default:
-        printf("fake_ddk: this operator not support yet\n");
+        fprintf(stderr, "fake_ddk: this operator not support yet\n");
         break;
     }
   }
   if (status != FAKE_DDK_SUCCESS) {
-    printf("fake_ddk: process graph fail\n");
+    fprintf(stderr, "fake_ddk: process graph fail\n");
     return FAKE_DDK_FAILURE;
   }
   return FAKE_DDK_SUCCESS;
@@ -140,7 +130,7 @@ int Exection::Run() {
  *  @return FAKE_DDK_SUCCESS when success
  */
 int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
-  printf("fake_ddk: GetOutputs\n ");
+  fprintf(stderr, "fake_ddk: GetOutputs\n");
   int i, j;
   fakedevice_nn_tensor_t* tensor;
   uint32_t sz;
@@ -157,7 +147,7 @@ int Exection::GetOutputs(std::vector<OutputInfo> outputs) {
     memcpy(outputs[i].buf, tensor->data, sizeof(uint8_t) * sz);
     /*
     for (j = 0; j < 10; j++) {
-      printf("fake_ddk: ddk-output<<[%d:%d]\n", j,
+      fprintf(stderr, "fake_ddk: ddk-output<<[%d:%d]\n", j,
     (reinterpret_cast<uint8_t*>((tensor->data)[j])));
     }
     */
