@@ -39,7 +39,7 @@ docker run -it \
   paddlepaddle/paddle-lite /bin/bash
 ```
 
-该命令的含义：将容器命名为`paddlelite_docker`即`<container-name>`，将当前目录下的`Paddle-Lite`文件夹挂载到容器中的`/Paddle-Lite`这个根目录下，并进入容器中。
+该命令的含义：将容器命名为`paddlelite_docker`即`<container-name>`，将当前目录下的`Paddle-Lite`文件夹挂载到容器中的`/Paddle-Lite`这个根目录下，并进入容器中。其中$PWD应替换为当前工作的绝对路径。
 
 Docker 初学者可以参考[ Docker 使用方法](https://thenewstack.io/docker-station-part-one-essential-docker-concepts-tools-terminology/)正确安装 Docker。Docker 常用命令参考如下：
 
