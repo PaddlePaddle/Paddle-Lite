@@ -64,16 +64,17 @@ class TestLayerNormOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=3, max_size=3))
-        in_shape.insert(0, draw(st.integers(min_value=1, max_value=16)))
+                    min_value=1, max_value=64), min_size=2, max_size=3))
+        in_shape.insert(0, draw(st.integers(min_value=1, max_value=64)))
         epsilon = draw(st.floats(min_value=0.0001, max_value=0.0005))
-        begin_norm_axis = draw(st.sampled_from([1, 2]))
+        begin_norm_axis = draw(st.sampled_from([1, 2, 3]))
+        assume(begin_norm_axis < len(in_shape))
 
         def generate_input(*args, **kwargs):
             return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
 
         channel_dim = 1
-        for dim in range(begin_norm_axis, 4):
+        for dim in range(begin_norm_axis, len(in_shape)):
             channel_dim = channel_dim * in_shape[dim]
 
         def generate_scale(*args, **kwargs):
