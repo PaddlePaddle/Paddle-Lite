@@ -1955,6 +1955,46 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+
+  /**
+   * Generate YOLO detection boxes from output of YOLOv3 network.
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32 tensor. a 4-D tensor with shape of [N, C,
+   * H, W]. The dimension(C) stores "box locations, confidence score and
+   * classification one-hot keys of each anchor box. Generally, X should be the
+   * output of YOLOv3 network.
+   * * 1: input1, imgsize, a NNADAPTER_INT32 tensor. a 2-D tensor with shape of
+   * [N, 2]. This tensor holds height and width of each input image used for
+   * resizing output box in input image scale.
+   * * 2: anchors, vector of NNADAPTER_INT32 scalar, the anchor width and
+   * height, it will be parsed pair by pair.
+   * * 3: class_num, a NNADAPTER_INT32 scalar, number of classes to predict.
+   * * 4: conf_thresh, a NNADAPTER_FLOAT32 scalar, the confidence scores
+   * threshold of detection boxes, boxes with confidence scores under threshold
+   * should be ignored.
+   * * 5: downsample_ratio, a NNADAPTER_INT32 scalar, down-sampling rate from
+   * network input to this operation input.
+   * * 6: clip_bbox, a NNADAPTER_BOOL8 scalar, whether clip output bonding box
+   * in input(imgsize), default true.
+   * * 7: scale_x_y, a NNADAPTER_FLOAT32 scalar, scale the center point of
+   * decoded bounding box, default 1.0.
+   * * 8: iou_aware, a NNADAPTER_BOOL8 scalar, whether use iou aware, default
+   * false.
+   * * 9: iou_aware_factor, a NNADAPTER_FLOAT32 scalar, iou aware factor,
+   * default 0.5.
+   *
+   * Outputs:
+   * * 0: boxes, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
+   * 4], N is the batch num, M is output box number, and the 3rd stores [xmin,
+   * ymin, xmax, ymax] coordinates of boxes.
+   * * 1: scores, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
+   * class_num], N is the batch num, M is output box number.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_YOLO_BOX,
 } NNAdapterOperationCode;
 
 /**

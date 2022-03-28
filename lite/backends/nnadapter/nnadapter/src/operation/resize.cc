@@ -72,6 +72,8 @@ void CopyShapeDimensionTypeToOutput(core::Operand* shape_operand,
   }
 }
 
+bool ValidateResize(const core::Operation* operation) { return false; }
+
 int PrepareResize(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -146,6 +148,10 @@ int PrepareResize(core::Operation* operation) {
   output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteResize(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

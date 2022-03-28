@@ -24,6 +24,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateComparisons(const core::Operation* operation) { return false; }
+
 int PrepareComparisons(core::Operation* operation) {
   COMPARISONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -34,6 +36,10 @@ int PrepareComparisons(core::Operation* operation) {
   output_operand->type.precision = NNADAPTER_BOOL8;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteComparisons(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

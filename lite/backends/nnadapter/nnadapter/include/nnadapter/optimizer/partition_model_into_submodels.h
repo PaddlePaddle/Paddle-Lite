@@ -57,7 +57,7 @@ class ModelPartitioner {
                    const std::function<bool(const Node *)> &leave);
 };
 
-// Acoording to the supported operations of the multiple devices, the main model
+// According to the supported operations of the multiple devices, the main model
 // is divided into the sub-models associated with the device in topological.
 // order.
 // For example:

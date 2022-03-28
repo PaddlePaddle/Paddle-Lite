@@ -1054,11 +1054,20 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_key.str("");
     kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
+      c_blk_ = default_c_blk_;
+      w_blk_ = UP_DIV(default_w_blk_, 4);
+      nh_blk_ = default_nh_blk_;
+    }
     if (kernel_func_names_[0] == "conv2d_1x1_h1w5c1") {
+      c_blk_ = default_c_blk_;
       w_blk_ = UP_DIV(default_w_blk_, 5);
+      nh_blk_ = default_nh_blk_;
     }
     if (kernel_func_names_[0] == "conv2d_1x1_h1w7c1") {
+      c_blk_ = default_c_blk_;
       w_blk_ = UP_DIV(default_w_blk_, 7);
+      nh_blk_ = default_nh_blk_;
     }
     if (kernel_func_names_[0] == "conv2d_1x1_h2w3c2") {
       c_blk_ = UP_DIV(default_c_blk_, 2);
@@ -1066,6 +1075,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       nh_blk_ = UP_DIV(default_nh_blk_, 2);
     }
     if (kernel_func_names_[0] == "conv2d_1x1_h2w2c1") {
+      c_blk_ = default_c_blk_;
       w_blk_ = UP_DIV(default_w_blk_, 2);
       nh_blk_ = UP_DIV(default_nh_blk_, 2);
     }

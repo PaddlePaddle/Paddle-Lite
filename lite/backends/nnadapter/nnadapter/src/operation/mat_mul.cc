@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateMatMul(const core::Operation* operation) { return true; }
+
 int PrepareMatMul(core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -120,6 +122,12 @@ int PrepareMatMul(core::Operation* operation) {
   out_type.precision = x_type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteMatMul(core::Operation* operation) {
+  NNADAPTER_LOG(FATAL) << OperationTypeToString(operation->type)
+                       << " is not implemented!";
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

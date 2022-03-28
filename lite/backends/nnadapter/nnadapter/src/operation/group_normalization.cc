@@ -22,6 +22,10 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateGroupNormalization(const core::Operation* operation) {
+  return false;
+}
+
 int PrepareGroupNormalization(core::Operation* operation) {
   GROUP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +33,10 @@ int PrepareGroupNormalization(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteGroupNormalization(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
