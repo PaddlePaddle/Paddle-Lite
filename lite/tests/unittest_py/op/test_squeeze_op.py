@@ -48,8 +48,9 @@ class TestSqueezeOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -67,12 +68,17 @@ class TestSqueezeOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=32), min_size=1, max_size=4))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
-        input_axis = draw(st.sampled_from([[0, 1, 2, 3]]))
+        input_axis = draw(st.sampled_from([[0, 1], [2, 3]]))
         assume(len(input_axis) <= len(in_shape))
         if len(input_axis) > 0:
             for num in input_axis:
                 num = num if num >= 0 else num + len(in_shape)
                 assume(num < len(in_shape))
+        # "nvidia_tensorrt" must satisfies theses 
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            for i in range(len(input_axis)):
+                in_shape[input_axis[i]] = 1
+            input_type = "float32"
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":

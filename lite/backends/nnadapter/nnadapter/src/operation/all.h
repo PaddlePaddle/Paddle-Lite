@@ -241,5 +241,6 @@ REGISTER_OPERATION(UNSQUEEZE,
                    PrepareUnsqueeze,
                    ExecuteUnsqueeze)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
+REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
 
 #endif  // NOLINT

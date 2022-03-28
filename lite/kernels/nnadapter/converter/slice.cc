@@ -64,7 +64,10 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
     // Squeeze operation
     converter->AddSqueezeOperation(slice_operand, decrease_axis, out_name);
   }
-
+  if (decrease_axis.size() == input_type->dimensions.count) {
+    std::vector<int> shape = {1};
+    converter->AddReshapeOperation(slice_operand, shape, out_name);
+  }
   return NO_ERROR;
 }
 
