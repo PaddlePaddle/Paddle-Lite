@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateGelu(const core::Operation* operation) { return false; }
+
 int PrepareGelu(core::Operation* operation) {
   GELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +31,10 @@ int PrepareGelu(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteGelu(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

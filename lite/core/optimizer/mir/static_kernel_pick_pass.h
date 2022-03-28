@@ -188,6 +188,41 @@ class StaticKernelPickPass : public mir::StmtPass {
         VLOG(4) << "[score s5]:" << score;
       }
 
+      if (kernel.place().target == TARGET(kOpenCL)) {
+        if (instruct.op_type() == "matmul" ||
+            instruct.op_type() == "matmul_v2") {
+          bool input_target_match = false;
+          int persistable_weights = 0;
+          int input_match_num = 0;
+          for (auto* in : node->inlinks) {
+            if (!in->IsArg()) continue;
+            if (in->AsArg().name == "feed") continue;
+            VLOG(4) << "persistable attr is: " << in->AsArg().is_persist;
+            VLOG(4) << "is_weight attr is: " << in->AsArg().is_weight;
+            std::string argname;
+            instruct.op_info()->GetInputArgname(in->AsArg().name, &argname);
+            VLOG(4) << "input var name : " << in->AsArg().name;
+            if (in->AsArg().is_weight || in->AsArg().is_persist)
+              persistable_weights++;
+            if (persistable_weights > 0 &&
+                kernel.GetInputDeclType(argname)->target() == TARGET(kHost)) {
+              input_target_match = true;
+            } else if (kernel.GetInputDeclType(argname)->target() ==
+                       TARGET(kOpenCL)) {
+              input_match_num++;
+            }
+          }
+          if (persistable_weights == 0 && input_match_num == 2) {
+            input_target_match = true;
+          }
+          if (input_target_match) {
+            score *= 2;
+            VLOG(4) << "[Input target compatible]: *2";
+          }
+          VLOG(4) << "[score s6]:" << score;
+        }
+      }
+
       if (weight * score > final_score) {
         final_score = weight * score;
         winner_place = place;

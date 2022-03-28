@@ -24,6 +24,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateReshape(const core::Operation* operation) { return true; }
+
 int PrepareReshape(core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -93,6 +95,28 @@ int PrepareReshape(core::Operation* operation) {
   }
   output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteReshape(core::Operation* operation) {
+  RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  auto& input_type = input_operand->type;
+  auto input_shape = std::vector<int32_t>(
+      input_type.dimensions.data,
+      input_type.dimensions.data + input_type.dimensions.count);
+  const auto input_buffer = input_operand->buffer;
+  NNADAPTER_CHECK(input_buffer);
+  auto& output_type = output_operand->type;
+  auto output_shape = std::vector<int32_t>(
+      output_type.dimensions.data,
+      output_type.dimensions.data + output_type.dimensions.count);
+  auto output_buffer = AllocateOperand(output_operand);
+  NNADAPTER_CHECK_EQ(input_type.precision, output_type.precision);
+  NNADAPTER_CHECK_EQ(ProductionOfDimensions(input_shape),
+                     ProductionOfDimensions(output_shape));
+  memcpy(output_buffer, input_buffer, GetOperandTypeBufferLength(input_type));
   return NNADAPTER_NO_ERROR;
 }
 

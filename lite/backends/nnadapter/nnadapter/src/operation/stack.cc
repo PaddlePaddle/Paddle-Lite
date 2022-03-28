@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateStack(const core::Operation* operation) { return false; }
+
 int PrepareStack(core::Operation* operation) {
   STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -48,6 +50,10 @@ int PrepareStack(core::Operation* operation) {
 
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteStack(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

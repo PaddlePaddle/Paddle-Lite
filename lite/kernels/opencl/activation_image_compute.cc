@@ -162,8 +162,13 @@ class ActivationComputeImageDefault
         scale_ = act_param_->hard_sigmoid_slope;
         threshold_ = act_param_->hard_sigmoid_offset;
         break;
+
+      case 15:
+        kernel_func_name_ = "log_act";
+        break;
       case 18:
         kernel_func_name_ = "gelu";
+
         break;
       default:
         LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
@@ -685,6 +690,23 @@ REGISTER_LITE_KERNEL(square,
                      kImageDefault,
                      paddle::lite::kernels::opencl::SquareComputeImageDefault,
                      def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    log,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

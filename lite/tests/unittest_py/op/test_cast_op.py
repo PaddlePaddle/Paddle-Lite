@@ -46,7 +46,8 @@ class TestCastOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -120,6 +121,17 @@ class TestCastOp(AutoScanTest):
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
+
+        def _teller2(program_config, predictor_config):
+            in_dtype = program_config.ops[0].attrs["in_dtype"]
+            out_dtype = program_config.ops[0].attrs["out_dtype"]
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                if [in_dtype, out_dtype] not in [[2, 5], [5, 2]]:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "nvidia_tensorrt now support int32<->float32.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

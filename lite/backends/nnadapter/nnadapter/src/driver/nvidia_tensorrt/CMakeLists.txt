@@ -23,7 +23,7 @@ include(dependencies.cmake)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
 aux_source_directory(converter/plugin PLUGINS)
-set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc)
+set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc calibrator.cc)
 set(DEPS ${NNADAPTER_OPERATIONS}
          ${NNADAPTER_UTILITIES}
          ${${DEVICE_NAME}_deps}
