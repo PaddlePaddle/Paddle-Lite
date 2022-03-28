@@ -32,7 +32,7 @@ int PrepareArgMinMax(core::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
   output_type.precision = dtype;
-  if (!keepdim) {
+  if (!keepdim && input_type.dimensions.count > 1) {
     output_type.dimensions.count = input_type.dimensions.count - 1;
   }
   const uint32_t input_dimensions_count = input_type.dimensions.count;

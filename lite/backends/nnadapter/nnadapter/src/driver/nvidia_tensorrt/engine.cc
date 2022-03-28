@@ -86,7 +86,7 @@ int Program::BuildFromModel(core::Model* model) {
   for (auto& operand : model->output_operands) {
     output_types_.push_back(operand->type);
   }
-  // Partion model
+  // Partition model
   std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
       supported_operations{{0, {}}, {1, {}}};
   auto cuda_operations = context_->CudaOperations();
@@ -192,9 +192,7 @@ int Program::Execute(uint32_t input_count,
     std::vector<std::shared_ptr<Tensor>> input_tensors;
     std::vector<std::shared_ptr<Tensor>> output_tensors;
     auto input_indexes = std::get<2>(sub_models_.at(i).second);
-    std::sort(input_indexes.begin(), input_indexes.end());
     auto output_indexes = std::get<3>(sub_models_.at(i).second);
-    std::sort(output_indexes.begin(), output_indexes.end());
     // Find inputs
     for (auto input_index : input_indexes) {
       if (input_index < 0) {
@@ -220,7 +218,6 @@ int Program::Execute(uint32_t input_count,
         output_tensors.push_back(temporary_tensors_[output_index]);
       }
     }
-
     sub_programs_[i]->Execute(&input_tensors, &output_tensors);
   }
   // 3. Fetch outputs
