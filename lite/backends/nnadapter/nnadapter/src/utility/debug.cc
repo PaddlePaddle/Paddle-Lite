@@ -524,7 +524,18 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"boxes", "scores"};
         break;
       case NNADAPTER_PRIOR_BOX:
-        input_args = {"Input", "Image", "min_sizes", "max_sizes", "aspect_ratios", "variances", "flip", "clip", "step_w", "step_h", "offset", "min_max_aspect_ratios_order"};
+        input_args = {"Input",
+                      "Image",
+                      "min_sizes",
+                      "max_sizes",
+                      "aspect_ratios",
+                      "variances",
+                      "flip",
+                      "clip",
+                      "step_w",
+                      "step_h",
+                      "offset",
+                      "min_max_aspect_ratios_order"};
         output_args = {"Boxes", "Variances"};
         break;
       default:
