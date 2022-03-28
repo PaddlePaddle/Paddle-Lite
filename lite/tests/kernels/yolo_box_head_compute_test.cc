@@ -35,7 +35,6 @@ class YoloBoxComputeTester : public arena::TestCase {
   int downsample_ratio_ = 0;
   bool clip_bbox_ = true;
   float scale_x_y_ = 1.0;
-
   DDim _dims0_{{1, 255, 13, 13}};
 
  public:
@@ -66,7 +65,6 @@ class YoloBoxComputeTester : public arena::TestCase {
     class_num = class_num_;
     conf_thresh = conf_thresh_;
     downsample_ratio = downsample_ratio_;
-
     const int n = in->dims()[0];
     const int h = in->dims()[2];
     const int w = in->dims()[3];
@@ -74,12 +72,10 @@ class YoloBoxComputeTester : public arena::TestCase {
     const int stride = h * w;
     int in_size = downsample_ratio * h;
     in_size = in_size;
-
     lite::Tensor* Boxes = scope->NewTensor(output0_);
     CHECK(Boxes);
     Boxes->Resize(in->dims());
     auto* boxes = Boxes;
-
     const T* in_data = in->data<T>();
     T* boxes_data = boxes->mutable_data<T>();
 

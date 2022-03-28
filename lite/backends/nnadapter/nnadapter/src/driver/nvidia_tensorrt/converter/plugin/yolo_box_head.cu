@@ -71,14 +71,11 @@ __global__ void yolohead_kernel(const float* input,
   uint x_id = blockIdx.x * blockDim.x + threadIdx.x;
   uint y_id = blockIdx.y * blockDim.y + threadIdx.y;
   uint z_id = blockIdx.z * blockDim.z + threadIdx.z;
-
   if ((x_id >= gridSizeX) || (y_id >= gridSizeY) || (z_id >= numBBoxes)) {
     return;
   }
-
   const int numGridCells = gridSizeX * gridSizeY;
   const int bbindex = y_id * gridSizeX + x_id;
-
   const float alpha = scale_x_y;
   const float beta = -0.5 * (scale_x_y - 1);
 
@@ -86,20 +83,16 @@ __global__ void yolohead_kernel(const float* input,
       input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 0)] *
           alpha +
       beta;
-
   output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 1)] =
       input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 1)] *
           alpha +
       beta;
-
   output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 2)] = pow(
       input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 2)] * 2,
       2);
-
   output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 3)] = pow(
       input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 3)] * 2,
       2);
-
   output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 4)] =
       input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 4)];
 
@@ -126,7 +119,6 @@ int32_t YoloBoxHeadPluginDynamic::enqueue(
   const float* input_data = static_cast<const float*>(inputs[0]);
   float* output_data = static_cast<float*>(outputs[0]);
   const int outputSize = input_desc[0].dims.d[1] * h * w;
-
   dim3 block(16, 16, 4);
   dim3 grid((gridSizeX / block.x) + 1,
             (gridSizeY / block.y) + 1,

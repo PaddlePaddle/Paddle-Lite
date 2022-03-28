@@ -28,14 +28,12 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-
   std::vector<int> anchors;
   int class_num;
   float conf_thresh;
   int downsample_ratio;
   bool clip_bbox = true;
   float scale_x_y = 1.f;
-
   anchors = op->GetAttr<std::vector<int>>("anchors");
   class_num = op->GetAttr<int>("class_num");
   conf_thresh = op->GetAttr<float>("conf_thresh");
@@ -46,7 +44,6 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasAttr("scale_x_y")) {
     scale_x_y = op->GetAttr<float>("scale_x_y");
   }
-
   auto anchors_operand = converter->AddConstantOperand(anchors);
   auto class_num_operand = converter->AddConstantOperand(class_num);
   auto conf_thresh_operand = converter->AddConstantOperand(conf_thresh);
@@ -58,7 +55,6 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
   // Output operand
   auto output_name = op->Output("output").front();
   auto output_operand = converter->AddOutputOperand(output_name);
-
   converter->AddOperation(NNADAPTER_YOLO_BOX_HEAD,
                           {input_operand,
                            anchors_operand,

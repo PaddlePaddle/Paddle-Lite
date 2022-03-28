@@ -29,17 +29,14 @@ int ConvertYoloBoxHead(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-
   YoloBoxHeadPluginDynamic yolo_box_head_plugin(
       anchors, class_num, conf_thresh, downsample_ratio, clip_bbox, scale_x_y);
-
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto yolo_box_head_layer = converter->network()->addPluginV2(
       tensors.data(), 1, yolo_box_head_plugin);
   NNADAPTER_CHECK(yolo_box_head_layer);
   auto output_tensor = yolo_box_head_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
-
   return NNADAPTER_NO_ERROR;
 }
 
