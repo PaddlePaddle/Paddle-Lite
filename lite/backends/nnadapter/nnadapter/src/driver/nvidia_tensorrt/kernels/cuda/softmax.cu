@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <cmath>
-#include "driver/nvidia_tensorrt/kernels/softmax.h"
+#include "driver/nvidia_tensorrt/kernels/cuda/softmax.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -35,7 +35,7 @@ __global__ void Softmax(const T* input, T* output, int num) {
   output[idx] /= sum;
 }
 
-int SoftmaxKernel::Run(
+int SoftmaxCudaKernel::Run(
     core::Operation* operation,
     std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
   NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SOFTMAX);
@@ -43,8 +43,8 @@ int SoftmaxKernel::Run(
   auto output_tensor = operand_map->at(operation->output_operands[0]);
   output_tensor->Resize(input_tensor->Dims());
   int num = input_tensor->Length();
-  const float* input = static_cast<const float*>(input_tensor->Data());
-  float* output = static_cast<float*>(output_tensor->Data());
+  const float* input = reinterpret_cast<const float*>(input_tensor->Data());
+  float* output = reinterpret_cast<float*>(output_tensor->Data());
   Softmax<float><<<1, num>>>(input, output, num);
   return NNADAPTER_NO_ERROR;
 }

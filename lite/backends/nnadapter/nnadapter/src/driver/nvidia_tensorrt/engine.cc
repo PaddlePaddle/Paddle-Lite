@@ -55,12 +55,22 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   // Create sub_model
   for (size_t i = 0; i < sub_models_.size(); i++) {
     auto& sub_model = sub_models_.at(i);
-    if (sub_model.first == 0) {
-      sub_programs_.emplace_back(new TensorrtProgram(
-          context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
-    } else {
-      sub_programs_.emplace_back(new CudaProgram(
-          context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+    switch (sub_model.first) {
+      case 0:
+        sub_programs_.emplace_back(new TensorrtProgram(
+            context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+        break;
+      case 1:
+        sub_programs_.emplace_back(new CudaProgram(
+            context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+        break;
+      case 2:
+        sub_programs_.emplace_back(new HostProgram(
+            context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
+        break;
+      default:
+        NNADAPTER_LOG(FATAL) << "Not support device id: " << sub_model.first;
+        break;
     }
   }
   // Build sub_model
@@ -87,16 +97,22 @@ int Program::BuildFromModel(core::Model* model) {
     output_types_.push_back(operand->type);
   }
   // Partition model
+  // 0: tensorrt; 1: cuda; 2: host
   std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
-      supported_operations{{0, {}}, {1, {}}};
+      supported_operations{{0, {}}, {1, {}}, {2, {}}};
   auto cuda_operations = context_->CudaOperations();
+  auto host_operations = context_->HostOperations();
   for (auto& operation : model->operations) {
     if (std::find(cuda_operations.begin(),
                   cuda_operations.end(),
-                  operation.type) == cuda_operations.end()) {
-      supported_operations[0].second.insert(&operation);
-    } else {
+                  operation.type) != cuda_operations.end()) {
       supported_operations[1].second.insert(&operation);
+    } else if (std::find(host_operations.begin(),
+                         host_operations.end(),
+                         operation.type) != host_operations.end()) {
+      supported_operations[2].second.insert(&operation);
+    } else {
+      supported_operations[0].second.insert(&operation);
     }
   }
   PartitionModelIntoSubmodels(model, supported_operations, &sub_models_);
@@ -231,11 +247,15 @@ int Program::Execute(uint32_t input_count,
     memcpy(type.dimensions.data, dims.data(), dims.size() * sizeof(int32_t));
     auto host_ptr = arg->access(arg->memory, &type);
     auto length = GetOperandTypeBufferLength(type);
-    NNADAPTER_CHECK_EQ(cudaMemcpy(host_ptr,
-                                  output_tensors_.at(index)->Data(),
-                                  length,
-                                  cudaMemcpyDeviceToHost),
-                       cudaSuccess);
+    auto output_tensor = output_tensors_.at(index);
+    if (output_tensor->Data() != nullptr) {
+      NNADAPTER_CHECK_EQ(
+          cudaMemcpy(
+              host_ptr, output_tensor->Data(), length, cudaMemcpyDeviceToHost),
+          cudaSuccess);
+    } else {
+      memcpy(host_ptr, output_tensor->Data(false), length);
+    }
   }
   return NNADAPTER_NO_ERROR;
 }

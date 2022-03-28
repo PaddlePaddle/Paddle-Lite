@@ -22,13 +22,15 @@ include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(converter/plugin PLUGINS)
-aux_source_directory(kernels KERNELS)
+aux_source_directory(kernels/cuda CUDA_KERNELS)
+aux_source_directory(kernels/host HOST_KERNELS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS engine.cc
   utility.cc
   ${CONVERTERS}
   ${PLUGINS}
-  ${KERNELS}
+  ${CUDA_KERNELS}
+  ${HOST_KERNELS}
   ${OPTIMIZERS}
   driver.cc
   calibrator.cc
