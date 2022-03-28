@@ -18,6 +18,17 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+void* Tensor::Data() {
+  uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
+  if (dst_length > buffer_length_) {
+    void* data{nullptr};
+    NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
+    buffer_.reset(data);
+    buffer_length_ = dst_length;
+  }
+  return buffer_.get();
+}
+
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
                     const char* msg) noexcept {
   switch (severity) {
@@ -121,6 +132,7 @@ void Serialize(void** buffer, const T value) {
 }
 template void Serialize(void** buffer, const int32_t value);
 template void Serialize(void** buffer, const int64_t value);
+template void Serialize(void** buffer, const size_t value);
 template void Serialize(void** buffer, const bool value);
 template void Serialize(void** buffer, const float value);
 
@@ -131,6 +143,7 @@ void Serialize(void** buffer, const std::vector<T>& value) {
   std::memcpy(*buffer, value.data(), nbyte);
   reinterpret_cast<char*&>(*buffer) += nbyte;
 }
+template void Serialize(void** buffer, const std::vector<uint8_t>& value);
 template void Serialize(void** buffer, const std::vector<int32_t>& value);
 template void Serialize(void** buffer, const std::vector<int64_t>& value);
 template void Serialize(void** buffer, const std::vector<float>& value);
@@ -148,6 +161,9 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           int64_t* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          size_t* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           bool* value);
@@ -171,6 +187,9 @@ void Deserialize(const void** buffer,
 }
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
+                          std::vector<uint8_t>* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
                           std::vector<int32_t>* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
@@ -178,6 +197,41 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           std::vector<float>* value);
+
+void ConvertDynamicDimensions(NNAdapterOperandType* type) {
+  if (type->dimensions.dynamic_count == 0) return;
+  int count = type->dimensions.count;
+  int dynamic_count = type->dimensions.dynamic_count;
+  auto& dynamic_data = type->dimensions.dynamic_data;
+  std::vector<int32_t> opt_shape(dynamic_data[0], dynamic_data[0] + count);
+  std::vector<int32_t> min_shape(opt_shape);
+  std::vector<int32_t> max_shape(opt_shape);
+  for (int i = 1; i < dynamic_count; i++) {
+    for (int j = 0; j < count; j++) {
+      if (dynamic_data[i][j] < min_shape[j]) {
+        min_shape[j] = dynamic_data[i][j];
+      }
+      if (dynamic_data[i][j] > max_shape[j]) {
+        max_shape[j] = dynamic_data[i][j];
+      }
+    }
+  }
+  memcpy(dynamic_data[0], min_shape.data(), sizeof(int32_t) * count);
+  memcpy(dynamic_data[1], opt_shape.data(), sizeof(int32_t) * count);
+  memcpy(dynamic_data[2], max_shape.data(), sizeof(int32_t) * count);
+  type->dimensions.dynamic_count = 3;
+}
+
+core::Argument* FindArgumentByIndex(core::Argument* arguments,
+                                    int index,
+                                    uint32_t count) {
+  for (uint32_t i = 0; i < count; i++) {
+    if (arguments[i].index == index) {
+      return &arguments[i];
+    }
+  }
+  return static_cast<core::Argument*>(nullptr);
+}
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

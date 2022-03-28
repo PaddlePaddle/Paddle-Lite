@@ -14,6 +14,7 @@
 
 #include "driver/device.h"
 #include "driver/nvidia_tensorrt/engine.h"
+#include "driver/nvidia_tensorrt/program.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
