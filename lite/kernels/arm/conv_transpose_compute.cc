@@ -45,7 +45,7 @@ namespace arm {
   int m = chout * kw * kh / group;                   \
   int n = hin * win;                                 \
   int k = chin / group;                              \
-  workspace_size_ = group * m * n + wout * hout * cout;
+  workspace_size_ = group * m * n;
 
 #define DEPTHWISE_PARAM                                                   \
   auto dilations = *param.dilations;                                      \
@@ -277,7 +277,8 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   INIT_PARAM
-  ctx.ExtendWorkspace((workspace_size_ * sizeof(int32_t)));
+  ctx.ExtendWorkspace(
+      ((group * chout * hout * wout + workspace_size_) * sizeof(int32_t)));
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
@@ -375,7 +376,8 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   INIT_PARAM
-  ctx.ExtendWorkspace((workspace_size_ * sizeof(int32_t)));
+  ctx.ExtendWorkspace(
+      ((group * chout * hout * wout + workspace_size_) * sizeof(int32_t)));
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
