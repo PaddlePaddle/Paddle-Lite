@@ -200,6 +200,16 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "verisilicon_timvx") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "android_nnapi") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "host") {
       valid_places_.emplace_back(TARGET(kHost));
     } else {
@@ -351,7 +361,8 @@ void OptBase::PrintHelpInfo() {
       "        "
       "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|"
-      "mediatek_apu|huawei_kirin_npu|amlogic_npu)`"
+      "mediatek_apu|huawei_kirin_npu|amlogic_npu|verisilicon_timvx|"
+      "android_nnapi)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -395,7 +406,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        "
       "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu)`\n"
+      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -414,12 +425,12 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu)`"
+      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu)`"
+      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
       "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
@@ -505,7 +516,9 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "rockchip_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
-                                                  "amlogic_npu"};
+                                                  "amlogic_npu",
+                                                  "verisilicon_timvx",
+                                                  "android_nnapi"};
   const std::vector<std::string> readable_valid_targets = {"ARM",
                                                            "OpenCL",
                                                            "Metal",
@@ -520,7 +533,9 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                            "瑞芯微NPU",
                                                            "华为麒麟NPU",
                                                            "颖脉NNA",
-                                                           "晶晨NPU"};
+                                                           "晶晨NPU",
+                                                           "TIM-VX",
+                                                           "Android NNAPI"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
@@ -792,6 +807,8 @@ void OptBase::InitSupportedOpInfo() {
                                      "huawei_kirin_npu",
                                      "imagination_nna",
                                      "amlogic_npu",
+                                     "verisilicon_timvx",
+                                     "android_nnapi",
                                      "kUnk"};
   for (size_t idx = 0; idx < supported_ops_target.size(); idx++) {
     if (valid_target.find(collect_targets[idx]) != valid_target.end()) {
