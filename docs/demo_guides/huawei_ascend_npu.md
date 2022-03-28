@@ -6,102 +6,214 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 
 ### 已支持的芯片
 
-- Ascend 310
+- Ascend 310 （CANN Version ≥  3.3.0）
+- Ascend 710 （CANN Version ≥  5.0.2.alpha005)
+- Ascend 910 （CANN Version ≥  5.0.2.alpha005)
 
 ### 已支持的设备
 
 - Atlas 300I 推理卡（型号：3000/3010)
 - Atlas 200 DK 开发者套件
 - Atlas 800 推理服务器（型号：3000/3010）
+- Atlas 300I Pro（CANN Version ≥ 5.0.2.alpha005)
+- Atlas 300T 训练卡（CANN Version ≥  5.0.2.alpha005)
 
-### 已支持的 Paddle 模型
+### 已支持的版本
+
+- CANN 版本 ≥ 3.3.0
+- 固件与驱动版本 ≥ 1.0.9.alpha
+- 设备的版本配套关系见 [Ascend 官网](https://www.hiascend.com/hardware/firmware-drivers?tag=community)
+
+### 已验证支持的 Paddle 模型
 
 #### 模型
+
 - 图像分类
   - [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz)
+  - [DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DarkNet/DarkNet53.tar.gz)
+  - [DeiT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DeiT/DeiT_base_patch16_224.tar.gz)
   - [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz)
+  - [DPN68](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DPN/DPN68.tar.gz)
   - [EfficientNetB0](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/EfficientNetB0.tgz)
+  - [GhostNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/GhostNet/GhostNet_x1_0.tar.gz)
   - [GoogLeNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/GoogLeNet.tgz)
+  - [HRNet-W18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/HRNet/HRNet_W18_C.tar.gz)
   - [Inception-v3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV3.tgz)
   - [Inception-v4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV4.tgz)
   - [MobileNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV1.tgz)
   - [MobileNet-v2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV2.tgz)
   - [MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_large_x1_0.tgz)
   - [MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_small_x1_0.tgz)
+  - [PP-LCNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/PPLCNet/PPLCNet_x0_25.tar.gz)
+  - [Res2Net50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/Res2Net/Res2Net50_26w_4s.tar.gz)
   - [ResNet-101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz)
   - [ResNet-18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet18.tgz)
   - [ResNet-50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz)
   - [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz)
+  - [SE_ResNet50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/SENet/SE_ResNet50_vd.tar.gz)
   - [ShuffleNetV2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ShuffleNetV2_x1_0.tgz)
   - [SqueezeNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/SqueezeNet1_0.tgz)
   - [VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG16.tgz)
   - [VGG19](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG19.tgz)
+  - [ViT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/VisionTransformer/ViT_base_patch16_224.tar.gz)
 - 目标检测
+  - [Picodet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/picodet_m_416_coco.tar.gz)
+  - [PP-YOLO_mbv3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_mbv3_large_coco.tar.gz)
+  - [PP-YOLO_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_r50vd_dcn_1x_coco.tar.gz)
+  - [PPYOLO_tiny](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_tiny_650e_coco.tar.gz)
+  - [PP-YOLOv2_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolov2_r50vd_dcn_365e_coco.tar.gz)
   - [SSD-MobileNetV1(1.8)](http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
   - [SSD-MobileNetV1(2.0+)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_mobilenet_v1_300_120e_voc.tgz)
+  - [SSD-MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_large.tar.gz)
+  - [SSD-MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_small.tar.gz)
   - [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz)
   - [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz)
   - [YOLOv3-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v1_270e_coco.tgz)
   - [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v3_large_270e_coco.tgz)
   - [YOLOv3-ResNet50_vd](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz)
   - [YOLOv4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov4_cspdarknet.tgz)
+- 姿态检测
+  - [PP-TinyPose](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/tinypose_128x96.tar.gz)
+- 人脸检测
+  - [BlazeFace](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/blazeface_1000e.tgz)
+  - [FaceBoxes](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/faceboxes.tgz)
 - 关键点检测
   - [HigherHRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/higherhrnet_hrnet_w32_640.tgz)
   - [HRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/hrnet_w32_384x288.tgz)
-- 文本检测 & 文本识别
-  - [OCR-DB](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_det_infer.tgz)
-  - [OCR-REC](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_rec_infer.tgz)
-- 语义理解
+- 文本检测 & 文本识别 & 端到端检测识别
+  - [ch_ppocr_mobile_v2.0_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_det_infer.tgz)
+  - [ch_ppocr_mobile_v2.0_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_rec_infer.tgz)
+  - [ch_ppocr_server_v2.0_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_ppocr_server_v2.0_det_infer.tar.gz)
+  - [ch_ppocr_server_v2.0_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_ppocr_server_v2.0_rec_infer.tar.gz)
+  - [ch_PP-OCRv2_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_PP-OCRv2_det_infer.tar.gz)
+  - [ch_PP-OCRv2_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_PP-OCRv2_rec_infer.tar.gz)
+  - [CRNN-mv3-CTC](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/rec_crnn_mv3_ctc.tar.gz)
+  - [e2e_server_pgnetA](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/e2e_server_pgnetA.tar.gz)
+- 自然语言处理 & 语义理解
+  - [BERT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/bert_base_uncased.tgz)
+  - [ERNIE](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_1.0.tgz)
   - [ERNIE-TINY](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_tiny.tgz)
+  - [Transformer](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/transformer.tar.gz)
 - 生成网络
   - [ESRGAN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleGAN/esrgan_psnr_x4_div2k.tgz)
+- 推荐系统
+  - [DeepFM](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/deepfm.tar.gz)
+  - [NAML](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/naml.tar.gz)
+  - [NCF](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/ncf.tar.gz)
+  - [Wide&Deep](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/wide_deep.tar.gz)
+- 图像分割
+  - [BiseNetV2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/bisenet.tar.gz)
+  - [DeepLabV3+(CityScapes)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/deeplabv3p_resnet50_os8_cityscapes_1024x512_80k.tar.gz)
+  - [PP-HumanSeg-Lite](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/pphumanseg_lite_generic_192x192_with_softmax.tar.gz)
+  - [PP-HumanSeg-Server(DeepLabV3+)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/deeplabv3p_resnet50_os8_humanseg_512x512_100k_with_softmax.tar.gz)
+  - [SegFormer](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/segformer.tar.gz)
+  - [STDCSeg](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/stdcseg.tar.gz)
+  - [U-Net](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/unet_cityscapes_1024x512_160k.tgz)
+- 视频分类
+  - [PP-TSN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleVideo/v2.2.0/ppTSN.tar.gz)
 
 
 - [开源模型支持列表](../quick_start/support_model_list)
 
-#### 性能
 
 
-|模型    |Intel CPU性能 (ms)    |x86 + Ascend310 性能 (ms）    |鲲鹏 920 CPU 性能 (ms)    |鲲鹏920 + Ascend310 性能 (ms)    |
-|---|---|---|---|---|
-|AlexNet    |81.16     |4.32     |67.39     |3.64     |
-|DenseNet121    |529.45     |7.81     |157.62     |6.23     |
-|EfficientNet_b0    |167.59     |21.08     |85.98     |7.14     |
-|ERNIE-TINY    |-    |12.31     |347.47     |10.72     |
-|ESRGAN    |41774.81     |103.75     |9755.14     |103.06     |
-|GoogLeNet    |104.55     |2.65     |71.24     |2.40     |
-|HigherHRNet    |6760.83     |386.02     |6482.55     |396.17     |
-|HRNet    |1245.54     |12.58     |752.93     |12.08     |
-|Inception-v3    |415.00     |5.91     |159.40     |3.46     |
-|Inception-v4    |1082.00     |9.00     |706.72     |6.72     |
-|MobileNet-v1    |33.88     |3.06     |35.08     |1.43     |
-|MobileNet-v2    |25.67     |3.82     |25.27     |1.74     |
-|MobileNetV3_large_x1_0    |43.53     |8.96    |20.46     |2.83     |
-|MobileNetV3_small_x1_0    |29.38     |6.38     |8.66     |2.24     |
-|OCR-DB    |359.16     |10.75     |129.01     |10.78     |
-|OCR-REC    |32.39     |8.75     |15.05     |5.87     |
-|ResNet-101    |528.43     |7.33     |401.14     |4.27     |
-|ResNet-18    |136.10     |2.84     |89.41     |1.59     |
-|ResNet-50    |258.21     |5.66     |229.04     |2.87     |
-|ResNeXt50    |353.43     |5.32     |261.28     |3.10     |
-|ShuffleNetv2    |37.93     |5.41     |14.12     |4.06     |
-|SqueezeNet-v1    |51.12     |3.06     |40.50     |1.49     |
-|SSD-MobileNetV1(1.8)    |64.82     |6.56     |70.40     |6.19     |
-|SSD-MobileNetV1(2.0+)    |70.72     |8.79     |73.16     |8.17     |
-|SSD-VGG16    |1999.32     |27.35     |1001.06     |25.93     |
-|VGG16    |1204.23     |10.53     |443.20     |9.43     |
-|VGG19    |1512.82     |11.50     |667.20     |10.23     |
-|YOLOv3-DarkNet53    |4241.35     |38.46     |2806.42     |34.47     |
-|YOLOv3-MobileNetV1    |1181.56     |27.20     |941.62     |23.13     |
-|YOLOv3-MobileNetV3    |1396.57     |27.97     |789.02     |27.06     |
-|YOLOv3-ResNet50_vd    |15521.84     |55.41     |2444.08     |48.96     |
-|YOLOv4    |7389.54     |77.80     |5503.77     |71.78     |
+#### 性能（基于 CANN 3.3.0 版本测试）
+
+性能仅供参考,以实际运行效果为准。
+
+
+| 模型                     | Intel CPU性能 (ms) | x86 + Ascend310 性能 (ms） | 鲲鹏 920 CPU 性能 (ms) | 鲲鹏920 + Ascend310 性能 (ms) |
+| ------------------------ | ------------------ | -------------------------- | ---------------------- | ----------------------------- |
+| AlexNet                  | 81.16              | 4.32                       | 67.39                  | 3.64                          |
+| DenseNet121              | 529.45             | 7.81                       | 157.62                 | 6.23                          |
+| EfficientNet_b0          | 167.59             | 21.08                      | 85.98                  | 7.14                          |
+| ERNIE-TINY               | -                  | 12.31                      | 347.47                 | 10.72                         |
+| ESRGAN                   | 41774.81           | 103.75                     | 9755.14                | 103.06                        |
+| GoogLeNet                | 104.55             | 2.65                       | 71.24                  | 2.40                          |
+| HigherHRNet              | 6760.83            | 386.02                     | 6482.55                | 396.17                        |
+| HRNet                    | 1245.54            | 12.58                      | 752.93                 | 12.08                         |
+| Inception-v3             | 415.00             | 5.91                       | 159.40                 | 3.46                          |
+| Inception-v4             | 1082.00            | 9.00                       | 706.72                 | 6.72                          |
+| MobileNet-v1             | 33.88              | 3.06                       | 35.08                  | 1.43                          |
+| MobileNet-v2             | 25.67              | 3.82                       | 25.27                  | 1.74                          |
+| MobileNetV3_large_x1_0   | 43.53              | 8.96                       | 20.46                  | 2.83                          |
+| MobileNetV3_small_x1_0   | 29.38              | 6.38                       | 8.66                   | 2.24                          |
+| ch_ppocr_mobile_v2.0_det | 359.16             | 10.75                      | 129.01                 | 10.78                         |
+| ch_ppocr_mobile_v2.0_ret | 32.39              | 8.75                       | 15.05                  | 5.87                          |
+| ResNet-101               | 528.43             | 7.33                       | 401.14                 | 4.27                          |
+| ResNet-18                | 136.10             | 2.84                       | 89.41                  | 1.59                          |
+| ResNet-50                | 258.21             | 5.66                       | 229.04                 | 2.87                          |
+| ResNeXt50                | 353.43             | 5.32                       | 261.28                 | 3.10                          |
+| ShuffleNetv2             | 37.93              | 5.41                       | 14.12                  | 4.06                          |
+| SqueezeNet-v1            | 51.12              | 3.06                       | 40.50                  | 1.49                          |
+| SSD-MobileNetV1(1.8)     | 64.82              | 6.56                       | 70.40                  | 6.19                          |
+| SSD-MobileNetV1(2.0+)    | 70.72              | 8.79                       | 73.16                  | 8.17                          |
+| SSD-VGG16                | 1999.32            | 27.35                      | 1001.06                | 25.93                         |
+| VGG16                    | 1204.23            | 10.53                      | 443.20                 | 9.43                          |
+| VGG19                    | 1512.82            | 11.50                      | 667.20                 | 10.23                         |
+| YOLOv3-DarkNet53         | 4241.35            | 38.46                      | 2806.42                | 34.47                         |
+| YOLOv3-MobileNetV1       | 1181.56            | 27.20                      | 941.62                 | 23.13                         |
+| YOLOv3-MobileNetV3       | 1396.57            | 27.97                      | 789.02                 | 27.06                         |
+| YOLOv3-ResNet50_vd       | 15521.84           | 55.41                      | 2444.08                | 48.96                         |
+| YOLOv4                   | 7389.54            | 77.80                      | 5503.77                | 71.78                         |
+
+
+
+#### 性能（基于 CANN 5.1.RC1.alpha001 版本测试）
+
+性能仅供参考,以实际运行效果为准。
+
+| 模型                                                         | Intel CPU性能 (ms) | x86 + Ascend310 性能 (ms） | 鲲鹏 920 CPU 性能 (ms) | 鲲鹏920 + Ascend310 性能 (ms) |
+| ------------------------------------------------------------ | ------------------ | -------------------------- | ---------------------- | ----------------------------- |
+| [DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DarkNet/DarkNet53.tar.gz) | 11791.1         | 4.2608                  | 347.008             | 3.3928                     |
+| [DeiT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DeiT/DeiT_base_patch16_224.tar.gz) | -                  | 20.4874                 | 1593.23             | 19.9074                    |
+| [DPN68](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DPN/DPN68.tar.gz) | 199.321         | 4.7786                  | 171.64              | 4.1362                     |
+| [GhostNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/GhostNet/GhostNet_x1_0.tar.gz) | 26.6712         | 5.8512                  | 16.5946             | 3.7472                     |
+| [HRNet-W18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/HRNet/HRNet_W18_C.tar.gz) | 271.791         | 8.3446                  | 245.833             | 7.2004                     |
+| [PP-LCNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/PPLCNet/PPLCNet_x0_25.tar.gz) | 3.5006          | 2.1592                  | 2.893               | 1.5552                     |
+| [Res2Net50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/Res2Net/Res2Net50_26w_4s.tar.gz) | 652.982         | 8.1164                  | 246.673             | 7.0866                     |
+| [SE_ResNet50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/SENet/SE_ResNet50_vd.tar.gz) | 231.064         | 12.3792                 | 236.161             | 5.3052                     |
+| [ViT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/VisionTransformer/ViT_base_patch16_224.tar.gz) | -                  | 20.4644                 | 1556.62             | 19.9086                    |
+| [Picodet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/picodet_m_416_coco.tar.gz) | 94.617          | 14.938                  | 89.9                | 12.083                     |
+| [PP-YOLO_mbv3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_mbv3_large_coco.tar.gz) | 56.4607         | 8.2009                  | 92.8885             | 4.5504                     |
+| [PP-YOLO_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_r50vd_dcn_1x_coco.tar.gz) | 6487.56         | 57.5038                 | 3213.65             | 51.7323                    |
+| [PP-YOLO_tiny](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_tiny_650e_coco.tar.gz) | 30.1026         | 11.1346                 | 48.245              | 6.33                       |
+| [PP-YOLOv2_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolov2_r50vd_dcn_365e_coco.tar.gz) | 10019.3         | 83.2727                 | 5727.97             | 124.624                    |
+| [SSDLite-MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_large.tar.gz) | 63.9276         | 8.205                   | 55.6868             | 6.6285                     |
+| [SSDLite-MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_small.tar.gz) | 30.1444         | 12.0989                 | 22.8334             | 7.7404                     |
+| [PP-TinyPose](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/tinypose_128x96.tar.gz) | 25.685          | 8.898                   | 12.009              | 9.394                      |
+| [BlazeFace](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/blazeface_1000e.tgz) | 217.842         | 51.311                  | 162.828             | 29.823                     |
+| [FaceBoxes](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/faceboxes.tgz) | 503.529         | 82.158                  | 285.394             | 51.057                     |
+| [ch_ppocr_server_v2.0_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_ppocr_server_v2.0_det_infer.tar.gz) | 1046.45         | 21.556                  | 1323.83             | 18.661                     |
+| [ch_ppocr_server_v2.0_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_ppocr_server_v2.0_rec_infer.tar.gz) | 283.479         | 55.651                  | 730.876             | 41.489                     |
+| [ch_PP-OCRv2_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_PP-OCRv2_det_infer.tar.gz) | 167.616         | 15.24                   | 202.873             | 13.491                     |
+| [ch_PP-OCRv2_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/ch_PP-OCRv2_rec_infer.tar.gz) | 47.577          | 14.533                  | 48.63               | 9.43                       |
+| [CRNN-mv3-CTC](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/rec_crnn_mv3_ctc.tar.gz) | 12.146          | 9.921                   | 10.125              | 4.751                      |
+| [e2e_server_pgnetA](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/v2.3/e2e_server_pgnetA.tar.gz) | 8432            | 84.441002                  | 10715               | 107.522003                    |
+| [BERT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/bert_base_uncased.tgz) | -                  | 13.545                  | 233.982             | 13.489                     |
+| [ERNIE](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_1.0.tgz) | -                  | 13.249                  | 211.621             | 12.763                     |
+| [ERNIE-TINY](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_tiny.tgz) | -                  | 6.02                    | 100.079             | 5.78                       |
+| [Transformer](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/transformer.tar.gz) | -                  | -                          | 899.997             | 665.344                    |
+| [DeepFM](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/deepfm.tar.gz) | 0.397           | 1.426                   | 0.363               | 1.394                      |
+| [NAML](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/naml.tar.gz) | -                  | 2.605                   | 6.201               | 2.211                      |
+| [NCF](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/ncf.tar.gz) | 0.011           | 0.727                   | 0.031               | 0.464                      |
+| [Wide&Deep](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleRec/v2.1.0/wide_deep.tar.gz) | 0.399           | 1.448                   | 0.323               | 1.339                      |
+| [BiseNetV2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/bisenet.tar.gz) | 3670.16         | 133.841                 | 3880.19             | 124.746                    |
+| [DeepLabV3+(CityScapes)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/deeplabv3p_resnet50_os8_cityscapes_1024x512_80k.tar.gz) | 52215.8         | 671.86                  | 76647.2             | 653.046                    |
+| [PP-HumanSeg-Lite](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/pphumanseg_lite_generic_192x192_with_soft.tar.gz) | 44.053          | 12.602                  | 15.502              | 12.08                      |
+| [PP-HumanSeg-Server(DeepLabV3+)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/deeplabv3p_resnet50_os8_humanseg_512x512_100k_with_soft.tar.gz) | 6569.85         | 125.655                 | 7923.12             | 123.139                    |
+| [SegFormer](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/segformer.tar.gz) | -                  | 82.789                  | 1440.23             | 83.664                     |
+| [STDCSeg](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/stdcseg.tar.gz) | 457.75          | 21.626                  | 529.451             | 17.376                     |
+| [U-Net](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/unet_cityscapes_1024x512_160k.tgz) | 50527.6         | 986.409                 | 34502               | 977.992                    |
+| [PP-TSN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleVideo/v2.2.0/ppTSN.tar.gz) | 69786.5         | 807.352                 | 53438               | 644.648                    |
+
+
 
 ### 已支持（或部分支持）的 Paddle 算子
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
-## 参考示例演示
+## 参考示例演示（以 CANN 3.3.0 为例）
 
 测试设备（Atlas300I 推理卡）
 
@@ -113,7 +225,8 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 
 - 安装Atlas 300I 推理卡的驱动和固件包（Driver 和 Firmware)
 
-- 驱动和固件包下载：https://www.hiascend.com/hardware/firmware-drivers?tag=commercial
+- 配套驱动和固件包下载：https://www.hiascend.com/hardware/firmware-drivers?tag=community（社区版）
+                    https://www.hiascend.com/hardware/firmware-drivers?tag=commercial（商业版）
 
   - 驱动：A300-3010-npu-driver_21.0.1_ubuntu18.04-x86_64.run（x86）
 
@@ -139,6 +252,8 @@ $ npu-smi info
 
 - 为了保证编译环境一致，建议使用Docker开发环境进行配置；
 
+- 若想使用新版本的 CANN，请自行更新 Dockerfile 文件内的 CANN 下载路径；
+
 - for arm64
 
   ```shell
@@ -147,7 +262,7 @@ $ npu-smi info
   # 通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_aarch64.Dockerfile -t paddlelite/ascend_aarch64:cann_3.3.0 .
   # 创建容器
-  $ docker run -itd --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_3.3.0 /bin/bash
+  $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_3.3.0 /bin/bash
   # 进入容器
   $ docker exec -it ascend-aarch64 /bin/bash
   # 确认容器的 Ascend 环境是否创建成功
@@ -162,7 +277,7 @@ $ npu-smi info
   # 通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_x86.Dockerfile -t paddlelite/ascend_x86:cann_3.3.0 .
   # 创建容器
-  $ docker run -itd --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_3.3.0 /bin/bash
+  $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_3.3.0 /bin/bash
   # 进入容器
   $ docker exec -it ascend-x86 /bin/bash
   # 确认容器的 Ascend 环境是否创建成功
