@@ -116,8 +116,11 @@ class TestFcFuse(FusePassAutoScanTest):
                 inputs={"X": ["mul_x_data"],
                         "Y": ["mul_y_data"]},
                 outputs={"Out": ["mul_output_data"]},
-                attrs={"trans_x": False,
-                       "trans_y": False})
+                attrs={
+                    "trans_x": False,
+                    "trans_y": False,
+                    "op_type": op_type
+                })
             inputs_data = {
                 "mul_x_data": TensorConfig(
                     shape=[draw(st.integers(

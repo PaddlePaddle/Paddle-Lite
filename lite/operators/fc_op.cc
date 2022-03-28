@@ -69,6 +69,7 @@ bool FcOpLite::InferShapeImpl() const {
   if (op_type == "matmul" || op_type == "matmul_v2") {
     in_num_col_dims = input_dims.size() - 1;
   }
+  param_.in_num_col_dims = in_num_col_dims;
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -140,7 +141,9 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (op_info->HasOutputScale(out_scale_name, true))
       param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
-  param_.op_type = op_desc.GetAttr<std::string>("op_type");
+  if (op_desc.HasAttr("op_type")) {
+    param_.op_type = op_desc.GetAttr<std::string>("op_type");
+  }
 
 #ifdef LITE_WITH_FPGA
   if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
