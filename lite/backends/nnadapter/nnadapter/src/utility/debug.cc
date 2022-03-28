@@ -508,8 +508,23 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"condition", "input0", "input1"};
         output_args = {"output"};
         break;
+      case NNADAPTER_YOLO_BOX:
+        input_args = {
+            "input",
+            "imgsize",
+            "anchors",
+            "class_num",
+            "conf_thresh",
+            "downsample_ratio",
+            "clip_bbox",
+            "scale_x_y",
+            "iou_aware",
+            "iou_aware_factor",
+        };
+        output_args = {"boxes", "scores"};
+        break;
       case NNADAPTER_PRIOR_BOX:
-        input_args = {"Input", "Image"};
+        input_args = {"Input", "Image", "min_sizes", "max_sizes", "aspect_ratios", "variances", "flip", "clip", "step_w", "step_h", "offset", "min_max_aspect_ratios_order"};
         output_args = {"Boxes", "Variances"};
         break;
       default:
