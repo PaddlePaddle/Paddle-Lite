@@ -574,6 +574,12 @@ TEST(StrideSlice, precision) {
   test_slice_axes(place, abs_error);
   test_slice_decrease_axis(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  test_slice(place, abs_error);
+  test_slice_axes(place, abs_error);
+  test_slice_decrease_axis(place, abs_error);
+  return;
 #else
   return;
 #endif

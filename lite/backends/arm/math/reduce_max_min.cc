@@ -18,78 +18,30 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
 template <>
 void reduce_second_of_two<float>(const float* src,
                                  float* dst,
                                  int first_in,
                                  int second_in,
-                                 MaxMinType max_min_selector) {
-  // max_min_selector == true, do reduce max; else do reduce min
-  for (int j = 0; j < second_in; j++) {
-    dst[j * first_in] = src[j * first_in];
-    for (int k = 1; k < first_in; k++) {
-      dst[j * first_in] = (src[j * first_in + k] <= dst[j * first_in]) ^
-                                  static_cast<bool>(max_min_selector)
-                              ? src[j * first_in + k]
-                              : dst[j * first_in];
-    }
-  }
-}
-
-template <>
-void reduce_first_of_two<float>(const float* src,
-                                float* dst,
-                                int first_in,
-                                int second_in,
-                                MaxMinType max_min_selector) {
-  // max_min_selector == true, do reduce max; else do reduce min
-  for (int j = 0; j < first_in; j++) {
-    dst[j] = src[j];
-    for (int k = 1; k < second_in; k++) {
-      dst[j] = (src[j + k * first_in] <= dst[j]) ^
-                       static_cast<bool>(max_min_selector)
-                   ? src[j + k * first_in]
-                   : dst[j];
-    }
-  }
-}
-
+                                 MaxMinType max_min_selector);
 template <>
 void reduce_second_of_two<int64_t>(const int64_t* src,
                                    int64_t* dst,
                                    int first_in,
                                    int second_in,
-                                   MaxMinType max_min_selector) {
-  // max_min_selector == true, do reduce max; else do reduce min
-  for (int j = 0; j < second_in; j++) {
-    dst[j * first_in] = src[j * first_in];
-    for (int k = 1; k < first_in; k++) {
-      dst[j * first_in] = (src[j * first_in + k] <= dst[j * first_in]) ^
-                                  static_cast<bool>(max_min_selector)
-                              ? src[j * first_in + k]
-                              : dst[j * first_in];
-    }
-  }
-}
-
+                                   MaxMinType max_min_selector);
+template <>
+void reduce_first_of_two<float>(const float* src,
+                                float* dst,
+                                int first_in,
+                                int second_in,
+                                MaxMinType max_min_selector);
 template <>
 void reduce_first_of_two<int64_t>(const int64_t* src,
                                   int64_t* dst,
                                   int first_in,
                                   int second_in,
-                                  MaxMinType max_min_selector) {
-  // max_min_selector == true, do reduce max; else do reduce min
-  for (int j = 0; j < first_in; j++) {
-    dst[j] = src[j];
-    for (int k = 1; k < second_in; k++) {
-      dst[j] = (src[j + k * first_in] <= dst[j]) ^
-                       static_cast<bool>(max_min_selector)
-                   ? src[j + k * first_in]
-                   : dst[j];
-    }
-  }
-}
+                                  MaxMinType max_min_selector);
 
 }  // namespace math
 }  // namespace arm

@@ -24,12 +24,16 @@
 #include "utility/logging.h"
 #include "utility/micros.h"
 
-#define REGISTER_OPERATION(__op_type__, __func_name__, ...) \
-  extern int __func_name__(nnadapter::core::Operation* operation);
+#define REGISTER_OPERATION(__op_type__,            \
+                           __validate_func_name__, \
+                           __prepare_func_name__,  \
+                           __execute_func_name__,  \
+                           ...)                    \
+  extern int __prepare_func_name__(nnadapter::core::Operation* operation);
 namespace nnadapter {
 namespace operation {
 #include "operation/all.h"  // NOLINT
-#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+#undef __NNADAPTER_OPERATION_ALL_H__
 }  // namespace operation
 }  // namespace nnadapter
 #undef REGISTER_OPERATION
@@ -252,12 +256,16 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperation(
         reinterpret_cast<nnadapter::core::Operand*>(output_operands[i]);
   }
   switch (type) {
-#define REGISTER_OPERATION(__op_type__, __func_name__) \
-  case NNADAPTER_##__op_type__:                        \
-    nnadapter::operation::__func_name__(o);            \
+#define REGISTER_OPERATION(__op_type__,             \
+                           __validate_func_name__,  \
+                           __prepare_func_name__,   \
+                           __execute_func_name__,   \
+                           ...)                     \
+  case NNADAPTER_##__op_type__:                     \
+    nnadapter::operation::__prepare_func_name__(o); \
     break;
 #include "operation/all.h"  // NOLINT
-#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+#undef __NNADAPTER_OPERATION_ALL_H__
 #undef REGISTER_OPERATION
     default:
       NNADAPTER_LOG(WARNING) << "Unsupported operation("
@@ -282,6 +290,18 @@ NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
   auto is = reinterpret_cast<nnadapter::core::Operand**>(input_operands);
   auto os = reinterpret_cast<nnadapter::core::Operand**>(output_operands);
   return m->IdentifyInputsAndOutputs(input_count, is, output_count, os);
+}
+
+NNADAPTER_EXPORT int NNAdapterModel_getSupportedOperations(
+    const NNAdapterModel* model,
+    NNAdapterContext* context,
+    bool* supported_operations) {
+  if (!model || !context || !supported_operations) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto m = reinterpret_cast<const nnadapter::runtime::Model*>(model);
+  auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
+  return m->GetSupportedOperations(x, supported_operations);
 }
 
 NNADAPTER_EXPORT int NNAdapterCompilation_create(

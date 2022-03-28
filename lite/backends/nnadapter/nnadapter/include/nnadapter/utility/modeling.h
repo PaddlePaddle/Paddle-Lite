@@ -19,8 +19,10 @@
 
 namespace nnadapter {
 
-// Clear all of buffers in a model
+// Clear the operands and operations of a model
 void ClearModel(core::Model* model);
+// Clear the type and the buffer of a operand
+void ClearOperand(core::Operand* operand);
 // Append a operand into a model
 core::Operand* AddOperand(core::Model* model);
 // Append a operation into a model
@@ -29,6 +31,9 @@ core::Operation* AddOperation(core::Model* model);
 void RemoveOperand(core::Model* model, core::Operand* operand);
 // Remove a operation into a model
 void RemoveOperation(core::Model* model, core::Operation* operation);
+// Allocate memory based on the data type and dimensions for a operand, and do
+// not reallocate if memory is sufficient
+void* AllocateOperand(core::Operand* operand);
 // Add a bool8 scalar constant operand
 core::Operand* AddBool8ConstantOperand(core::Model* model, bool value);
 // Add a int32 scalar constant operand
@@ -113,6 +118,10 @@ core::Operand* AddFloat32VariableOperand(
 void TransposeOperand(core::Operand* operand, std::vector<int32_t> permutation);
 // Reshapes the dimensions of a operand, similar to numpy.reshape
 void ReshapeOperand(core::Operand* operand, std::vector<int32_t> dimensions);
+// Copy the operand and its buffer
+void CopyOperand(core::Operand* dst_operand,
+                 core::Operand* src_operand,
+                 bool copy = true);
 // Update the input/output operands of the operations which equal to the
 // old_operand with the new_operand
 // For example:
@@ -195,6 +204,8 @@ core::Operand* InsertRequantOperation(core::Model* model,
                                       void* input_quant_params);
 
 // Sort the operations of the specified model in topological order
+std::vector<const core::Operation*> SortOperationsInTopologicalOrder(
+    const core::Model* model);
 std::vector<core::Operation*> SortOperationsInTopologicalOrder(
     core::Model* model);
 

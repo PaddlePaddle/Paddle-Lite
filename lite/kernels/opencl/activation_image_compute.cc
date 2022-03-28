@@ -162,6 +162,14 @@ class ActivationComputeImageDefault
         scale_ = act_param_->hard_sigmoid_slope;
         threshold_ = act_param_->hard_sigmoid_offset;
         break;
+
+      case 15:
+        kernel_func_name_ = "log_act";
+        break;
+      case 18:
+        kernel_func_name_ = "gelu";
+
+        break;
       default:
         LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
         return;
@@ -212,33 +220,40 @@ class ActivationComputeImageDefault
     auto* out_img = MUTABLE_DATA_GPU(
         act_param_->Out, out_img_shape_[0], out_img_shape_[1], nullptr);
     auto kernel = kernel_;
+    int cnt = 2;
     cl_int status;
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, threshold_);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, scale_);
-    CL_CHECK_FATAL(status);
-    if (act_type_ == 10) {
-      status = kernel.setArg(4, offset_);
+    if (kernel_func_name_ == "hard_sigmoid") {
+      status = kernel.setArg(cnt++, threshold_);
       CL_CHECK_FATAL(status);
-    }
-    if (act_type_ == 3) {
-      if (mode_ == "channel") {
-        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
-        status = kernel.setArg(4, width_);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(5, *alpha_img_in);
-        CL_CHECK_FATAL(status);
-      } else if (mode_ == "element") {
-        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
-        status = kernel.setArg(4, height_);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(5, *alpha_img_in);
-        CL_CHECK_FATAL(status);
-      }
+      status = kernel.setArg(cnt++, scale_);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "leaky_relu" ||
+               kernel_func_name_ == "swish") {
+      status = kernel.setArg(cnt++, scale_);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "prelu_channel") {
+      auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+      status = kernel.setArg(cnt++, width_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(cnt++, *alpha_img_in);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "prelu_element") {
+      auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+      status = kernel.setArg(cnt++, height_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(cnt++, *alpha_img_in);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "hard_swish") {
+      status = kernel.setArg(cnt++, threshold_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(cnt++, scale_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(cnt++, offset_);
+      CL_CHECK_FATAL(status);
     }
 
 #ifdef LITE_WITH_LOG
@@ -268,7 +283,6 @@ class ActivationComputeImageDefault
                                   event_);
     CL_CHECK_FATAL(status);
   }
-
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
@@ -597,6 +611,24 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
+// Gelu
+REGISTER_LITE_KERNEL(
+    gelu,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
 // Prelu
 REGISTER_LITE_KERNEL(
     prelu,
@@ -658,6 +690,23 @@ REGISTER_LITE_KERNEL(square,
                      kImageDefault,
                      paddle::lite::kernels::opencl::SquareComputeImageDefault,
                      def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    log,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

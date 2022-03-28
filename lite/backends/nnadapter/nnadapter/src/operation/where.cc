@@ -25,6 +25,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateWhere(const core::Operation* operation) { return false; }
+
 int PrepareWhere(core::Operation* operation) {
   WHERE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -34,6 +36,10 @@ int PrepareWhere(core::Operation* operation) {
   output_operand->type.precision = input0_operand->type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteWhere(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

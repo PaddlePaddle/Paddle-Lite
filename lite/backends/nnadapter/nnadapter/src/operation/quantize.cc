@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateQuantize(const core::Operation* operation) { return false; }
+
 int PrepareQuantize(core::Operation* operation) {
   QUANTIZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -38,6 +40,10 @@ int PrepareQuantize(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteQuantize(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

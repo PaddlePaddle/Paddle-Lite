@@ -144,11 +144,10 @@ void GenerateProposalsCompute::Run() {
     std::vector<float> tmp_scores_cpu(M, 0);
     std::vector<int> topk_indices_cpu(K, 0);
     std::vector<float> topk_scores_cpu(K, 0);
-    XPU_CALL(xpu_wait());
-    XPU_CALL(xpu_memcpy(tmp_scores_cpu.data(),
-                        trans_scores + batch_idx * M,
-                        sizeof(float) * M,
-                        XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+    TargetWrapperXPU::MemcpySync(tmp_scores_cpu.data(),
+                                 trans_scores + batch_idx * M,
+                                 sizeof(float) * M,
+                                 IoDirection::DtoH);
 
     xdnn::Context ctx_cpu(xdnn::kCPU);
     r = xdnn::sorted_topk(&ctx_cpu,
@@ -222,11 +221,10 @@ void GenerateProposalsCompute::Run() {
     CHECK_EQ(r, 0);
     // gather after remove_small_box
     int remove_small_boxes_n_keep_cpu = 0;
-    XPU_CALL(xpu_wait());
-    XPU_CALL(xpu_memcpy(&remove_small_boxes_n_keep_cpu,
-                        remove_small_boxes_n_keep,
-                        sizeof(int),
-                        XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+    TargetWrapperXPU::MemcpySync(&remove_small_boxes_n_keep_cpu,
+                                 remove_small_boxes_n_keep,
+                                 sizeof(int),
+                                 IoDirection::DtoH);
     r = xdnn::gather<float, int>(ctx.GetRawContext(),
                                  box_clip_pros,
                                  remove_small_boxes_idx,
@@ -252,11 +250,8 @@ void GenerateProposalsCompute::Run() {
                                 nms_thresh);
     CHECK_EQ(r, 0);
     int nms_n_keep_cpu = 0;
-    XPU_CALL(xpu_wait());
-    XPU_CALL(xpu_memcpy(&nms_n_keep_cpu,
-                        nms_n_keep,
-                        sizeof(int),
-                        XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+    TargetWrapperXPU::MemcpySync(
+        &nms_n_keep_cpu, nms_n_keep, sizeof(int), IoDirection::DtoH);
     nms_n_keep_cpu = std::min(nms_n_keep_cpu, post_nms_top_n);
     // Gather After NMS
     r = xdnn::gather<float, int>(ctx.GetRawContext(),

@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "driver/nvidia_tensorrt/calibrator.h"
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/logging.h"
 
@@ -36,9 +37,22 @@ class Context {
   explicit Context(void* device, const char* properties);
   ~Context();
 
+  nvinfer1::DeviceType DeviceType() { return device_type_; }
+  int DeviceId() { return device_id_; }
+  PrecisionMode Precision() { return precision_; }
+  bool GpuFallback() { return gpu_fallback_; }
+  std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
+  std::string CalibrationTablePath() { return calibration_table_path_; }
+
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  nvinfer1::DeviceType device_type_{nvinfer1::DeviceType::kGPU};
+  int device_id_{0};
+  PrecisionMode precision_{kFloat32};
+  bool gpu_fallback_{true};
+  std::string calibration_dataset_path_;
+  std::string calibration_table_path_;
 };
 
 struct Deleter {
@@ -67,9 +81,15 @@ class Program {
 
  private:
   void Clear();
-  // Build from model or cache
+  void CompleteConfig(core::Model* model);
+  // Build model and save to plan_
   int BuildFromModel(core::Model* model);
+  // Read model from cache to plan_
   int BuildFromCache(core::Cache* cache);
+  int CheckInputsAndOutputs(uint32_t input_count,
+                            core::Argument* input_arguments,
+                            uint32_t output_count,
+                            core::Argument* output_arguments);
 
  private:
   std::unique_ptr<nvinfer1::IBuilder, Deleter> builder_;
@@ -78,12 +98,16 @@ class Program {
   std::unique_ptr<nvinfer1::IHostMemory, Deleter> plan_;
   std::unique_ptr<nvinfer1::IRuntime, Deleter> runtime_;
   std::unique_ptr<nvinfer1::ICudaEngine, Deleter> engine_;
-  std::unique_ptr<nvinfer1::IExecutionContext, Deleter> nv_context_;
-  std::vector<std::shared_ptr<void>> device_data_;
+  std::unique_ptr<nvinfer1::IExecutionContext, Deleter> execution_context_;
+  std::unique_ptr<Int8EntropyCalibrator> calibrator_;
+  std::vector<std::shared_ptr<void>> device_buffers_;
   std::map<core::Operand*, std::vector<nvinfer1::ITensor*>> tensors_;
+  std::vector<int> input_indices_;
+  std::vector<int> output_indices_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  Context* context_;
+  Context* context_{nullptr};
+  bool with_dynamic_shape_{false};
 };
 
 }  // namespace nvidia_tensorrt

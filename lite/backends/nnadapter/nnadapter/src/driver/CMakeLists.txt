@@ -61,3 +61,11 @@ endif()
 if(NNADAPTER_WITH_INTEL_OPENVINO)
   add_subdirectory(intel_openvino)
 endif()
+
+if(NNADAPTER_WITH_FAKE_DEVICE)
+  add_subdirectory(fake_device)
+endif()
+
+if(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  add_subdirectory(google_xnnpack)
+endif()

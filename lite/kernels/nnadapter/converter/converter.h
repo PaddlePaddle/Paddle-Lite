@@ -36,17 +36,15 @@ const int UNSUPPORTED_FEATURE = 2;
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {}
+  explicit Converter(NNAdapterModel* model, ::NNAdapterContext* context)
+      : model_(model), context_(context) {}
   ~Converter() {}
 
   // Convert a block_desc with tensors to a NNAdapter model
-  int Apply(int block_idx,
-            const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+  int Apply(const cpp::BlockDesc* block_desc,
             Scope* exec_scope,
             const std::vector<Variable>& input_vars,
-            std::vector<Variable>* output_vars,
-            std::vector<NNAdapterOperand*>* input_operands,
-            std::vector<NNAdapterOperand*>* output_operands);
+            std::vector<Variable>* output_vars);
 
   // Mapping a string name to a operand
   NNAdapterOperand* GetMappedOperand(const std::string& name);
@@ -185,12 +183,21 @@ class Converter {
       const std::string& output_name = "",
       const std::vector<float>& output_quant_scales = {},
       uint32_t output_quant_channel_dim = 0);
+  // Add slice operation with input operand, axes, starts, ends, steps,
+  // output_name, quant_scales
   NNAdapterOperand* AddSliceOperation(
       NNAdapterOperand* input_operand,
       const std::vector<int32_t>& axes,
       const std::vector<int32_t>& starts,
       const std::vector<int32_t>& ends,
       const std::vector<int32_t>& steps,
+      const std::string& output_name = "",
+      const std::vector<float>& output_quant_scales = {},
+      uint32_t output_quant_channel_dim = 0);
+  // Add reshape operation with input operand, shape, output_name, quant_scales
+  NNAdapterOperand* AddReshapeOperation(
+      NNAdapterOperand* input_operand,
+      const std::vector<int32_t>& shape,
       const std::string& output_name = "",
       const std::vector<float>& output_quant_scales = {},
       uint32_t output_quant_channel_dim = 0);
@@ -233,7 +240,9 @@ class Converter {
                        size_t length,
                        bool copy = true);
   NNAdapterModel* model_{nullptr};
+  ::NNAdapterContext* context_{nullptr};
   std::map<std::string, std::vector<NNAdapterOperand*>> operands_;
+  size_t operation_count_{0};
 };
 
 }  // namespace nnadapter

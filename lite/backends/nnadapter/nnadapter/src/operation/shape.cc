@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateShape(const core::Operation* operation) { return false; }
+
 int PrepareShape(core::Operation* operation) {
   SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -37,6 +39,10 @@ int PrepareShape(core::Operation* operation) {
   SetTemporaryShape(output_operand, input_type.dimensions);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteShape(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

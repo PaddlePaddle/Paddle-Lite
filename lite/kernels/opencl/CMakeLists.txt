@@ -54,6 +54,7 @@ add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
 add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
+add_kernel(layer_norm_opencl_image OPENCL basic SRCS layer_norm_image_compute.cc)
 # extra
 # wait to add ...
 
@@ -154,8 +155,8 @@ lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
 lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
-             DEPS kernels core)
+#lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
+#             DEPS kernels core)
 ######################
 # buffer kernel      #
 ######################

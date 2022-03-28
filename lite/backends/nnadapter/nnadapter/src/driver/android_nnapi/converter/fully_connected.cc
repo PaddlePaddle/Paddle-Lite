@@ -14,12 +14,18 @@
 
 #include "operation/fully_connected.h"
 #include "driver/android_nnapi/converter/converter.h"
+#include "driver/android_nnapi/converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace android_nnapi {
+
+bool ValidateFullyConnected(Validator* validator,
+                            const core::Operation* operation) {
+  return true;
+}
 
 int ConvertFullyConnected(Converter* converter, core::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS

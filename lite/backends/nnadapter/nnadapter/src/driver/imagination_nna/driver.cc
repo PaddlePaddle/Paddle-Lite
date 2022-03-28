@@ -115,6 +115,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::imagination_nna::CloseDevice,
     .create_context = nnadapter::imagination_nna::CreateContext,
     .destroy_context = nnadapter::imagination_nna::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::imagination_nna::CreateProgram,
     .destroy_program = nnadapter::imagination_nna::DestroyProgram,
     .execute_program = nnadapter::imagination_nna::ExecuteProgram,

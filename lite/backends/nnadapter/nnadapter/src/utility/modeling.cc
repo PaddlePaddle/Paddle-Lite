@@ -20,6 +20,7 @@
 #include <utility>
 #include "utility/cache.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/utility.h"
@@ -28,17 +29,26 @@ namespace nnadapter {
 
 NNADAPTER_EXPORT void ClearModel(core::Model* model) {
   for (auto& operand : model->operands) {
-    if (operand.type.lifetime == NNADAPTER_CONSTANT_COPY && operand.buffer) {
-      free(operand.buffer);
-    }
-    if (IsPerChannelQuantType(operand.type.precision) &&
-        operand.type.symm_per_channel_params.scales) {
-      free(operand.type.symm_per_channel_params.scales);
-    }
-    for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-      if (operand.hints[i].handler) {
-        operand.hints[i].deleter(&operand.hints[i].handler);
-      }
+    ClearOperand(&operand);
+  }
+}
+
+NNADAPTER_EXPORT void ClearOperand(core::Operand* operand) {
+  if (operand->type.lifetime != NNADAPTER_CONSTANT_REFERENCE &&
+      operand->buffer && operand->length > 0) {
+    free(operand->buffer);
+    operand->buffer = nullptr;
+    operand->length = 0;
+  }
+  if (IsPerChannelQuantType(operand->type.precision) &&
+      operand->type.symm_per_channel_params.scales) {
+    free(operand->type.symm_per_channel_params.scales);
+    operand->type.symm_per_channel_params.scales = nullptr;
+  }
+  for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+    if (operand->hints[i].handler) {
+      operand->hints[i].deleter(&operand->hints[i].handler);
+      operand->hints[i].handler = nullptr;
     }
   }
 }
@@ -61,21 +71,7 @@ NNADAPTER_EXPORT void RemoveOperand(core::Model* model,
                                     core::Operand* operand) {
   for (auto it = model->operands.begin(); it != model->operands.end();) {
     if (&(*it) == operand) {
-      if ((operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
-           operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
-          operand->buffer) {
-        free(operand->buffer);
-      }
-      if ((operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
-           operand->type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) &&
-          operand->type.symm_per_channel_params.scales) {
-        free(operand->type.symm_per_channel_params.scales);
-      }
-      for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-        if (operand->hints[i].handler) {
-          operand->hints[i].deleter(&operand->hints[i].handler);
-        }
-      }
+      ClearOperand(operand);
       it = model->operands.erase(it);
     } else {
       ++it;
@@ -92,6 +88,27 @@ NNADAPTER_EXPORT void RemoveOperation(core::Model* model,
       ++it;
     }
   }
+}
+
+NNADAPTER_EXPORT void* AllocateOperand(core::Operand* operand) {
+  if (operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE) {
+    operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+    operand->buffer = nullptr;
+    operand->length = 0;
+  }
+  auto length = GetOperandTypeBufferLength(operand->type);
+  if (operand->length < length) {
+    if (operand->buffer) {
+      free(operand->buffer);
+    }
+    operand->buffer = malloc(length);
+    NNADAPTER_CHECK(operand->buffer) << "Failed to allocate " << length
+                                     << " bytes, out of memory!";
+    operand->length = length;
+  }
+  NNADAPTER_CHECK(operand->buffer);
+  NNADAPTER_CHECK_GT(operand->length, 0);
+  return operand->buffer;
 }
 
 static core::Operand* AddOperand(core::Model* model,
@@ -421,6 +438,30 @@ NNADAPTER_EXPORT void TransposeOperand(core::Operand* operand,
   }
 }
 
+NNADAPTER_EXPORT void CopyOperand(core::Operand* dst_operand,
+                                  core::Operand* src_operand,
+                                  bool copy) {
+  CopyOperandType(&dst_operand->type, src_operand->type);
+  dst_operand->type.lifetime = src_operand->type.lifetime;
+  if (IsTemporaryShapeOperand(dst_operand)) {
+    SetTemporaryShape(dst_operand, *(GetTemporaryShape(src_operand)));
+  } else if (IsConstantOperand(dst_operand)) {
+    if (copy) {
+      dst_operand->buffer = malloc(src_operand->length);
+      NNADAPTER_CHECK(dst_operand->buffer != nullptr)
+          << "Failed to allocate " << src_operand->length
+          << " bytes for the buffer of an operand, out of memory!";
+      memcpy(dst_operand->buffer, src_operand->buffer, src_operand->length);
+      dst_operand->length = src_operand->length;
+      dst_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+    } else {
+      dst_operand->buffer = src_operand->buffer;
+      dst_operand->length = src_operand->length;
+      dst_operand->type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
+    }
+  }
+}
+
 NNADAPTER_EXPORT bool UpdateOperationInputOperands(
     std::vector<core::Operation*> operations,
     core::Operand* old_operand,
@@ -529,12 +570,14 @@ NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(
 std::vector<core::Operation*> GetOperandConsumers(core::Model* model,
                                                   core::Operand* operand) {
   std::vector<core::Operation*> consumers;
-  for (auto& operation : model->operations) {
-    auto& input_operands = operation.input_operands;
-    if (std::find(input_operands.begin(), input_operands.end(), operand) ==
-        input_operands.end())
-      continue;
-    consumers.push_back(&operation);
+  if (operand) {
+    for (auto& operation : model->operations) {
+      auto& input_operands = operation.input_operands;
+      if (std::find(input_operands.begin(), input_operands.end(), operand) ==
+          input_operands.end())
+        continue;
+      consumers.push_back(&operation);
+    }
   }
   return consumers;
 }
@@ -542,14 +585,16 @@ std::vector<core::Operation*> GetOperandConsumers(core::Model* model,
 NNADAPTER_EXPORT core::Operation* GetOperandProducer(core::Model* model,
                                                      core::Operand* operand) {
   core::Operation* producer = nullptr;
-  for (auto& operation : model->operations) {
-    auto& output_operands = operation.output_operands;
-    if (std::find(output_operands.begin(), output_operands.end(), operand) ==
-        output_operands.end())
-      continue;
-    // a operand has only one producer
-    NNADAPTER_CHECK(producer == nullptr);
-    producer = &operation;
+  if (operand) {
+    for (auto& operation : model->operations) {
+      auto& output_operands = operation.output_operands;
+      if (std::find(output_operands.begin(), output_operands.end(), operand) ==
+          output_operands.end())
+        continue;
+      // a operand has only one producer
+      NNADAPTER_CHECK(producer == nullptr);
+      producer = &operation;
+    }
   }
   return producer;
 }
@@ -822,56 +867,63 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
   return AddRequantOperation(model, output_operand, input_quant_params, false);
 }
 
-NNADAPTER_EXPORT std::vector<core::Operation*> SortOperationsInTopologicalOrder(
-    core::Model* model) {
-  NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
-  NNADAPTER_VLOG(5) << "model input operands: " << model->input_operands.size();
-  NNADAPTER_VLOG(5) << "model output operands: "
-                    << model->output_operands.size();
-  NNADAPTER_VLOG(5) << "model total operations: " << model->operations.size();
-  std::vector<core::Operation*> operations;  // Operations in topological order
-  std::vector<core::Operation*> queue;
-  // Use to find all of adjacent operations according to a given operand.
-  std::multimap<core::Operand*, core::Operation*> map;
-  // The counters of variable inputs for all of operations.
-  std::map<core::Operation*, uint32_t> counts;
-  for (auto& operation : model->operations) {
-    uint32_t count = 0;
-    for (auto operand : operation.input_operands) {
-      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
-      if (operand != nullptr) {
-        lifetime = operand->type.lifetime;
-      }
-      if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
-          lifetime == NNADAPTER_TEMPORARY_SHAPE ||
-          lifetime == NNADAPTER_MODEL_OUTPUT) {
-        count++;
-        map.insert(
-            std::pair<core::Operand*, core::Operation*>(operand, &operation));
-      }
-    }
-    if (count == 0) {
-      // The operation which only depends the model inputs and constants
-      queue.push_back(&operation);
-    }
-    counts[&operation] = count;
+#define SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(T)                               \
+  NNADAPTER_EXPORT std::vector<T core::Operation*>                            \
+  SortOperationsInTopologicalOrder(T core::Model* model) {                    \
+    NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();  \
+    NNADAPTER_VLOG(5) << "model input operands: "                             \
+                      << model->input_operands.size();                        \
+    NNADAPTER_VLOG(5) << "model output operands: "                            \
+                      << model->output_operands.size();                       \
+    NNADAPTER_VLOG(5) << "model total operations: "                           \
+                      << model->operations.size();                            \
+    /* Operations in topological order */                                     \
+    std::vector<T core::Operation*> operations;                               \
+    std::vector<T core::Operation*> queue;                                    \
+    /* Use to find all of adjacent operations according to a given operand.*/ \
+    std::multimap<T core::Operand*, T core::Operation*> map;                  \
+    /* The counters of variable inputs for all of operations. */              \
+    std::map<T core::Operation*, uint32_t> counts;                            \
+    for (auto& operation : model->operations) {                               \
+      uint32_t count = 0;                                                     \
+      for (auto operand : operation.input_operands) {                         \
+        NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};       \
+        if (operand != nullptr) {                                             \
+          lifetime = operand->type.lifetime;                                  \
+        }                                                                     \
+        if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||                       \
+            lifetime == NNADAPTER_TEMPORARY_SHAPE ||                          \
+            lifetime == NNADAPTER_MODEL_OUTPUT) {                             \
+          count++;                                                            \
+          map.insert(std::pair<T core::Operand*, T core::Operation*>(         \
+              operand, &operation));                                          \
+        }                                                                     \
+      }                                                                       \
+      if (count == 0) {                                                       \
+        /* The operation which only depends the model inputs and constants */ \
+        queue.push_back(&operation);                                          \
+      }                                                                       \
+      counts[&operation] = count;                                             \
+    }                                                                         \
+    while (queue.size() > 0) {                                                \
+      auto operation = queue.back();                                          \
+      queue.pop_back();                                                       \
+      operations.push_back(operation);                                        \
+      for (auto operand : operation->output_operands) {                       \
+        auto range = map.equal_range(operand);                                \
+        for (auto i = range.first; i != range.second; i++) {                  \
+          uint32_t& count = counts[i->second];                                \
+          if (--count == 0) {                                                 \
+            queue.push_back(i->second);                                       \
+          }                                                                   \
+        }                                                                     \
+      }                                                                       \
+    }                                                                         \
+    return operations;                                                        \
   }
-  while (queue.size() > 0) {
-    auto operation = queue.back();
-    queue.pop_back();
-    operations.push_back(operation);
-    for (auto operand : operation->output_operands) {
-      auto range = map.equal_range(operand);
-      for (auto i = range.first; i != range.second; i++) {
-        uint32_t& count = counts[i->second];
-        if (--count == 0) {
-          queue.push_back(i->second);
-        }
-      }
-    }
-  }
-  return operations;
-}
+
+SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER()
+SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(const)
 
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY =
     "operands";
@@ -1061,6 +1113,7 @@ NNADAPTER_EXPORT bool DeserializeModel(void* buffer,
       NNADAPTER_CHECK(buffer)
           << "Failed to allocate the buffer for a constant operand!";
       DeserializeData(&value, &offset, buffer, length);
+      operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
       operand->buffer = buffer;
       operand->length = length;
     }
