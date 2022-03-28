@@ -499,6 +499,69 @@ function armlinux_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
+# Built-in Device
+function builtin_device_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+}
+
+function builtin_device_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function builtin_device_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE builtin_device_build_target builtin_device_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
 # Huawei Kirin NPU
 function huawei_kirin_npu_prepare_device() {
     local os=$1
@@ -1553,6 +1616,10 @@ function main() {
             ;;
         armlinux_cpu_build_and_test)
             armlinux_cpu_build_and_test
+            shift
+            ;;
+        builtin_device_build_and_test)
+            builtin_device_build_and_test
             shift
             ;;
         huawei_kirin_npu_build_and_test)

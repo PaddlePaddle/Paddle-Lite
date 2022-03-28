@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateSplit(const core::Operation* operation) { return false; }
+
 int PrepareSplit(core::Operation* operation) {
   SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(IsConstantOperand(axis_operand));
@@ -43,6 +45,10 @@ int PrepareSplit(core::Operation* operation) {
                       << OperandToString(output_operands[i]);
   }
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteSplit(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

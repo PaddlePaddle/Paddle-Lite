@@ -22,6 +22,10 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateUnaryActivations(const core::Operation* operation) {
+  return false;
+}
+
 int PrepareUnaryActivations(core::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +33,10 @@ int PrepareUnaryActivations(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteUnaryActivations(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

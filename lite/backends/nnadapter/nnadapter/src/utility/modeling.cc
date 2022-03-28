@@ -34,9 +34,11 @@ NNADAPTER_EXPORT void ClearModel(core::Model* model) {
 }
 
 NNADAPTER_EXPORT void ClearOperand(core::Operand* operand) {
-  if (operand->type.lifetime == NNADAPTER_CONSTANT_COPY && operand->buffer) {
+  if (operand->type.lifetime != NNADAPTER_CONSTANT_REFERENCE &&
+      operand->buffer && operand->length > 0) {
     free(operand->buffer);
     operand->buffer = nullptr;
+    operand->length = 0;
   }
   if (IsPerChannelQuantType(operand->type.precision) &&
       operand->type.symm_per_channel_params.scales) {
@@ -69,21 +71,7 @@ NNADAPTER_EXPORT void RemoveOperand(core::Model* model,
                                     core::Operand* operand) {
   for (auto it = model->operands.begin(); it != model->operands.end();) {
     if (&(*it) == operand) {
-      if ((operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
-           operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
-          operand->buffer) {
-        free(operand->buffer);
-      }
-      if ((operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
-           operand->type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) &&
-          operand->type.symm_per_channel_params.scales) {
-        free(operand->type.symm_per_channel_params.scales);
-      }
-      for (size_t i = 0; i < core::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-        if (operand->hints[i].handler) {
-          operand->hints[i].deleter(&operand->hints[i].handler);
-        }
-      }
+      ClearOperand(operand);
       it = model->operands.erase(it);
     } else {
       ++it;
@@ -100,6 +88,27 @@ NNADAPTER_EXPORT void RemoveOperation(core::Model* model,
       ++it;
     }
   }
+}
+
+NNADAPTER_EXPORT void* AllocateOperand(core::Operand* operand) {
+  if (operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE) {
+    operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+    operand->buffer = nullptr;
+    operand->length = 0;
+  }
+  auto length = GetOperandTypeBufferLength(operand->type);
+  if (operand->length < length) {
+    if (operand->buffer) {
+      free(operand->buffer);
+    }
+    operand->buffer = malloc(length);
+    NNADAPTER_CHECK(operand->buffer) << "Failed to allocate " << length
+                                     << " bytes, out of memory!";
+    operand->length = length;
+  }
+  NNADAPTER_CHECK(operand->buffer);
+  NNADAPTER_CHECK_GT(operand->length, 0);
+  return operand->buffer;
 }
 
 static core::Operand* AddOperand(core::Model* model,
