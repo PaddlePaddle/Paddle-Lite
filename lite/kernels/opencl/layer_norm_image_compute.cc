@@ -54,12 +54,18 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
         kernel_func_name_ = "layer_norm_batch";
       } else if (begin_norm_axis == 2) {
         kernel_func_name_ = "layer_norm_chann";
+      } else if (begin_norm_axis == 3) {
+        kernel_func_name_ = "layer_norm_width";
+      } else {
+        LOG(FATAL) << "unsupported norm axis.";
       }
     } else if (x_dims.size() == 3) {
       if (begin_norm_axis == 1) {
         kernel_func_name_ = "layer_norm_chann";
       } else if (begin_norm_axis == 2) {
         kernel_func_name_ = "layer_norm_width";
+      } else {
+        LOG(FATAL) << "unsupported norm axis.";
       }
     } else {
       LOG(FATAL) << "unsupported input dim.";
