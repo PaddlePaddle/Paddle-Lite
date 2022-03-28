@@ -21,6 +21,7 @@
 
 namespace nnadapter {
 namespace operation {
+bool ValidatePriorBox(const core::Operation* operation) { return false; }
 
 int PreparePriorBox(core::Operation* operation) {
   PRIOR_BOX_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -84,6 +85,10 @@ int PreparePriorBox(core::Operation* operation) {
   NNADAPTER_VLOG(5) << "boxes: " << OperandToString(boxes_operand);
   NNADAPTER_VLOG(5) << "Variances: " << OperandToString(Variances_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecutePriorBox(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
