@@ -52,15 +52,6 @@ nvinfer1::IPluginV2DynamicExt* YoloBoxHeadPluginDynamic::clone() const
                                       scale_x_y_);
 }
 
-nvinfer1::DimsExprs YoloBoxHeadPluginDynamic::getOutputDimensions(
-    int32_t output_index,
-    const nvinfer1::DimsExprs* inputs,
-    int32_t nb_inputs,
-    nvinfer1::IExprBuilder& expr_builder) noexcept {
-  NNADAPTER_CHECK(inputs);
-  return inputs[0];
-}
-
 __global__ void yolohead_kernel(const float* input,
                                 float* output,
                                 const uint gridSizeX,
@@ -150,25 +141,6 @@ void YoloBoxHeadPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, downsample_ratio_);
   Serialize(&buffer, clip_bbox_);
   Serialize(&buffer, scale_x_y_);
-}
-
-int32_t YoloBoxHeadPluginDynamic::getNbOutputs() const noexcept { return 1; }
-
-nvinfer1::DataType YoloBoxHeadPluginDynamic::getOutputDataType(
-    int32_t index,
-    const nvinfer1::DataType* input_types,
-    int32_t nb_inputs) const noexcept {
-  return input_types[0];
-}
-
-bool YoloBoxHeadPluginDynamic::supportsFormatCombination(
-    int32_t pos,
-    const nvinfer1::PluginTensorDesc* in_out,
-    int32_t nb_inputs,
-    int32_t nb_outputs) noexcept {
-  NNADAPTER_CHECK_LT(pos, nb_inputs + nb_outputs);
-  NNADAPTER_CHECK(in_out);
-  return true;
 }
 
 REGISTER_NNADAPTER_TENSORRT_PLUGIN(YoloBoxHeadPluginDynamic,

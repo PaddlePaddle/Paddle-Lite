@@ -39,22 +39,6 @@ class YoloBoxHeadPluginDynamic : public PluginDynamic {
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
 
-  bool supportsFormatCombination(int32_t pos,
-                                 const nvinfer1::PluginTensorDesc* in_out,
-                                 int32_t nb_inputs,
-                                 int32_t nb_outputs) noexcept;
-  nvinfer1::DimsExprs getOutputDimensions(
-      int32_t output_index,
-      const nvinfer1::DimsExprs* inputs,
-      int32_t nb_inputs,
-      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
-
-  int32_t getNbOutputs() const noexcept;
-
-  nvinfer1::DataType getOutputDataType(int32_t index,
-                                       const nvinfer1::DataType* input_types,
-                                       int32_t nb_inputs) const noexcept;
-
  private:
   std::vector<int32_t> anchors_;
   int class_num_;
