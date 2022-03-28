@@ -72,12 +72,6 @@ namespace operation {
   auto image_type = input_operands[1]->type;                                   \
   NNADAPTER_CHECK_EQ(input_type.dimensions.count, 4);                          \
   NNADAPTER_CHECK_EQ(image_type.dimensions.count, 4);                          \
-  auto input_dimension = input_operand->type.dimensions.data;                  \
-  auto image_dimension = image_operand->type.dimensions.data;                  \
-  std::vector<int32_t> input_dimension_vec(input_dimension,                    \
-                                           input_dimension + 4);               \
-  std::vector<int32_t> image_dimension_vec(image_dimension,                    \
-                                           image_dimension + 4);               \
   float* aspect_ratios_data =                                                  \
       reinterpret_cast<float*>(aspect_ratios_operand->buffer);                 \
   uint32_t aspect_ratios_size = aspect_ratios_operand->length / sizeof(float); \

@@ -33,6 +33,10 @@ int ConvertPriorBox(Converter* converter, core::Operation* operation) {
   if (!image_tensor) {
     image_tensor = converter->ConvertOperand(image_operand);
   }
+  std::vector<int32_t> input_dimension_vec(input_dimension,
+                                           input_dimension + 4);
+  std::vector<int32_t> image_dimension_vec(image_dimension,
+                                           image_dimension + 4);
   PriorBoxPluginDynamic prior_box_plugin(
       aspect_ratios,
       input_dimension_vec,
@@ -46,6 +50,8 @@ int ConvertPriorBox(Converter* converter, core::Operation* operation) {
       *reinterpret_cast<bool*>(flip_operand->buffer),
       *reinterpret_cast<bool*>(min_max_aspect_ratios_order_operand->buffer),
       variances);
+  auto input_dimension = input_operand->type.dimensions.data;
+  auto image_dimension = image_operand->type.dimensions.data;
   std::vector<nvinfer1::ITensor*> tensors{input_tensor, image_tensor};
   auto prior_box_layer =
       converter->network()->addPluginV2(tensors.data(), 2, prior_box_plugin);
