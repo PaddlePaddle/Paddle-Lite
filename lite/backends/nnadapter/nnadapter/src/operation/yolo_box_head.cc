@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateYoloBoxHead(const core::Operation* operation) { return false; }
+
 int PrepareYoloBoxHead(core::Operation* operation) {
   YOLO_BOX_HEAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -41,8 +43,6 @@ int PrepareYoloBoxHead(core::Operation* operation) {
   downsample_ratio = downsample_ratio;
   clip_bbox = clip_bbox;
   scale_x_y = scale_x_y;
-  iou_aware = iou_aware;
-  iou_aware_factor = iou_aware_factor;
 
   output_type.precision = input_operand->type.precision;
   output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
@@ -50,6 +50,10 @@ int PrepareYoloBoxHead(core::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteYoloBoxHead(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

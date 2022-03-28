@@ -24,7 +24,7 @@ namespace operation {
   auto& output_operands = operation->output_operands;                         \
   auto input_count = input_operands.size();                                   \
   auto output_count = output_operands.size();                                 \
-  NNADAPTER_CHECK_EQ(input_count, 9);                                         \
+  NNADAPTER_CHECK_EQ(input_count, 7);                                         \
   NNADAPTER_CHECK_EQ(output_count, 1);                                        \
   /* Input */                                                                 \
   auto input_operand = input_operands[0];                                     \
@@ -45,9 +45,6 @@ namespace operation {
   auto downsample_ratio = *reinterpret_cast<int*>(input_operands[4]->buffer); \
   auto clip_bbox = *reinterpret_cast<bool*>(input_operands[5]->buffer);       \
   auto scale_x_y = *reinterpret_cast<float*>(input_operands[6]->buffer);      \
-  auto iou_aware = *reinterpret_cast<bool*>(input_operands[7]->buffer);       \
-  auto iou_aware_factor =                                                     \
-      *reinterpret_cast<float*>(input_operands[8]->buffer);                   \
   /* Output */                                                                \
   auto output_operand = output_operands[0];                                   \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

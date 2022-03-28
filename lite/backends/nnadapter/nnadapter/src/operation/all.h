@@ -242,7 +242,9 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ExecuteUnsqueeze)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
-REGISTER_OPERATION(YOLO_BOX_HEAD, ValidateYoloBoxHead, PrepareYoloBoxHead, ExecuteYoloBoxHead)
-REGISTER_OPERATION(YOLO_BOX_PARSER, ValidateYoloBoxParser, PrepareYoloBoxParser, ExecuteYoloBoxParser)
+REGISTER_OPERATION(YOLO_BOX_HEAD,
+                   ValidateYoloBoxHead,
+                   PrepareYoloBoxHead,
+                   ExecuteYoloBoxHead)
 
 #endif  // NOLINT

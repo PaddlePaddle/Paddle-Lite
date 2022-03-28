@@ -523,6 +523,18 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         };
         output_args = {"boxes", "scores"};
         break;
+      case NNADAPTER_YOLO_BOX_HEAD:
+        input_args = {
+            "input",
+            "anchors",
+            "class_num",
+            "conf_thresh",
+            "downsample_ratio",
+            "clip_bbox",
+            "scale_x_y",
+        };
+        output_args = {"output"};
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "unsupported op: "
                              << static_cast<int>(operation->type);

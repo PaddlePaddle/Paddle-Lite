@@ -30,14 +30,8 @@ int ConvertYoloBoxHead(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
 
-  YoloBoxHeadPluginDynamic yolo_box_head_plugin(anchors,
-                                                class_num,
-                                                conf_thresh,
-                                                downsample_ratio,
-                                                clip_bbox,
-                                                scale_x_y,
-                                                iou_aware,
-                                                iou_aware_factor);
+  YoloBoxHeadPluginDynamic yolo_box_head_plugin(
+      anchors, class_num, conf_thresh, downsample_ratio, clip_bbox, scale_x_y);
 
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto yolo_box_head_layer = converter->network()->addPluginV2(

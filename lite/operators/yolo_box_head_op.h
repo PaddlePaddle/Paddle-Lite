@@ -38,7 +38,7 @@ class YoloBoxHeadOp : public OpLite {
   std::string DebugString() const override { return "yolo_box_head"; }
 
  private:
-  mutable YoloBoxParam param_;
+  mutable YoloBoxHeadParam param_;
 };
 
 }  // namespace operators

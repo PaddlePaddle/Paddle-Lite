@@ -21,7 +21,7 @@ namespace nnadapter {
 
 int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
-  auto x_name = op->Input("X").front();
+  auto x_name = op->Input("x").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
@@ -35,8 +35,6 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
   int downsample_ratio;
   bool clip_bbox = true;
   float scale_x_y = 1.f;
-  bool iou_aware = false;
-  float iou_aware_factor = 0.5;
 
   anchors = op->GetAttr<std::vector<int>>("anchors");
   class_num = op->GetAttr<int>("class_num");
@@ -48,12 +46,7 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasAttr("scale_x_y")) {
     scale_x_y = op->GetAttr<float>("scale_x_y");
   }
-  if (op->HasAttr("iou_aware")) {
-    iou_aware = op->GetAttr<bool>("iou_aware");
-  }
-  if (op->HasAttr("iou_aware_factor")) {
-    iou_aware_factor = op->GetAttr<float>("iou_aware_factor");
-  }
+
   auto anchors_operand = converter->AddConstantOperand(anchors);
   auto class_num_operand = converter->AddConstantOperand(class_num);
   auto conf_thresh_operand = converter->AddConstantOperand(conf_thresh);
@@ -61,12 +54,9 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddConstantOperand(downsample_ratio);
   auto clip_bbox_operand = converter->AddConstantOperand(clip_bbox);
   auto scale_x_y_operand = converter->AddConstantOperand(scale_x_y);
-  auto iou_aware_operand = converter->AddConstantOperand(iou_aware);
-  auto iou_aware_factor_operand =
-      converter->AddConstantOperand(iou_aware_factor);
 
   // Output operand
-  auto output_name = op->Output("Boxes").front();
+  auto output_name = op->Output("output").front();
   auto output_operand = converter->AddOutputOperand(output_name);
 
   converter->AddOperation(NNADAPTER_YOLO_BOX_HEAD,
@@ -76,9 +66,7 @@ int ConvertYoloBoxHead(Converter* converter, OpInfo* op, Scope* scope) {
                            conf_thresh_operand,
                            downsample_ratio_operand,
                            clip_bbox_operand,
-                           scale_x_y_operand,
-                           iou_aware_operand,
-                           iou_aware_factor_operand},
+                           scale_x_y_operand},
                           {output_operand});
   return NO_ERROR;
 }

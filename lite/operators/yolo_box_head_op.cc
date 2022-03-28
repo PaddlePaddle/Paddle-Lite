@@ -23,42 +23,34 @@ namespace lite {
 namespace operators {
 
 bool YoloBoxHeadOp::CheckShape() const {
-  auto* X = param_.X;
-  auto* ImgSize = param_.ImgSize;
-  auto* Boxes = param_.Boxes;
-  auto* Scores = param_.Scores;
-  CHECK_OR_FALSE(X);
-  CHECK_OR_FALSE(ImgSize);
-  CHECK_OR_FALSE(Boxes);
-  CHECK_OR_FALSE(Scores);
+  auto* x = param_.x;
+  auto* output = param_.output;
+  CHECK_OR_FALSE(x);
+  CHECK_OR_FALSE(output);
 
-  auto dim_x = X->dims();
-  auto dim_imgsize = ImgSize->dims();
+  auto dim_x = x->dims();
   std::vector<int> anchors = param_.anchors;
   int anchor_num = anchors.size() / 2;
   auto class_num = param_.class_num;
   CHECK_OR_FALSE(dim_x.size() == 4);
   CHECK_OR_FALSE(dim_x[1] == anchor_num * (5 + class_num));
-  CHECK_OR_FALSE(dim_imgsize[0] == dim_x[0]);
-  CHECK_OR_FALSE(dim_imgsize[1] == 2);
   CHECK_OR_FALSE(anchors.size() > 0 && anchors.size() % 2 == 0);
   CHECK_OR_FALSE(class_num > 0);
   return true;
 }
 
 bool YoloBoxHeadOp::InferShapeImpl() const {
-  auto* X = param_.X;
-  DDim x_dim = X->dims();
-  param_.Boxes->Resize(x_dim);
+  auto* x = param_.x;
+  DDim x_dim = x->dims();
+  param_.output->Resize(x_dim);
   return true;
 }
 
 bool YoloBoxHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  auto X = op_desc.Input("X").front();
-  // we just use Boxes! no using Scores!
-  auto Boxes = op_desc.Output("Out").front();
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.Boxes = scope->FindVar(Boxes)->GetMutable<lite::Tensor>();
+  auto x = op_desc.Input("X").front();
+  auto output = op_desc.Output("Out").front();
+  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();
   param_.anchors = op_desc.GetAttr<std::vector<int>>("anchors");
   param_.class_num = op_desc.GetAttr<int>("class_num");
   param_.conf_thresh = op_desc.GetAttr<float>("conf_thresh");

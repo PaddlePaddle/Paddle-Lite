@@ -26,9 +26,7 @@ class YoloBoxHeadPluginDynamic : public PluginDynamic {
                            float conf_thresh,
                            int downsample_ratio,
                            bool clip_bbox,
-                           float scale_x_y,
-                           bool iou_aware,
-                           float iou_aware_factor);
+                           float scale_x_y);
   YoloBoxHeadPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
@@ -64,8 +62,6 @@ class YoloBoxHeadPluginDynamic : public PluginDynamic {
   int downsample_ratio_;
   bool clip_bbox_;
   float scale_x_y_;
-  bool iou_aware_;
-  float iou_aware_factor_;
 };
 
 class YoloBoxHeadPluginDynamicCreator : public PluginCreator {

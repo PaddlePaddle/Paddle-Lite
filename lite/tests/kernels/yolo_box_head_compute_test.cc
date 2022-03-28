@@ -27,8 +27,8 @@ template <typename T>
 class YoloBoxComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::string input0_ = "X";
-  std::string output0_ = "Boxes";
+  std::string input0_ = "x";
+  std::string output0_ = "output";
   std::vector<int> anchors_;
   int class_num_ = 0;
   float conf_thresh_ = 0.f;
@@ -109,8 +109,8 @@ class YoloBoxComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("yolo_box_head");
-    op_desc->SetInput("X", {input0_});
-    op_desc->SetOutput("Boxes", {output0_});
+    op_desc->SetInput("x", {input0_});
+    op_desc->SetOutput("output", {output0_});
     op_desc->SetAttr("anchors", anchors_);
     op_desc->SetAttr("class_num", class_num_);
     op_desc->SetAttr("conf_thresh", conf_thresh_);

@@ -24,17 +24,13 @@ YoloBoxHeadPluginDynamic::YoloBoxHeadPluginDynamic(
     float conf_thresh,
     int downsample_ratio,
     bool clip_bbox,
-    float scale_x_y,
-    bool iou_aware,
-    float iou_aware_factor)
+    float scale_x_y)
     : anchors_(anchors),
       class_num_(class_num),
       conf_thresh_(conf_thresh),
       downsample_ratio_(downsample_ratio),
       clip_bbox_(clip_bbox),
-      scale_x_y_(scale_x_y),
-      iou_aware_(iou_aware),
-      iou_aware_factor_(iou_aware_factor) {}
+      scale_x_y_(scale_x_y) {}
 
 YoloBoxHeadPluginDynamic::YoloBoxHeadPluginDynamic(const void* serial_data,
                                                    size_t serial_length) {
@@ -44,8 +40,6 @@ YoloBoxHeadPluginDynamic::YoloBoxHeadPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &downsample_ratio_);
   Deserialize(&serial_data, &serial_length, &clip_bbox_);
   Deserialize(&serial_data, &serial_length, &scale_x_y_);
-  Deserialize(&serial_data, &serial_length, &iou_aware_);
-  Deserialize(&serial_data, &serial_length, &iou_aware_factor_);
 }
 
 nvinfer1::IPluginV2DynamicExt* YoloBoxHeadPluginDynamic::clone() const
@@ -55,9 +49,7 @@ nvinfer1::IPluginV2DynamicExt* YoloBoxHeadPluginDynamic::clone() const
                                       conf_thresh_,
                                       downsample_ratio_,
                                       clip_bbox_,
-                                      scale_x_y_,
-                                      iou_aware_,
-                                      iou_aware_factor_);
+                                      scale_x_y_);
 }
 
 nvinfer1::DimsExprs YoloBoxHeadPluginDynamic::getOutputDimensions(
@@ -156,8 +148,7 @@ int32_t YoloBoxHeadPluginDynamic::enqueue(
 
 size_t YoloBoxHeadPluginDynamic::getSerializationSize() const noexcept {
   return SerializedSize(anchors_) + sizeof(class_num_) + sizeof(conf_thresh_) +
-         sizeof(downsample_ratio_) + sizeof(clip_bbox_) + sizeof(scale_x_y_) +
-         sizeof(iou_aware_) + sizeof(iou_aware_factor_);
+         sizeof(downsample_ratio_) + sizeof(clip_bbox_) + sizeof(scale_x_y_);
 }
 
 void YoloBoxHeadPluginDynamic::serialize(void* buffer) const noexcept {
@@ -167,8 +158,6 @@ void YoloBoxHeadPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, downsample_ratio_);
   Serialize(&buffer, clip_bbox_);
   Serialize(&buffer, scale_x_y_);
-  Serialize(&buffer, iou_aware_);
-  Serialize(&buffer, iou_aware_factor_);
 }
 
 int32_t YoloBoxHeadPluginDynamic::getNbOutputs() const noexcept { return 1; }

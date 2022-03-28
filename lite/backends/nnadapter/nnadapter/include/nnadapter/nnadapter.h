@@ -1995,20 +1995,27 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_YOLO_BOX,
+
   /**
-   * Performs some preprocess for yolo_box op in Pytorch.
-   * NNADAPTER_YOLO_BOX_HEAD is diffrent from NNADAPTER_YOLO_BOX
-   *
-   * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32 tensor.
-   *
-   * Outputs:
-   * * 0: output, a NNADAPTER_FLOAT32 tensor.
-   *
-   * Available since version 1.
+    * yolo_box_parser introduction:
+    * it finish box calculate, sigmoid and exp.
+    *
+    * Inputs:
+    * * x is totally same as input0 in NNADAPTER_YOLO_BOX.
+    * * 0: x, a NNADAPTER_FP32 tensor, [N, C, H, W].
+    * * the following 6 attrs are totally same as in NNADAPTER_YOLO_BOX.
+    * * 1: anchors.
+    * * 2: class_num.
+    * * 3: conf_thresh.
+    * * 4: downsample_ratio, int, value=[32, 16, 8].
+    * * 5: clip_bbox.
+    * * 6: scale_x_y.
+    *
+    * Outputs:
+    * * 0: output, a NNADAPTER_FP32 tensor, it's just the sigmoid, exp or linear
+    * transformation in x elementwise
    */
   NNADAPTER_YOLO_BOX_HEAD,
-  NNADAPTER_YOLO_BOX_PARSER,
 } NNAdapterOperationCode;
 
 /**
