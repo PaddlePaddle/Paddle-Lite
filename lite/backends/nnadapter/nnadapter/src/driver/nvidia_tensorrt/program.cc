@@ -112,15 +112,30 @@ Context::Context(void* device, const char* properties) : device_(device) {
            "is int8.";
   }
   // Cuda operations list
-  auto operations_str =
+  auto cuda_operations_str =
       key_values.count(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST)
           ? key_values[NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST]
           : GetStringFromEnv(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST);
-  if (!operations_str.empty()) {
-    auto operations = string_split(operations_str, ",");
+  if (!cuda_operations_str.empty()) {
+    auto operations = string_split(cuda_operations_str, ",");
     for (auto operation : operations) {
       if (operation == "NNADAPTER_SOFTMAX") {
         cuda_operations_.push_back(NNADAPTER_SOFTMAX);
+      } else {
+        NNADAPTER_LOG(FATAL) << "Not support.";
+      }
+    }
+  }
+  // Host operations list
+  auto host_operations_str =
+      key_values.count(NVIDIA_TENSORRT_HOST_OPERATIONS_LIST)
+          ? key_values[NVIDIA_TENSORRT_HOST_OPERATIONS_LIST]
+          : GetStringFromEnv(NVIDIA_TENSORRT_HOST_OPERATIONS_LIST);
+  if (!host_operations_str.empty()) {
+    auto operations = string_split(host_operations_str, ",");
+    for (auto operation : operations) {
+      if (operation == "NNADAPTER_SOFTMAX") {
+        host_operations_.push_back(NNADAPTER_SOFTMAX);
       } else {
         NNADAPTER_LOG(FATAL) << "Not support.";
       }
@@ -366,8 +381,8 @@ int CudaProgram::Build() {
   case NNADAPTER_##__op_type__:                                                \
     kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
     break;
-#include "driver/nvidia_tensorrt/kernels/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_ALL_H__
+#include "driver/nvidia_tensorrt/kernels/cuda/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
 #undef REGISTER_KERNEL
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
@@ -398,6 +413,55 @@ int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
     NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &operand_map_),
                        NNADAPTER_NO_ERROR);
     cudaDeviceSynchronize();
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+void HostProgram::Clear() {
+  operations_.clear();
+  kernels_.clear();
+  operand_map_.clear();
+}
+
+int HostProgram::Build() {
+  operations_ = SortOperationsInTopologicalOrder(model_);
+  for (auto operation : operations_) {
+    switch (operation->type) {
+#define REGISTER_KERNEL(__op_type__, __kernel_name__)                          \
+  case NNADAPTER_##__op_type__:                                                \
+    kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
+    break;
+#include "driver/nvidia_tensorrt/kernels/host/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
+#undef REGISTER_KERNEL
+      default:
+        NNADAPTER_LOG(FATAL) << "Unsupported operation("
+                             << OperationTypeToString(operation->type)
+                             << ") is found.";
+        break;
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+int HostProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
+                         std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+  for (auto& operand : model_->operands) {
+    if (!operand_map_.count(&operand)) {
+      operand_map_[&operand] = std::shared_ptr<Tensor>(new Tensor());
+    }
+  }
+  auto& input_operands = model_->input_operands;
+  for (size_t i = 0; i < input_operands.size(); i++) {
+    operand_map_[input_operands[i]] = input_tensors->at(i);
+  }
+  auto& output_operands = model_->output_operands;
+  for (size_t i = 0; i < output_operands.size(); i++) {
+    operand_map_[output_operands[i]] = output_tensors->at(i);
+  }
+  for (size_t i = 0; i < kernels_.size(); i++) {
+    NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &operand_map_),
+                       NNADAPTER_NO_ERROR);
   }
   return NNADAPTER_NO_ERROR;
 }

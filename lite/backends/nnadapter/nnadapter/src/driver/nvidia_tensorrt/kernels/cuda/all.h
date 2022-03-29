@@ -12,24 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__  // NOLINT
+#define __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
 
-#include <map>
-#include <memory>
-#include "driver/nvidia_tensorrt/kernels/kernel.h"
-#include "driver/nvidia_tensorrt/utility.h"
+REGISTER_KERNEL(SOFTMAX, SoftmaxCudaKernel)
 
-namespace nnadapter {
-namespace nvidia_tensorrt {
-
-class SoftmaxKernel : public KernelBase {
- public:
-  virtual ~SoftmaxKernel() {}
-
-  int Run(
-      core::Operation* operation,
-      std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) override;
-};
-
-}  // namespace nvidia_tensorrt
-}  // namespace nnadapter
+#endif  // NOLINT
