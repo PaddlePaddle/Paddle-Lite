@@ -35,7 +35,7 @@ bool sgemv(const float *A,
            const float *bias,
            bool flag_act,
            lite_api::ActivationType act,
-           const ARMContext *ctx,
+           ARMContext *ctx,
            float six = 6.f,
            float alpha = 1.f);
 
