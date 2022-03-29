@@ -58,8 +58,6 @@ class TestFcFuse(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() != TargetType.X86:
-            return len(program_config.ops) == 2
         return True
 
     def sample_program_configs(self, draw):
@@ -111,22 +109,41 @@ class TestFcFuse(FusePassAutoScanTest):
             "mul_y_data": TensorConfig(shape=[x1, y1])
         }
         if op_type == "matmul" or op_type == "matmul_v2":
+            if op_type == "matmul_v2":
+                attrs_op = {
+                    "trans_x": False,
+                    "trans_y": False,
+                }
+            else:
+                attrs_op = {
+                    "transpose_X": False,
+                    "transpose_Y": False,
+                    "alpha": 0.1,
+                    "fused_reshape_X": [],
+                    "fused_reshape_Y": [],
+                    "fused_transpose_X": [],
+                    "fused_transpose_Y": [],
+                    "fused_reshape_Out": [],
+                    "fused_transpose_Out": [],
+                    "Scale_x": 0.1,
+                    "Scale_y": 0.1,
+                    "Scale_out": 0.1,
+                    "head_number": 1,
+                    "force_fp32_output": False
+                }
             mul_op = OpConfig(
                 type=op_type,
                 inputs={"X": ["mul_x_data"],
                         "Y": ["mul_y_data"]},
                 outputs={"Out": ["mul_output_data"]},
-                attrs={
-                    "trans_x": False,
-                    "trans_y": False,
-                    "op_type": op_type
-                })
+                attrs=attrs_op)
             inputs_data = {
                 "mul_x_data": TensorConfig(
                     shape=[draw(st.integers(
                         min_value=2, max_value=100)), x1]),
                 "mul_y_data": TensorConfig(shape=[x1, y1])
             }
+            axis = 2 - len(add_x_data_shape)
 
         elementwise_add_op = OpConfig(
             type="elementwise_add",
@@ -149,10 +166,7 @@ class TestFcFuse(FusePassAutoScanTest):
         program_config = ProgramConfig(
             ops=ops,
             weights={"add_x_data": TensorConfig(shape=add_x_data_shape)},
-            inputs={
-                "mul_x_data": TensorConfig(shape=mul_x_in_shape),
-                "mul_y_data": TensorConfig(shape=[x1, y1])
-            },
+            inputs=inputs_data,
             outputs=[output_data])
         return program_config
 
@@ -161,7 +175,17 @@ class TestFcFuse(FusePassAutoScanTest):
         return self.get_predictor_configs(), ['fc'], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            op_type = program_config.ops[0].type
+            if target_type == TargetType.X86:
+                if op_type == "matmul" or op_type == "matmul_v2":
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op/pass in a specific case on X86. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(

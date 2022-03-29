@@ -24,7 +24,7 @@ namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> mul_types{"mul"};
-  std::vector<bool> act_types{false};
+  std::vector<bool> act_types;
   for (auto& place : graph->valid_places()) {
     if (place.target != TARGET(kMLU)) {
       act_types.push_back(true);
@@ -34,6 +34,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       mul_types.push_back("matmul_v2");
     }
   }
+  act_types.push_back(false);
   for (auto op_type : mul_types) {
     for (auto act_type : act_types) {
       fusion::FcFuser fuser(op_type, act_type);
