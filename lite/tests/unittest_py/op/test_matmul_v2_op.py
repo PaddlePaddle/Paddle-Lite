@@ -33,16 +33,6 @@ class TestMatmulV2Op(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP16,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        arm_valid_places = [
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageFolder), Place(
@@ -235,17 +225,6 @@ class TestMatmulV2Op(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on arm when x_dims=1 and x_trans=true. We need to fix it as soon as possible."
-        )
-
-        def _teller3(program_config, predictor_config):
-            target_type = predictor_config.target()
-            if target_type == TargetType.ARM and predictor_config.precision(
-            ) == PrecisionType.FP16:
-                return True
-
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "Some case run diff in arm fp16, We need to fix it as soon as possible."
         )
 
         def _teller4(program_config, predictor_config):

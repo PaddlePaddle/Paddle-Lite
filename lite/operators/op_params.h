@@ -105,7 +105,6 @@ struct FcParam : ParamBase {
   bool padding_weights{false};
   std::string Prelu_mode{
       "channel"};  // prelu param, can be "all", "channel" or "element"
-  std::string op_type{"mul"};
   // for int8
   WITH_INT8_CONFIG
 };

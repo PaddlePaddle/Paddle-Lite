@@ -94,7 +94,7 @@ class QuantDequantOpFuser : public FuseBase {
  private:
   std::string quant_dequant_op_type_{};
   std::vector<std::string> input_activation_quant_op = {
-      "matmul", "mul", "matmul_v2"};
+      "matmul_v2", "matmul", "mul"};
 };
 
 /* DynamicQuantOpFuser is applied for LSTM and GRU for now.
@@ -137,7 +137,8 @@ class QuantDequantLinearOpFuser : public FuseBase {
                                               "conv2d_transpose",
                                               "depthwise_conv2d_transpose",
                                               "mul",
-                                              "matmul"};
+                                              "matmul",
+                                              "matmul_v2"};
 };
 
 /* The pattern like "dequantize_linear_op + quantized_op "

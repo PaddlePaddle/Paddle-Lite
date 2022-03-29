@@ -33,7 +33,7 @@ static std::string GetWeightArgname(const std::string& op_type) {
                                        "depthwise_conv2d",
                                        "conv2d_transpose",
                                        "depthwise_conv2d_transpose"};
-  std::vector<std::string> mul_ops = {"mul", "matmul"};
+  std::vector<std::string> mul_ops = {"mul", "matmul", "matmul_v2"};
   if (std::find(conv_ops.begin(), conv_ops.end(), op_type) != conv_ops.end()) {
     weight_argname = "Filter";
   } else if (std::find(mul_ops.begin(), mul_ops.end(), op_type) !=
@@ -263,7 +263,8 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     // should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[1] * groups;
-  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
+  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul" ||
+             quantized_op_type_ == "matmul_v2") {
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
     // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
@@ -275,7 +276,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
 #ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
 #endif
-
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
