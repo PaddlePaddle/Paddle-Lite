@@ -14,11 +14,10 @@
 
 #pragma once
 
-#include <string>
+#include <vector>
 #include "fake_ddk/tensor.h"
 
 namespace fake_ddk {
-namespace nn {
 
 /* Supported operator types
  * <pre>
@@ -26,43 +25,52 @@ namespace nn {
  * and each Operator has different inputs and outputs, also has different
  * additional attrs.
  * e.g.
- *    CONV2D     inputs: [in, weight, bias]      outputs: [out]      attrs:
- * Conv2DAttr
- *    It means that CONV2D needs to set 3 inputs and 1 outputs, and fill the
+ *   CONV2D  inputs: [input, filter, bias]  outputs: [output]  attrs: Conv2DAttr
+ *   It means that CONV2D needs to set 3 inputs and 1 outputs, and fill the
  * Conv2DAttr structure.
- *    simple code as follow:
- *        std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> inputs, outputs;
- *        inputs.push_back(in);
- *        inputs.push_back(weight);
- *        inputs.push_back(bias);
- *        outputs.push_back(out);
- *        fake_ddk::nn::Conv2DAttr attr;
- *        ...   // fill attr
- *        graph->AddOperator(fake_ddk::nn::OperatorType::CONV2D, inputs,
- * outputs, (void*)&attr);
+ *   Sample code as follow:
+ *     std::vector<fake_ddk::Tensor*> inputs, outputs;
+ *     inputs.push_back(input);
+ *     inputs.push_back(filter));
+ *     inputs.push_back(bias);
+ *     outputs.push_back(output);
+ *     fake_ddk::Conv2DAttr attr;
+ *     ...   // fill attr
+ *     graph->AddOperator(fake_ddk::OperatorType::CONV2D, inputs, outputs,
+ * reinterpret_cast<void*>(&attr));
  * </pre>
 */
 
-typedef enum { FAKE_DEVICE_CONV2D, FAKE_DEVICE_RELU } fakedevice_nn_op_t;
-typedef fakedevice_nn_op_t OperatorType;
+typedef enum { FAKE_DDK_CONV2D = 0 } OperatorType;
 
-typedef struct _fakedevice_nn_conv2d_param {
-  uint32_t ksize[2];
-  uint32_t stride[2];
-  /* Pad left, right, top, bottom */
-  uint32_t pad[4];
+typedef struct {
+  /* Use POD(Plain Old Data) type otherwise it will cause serialization error */
   /* Pad type default value shall be AUTO */
   PadType pad_type;
-  uint32_t weights;
-  uint32_t group;
-  uint32_t dilation[2];
-  int32_t multiplier;
-  bool has_relu;
-} fakedevice_nn_conv2d_param;
-typedef fakedevice_nn_conv2d_param Conv2DAttr;
+  /* Pad top, bottom, left, right */
+  int32_t pad[4];
+  /* Stride height, width */
+  int32_t stride[2];
+  /* Dilation height, width */
+  int32_t dilation[2];
+  /* Group */
+  int32_t group;
+  /* Fuse type: FUSE_NONE, FUSE_RELU, FUSE_RELU1 and FUSE_RELU6 */
+  FuseType fuse_type;
+} Conv2DAttr;
 
-typedef union _fakedevice_nn_param {
-  fakedevice_nn_conv2d_param conv2d_param;
-} fakedevice_nn_param_t;
-}  // namespace nn
+typedef union {
+  Conv2DAttr conv2d_attr;
+  /* Add the structure of the attributes of other operators */
+} OperatorAttr;
+
+typedef struct {
+  OperatorType type;
+  OperatorAttr attr;
+  /* Inputs of the operator */
+  std::vector<Tensor*> input_tensors;
+  /* Outputs of the operator */
+  std::vector<Tensor*> output_tensors;
+} Operator;
+
 }  // namespace fake_ddk

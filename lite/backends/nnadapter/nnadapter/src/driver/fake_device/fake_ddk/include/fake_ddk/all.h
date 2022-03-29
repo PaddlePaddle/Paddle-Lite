@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 
 /*
  * FAKED_DDK is an example of HOW TO MAKE A NEW NNADAPTER DELEGATE DDK.
 */
 
-#include "fake_ddk/exection.h"
+#include "fake_ddk/execution.h"
 #include "fake_ddk/graph.h"
 #include "fake_ddk/operator.h"
 #include "fake_ddk/tensor.h"
