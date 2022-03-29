@@ -118,7 +118,7 @@ class TestFcFuse(FusePassAutoScanTest):
                 attrs_op = {
                     "transpose_X": False,
                     "transpose_Y": False,
-                    "alpha": 0.1,
+                    "alpha": 1.0,
                     "fused_reshape_X": [],
                     "fused_reshape_Y": [],
                     "fused_transpose_X": [],
