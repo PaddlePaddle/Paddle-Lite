@@ -49,10 +49,26 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto x_dims = layer_norm_param_->X->dims();
     begin_norm_axis = layer_norm_param_->begin_norm_axis;
     VLOG(4) << "begin_norm_axis: " << begin_norm_axis;
-    if (begin_norm_axis == 1) {
-      kernel_func_name_ = "layer_norm_batch";
-    } else if (begin_norm_axis == 2) {
-      kernel_func_name_ = "layer_norm_chann";
+    if (x_dims.size() == 4) {
+      if (begin_norm_axis == 1) {
+        kernel_func_name_ = "layer_norm_batch";
+      } else if (begin_norm_axis == 2) {
+        kernel_func_name_ = "layer_norm_chann";
+      } else if (begin_norm_axis == 3) {
+        kernel_func_name_ = "layer_norm_width";
+      } else {
+        LOG(FATAL) << "unsupported norm axis.";
+      }
+    } else if (x_dims.size() == 3) {
+      if (begin_norm_axis == 1) {
+        kernel_func_name_ = "layer_norm_chann";
+      } else if (begin_norm_axis == 2) {
+        kernel_func_name_ = "layer_norm_width";
+      } else {
+        LOG(FATAL) << "unsupported norm axis.";
+      }
+    } else {
+      LOG(FATAL) << "unsupported input dim.";
     }
     auto* scale = layer_norm_param_->Scale;
     auto* bias = layer_norm_param_->Bias;
@@ -116,8 +132,8 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
     int batch_size = matrix_dim[0];
     int feature_size = matrix_dim[1];
     epsilon = layer_norm_param_->epsilon;
-    int height = x_dims[2];
-    int width = x_dims[3];
+    int height = x_dims[x_dims.size() - 2];
+    int width = x_dims[x_dims.size() - 1];
 
     int arg_idx = 0;
     auto default_work_size = DefaultGlobalWorkSize(
@@ -150,7 +166,7 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, height);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, y_image_shape["width"]);
+    status = kernel.setArg(arg_idx++, static_cast<int>(y_image_shape["width"]));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, width);
     CL_CHECK_FATAL(status);

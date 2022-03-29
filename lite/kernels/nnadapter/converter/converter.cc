@@ -449,6 +449,21 @@ NNAdapterOperand* Converter::AddSliceOperation(
   return output_operand;
 }
 
+NNAdapterOperand* Converter::AddReshapeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& shape,
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
+  auto shape_operand = AddConstantOperand(shape);
+  // Copy scales from input in PrepareReshape
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
+  AddOperation(
+      NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
+  return output_operand;
+}
+
 NNAdapterOperand* Converter::AddFlattenOperation(
     NNAdapterOperand* input_operand,
     const int32_t start_axis,

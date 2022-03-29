@@ -23,9 +23,20 @@ include(dependencies.cmake)
 
 include_directories(.)
 aux_source_directory(converter CONVERTERS)
-aux_source_directory(optimizer OPTIMIZERS)
 aux_source_directory(converter/plugin PLUGINS)
-set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc calibrator.cc)
+aux_source_directory(kernels/cuda CUDA_KERNELS)
+aux_source_directory(kernels/host HOST_KERNELS)
+aux_source_directory(optimizer OPTIMIZERS)
+set(SRCS engine.cc
+  utility.cc
+  ${CONVERTERS}
+  ${PLUGINS}
+  ${CUDA_KERNELS}
+  ${HOST_KERNELS}
+  ${OPTIMIZERS}
+  driver.cc
+  calibrator.cc
+  program.cc)
 set(DEPS ${DEPS} nnadapter)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
