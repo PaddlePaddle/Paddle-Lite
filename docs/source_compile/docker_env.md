@@ -6,7 +6,7 @@
 
 ## Docker 开发环境
 
-[ Docker ](https://www.docker.com/) 是一个开源的应用容器引擎, 使用沙箱机制创建独立容器，方便运行不同程序。Paddle Lite 的 Docker 镜像基于 Ubuntu 16.04，镜像中包含了开发 Andriod / Linux 等平台要求的软件依赖与工具。
+[ Docker ](https://www.docker.com/) 是一个开源的应用容器引擎, 使用沙箱机制创建独立容器，方便运行不同程序。Paddle Lite 的 Docker 镜像基于 Ubuntu 18.04，镜像中包含了开发 Andriod / Linux 等平台要求的软件依赖与工具。
 
 ### Docker 镜像
 
