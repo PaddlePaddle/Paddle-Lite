@@ -90,18 +90,23 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
              const int cnt,
              const bool repeat_flag) {
   lite::Timer timer;
-  timer.Start();
-  task->PreProcess(predictor, config, image_files, cnt);
-  perf_data->set_pre_process_time(timer.Stop());
+  bool has_validation_set = FLAGS_validation_set.empty();
+  if (!has_validation_set) {
+    timer.Start();
+    task->PreProcess(predictor, config, image_files, cnt);
+    perf_data->set_pre_process_time(timer.Stop());
+  }
 
   timer.Start();
   predictor->Run();
   perf_data->set_run_time(timer.Stop());
 
-  timer.Start();
-  task->PostProcess(
-      predictor, config, image_files, word_labels, cnt, repeat_flag);
-  perf_data->set_post_process_time(timer.Stop());
+  if (!has_validation_set) {
+    timer.Start();
+    task->PostProcess(
+        predictor, config, image_files, word_labels, cnt, repeat_flag);
+    perf_data->set_post_process_time(timer.Stop());
+  }
 }
 #endif
 
