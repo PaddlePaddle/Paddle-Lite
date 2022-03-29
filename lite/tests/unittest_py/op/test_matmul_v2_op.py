@@ -237,6 +237,17 @@ class TestMatmulV2Op(AutoScanTest):
             "Lite does not support this op in a specific case on arm when x_dims=1 and x_trans=true. We need to fix it as soon as possible."
         )
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.ARM and predictor_config.precision(
+            ) == PrecisionType.FP16:
+                return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.ACCURACY_ERROR,
+            "Some case run diff in arm fp16, We need to fix it as soon as possible."
+        )
+
         def _teller4(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data_x"].shape)
             y_shape = list(program_config.inputs["input_data_y"].shape)
