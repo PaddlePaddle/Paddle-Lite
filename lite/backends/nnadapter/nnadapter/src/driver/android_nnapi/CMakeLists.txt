@@ -11,18 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cmake_minimum_required(VERSION 3.10)
 
 set(DEVICE_NAME android_nnapi)
-add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
-add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
+add_definitions(-DDEVICE_NAME=${DEVICE_NAME})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Os -fvisibility=hidden -fvisibility-inlines-hidden -fexceptions -fasynchronous-unwind-tables -funwind-tables -Wl,--allow-shlib-undefined")
 
 include(dependencies.cmake)
 
+include_directories(.)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS nnapi_implementation.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} engine.cc driver.cc)
-set(DEPS ${NNADAPTER_OPERATIONS} ${NNADAPTER_UTILITIES} nnadapter_optimizer_convert_quantization_symm_to_asymm nnadapter_optimizer_convert_datalayout_nchw_to_nhwc nnadapter_optimizer_fuse_matmul_add_into_fully_connected ${${DEVICE_NAME}_deps})
+set(DEPS ${DEPS} nnadapter)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
-target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group -Wl,-exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-all")
 set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

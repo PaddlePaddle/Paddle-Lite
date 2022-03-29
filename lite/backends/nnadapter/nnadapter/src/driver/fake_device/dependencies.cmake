@@ -45,4 +45,4 @@ else()
   add_subdirectory(fake_ddk)
 endif()
 
-set(${DEVICE_NAME}_deps fake_ddk)
+set(DEPS ${DEPS} fake_ddk)

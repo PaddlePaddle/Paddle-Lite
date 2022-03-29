@@ -49,4 +49,4 @@ endif()
 add_library(amlnpu_ddk SHARED IMPORTED GLOBAL)
 set_property(TARGET amlnpu_ddk PROPERTY IMPORTED_LOCATION ${AMLOGIC_NPU_SDK_DDK_FILE})
 
-set(${DEVICE_NAME}_deps amlnpu_ddk)
+set(DEPS ${DEPS} amlnpu_ddk)

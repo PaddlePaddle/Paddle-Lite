@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "operation/conv2d.h"
-#include "driver/fake_device/converter/converter.h"
-#include "driver/fake_device/converter/validator.h"
+#include "converter/converter.h"
+#include "converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 

@@ -17,6 +17,10 @@
 include_directories("./include")
 include_directories("./src")
 
+if(CMAKE_SYSTEM_NAME MATCHES "Android")
+  set(CMAKE_CXX_FLAGS "-llog ${CMAKE_CXX_FLAGS}")
+endif()
+
 aux_source_directory(src SRCS)
 
 add_library(fake_ddk SHARED ${SRCS})

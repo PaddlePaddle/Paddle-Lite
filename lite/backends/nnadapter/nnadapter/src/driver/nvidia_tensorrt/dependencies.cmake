@@ -98,6 +98,6 @@ endif()
 add_library(tensorrt_nvinfer_plugin SHARED IMPORTED GLOBAL)
 set_property(TARGET tensorrt_nvinfer_plugin PROPERTY IMPORTED_LOCATION ${NVIDIA_TENSORRT_NVINFER_PLUGIN_FILE})
 
-set(${DEVICE_NAME}_deps tensorrt_nvinfer tensorrt_nvinfer_plugin cuda_cudnn cuda_cudart)
+set(DEPS ${DEPS} tensorrt_nvinfer tensorrt_nvinfer_plugin cuda_cudnn cuda_cudart)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-declarations -Wno-deprecated-declarations")

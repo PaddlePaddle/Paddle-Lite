@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/fake_device/converter/converter.h"
+#include "converter/converter.h"
 #include <unistd.h>
 #include <algorithm>
 #include <utility>
@@ -30,7 +30,7 @@ namespace fake_device {
     __op_type__, __validate_func_name__, __convert_func_name__) \
   extern int __convert_func_name__(Converter* converter,        \
                                    core::Operation* operation);
-#include "driver/fake_device/converter/all.h"  // NOLINT
+#include "converter/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_FAKE_DEVICE_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
@@ -47,7 +47,7 @@ int Converter::Apply(core::Model* model) {
   case NNADAPTER_##__op_type__:                                 \
     __convert_func_name__(this, operation);                     \
     break;
-#include "driver/fake_device/converter/all.h"  // NOLINT
+#include "converter/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_FAKE_DEVICE_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:

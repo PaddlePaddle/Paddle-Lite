@@ -88,4 +88,4 @@ add_dependencies(timvx_libs copy_timvx_libs)
 
 include_directories(${VERISILICON_TIMVX_INSTALL_DIR}/include)
 
-set(${DEVICE_NAME}_deps timvx_libs)
+set(DEPS ${DEPS} timvx_libs)

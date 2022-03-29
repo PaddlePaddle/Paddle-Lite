@@ -105,9 +105,8 @@ int ExecuteProgram(void* program,
 }  // namespace imagination_nna
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Imagination",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,

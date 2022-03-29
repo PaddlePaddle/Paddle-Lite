@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/fake_device/engine.h"
+#include "engine.h"  // NOLINT
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
-#include "driver/fake_device/converter/converter.h"
-#include "driver/fake_device/converter/validator.h"
+#include "converter/converter.h"
+#include "converter/validator.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"

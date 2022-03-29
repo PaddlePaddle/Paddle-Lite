@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/fake_device/utility.h"
+#include "utility.h"  // NOLINT
 
 namespace nnadapter {
 namespace fake_device {
