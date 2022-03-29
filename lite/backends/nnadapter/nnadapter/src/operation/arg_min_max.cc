@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateArgMinMax(const core::Operation* operation) { return false; }
+
 int PrepareArgMinMax(core::Operation* operation) {
   ARG_MIN_MAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -30,7 +32,7 @@ int PrepareArgMinMax(core::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
   output_type.precision = dtype;
-  if (!keepdim) {
+  if (!keepdim && input_type.dimensions.count > 1) {
     output_type.dimensions.count = input_type.dimensions.count - 1;
   }
   const uint32_t input_dimensions_count = input_type.dimensions.count;
@@ -54,6 +56,10 @@ int PrepareArgMinMax(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteArgMinMax(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

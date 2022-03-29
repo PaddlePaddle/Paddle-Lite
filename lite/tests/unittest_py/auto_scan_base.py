@@ -481,8 +481,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     ) == 'x86_64':
                         # only run in linux
                         continue
-                    atol_ = 1e-3
-                    rtol_ = 1e-3
+                    atol_ = 8e-3
+                    rtol_ = 8e-3
                     if cnt == 0:
                         self.insert_leaky_relu_op(prog_config)
                     cnt = cnt + 1

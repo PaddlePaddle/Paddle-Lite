@@ -22,6 +22,10 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateLayerNormalization(const core::Operation* operation) {
+  return false;
+}
+
 int PrepareLayerNormalization(core::Operation* operation) {
   LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -29,6 +33,10 @@ int PrepareLayerNormalization(core::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteLayerNormalization(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation
