@@ -38,6 +38,8 @@ class TestReduceSumOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -51,7 +53,8 @@ class TestReduceSumOp(AutoScanTest):
                     min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
         axis_list = draw(
-            st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
+            st.sampled_from([[-1], [-2], [-3], [-4], [-2, -1], [-3, -2], [0],
+                             [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
         reduce_all_data = True if axis_list == None or axis_list == [] else False
 
