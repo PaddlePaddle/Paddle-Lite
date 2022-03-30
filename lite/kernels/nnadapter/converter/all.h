@@ -15,10 +15,11 @@
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(batch_norm,
-                   ConvertBatchNorm,
-                   "huawei_ascend_npu,verisilicon_"
-                   "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino");
+REGISTER_CONVERTER(
+    batch_norm,
+    ConvertBatchNorm,
+    "huawei_ascend_npu,verisilicon_"
+    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino,nvidia_tensorrt");
 REGISTER_CONVERTER(
     cast,
     ConvertCast,
