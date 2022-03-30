@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__  // NOLINT
-#define __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
+#pragma once
+#include "core/types.h"
 
-REGISTER_KERNEL(SOFTMAX_HOST, SoftmaxHostKernel)
+namespace nnadapter {
+namespace nvidia_tensorrt {
 
-#endif  // NOLINT
+// Convert NNADAPTER_SOFTMAX to custom softmax
+// If type is 0, replace NNADAPTER_SOFTMAX with NNADAPTER_SOFTMAX_CUDA
+// If type is 1, replace NNADAPTER_SOFTMAX with NNADAPTER_SOFTMAX_HOST
+void ReplaceSoftmax(core::Model* model, int type = 0);
+
+}  // namespace nvidia_tensorrt
+}  // namespace nnadapter

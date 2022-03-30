@@ -20,8 +20,8 @@
 #include <utility>
 #include <vector>
 #include "driver/nvidia_tensorrt/calibrator.h"
-#include "driver/nvidia_tensorrt/kernels/cuda/softmax.h"
-#include "driver/nvidia_tensorrt/kernels/host/softmax.h"
+#include "driver/nvidia_tensorrt/kernels/cuda/softmax_cuda.h"
+#include "driver/nvidia_tensorrt/kernels/host/softmax_host.h"
 #include "driver/nvidia_tensorrt/kernels/kernel.h"
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/logging.h"
@@ -46,12 +46,6 @@ class Context {
   bool GpuFallback() { return gpu_fallback_; }
   std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
   std::string CalibrationTablePath() { return calibration_table_path_; }
-  std::vector<NNAdapterOperationCode> CudaOperations() {
-    return cuda_operations_;
-  }
-  std::vector<NNAdapterOperationCode> HostOperations() {
-    return host_operations_;
-  }
 
  private:
   void* device_{nullptr};
@@ -62,8 +56,6 @@ class Context {
   bool gpu_fallback_{true};
   std::string calibration_dataset_path_;
   std::string calibration_table_path_;
-  std::vector<NNAdapterOperationCode> cuda_operations_;
-  std::vector<NNAdapterOperationCode> host_operations_;
 };
 
 class ProgramBase {
@@ -140,7 +132,7 @@ class CudaProgram : public ProgramBase {
   std::vector<uint8_t>* cache_{nullptr};
   std::vector<core::Operation*> operations_;
   std::vector<std::shared_ptr<KernelBase>> kernels_;
-  std::map<core::Operand*, std::shared_ptr<Tensor>> operand_map_;
+  std::map<core::Operand*, std::shared_ptr<Tensor>> tensors_;
 };
 
 class HostProgram : public ProgramBase {
@@ -166,7 +158,7 @@ class HostProgram : public ProgramBase {
   std::vector<uint8_t>* cache_{nullptr};
   std::vector<core::Operation*> operations_;
   std::vector<std::shared_ptr<KernelBase>> kernels_;
-  std::map<core::Operand*, std::shared_ptr<Tensor>> operand_map_;
+  std::map<core::Operand*, std::shared_ptr<Tensor>> tensors_;
 };
 
 }  // namespace nvidia_tensorrt

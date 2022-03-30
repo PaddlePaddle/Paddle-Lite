@@ -132,7 +132,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_ABS,
+  NNADAPTER_ABS = 0,
 
   /**
    * Applies adaptive 2-D average pooling across the input according to input

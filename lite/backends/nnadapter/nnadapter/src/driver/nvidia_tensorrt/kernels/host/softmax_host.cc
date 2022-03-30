@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/kernels/host/softmax.h"
+#include "driver/nvidia_tensorrt/kernels/host/softmax_host.h"
 #include <cmath>
 
 namespace nnadapter {
@@ -39,7 +39,7 @@ void Softmax(const T* input, T* output, const int num) {
 int SoftmaxHostKernel::Run(
     core::Operation* operation,
     std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
-  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SOFTMAX);
+  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SOFTMAX_HOST);
   auto input_tensor = operand_map->at(operation->input_operands[0]);
   auto output_tensor = operand_map->at(operation->output_operands[0]);
   output_tensor->Resize(input_tensor->Dims());

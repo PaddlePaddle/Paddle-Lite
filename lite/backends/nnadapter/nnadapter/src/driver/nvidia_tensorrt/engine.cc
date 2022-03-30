@@ -15,6 +15,7 @@
 #include "driver/nvidia_tensorrt/engine.h"
 #include <algorithm>
 #include <unordered_set>
+#include "driver/nvidia_tensorrt/optimizer/replace_softmax.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -23,6 +24,41 @@
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+static std::unordered_set<NNAdapterOperationType>
+GetTensorrtSupportedOperationTypes() {
+  std::unordered_set<NNAdapterOperationType> tensorrt_operations;
+#define REGISTER_CONVERTER(__op_type__, __kernel_name__) \
+  tensorrt_operations.insert(NNADAPTER_##__op_type__);
+#include "driver/nvidia_tensorrt/converter/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_CONVERTER_ALL_H__
+#undef REGISTER_CONVERTER
+  return tensorrt_operations;
+}
+
+static std::unordered_set<NNAdapterOperationType>
+GetCudaSupportedOperationTypes() {
+  std::unordered_set<NNAdapterOperationType> tensorrt_operations;
+  std::unordered_set<NNAdapterOperationType> cuda_operations;
+#define REGISTER_KERNEL(__op_type__, __kernel_name__) \
+  cuda_operations.insert(NNADAPTER_##__op_type__);
+#include "driver/nvidia_tensorrt/kernels/cuda/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
+#undef REGISTER_KERNEL
+  return cuda_operations;
+}
+
+static std::unordered_set<NNAdapterOperationType>
+GetHostSupportedOperationTypes() {
+  std::unordered_set<NNAdapterOperationType> tensorrt_operations;
+  std::unordered_set<NNAdapterOperationType> host_operations;
+#define REGISTER_KERNEL(__op_type__, __kernel_name__) \
+  host_operations.insert(NNADAPTER_##__op_type__);
+#include "driver/nvidia_tensorrt/kernels/host/all.h"  // NOLINT
+#undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
+#undef REGISTER_KERNEL
+  return host_operations;
+}
 
 void Program::Clear() {
   if (is_sub_model_from_cache_) {
@@ -48,6 +84,8 @@ void Program::Clear() {
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
   if (cache->buffer.empty()) {
+    // Convert nnadapter standard ops to cunstom ops
+    // ReplaceSoftmax(model);
     NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
@@ -55,16 +93,16 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   // Create sub_model
   for (size_t i = 0; i < sub_models_.size(); i++) {
     auto& sub_model = sub_models_.at(i);
-    switch (sub_model.first) {
-      case 0:
+    switch (static_cast<DeviceType>(sub_model.first)) {
+      case kTensorrt:
         sub_programs_.emplace_back(new TensorrtProgram(
             context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
         break;
-      case 1:
+      case kCUDA:
         sub_programs_.emplace_back(new CudaProgram(
             context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
         break;
-      case 2:
+      case kHost:
         sub_programs_.emplace_back(new HostProgram(
             context_, std::get<0>(sub_model.second), &sub_caches_.at(i)));
         break;
@@ -99,20 +137,25 @@ int Program::BuildFromModel(core::Model* model) {
   // Partition model
   // 0: tensorrt; 1: cuda; 2: host
   std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
-      supported_operations{{0, {}}, {1, {}}, {2, {}}};
-  auto cuda_operations = context_->CudaOperations();
-  auto host_operations = context_->HostOperations();
+      supported_operations{{static_cast<int>(kTensorrt), {}},
+                           {static_cast<int>(kCUDA), {}},
+                           {static_cast<int>(kHost), {}}};
+  auto tensorrt_operations = GetTensorrtSupportedOperationTypes();
+  auto cuda_operations = GetCudaSupportedOperationTypes();
+  auto host_operations = GetHostSupportedOperationTypes();
   for (auto& operation : model->operations) {
-    if (std::find(cuda_operations.begin(),
-                  cuda_operations.end(),
-                  operation.type) != cuda_operations.end()) {
-      supported_operations[1].second.insert(&operation);
-    } else if (std::find(host_operations.begin(),
-                         host_operations.end(),
-                         operation.type) != host_operations.end()) {
-      supported_operations[2].second.insert(&operation);
+    if (tensorrt_operations.count(operation.type)) {
+      supported_operations.at(static_cast<int>(kTensorrt))
+          .second.insert(&operation);
+    } else if (cuda_operations.count(operation.type)) {
+      supported_operations.at(static_cast<int>(kCUDA))
+          .second.insert(&operation);
+    } else if (host_operations.count(operation.type)) {
+      supported_operations.at(static_cast<int>(kHost))
+          .second.insert(&operation);
     } else {
-      supported_operations[0].second.insert(&operation);
+      NNADAPTER_LOG(INFO) << "Not support operation: "
+                          << OperationTypeToString(operation.type);
     }
   }
   PartitionModelIntoSubmodels(model, supported_operations, &sub_models_);

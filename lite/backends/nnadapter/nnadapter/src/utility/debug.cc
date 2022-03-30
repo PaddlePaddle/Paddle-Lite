@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include "driver/nvidia_tensorrt/operations/types.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -353,6 +354,8 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_SOFTMAX:
+      case NNADAPTER_SOFTMAX_CUDA:
+      case NNADAPTER_SOFTMAX_HOST:
         input_args = {"input", "axis"};
         output_args = {"output"};
         break;
@@ -714,6 +717,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(SOFTMAX_CUDA);
+    NNADAPTER_TYPE_TO_STRING(SOFTMAX_HOST);
     NNADAPTER_TYPE_TO_STRING(SOFTPLUS);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUARE);
