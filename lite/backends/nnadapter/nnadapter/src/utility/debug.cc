@@ -508,6 +508,21 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"condition", "input0", "input1"};
         output_args = {"output"};
         break;
+      case NNADAPTER_PRIOR_BOX:
+        input_args = {"Input",
+                      "Image",
+                      "min_sizes",
+                      "max_sizes",
+                      "aspect_ratios",
+                      "variances",
+                      "flip",
+                      "clip",
+                      "step_w",
+                      "step_h",
+                      "offset",
+                      "min_max_aspect_ratios_order"};
+        output_args = {"Boxes", "Variances"};
+        break;
       case NNADAPTER_YOLO_BOX:
         input_args = {
             "input",
@@ -523,7 +538,6 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         };
         output_args = {"boxes", "scores"};
         break;
-<<<<<<< HEAD
       case NNADAPTER_YOLO_BOX_HEAD:
         input_args = {
             "input",
@@ -535,22 +549,6 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
             "scale_x_y",
         };
         output_args = {"output"};
-=======
-      case NNADAPTER_PRIOR_BOX:
-        input_args = {"Input",
-                      "Image",
-                      "min_sizes",
-                      "max_sizes",
-                      "aspect_ratios",
-                      "variances",
-                      "flip",
-                      "clip",
-                      "step_w",
-                      "step_h",
-                      "offset",
-                      "min_max_aspect_ratios_order"};
-        output_args = {"Boxes", "Variances"};
->>>>>>> origin/develop
         break;
       default:
         NNADAPTER_LOG(FATAL) << "unsupported op: "
