@@ -56,11 +56,17 @@ RUN apt-get install -y --no-install-recommends \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu
 
-# android ndk
+# android ndk22b (default)
 RUN cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r22b-linux-x86_64.zip
 ENV NDK_ROOT /opt/android-ndk-r22b
 ENV ANDROID_NDK /opt/android-ndk-r22b
 RUN cd /opt && unzip /tmp/android-ndk-r22b-linux-x86_64.zip
+
+# android ndk17c
+RUN cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+ENV NDK_ROOT_R17C /opt/android-ndk-r17c
+ENV ANDROID_NDK_R17C /opt/android-ndk-r17c
+RUN cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
 
 # VNC port
 EXPOSE 5900
@@ -68,4 +74,5 @@ EXPOSE 5900
 # clean
 RUN python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pre-commit wheel
 RUN apt-get autoremove -y && apt-get clean
-RUN rm -rf /cmake-3.19.2-Linux-x86_64.tar.gz /tmp/android-ndk-r22b-linux-x86_64.zip
+RUN rm -rf /cmake-3.19.2-Linux-x86_64.tar.gz
+RUN rm -rf /tmp/android-ndk-r22b-linux-x86_64.zip /tmp/android-ndk-r17c-linux-x86_64.zip
