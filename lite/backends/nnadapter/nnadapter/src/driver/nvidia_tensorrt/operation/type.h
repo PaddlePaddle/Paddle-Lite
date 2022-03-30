@@ -18,28 +18,6 @@ namespace nnadapter {
 
 enum {
   /**
-   * Custom softmax to compute on cuda place
-   * Computes the normalized exponential values for the input tensor
-   * element-wise.
-   * The output is calculated using this formula:
-   *     output = exp(input) / reduce_sum(exp(input), axis=axis, keepdims=true)
-   *
-   * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to 1. It represents the
-   * dimension along which softmax will be performed. It should be in range [-R,
-   * R), where R is the rank of input, negative value works the same way as
-   * axis+R.
-   *
-   * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
-   *
-   * Available since version 1.
-   */
-  NNADAPTER_SOFTMAX_CUDA = 10000,
-
-  /**
    * Custom softmax to compute on host place
    * Computes the normalized exponential values for the input tensor
    * element-wise.
@@ -59,7 +37,29 @@ enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SOFTMAX_HOST,
+  NNADAPTER_NAIVE_SOFTMAX = -1000,
+
+  /**
+   * Custom softmax to compute on cuda place
+   * Computes the normalized exponential values for the input tensor
+   * element-wise.
+   * The output is calculated using this formula:
+   *     output = exp(input) / reduce_sum(exp(input), axis=axis, keepdims=true)
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to 1. It represents the
+   * dimension along which softmax will be performed. It should be in range [-R,
+   * R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SPECIAL_SOFTMAX,
 };  // Custom operations type
 
 }  // namespace nnadapter

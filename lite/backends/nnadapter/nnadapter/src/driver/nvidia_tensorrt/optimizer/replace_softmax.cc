@@ -15,7 +15,7 @@
 #include "driver/nvidia_tensorrt/optimizer/replace_softmax.h"
 #include <cmath>
 #include <vector>
-#include "driver/nvidia_tensorrt/operations/types.h"
+#include "driver/nvidia_tensorrt/operation/type.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -24,16 +24,22 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-void ReplaceSoftmax(core::Model* model, int type) {
+void ReplaceSoftmaxWithNaiveSoftmax(core::Model* model) {
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     if (operation->type == NNADAPTER_SOFTMAX) {
-      if (type == 0) {
-        operation->type = NNADAPTER_SOFTMAX_CUDA;
-      } else {
-        operation->type = NNADAPTER_SOFTMAX_HOST;
-      }
+      operation->type = NNADAPTER_NAIVE_SOFTMAX;
+    }
+  }
+}
+
+void ReplaceSoftmaxWithSpecialSoftmax(core::Model* model) {
+  std::vector<core::Operation*> operations =
+      SortOperationsInTopologicalOrder(model);
+  for (auto operation : operations) {
+    if (operation->type == NNADAPTER_SOFTMAX) {
+      operation->type = NNADAPTER_SPECIAL_SOFTMAX;
     }
   }
 }

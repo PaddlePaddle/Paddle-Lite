@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__  // NOLINT
-#define __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
+#ifndef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__  // NOLINT
+#define __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
 
-REGISTER_KERNEL(SOFTMAX_CUDA, SoftmaxCudaKernel)
+REGISTER_KERNEL(NAIVE_SOFTMAX, NaiveSoftmaxKernel)
 
 #endif  // NOLINT

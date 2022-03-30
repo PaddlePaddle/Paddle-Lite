@@ -20,7 +20,8 @@
 #include <memory>
 #include <vector>
 #include "core/types.h"
-#include "driver/nvidia_tensorrt/operations/types.h"
+#include "driver/nvidia_tensorrt/operation/type.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {

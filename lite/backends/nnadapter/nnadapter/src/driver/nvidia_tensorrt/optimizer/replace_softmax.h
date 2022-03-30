@@ -18,10 +18,9 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-// Convert NNADAPTER_SOFTMAX to custom softmax
-// If type is 0, replace NNADAPTER_SOFTMAX with NNADAPTER_SOFTMAX_CUDA
-// If type is 1, replace NNADAPTER_SOFTMAX with NNADAPTER_SOFTMAX_HOST
-void ReplaceSoftmax(core::Model* model, int type = 0);
+void ReplaceSoftmaxWithNaiveSoftmax(core::Model* model);
+
+void ReplaceSoftmaxWithSpecialSoftmax(core::Model* model);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

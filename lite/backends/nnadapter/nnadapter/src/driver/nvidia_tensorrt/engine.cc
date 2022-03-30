@@ -38,11 +38,10 @@ GetTensorrtSupportedOperationTypes() {
 
 static std::unordered_set<NNAdapterOperationType>
 GetCudaSupportedOperationTypes() {
-  std::unordered_set<NNAdapterOperationType> tensorrt_operations;
   std::unordered_set<NNAdapterOperationType> cuda_operations;
 #define REGISTER_KERNEL(__op_type__, __kernel_name__) \
   cuda_operations.insert(NNADAPTER_##__op_type__);
-#include "driver/nvidia_tensorrt/kernels/cuda/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/cuda/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
 #undef REGISTER_KERNEL
   return cuda_operations;
@@ -50,11 +49,10 @@ GetCudaSupportedOperationTypes() {
 
 static std::unordered_set<NNAdapterOperationType>
 GetHostSupportedOperationTypes() {
-  std::unordered_set<NNAdapterOperationType> tensorrt_operations;
   std::unordered_set<NNAdapterOperationType> host_operations;
 #define REGISTER_KERNEL(__op_type__, __kernel_name__) \
   host_operations.insert(NNADAPTER_##__op_type__);
-#include "driver/nvidia_tensorrt/kernels/host/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/host/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
 #undef REGISTER_KERNEL
   return host_operations;
@@ -84,8 +82,6 @@ void Program::Clear() {
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
   if (cache->buffer.empty()) {
-    // Convert nnadapter standard ops to cunstom ops
-    // ReplaceSoftmax(model);
     NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
@@ -128,6 +124,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 }
 
 int Program::BuildFromModel(core::Model* model) {
+  // Convert nnadapter standard ops to cunstom ops
+  // ReplaceSoftmaxWithNaiveSoftmax(model);
+  // ReplaceSoftmaxWithSpecialSoftmax(model);
+  // Prepare input/output types
   for (auto& operand : model->input_operands) {
     input_types_.push_back(operand->type);
   }
@@ -135,29 +135,28 @@ int Program::BuildFromModel(core::Model* model) {
     output_types_.push_back(operand->type);
   }
   // Partition model
-  // 0: tensorrt; 1: cuda; 2: host
-  std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
-      supported_operations{{static_cast<int>(kTensorrt), {}},
-                           {static_cast<int>(kCUDA), {}},
-                           {static_cast<int>(kHost), {}}};
-  auto tensorrt_operations = GetTensorrtSupportedOperationTypes();
-  auto cuda_operations = GetCudaSupportedOperationTypes();
-  auto host_operations = GetHostSupportedOperationTypes();
+  std::unordered_set<core::Operation*> tensorrt_operations;
+  std::unordered_set<core::Operation*> cuda_operations;
+  std::unordered_set<core::Operation*> host_operations;
+  auto tensorrt_supported_operation_types =
+      GetTensorrtSupportedOperationTypes();
+  auto cuda_supported_operation_types = GetCudaSupportedOperationTypes();
+  auto host_supported_operation_types = GetHostSupportedOperationTypes();
   for (auto& operation : model->operations) {
-    if (tensorrt_operations.count(operation.type)) {
-      supported_operations.at(static_cast<int>(kTensorrt))
-          .second.insert(&operation);
-    } else if (cuda_operations.count(operation.type)) {
-      supported_operations.at(static_cast<int>(kCUDA))
-          .second.insert(&operation);
-    } else if (host_operations.count(operation.type)) {
-      supported_operations.at(static_cast<int>(kHost))
-          .second.insert(&operation);
+    if (tensorrt_supported_operation_types.count(operation.type)) {
+      tensorrt_operations.insert(&operation);
+    } else if (cuda_supported_operation_types.count(operation.type)) {
+      cuda_operations.insert(&operation);
+    } else if (host_supported_operation_types.count(operation.type)) {
+      host_operations.insert(&operation);
     } else {
-      NNADAPTER_LOG(INFO) << "Not support operation: "
-                          << OperationTypeToString(operation.type);
+      NNADAPTER_LOG(FATAL) << "Not support operation type: " << operation.type;
     }
   }
+  std::vector<std::pair<int, std::unordered_set<core::Operation*>>>
+      supported_operations{{static_cast<int>(kTensorrt), tensorrt_operations},
+                           {static_cast<int>(kCUDA), cuda_operations},
+                           {static_cast<int>(kHost), host_operations}};
   PartitionModelIntoSubmodels(model, supported_operations, &sub_models_);
   NNADAPTER_CHECK(!sub_models_.empty());
   sub_caches_.resize(sub_models_.size());

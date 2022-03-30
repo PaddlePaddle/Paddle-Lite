@@ -347,11 +347,12 @@ int CudaProgram::Build() {
   operations_ = SortOperationsInTopologicalOrder(model_);
   for (auto operation : operations_) {
     switch (operation->type) {
-#define REGISTER_KERNEL(__op_type__, __kernel_name__)                          \
-  case NNADAPTER_##__op_type__:                                                \
-    kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
+#define REGISTER_KERNEL(__op_type__, __kernel_name__)              \
+  case NNADAPTER_##__op_type__:                                    \
+    kernels_.emplace_back(                                         \
+        std::shared_ptr<KernelBase>(new cuda::__kernel_name__())); \
     break;
-#include "driver/nvidia_tensorrt/kernels/cuda/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/cuda/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
 #undef REGISTER_KERNEL
       default:
@@ -397,11 +398,12 @@ int HostProgram::Build() {
   operations_ = SortOperationsInTopologicalOrder(model_);
   for (auto operation : operations_) {
     switch (operation->type) {
-#define REGISTER_KERNEL(__op_type__, __kernel_name__)                          \
-  case NNADAPTER_##__op_type__:                                                \
-    kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
+#define REGISTER_KERNEL(__op_type__, __kernel_name__)              \
+  case NNADAPTER_##__op_type__:                                    \
+    kernels_.emplace_back(                                         \
+        std::shared_ptr<KernelBase>(new host::__kernel_name__())); \
     break;
-#include "driver/nvidia_tensorrt/kernels/host/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/host/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
 #undef REGISTER_KERNEL
       default:

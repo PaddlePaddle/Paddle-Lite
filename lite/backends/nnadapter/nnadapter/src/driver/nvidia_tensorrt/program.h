@@ -20,9 +20,9 @@
 #include <utility>
 #include <vector>
 #include "driver/nvidia_tensorrt/calibrator.h"
-#include "driver/nvidia_tensorrt/kernels/cuda/softmax_cuda.h"
-#include "driver/nvidia_tensorrt/kernels/host/softmax_host.h"
-#include "driver/nvidia_tensorrt/kernels/kernel.h"
+#include "driver/nvidia_tensorrt/kernel/cuda/special_softmax.h"
+#include "driver/nvidia_tensorrt/kernel/host/naive_softmax.h"
+#include "driver/nvidia_tensorrt/kernel/kernel.h"
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/logging.h"
 
