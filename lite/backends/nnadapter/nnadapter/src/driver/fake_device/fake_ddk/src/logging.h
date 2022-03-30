@@ -48,7 +48,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #if defined(ANDROID) || defined(__ANDROID__)
 #include <android/log.h>
 // Android log macors
-#define ANDROID_LOG_TAG "NNADAPTER"
+#define ANDROID_LOG_TAG "FAKE_DDK"
 #define ANDROID_LOG_I(msg) \
   __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, "%s", msg)
 #define ANDROID_LOG_W(msg) \
@@ -57,39 +57,39 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
   __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
-// NNADAPTER_LOG()
-#define NNADAPTER_LOG(status) NNADAPTER_LOG_##status.stream()
-#define NNADAPTER_LOG_INFO \
-  nnadapter::logging::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
-#define NNADAPTER_LOG_ERROR NNADAPTER_LOG_INFO
-#define NNADAPTER_LOG_WARNING \
-  nnadapter::logging::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
-#define NNADAPTER_LOG_FATAL \
-  nnadapter::logging::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
+// FAKE_DDK_LOG()
+#define FAKE_DDK_LOG(status) FAKE_DDK_LOG_##status.stream()
+#define FAKE_DDK_LOG_INFO \
+  fake_ddk::logging::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
+#define FAKE_DDK_LOG_ERROR FAKE_DDK_LOG_INFO
+#define FAKE_DDK_LOG_WARNING \
+  fake_ddk::logging::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
+#define FAKE_DDK_LOG_FATAL \
+  fake_ddk::logging::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
 
-// NNADAPTER_VLOG()
-#define NNADAPTER_VLOG(level)                                              \
-  nnadapter::logging::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level) \
+// FAKE_DDK_VLOG()
+#define FAKE_DDK_VLOG(level)                                              \
+  fake_ddk::logging::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level) \
       .stream()
 
-// NNADAPTER_CHECK()
+// FAKE_DDK_CHECK()
 // clang-format off
-#define NNADAPTER_CHECK(x) if (!(x)) nnadapter::logging::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
-#define _NNADAPTER_CHECK_BINARY(x, cmp, y) NNADAPTER_CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
+#define FAKE_DDK_CHECK(x) if (!(x)) fake_ddk::logging::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
+#define _FAKE_DDK_CHECK_BINARY(x, cmp, y) FAKE_DDK_CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
 
 // clang-format on
-#define NNADAPTER_CHECK_EQ(x, y) _NNADAPTER_CHECK_BINARY(x, ==, y)
-#define NNADAPTER_CHECK_NE(x, y) _NNADAPTER_CHECK_BINARY(x, !=, y)
-#define NNADAPTER_CHECK_LT(x, y) _NNADAPTER_CHECK_BINARY(x, <, y)
-#define NNADAPTER_CHECK_LE(x, y) _NNADAPTER_CHECK_BINARY(x, <=, y)
-#define NNADAPTER_CHECK_GT(x, y) _NNADAPTER_CHECK_BINARY(x, >, y)
-#define NNADAPTER_CHECK_GE(x, y) _NNADAPTER_CHECK_BINARY(x, >=, y)
+#define FAKE_DDK_CHECK_EQ(x, y) _FAKE_DDK_CHECK_BINARY(x, ==, y)
+#define FAKE_DDK_CHECK_NE(x, y) _FAKE_DDK_CHECK_BINARY(x, !=, y)
+#define FAKE_DDK_CHECK_LT(x, y) _FAKE_DDK_CHECK_BINARY(x, <, y)
+#define FAKE_DDK_CHECK_LE(x, y) _FAKE_DDK_CHECK_BINARY(x, <=, y)
+#define FAKE_DDK_CHECK_GT(x, y) _FAKE_DDK_CHECK_BINARY(x, >, y)
+#define FAKE_DDK_CHECK_GE(x, y) _FAKE_DDK_CHECK_BINARY(x, >=, y)
 
-namespace nnadapter {
+namespace fake_ddk {
 namespace logging {
 
 struct Exception : public std::exception {
-  const std::string exception_prefix = "NNAdapter C++ Exception: \n";
+  const std::string exception_prefix = "FakeDDK C++ Exception: \n";
   std::string message;
   explicit Exception(const char* detail) {
     message = exception_prefix + std::string(detail);
@@ -145,4 +145,4 @@ class VLogMessage {
 };
 
 }  // namespace logging
-}  // namespace nnadapter
+}  // namespace fake_ddk

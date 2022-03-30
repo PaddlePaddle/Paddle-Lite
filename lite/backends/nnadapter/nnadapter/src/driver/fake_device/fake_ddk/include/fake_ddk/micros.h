@@ -14,26 +14,12 @@
 
 #pragma once
 
-#include "engine.h"  // NOLINT
-
-namespace nnadapter {
-namespace fake_device {
-
-class Validator {
- public:
-  explicit Validator(Context* context) : context_(context) {}
-  ~Validator() {}
-
-  // Traverse each operation in the model and check if it is supported by the
-  // device, and return a list of whether it is supported or not
-  int Apply(const core::Model* model, bool* supported_operations);
-  // Check each the operation is supported according to the device context and
-  // custom settings
-  Context* context() { return context_; }
-
- private:
-  Context* context_{nullptr};
-};
-
-}  // namespace fake_device
-}  // namespace nnadapter
+#if defined _WIN32 || defined __CYGWIN__
+#define FAKE_DDK_EXPORT __declspec(dllexport)
+#else
+#if __GNUC__ >= 4
+#define FAKE_DDK_EXPORT __attribute__((visibility("default")))
+#else
+#define FAKE_DDK_EXPORT
+#endif
+#endif

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "operation/conv2d.h"
-#include "driver/fake_device/converter/converter.h"
-#include "driver/fake_device/converter/validator.h"
+#include "converter/converter.h"
+#include "converter/validator.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
@@ -46,7 +46,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
         &dilation_width);
   }
 
-  // Convert to fake_ddk tensors and operators
+  // Convert to fake device tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
@@ -57,37 +57,21 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
     bias_tensor = converter->ConvertOperand(bias_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  fake_ddk::nn::Conv2DAttr attr;
-  attr.ksize[0] = filter_width;
-  attr.ksize[1] = filter_height;
-  attr.stride[0] = stride_width;
-  attr.stride[1] = stride_height;
-  attr.pad[0] = pad_width_left;
-  attr.pad[1] = pad_width_right;
-  attr.pad[2] = pad_height_top;
-  attr.pad[3] = pad_height_bottom;
+  fake_ddk::Conv2DAttr attr;
+  attr.pad_type = fake_ddk::PadType::AUTO;
+  attr.pad[0] = pad_height_top;
+  attr.pad[1] = pad_height_bottom;
+  attr.pad[2] = pad_width_left;
+  attr.pad[3] = pad_width_right;
+  attr.stride[0] = stride_height;
+  attr.stride[1] = stride_width;
+  attr.dilation[0] = dilation_height;
+  attr.dilation[1] = dilation_width;
   attr.group = group;
-  attr.multiplier = is_depthwise_mode ? output_channel_size / group : 0;
-  attr.weights = output_channel_size;
-  attr.dilation[0] = dilation_width;
-  attr.dilation[1] = dilation_height;
-  attr.pad_type = fake_ddk::nn::PadType::AUTO;
-  // fuse RELU ?
-  if (fuse_code == NNADAPTER_FUSED_NONE) {
-    attr.has_relu = false;
-  } else if (fuse_code == NNADAPTER_FUSED_RELU) {
-    attr.has_relu = true;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
-                         << ") is found.";
-  }
-  std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> input_tensors = {
-      input_tensor, filter_tensor, bias_tensor};
-  std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> output_tensors = {
-      output_tensor};
-  converter->AddOperator(fake_ddk::nn::OperatorType::FAKE_DEVICE_CONV2D,
-                         input_tensors,
-                         output_tensors,
+  attr.fuse_type = ConvertFuseCodeToFakeDeviceFuseType(fuse_code);
+  converter->AddOperator(fake_ddk::OperatorType::FAKE_DDK_CONV2D,
+                         {input_tensor, filter_tensor, bias_tensor},
+                         {output_tensor},
                          &attr);
   return NNADAPTER_NO_ERROR;
 }

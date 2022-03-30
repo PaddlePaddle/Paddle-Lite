@@ -53,4 +53,4 @@ endif()
 add_library(magicmind_runtime SHARED IMPORTED GLOBAL)
 set_property(TARGET magicmind_runtime PROPERTY IMPORTED_LOCATION ${CAMBRICON_MLU_SDK_MAGICMIND_RUNTIME_FILE})
 
-set(${DEVICE_NAME}_deps magicmind magicmind_runtime)
+set(DEPS ${DEPS} magicmind magicmind_runtime)

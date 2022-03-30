@@ -78,4 +78,4 @@ endif()
 add_library(hcl SHARED IMPORTED GLOBAL)
 set_property(TARGET hcl PROPERTY IMPORTED_LOCATION ${HUAWEI_KIRIN_NPU_SDK_HCL_FILE})
 
-set(${DEVICE_NAME}_deps hiai_ir hiai_ir_build hiai hcl)
+set(DEPS ${DEPS} hiai_ir hiai_ir_build hiai hcl)

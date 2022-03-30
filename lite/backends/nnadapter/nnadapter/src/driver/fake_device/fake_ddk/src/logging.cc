@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "utility/logging.h"
+#include "logging.h"  // NOLINT
 #include <iomanip>
 
-namespace nnadapter {
+namespace fake_ddk {
 namespace logging {
 
 void gen_log(std::ostream& log_stream_,
@@ -112,4 +112,4 @@ VLogMessage::~VLogMessage() {
 }
 
 }  // namespace logging
-}  // namespace nnadapter
+}  // namespace fake_ddk
