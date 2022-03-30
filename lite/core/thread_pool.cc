@@ -48,11 +48,10 @@ ThreadPool::ThreadPool(int number) {
   for (int thread_index = 1; thread_index < thread_num_; ++thread_index) {
     workers_.emplace_back([this, thread_index]() {
       while (!stop_) {
-        std::unique_lock<std::mutex> lck(gInstance->mutex_);
-        cv_.wait(lck, [&]() {
-          return *tasks_.second[thread_index] == true || stop_ == true;
-        });
-        lck.unlock();
+        // if (*tasks_.second[thread_index]) {
+        while (!(*tasks_.second[thread_index])) {
+          std::this_thread::yield();
+        }
         tasks_.first(thread_index, thread_index);
         *tasks_.second[thread_index] = false;
       }
@@ -62,13 +61,33 @@ ThreadPool::ThreadPool(int number) {
 
 ThreadPool::~ThreadPool() {
   stop_ = true;
-  cv_.notify_all();
   for (auto& worker : workers_) {
     worker.join();
   }
   for (auto c : tasks_.second) {
     delete c;
   }
+}
+
+void ThreadPool::AcquireThreadPool() {
+  if (nullptr == gInstance) {
+    return;
+  }
+  LOG(INFO) << "ThreadPool::AcquireThreadPool()\n";
+  std::unique_lock<std::mutex> _l(gInstance->mutex_);
+  while (!gInstance->ready_) gInstance->cv_.wait(_l);
+  gInstance->ready_ = false;
+  return;
+}
+
+void ThreadPool::ReleaseThreadPool() {
+  if (nullptr == gInstance) {
+    return;
+  }
+  LOG(INFO) << "ThreadPool::ReleaseThreadPool()\n";
+  std::unique_lock<std::mutex> _l(gInstance->mutex_);
+  gInstance->ready_ = true;
+  gInstance->cv_.notify_all();
 }
 
 void ThreadPool::Enqueue(TASK_BASIC&& task) {
@@ -90,9 +109,7 @@ void ThreadPool::Enqueue(TASK_BASIC&& task) {
     gInstance->tasks_.first = std::move(task.first);
   }
   for (int i = 1; i < work_size; ++i) {
-    std::unique_lock<std::mutex> lck(gInstance->mutex_);
     *(gInstance->tasks_.second[i]) = true;
-    gInstance->cv_.notify_all();
   }
   // invoke tid 0 callback in main thread
   // other tid task is invoked in child thread
@@ -138,9 +155,7 @@ void ThreadPool::Enqueue(TASK_COMMON&& task) {
     });
   }
   for (int i = 1; i < work_size; ++i) {
-    std::unique_lock<std::mutex> lck(gInstance->mutex_);
     *(gInstance->tasks_.second[i]) = true;
-    gInstance->cv_.notify_all();
   }
   // invoke tid 0 callback in main thread
   // other tid task is invoked in new thread
