@@ -1365,6 +1365,63 @@ typedef enum {
   NNADAPTER_POW,
 
   /**
+   * Prior box operator Generate prior boxes for SSD(Single Shot MultiBox
+   * Detector) algorithm.
+   * https://arxiv.org/abs/1512.02325.
+   * Each position of the input produce N prior boxes, N is determined by the
+   * count of min_sizes, max_sizes and aspect_ratios,
+   * The size of the box is in range(min_size, max_size) interval, which is
+   * generated in sequence according to the aspect_ratios.
+   *
+   * Inputs:
+   * * 0: Input, a NNADAPTER_FLOAT32 tensor,
+   * the input feature data of PriorBoxOp, The layout is NCHW.
+   * * 1: Image, a NNADAPTER_FLOAT32 tensor,
+   * the input image data of PriorBoxOp, The layout is NCHW.
+   * * 2: min_sizes, a NNADAPTER_FLOAT32 tensor, List of min sizes of generated
+   * prior boxes.
+   * * 3: max_sizes, a NNADAPTER_FLOAT32 tensor, List of max sizes of generated
+   * prior boxes.
+   * * 4: aspect_ratios, a NNADAPTER_FLOAT32 tensor, List of aspect ratios of
+   * generated
+   * prior boxes.
+   * * 5: variances, a NNADAPTER_FLOAT32 tensor, List of variances to be encoded
+   * in prior
+   * boxes.
+   * * 6: flip, a NNADAPTER_BOOL scalar, Whether to flip aspect ratios, Default
+   * is True.
+   * * 7: clip, a NNADAPTER_BOOL scalar, Whether to clip out-of-boundary boxes,
+   * Default is True.
+   * * 8: step_w, a NNADAPTER_FLOAT32 scalar, Prior boxes step across width, 0.0
+   * for auto
+   * calculation, Default is 0.0.
+   * * 9: step_h, a NNADAPTER_FLOAT32 scalar, Prior boxes step across height,
+   * 0.0 for auto
+   * calculation, Default is 0.0.
+   * * 10: offset, a NNADAPTER_FLOAT32 scalar, Prior boxes center offset,
+   * Default is 0.5.
+   * * 11: min_max_aspect_ratios_order, a NNADAPTER_BOOL scalar, If set True,
+   * the output prior box
+   * is in order of [min, max, aspect_ratios], which is consistent with
+   * Caffe.Please note,
+   * this order affects the weights order of convolution layer followed by and
+   * does not affect the final detection results, Default is False.
+   *
+   * Outputs:
+   * * 0: Boxes, a Boxes NNADAPTER_FLOAT32 tensor .
+   * the output prior boxes of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position.
+   * * 1: Variances, a Variances NNADAPTER_FLOAT32 tensor .
+   * the expanded variances of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position."
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRIOR_BOX,
+
+  /**
    * Applies the prelu activation to the input tensor. The output is calculated
    * using this formula:
    * output = input, if input >=0;

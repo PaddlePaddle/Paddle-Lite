@@ -183,6 +183,10 @@ REGISTER_OPERATION(POW,
                    PrepareElementwise,
                    ExecuteElementwise)
 REGISTER_OPERATION(PRELU, ValidatePRelu, PreparePRelu, ExecutePRelu)
+REGISTER_OPERATION(PRIOR_BOX,
+                   ValidatePriorBox,
+                   PreparePriorBox,
+                   ExecutePriorBox)
 REGISTER_OPERATION(QUANTIZE, ValidateQuantize, PrepareQuantize, ExecuteQuantize)
 REGISTER_OPERATION(RANGE, ValidateRange, PrepareRange, ExecuteRange)
 REGISTER_OPERATION(REDUCE_MEAN, ValidateReduce, PrepareReduce, ExecuteReduce)
