@@ -27,7 +27,7 @@ $(info NDK_VERSION: $(NDK_VERSION))
 
 SYSTEM_INCLUDES = $(SYSTEM_INCLUDES_PRE)
 ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
-    SYSTEM_INCLUDES = $(SYSTEM_INCLUDES_PRE) -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include 
+    SYSTEM_INCLUDES = $(SYSTEM_INCLUDES_PRE) -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include
 endif
 
 $(info HOST_NAME: $(HOST_NAME))
@@ -65,11 +65,11 @@ ifeq ($(ARM_ABI), arm8)
     ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
         AARCH64_LINUX_ANDROID = -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include/aarch64-linux-android
         LIBSTDC = $(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/lib/aarch64-linux-android/21/libstdc++.so
-    endif        
+    endif
     SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a \
                   $(LIBSTDC)
-                 
+
     INCLUDES = $(SYSTEM_INCLUDES) $(AARCH64_LINUX_ANDROID)
 else
     CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
@@ -78,9 +78,11 @@ else
     LIBUNWIND = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libunwind.a
     ANDROIDABI = -I$(NDK_ROOT)/sysroot/usr/include/arm-linux-androideabi
     ifeq ($(shell expr $(NDK_VERSION) \>= 22), 1)
-        LIBUNWIND = $(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/lib64/clang/12.0.8/lib/linux/arm/libunwind.a
+        ifeq ($(shell expr $(NDK_VERSION) \>= 23), 1)
+            LIBUNWIND = $(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/lib64/clang/12.0.8/lib/linux/arm/libunwind.a
+        endif
         ANDROIDABI = -I$(NDK_ROOT)/toolchains/llvm/prebuilt/$(HOST_TARGET)/sysroot/usr/include/arm-linux-androideabi
-    endif    
+    endif
     SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                   $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
