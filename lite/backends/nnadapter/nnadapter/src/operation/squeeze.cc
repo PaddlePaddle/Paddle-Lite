@@ -67,6 +67,9 @@ int PrepareSqueeze(core::Operation* operation) {
         output_dimensions[out_idx++] = input_dimensions[in_idx];
       }
     }
+    if (static_cast<uint32_t>(squeezed_dims.size()) == input_dimensions_count) {
+      output_dimensions[0] = 1;
+    }
     return squeezed_dims.size();
   };
 
@@ -76,6 +79,8 @@ int PrepareSqueeze(core::Operation* operation) {
                          input_type.dimensions.count);
   output_type.dimensions.count =
       input_type.dimensions.count - squeezed_dimensions_count;
+  output_type.dimensions.count =
+      output_type.dimensions.count > 0 ? output_type.dimensions.count : 1;
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_type.dimensions.dynamic_data[i],
                        output_type.dimensions.dynamic_data[i],

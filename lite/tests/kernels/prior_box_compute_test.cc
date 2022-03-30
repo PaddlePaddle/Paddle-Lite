@@ -728,7 +728,16 @@ void test_prior_box(Place place) {
 }
 
 TEST(PriorBox, precision) {
-  Place place(TARGET(kHost));
+  Place place;
+#if defined(LITE_WITH_NNADAPTER)
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  place = TARGET(kNNAdapter);
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#endif
   test_prior_box(place);
 }
 

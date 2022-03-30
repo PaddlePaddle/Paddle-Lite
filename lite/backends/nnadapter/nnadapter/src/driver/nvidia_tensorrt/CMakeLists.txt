@@ -21,12 +21,24 @@ add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEV
 include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
-aux_source_directory(optimizer OPTIMIZERS)
 aux_source_directory(converter/plugin PLUGINS)
-set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc calibrator.cc)
+aux_source_directory(kernels/cuda CUDA_KERNELS)
+aux_source_directory(kernels/host HOST_KERNELS)
+aux_source_directory(optimizer OPTIMIZERS)
+set(SRCS engine.cc
+  utility.cc
+  ${CONVERTERS}
+  ${PLUGINS}
+  ${CUDA_KERNELS}
+  ${HOST_KERNELS}
+  ${OPTIMIZERS}
+  driver.cc
+  calibrator.cc
+  program.cc)
 set(DEPS ${NNADAPTER_OPERATIONS}
          ${NNADAPTER_UTILITIES}
          ${${DEVICE_NAME}_deps}
+         nnadapter_optimizer_partition_model_into_submodels
          nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})

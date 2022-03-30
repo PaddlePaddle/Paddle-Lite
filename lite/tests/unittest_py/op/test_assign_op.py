@@ -45,7 +45,7 @@ class TestAssignOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), max_size=2))
+                    min_value=1, max_value=8), min_size=1, max_size=4))
         assign_op = OpConfig(
             type="assign",
             inputs={"X": ["input_data"]},

@@ -46,12 +46,12 @@ int PrepareYoloBox(core::Operation* operation) {
   };
 
   infer_output_shape(input_operand->type.dimensions.data,
-                     scores_operand->type.dimensions.data,
-                     boxes_operand->type.dimensions.data);
+                     boxes_operand->type.dimensions.data,
+                     scores_operand->type.dimensions.data);
   for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
-                       scores_operand->type.dimensions.dynamic_data[i],
-                       boxes_operand->type.dimensions.dynamic_data[i]);
+                       boxes_operand->type.dimensions.dynamic_data[i],
+                       scores_operand->type.dimensions.dynamic_data[i]);
   }
   CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
   CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
