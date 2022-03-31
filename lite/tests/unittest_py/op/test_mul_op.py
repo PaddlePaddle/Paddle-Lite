@@ -123,7 +123,8 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=250)
+        # int8 case run long time in max_examples=250
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

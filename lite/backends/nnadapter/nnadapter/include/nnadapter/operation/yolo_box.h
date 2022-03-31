@@ -23,44 +23,43 @@ namespace operation {
   auto& output_operands = operation->output_operands;                         \
   auto input_count = input_operands.size();                                   \
   auto output_count = output_operands.size();                                 \
-  NNADAPTER_CHECK_EQ(input_count, 8);                                         \
+  NNADAPTER_CHECK_EQ(input_count, 10);                                        \
   NNADAPTER_CHECK_EQ(output_count, 2);                                        \
-  /* x */                                                                     \
-  auto x_operand = input_operands[0];                                         \
-  NNADAPTER_VLOG(5) << "x: " << OperandToString(x_operand);                   \
-  /* image_size */                                                            \
-  auto image_size_operand = input_operands[1];                                \
-  NNADAPTER_VLOG(5) << "image_size: " << OperandToString(image_size_operand); \
+  /* Inputs */                                                                \
+  auto input_operand = input_operands[0];                                     \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
+  auto imgsize_operand = input_operands[1];                                   \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(imgsize_operand);         \
   /* anchors */                                                               \
   auto anchors_operand = input_operands[2];                                   \
   NNADAPTER_VLOG(5) << "anchors: " << OperandToString(anchors_operand);       \
   auto anchors_count = anchors_operand->length / sizeof(int32_t);             \
   auto anchors_data = reinterpret_cast<int32_t*>(anchors_operand->buffer);    \
-  anchors = std::vector<int32_t>(anchors_data, anchors_data + anchors_count); \
-  /* class_num */                                                             \
-  auto class_num_operand = input_operands[3];                                 \
-  NNADAPTER_VLOG(5) << "class_num: " << OperandToString(class_num_operand);   \
-  /* conf_thresh */                                                           \
-  auto conf_thresh_operand = input_operands[4];                               \
-  NNADAPTER_VLOG(5) << "conf_thresh: "                                        \
-                    << OperandToString(conf_thresh_operand);                  \
-  /* downsample_ratio */                                                      \
-  auto downsample_ratio_operand = input_operands[5];                          \
-  NNADAPTER_VLOG(5) << "downsample_ratio: "                                   \
-                    << OperandToString(adownsample_ratio_operand);            \
-  /* clip_bbox */                                                             \
-  auto clip_bbox_operand = input_operands[6];                                 \
-  NNADAPTER_VLOG(5) << "clip_bbox: " << OperandToString(clip_bbox_operand);   \
-  /* scale_x_y */                                                             \
-  auto scale_x_y_operand = input_operands[7];                                 \
-  NNADAPTER_VLOG(5) << "scale_x_y: " << OperandToString(scale_x_y_operand);   \
-  /* Output box*/                                                             \
-  auto output_box_operand = output_operands[0];                               \
-  NNADAPTER_VLOG(5) << "output_box: " << OperandToString(output_box_operand); \
-  /* Output score*/                                                           \
-  auto output_score_operand = output_operands[1];                             \
-  NNADAPTER_VLOG(5) << "output_score: "                                       \
-                    << OperandToString(output_score_operand);
-
+  auto anchors =                                                              \
+      std::vector<int32_t>(anchors_data, anchors_data + anchors_count);       \
+  for (size_t i = 0; i < anchors.size(); i++) {                               \
+    NNADAPTER_VLOG(5) << "anchors[" << i << "]: " << anchors[i];              \
+  }                                                                           \
+  /* various attrs */                                                         \
+  auto class_num = *reinterpret_cast<int*>(input_operands[3]->buffer);        \
+  NNADAPTER_VLOG(5) << "class_num: " << class_num;                            \
+  auto conf_thresh = *reinterpret_cast<float*>(input_operands[4]->buffer);    \
+  NNADAPTER_VLOG(5) << "conf_thresh: " << conf_thresh;                        \
+  auto downsample_ratio = *reinterpret_cast<int*>(input_operands[5]->buffer); \
+  NNADAPTER_VLOG(5) << "downsample_ratio: " << downsample_ratio;              \
+  auto clip_bbox = *reinterpret_cast<bool*>(input_operands[6]->buffer);       \
+  NNADAPTER_VLOG(5) << "clip_bbox: " << clip_bbox;                            \
+  auto scale_x_y = *reinterpret_cast<float*>(input_operands[7]->buffer);      \
+  NNADAPTER_VLOG(5) << "scale_x_y: " << scale_x_y;                            \
+  auto iou_aware = *reinterpret_cast<bool*>(input_operands[8]->buffer);       \
+  NNADAPTER_VLOG(5) << "iou_aware: " << iou_aware;                            \
+  auto iou_aware_factor =                                                     \
+      *reinterpret_cast<float*>(input_operands[9]->buffer);                   \
+  NNADAPTER_VLOG(5) << "iou_aware_factor: " << iou_aware_factor;              \
+  /* Output */                                                                \
+  auto boxes_operand = output_operands[0];                                    \
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(boxes_operand);          \
+  auto scores_operand = output_operands[1];                                   \
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(scores_operand);
 }  // namespace operation
 }  // namespace nnadapter

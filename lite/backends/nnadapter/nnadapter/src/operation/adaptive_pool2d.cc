@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateAdaptivePool2D(const core::Operation* operation) { return false; }
+
 int PrepareAdaptivePool2D(core::Operation* operation) {
   ADAPTIVE_POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -36,6 +38,10 @@ int PrepareAdaptivePool2D(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteAdaptivePool2D(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

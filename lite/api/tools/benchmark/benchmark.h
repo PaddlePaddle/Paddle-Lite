@@ -128,13 +128,19 @@ std::string GetDeviceInfo() {
 
 void StoreBenchmarkResult(const std::string res) {
   if (!FLAGS_result_path.empty()) {
-    std::ofstream fs(FLAGS_result_path, std::ios::app);
+    static bool first_call_flag = true;
+    auto openmode = std::ios::ate;
+    if (!first_call_flag) {
+      openmode = std::ios::app;
+    }
+    std::ofstream fs(FLAGS_result_path, openmode);
     if (!fs.is_open()) {
       std::cerr << "Fail to open result file: " << FLAGS_result_path
                 << std::endl;
     }
     fs << res;
     fs.close();
+    first_call_flag = false;
   }
 }
 

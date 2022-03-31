@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateFillLike(const core::Operation* operation) { return false; }
+
 int PrepareFillLike(core::Operation* operation) {
   FILL_LIKE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -30,6 +32,10 @@ int PrepareFillLike(core::Operation* operation) {
   output_operand->type.precision = value_operand->type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteFillLike(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

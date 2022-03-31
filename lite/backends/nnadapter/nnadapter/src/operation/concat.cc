@@ -25,6 +25,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateConcat(const core::Operation* operation) { return false; }
+
 int PrepareConcat(core::Operation* operation) {
   CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -132,6 +134,10 @@ int PrepareConcat(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteConcat(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

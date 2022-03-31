@@ -13,58 +13,55 @@
 // limitations under the License.
 
 #include "operation/yolo_box.h"
-#include <vector>
+#include <iostream>
 #include "core/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
-
 namespace nnadapter {
 namespace operation {
 
+bool ValidateYoloBox(const core::Operation* operation) { return false; }
+
 int PrepareYoloBox(core::Operation* operation) {
   YOLO_BOX_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Infer the shape and type of output operands
-  auto input_dims = input_operands[0]->type.dimensions.count;
-  auto input_dims_ptr = input_operands[0]->type.dimensions.data;
-  auto anchor_num = anchors.size() / 2;
-  auto class_num = *reinterpret_cast<int32_t*>(class_num_operand->buffer);
-  NNADAPTER_CHECK_EQ(input_dims, 4) << "Input dims should be 4D.";
-  int box_num = input_dims_ptr[2] * input_dims_ptr[3] * anchor_num;
-  std::vector<int> output_box_shape;
-  output_box_shape.push_back(input_dims_ptr[0]);
-  output_box_shape.push_back(box_num);
-  output_box_shape.push_back(4);
-  std::vector<int> output_score_shape;
-  output_score_shape.push_back(input_dims_ptr[0]);
-  output_score_shape.push_back(box_num);
-  output_score_shape.push_back(class_num);
-  for (int i = 0; i < 3; i++) {
-    output_box_operand->type.dimensions.data[i] = output_box_shape[i];
-    output_score_operand->type.dimensions.data[i] = output_score_shape[i];
-  }
 
-  // Dynamic shape
-  if (input_operands[0]->type.dimensions.dynamic_count != 0) {
-    auto input_dims_ptr_dy = input_operands[0]->type.dimensions.dynamic_data;
-    std::vector<int> output_box_shape_dy;
-    output_box_shape_dy.push_back(input_dims_ptr_dy[0]);
-    output_box_shape_dy.push_back(box_num);
-    output_box_shape_dy.push_back(4);
-    std::vector<int> output_score_shape;
-    output_score_shape_dy.push_back(input_dims_ptr_dy[0]);
-    output_score_shape_dy.push_back(box_num);
-    output_score_shape_dy.push_back(class_num);
-    for (int i = 0; i < 3; i++) {
-      output_box_operand->type.dimensions.dynamic_data[i] =
-          output_box_shape_dy[i];
-      output_score_operand->type.dimensions.dynamic_data[i] =
-          output_score_shape_dy[i];
-    }
+  // Infer the shape of boxes and scores
+  auto& boxes_type = boxes_operand->type;
+  auto& scores_type = scores_operand->type;
+  boxes_type.dimensions.count = 3;
+  scores_type.dimensions.count = 3;
+
+  auto infer_output_shape = [&](
+      int* x_dims, int32_t* boxes_dims, int32_t* scores_dims) {
+    int box_num = anchors.size() / 2 * x_dims[2] * x_dims[3];
+    boxes_dims[0] = x_dims[0];
+    boxes_dims[1] = box_num;
+    boxes_dims[2] = 4;
+    scores_dims[0] = x_dims[0];
+    scores_dims[1] = box_num;
+    scores_dims[2] = class_num;
+  };
+
+  infer_output_shape(input_operand->type.dimensions.data,
+                     boxes_operand->type.dimensions.data,
+                     scores_operand->type.dimensions.data);
+  for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
+                       boxes_operand->type.dimensions.dynamic_data[i],
+                       scores_operand->type.dimensions.dynamic_data[i]);
   }
+  CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
+  CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
+  NNADAPTER_VLOG(5) << "boxes: " << OperandToString(boxes_operand);
+  NNADAPTER_VLOG(5) << "scores: " << OperandToString(scores_operand);
   return NNADAPTER_NO_ERROR;
 }
 
+int ExecuteYoloBox(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+}
 }  // namespace operation
 }  // namespace nnadapter

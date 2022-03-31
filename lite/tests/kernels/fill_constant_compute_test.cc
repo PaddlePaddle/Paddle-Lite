@@ -268,7 +268,8 @@ TEST(fill_constant, precision) {
   float abs_error = 1e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 1e-2;
   TestFillConstantShape(place, abs_error);
   return;

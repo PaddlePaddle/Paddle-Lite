@@ -22,13 +22,13 @@ namespace operation {
 namespace math {
 
 template <typename T>
-static void slice(const T* input_data_ptr,
-                  const std::vector<int32_t>& input_shape,
-                  uint32_t axes_count,
-                  int32_t* axes,
-                  int32_t* starts,
-                  int32_t* ends,
-                  T* output_data_ptr) {
+static int slice(const T* input_data,
+                 const std::vector<int32_t>& input_shape,
+                 uint32_t axes_count,
+                 int32_t* axes,
+                 int32_t* starts,
+                 int32_t* ends,
+                 T* output_data) {
   std::vector<int32_t> output_shape(input_shape);
   std::vector<int> real_starts(input_shape.size(), 0);
   std::vector<int> real_ends(input_shape.size(), 0);
@@ -73,8 +73,9 @@ static void slice(const T* input_data_ptr,
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
     }
-    output_data_ptr[dst_id] = input_data_ptr[src_id];
+    output_data[dst_id] = input_data[src_id];
   }
+  return 0;
 }
 
 }  // namespace math

@@ -17,61 +17,21 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
-#include "driver/nvidia_tensorrt/calibrator.h"
+#include "driver/nvidia_tensorrt/program.h"
 #include "driver/nvidia_tensorrt/utility.h"
+#include "optimizer/partition_model_into_submodels.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-class Device {
- public:
-  Device() {}
-  ~Device() {}
-};
-
-class Context {
- public:
-  explicit Context(void* device, const char* properties);
-  ~Context();
-
-  nvinfer1::DeviceType DeviceType() { return device_type_; }
-  int DeviceId() { return device_id_; }
-  PrecisionMode Precision() { return precision_; }
-  bool GpuFallback() { return gpu_fallback_; }
-  std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
-  std::string CalibrationTablePath() { return calibration_table_path_; }
-
- private:
-  void* device_{nullptr};
-  void* context_{nullptr};
-  nvinfer1::DeviceType device_type_{nvinfer1::DeviceType::kGPU};
-  int device_id_{0};
-  PrecisionMode precision_{kFloat32};
-  bool gpu_fallback_{true};
-  std::string calibration_dataset_path_;
-  std::string calibration_table_path_;
-};
-
-struct Deleter {
-  template <typename T>
-  void operator()(T* obj) const {
-#if TENSORRT_MAJOR_VERSION >= 8
-    delete obj;
-#else
-    if (obj) {
-      obj->destroy();
-    }
-#endif
-  }
-};
-
 class Program {
  public:
   explicit Program(Context* context) : context_(context) {}
-  ~Program();
+  ~Program() {}
 
   int Build(core::Model* model, core::Cache* cache);
   int Execute(uint32_t input_count,
@@ -81,33 +41,29 @@ class Program {
 
  private:
   void Clear();
-  void CompleteConfig(core::Model* model);
-  // Build model and save to plan_
   int BuildFromModel(core::Model* model);
-  // Read model from cache to plan_
   int BuildFromCache(core::Cache* cache);
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
                             uint32_t output_count,
                             core::Argument* output_arguments);
+  int SerializeToCache(std::vector<uint8_t>* buffer);
+  int DeserializeFromCache(std::vector<uint8_t>* buffer);
 
  private:
-  std::unique_ptr<nvinfer1::IBuilder, Deleter> builder_;
-  std::unique_ptr<nvinfer1::INetworkDefinition, Deleter> network_;
-  std::unique_ptr<nvinfer1::IBuilderConfig, Deleter> config_;
-  std::unique_ptr<nvinfer1::IHostMemory, Deleter> plan_;
-  std::unique_ptr<nvinfer1::IRuntime, Deleter> runtime_;
-  std::unique_ptr<nvinfer1::ICudaEngine, Deleter> engine_;
-  std::unique_ptr<nvinfer1::IExecutionContext, Deleter> execution_context_;
-  std::unique_ptr<Int8EntropyCalibrator> calibrator_;
-  std::vector<std::shared_ptr<void>> device_buffers_;
-  std::map<core::Operand*, std::vector<nvinfer1::ITensor*>> tensors_;
-  std::vector<int> input_indices_;
-  std::vector<int> output_indices_;
+  Context* context_;
+  std::vector<std::pair<
+      int,
+      std::tuple<core::Model*, bool, std::vector<int>, std::vector<int>>>>
+      sub_models_;
+  std::vector<std::vector<uint8_t>> sub_caches_;
+  std::vector<std::shared_ptr<ProgramBase>> sub_programs_;
+  std::map<int, std::shared_ptr<Tensor>> input_tensors_;
+  std::map<int, std::shared_ptr<Tensor>> temporary_tensors_;
+  std::map<int, std::shared_ptr<Tensor>> output_tensors_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  Context* context_{nullptr};
-  bool with_dynamic_shape_{false};
+  bool is_sub_model_from_cache_{false};
 };
 
 }  // namespace nvidia_tensorrt

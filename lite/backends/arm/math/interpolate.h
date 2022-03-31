@@ -73,25 +73,21 @@ void nearest_interp_v2_compute(const T* src,
                                float scale_x,
                                float scale_y,
                                bool with_align) {
-  float scale_w_new =
-      (with_align) ? (static_cast<float>(w_in - 1) / (w_out - 1)) : scale_x;
-  float scale_h_new =
-      (with_align) ? (static_cast<float>(h_in - 1) / (h_out - 1)) : scale_y;
   if (with_align) {
     for (int h = 0; h < h_out; ++h) {
       T* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h + 0.5);
+      int near_y = static_cast<int>(scale_y * h + 0.5);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w + 0.5);
+        int near_x = static_cast<int>(scale_x * w + 0.5);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
   } else {
     for (int h = 0; h < h_out; ++h) {
       T* dst_p = dst + h * w_out;
-      int near_y = static_cast<int>(scale_h_new * h);
+      int near_y = static_cast<int>(scale_y * h);
       for (int w = 0; w < w_out; ++w) {
-        int near_x = static_cast<int>(scale_w_new * w);
+        int near_x = static_cast<int>(scale_x * w);
         *dst_p++ = src[near_y * w_in + near_x];
       }
     }
