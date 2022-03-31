@@ -61,7 +61,7 @@ void FcFuser::BuildPattern() {
   auto* mul = OpNode("mul", op_type_)->assert_node_satisfied(inputs_teller0);
   auto* mul_out = VarNode("mul_out");
   auto* add =
-      OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
+      OpNode("add", elt_add_type_)->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
   if (op_type_ == "matmul") {
     mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller);
@@ -79,17 +79,7 @@ void FcFuser::BuildPattern() {
   mul->AsIntermediate();
   add->AsIntermediate();
 
-  if (with_relu_) {
-    auto* add_out = VarNode("add_out");
-    auto* relu = OpNode("relu", "relu");
-    std::vector<PMNode*> relu_inputs{add_out};
-    add_inputs >> *add >> *add_out;
-    relu_inputs >> *relu >> *Out;
-    add_out->AsIntermediate();
-    relu->AsIntermediate();
-  } else {
-    add_inputs >> *add >> *Out;
-  }
+  add_inputs >> *add >> *Out;
 }
 
 void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
@@ -101,7 +91,7 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto bias_dims = bias->Get<lite::Tensor>().dims();
   if (bias_dims.size() == 2 && bias_dims[0] != 1) {
     nodes_.erase(nodes_.begin(), nodes_.end());
-    LOG(WARNING) << "elementwiseadd bias size equal to 2, but bias[0] not "
+    LOG(WARNING) << "elementwise_add bias size equal to 2, but bias[0] not "
                     "equal to 1 , eleminate failed";
     return;
   }
@@ -155,8 +145,10 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   }
   op_desc.SetAttr("op_type", op_type_);
 
-  if (with_relu_) {
-    op_desc.SetAttr("activation_type", std::string{"relu"});
+  if (matched.at("add")->stmt()->op_info()->HasAttr("act_type")) {
+    op_desc.SetAttr(
+        "activation_type",
+        matched.at("add")->stmt()->op_info()->GetAttr<std::string>("act_type"));
   }
 
   // Set the input scale into fc

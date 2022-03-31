@@ -24,20 +24,25 @@ namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> mul_types{"mul"};
-  std::vector<bool> act_types;
+  std::vector<std::string> elt_add_types;
   for (auto& place : graph->valid_places()) {
     if (place.target != TARGET(kMLU)) {
-      act_types.push_back(true);
+      elt_add_types.push_back("elementwise_add");
     }
     if (place.target == TARGET(kARM)) {
       mul_types.push_back("matmul");
       mul_types.push_back("matmul_v2");
     }
+    if (place.target == TARGET(kOpenCL)) {
+      mul_types.push_back("matmul");
+      mul_types.push_back("matmul_v2");
+      elt_add_types.push_back("fusion_elementwise_add_activation");
+    }
   }
-  act_types.push_back(false);
+
   for (auto op_type : mul_types) {
-    for (auto act_type : act_types) {
-      fusion::FcFuser fuser(op_type, act_type);
+    for (auto elt_add_type : elt_add_types) {
+      fusion::FcFuser fuser(op_type, elt_add_type);
       fuser(graph.get());
     }
   }
