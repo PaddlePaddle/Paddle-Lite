@@ -50,6 +50,9 @@ namespace nvidia_tensorrt {
 #define NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH \
   "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH"
 
+// Max workspace size, for example: "1048576"
+#define NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE "NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE"
+
 // Supported places
 typedef enum {
   kTensorrt = 0,
