@@ -44,8 +44,11 @@ namespace math {
 namespace fp16 {
 
 template <typename T>
-void fill_bias_fc(
-    T* tensor, const T* bias, int num, int channel, bool flag_relu);
+void fill_bias_fc(T* tensor,
+                  const T* bias,
+                  int num,
+                  int channel,
+                  const operators::ActivationParam* act_param);
 
 // exp() computed for 8 float at once
 inline float16x8_t expq_ps_f16(float16x8_t x) {
