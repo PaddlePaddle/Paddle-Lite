@@ -272,10 +272,9 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                             ceil_mode,
                                             use_quantizer,
                                             pooling_type);
-#undef POOL_IN_PARAM
 }
-
 #endif
+#undef POOL_IN_PARAM
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
