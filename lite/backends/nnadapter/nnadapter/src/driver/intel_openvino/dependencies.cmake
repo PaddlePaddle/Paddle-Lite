@@ -40,4 +40,4 @@ endif()
 add_library(openvino SHARED IMPORTED GLOBAL)
 set_property(TARGET openvino PROPERTY IMPORTED_LOCATION ${INTEL_OPENVINO_SDK_OPENVINO_FILE})
 
-set(${DEVICE_NAME}_deps openvino)
+set(DEPS ${DEPS} openvino)

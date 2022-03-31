@@ -58,6 +58,8 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "act: " << act_t;
       if (act_t == "relu") {
         build_options_ += " -DRELU";
+      } else if (act_t == "relu6") {
+        build_options_ += " -DRELU6";
       } else if (act_t == "gelu") {
         build_options_ += " -DGELU";
       } else {

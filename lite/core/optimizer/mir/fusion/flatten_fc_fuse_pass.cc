@@ -23,8 +23,11 @@ namespace lite {
 namespace mir {
 
 void FlattenFcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::FlattenFcFuser flatten_fuser(" ");
-  flatten_fuser(graph.get());
+  std::vector<bool> has_xshapes = {false, true};
+  for (auto has_xshape : has_xshapes) {
+    fusion::FlattenFcFuser flatten_fuser(has_xshape);
+    flatten_fuser(graph.get());
+  }
 }
 
 }  // namespace mir

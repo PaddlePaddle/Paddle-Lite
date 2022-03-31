@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include <cmath>
-#include "driver/nvidia_tensorrt/kernels/softmax.h"
+#include "driver/nvidia_tensorrt/kernel/cuda/special_softmax.h"
+#include "driver/nvidia_tensorrt/operation/special_softmax.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+namespace cuda {
 
 template <typename T>
 __global__ void Softmax(const T* input, T* output, int num) {
@@ -25,7 +27,6 @@ __global__ void Softmax(const T* input, T* output, int num) {
   for (int i = 1; i < num; i++) {
     x_max = input[i] > x_max ? input[i] : x_max;
   }
-  __syncthreads();
   output[idx] = exp(input[idx] - x_max);
   __syncthreads();
   T sum = output[0];
@@ -35,19 +36,22 @@ __global__ void Softmax(const T* input, T* output, int num) {
   output[idx] /= sum;
 }
 
-int SoftmaxKernel::Run(
+int SpecialSoftmaxKernel::Run(
     core::Operation* operation,
     std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
-  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SOFTMAX);
+  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SPECIAL_SOFTMAX);
+  SPECIAL_SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   auto input_tensor = operand_map->at(operation->input_operands[0]);
   auto output_tensor = operand_map->at(operation->output_operands[0]);
   output_tensor->Resize(input_tensor->Dims());
   int num = input_tensor->Length();
-  const float* input = static_cast<const float*>(input_tensor->Data());
-  float* output = static_cast<float*>(output_tensor->Data());
+  const float* input = reinterpret_cast<const float*>(input_tensor->Data());
+  float* output = reinterpret_cast<float*>(output_tensor->Data());
   Softmax<float><<<1, num>>>(input, output, num);
   return NNADAPTER_NO_ERROR;
 }
 
+}  // namespace cuda
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

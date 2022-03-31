@@ -20,6 +20,8 @@
 #include <memory>
 #include <vector>
 #include "core/types.h"
+#include "driver/nvidia_tensorrt/operation/type.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
@@ -48,11 +50,14 @@ namespace nvidia_tensorrt {
 #define NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH \
   "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH"
 
-// Operations to run with cuda, for example:
-// "NNADAPTER_SOFTMAX,NNADAPTER_YOLO_BOX"
-#define NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST \
-  "NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST"
+// Supported places
+typedef enum {
+  kTensorrt = 0,
+  kCUDA = 1,
+  kHost = 2,
+} DeviceType;
 
+// Tensorrt precision mode options
 typedef enum {
   kFloat32 = 0,
   kFloat16 = 1,
@@ -81,12 +86,22 @@ struct CudaMemoryDeleter {
   }
 };
 
+struct HostMemoryDeleter {
+  template <typename T>
+  void operator()(T* ptr) const {
+    if (ptr) {
+      free(ptr);
+    }
+  }
+};
+
 class Tensor {
  public:
   Tensor() {}
   ~Tensor() {}
 
-  void* Data();
+  // Only support copy from cuda to host
+  void* Data(bool return_cuda_buffer = true);
 
   void Resize(const std::vector<int32_t>& dims) { dims_ = dims; }
 
@@ -106,8 +121,10 @@ class Tensor {
   nvinfer1::DataType DateType() { return data_type_; }
 
  private:
-  std::unique_ptr<void, CudaMemoryDeleter> buffer_;
-  uint32_t buffer_length_{0};
+  std::unique_ptr<void, CudaMemoryDeleter> cuda_buffer_;
+  uint32_t cuda_buffer_length_{0};
+  std::unique_ptr<void, HostMemoryDeleter> host_buffer_;
+  uint32_t host_buffer_length_{0};
   nvinfer1::DataType data_type_{nvinfer1::DataType::kFLOAT};
   std::vector<int32_t> dims_;
 };

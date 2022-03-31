@@ -13,20 +13,40 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/utility.h"
-#include "utility/debug.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-void* Tensor::Data() {
+void* Tensor::Data(bool return_cuda_buffer) {
   uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
-  if (dst_length > buffer_length_) {
-    void* data{nullptr};
-    NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
-    buffer_.reset(data);
-    buffer_length_ = dst_length;
+  if (return_cuda_buffer) {
+    if (host_buffer_length_ > 0 && cuda_buffer_length_ == 0) {
+      // Host tensor should not return cuda buffer
+      return nullptr;
+    }
+    if (dst_length > cuda_buffer_length_) {
+      void* data{nullptr};
+      NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
+      cuda_buffer_.reset(data);
+      cuda_buffer_length_ = dst_length;
+    }
+    return cuda_buffer_.get();
+  } else {
+    if (dst_length > host_buffer_length_) {
+      void* data = malloc(dst_length);
+      host_buffer_.reset(data);
+      host_buffer_length_ = dst_length;
+    }
+    if (cuda_buffer_length_ > 0) {
+      NNADAPTER_CHECK_GE(host_buffer_length_, cuda_buffer_length_);
+      NNADAPTER_CHECK_EQ(cudaMemcpy(host_buffer_.get(),
+                                    cuda_buffer_.get(),
+                                    cuda_buffer_length_,
+                                    cudaMemcpyDeviceToHost),
+                         cudaSuccess);
+    }
+    return host_buffer_.get();
   }
-  return buffer_.get();
 }
 
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,

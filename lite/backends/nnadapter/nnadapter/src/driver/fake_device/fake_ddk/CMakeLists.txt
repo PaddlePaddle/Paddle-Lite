@@ -14,11 +14,16 @@
 
 # This an example, so we build fake_device_ddk 
 # Normally, the ddk is provided by hardware vendors
-aux_source_directory(src SRC)
-set(SRCS ${SRC})
 include_directories("./include")
-add_library(fake_ddk SHARED ${SRCS})
+include_directories("./src")
 
+if(CMAKE_SYSTEM_NAME MATCHES "Android")
+  set(CMAKE_CXX_FLAGS "-llog ${CMAKE_CXX_FLAGS}")
+endif()
+
+aux_source_directory(src SRCS)
+
+add_library(fake_ddk SHARED ${SRCS})
 add_custom_command(TARGET fake_ddk
   POST_BUILD
   COMMAND cp -r "${CMAKE_CURRENT_BINARY_DIR}/libfake_ddk.so" "${CMAKE_CURRENT_BINARY_DIR}/.."

@@ -113,4 +113,4 @@ add_dependencies(xnnpack_lib ${GOOGLE_XNNPACK_PROJECT})
 
 include_directories(${GOOGLE_XNNPACK_INSTALL_DIR}/include)
 
-set(${DEVICE_NAME}_deps clog_lib cpuinfo_lib pthreadpool_lib xnnpack_lib)
+set(DEPS ${DEPS} clog_lib cpuinfo_lib pthreadpool_lib xnnpack_lib)

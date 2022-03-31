@@ -15,7 +15,7 @@
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
 #include <algorithm>
 #include <limits>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #include "lite/core/parallel_defines.h"
 
 namespace paddle {

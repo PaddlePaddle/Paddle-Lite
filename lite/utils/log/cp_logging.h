@@ -20,7 +20,7 @@
 // 3. use glog in other cases.
 
 #if defined(LITE_WITH_ARM) || defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || \
-    defined(LITE_WITH_PYTHON)
+    defined(LITE_WITH_PYTHON) || defined(LITE_WITH_XPU)
 #include "lite/utils/log/logging.h"
 #else
 #ifndef LITE_WITH_LOG

@@ -50,12 +50,18 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
   auto pads_operand = converter->AddConstantOperand(paddings);
 
   // Kernel_shape operand
+  bool adaptive =
+      op->HasAttr("adaptive") ? op->GetAttr<bool>("adaptive") : false;
   std::vector<int> ksize = op->GetAttr<std::vector<int>>("ksize");
-  if (global_pooling) {
+  bool trans_adaptive_to_global = adaptive && ksize[0] == 1 && ksize[1] == 1;
+  if (global_pooling || trans_adaptive_to_global) {
     auto in_dims_data =
         converter->GetOperandType(input_operand)->dimensions.data;
     ksize[0] = in_dims_data[2];
     ksize[1] = in_dims_data[3];
+    if (trans_adaptive_to_global) {
+      adaptive = false;
+    }
   }
   auto kernel_shape_operand = converter->AddConstantOperand(ksize);
 
@@ -94,8 +100,6 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Pool operation
   std::vector<NNAdapterOperand*> input_operands;
-  bool adaptive =
-      op->HasAttr("adaptive") ? op->GetAttr<bool>("adaptive") : false;
   if (adaptive) {
     input_operands.push_back(input_operand);
     input_operands.push_back(kernel_shape_operand);

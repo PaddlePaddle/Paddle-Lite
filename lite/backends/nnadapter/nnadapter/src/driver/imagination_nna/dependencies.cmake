@@ -54,4 +54,4 @@ endif()
 add_library(nnasession SHARED IMPORTED GLOBAL)
 set_property(TARGET nnasession PROPERTY IMPORTED_LOCATION ${IMAGINATION_NNA_SDK_NNASESSION_FILE})
 
-set(${DEVICE_NAME}_deps imgdnn nnasession)
+set(DEPS ${DEPS} imgdnn nnasession)

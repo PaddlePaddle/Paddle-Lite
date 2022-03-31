@@ -14,102 +14,74 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include <list>
 #include <vector>
+#include "fake_ddk/micros.h"
 #include "fake_ddk/operator.h"
 #include "fake_ddk/tensor.h"
 
 namespace fake_ddk {
-namespace nn {
 
-typedef struct _fakedevice_nn_node {
-  /*
-   * Operation type
-   * @see fakedevice_nn_op_t
-   */
-  fakedevice_nn_op_t op;
-  /* Node inputs */
-  std::vector<fakedevice_nn_tensor_t*> input_tensors;
-  /* Node outputs */
-  std::vector<fakedevice_nn_tensor_t*> output_tensors;
-  /* Operation parameters */
-  fakedevice_nn_param_t nn_param;
-} fakedevice_nn_node_t;
-
-typedef struct _fakedevice_nn_graph {
-  /* Tensor number */
-  uint32_t tensor_num;
-
-  /* Node list of this graph */
-  /* Node table */
-  std::vector<fakedevice_nn_node_t*> node_table;
-  /* Inputs to the graph */
-  std::vector<fakedevice_nn_tensor_t*> input_tensors;
-  /* Outputs to the graph */
-  std::vector<fakedevice_nn_tensor_t*> output_tensors;
-} fakedevice_nn_graph_t;
-
-typedef struct _fakedevice_model_buffer {
-  int length;
-  void* data;
-} fakedevice_model_buffer;
-
-/* Graph is used to create and save tensor and Operator, and the connection
- * relationship of these Operators.
- * It is mainly used to save model information and is not actually created on
- * the FAKE_DEVICE.
+/* A graph is mainly used to represent a neural network model, it contains
+ * operators and tensors and their dependencies.
 */
-class Graph {
-  friend class Exection;
-
- private:
-  void* fakedevice_graph_;
-  fakedevice_model_buffer* fm_;
+class FAKE_DDK_EXPORT Graph {
+  friend class Execution;
 
  public:
+  /* Create a new graph */
   Graph();
-  explicit Graph(char* cache_path);
+  /* Restore a graph from a buffer */
+  explicit Graph(const std::vector<uint8_t>& buffer);
   ~Graph();
-  /* Add an Operator.
-   * @param type [in] Operator Type
-   * @param inputs [in] input tensors
-   * @param outputs [in] outputs tensors
-   * @param attrs [in] attributes of Operator
-   * @param name [in] Operator's name
-   * @return The corresponding Operator is returned on success, otherwise it
-   * returns nullptr
-  */
-  int AddOperator(OperatorType type,
-                  std::vector<std::shared_ptr<Tensor>> inputs,
-                  std::vector<std::shared_ptr<Tensor>> outputs,
-                  void* attrs,
-                  std::string name = "");
-  /* Create a tensor.
-   * @param attr [in] attributes of tensor, cannot be empty.
-   * @param data [in] tensor data, can be empty.
-   * @return the pointer of tensor
-  */
-  std::shared_ptr<Tensor> CreateTensor(std::shared_ptr<TensorAttr> attr,
-                                       void* data);
 
-  /* Set the input and output tensor of the graph.
-   * @param input_tensors [in] input tensors
-   * @param output_tensors [in] output tensors
-   * @return FAKE_DDK_SUCCESS when success
-  */
-  int SetInputsOutputs(std::vector<std::shared_ptr<Tensor>> input_tensors,
-                       std::vector<std::shared_ptr<Tensor>> output_tensors);
-  /* Enable model cache.
-   * @return FAKE_DDK_SUCCESS when the ddk support it
-  */
-  int EnableCache();
+  /* Reset the graph, clear the tensors and operators */
+  void Clear();
 
-  int DisableCache();
-  /* Load model cache. Deserialize cache buffer to fake_ddk's grpah
-   * @return FAKE_DDK_SUCCESS when the ddk support it
+  /* Create and add a new tensor, and set its data if provided.
+   * @param attr [in] the attributes of tensor, cannot be empty.
+   * @param data [in] the data of constant/weight tensor, can be empty.
+   * @return the pointer of tensor.
   */
-  int LoadCache(char* cache_buffer, int size);
+  Tensor* AddTensor(const TensorAttr& attr, void* data);
+
+  /* Create and add a new operator, and set its input and output tensors.
+   * @param type [in] the operator type.
+   * @param inputs [in] the input tensors.
+   * @param outputs [in] the outputs tensors.
+   * @param attr [in] the operator attributes.
+   * @return the corresponding operator is returned on success, otherwise it
+   * returns nullptr.
+  */
+  Operator* AddOperator(OperatorType type,
+                        const std::vector<Tensor*>& input_tensors,
+                        const std::vector<Tensor*>& output_tensors,
+                        void* attr);
+
+  /* Identify the input and output tensors of the graph.
+   * @param input_tensors [in] the input tensors.
+   * @param output_tensors [in] the output tensors.
+   * @return StatusType::SUCCESS when success.
+  */
+  int IdentifyInputsAndOutputs(const std::vector<Tensor*>& input_tensors,
+                               const std::vector<Tensor*>& output_tensors);
+
+  /** Query the attributes of input and output tensors of the graph.
+    * @param input_tensors [out] the attributes of the input tensors.
+    * @param output_tensors [out] the attributes of the output tensors.
+    * @return StatusType::SUCCESS when success.
+  */
+  int QueryInputsAndOutputs(std::vector<TensorAttr>* input_attrs,
+                            std::vector<TensorAttr>* output_attrs);
+
+ public:
+  /* The tensors and operators of the graph */
+  std::list<Tensor> tensors_;
+  std::list<Operator> operators_;
+  /* The input tensors of the graph */
+  std::vector<Tensor*> input_tensors_;
+  /* The output tensors of the graph */
+  std::vector<Tensor*> output_tensors_;
 };
-}  // namespace nn
+
 }  // namespace fake_ddk
