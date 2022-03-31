@@ -41,16 +41,33 @@ void FcFuser::BuildPattern() {
     size_t b_rank = b_shape.size();
     return b_rank == 2 || b_rank == 1;
   };
+  auto input_attr_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("transpose_X");
+    bool trans_y = op_desc.GetAttr<bool>("transpose_Y");
+    return trans_x == false && trans_y == false;
+  };
+  auto input_attr_teller_v2 = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("trans_x");
+    bool trans_y = op_desc.GetAttr<bool>("trans_y");
+    return trans_x == false && trans_y == false;
+  };
 
   // create nodes.
-  auto* x = VarNode("x")->assert_is_op_input("mul", "X");
-  auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
+  auto* x = VarNode("x")->assert_is_op_input(op_type_, "X");
+  auto* W = VarNode("W")->assert_is_op_input(op_type_, "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
-  auto* mul = OpNode("mul", "mul")->assert_node_satisfied(inputs_teller0);
+  auto* mul = OpNode("mul", op_type_)->assert_node_satisfied(inputs_teller0);
   auto* mul_out = VarNode("mul_out");
   auto* add =
       OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
+  if (op_type_ == "matmul") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller);
+  } else if (op_type_ == "matmul_v2") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller_v2);
+  }
 
   // create topology.
   std::vector<PMNode*> mul_inputs{W, x};
@@ -129,9 +146,15 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetInput("W", {matched.at("W")->arg()->name});
   op_desc.SetInput("Bias", {matched.at("b")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-  op_desc.SetAttr(
-      "in_num_col_dims",
-      matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+  if (op_type_ == "mul") {
+    op_desc.SetAttr(
+        "in_num_col_dims",
+        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+  } else {
+    op_desc.SetAttr("in_num_col_dims", 1);
+  }
+  op_desc.SetAttr("op_type", op_type_);
+
   if (with_relu_) {
     op_desc.SetAttr("activation_type", std::string{"relu"});
   }

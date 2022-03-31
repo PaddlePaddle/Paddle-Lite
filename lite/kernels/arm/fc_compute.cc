@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/fc_compute.h"
+#include <string>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/backends/arm/math/funcs.h"
@@ -97,9 +98,14 @@ void FcCompute<PType, OutType>::ReInitWhenNeeded() {
   CHECK_GE(x_dims.size(), 2UL);
   CHECK_EQ(w_dims.size(), 2UL);
   CHECK_GE(param.output->dims().size(), 2UL);
+  int in_num_col_dims = param.in_num_col_dims;
+  std::string op_type = param.op_type;
+  if (op_type == "matmul" || op_type == "matmul_v2") {
+    in_num_col_dims = x_dims.size() - 1;
+  }
 
-  m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-  k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+  m_ = x_dims.Slice(0, in_num_col_dims).production();
+  k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
   CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
   CHECK_EQ(k_, static_cast<int>(w_dims[0]));
