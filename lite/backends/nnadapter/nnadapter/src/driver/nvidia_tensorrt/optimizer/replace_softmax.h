@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__  // NOLINT
-#define __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
+#pragma once
+#include "core/types.h"
 
-REGISTER_KERNEL(SOFTMAX, SoftmaxCudaKernel)
+namespace nnadapter {
+namespace nvidia_tensorrt {
 
-#endif  // NOLINT
+void ReplaceSoftmaxWithNaiveSoftmax(core::Model* model);
+
+void ReplaceSoftmaxWithSpecialSoftmax(core::Model* model);
+
+}  // namespace nvidia_tensorrt
+}  // namespace nnadapter

@@ -20,6 +20,8 @@
 #include <memory>
 #include <vector>
 #include "core/types.h"
+#include "driver/nvidia_tensorrt/operation/type.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
@@ -48,15 +50,12 @@ namespace nvidia_tensorrt {
 #define NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH \
   "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH"
 
-// Operations to run with cuda place, for example:
-// "NNADAPTER_SOFTMAX,NNADAPTER_YOLO_BOX"
-#define NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST \
-  "NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST"
-
-// Operations to run with host place, for example:
-// "NNADAPTER_SOFTMAX,NNADAPTER_YOLO_BOX"
-#define NVIDIA_TENSORRT_HOST_OPERATIONS_LIST \
-  "NVIDIA_TENSORRT_HOST_OPERATIONS_LIST"
+// Supported places
+typedef enum {
+  kTensorrt = 0,
+  kCUDA = 1,
+  kHost = 2,
+} DeviceType;
 
 // Tensorrt precision mode options
 typedef enum {

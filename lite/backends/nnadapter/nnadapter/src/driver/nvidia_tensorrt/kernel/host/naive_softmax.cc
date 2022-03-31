@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/kernels/host/softmax.h"
+#include "driver/nvidia_tensorrt/kernel/host/naive_softmax.h"
 #include <cmath>
+#include "driver/nvidia_tensorrt/operation/naive_softmax.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+namespace host {
 
 template <typename T>
 void Softmax(const T* input, T* output, const int num) {
@@ -36,12 +38,14 @@ void Softmax(const T* input, T* output, const int num) {
   }
 }
 
-int SoftmaxHostKernel::Run(
+int NaiveSoftmaxKernel::Run(
     core::Operation* operation,
     std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
-  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SOFTMAX);
-  auto input_tensor = operand_map->at(operation->input_operands[0]);
-  auto output_tensor = operand_map->at(operation->output_operands[0]);
+  NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_NAIVE_SOFTMAX);
+  NAIVE_SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  auto input_tensor = operand_map->at(input_operand);
+  auto output_tensor = operand_map->at(output_operand);
   output_tensor->Resize(input_tensor->Dims());
   int num = input_tensor->Length();
   const float* input =
@@ -51,5 +55,6 @@ int SoftmaxHostKernel::Run(
   return NNADAPTER_NO_ERROR;
 }
 
+}  // namespace host
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

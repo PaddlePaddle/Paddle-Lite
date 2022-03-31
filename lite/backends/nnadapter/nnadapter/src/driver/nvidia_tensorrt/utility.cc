@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/utility.h"
-#include "utility/debug.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {

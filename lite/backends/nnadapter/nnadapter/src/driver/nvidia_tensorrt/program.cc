@@ -111,36 +111,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
            "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH should be set if precision "
            "is int8.";
   }
-  // Cuda operations list
-  auto cuda_operations_str =
-      key_values.count(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST)
-          ? key_values[NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST]
-          : GetStringFromEnv(NVIDIA_TENSORRT_CUDA_OPERATIONS_LIST);
-  if (!cuda_operations_str.empty()) {
-    auto operations = string_split(cuda_operations_str, ",");
-    for (auto operation : operations) {
-      if (operation == "NNADAPTER_SOFTMAX") {
-        cuda_operations_.push_back(NNADAPTER_SOFTMAX);
-      } else {
-        NNADAPTER_LOG(FATAL) << "Not support.";
-      }
-    }
-  }
-  // Host operations list
-  auto host_operations_str =
-      key_values.count(NVIDIA_TENSORRT_HOST_OPERATIONS_LIST)
-          ? key_values[NVIDIA_TENSORRT_HOST_OPERATIONS_LIST]
-          : GetStringFromEnv(NVIDIA_TENSORRT_HOST_OPERATIONS_LIST);
-  if (!host_operations_str.empty()) {
-    auto operations = string_split(host_operations_str, ",");
-    for (auto operation : operations) {
-      if (operation == "NNADAPTER_SOFTMAX") {
-        host_operations_.push_back(NNADAPTER_SOFTMAX);
-      } else {
-        NNADAPTER_LOG(FATAL) << "Not support.";
-      }
-    }
-  }
 }
 
 void TensorrtProgram::Clear() {
@@ -370,18 +340,19 @@ int TensorrtProgram::Execute(
 void CudaProgram::Clear() {
   operations_.clear();
   kernels_.clear();
-  operand_map_.clear();
+  tensors_.clear();
 }
 
 int CudaProgram::Build() {
   operations_ = SortOperationsInTopologicalOrder(model_);
   for (auto operation : operations_) {
     switch (operation->type) {
-#define REGISTER_KERNEL(__op_type__, __kernel_name__)                          \
-  case NNADAPTER_##__op_type__:                                                \
-    kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
+#define REGISTER_KERNEL(__op_type__, __kernel_name__)              \
+  case NNADAPTER_##__op_type__:                                    \
+    kernels_.emplace_back(                                         \
+        std::shared_ptr<KernelBase>(new cuda::__kernel_name__())); \
     break;
-#include "driver/nvidia_tensorrt/kernels/cuda/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/cuda/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_CUDA_ALL_H__
 #undef REGISTER_KERNEL
       default:
@@ -397,20 +368,20 @@ int CudaProgram::Build() {
 int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
                          std::vector<std::shared_ptr<Tensor>>* output_tensors) {
   for (auto& operand : model_->operands) {
-    if (!operand_map_.count(&operand)) {
-      operand_map_[&operand] = std::shared_ptr<Tensor>(new Tensor());
+    if (!tensors_.count(&operand)) {
+      tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());
     }
   }
   auto& input_operands = model_->input_operands;
   for (size_t i = 0; i < input_operands.size(); i++) {
-    operand_map_[input_operands[i]] = input_tensors->at(i);
+    tensors_[input_operands[i]] = input_tensors->at(i);
   }
   auto& output_operands = model_->output_operands;
   for (size_t i = 0; i < output_operands.size(); i++) {
-    operand_map_[output_operands[i]] = output_tensors->at(i);
+    tensors_[output_operands[i]] = output_tensors->at(i);
   }
   for (size_t i = 0; i < kernels_.size(); i++) {
-    NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &operand_map_),
+    NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &tensors_),
                        NNADAPTER_NO_ERROR);
     cudaDeviceSynchronize();
   }
@@ -420,18 +391,19 @@ int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
 void HostProgram::Clear() {
   operations_.clear();
   kernels_.clear();
-  operand_map_.clear();
+  tensors_.clear();
 }
 
 int HostProgram::Build() {
   operations_ = SortOperationsInTopologicalOrder(model_);
   for (auto operation : operations_) {
     switch (operation->type) {
-#define REGISTER_KERNEL(__op_type__, __kernel_name__)                          \
-  case NNADAPTER_##__op_type__:                                                \
-    kernels_.emplace_back(std::shared_ptr<KernelBase>(new __kernel_name__())); \
+#define REGISTER_KERNEL(__op_type__, __kernel_name__)              \
+  case NNADAPTER_##__op_type__:                                    \
+    kernels_.emplace_back(                                         \
+        std::shared_ptr<KernelBase>(new host::__kernel_name__())); \
     break;
-#include "driver/nvidia_tensorrt/kernels/host/all.h"  // NOLINT
+#include "driver/nvidia_tensorrt/kernel/host/all.h"  // NOLINT
 #undef __NNADAPTER_DRIVER_NVIDIA_TENSORRT_KERNELS_HOST_ALL_H__
 #undef REGISTER_KERNEL
       default:
@@ -447,20 +419,20 @@ int HostProgram::Build() {
 int HostProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
                          std::vector<std::shared_ptr<Tensor>>* output_tensors) {
   for (auto& operand : model_->operands) {
-    if (!operand_map_.count(&operand)) {
-      operand_map_[&operand] = std::shared_ptr<Tensor>(new Tensor());
+    if (!tensors_.count(&operand)) {
+      tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());
     }
   }
   auto& input_operands = model_->input_operands;
   for (size_t i = 0; i < input_operands.size(); i++) {
-    operand_map_[input_operands[i]] = input_tensors->at(i);
+    tensors_[input_operands[i]] = input_tensors->at(i);
   }
   auto& output_operands = model_->output_operands;
   for (size_t i = 0; i < output_operands.size(); i++) {
-    operand_map_[output_operands[i]] = output_tensors->at(i);
+    tensors_[output_operands[i]] = output_tensors->at(i);
   }
   for (size_t i = 0; i < kernels_.size(); i++) {
-    NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &operand_map_),
+    NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &tensors_),
                        NNADAPTER_NO_ERROR);
   }
   return NNADAPTER_NO_ERROR;

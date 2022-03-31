@@ -24,8 +24,8 @@ include(dependencies.cmake)
 include_directories(.)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(converter/plugin PLUGINS)
-aux_source_directory(kernels/cuda CUDA_KERNELS)
-aux_source_directory(kernels/host HOST_KERNELS)
+aux_source_directory(kernel/cuda CUDA_KERNELS)
+aux_source_directory(kernel/host HOST_KERNELS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS engine.cc
   utility.cc
