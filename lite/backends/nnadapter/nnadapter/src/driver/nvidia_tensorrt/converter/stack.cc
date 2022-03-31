@@ -45,6 +45,10 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
       }
       reshape_dim.nbDims = input_dimensions_count + 1;
       reshape_dim.d[input_dimensions_count] = 1;
+      NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
+      for (int i = 0; i < input_dimensions_count; i++) {
+        reshape_dim.d[i] = input_operand->type.dimensions.data[i];
+      }
       auto reshape_layer = converter->network()->addShuffle(*input_operator);
       reshape_layer->setReshapeDimensions(reshape_dim);
       auto output_ = reshape_layer->getOutput(0);
