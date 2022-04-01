@@ -24,6 +24,7 @@
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_yolo_box.h"
 #include "optimizer/partition_model_into_submodels.h"
 #include "utility/debug.h"
 #include "utility/logging.h"

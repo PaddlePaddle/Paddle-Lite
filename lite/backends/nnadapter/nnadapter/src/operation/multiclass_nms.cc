@@ -23,6 +23,8 @@
 namespace nnadapter {
 namespace operation {
 
+bool ValidateMulticlassNMSd(const core::Operation* operation) { return false; }
+
 int PrepareMulticlassNMS(core::Operation* operation) {
   MULTICLASS_NMS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -40,7 +42,6 @@ int PrepareMulticlassNMS(core::Operation* operation) {
   output_box_operand->type.dimensions.data[1] = output_shape[1];
 
   // Dynamic shape
-  auto input_count = input_operands.size();
   if (input_operands[0]->type.dimensions.dynamic_count != 0) {
     for (uint32_t i = 0; i < input_operands[0]->type.dimensions.dynamic_count;
          i++) {
@@ -56,6 +57,10 @@ int PrepareMulticlassNMS(core::Operation* operation) {
     }
   }
   return NNADAPTER_NO_ERROR;
+}
+
+int ExecuteeMulticlassNMS(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

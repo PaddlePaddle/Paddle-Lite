@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/optimizer/fuse_yolo_box.h"
+#include "driver/nvidia_tensorrt/operation/type.h"
 #include <cmath>
 #include <map>
 #include <string>
@@ -45,7 +46,7 @@ static bool FindYoloBoxPattern(
                       << score_consumers.size();
     return false;
   }
-  *operation_map[yolo_box_name] = yolo_box_operation;
+  (*operation_map)[yolo_box_name] = yolo_box_operation;
   auto concat_0_operation_0 = box_consumers[0];
   auto transpose2_0_operation = score_consumers[0];
   if (concat_0_operation_0->type != NNADAPTER_CONCAT &&
@@ -59,15 +60,15 @@ static bool FindYoloBoxPattern(
     return false;
   }
   NNADAPTER_CHECK_EQ(concat_0_operation_0->input_operands.size(), 4);
-  *operation_map["concat_0"] = concat_0_operation_0;
+  (*operation_map)["concat_0"] = concat_0_operation_0;
   auto transpose2_0_output_operand = transpose2_0_operation->output_operands[0];
   auto transpose2_0_consumers =
       GetOperandConsumers(model, transpose2_0_output_operand);
   if (transpose2_0_consumers.size() != 1) {
     return false;
   }
-  std::string transpse2_name = "transpose2_" + str(num);
-  operation_map[transpse2_name] = transpose2_0_operation;
+  std::string transpse2_name = "transpose2_" +  std::to_string(num);
+  (*operation_map)[transpse2_name] = transpose2_0_operation;
   auto concat_0_operation_1 = transpose2_0_consumers[0];
   if (concat_0_operation_1->type != NNADAPTER_CONCAT) {
     NNADAPTER_VLOG(5) << "Converting "
@@ -76,7 +77,7 @@ static bool FindYoloBoxPattern(
     return false;
   }
   NNADAPTER_CHECK_EQ(concat_0_operation_1->input_operands.size(), 4);
-  *operation_map["concat_1"] = concat_0_operation_1;
+  (*operation_map)["concat_1"] = concat_0_operation_1;
   auto concat_0_output_operand_1 = concat_0_operation_1->output_operands[0];
   auto concat_0_consumers =
       GetOperandConsumers(model, concat_0_output_operand_1);
@@ -92,7 +93,7 @@ static bool FindYoloBoxPattern(
   }
   NNADAPTER_CHECK_EQ(nms_0_operation_1->input_operands.size(), 2);
   NNADAPTER_CHECK_EQ(nms_0_operation_1->output_operands.size(), 2);
-  *operation_map[nms_name] = nms_0_operation_1;
+  (*operation_map)[nms_name] = nms_0_operation_1;
   return true;
 }
 
@@ -138,10 +139,10 @@ static bool AddYoloHeadOperation(core::Model* model,
     yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[i]);
   }
   yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[yolo_box_0_dims - 1] +
-                                   yolo_score_0_dims[yolo_box_0_dims - 1]);
-  auto yolo_box_head0_output_operand =
-      AddOperand(model, yolo_box_0_output_dims, NNADAPTER_FLOAT32);
-  yolo_box_head0->output_operands = {yolo_box_head0_output_operand};
+                                   yolo_score_0_dims_ptr[yolo_box_0_dims - 1]);
+  auto yolo_box_head0_output_operand =AddOperand(model);
+      // AddOperand(model, yolo_box_0_output_dims, NNADAPTER_FLOAT32);
+  yolo_box_head->output_operands = {yolo_box_head0_output_operand};
   return true;
 }
 
@@ -201,9 +202,9 @@ static bool AddYoloParseOperation(core::Model* model,
   }
   std::vector<int32_t> yolo_box_parse_output_dims;
   auto size_index = box_operand0_dims - 2;
-  for (int i = 0; i < box_operand0_dims; i++) {
+  for (uint32_t i = 0; i < box_operand0_dims; i++) {
     if (i == size_index) continue;
-    if (box_operand0_dims_ptr[i] != box_operand1_dims_ptr ||
+    if (box_operand0_dims_ptr[i] != box_operand1_dims_ptr[i] ||
         box_operand0_dims_ptr[i] != box_operand2_dims_ptr[i]) {
       NNADAPTER_VLOG(5) << "box_operand0_dims data: "
                         << box_operand0_dims_ptr[i]
@@ -221,7 +222,7 @@ static bool AddYoloParseOperation(core::Model* model,
   yolo_box_parse_output_dims.push_back(size);
   yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[size_index + 1]);
   auto yolo_box_parse_output_operand =
-      AddOperand(model, yolo_box_parse_output_dims, NNADAPTER_FLOAT32);
+      AddOperand(model);
   yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
   return true;
 }
@@ -243,7 +244,7 @@ static void DelOperation(core::Model* model,
     RemoveOperand(model, operation->input_operands[7]);
   }
   // remove yolo_box output == transpose2
-  std::string transpose2_name = "transpose2_" + str(num);
+  std::string transpose2_name = "transpose2_" +  std::to_string(num);
   auto transpose2_operation = operation_map[transpose2_name];
   RemoveOperand(model, transpose2_operation->input_operands[0]);
   RemoveOperand(model, transpose2_operation->input_operands[1]);
@@ -285,8 +286,8 @@ void FuseYoloBox(core::Model* model) {
       auto elt_div_input0_operand = input_operands[0];
       auto elt_div_input1_operand = input_operands[1];
       auto elt_div_output_operand = output_operands[0];
-      if (x_operand->type.dimensions.count != 2 ||
-          y_operand->type.dimensions.count != 2) {
+      if (elt_div_input0_operand->type.dimensions.count != 2 ||
+          elt_div_input1_operand->type.dimensions.count != 2) {
         NNADAPTER_VLOG(5)
             << "Only support x's dims count and y's dims count is 2.";
         continue;
@@ -306,7 +307,7 @@ void FuseYoloBox(core::Model* model) {
 
       auto cast_input_attr_dtype = cast_operation->input_operands[1];
       auto cast_output_operand = cast_operation->output_operands[0];
-      if (reinterpret_cast<int32_t*>(cast_input_attr_dtype->buffer) !=
+      if (*reinterpret_cast<int32_t*>(cast_input_attr_dtype->buffer) !=
           NNADAPTER_INT32) {
         continue;
       }
@@ -361,7 +362,7 @@ void FuseYoloBox(core::Model* model) {
         break;
       }
       if (operation_map.size() != 9) {
-        NNADAPTER_VLOG(5) << "operation_map size: " << operation_map.size
+        NNADAPTER_VLOG(5) << "operation_map size: " << operation_map.size()
                           << " is not equal 9!";
       }
       // add new operation
@@ -405,9 +406,9 @@ void FuseYoloBox(core::Model* model) {
       yolo_box_nms->input_operands = yolo_box_parser->output_operands;
       yolo_box_nms->output_operands = operation_map["nms_0"]->output_operands;
       // clean operation and node
-      DelOperation(operation_map["yolo_box_0"], operation_map, 0);
-      DelOperation(operation_map["yolo_box_1"], operation_map, 1);
-      DelOperation(operation_map["yolo_box_2"], operation_map, 2);
+      DelOperation(model, operation_map["yolo_box_0"], operation_map, 0);
+      DelOperation(model, operation_map["yolo_box_1"], operation_map, 1);
+      DelOperation(model, operation_map["yolo_box_2"], operation_map, 2);
       // concat_0
       RemoveOperand(model, operation_map["concat_0"]->input_operands[0]);
       RemoveOperand(model, operation_map["concat_0"]->input_operands[1]);
