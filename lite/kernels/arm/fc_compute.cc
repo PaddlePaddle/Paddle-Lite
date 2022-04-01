@@ -397,14 +397,6 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
     b_data = bias_.data<float16_t>();
   }
   operators::ActivationParam act_param;
-  if (param.activation_type == "relu") {
-    act_param.has_active = true;
-    act_param.active_type = lite_api::ActivationType::kRelu;
-  } else if (param.activation_type == "relu6") {
-    act_param.has_active = true;
-    act_param.active_type = lite_api::ActivationType::kRelu6;
-    act_param.Relu_clipped_coef = param.alpha;
-  }
   if (flag_gemm_) {
     act_param.has_active = false;
     lite::arm::math::fp16::sgemm_fp16(false,
@@ -426,6 +418,14 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                       &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
+      if (param.activation_type == "relu") {
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu;
+      } else if (param.activation_type == "relu6") {
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu6;
+        act_param.Relu_clipped_coef = param.alpha;
+      }
       lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
     }
   } else {

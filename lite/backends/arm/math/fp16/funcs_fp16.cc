@@ -73,7 +73,7 @@ void fill_bias_fc<float16_t>(float16_t *out,
   int cnt_num = remain >> 3;
   int cnt_rem = remain & 7;
   if (act_param != nullptr && act_param->has_active) {
-    float32x4_t vzero = vdupq_n_f32(0.f);
+    float16x8_t vzero = vdupq_n_f16(0.f);
     if (act_param->active_type == lite_api::ActivationType::kRelu) {
       for (int j = 0; j < num; ++j) {
         const float16_t *ptr_bias = bias;
@@ -96,8 +96,8 @@ void fill_bias_fc<float16_t>(float16_t *out,
         }
       }
     } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
-      float alpha = act_param->Relu_clipped_coef;
-      float32x4_t valpha = vdupq_n_f32(act_param->Relu_clipped_coef);
+      float16_t alpha = static_cast<float16_t>(act_param->Relu_clipped_coef);
+      float16x8_t valpha = vdupq_n_f16(alpha);
       for (int j = 0; j < num; ++j) {
         const float16_t *ptr_bias = bias;
         float16_t *ptr_out = out + j * channel;
