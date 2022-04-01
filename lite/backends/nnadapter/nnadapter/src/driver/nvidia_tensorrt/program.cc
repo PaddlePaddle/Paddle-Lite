@@ -111,6 +111,12 @@ Context::Context(void* device, const char* properties) : device_(device) {
            "NVIDIA_TENSORRT_CALIBRATION_TABLE_PATH should be set if precision "
            "is int8.";
   }
+  // Max workspace size
+  max_workspce_size_ =
+      key_values.count(NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE)
+          ? string_parse<int64_t>(
+                key_values[NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE])
+          : GetUInt64FromEnv(NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE);
 }
 
 void TensorrtProgram::Clear() {
@@ -239,6 +245,11 @@ void TensorrtProgram::CompleteConfig() {
         context_->CalibrationDatasetPath(),
         context_->CalibrationTablePath()));
     config_->setInt8Calibrator(calibrator_.get());
+  }
+  // Set max workspace size
+  size_t max_workspace_size = context_->MaxWorkspaceSize();
+  if (max_workspace_size > 0) {
+    config_->setMaxWorkspaceSize(max_workspace_size);
   }
 }
 
