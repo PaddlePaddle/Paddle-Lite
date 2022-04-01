@@ -116,32 +116,7 @@ static bool AddYoloHeadOperation(core::Model* model,
                                    downsample_ratio,
                                    clip_bbox,
                                    scale_x_y};
-  auto box_operand0 = yolo_box_operands->output_operands[0];
-  auto score_operand0 = yolo_box_operands->output_operands[1];
-  auto yolo_box_0_dims = box_operand0->type.dimensions.count;
-  auto yolo_box_0_dims_ptr = box_operand0->type.dimensions.data;
-  auto yolo_score_0_dims = score_operand0->type.dimensions.count;
-  auto yolo_score_0_dims_ptr = score_operand0->type.dimensions.data;
-  if (yolo_box_0_dims != yolo_score_0_dims) {
-    NNADAPTER_VLOG(5) << "yolo_box_0_dims: " << yolo_box_0_dims
-                      << ", is not equal to yolo_score_0_dims: "
-                      << yolo_score_0_dims;
-    return false;
-  }
-  std::vector<int32_t> yolo_box_0_output_dims;
-  for (int i = 0; i < yolo_box_0_dims - 1; i++) {
-    if (yolo_box_0_dims_ptr[i] != yolo_score_0_dims_ptr[i]) {
-      NNADAPTER_VLOG(5) << "yolo_box_0_dims_data: " << yolo_box_0_dims_ptr[i]
-                        << ", is not equal to yolo_score_0_dims_data: "
-                        << yolo_score_0_dims_ptr[i];
-      return false;
-    }
-    yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[i]);
-  }
-  yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[yolo_box_0_dims - 1] +
-                                   yolo_score_0_dims_ptr[yolo_box_0_dims - 1]);
   auto yolo_box_head0_output_operand = AddOperand(model);
-  // AddOperand(model, yolo_box_0_output_dims, NNADAPTER_FLOAT32);
   yolo_box_head->output_operands = {yolo_box_head0_output_operand};
   return true;
 }
@@ -183,44 +158,6 @@ static bool AddYoloParseOperation(core::Model* model,
                                     downsample_ratio2,
                                     clip_bbox,
                                     scale_x_y};
-  auto box_operand0 = yolo_box_head0->output_operands[0];
-  auto box_operand1 = yolo_box_head1->output_operands[0];
-  auto box_operand2 = yolo_box_head2->output_operands[0];
-  auto box_operand0_dims = box_operand0->type.dimensions.count;
-  auto box_operand0_dims_ptr = box_operand0->type.dimensions.data;
-  auto box_operand1_dims = box_operand1->type.dimensions.count;
-  auto box_operand1_dims_ptr = box_operand1->type.dimensions.data;
-  auto box_operand2_dims = box_operand2->type.dimensions.count;
-  auto box_operand2_dims_ptr = box_operand1->type.dimensions.data;
-  if (box_operand0_dims != box_operand1_dims &&
-      box_operand0_dims != box_operand2_dims) {
-    NNADAPTER_VLOG(5) << "box_operand0_dims: " << box_operand1_dims
-                      << ", is not equal to box_operand1_dims: "
-                      << box_operand1_dims
-                      << ", and box_operand2_dims: " << box_operand2_dims;
-    return false;
-  }
-  std::vector<int32_t> yolo_box_parse_output_dims;
-  auto size_index = box_operand0_dims - 2;
-  for (uint32_t i = 0; i < box_operand0_dims; i++) {
-    if (i == size_index) continue;
-    if (box_operand0_dims_ptr[i] != box_operand1_dims_ptr[i] ||
-        box_operand0_dims_ptr[i] != box_operand2_dims_ptr[i]) {
-      NNADAPTER_VLOG(5) << "box_operand0_dims data: "
-                        << box_operand0_dims_ptr[i]
-                        << ", is not equal to box_operand1_dims data: "
-                        << box_operand1_dims_ptr[i]
-                        << ", and box_operand2_dims data: "
-                        << box_operand2_dims_ptr[i];
-      return false;
-    }
-    yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[i]);
-  }
-  auto size = box_operand0_dims_ptr[size_index] +
-              box_operand1_dims_ptr[size_index] +
-              box_operand2_dims_ptr[size_index];
-  yolo_box_parse_output_dims.push_back(size);
-  yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[size_index + 1]);
   auto yolo_box_parse_output_operand = AddOperand(model);
   yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
   return true;
