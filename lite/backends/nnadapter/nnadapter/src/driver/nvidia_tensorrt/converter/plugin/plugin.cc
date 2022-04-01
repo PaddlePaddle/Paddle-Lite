@@ -17,6 +17,60 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+Plugin::Plugin() {}
+
+Plugin::Plugin(const void* serial_data, size_t serial_length) {}
+
+Plugin::~Plugin() {}
+
+const char* Plugin::getPluginVersion() const noexcept { return "1"; }
+
+int32_t Plugin::getNbOutputs() const noexcept { return 1; }
+
+nvinfer1::Dims Plugin::getOutputDimensions(int index,
+                                           const nvinfer1::Dims* inputs,
+                                           int nb_input_dims) noexcept {
+  return nb_input_dims > 0 ? inputs[0] : nvinfer1::Dims{-1, {}, {}};
+}
+
+bool Plugin::supportsFormat(nvinfer1::DataType type,
+                            nvinfer1::PluginFormat format) const noexcept {
+  return (type == nvinfer1::DataType::kFLOAT) &&
+         (format == nvinfer1::PluginFormat::kLINEAR);
+}
+
+void Plugin::configureWithFormat(const nvinfer1::Dims* input_dims,
+                                 int nb_inputs,
+                                 const nvinfer1::Dims* output_dims,
+                                 int nb_outputs,
+                                 nvinfer1::DataType type,
+                                 nvinfer1::PluginFormat format,
+                                 int max_batch_size) noexcept {
+  input_dims_.assign(input_dims, input_dims + nb_inputs);
+  data_type_ = type;
+  data_format_ = format;
+}
+
+int Plugin::initialize() noexcept { return 0; }
+
+void Plugin::terminate() noexcept {}
+
+size_t Plugin::getWorkspaceSize(int max_batch_size) const noexcept { return 0; }
+
+size_t Plugin::getSerializationSize() const noexcept { return 0; }
+
+void Plugin::serialize(void* buffer) const noexcept {}
+
+void Plugin::destroy() noexcept {}
+
+void Plugin::setPluginNamespace(const char* plugin_namespace) noexcept {
+  namespace_ = plugin_namespace;
+}
+
+const char* Plugin::getPluginNamespace() const noexcept {
+  return namespace_.c_str();
+}
+
 PluginDynamic::PluginDynamic() {}
 
 PluginDynamic::PluginDynamic(const void* serial_data, size_t serial_length) {}
@@ -63,10 +117,7 @@ nvinfer1::DataType PluginDynamic::getOutputDataType(
     int32_t index,
     const nvinfer1::DataType* input_types,
     int32_t nb_inputs) const noexcept {
-  NNADAPTER_CHECK_EQ(index, 0);
-  NNADAPTER_CHECK(input_types);
-  NNADAPTER_CHECK_GE(nb_inputs, 1);
-  return input_types[0];
+  return nb_inputs > 0 ? input_types[0] : nvinfer1::DataType::kFLOAT;
 }
 
 const char* PluginDynamic::getPluginVersion() const noexcept { return "1"; }
@@ -88,7 +139,7 @@ void PluginDynamic::setPluginNamespace(const char* plugin_namespace) noexcept {
 }
 
 const char* PluginDynamic::getPluginNamespace() const noexcept {
-  return namespace_.data();
+  return namespace_.c_str();
 }
 
 const char* PluginCreator::getPluginVersion() const noexcept { return "1"; }
@@ -107,7 +158,7 @@ void PluginCreator::setPluginNamespace(const char* plugin_namespace) noexcept {
 }
 
 const char* PluginCreator::getPluginNamespace() const noexcept {
-  return namespace_.data();
+  return namespace_.c_str();
 }
 
 }  // namespace nvidia_tensorrt
