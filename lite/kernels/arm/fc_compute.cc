@@ -429,6 +429,14 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
     }
   } else {
+    if (param.activation_type == "relu") {
+      act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu;
+    } else if (param.activation_type == "relu6") {
+      act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu6;
+      act_param.Relu_clipped_coef = param.alpha;
+    }
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
