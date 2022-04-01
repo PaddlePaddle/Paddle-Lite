@@ -46,6 +46,7 @@ class Context {
   bool GpuFallback() { return gpu_fallback_; }
   std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
   std::string CalibrationTablePath() { return calibration_table_path_; }
+  size_t MaxWorkspaceSize() { return max_workspce_size_; }
 
  private:
   void* device_{nullptr};
@@ -56,6 +57,7 @@ class Context {
   bool gpu_fallback_{true};
   std::string calibration_dataset_path_;
   std::string calibration_table_path_;
+  size_t max_workspce_size_{0};
 };
 
 class ProgramBase {
