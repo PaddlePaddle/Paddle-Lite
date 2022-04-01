@@ -45,7 +45,7 @@ static bool FindYoloBoxPattern(
                       << score_consumers.size();
     return false;
   }
-  operation_map[yolo_box_name] = yolo_box_operation;
+  *operation_map[yolo_box_name] = yolo_box_operation;
   auto concat_0_operation_0 = box_consumers[0];
   auto transpose2_0_operation = score_consumers[0];
   if (concat_0_operation_0->type != NNADAPTER_CONCAT &&
@@ -59,7 +59,7 @@ static bool FindYoloBoxPattern(
     return false;
   }
   NNADAPTER_CHECK_EQ(concat_0_operation_0->input_operands.size(), 4);
-  operation_map["concat_0"] = concat_0_operation_0;
+  *operation_map["concat_0"] = concat_0_operation_0;
   auto transpose2_0_output_operand = transpose2_0_operation->output_operands[0];
   auto transpose2_0_consumers =
       GetOperandConsumers(model, transpose2_0_output_operand);
@@ -76,7 +76,7 @@ static bool FindYoloBoxPattern(
     return false;
   }
   NNADAPTER_CHECK_EQ(concat_0_operation_1->input_operands.size(), 4);
-  operation_map["concat_1"] = concat_0_operation_1;
+  *operation_map["concat_1"] = concat_0_operation_1;
   auto concat_0_output_operand_1 = concat_0_operation_1->output_operands[0];
   auto concat_0_consumers =
       GetOperandConsumers(model, concat_0_output_operand_1);
@@ -92,7 +92,7 @@ static bool FindYoloBoxPattern(
   }
   NNADAPTER_CHECK_EQ(nms_0_operation_1->input_operands.size(), 2);
   NNADAPTER_CHECK_EQ(nms_0_operation_1->output_operands.size(), 2);
-  operation_map[nms_name] = nms_0_operation_1;
+  *operation_map[nms_name] = nms_0_operation_1;
   return true;
 }
 
@@ -228,7 +228,7 @@ static bool AddYoloParseOperation(core::Model* model,
 
 static void DelOperation(core::Model* model,
                          core::Operation* operation,
-                         std::map<std::string, core::Operation*>* operation_map,
+                         std::map<std::string, core::Operation*> operation_map,
                          int num) {
   // remove yolo_box input
   RemoveOperand(model, operation->input_operands[1]);
@@ -332,23 +332,31 @@ void FuseYoloBox(core::Model* model) {
                           << " ...";
         break;
       }
-      std::map<std::string, core::Operation*>* operation_map bool find =
-          FindYoloBoxPattern(model,
-                             yolo_box_operation_0,
-                             operation_map,
-                             "yolo_box_0",
-                             "nms_0",
-                             0);
+      std::map<std::string, core::Operation*> operation_map;
+      bool find = FindYoloBoxPattern(model,
+                                     yolo_box_operation_0,
+                                     &operation_map,
+                                     "yolo_box_0",
+                                     "nms_0",
+                                     0);
       if (!find) {
         break;
       }
-      find = FindYoloBoxPattern(
-          model, yolo_box_operation_1, operation_map, "yolo_box_1", "nms_0", 1);
+      find = FindYoloBoxPattern(model,
+                                yolo_box_operation_1,
+                                &operation_map,
+                                "yolo_box_1",
+                                "nms_0",
+                                1);
       if (!find) {
         break;
       }
-      find = FindYoloBoxPattern(
-          model, yolo_box_operation_2, operation_map, "yolo_box_2", "nms_0", 2);
+      find = FindYoloBoxPattern(model,
+                                yolo_box_operation_2,
+                                &operation_map,
+                                "yolo_box_2",
+                                "nms_0",
+                                2);
       if (!find) {
         break;
       }

@@ -254,6 +254,7 @@ int TensorrtProgram::BuildFromModel() {
   UnpackOpFusion(model_);
   FuseMatMulAddIntoFullyConnected(model_);
   RemoveReshapeBeforeFullyConnected(model_);
+  FuseYoloBox(model_);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model_);
   // 2. Build model_, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));

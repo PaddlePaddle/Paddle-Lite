@@ -2080,6 +2080,7 @@ typedef enum {
    * valid only if "return_index" is true.
    */
   NNADAPTER_MULTICLASS_NMS,
+
   /**
    * Generate YOLO detection boxes from output of YOLOv3 network.
    * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
