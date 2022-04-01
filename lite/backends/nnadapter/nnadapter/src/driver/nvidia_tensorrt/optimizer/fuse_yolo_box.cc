@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/optimizer/fuse_yolo_box.h"
-#include "driver/nvidia_tensorrt/operation/type.h"
 #include <cmath>
 #include <map>
 #include <string>
 #include <vector>
+#include "driver/nvidia_tensorrt/operation/type.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -67,7 +67,7 @@ static bool FindYoloBoxPattern(
   if (transpose2_0_consumers.size() != 1) {
     return false;
   }
-  std::string transpse2_name = "transpose2_" +  std::to_string(num);
+  std::string transpse2_name = "transpose2_" + std::to_string(num);
   (*operation_map)[transpse2_name] = transpose2_0_operation;
   auto concat_0_operation_1 = transpose2_0_consumers[0];
   if (concat_0_operation_1->type != NNADAPTER_CONCAT) {
@@ -140,8 +140,8 @@ static bool AddYoloHeadOperation(core::Model* model,
   }
   yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[yolo_box_0_dims - 1] +
                                    yolo_score_0_dims_ptr[yolo_box_0_dims - 1]);
-  auto yolo_box_head0_output_operand =AddOperand(model);
-      // AddOperand(model, yolo_box_0_output_dims, NNADAPTER_FLOAT32);
+  auto yolo_box_head0_output_operand = AddOperand(model);
+  // AddOperand(model, yolo_box_0_output_dims, NNADAPTER_FLOAT32);
   yolo_box_head->output_operands = {yolo_box_head0_output_operand};
   return true;
 }
@@ -221,8 +221,7 @@ static bool AddYoloParseOperation(core::Model* model,
               box_operand2_dims_ptr[size_index];
   yolo_box_parse_output_dims.push_back(size);
   yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[size_index + 1]);
-  auto yolo_box_parse_output_operand =
-      AddOperand(model);
+  auto yolo_box_parse_output_operand = AddOperand(model);
   yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
   return true;
 }
@@ -244,7 +243,7 @@ static void DelOperation(core::Model* model,
     RemoveOperand(model, operation->input_operands[7]);
   }
   // remove yolo_box output == transpose2
-  std::string transpose2_name = "transpose2_" +  std::to_string(num);
+  std::string transpose2_name = "transpose2_" + std::to_string(num);
   auto transpose2_operation = operation_map[transpose2_name];
   RemoveOperand(model, transpose2_operation->input_operands[0]);
   RemoveOperand(model, transpose2_operation->input_operands[1]);
