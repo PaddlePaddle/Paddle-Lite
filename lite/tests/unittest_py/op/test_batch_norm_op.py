@@ -65,7 +65,8 @@ class TestBatchNormOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,
@@ -107,6 +108,10 @@ class TestBatchNormOp(AutoScanTest):
         if self.get_target() == "Metal":
             outputs = ["output_data"]
 
+        if self.get_target().upper() == "NNADAPTER":
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                outputs = ["output_data"]
+
         batch_norm_ops = OpConfig(
             type="batch_norm",
             inputs={
@@ -131,16 +136,18 @@ class TestBatchNormOp(AutoScanTest):
                 "epsilon": epsilon,
                 "momentum": momentum
             })
+
         program_config = ProgramConfig(
             ops=[batch_norm_ops],
-            weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            weights={
                 "scale_data": TensorConfig(data_gen=partial(generate_scale)),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias)),
                 "mean_data": TensorConfig(data_gen=partial(generate_mean)),
                 "variance_data":
                 TensorConfig(data_gen=partial(generate_variance)),
+            },
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
             },
             outputs=outputs)
         return program_config

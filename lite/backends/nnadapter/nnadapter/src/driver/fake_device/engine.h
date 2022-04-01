@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/fake_device/utility.h"
+#include "utility.h"  // NOLINT
 
 namespace nnadapter {
 namespace fake_device {
@@ -63,15 +63,12 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to fake_ddk tensor
-  std::map<core::Operand*, std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>
-      tensors_;
-  std::shared_ptr<fake_ddk::nn::Graph> graph_{nullptr};
-  std::shared_ptr<fake_ddk::nn::Exection> execution_{nullptr};
+  // Map NNAdapter operand to fake device tensor
+  std::map<core::Operand*, std::vector<fake_ddk::Tensor*>> tensors_;
+  std::shared_ptr<fake_ddk::Graph> graph_{nullptr};
+  std::shared_ptr<fake_ddk::Execution> execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  std::string dump_graph_path_;
-  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
 }  // namespace fake_device

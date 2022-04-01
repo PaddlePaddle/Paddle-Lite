@@ -15,20 +15,22 @@
 #pragma once
 #include <map>
 #include <memory>
-#include "driver/nvidia_tensorrt/kernels/kernel.h"
+#include "driver/nvidia_tensorrt/kernel/kernel.h"
 #include "driver/nvidia_tensorrt/utility.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+namespace cuda {
 
-class SoftmaxHostKernel : public KernelBase {
+class SpecialSoftmaxKernel : public KernelBase {
  public:
-  virtual ~SoftmaxHostKernel() {}
+  virtual ~SpecialSoftmaxKernel() {}
 
   int Run(
       core::Operation* operation,
       std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) override;
 };
 
+}  // namespace cuda
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

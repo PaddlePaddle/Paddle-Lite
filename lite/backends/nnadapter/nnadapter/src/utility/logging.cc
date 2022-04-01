@@ -82,7 +82,7 @@ LogMessageFatal::~LogMessageFatal() noexcept(false) {
   ANDROID_LOG_F(log_stream_.str().c_str());
 #endif
   fprintf(stderr, "%s", log_stream_.str().c_str());
-  throw NNAdapterException(log_stream_.str().c_str());
+  throw Exception(log_stream_.str().c_str());
   abort();
 }
 

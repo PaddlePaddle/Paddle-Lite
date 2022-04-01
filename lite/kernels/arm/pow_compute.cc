@@ -14,13 +14,16 @@
 
 #include "lite/kernels/arm/pow_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-void PowCompute::Run() {
+template <>
+void PowCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<operators::PowParam>();
   const float* x_data = param.X->data<float>();
   float* output_data = param.Out->mutable_data<float>();
@@ -33,13 +36,40 @@ void PowCompute::Run() {
       x_data, output_data, x_dims.production(), scale, shift, power);
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void PowCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = Param<operators::PowParam>();
+  const float* x_data = param.X->data<float>();
+  float* output_data = param.Out->mutable_data<float>();
+  DDim x_dims = param.X->dims();
+  float scale = 1.0;
+  float shift = 0.0;
+  float power = param.factor;
+
+  lite::arm::math::power(
+      x_data, output_data, x_dims.production(), scale, shift, power);
+}
+#endif
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    pow, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::PowCompute<PRECISION(kFP16),
+                                               PRECISION(kFP16)>
+    PowFp16;
+REGISTER_LITE_KERNEL(pow, kARM, kFP16, kNCHW, PowFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::PowCompute<PRECISION(kFloat),
+                                               PRECISION(kFloat)>
+    PowFp32;
+REGISTER_LITE_KERNEL(pow, kARM, kFloat, kNCHW, PowFp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

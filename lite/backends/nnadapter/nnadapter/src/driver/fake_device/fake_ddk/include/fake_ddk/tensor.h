@@ -20,34 +20,28 @@
 #include "fake_ddk/types.h"
 
 namespace fake_ddk {
-namespace nn {
 
-/* The structure of quantization parameter of Affine Asymmetric */
-struct QuantizationParamAffineAsymmetric {
-  std::vector<uint32_t> zero_point;
-  std::vector<float> scale;
-};
+/* The parameter of symmetric/asymmetric per-layer/per-channel quantization */
+typedef struct {
+  std::vector<float> scales;
+  std::vector<int32_t> zero_points;
+  int32_t channel_dim;
+} QuantParams;
 
-/* The structure of quantization parameter of Symmetric */
-struct QuantizationParamSymmetric {
-  std::vector<float> scale;
-};
-
-/* The structure of Tensor Attribute */
-struct TensorAttr {
-  std::string name;
-  std::vector<uint32_t> dims;
+/* Tensor Attribute */
+typedef struct {
   PrecisionType precision;
   DataLayoutType layout;
-  /* Fake_ddk use affine asymmetric */
-  QuantizationParamAffineAsymmetric qntParamAffineAsymmetric;
-};
+  std::vector<int32_t> shape;
+  QuantParams quant_params;
+} TensorAttr;
 
-typedef struct _fakedevice_nn_tensor {
-  /* Tensor attributes */
-  std::shared_ptr<const TensorAttr> attr;
-  void* data;
-} fakedevice_nn_tensor_t;
-typedef fakedevice_nn_tensor_t Tensor;
-}  // namespace nn
+/* Tensor */
+typedef struct {
+  TensorAttr attr;
+  LifeTimeType lifetime;
+  void* buffer;
+  size_t length;
+} Tensor;
+
 }  // namespace fake_ddk

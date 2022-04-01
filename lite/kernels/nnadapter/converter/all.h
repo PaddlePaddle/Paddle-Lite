@@ -15,10 +15,11 @@
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(batch_norm,
-                   ConvertBatchNorm,
-                   "huawei_ascend_npu,verisilicon_"
-                   "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino");
+REGISTER_CONVERTER(
+    batch_norm,
+    ConvertBatchNorm,
+    "huawei_ascend_npu,verisilicon_"
+    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino,nvidia_tensorrt");
 REGISTER_CONVERTER(
     cast,
     ConvertCast,
@@ -32,8 +33,7 @@ REGISTER_CONVERTER(
     ConvertConv2D,
     "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
-    "fake_device");
+    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(
     depthwise_conv2d,
     ConvertConv2D,

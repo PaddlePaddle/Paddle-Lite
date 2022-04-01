@@ -65,7 +65,7 @@ macro(add_xtcl_lib_deps LIB_PATH)
     )
     add_dependencies(${LIB_NAME} copy_${LIB_NAME}_lib)
   endif()
-  set(${DEVICE_NAME}_deps ${${DEVICE_NAME}_deps} ${LIB_NAME})
+  set(DEPS ${DEPS} ${LIB_NAME})
 endmacro()
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)

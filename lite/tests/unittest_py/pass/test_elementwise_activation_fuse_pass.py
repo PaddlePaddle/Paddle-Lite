@@ -97,6 +97,7 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
         target_str = self.get_target()
         act_list = ['relu']
         if target_str == "OpenCL":
+            act_list.append("relu6")
             act_list.append("gelu")
         act_type = draw(st.sampled_from(act_list))
 

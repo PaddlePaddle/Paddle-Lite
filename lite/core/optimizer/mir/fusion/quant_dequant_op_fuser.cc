@@ -33,7 +33,7 @@ static std::string GetWeightArgname(const std::string& op_type) {
                                        "depthwise_conv2d",
                                        "conv2d_transpose",
                                        "depthwise_conv2d_transpose"};
-  std::vector<std::string> mul_ops = {"mul", "matmul"};
+  std::vector<std::string> mul_ops = {"mul", "matmul", "matmul_v2"};
   if (std::find(conv_ops.begin(), conv_ops.end(), op_type) != conv_ops.end()) {
     weight_argname = "Filter";
   } else if (std::find(mul_ops.begin(), mul_ops.end(), op_type) !=
@@ -56,7 +56,8 @@ static float FindAbsMax(const float* input, int size) {
 template <typename T>
 void QuantizeTensorInPlace(Tensor* input, float scale) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.";
+    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
+               << PrecisionToStr(input->precision());
   }
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*input);
@@ -75,7 +76,8 @@ void QuantizeTensorInPlace(Tensor* input,
                            const std::vector<float>& scales,
                            int quant_axis) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.";
+    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
+               << PrecisionToStr(input->precision());
   }
   if (quant_axis != 0 && quant_axis != 1) {
     LOG(FATAL) << "Input error: quant_axis should be 0 or 1.";
@@ -263,7 +265,8 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     // should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[1] * groups;
-  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
+  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul" ||
+             quantized_op_type_ == "matmul_v2") {
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
     // Fc weight: Cin * Cout, the weight_scale_size should be Cout.
@@ -275,7 +278,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
 #ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
 #endif
-
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -774,6 +776,13 @@ void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < scale_tensor->data_size(); i++) {
     weight_scale.push_back(scale_value[i]);
   }
+  int bit_length = dequant_node->stmt()->op_info()->GetAttr<int>("bit_length");
+  std::vector<float> scales(weight_scale.size(), 0);
+  std::transform(
+      weight_scale.begin(),
+      weight_scale.end(),
+      scales.begin(),
+      [&bit_length](float x) { return x / ((1 << (bit_length - 1)) - 1); });
 
   auto in_name = input_node->arg()->name;
   auto out_name = output_node->arg()->name;
@@ -781,7 +790,7 @@ void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   for (auto* quantized_node : outlinks) {
     // save input scale in quantized op by input argname + index
     auto op_desc = *quantized_node->stmt()->mutable_op_info();
-    op_desc.SetInputScale(out_name, weight_scale);
+    op_desc.SetInputScale(out_name, scales);
     op_desc.UpdateAllInputs(out_name, in_name);
 
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());

@@ -49,6 +49,10 @@ void act_prelu(const T* din,
                std::string mode,
                const T* alpha_data,
                int threads);
+
+template <typename T>
+void act_tanh(const T* din, T* dout, int size, int threads);
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

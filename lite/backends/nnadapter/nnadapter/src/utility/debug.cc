@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include "driver/nvidia_tensorrt/operation/type.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -551,8 +552,20 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       default:
-        NNADAPTER_LOG(FATAL) << "unsupported op: "
-                             << static_cast<int>(operation->type);
+        if (operation->type < 0) {
+          input_args.resize(input_count);
+          for (int i = 0; i < input_count; i++) {
+            input_args[i] = string_format("input%d", i);
+          }
+          output_args.resize(output_count);
+          for (int i = 0; i < output_count; i++) {
+            output_args[i] = string_format("output%d", i);
+          }
+        } else {
+          NNADAPTER_LOG(FATAL) << "unsupported op: "
+                               << static_cast<int>(operation->type);
+        }
+        break;
     }
     for (size_t i = 0; i < input_count; i++) {
       auto* operand = input_operands[i];
@@ -740,7 +753,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
-      name = "UNKNOWN";
+      name = type < 0 ? string_format("CUSTOM(type=%d)", type) : "UNKNOWN";
       break;
   }
   return name;

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "driver/fake_device/engine.h"
+#include "engine.h"  // NOLINT
 
 namespace nnadapter {
 namespace fake_device {

@@ -81,12 +81,13 @@ int32_t CastPluginDynamic::enqueue(
 }
 
 size_t CastPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize((int)(outtype_)) + SerializedSize((int)(intype_));
+  return SerializedSize(static_cast<int>(outtype_)) +
+         SerializedSize(static_cast<int>(intype_));
 }
 
 void CastPluginDynamic::serialize(void* buffer) const noexcept {
-  Serialize(&buffer, (int)(outtype_));
-  Serialize(&buffer, (int)(intype_));
+  Serialize(&buffer, static_cast<int>(outtype_));
+  Serialize(&buffer, static_cast<int>(intype_));
 }
 
 bool CastPluginDynamic::supportsFormatCombination(

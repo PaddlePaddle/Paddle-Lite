@@ -47,6 +47,7 @@ class FP16AttributePass : public ProgramPass {
                                      "elementwise_sub",
                                      "matmul",
                                      "mul",
+                                     "matmul_v2",
                                      "prelu"};
 };
 
