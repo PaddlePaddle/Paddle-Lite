@@ -94,7 +94,6 @@ inline float16x8_t powq_ps_f16(float16x8_t a, float32x4_t b) {
       }
     }
   }
-  // float16x8_t vsum = expq_ps_f16(vmulq_f16(b, log_ps(a)));
   float16x8_t vsum = exp_logq_f16(a, b);
   return vmulq_f16(vsum, vone);
 }
@@ -110,7 +109,6 @@ inline float16x4_t pow_ps_f16(float16x4_t a, float32x4_t b) {
       }
     }
   }
-  // float16x4_t vsum = expq_ps_f16(vmul_f16(b, log_ps(a)));
   float16x4_t vsum = exp_log_f16(a, b);
   return vmul_f16(vsum, vone);
 }
