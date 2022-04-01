@@ -60,6 +60,7 @@ enum {
    * Available since version 1.
    */
   NNADAPTER_SPECIAL_SOFTMAX,
+
   /**
    * yolo_box_parser introduction:
    * it finish box calculate, sigmoid and exp.
@@ -77,6 +78,28 @@ enum {
    * * 0: output, a NNADAPTER_FP32 tensor, [N, C, H, W].
    */
   NNADAPTER_YOLO_BOX_HEAD,
+
+  /**
+   * multiclass_nms introduction:
+   * do nms sort process and filter according to nms_threshold
+   *
+   * Inputs:
+   * * 0: box, a NNADAPTER_FP32 tensor, [N, M, 4 + class_num].
+   * * 1: background_label, int, default=1.
+   * * 2: score_threshold, float.
+   * * 3: nms_top_k, int.
+   * * 4: nms_threshold, float.
+   * * 5: nms_eta, float, default=1.
+   * * 6: keep_top_k, int.
+   * * 7: normalized, bool,  default=true.
+   *
+   * Outputs:
+   * * 0: box_res, a NNADAPTER_FP32 tensor, [?, 6].
+   * * 1: index, a NNADAPTER_INT32 tensor, [?], optional.
+   * * 2: NmsRoisNum, a NNADAPTER_INT32 tensor, [?].
+   */
+  NNADAPTER_YOLO_BOX_NMS,
+
   /**
    * yolo_box_parser introduction:
    * it finish box parser and filter box according to score_threshold
@@ -102,26 +125,6 @@ enum {
    * * 0: boxes_scores, a NNADAPTER_FP32 tensor, [N, M, 4 + class_num].
    */
   NNADAPTER_YOLO_BOX_PARSER,
-  /**
-   * multiclass_nms introduction:
-   * do nms sort process and filter according to nms_threshold
-   *
-   * Inputs:
-   * * 0: box, a NNADAPTER_FP32 tensor, [N, M, 4 + class_num].
-   * * 1: background_label, int, default=1.
-   * * 2: score_threshold, float.
-   * * 3: nms_top_k, int.
-   * * 4: nms_threshold, float.
-   * * 5: nms_eta, float, default=1.
-   * * 6: keep_top_k, int.
-   * * 7: normalized, bool,  default=true.
-   *
-   * Outputs:
-   * * 0: box_res, a NNADAPTER_FP32 tensor, [?, 6].
-   * * 1: index, a NNADAPTER_INT32 tensor, [?], optional.
-   * * 2: NmsRoisNum, a NNADAPTER_INT32 tensor, [?].
-   */
-  NNADAPTER_YOLO_BOX_NMS,
 };  // Custom operations type
 
 }  // namespace nnadapter

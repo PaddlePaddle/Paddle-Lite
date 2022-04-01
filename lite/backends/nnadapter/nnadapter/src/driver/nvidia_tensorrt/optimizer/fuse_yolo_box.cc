@@ -24,6 +24,7 @@
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
 static bool FindYoloBoxPattern(
     core::Model* model,
     core::Operation* yolo_box_operation,
@@ -94,6 +95,7 @@ static bool FindYoloBoxPattern(
   operation_map[nms_name] = nms_0_operation_1;
   return true;
 }
+
 static bool AddYoloHeadOperation(core::Model* model,
                                  core::Operation* yolo_box_head,
                                  core::Operation* yolo_box_operands) {
@@ -142,6 +144,7 @@ static bool AddYoloHeadOperation(core::Model* model,
   yolo_box_head0->output_operands = {yolo_box_head0_output_operand};
   return true;
 }
+
 static bool AddYoloParseOperation(core::Model* model,
                                   core::Operation* yolo_box_parse,
                                   core::Operation* yolo_box_head0,
@@ -164,21 +167,21 @@ static bool AddYoloParseOperation(core::Model* model,
   auto clip_bbox = yolo_box_head0->input_operands[6];
   auto scale_x_y = yolo_box_head0->input_operands[7];
   // set input
-  yolo_box_parse->->input_operands = {boxes0,
-                                      boxes1,
-                                      boxes2,
-                                      elt_div_input0_operand,
-                                      elt_div_input1_operand,
-                                      anchors0,
-                                      anchors1,
-                                      anchors2,
-                                      class_num,
-                                      conf_thresh,
-                                      downsample_ratio0,
-                                      downsample_ratio1,
-                                      downsample_ratio2,
-                                      clip_bbox,
-                                      scale_x_y};
+  yolo_box_parse->input_operands = {boxes0,
+                                    boxes1,
+                                    boxes2,
+                                    elt_div_input0_operand,
+                                    elt_div_input1_operand,
+                                    anchors0,
+                                    anchors1,
+                                    anchors2,
+                                    class_num,
+                                    conf_thresh,
+                                    downsample_ratio0,
+                                    downsample_ratio1,
+                                    downsample_ratio2,
+                                    clip_bbox,
+                                    scale_x_y};
   auto box_operand0 = yolo_box_head0->output_operands[0];
   auto box_operand1 = yolo_box_head1->output_operands[0];
   auto box_operand2 = yolo_box_head2->output_operands[0];
@@ -222,6 +225,7 @@ static bool AddYoloParseOperation(core::Model* model,
   yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
   return true;
 }
+
 static void DelOperation(core::Model* model,
                          core::Operation* operation,
                          std::map<std::string, core::Operation*>* operation_map,
@@ -247,6 +251,7 @@ static void DelOperation(core::Model* model,
   // remove yolo_box operation
   RemoveOperation(model, operation);
 }
+
 // clang-format off
 /*
 * x0  y0    input0        input1      input2                   input0     input1          input2

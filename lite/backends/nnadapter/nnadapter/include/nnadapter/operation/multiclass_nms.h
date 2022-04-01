@@ -22,45 +22,55 @@ namespace operation {
   auto& output_operands = operation->output_operands;                         \
   auto input_count = input_operands.size();                                   \
   auto output_count = output_operands.size();                                 \
-  NNADAPTER_CHECK_EQ(input_count, 9);                                         \
-  NNADAPTER_CHECK_EQ(output_count, 2);                                        \
+  NNADAPTER_CHECK_EQ(input_count, 11);                                        \
+  NNADAPTER_CHECK_GE(output_count, 2);                                        \
   /* box */                                                                   \
   auto box_operand = input_operands[0];                                       \
   NNADAPTER_VLOG(5) << "box: " << OperandToString(box_operand);               \
   /* scores */                                                                \
   auto scores_operand = input_operands[1];                                    \
   NNADAPTER_VLOG(5) << "scores: " << OperandToString(scores_operand);         \
+  /* rois_num */                                                              \
+  auto rois_num_operand = input_operands[2];                                  \
+  NNADAPTER_VLOG(5) << "rois_num: " << OperandToString(rois_num_operand);     \
   /* background_label */                                                      \
-  auto background_label_operand = input_operands[2];                          \
+  auto background_label = *reinterpret_cast<int32_t*>(input_operands[3]);     \
   NNADAPTER_VLOG(5) << "background_label: "                                   \
-                    << OperandToString(background_label_operand);             \
+                    << OperandToString(background_label);                     \
   /* score_threshold */                                                       \
-  auto score_threshold_operand = input_operands[3];                           \
+  auto score_threshold = *reinterpret_cast<float*>(input_operands[4]);        \
   NNADAPTER_VLOG(5) << "score_threshold: "                                    \
-                    << OperandToString(score_threshold_operand);              \
+                    << OperandToString(score_threshold);                      \
   /* nms_top_k */                                                             \
-  auto nms_top_k_operand = input_operands[4];                                 \
-  NNADAPTER_VLOG(5) << "nms_top_k: " << OperandToString(nms_top_k_operand);   \
+  auto nms_top_k = *reinterpret_cast<int32_t*>(input_operands[5]);            \
+  NNADAPTER_VLOG(5) << "nms_top_k: " << OperandToString(nms_top_k);           \
   /* nms_threshold */                                                         \
-  auto nms_threshold_operand = input_operands[5];                             \
-  NNADAPTER_VLOG(5) << "nms_threshold: "                                      \
-                    << OperandToString(nms_threshold_operand);                \
+  auto nms_threshold = *reinterpret_cast<float*>(input_operands[6]);          \
+  NNADAPTER_VLOG(5) << "nms_threshold: " << OperandToString(nms_threshold);   \
   /* nms_eta */                                                               \
-  auto nms_eta_operand = input_operands[6];                                   \
-  NNADAPTER_VLOG(5) << "nms_eta: " << OperandToString(nms_eta_operand);       \
+  auto nms_eta = *reinterpret_cast<float*>(input_operands[7]);                \
+  NNADAPTER_VLOG(5) << "nms_eta: " << OperandToString(nms_eta);               \
   /* keep_top_k */                                                            \
-  auto keep_top_k_operand = input_operands[7];                                \
-  NNADAPTER_VLOG(5) << "keep_top_k: " << OperandToString(keep_top_k_operand); \
+  auto keep_top_k = *reinterpret_cast<int32_t*>(input_operands[8]);           \
+  NNADAPTER_VLOG(5) << "keep_top_k: " << OperandToString(keep_top_k);         \
   /* normalized */                                                            \
-  auto normalized_operand = input_operands[8];                                \
-  NNADAPTER_VLOG(5) << "normalized: " << OperandToString(normalized_operand); \
+  auto normalized = *reinterpret_cast<bool*>(input_operands[9]);              \
+  NNADAPTER_VLOG(5) << "normalized: " << OperandToString(normalized);         \
+  /* return_index */                                                          \
+  auto return_index = *reinterpret_cast<bool*>(input_operands[10]);           \
+  NNADAPTER_VLOG(5) << "return_index: " << OperandToString(return_index);     \
   /* Output box_res*/                                                         \
   auto output_box_operand = output_operands[0];                               \
   NNADAPTER_VLOG(5) << "output_box: " << OperandToString(output_box_operand); \
   /* Output nms_rois_num*/                                                    \
   auto output_nms_rois_num_operand = output_operands[1];                      \
   NNADAPTER_VLOG(5) << "output_nms_rois_num: "                                \
-                    << OperandToString(output_nms_rois_num_operand);
-
+                    << OperandToString(output_nms_rois_num_operand);          \
+  if (return_index) {                                                         \
+    /* Output index*/                                                         \
+    auto output_index_operand = output_operands[2];                           \
+    NNADAPTER_VLOG(5) << "output_index: "                                     \
+                      << OperandToString(output_index_operand);               \
+  }
 }  // namespace operation
 }  // namespace nnadapter
