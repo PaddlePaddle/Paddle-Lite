@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/converter/plugin/swish.h"
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "operation/unary_activations.h"
 #include "utility/debug.h"
@@ -29,13 +28,16 @@ int ConvertSwish(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  SwishPluginDynamic swish_plugin(1.0f);
-  std::vector<nvinfer1::ITensor*> tensors{input_tensor};
-  auto swish_layer =
-      converter->network()->addPluginV2(tensors.data(), 1, swish_plugin);
-  NNADAPTER_CHECK(swish_layer);
-  auto output_tensor = swish_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  auto sigmoid_layer = converter->network()->addActivation(
+      *input_tensor, nvinfer1::ActivationType::kSIGMOID);
+  NNADAPTER_CHECK(sigmoid_layer);
+  auto elementwise_mul_layer = converter->network()->addElementWise(
+      *input_tensor,
+      *sigmoid_layer->getOutput(0),
+      nvinfer1::ElementWiseOperation::kPROD);
+  NNADAPTER_CHECK(elementwise_mul_layer);
+  converter->UpdateTensorMap(output_operand,
+                             elementwise_mul_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 
