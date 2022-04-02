@@ -25,8 +25,14 @@ class ReshapeCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
-
+  void ReInitWhenNeeded() override;
   virtual ~ReshapeCompute() = default;
+
+ protected:
+  DDim last_shape_{};
+
+ private:
+  void GetCurrentShape(DDim &out_shape);
 };
 
 }  // namespace host
