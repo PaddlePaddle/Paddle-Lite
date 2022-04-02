@@ -17,6 +17,9 @@
 # Enable throwing exception when check failed in logging.cc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
 
+# Avoid the export symbols being stripped, which will cause 'undefined reference' errors when HAL is compiled independently.
+string(REPLACE "-Wl,--exclude-libs,ALL" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+
 # CANN libraries only supports old ABI of libstdc++, so need to set -D_GLIBCXX_USE_CXX11_ABI=0
 # and the common modules(utility and optimizer) needs to be compiled and linked separately if 
 # the version of GCC greater than 5.0
