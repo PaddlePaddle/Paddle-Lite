@@ -65,6 +65,8 @@ static bool FindYoloBoxPattern(
   auto transpose2_0_consumers =
       GetOperandConsumers(model, transpose2_0_output_operand);
   if (transpose2_0_consumers.size() != 1) {
+    NNADAPTER_VLOG(5) << "transpose2_0_consumers size: "
+                      << transpose2_0_consumers.size() << " is not equal 1";
     return false;
   }
   std::string transpse2_name = "transpose2_" + std::to_string(num);
@@ -82,6 +84,8 @@ static bool FindYoloBoxPattern(
   auto concat_0_consumers =
       GetOperandConsumers(model, concat_0_output_operand_1);
   if (concat_0_consumers.size() != 1) {
+    NNADAPTER_VLOG(5) << "concat_0_consumers size: "
+                      << concat_0_consumers.size() << " is not equal 1";
     return false;
   }
   auto nms_0_operation_1 = concat_0_consumers[0];
@@ -116,8 +120,44 @@ static bool AddYoloHeadOperation(core::Model* model,
                                    downsample_ratio,
                                    clip_bbox,
                                    scale_x_y};
-  auto yolo_box_head0_output_operand = AddOperand(model);
-  yolo_box_head->output_operands = {yolo_box_head0_output_operand};
+  auto box_operand0 = yolo_box_operands->output_operands[0];
+  auto score_operand0 = yolo_box_operands->output_operands[1];
+  auto yolo_box_0_dims = box_operand0->type.dimensions.count;
+  auto yolo_box_0_dims_ptr = box_operand0->type.dimensions.data;
+  auto yolo_score_0_dims = score_operand0->type.dimensions.count;
+  auto yolo_score_0_dims_ptr = score_operand0->type.dimensions.data;
+  if (yolo_box_0_dims != yolo_score_0_dims) {
+    NNADAPTER_VLOG(5) << "yolo_box_0_dims: " << yolo_box_0_dims
+                      << ", is not equal to yolo_score_0_dims: "
+                      << yolo_score_0_dims;
+    return false;
+  }
+  std::vector<int32_t> yolo_box_0_output_dims;
+  for (int i = 0; i < yolo_box_0_dims - 1; i++) {
+    if (yolo_box_0_dims_ptr[i] != yolo_score_0_dims_ptr[i]) {
+      NNADAPTER_VLOG(5) << "yolo_box_0_dims_data: " << yolo_box_0_dims_ptr[i]
+                        << ", is not equal to yolo_score_0_dims_data: "
+                        << yolo_score_0_dims_ptr[i];
+      return false;
+    }
+    yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[i]);
+  }
+  yolo_box_0_output_dims.push_back(yolo_box_0_dims_ptr[yolo_box_0_dims - 1] +
+                                   yolo_score_0_dims_ptr[yolo_box_0_dims - 1]);
+  auto yolo_box_head0_output_operand =
+      AddFloat32VariableOperand(model, yolo_box_0_output_dims)
+      // auto yolo_box_head0_output_operand = AddOperand(model,
+      //                   yolo_box_0_output_dims,
+      //                   NNADAPTER_FLOAT32,
+      //                   nullptr,
+      //                   nullptr,
+      //                   0,
+      //                   0,
+      //                   nullptr,
+      //                   false);
+      // yolo_box_head0_output_operand->type.dimensions.data =
+      // yolo_box_0_output_dims;
+      yolo_box_head->output_operands = {yolo_box_head0_output_operand};
   return true;
 }
 
@@ -158,8 +198,48 @@ static bool AddYoloParseOperation(core::Model* model,
                                     downsample_ratio2,
                                     clip_bbox,
                                     scale_x_y};
-  auto yolo_box_parse_output_operand = AddOperand(model);
-  yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
+  auto box_operand0 = yolo_box_head0->output_operands[0];
+  auto box_operand1 = yolo_box_head1->output_operands[0];
+  auto box_operand2 = yolo_box_head2->output_operands[0];
+  auto box_operand0_dims = box_operand0->type.dimensions.count;
+  auto box_operand0_dims_ptr = box_operand0->type.dimensions.data;
+  auto box_operand1_dims = box_operand1->type.dimensions.count;
+  auto box_operand1_dims_ptr = box_operand1->type.dimensions.data;
+  auto box_operand2_dims = box_operand2->type.dimensions.count;
+  auto box_operand2_dims_ptr = box_operand1->type.dimensions.data;
+  if (box_operand0_dims != box_operand1_dims &&
+      box_operand0_dims != box_operand2_dims) {
+    NNADAPTER_VLOG(5) << "box_operand0_dims: " << box_operand1_dims
+                      << ", is not equal to box_operand1_dims: "
+                      << box_operand1_dims
+                      << ", and box_operand2_dims: " << box_operand2_dims;
+    return false;
+  }
+  std::vector<int32_t> yolo_box_parse_output_dims;
+  auto size_index = box_operand0_dims - 2;
+  for (uint32_t i = 0; i < box_operand0_dims; i++) {
+    if (i == size_index) continue;
+    if (box_operand0_dims_ptr[i] != box_operand1_dims_ptr[i] ||
+        box_operand0_dims_ptr[i] != box_operand2_dims_ptr[i]) {
+      NNADAPTER_VLOG(5) << "box_operand0_dims data: "
+                        << box_operand0_dims_ptr[i]
+                        << ", is not equal to box_operand1_dims data: "
+                        << box_operand1_dims_ptr[i]
+                        << ", and box_operand2_dims data: "
+                        << box_operand2_dims_ptr[i];
+      return false;
+    }
+    yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[i]);
+  }
+  auto size = box_operand0_dims_ptr[size_index] +
+              box_operand1_dims_ptr[size_index] +
+              box_operand2_dims_ptr[size_index];
+  yolo_box_parse_output_dims.push_back(size);
+  yolo_box_parse_output_dims.push_back(box_operand0_dims_ptr[size_index + 1]);
+  // auto yolo_box_parse_output_operand = AddOperand(model);
+  auto yolo_box_parse_output_operand =
+      AddFloat32VariableOperand(model, yolo_box_parse_output_dims)
+          yolo_box_parse->output_operands = {yolo_box_parse_output_operand};
   return true;
 }
 
@@ -219,6 +299,7 @@ void FuseYoloBox(core::Model* model) {
       auto& output_operands = operation->output_operands;
       NNADAPTER_CHECK_EQ(input_operands.size(), 3);
       NNADAPTER_CHECK_EQ(output_operands.size(), 1);
+      NNADAPTER_VLOG(5) << "find div operation";
       auto elt_div_input0_operand = input_operands[0];
       auto elt_div_input1_operand = input_operands[1];
       auto elt_div_output_operand = output_operands[0];
@@ -267,7 +348,7 @@ void FuseYoloBox(core::Model* model) {
         NNADAPTER_VLOG(5) << "Converting "
                           << OperationTypeToString(yolo_box_operation_2->type)
                           << " ...";
-        break;
+        continue;
       }
       std::map<std::string, core::Operation*> operation_map;
       bool find = FindYoloBoxPattern(model,
@@ -277,7 +358,8 @@ void FuseYoloBox(core::Model* model) {
                                      "nms_0",
                                      0);
       if (!find) {
-        break;
+        NNADAPTER_VLOG(5) << "FindYoloBoxPattern0 failed ";
+        continue;
       }
       find = FindYoloBoxPattern(model,
                                 yolo_box_operation_1,
@@ -286,7 +368,8 @@ void FuseYoloBox(core::Model* model) {
                                 "nms_0",
                                 1);
       if (!find) {
-        break;
+        NNADAPTER_VLOG(5) << "FindYoloBoxPattern1 failed ";
+        continue;
       }
       find = FindYoloBoxPattern(model,
                                 yolo_box_operation_2,
@@ -295,7 +378,8 @@ void FuseYoloBox(core::Model* model) {
                                 "nms_0",
                                 2);
       if (!find) {
-        break;
+        NNADAPTER_VLOG(5) << "FindYoloBoxPattern2 failed ";
+        continue;
       }
       if (operation_map.size() != 9) {
         NNADAPTER_VLOG(5) << "operation_map size: " << operation_map.size()
@@ -311,6 +395,7 @@ void FuseYoloBox(core::Model* model) {
       bool add = AddYoloHeadOperation(
           model, yolo_box_head0, operation_map["yolo_box_0"]);
       if (!add) {
+        NNADAPTER_VLOG(5) << "AddYoloHeadOperation0 failed ";
         break;
       }
 
@@ -318,6 +403,7 @@ void FuseYoloBox(core::Model* model) {
       add = AddYoloHeadOperation(
           model, yolo_box_head1, operation_map["yolo_box_1"]);
       if (!add) {
+        NNADAPTER_VLOG(5) << "AddYoloHeadOperation1 failed ";
         break;
       }
 
@@ -325,6 +411,7 @@ void FuseYoloBox(core::Model* model) {
       add = AddYoloHeadOperation(
           model, yolo_box_head2, operation_map["yolo_box_2"]);
       if (!add) {
+        NNADAPTER_VLOG(5) << "AddYoloHeadOperation2 failed ";
         break;
       }
       yolo_box_parser->type = NNADAPTER_YOLO_BOX_PARSER;
@@ -336,6 +423,7 @@ void FuseYoloBox(core::Model* model) {
                                   elt_div_input0_operand,
                                   elt_div_input1_operand);
       if (!add) {
+        NNADAPTER_VLOG(5) << "AddYoloParseOperation failed ";
         break;
       }
       yolo_box_nms->type = NNADAPTER_YOLO_BOX_NMS;
