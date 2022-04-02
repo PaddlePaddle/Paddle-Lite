@@ -46,8 +46,14 @@ void power_fp16(const float16_t* din,
   }
   float16_t* ptr_out = dout;
   const float16_t* ptr_in = din;
-  float16x8_t vscale = vdupq_n_f16(static_cast<float16_t>(scale_));
-  float16x8_t vshift = vdupq_n_f16(static_cast<float16_t>(shift_));
+  float16_t scale_tmp[8];
+  float16_t shift_tmp[8];
+  for (int i = 0; i < 8; i++) {
+    scale_tmp[i] = static_cast<float16_t>(scale_);
+    shift_tmp[i] = static_cast<float16_t>(shift_);
+  }
+  float16x8_t vscale = vld1q_f16(scale_tmp);
+  float16x8_t vshift = vld1q_f16(shift_tmp);
   float32x4_t vpower = vdupq_n_f32(factor_);
   LITE_PARALLEL_BEGIN(nums, tid, cnt) {
     float16x8_t vr0 = vld1q_f16(ptr_in);
