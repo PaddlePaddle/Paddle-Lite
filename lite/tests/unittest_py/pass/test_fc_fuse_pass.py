@@ -61,7 +61,7 @@ class TestFcFuse(FusePassAutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        has_relu = draw(st.sampled_from([True, False]))
+        act_type = draw(st.sampled_from(["", "relu", "relu6"]))
         op_type = draw(st.sampled_from(["mul", "matmul", "matmul_v2"]))
         mul_x_in_shape = draw(
             st.lists(
@@ -152,15 +152,18 @@ class TestFcFuse(FusePassAutoScanTest):
             outputs={"Out": ["elementwise_add_output_data"]},
             attrs={"axis": axis})
 
+        act_attrs = {}
+        if act_type == "relu6":
+            act_attrs = {"threshold": 6.0, }
         active_op = OpConfig(
-            type="relu",
+            type=act_type,
             inputs={"X": ["elementwise_add_output_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={})
+            attrs=act_attrs)
 
         ops = [mul_op, elementwise_add_op]
         output_data = "elementwise_add_output_data"
-        if has_relu:
+        if act_type == "relu" or act_type == "relu6":
             ops.append(active_op)
             output_data = "output_data"
         program_config = ProgramConfig(
@@ -178,8 +181,11 @@ class TestFcFuse(FusePassAutoScanTest):
         def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             op_type = program_config.ops[0].type
+            act_type = program_config.ops[2].type
             if target_type == TargetType.X86:
                 if op_type == "matmul" or op_type == "matmul_v2":
+                    return True
+                if act_type == "relu6":
                     return True
 
         self.add_ignore_check_case(

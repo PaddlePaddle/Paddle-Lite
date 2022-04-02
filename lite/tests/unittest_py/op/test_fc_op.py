@@ -104,7 +104,7 @@ class TestFcOp(AutoScanTest):
         act_type = ""
 
         if (with_bias and random.random() > 0.5):
-            act_type = draw(st.sampled_from(["relu", "relu6"]))
+            act_type = "relu"
 
         op_inputs = {}
         program_inputs = {}
@@ -137,7 +137,6 @@ class TestFcOp(AutoScanTest):
                 "in_num_col_dims": in_num_col_dims,
                 "activation_type": act_type,
                 "use_mkldnn": False,
-                "alpha": 6.0,
                 "padding_weights": padding_weights,
                 "use_quantizer": False,
                 "Scale_in": float(1),
@@ -155,17 +154,7 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            act_type = program_config.ops[0].attrs["activation_type"]
-            if act_type == "relu6":
-                if target_type == TargetType.Metal or target_type == TargetType.OpenCL or target_type == TargetType.X86:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Opencl/Metal/X86 doesn't support fc+relu6 compute, we will fix as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
