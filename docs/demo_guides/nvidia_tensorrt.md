@@ -1,19 +1,24 @@
 # 英伟达 TensorRT 部署示例
 
-Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 TensorRT 组网 API 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 TensorRT 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
-### 已支持的设备
+### 已支持的 GPU 类型
+- Jetson 全系列
+- Pascal/Volt/Turning 架构的 GPU, 即将支持 Ampere 架构 GPU。
 
-- NVIDIA Jetson AGX Xavier
-- GPU(Quadro RTX 4000)
+### 已支持的英伟达软件栈
 
-### 已支持的软件库版本
+- Jetson
+  - Jetpack 4.3 以上
+- Tesla
+  - CUDA 10.2/CUDA 11.0/CUDA 11.1
+- cuDNN
+  - 8.0.x
+- TensorRT 
+  - 7.1.3.x
 
-| CUDA | cuDNN | TensorRT |
-| --| -- | -- |
-|10.2 | 8.0 | 7.1.3.x |
 
 ### 已支持模型
 
@@ -247,7 +252,7 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 目前支持子图接入�
       ```shell
       $ export NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda" # 替换成自己环境的 cuda 路径
       $ export NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt" # 替换成自己环境的 tensorrt 路径
-      $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_nvidia_tensorrt=ON -- nnadapter_nvidia_cuda_root=$NNADAPTER_NVIDIA_CUDA_ROOT --nnadapter_nvidia_tensorrt_root=$NNADAPTER_NVIDIA_TENSORRT_ROOT full_publish
+      $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_nvidia_tensorrt=ON --nnadapter_nvidia_cuda_root=$NNADAPTER_NVIDIA_CUDA_ROOT --nnadapter_nvidia_tensorrt_root=$NNADAPTER_NVIDIA_TENSORRT_ROOT full_publish
       ```
 
     - 替换头文件和库
@@ -291,9 +296,3 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 目前支持子图接入�
       ```
 
 - 替换头文件后需要重新编译示例程序
-
-## FAQ
-
-1. **问题**：编译 Paddle Lite 源码时 , 部分 cmake 语法不支持
-   
-   **解答**：升级 cmake 到最新版本: https://cmake.org/download/
