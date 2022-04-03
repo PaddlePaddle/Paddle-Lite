@@ -16,15 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateCumSum(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateCumSum(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareCumSum(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareCumSum(core::Operation* operation) {
   CUM_SUM_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -33,7 +36,7 @@ int PrepareCumSum(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteCumSum(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteCumSum(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

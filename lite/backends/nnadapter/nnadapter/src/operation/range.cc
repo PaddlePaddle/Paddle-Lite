@@ -17,6 +17,7 @@
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
@@ -37,9 +38,11 @@ void GetRangeOperandValue(core::Operand* operand, int64_t* data) {  // NOLINT
   }
 }
 
-bool ValidateRange(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateRange(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareRange(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareRange(core::Operation* operation) {
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -69,7 +72,7 @@ int PrepareRange(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteRange(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteRange(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

@@ -16,17 +16,19 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateInstanceNormalization(const core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateInstanceNormalization(
+    const core::Operation* operation) {
   return false;
 }
 
-int PrepareInstanceNormalization(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareInstanceNormalization(core::Operation* operation) {
   INSTANCE_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -35,7 +37,7 @@ int PrepareInstanceNormalization(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteInstanceNormalization(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteInstanceNormalization(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

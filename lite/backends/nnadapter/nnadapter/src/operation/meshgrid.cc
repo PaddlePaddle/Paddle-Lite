@@ -17,15 +17,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateMeshgrid(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateMeshgrid(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareMeshgrid(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareMeshgrid(core::Operation* operation) {
   MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
   for (auto output_operand : output_operands) {
     output_operand->type.dimensions.count = input_count;
@@ -68,7 +71,7 @@ int PrepareMeshgrid(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteMeshgrid(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteMeshgrid(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

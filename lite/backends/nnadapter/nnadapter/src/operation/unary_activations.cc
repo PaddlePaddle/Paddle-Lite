@@ -16,17 +16,19 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateUnaryActivations(const core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateUnaryActivations(
+    const core::Operation* operation) {
   return false;
 }
 
-int PrepareUnaryActivations(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareUnaryActivations(core::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -35,7 +37,7 @@ int PrepareUnaryActivations(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteUnaryActivations(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteUnaryActivations(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

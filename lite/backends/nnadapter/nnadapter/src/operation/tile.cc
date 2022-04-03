@@ -18,15 +18,18 @@
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateTile(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateTile(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareTile(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareTile(core::Operation* operation) {
   TILE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -88,7 +91,7 @@ int PrepareTile(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteTile(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteTile(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

@@ -18,15 +18,18 @@
 #include "operation/math/fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateFullyConnected(const core::Operation* operation) { return true; }
+NNADAPTER_EXPORT bool ValidateFullyConnected(const core::Operation* operation) {
+  return true;
+}
 
-int PrepareFullyConnected(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareFullyConnected(core::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -81,7 +84,7 @@ int PrepareFullyConnected(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteFullyConnected(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteFullyConnected(core::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands
