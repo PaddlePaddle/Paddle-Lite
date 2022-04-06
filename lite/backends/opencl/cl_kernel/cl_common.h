@@ -224,7 +224,8 @@ inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
 #endif
 
 #ifdef SWISH
-  output = in / (1 + exp(-(CL_DTYPE)ACT_SCALE * in));
+  const float in_f32 = convert_float(in);
+  output = (CL_DTYPE)(in_f32 / (1 + exp(-ACT_SCALE * in_f32)));
 #endif
 
 #ifdef EXP
