@@ -16,11 +16,13 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
+enum class ReshapeOpType {TypeReshape, TypeFlatten};
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
-
+template <ReshapeOpType OpType>
 class ReshapeCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
