@@ -91,7 +91,7 @@ void RunModel(std::string model_dir,
   std::string model_buffer = ReadFile(model_dir);
   // Model buffer jiami/fanjiami can be operated here
   // Load model data from buffer
-  config.set_model_from_buffer(model_buffer);
+  config.set_model_from_buffer(std::move(model_buffer));
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
