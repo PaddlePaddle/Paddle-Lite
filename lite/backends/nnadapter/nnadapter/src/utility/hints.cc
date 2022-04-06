@@ -14,16 +14,18 @@
 
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 
 namespace nnadapter {
 
-void ClearTemporaryShape(void** handler) {
+NNADAPTER_EXPORT void ClearTemporaryShape(void** handler) {
   NNADAPTER_CHECK(*handler);
   free(*handler);
   *handler = nullptr;
 }
 
-NNAdapterOperandDimensionType* GetTemporaryShape(core::Operand* operand) {
+NNADAPTER_EXPORT NNAdapterOperandDimensionType* GetTemporaryShape(
+    core::Operand* operand) {
   return operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE].handler
              ? reinterpret_cast<NNAdapterOperandDimensionType*>(
                    operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE]
@@ -31,8 +33,8 @@ NNAdapterOperandDimensionType* GetTemporaryShape(core::Operand* operand) {
              : nullptr;
 }
 
-void SetTemporaryShape(core::Operand* operand,
-                       const NNAdapterOperandDimensionType type) {
+NNADAPTER_EXPORT void SetTemporaryShape(
+    core::Operand* operand, const NNAdapterOperandDimensionType type) {
   auto ptr = malloc(sizeof(NNAdapterOperandDimensionType));
   memcpy(ptr, &type, sizeof(NNAdapterOperandDimensionType));
   operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE].handler = ptr;

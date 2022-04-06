@@ -17,15 +17,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateSplit(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateSplit(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareSplit(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareSplit(core::Operation* operation) {
   SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(IsConstantOperand(axis_operand));
   NNADAPTER_CHECK(IsConstantOperand(split_operand));
@@ -47,7 +50,7 @@ int PrepareSplit(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteSplit(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteSplit(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

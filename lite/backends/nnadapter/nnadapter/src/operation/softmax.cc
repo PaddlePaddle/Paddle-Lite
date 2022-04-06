@@ -17,15 +17,18 @@
 #include "operation/math/softmax.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateSoftmax(const core::Operation* operation) { return true; }
+NNADAPTER_EXPORT bool ValidateSoftmax(const core::Operation* operation) {
+  return true;
+}
 
-int PrepareSoftmax(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareSoftmax(core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -34,7 +37,7 @@ int PrepareSoftmax(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteSoftmax(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteSoftmax(core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands

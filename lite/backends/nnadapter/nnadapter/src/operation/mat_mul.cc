@@ -17,15 +17,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateMatMul(const core::Operation* operation) { return true; }
+NNADAPTER_EXPORT bool ValidateMatMul(const core::Operation* operation) {
+  return true;
+}
 
-int PrepareMatMul(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareMatMul(core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -124,7 +127,7 @@ int PrepareMatMul(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteMatMul(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteMatMul(core::Operation* operation) {
   NNADAPTER_LOG(FATAL) << OperationTypeToString(operation->type)
                        << " is not implemented!";
   return NNADAPTER_FEATURE_NOT_SUPPORTED;

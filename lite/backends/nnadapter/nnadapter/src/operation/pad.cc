@@ -16,15 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidatePad(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidatePad(const core::Operation* operation) {
+  return false;
+}
 
-int PreparePad(core::Operation* operation) {
+NNADAPTER_EXPORT int PreparePad(core::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(IsConstantOperand(pads_operand))
       << "Only support constant pads now.";
@@ -60,7 +63,7 @@ int PreparePad(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecutePad(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecutePad(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

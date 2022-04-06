@@ -18,15 +18,18 @@
 #include "operation/elementwise.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateComparisons(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateComparisons(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareComparisons(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareComparisons(core::Operation* operation) {
   COMPARISONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -38,7 +41,7 @@ int PrepareComparisons(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteComparisons(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteComparisons(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

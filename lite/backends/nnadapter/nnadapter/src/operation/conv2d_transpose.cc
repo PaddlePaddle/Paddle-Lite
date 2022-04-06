@@ -47,9 +47,12 @@ CalcConv2DTransposeOutputSize(int32_t input_size,
          pad_bottom_or_right + dkernel;
 }
 
-bool ValidateConv2DTranspose(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateConv2DTranspose(
+    const core::Operation* operation) {
+  return false;
+}
 
-int PrepareConv2DTranspose(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareConv2DTranspose(core::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -93,7 +96,7 @@ int PrepareConv2DTranspose(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteConv2DTranspose(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteConv2DTranspose(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
