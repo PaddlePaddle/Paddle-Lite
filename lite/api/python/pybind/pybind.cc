@@ -226,6 +226,17 @@ void BindLiteMobileConfig(py::module *m) {
       .def("set_metal_use_memory_reuse",
            &MobileConfig::set_metal_use_memory_reuse)
       .def("set_metal_lib_path", &MobileConfig::set_metal_lib_path);
+  mobile_config
+      .def("set_nnadapter_device_names",
+           &MobileConfig::set_nnadapter_device_names)
+      .def("set_nnadapter_context_properties",
+           &MobileConfig::set_nnadapter_context_properties)
+      .def("set_nnadapter_model_cache_dir",
+           &MobileConfig::set_nnadapter_model_cache_dir)
+      .def("set_nnadapter_dynamic_shape_info",
+           &MobileConfig::set_nnadapter_dynamic_shape_info)
+      .def("set_nnadapter_model_cache_buffers",
+           &MobileConfig::set_nnadapter_model_cache_buffers);
 }
 
 void BindLitePowerMode(py::module *m) {
