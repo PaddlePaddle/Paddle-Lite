@@ -181,12 +181,13 @@ class TestFcFuse(FusePassAutoScanTest):
         def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             op_type = program_config.ops[0].type
-            act_type = program_config.ops[2].type
             if target_type == TargetType.X86:
                 if op_type == "matmul" or op_type == "matmul_v2":
                     return True
-                if act_type == "relu6":
-                    return True
+                if len(program_config.ops) > 2:
+                    act_type = program_config.ops[2].type
+                    if act_type == "relu6":
+                        return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
