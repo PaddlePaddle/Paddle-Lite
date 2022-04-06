@@ -8,6 +8,8 @@ lite_cc_test(test_kernel_deformable_conv_compute SRCS deformable_conv_compute_te
 lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc)
 lite_cc_test(test_kernel_shuffle_channel_compute SRCS shuffle_channel_compute_test.cc)
 lite_cc_test(test_kernel_yolo_box_compute SRCS yolo_box_compute_test.cc)
+lite_cc_test(test_kernel_yolo_box_head_compute SRCS yolo_box_head_compute_test.cc)
+lite_cc_test(test_kernel_yolo_box_parser_compute SRCS yolo_box_parser_compute_test.cc)
 lite_cc_test(test_kernel_fc_compute SRCS fc_compute_test.cc)
 lite_cc_test(test_kernel_elementwise_compute SRCS elementwise_compute_test.cc)
 lite_cc_test(test_kernel_lrn_compute SRCS lrn_compute_test.cc)

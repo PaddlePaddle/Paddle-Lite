@@ -51,6 +51,7 @@ int NaiveSoftmaxKernel::Run(
   const float* input =
       reinterpret_cast<const float*>(input_tensor->Data(false));
   float* output = reinterpret_cast<float*>(output_tensor->Data(false));
+  printf("精神分裂的说法\n\n\n\n");
   Softmax<float>(input, output, num);
   return NNADAPTER_NO_ERROR;
 }

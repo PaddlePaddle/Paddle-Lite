@@ -126,7 +126,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 int Program::BuildFromModel(core::Model* model) {
   // Convert nnadapter standard ops to cunstom ops
   // ReplaceSoftmaxWithNaiveSoftmax(model);
-  // ReplaceSoftmaxWithSpecialSoftmax(model);
+  ReplaceSoftmaxWithSpecialSoftmax(model);
   // Prepare input/output types
   for (auto& operand : model->input_operands) {
     input_types_.push_back(operand->type);
@@ -276,6 +276,7 @@ int Program::Execute(uint32_t input_count,
         output_tensors.push_back(temporary_tensors_[output_index]);
       }
     }
+    sub_programs_[i]->Execute(&input_tensors, &output_tensors);
     sub_programs_[i]->Execute(&input_tensors, &output_tensors);
   }
   // 3. Fetch outputs

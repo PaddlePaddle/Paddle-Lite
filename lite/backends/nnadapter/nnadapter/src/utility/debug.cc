@@ -551,6 +551,8 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         };
         output_args = {"output"};
         break;
+      case NNADAPTER_YOLO_BOX_PARSER:
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);

@@ -60,6 +60,8 @@ enum {
    * Available since version 1.
    */
   NNADAPTER_SPECIAL_SOFTMAX,
+  NNADAPTER_SPECIAL_YOLOBOXPARSER,
+  NNADAPTER_NAIVE_YOLOBOXPARSER,
 };  // Custom operations type
 
 }  // namespace nnadapter

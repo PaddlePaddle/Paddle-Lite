@@ -38,7 +38,7 @@ void ReplaceSoftmaxWithSpecialSoftmax(core::Model* model) {
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
-    if (operation->type == NNADAPTER_SOFTMAX) {
+    if (operation->type == NNADAPTER_YOLO_BOX_PARSER) {
       operation->type = NNADAPTER_SPECIAL_SOFTMAX;
     }
   }

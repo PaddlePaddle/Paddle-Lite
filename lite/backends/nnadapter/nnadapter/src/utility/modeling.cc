@@ -886,11 +886,13 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
     std::map<T core::Operation*, uint32_t> counts;                            \
     for (auto& operation : model->operations) {                               \
       uint32_t count = 0;                                                     \
+      printf("哈哈哈\n");                                                     \
       for (auto operand : operation.input_operands) {                         \
         NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};       \
         if (operand != nullptr) {                                             \
           lifetime = operand->type.lifetime;                                  \
         }                                                                     \
+        printf("北京市地方你脸上的肌肤%d\n", (int)lifetime);                  \
         if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||                       \
             lifetime == NNADAPTER_TEMPORARY_SHAPE ||                          \
             lifetime == NNADAPTER_MODEL_OUTPUT) {                             \

@@ -223,6 +223,40 @@ struct YoloBoxParam : ParamBase {
   float scale_x_y{1.0f};
 };
 
+struct YoloBoxHeadParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+
+  std::vector<int> anchors{};
+  int class_num{0};
+  float conf_thresh{0.f};
+  int downsample_ratio{};
+  bool clip_bbox{true};
+  float scale_x_y{1.0f};
+};
+
+// For YoloBoxParser
+struct YoloBoxParserParam : ParamBase {
+  lite::Tensor* x0{};
+  lite::Tensor* x1{};
+  lite::Tensor* x2{};
+  lite::Tensor* image_shape{};
+  lite::Tensor* image_scale{};
+  lite::Tensor* boxes_scores{};
+
+  std::vector<int> anchors0{};
+  std::vector<int> anchors1{};
+  std::vector<int> anchors2{};
+
+  int class_num{0};
+  float conf_thresh{0.f};
+  int downsample_ratio0{};
+  int downsample_ratio1{};
+  int downsample_ratio2{};
+  bool clip_bbox{true};
+  float scale_x_y{1.0f};
+};
+
 // For Scale Op
 struct ScaleParam : ParamBase {
   lite::Tensor* x{};

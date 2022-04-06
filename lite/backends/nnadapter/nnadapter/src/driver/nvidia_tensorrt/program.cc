@@ -339,6 +339,8 @@ int TensorrtProgram::Execute(
   NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
   // Execute model
   execution_context_->execute(1, device_ptrs.data());
+  execution_context_->execute(1, device_ptrs.data());
+
   // Get output dims
   for (int i = 0; i < output_size; i++) {
     auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));

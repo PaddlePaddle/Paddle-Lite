@@ -250,5 +250,9 @@ REGISTER_OPERATION(YOLO_BOX_HEAD,
                    ValidateYoloBoxHead,
                    PrepareYoloBoxHead,
                    ExecuteYoloBoxHead)
+REGISTER_OPERATION(YOLO_BOX_PARSER,
+                   ValidateYoloBoxParser,
+                   PrepareYoloBoxParser,
+                   ExecuteYoloBoxParser)
 
 #endif  // NOLINT
