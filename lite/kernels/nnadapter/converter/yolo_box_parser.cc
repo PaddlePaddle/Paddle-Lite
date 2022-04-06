@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nnadapter/converter/converter.h"
 #include <iostream>
+#include "lite/kernels/nnadapter/converter/converter.h"
 
 namespace paddle {
 namespace lite {
@@ -21,6 +21,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertYoloBoxParser(Converter* converter, OpInfo* op, Scope* scope) {
+  printf("是开发绿色的肌肤\n\n\n");
   // Input operand
   auto x0_name = op->Input("x0").front();
   auto x0_operand = converter->AddInputOperand(scope, x0_name, {});
@@ -29,9 +30,11 @@ int ConvertYoloBoxParser(Converter* converter, OpInfo* op, Scope* scope) {
   auto x2_name = op->Input("x2").front();
   auto x2_operand = converter->AddInputOperand(scope, x2_name, {});
   auto image_shape_name = op->Input("image_shape").front();
-  auto image_shape_operand = converter->AddInputOperand(scope, image_shape_name, {});
+  auto image_shape_operand =
+      converter->AddInputOperand(scope, image_shape_name, {});
   auto image_scale_name = op->Input("image_scale").front();
-  auto image_scale_operand = converter->AddInputOperand(scope, image_scale_name, {});
+  auto image_scale_operand =
+      converter->AddInputOperand(scope, image_scale_name, {});
 
   std::vector<int> anchors0;
   std::vector<int> anchors1;
@@ -41,11 +44,11 @@ int ConvertYoloBoxParser(Converter* converter, OpInfo* op, Scope* scope) {
   int downsample_ratio0, downsample_ratio1, downsample_ratio2;
   bool clip_bbox = true;
   float scale_x_y = 1.f;
+  float nms_thresh = 0.3f;
 
   anchors0 = op->GetAttr<std::vector<int>>("anchors0");
   anchors1 = op->GetAttr<std::vector<int>>("anchors1");
   anchors2 = op->GetAttr<std::vector<int>>("anchors2");
-  std::cout << anchors1.size() << "难受的福利时间" << std::endl;
   class_num = op->GetAttr<int>("class_num");
   conf_thresh = op->GetAttr<float>("conf_thresh");
   downsample_ratio0 = op->GetAttr<int>("downsample_ratio0");
@@ -57,6 +60,7 @@ int ConvertYoloBoxParser(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasAttr("scale_x_y")) {
     scale_x_y = op->GetAttr<float>("scale_x_y");
   }
+  nms_thresh = op->GetAttr<float>("nms_thresh");
   auto anchors_operand0 = converter->AddConstantOperand(anchors0);
   auto anchors_operand1 = converter->AddConstantOperand(anchors1);
   auto anchors_operand2 = converter->AddConstantOperand(anchors2);
@@ -70,20 +74,32 @@ int ConvertYoloBoxParser(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddConstantOperand(downsample_ratio2);
   auto clip_bbox_operand = converter->AddConstantOperand(clip_bbox);
   auto scale_x_y_operand = converter->AddConstantOperand(scale_x_y);
+  auto nms_thresh_operand = converter->AddConstantOperand(nms_thresh);
 
   // Output operand
   auto boxes_scores_name = op->Output("boxes_scores").front();
+  auto boxes_num_name = op->Output("boxes_num").front();
   auto boxes_scores_operand = converter->AddOutputOperand(boxes_scores_name);
+  auto boxes_num_operand = converter->AddOutputOperand(boxes_num_name);
+
   converter->AddOperation(NNADAPTER_YOLO_BOX_PARSER,
-                          {x0_operand,x1_operand,x2_operand,
-                          image_shape_operand, image_scale_operand,
-                           anchors_operand0,anchors_operand1,anchors_operand2,
+                          {x0_operand,
+                           x1_operand,
+                           x2_operand,
+                           image_shape_operand,
+                           image_scale_operand,
+                           anchors_operand0,
+                           anchors_operand1,
+                           anchors_operand2,
                            class_num_operand,
                            conf_thresh_operand,
-                           downsample_ratio_operand0,downsample_ratio_operand1,downsample_ratio_operand2,
+                           downsample_ratio_operand0,
+                           downsample_ratio_operand1,
+                           downsample_ratio_operand2,
                            clip_bbox_operand,
-                           scale_x_y_operand},
-                          {boxes_scores_operand});
+                           scale_x_y_operand,
+                           nms_thresh_operand},
+                          {boxes_scores_operand, boxes_num_operand});
   return NO_ERROR;
 }
 

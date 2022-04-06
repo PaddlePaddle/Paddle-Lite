@@ -37,8 +37,9 @@ bool YoloBoxParserOp::CheckShape() const {
   auto class_num = param_.class_num;
   CHECK_OR_FALSE(image_shape_dims[1] == 2);
   CHECK_OR_FALSE(class_num > 0);
-  
-  auto check = [class_num, image_shape_dims](lite::Tensor* x, std::vector<int> anchors) {
+
+  auto check = [class_num, image_shape_dims](lite::Tensor* x,
+                                             std::vector<int> anchors) {
     int anchor_num = anchors.size() / 2;
     CHECK_OR_FALSE(anchor_num > 0 && anchors.size() % 2 == 0);
     auto x_dims = x->dims();
@@ -60,7 +61,6 @@ bool YoloBoxParserOp::InferShapeImpl() const {
 
 bool YoloBoxParserOp::AttachImpl(const cpp::OpDesc& op_desc,
                                  lite::Scope* scope) {
-
   auto x0 = op_desc.Input("x0").front();
   auto x1 = op_desc.Input("x1").front();
   auto x2 = op_desc.Input("x2").front();
@@ -73,7 +73,8 @@ bool YoloBoxParserOp::AttachImpl(const cpp::OpDesc& op_desc,
   auto boxes_scores = op_desc.Output("boxes_scores").front();
   param_.image_shape = scope->FindVar(image_shape)->GetMutable<lite::Tensor>();
   param_.image_scale = scope->FindVar(image_scale)->GetMutable<lite::Tensor>();
-  param_.boxes_scores = scope->FindVar(boxes_scores)->GetMutable<lite::Tensor>();
+  param_.boxes_scores =
+      scope->FindVar(boxes_scores)->GetMutable<lite::Tensor>();
 
   param_.anchors0 = op_desc.GetAttr<std::vector<int>>("anchors0");
   param_.anchors1 = op_desc.GetAttr<std::vector<int>>("anchors1");

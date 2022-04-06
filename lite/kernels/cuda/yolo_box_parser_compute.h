@@ -20,7 +20,8 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class YoloBoxParserCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+class YoloBoxParserCompute
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
  public:
   using param_t = operators::YoloBoxParam;
 

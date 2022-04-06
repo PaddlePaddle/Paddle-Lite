@@ -25,23 +25,25 @@ namespace lite {
 namespace {}  // namespace
 
 // for compare results
-void set_objectness_distinct(int start, float* out_ptr,int batch, int h, int w, int class_num, int anchor_num)
-{
-  for (int batch_id = 0; batch_id < batch; batch_id++)
-  {
-
-        //[3, 5 + class_num, h , w]
-        for (int h_id = 0; h_id < h; h_id++) {
-          for (int w_id = 0; w_id < w; w_id++) {
-            for (int anchor_id = 0; anchor_id < anchor_num;
-                 anchor_id++) {
-                  *(out_ptr + batch_id * anchor_num * (5 + class_num) * h * w + anchor_id * (5 + class_num) * h * w +
-                    4 * h * w + h_id * w + w_id)
-                    =  (start + 1) / 100.0;
-                    start++;
-            }
+void set_objectness_distinct(int start,
+                             float* out_ptr,
+                             int batch,
+                             int h,
+                             int w,
+                             int class_num,
+                             int anchor_num) {
+  for (int batch_id = 0; batch_id < batch; batch_id++) {
+    //[3, 5 + class_num, h , w]
+    for (int h_id = 0; h_id < h; h_id++) {
+      for (int w_id = 0; w_id < w; w_id++) {
+        for (int anchor_id = 0; anchor_id < anchor_num; anchor_id++) {
+          *(out_ptr + batch_id * anchor_num * (5 + class_num) * h * w +
+            anchor_id * (5 + class_num) * h * w + 4 * h * w + h_id * w + w_id) =
+              (start + 1) / 100.0;
+          start++;
+        }
       }
-  }
+    }
   }
 }
 
@@ -68,7 +70,6 @@ void correct_yolo_box(float& x,
   w /= (float)new_w;
   h /= (float)new_h;
 }
-
 
 std::vector<float> yolo_tensor_parse_naive(const std::vector<float>& xywh_obj,
                                            const std::vector<float>& class_prob,
@@ -144,7 +145,8 @@ class YoloBoxComputeTester : public arena::TestCase {
   std::string input3_ = "image_shape";
   std::string input4_ = "image_scale";
 
-  std::string output0_ = "output";
+  std::string output0_ = "boxes_scores";
+  std::string output1_ = "boxes_num";
   std::vector<int> anchors0_ = {116, 90, 156, 198, 373, 326};
   std::vector<int> anchors1_ = {30, 61, 62, 45, 59, 119};
   std::vector<int> anchors2_ = {10, 13, 16, 30, 33, 23};
@@ -156,6 +158,7 @@ class YoloBoxComputeTester : public arena::TestCase {
   int downsample_ratio2_ = 8;
   bool clip_bbox_ = true;
   float scale_x_y_ = 1.0;
+  float nms_thresh_ = 0.3;
   DDim _dims0_{{2, 255, 19, 19}};
   DDim _dims1_{{2, 255, 38, 38}};
   DDim _dims2_{{2, 255, 76, 76}};
@@ -180,12 +183,13 @@ class YoloBoxComputeTester : public arena::TestCase {
     const lite::Tensor* x0 = scope->FindTensor(input0_);
     const lite::Tensor* x1 = scope->FindTensor(input1_);
     const lite::Tensor* x2 = scope->FindTensor(input2_);
-    std::vector <const lite::Tensor*> x = {x0, x1, x2};
+    std::vector<const lite::Tensor*> x = {x0, x1, x2};
     const lite::Tensor* image_shape = scope->FindTensor(input3_);
     const lite::Tensor* image_scale = scope->FindTensor(input4_);
     const T* image_shape_ptr = image_shape->data<T>();
     const T* image_scale_ptr = image_scale->data<T>();
     lite::Tensor* boxes_scores = scope->NewTensor(output0_);
+    lite::Tensor* boxes_num = scope->NewTensor(output1_);
 
     std::vector<std::vector<int>> anchors = {anchors0_, anchors1_, anchors2_};
 
@@ -201,10 +205,7 @@ class YoloBoxComputeTester : public arena::TestCase {
     int result_numbox = 0;
     std::vector<float> result_bbox;
 
-
-
-	FILE* f = fopen("/zhoukangkang/lite_jetson_yolo_head/baseline.txt", "w");
-	
+    FILE* f = fopen("/zhoukangkang/lite_jetson_yolo_head/baseline.txt", "w");
 
     for (int batch_id = 0; batch_id < batch; batch_id++) {
       const float pic_h =
@@ -258,8 +259,7 @@ class YoloBoxComputeTester : public arena::TestCase {
                                           anchor[anchor_id * 2],
                                           conf_thresh);
 
-              for (int i = 0; i < one_bbox.size(); i++)
-              {
+              for (int i = 0; i < one_bbox.size(); i++) {
                 result_bbox.push_back(one_bbox[i]);
               }
             }
@@ -268,33 +268,35 @@ class YoloBoxComputeTester : public arena::TestCase {
       }
     }
 
-std::vector<std::vector<float>> tmp_result;
-for(int i = 0;i < result_bbox.size(); i += (5 + class_num))
-{
-  std::vector<float> ele;
-  for (int j = 0; j < (5 + class_num); j++)
-  {
-    ele.push_back(result_bbox[i + j]);
-  }
-  tmp_result.push_back(ele);
-}
+    std::vector<std::vector<float>> tmp_result;
+    for (int i = 0; i < result_bbox.size(); i += (5 + class_num)) {
+      std::vector<float> ele;
+      for (int j = 0; j < (5 + class_num); j++) {
+        ele.push_back(result_bbox[i + j]);
+      }
+      tmp_result.push_back(ele);
+    }
 
-auto cmp = [] (const std::vector<float>& a, const std::vector<float>& b) -> bool
-{
-  return a[0] > b[0];
-};
+    auto cmp = [](const std::vector<float>& a,
+                  const std::vector<float>& b) -> bool { return a[0] > b[0]; };
 
-std::sort(tmp_result.begin(),tmp_result.end(),cmp);
-result_bbox.clear();
-for (int i = 0;i<tmp_result.size();i++)
-for (int j = 0; j < tmp_result[i].size();j++)
-{
-result_bbox.push_back(tmp_result[i][j]);
-fprintf(f,"%f\n", tmp_result[i][j]);
-}
+    std::sort(tmp_result.begin(), tmp_result.end(), cmp);
+    result_bbox.clear();
+    for (int i = 0; i < tmp_result.size(); i++)
+      for (int j = 0; j < tmp_result[i].size(); j++) {
+        result_bbox.push_back(tmp_result[i][j]);
+        fprintf(f, "%f\n", tmp_result[i][j]);
+      }
     boxes_scores->Resize({result_numbox, 5 + class_num});
+    boxes_num->Resize({2});
+
     T* boxes_scores_ptr = boxes_scores->mutable_data<T>();
-    memcpy(boxes_scores_ptr, result_bbox.data(), result_bbox.size() * sizeof(float));
+    int* boxes_num_ptr = boxes_num->mutable_data<int>();
+    boxes_num_ptr[0] = 1;
+    boxes_num_ptr[1] = 1;
+    memcpy(boxes_scores_ptr,
+           result_bbox.data(),
+           result_bbox.size() * sizeof(float));
     fclose(f);
   }
 
@@ -306,6 +308,7 @@ fprintf(f,"%f\n", tmp_result[i][j]);
     op_desc->SetInput("image_shape", {input3_});
     op_desc->SetInput("image_scale", {input4_});
     op_desc->SetOutput("boxes_scores", {output0_});
+    op_desc->SetOutput("boxes_num", {output1_});
     op_desc->SetAttr("anchors0", anchors0_);
     op_desc->SetAttr("anchors1", anchors1_);
     op_desc->SetAttr("anchors2", anchors2_);
@@ -316,22 +319,41 @@ fprintf(f,"%f\n", tmp_result[i][j]);
     op_desc->SetAttr("downsample_ratio2", downsample_ratio2_);
     op_desc->SetAttr("clip_bbox", clip_bbox_);
     op_desc->SetAttr("scale_x_y", scale_x_y_);
+    op_desc->SetAttr("nms_thresh", nms_thresh_);
   }
 
   void PrepareData() override {
     std::vector<T> data0(_dims0_.production());
     fill_data_rand<T>(data0.data(), 0, 1, data0.size());
-   set_objectness_distinct(0, data0.data(), _dims0_[0], _dims0_[2], _dims0_[3], class_num_, anchors0_.size() / 2);
+    set_objectness_distinct(0,
+                            data0.data(),
+                            _dims0_[0],
+                            _dims0_[2],
+                            _dims0_[3],
+                            class_num_,
+                            anchors0_.size() / 2);
     SetCommonTensor(input0_, _dims0_, data0.data());
-    
+
     std::vector<T> data1(_dims1_.production());
     fill_data_rand<T>(data1.data(), 0, 1, data1.size());
-    set_objectness_distinct(data1.size(), data1.data(), _dims1_[0], _dims1_[2], _dims1_[3], class_num_, anchors1_.size() / 2);
+    set_objectness_distinct(data1.size(),
+                            data1.data(),
+                            _dims1_[0],
+                            _dims1_[2],
+                            _dims1_[3],
+                            class_num_,
+                            anchors1_.size() / 2);
     SetCommonTensor(input1_, _dims1_, data1.data());
 
     std::vector<T> data2(_dims2_.production());
     fill_data_rand<T>(data2.data(), 0, 1, data2.size());
-    set_objectness_distinct(data2.size() + data1.size(), data2.data(), _dims2_[0], _dims2_[2], _dims2_[3], class_num_, anchors2_.size() / 2);
+    set_objectness_distinct(data2.size() + data1.size(),
+                            data2.data(),
+                            _dims2_[0],
+                            _dims2_[2],
+                            _dims2_[3],
+                            class_num_,
+                            anchors2_.size() / 2);
     SetCommonTensor(input2_, _dims2_, data2.data());
 
     std::vector<T> data3(_dims3_.production());

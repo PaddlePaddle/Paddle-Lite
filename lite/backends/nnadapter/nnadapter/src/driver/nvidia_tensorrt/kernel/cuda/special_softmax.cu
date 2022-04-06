@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include "driver/nvidia_tensorrt/kernel/cuda/special_softmax.h"
+#include "driver/nvidia_tensorrt/kernel/cuda/yolo.h"
 namespace nnadapter {
 namespace nvidia_tensorrt {
 namespace cuda {
@@ -196,7 +197,7 @@ void yolo_tensor_parse_cuda(
     *bboxes_tensor_ptr = bbox_tensor;
   }
 
-  // now we will generate the boxes!
+  // now generate the boxes
   int bbox_index = 0;
   cudaMemcpy(
       bbox_index_device_ptr, &bbox_index, sizeof(int), cudaMemcpyHostToDevice);
@@ -235,6 +236,7 @@ int SpecialSoftmaxKernel::Run(
       reinterpret_cast<const float*>(image_scale_tensor->Data());
 
   auto boxes_scores_tensor = operand_map->at(operation->output_operands[0]);
+  auto boxes_num_tensor = operand_map->at(operation->output_operands[1]);
   /* anchors */
   auto anchors_operand0 = input_operands[5];
   auto anchors_operand1 = input_operands[6];
@@ -247,7 +249,7 @@ int SpecialSoftmaxKernel::Run(
   auto anchors_data2 = reinterpret_cast<int32_t*>(anchors_operand2->buffer);
   auto anchors =
       std::vector<int32_t>(anchors_count0 + anchors_count1 + anchors_count2);
-  
+
   memcpy(&anchors[0], anchors_data0, anchors_count0 * sizeof(int));
   memcpy(&anchors[anchors_count0], anchors_data1, anchors_count1 * sizeof(int));
   memcpy(&anchors[anchors_count0 + anchors_count1],
@@ -255,7 +257,7 @@ int SpecialSoftmaxKernel::Run(
          anchors_count2 * sizeof(int));
   // memcpy anchors to gpu memory
   int* d_anchors;
-  cudaMalloc((void**)&d_anchors, anchors.size() * sizeof(int));
+  cudaMalloc(&d_anchors, anchors.size() * sizeof(int));
   cudaMemcpy(d_anchors,
              anchors.data(),
              anchors.size() * sizeof(int),
@@ -277,37 +279,27 @@ int SpecialSoftmaxKernel::Run(
   // clip_bbox and scale_x_y is not used now!
   bool clip_bbox = *reinterpret_cast<bool*>(input_operands[13]->buffer);
   float scale_x_y = *reinterpret_cast<float*>(input_operands[14]->buffer);
+  // attrs with NMS
+  float nms_thresh = *reinterpret_cast<float*>(input_operands[15]->buffer);
 
   // other attrs
   int batch = image_shape_tensor->Dims()[0];
 
-  struct BatchInfo {
-    int bbox_count_host;  // record bbox numbers
-    int bbox_count_max_alloc = 500;
-    float* bboxes_tensor_ptr;
-    int *bbox_count_device_ptr;
-  };
-  BatchInfo* batch_info = new BatchInfo[batch];
-  for (int i = 0; i < batch; i++)
-  {
-      cudaMalloc((void**)batch_info[i].bboxes_tensor_ptr,
-             batch_info[i].bbox_count_max_alloc * (5 + class_num) * sizeof(float));
-      cudaMalloc((void**)batch_info[i].bbox_count_device_ptr, sizeof(int));
+  TensorInfo* ts_info = new TensorInfo[batch * boxes_input.size()];
+
+  for (int i = 0; i < batch * boxes_input.size(); i++) {
+    cudaMalloc(
+        &ts_info[i].bboxes_dev_ptr,
+        ts_info[i].bbox_count_max_alloc * (5 + class_num) * sizeof(float));
+    ts_info[i].bboxes_host_ptr =
+        (float*)malloc(ts_info[i].bbox_count_max_alloc * sizeof(float));
+    cudaMalloc(&ts_info[i].bbox_count_device_ptr, sizeof(int));
   }
 
-  int bbox_count_host;  // record bbox numbers
-  int bbox_count_max_alloc = 500;
-  float* bboxes_tensor_ptr;
-  cudaMalloc((void**)bboxes_tensor_ptr,
-             bbox_count_max_alloc * (5 + class_num) * sizeof(float));
-
-  // box counter in gpu memory
   // box index counter in gpu memory
-  // *bbox_index_device_ptr and *bbox_count_device_ptr will be used by atomicAdd
-  // so must cudaMalloc;
-  int *bbox_count_device_ptr, *bbox_index_device_ptr;
-  cudaMalloc((void**)&bbox_index_device_ptr, sizeof(int));
-  cudaMalloc((void**)&bbox_count_device_ptr, sizeof(int));
+  // *bbox_index_device_ptr used by atomicAdd
+  int* bbox_index_device_ptr;
+  cudaMalloc(&bbox_index_device_ptr, sizeof(int));
 
   std::vector<float> result;
 
@@ -316,16 +308,20 @@ int SpecialSoftmaxKernel::Run(
       int c = boxes_input_dims[input_id][1];
       int h = boxes_input_dims[input_id][2];
       int w = boxes_input_dims[input_id][3];
+      int ts_id = batch_id * boxes_input.size() + input_id;
+      int bbox_count_max_alloc = ts_info[ts_id].bbox_count_max_alloc;
       yolo_tensor_parse_cuda(
           boxes_input[input_id] + batch_id * c * h * w,
           image_shape_data + batch_id * 2,
           image_scale_data + batch_id * 2,
-          &bboxes_tensor_ptr,  // output in gpu memory, here we must use 2-level
-                               // pointer, because we may re-malloc this area
-          bbox_count_max_alloc,   // bbox_count_alloc_ptr boxes we pre-allocate
-          bbox_count_host,        // record bbox numbers
-          bbox_count_device_ptr,  // for atomicAdd
-          bbox_index_device_ptr,  // for atomicAdd
+          &(ts_info[ts_id].bboxes_dev_ptr),  // output in gpu memory,
+                                             // here we must use
+                                             // 2-level
+          // pointer, because we may re-malloc this area
+          bbox_count_max_alloc,  // bbox_count_alloc_ptr boxes we pre-allocate
+          ts_info[ts_id].bbox_count_host,        // record bbox numbers
+          ts_info[ts_id].bbox_count_device_ptr,  // for atomicAdd
+          bbox_index_device_ptr,                 // for atomicAdd
           h,
           class_num,
           anchors_num[input_id],
@@ -333,13 +329,24 @@ int SpecialSoftmaxKernel::Run(
           downsample_ratio[input_id] * w,
           dev_anchors_ptr[input_id],
           conf_thresh);
+
+      // batch info update
+      if (bbox_count_max_alloc > ts_info[ts_id].bbox_count_max_alloc) {
+        ts_info[ts_id].bbox_count_max_alloc = bbox_count_max_alloc;
+        ts_info[ts_id].bboxes_host_ptr = (float*)realloc(
+            ts_info[ts_id].bboxes_host_ptr,
+            bbox_count_max_alloc * (5 + class_num) * sizeof(float));
+      }
       // we need copy bbox_count_host boxes to cpu memory
-      result.resize(result.size() + bbox_count_host * (5 + class_num));
       cudaMemcpy(
-          result.data() + result.size() - bbox_count_host * (5 + class_num),
-          bboxes_tensor_ptr,
-          bbox_count_host * (5 + class_num) * sizeof(float),
+          ts_info[ts_id].bboxes_host_ptr,
+          ts_info[ts_id].bboxes_dev_ptr,
+          ts_info[ts_id].bbox_count_host * (5 + class_num) * sizeof(float),
           cudaMemcpyDeviceToHost);
+
+      // copy bbox_count_host boxes to cpu memory
+      for (int i = 0; i < ts_info[ts_id].bbox_count_host * (5 + class_num); i++)
+        result.push_back(ts_info[ts_id].bboxes_host_ptr[i]);
     }
   }
   boxes_scores_tensor->Resize(
@@ -348,8 +355,59 @@ int SpecialSoftmaxKernel::Run(
       reinterpret_cast<float*>(boxes_scores_tensor->Data(false));
   memcpy(boxes_scores_data, result.data(), result.size() * sizeof(float));
 
+  boxes_num_tensor->Resize({batch});
+  int* boxes_num_data = reinterpret_cast<int*>(boxes_num_tensor->Data(false));
 
-/* ----------------------- for  -----------------------------  */
+  /* ----------------------- NMS  -----------------------------  */
+
+  for (int batch_id = 0; batch_id < batch; batch_id++) {
+    std::vector<detection> bbox_det_vec;
+
+    for (int input_id = 0; input_id < boxes_input.size(); input_id++) {
+      int ts_id = batch_id * boxes_input.size() + input_id;
+      int bbox_count = ts_info[ts_id].bbox_count_host;
+
+      if (bbox_count <= 0) {
+        continue;
+      }
+
+      float* bbox_host_ptr = ts_info[ts_id].bboxes_host_ptr;
+
+      for (int bbox_index = 0; bbox_index < bbox_count; ++bbox_index) {
+        detection bbox_det;
+        memset(&bbox_det, 0, sizeof(detection));
+        bbox_det.objectness = bbox_host_ptr[bbox_index * (5 + class_num) + 0];
+        bbox_det.bbox.x = bbox_host_ptr[bbox_index * (5 + class_num) + 1];
+        bbox_det.bbox.y = bbox_host_ptr[bbox_index * (5 + class_num) + 2];
+        bbox_det.bbox.w = bbox_host_ptr[bbox_index * (5 + class_num) + 3];
+        bbox_det.bbox.h = bbox_host_ptr[bbox_index * (5 + class_num) + 4];
+        bbox_det.classes = class_num;
+        bbox_det.prob = (float*)malloc(class_num * sizeof(float));
+        int max_prob_class_index = -1;
+        float max_class_prob = 0.0;
+        for (int class_index = 0; class_index < class_num; class_index++) {
+          float prob =
+              bbox_host_ptr[bbox_index * (5 + class_num) + 5 + class_index];
+          bbox_det.prob[class_index] = prob;
+          if (prob > max_class_prob) {
+            max_class_prob = prob;
+            max_prob_class_index = class_index;
+          }
+        }
+        bbox_det.max_prob_class_index = max_prob_class_index;
+        bbox_det.sort_class = max_prob_class_index;
+        bbox_det_vec.push_back(bbox_det);
+      }
+    }
+    post_nms(bbox_det_vec, nms_thresh, class_num);
+    for (int i = 0; i < bbox_det_vec.size(); i++)
+    free(bbox_det_vec[i].prob);
+  
+    boxes_num_data[batch_id] = 1;  // bbox_det_vec.size();
+  }
+  /* ----------------------- NMS END  -----------------------------  */
+
+  /* ----------------------- for  -----------------------------  */
   struct Num {
     float data[85];
   };
@@ -377,12 +435,16 @@ int SpecialSoftmaxKernel::Run(
   FILE* f = fopen("/zhoukangkang/lite_jetson_yolo_head/cuda.txt", "w");
   for (int i = 0; i < result.size(); i++) fprintf(f, "%f\n", result[i]);
   fclose(f);
-/*-------------------------------------------------------------------------*/
-
+  /*-------------------------------------------------------------------------*/
 
   cudaFree(bbox_index_device_ptr);
-  cudaFree(bbox_count_device_ptr);
-  cudaFree(bboxes_tensor_ptr);
+
+  for (int i = 0; i < batch * boxes_input.size(); i++) {
+    cudaFree(ts_info[i].bboxes_dev_ptr);
+    cudaFree(ts_info[i].bbox_count_device_ptr);
+    free(ts_info[i].bboxes_host_ptr);
+  }
+
   return NNADAPTER_NO_ERROR;
 }
 

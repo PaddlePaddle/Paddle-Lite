@@ -30,9 +30,9 @@ int PrepareYoloBoxParser(core::Operation* operation) {
 
   // Infer the shape of boxes and scores
   auto& boxes_scores_type = boxes_scores_operand->type;
-printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand0->type.lifetime));
-printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand1->type.lifetime));
-printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand2->type.lifetime));
+  printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand0->type.lifetime));
+  printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand1->type.lifetime));
+  printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand2->type.lifetime));
   boxes_scores_type.dimensions.count = 3;
 
   class_num = class_num;
@@ -42,11 +42,17 @@ printf("四年级的v啊力所能及的sieved%d\n", (anchors_operand2->type.life
   downsample_ratio2 = downsample_ratio2;
   clip_bbox = clip_bbox;
   scale_x_y = scale_x_y;
+  nms_thresh = nms_thresh;
 
   boxes_scores_type.precision = x0_operand->type.precision;
   boxes_scores_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
 
-  NNADAPTER_VLOG(5) << "boxes_scores: " << OperandToString(boxes_scores_operand);
+  auto& boxes_num_type = boxes_num_operand->type;
+  boxes_num_type.precision = NNADAPTER_INT32;
+  boxes_scores_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+
+  NNADAPTER_VLOG(5) << "boxes_scores: "
+                    << OperandToString(boxes_scores_operand);
 
   return NNADAPTER_NO_ERROR;
 }
