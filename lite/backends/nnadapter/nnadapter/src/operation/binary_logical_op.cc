@@ -17,15 +17,19 @@
 #include "operation/elementwise.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateBinaryLogicalOp(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateBinaryLogicalOp(
+    const core::Operation* operation) {
+  return false;
+}
 
-int PrepareBinaryLogicalOp(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareBinaryLogicalOp(core::Operation* operation) {
   BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -36,7 +40,7 @@ int PrepareBinaryLogicalOp(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteBinaryLogicalOp(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteBinaryLogicalOp(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

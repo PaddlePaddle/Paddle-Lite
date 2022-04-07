@@ -18,15 +18,18 @@
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateReshape(const core::Operation* operation) { return true; }
+NNADAPTER_EXPORT bool ValidateReshape(const core::Operation* operation) {
+  return true;
+}
 
-int PrepareReshape(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -98,7 +101,7 @@ int PrepareReshape(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteReshape(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteReshape(core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands

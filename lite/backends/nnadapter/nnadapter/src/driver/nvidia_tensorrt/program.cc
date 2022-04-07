@@ -269,12 +269,12 @@ int TensorrtProgram::BuildFromModel() {
   // 2. Build model_, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));
   NNADAPTER_CHECK(builder_);
-  if (context_->Precision() == kInt8) {
-    network_.reset(builder_->createNetworkV2(0U));
-  } else {
+  if (with_dynamic_shape_) {
     network_.reset(builder_->createNetworkV2(
         1U << static_cast<int>(
             nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
+  } else {
+    network_.reset(builder_->createNetworkV2(0U));
   }
   NNADAPTER_CHECK(network_);
   // Convert a NNAdapter model_ to a tensorrt network

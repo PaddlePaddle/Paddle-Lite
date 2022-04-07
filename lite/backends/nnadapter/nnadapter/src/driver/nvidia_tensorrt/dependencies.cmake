@@ -34,11 +34,35 @@ else()
   message(FATAL_ERROR "${CMAKE_SYSTEM_PROCESSOR} isn't supported by NVIDIA GPU.")
 endif()
 
-include_directories("${NNADAPTER_NVIDIA_CUDA_ROOT}/include")
-include_directories("${NNADAPTER_NVIDIA_TENSORRT_ROOT}/include")
+# find cuda/cudnn/tensorrt include dirs
+find_path(NNADAPTER_NVIDIA_CUDA_INCLUDE_DIR cuda.h
+          PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/include
+                /usr/include/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/include
+          NO_DEFAULT_PATH
+)
+find_path(NNADAPTER_NVIDIA_CUDNN_INCLUDE_DIR cudnn.h
+          PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/include
+                /usr/include/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/include
+          NO_DEFAULT_PATH
+)
+find_path(NNADAPTER_NVIDIA_TENSORRT_INCLUDE_DIR NvInfer.h
+          PATHS ${NNADAPTER_NVIDIA_TENSORRT_ROOT}
+                ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/include
+                /usr/include/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/include
+          NO_DEFAULT_PATH
+)
+include_directories(${NNADAPTER_NVIDIA_CUDA_INCLUDE_DIR}
+                    ${NNADAPTER_NVIDIA_CUDNN_INCLUDE_DIR}
+                    ${NNADAPTER_NVIDIA_TENSORRT_INCLUDE_DIR})
+
 
 # find NvInferVersion.h and get version info
-file(READ ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/include/NvInferVersion.h TENSORRT_VERSION_FILE_CONTENTS)
+file(READ ${NNADAPTER_NVIDIA_TENSORRT_INCLUDE_DIR}/NvInferVersion.h TENSORRT_VERSION_FILE_CONTENTS)
 string(REGEX MATCH "define NV_TENSORRT_MAJOR +([0-9]+)" TENSORRT_MAJOR_VERSION "${TENSORRT_VERSION_FILE_CONTENTS}")
 string(REGEX MATCH "define NV_TENSORRT_MINOR +([0-9]+)" TENSORRT_MINOR_VERSION "${TENSORRT_VERSION_FILE_CONTENTS}")
 string(REGEX MATCH "define NV_TENSORRT_PATCH +([0-9]+)" TENSORRT_PATCH_VERSION "${TENSORRT_VERSION_FILE_CONTENTS}")
@@ -56,23 +80,54 @@ add_compile_options(-DTENSORRT_MINOR_VERSION=${TENSORRT_MINOR_VERSION})
 add_compile_options(-DTENSORRT_PATCH_VERSION=${TENSORRT_PATCH_VERSION})
 add_compile_options(-DTENSORRT_BUILD_VERSION=${TENSORRT_BUILD_VERSION})
 
+# find cuda/cudnn/tensorrt lib dirs
+find_path(NNADAPTER_NVIDIA_CUDA_LIB_DIR libcudart.so
+          PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/targets/${NNADAPTER_NVIDIA_TENSORRT_ROOT}-linux/lib
+                /usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/lib64
+                /usr/lib
+          NO_DEFAULT_PATH
+)
+find_path(NNADAPTER_NVIDIA_CUDNN_LIB_DIR libcudnn.so
+          PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib
+                ${NNADAPTER_NVIDIA_CUDA_ROOT}/targets/${NNADAPTER_NVIDIA_TENSORRT_ROOT}-linux/lib
+                /usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/lib64
+                /usr/lib
+          NO_DEFAULT_PATH
+)
+find_path(NNADAPTER_NVIDIA_TENSORRT_LIB_DIR libnvinfer.so
+          PATHS ${NNADAPTER_NVIDIA_TENSORRT_ROOT}
+                ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib64
+                ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib
+                /usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu
+                /usr/lib64
+                /usr/lib
+          NO_DEFAULT_PATH
+)
+
 # CUDA libraries
 # cudart.so 
 find_library(NVIDIA_CUDA_CUDART_FILE NAMES cudart
-  PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64
+  PATHS ${NNADAPTER_NVIDIA_CUDA_LIB_DIR}
   CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT NVIDIA_CUDA_CUDART_FILE)
-  message(FATAL_ERROR "Missing libcudart.so in ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64")
+  message(FATAL_ERROR "Missing libcudart.so in ${NNADAPTER_NVIDIA_CUDA_LIB_DIR}")
 endif()
 add_library(cuda_cudart SHARED IMPORTED GLOBAL)
 set_property(TARGET cuda_cudart PROPERTY IMPORTED_LOCATION ${NVIDIA_CUDA_CUDART_FILE})
 
 # cudnn.so 
 find_library(NVIDIA_CUDA_CUDNN_FILE NAMES cudnn
-  PATHS ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64
+  PATHS ${NNADAPTER_NVIDIA_CUDNN_LIB_DIR}
   CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT NVIDIA_CUDA_CUDNN_FILE)
-  message(FATAL_ERROR "Missing libcudnn.so in ${NNADAPTER_NVIDIA_CUDA_ROOT}/lib64")
+  message(FATAL_ERROR "Missing libcudnn.so in ${NNADAPTER_NVIDIA_CUDNN_LIB_DIR}")
 endif()
 add_library(cuda_cudnn SHARED IMPORTED GLOBAL)
 set_property(TARGET cuda_cudnn PROPERTY IMPORTED_LOCATION ${NVIDIA_CUDA_CUDNN_FILE})
@@ -80,20 +135,20 @@ set_property(TARGET cuda_cudnn PROPERTY IMPORTED_LOCATION ${NVIDIA_CUDA_CUDNN_FI
 # TENSORRT libraries
 # libnvinfer.so
 find_library(NVIDIA_TENSORRT_NVINFER_FILE NAMES nvinfer
-  PATHS ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib
+  PATHS ${NNADAPTER_NVIDIA_TENSORRT_LIB_DIR}
   CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT NVIDIA_TENSORRT_NVINFER_FILE)
-  message(FATAL_ERROR "Missing libnvinfer.so in ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib")
+  message(FATAL_ERROR "Missing libnvinfer.so in ${NNADAPTER_NVIDIA_TENSORRT_LIB_DIR}")
 endif()
 add_library(tensorrt_nvinfer SHARED IMPORTED GLOBAL)
 set_property(TARGET tensorrt_nvinfer PROPERTY IMPORTED_LOCATION ${NVIDIA_TENSORRT_NVINFER_FILE})
 
 # libnvinfer_plugin.so
 find_library(NVIDIA_TENSORRT_NVINFER_PLUGIN_FILE NAMES nvinfer_plugin
-  PATHS ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib
+  PATHS ${NNADAPTER_NVIDIA_TENSORRT_LIB_DIR}
   CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT NVIDIA_TENSORRT_NVINFER_PLUGIN_FILE)
-  message(FATAL_ERROR "Missing libnvinfer_plugin.so in ${NNADAPTER_NVIDIA_TENSORRT_ROOT}/lib")
+  message(FATAL_ERROR "Missing libnvinfer_plugin.so in ${NNADAPTER_NVIDIA_TENSORRT_LIB_DIR}")
 endif()
 add_library(tensorrt_nvinfer_plugin SHARED IMPORTED GLOBAL)
 set_property(TARGET tensorrt_nvinfer_plugin PROPERTY IMPORTED_LOCATION ${NVIDIA_TENSORRT_NVINFER_PLUGIN_FILE})

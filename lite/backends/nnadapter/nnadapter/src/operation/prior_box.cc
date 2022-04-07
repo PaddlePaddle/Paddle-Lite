@@ -16,14 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
-bool ValidatePriorBox(const core::Operation* operation) { return false; }
 
-int PreparePriorBox(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidatePriorBox(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PreparePriorBox(core::Operation* operation) {
   PRIOR_BOX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -87,7 +91,7 @@ int PreparePriorBox(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecutePriorBox(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecutePriorBox(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

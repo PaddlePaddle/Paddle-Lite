@@ -16,15 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateFlatten(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateFlatten(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareFlatten(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareFlatten(core::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -73,7 +76,7 @@ int PrepareFlatten(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteFlatten(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteFlatten(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
