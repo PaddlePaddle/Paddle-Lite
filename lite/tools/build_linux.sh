@@ -344,8 +344,6 @@ function make_publish_so {
     cmake $workspace \
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
-    echo ${CMAKE_COMMON_OPTIONS}
-    echo ${cmake_mutable_options}
 
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
