@@ -113,7 +113,8 @@ void Optimizer::ApplyPasses(
                 << " because the target or kernel does not match.";
     } else {
       // Check the pass whether it is supported for processing subblocks
-      if (kSubblockUnsupportedPasses.count(pass->name())) {
+      if (kSubblockUnsupportedPasses.count(pass->name()) ||
+           kSubblockSkippedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
         for (auto& graph : *graphes) {
