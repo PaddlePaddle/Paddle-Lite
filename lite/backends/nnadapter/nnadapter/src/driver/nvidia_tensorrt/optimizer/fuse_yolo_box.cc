@@ -164,16 +164,16 @@ static bool AddYoloPostOperation(core::Model* model,
   auto boxes0 = yolo_box_head0->output_operands[0];
   auto boxes1 = yolo_box_head1->output_operands[0];
   auto boxes2 = yolo_box_head2->output_operands[0];
-  auto anchors0 = yolo_box_head0->input_operands[2];
-  auto anchors1 = yolo_box_head1->input_operands[2];
-  auto anchors2 = yolo_box_head2->input_operands[2];
-  auto class_num = yolo_box_head0->input_operands[3];
-  auto conf_thresh = yolo_box_head0->input_operands[4];
-  auto downsample_ratio0 = yolo_box_head0->input_operands[5];
-  auto downsample_ratio1 = yolo_box_head1->input_operands[5];
-  auto downsample_ratio2 = yolo_box_head2->input_operands[5];
-  auto clip_bbox = yolo_box_head0->input_operands[6];
-  auto scale_x_y = yolo_box_head0->input_operands[7];
+  auto anchors0 = yolo_box_head0->input_operands[1];
+  auto anchors1 = yolo_box_head1->input_operands[1];
+  auto anchors2 = yolo_box_head2->input_operands[1];
+  auto class_num = yolo_box_head0->input_operands[2];
+  auto conf_thresh = yolo_box_head0->input_operands[3];
+  auto downsample_ratio0 = yolo_box_head0->input_operands[4];
+  auto downsample_ratio1 = yolo_box_head1->input_operands[4];
+  auto downsample_ratio2 = yolo_box_head2->input_operands[4];
+  auto clip_bbox = yolo_box_head0->input_operands[5];
+  auto scale_x_y = yolo_box_head0->input_operands[6];
   auto nms_thresh = nms_operand->input_operands[6];
 
   // set input
