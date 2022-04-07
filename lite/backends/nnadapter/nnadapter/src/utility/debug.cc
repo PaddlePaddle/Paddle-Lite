@@ -843,10 +843,8 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
     default:
-      NNADAPTER_LOG(INFO) << "Unhandle case: type="
-                          << OperandPrecisionCodeToString(type) << ".";
-      // NNADAPTER_LOG(FATAL) << "Unhandle case: type="
-      //  << OperandPrecisionCodeToString(type) << ".";
+      NNADAPTER_LOG(FATAL) << "Unhandle case: type="
+                           << OperandPrecisionCodeToString(type) << ".";
       break;
   }
 #undef NNADAPTER_TYPE_TO_STRING
