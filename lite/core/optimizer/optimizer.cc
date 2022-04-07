@@ -113,8 +113,7 @@ void Optimizer::ApplyPasses(
                 << " because the target or kernel does not match.";
     } else {
       // Check the pass whether it is supported for processing subblocks
-      if (kSubblockUnsupportedPasses.count(pass->name()) ||
-          kSubblockSkippedPasses.count(pass->name())) {
+      if (kSubblockUnsupportedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
         for (auto& graph : *graphes) {
@@ -320,7 +319,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       auto iter =
           std::find(passes_local.begin(), passes_local.end(), pqd_depend_pass);
       CHECK(iter != passes_local.end()) << "No find " << pqd_depend_pass;
-      passes_local.insert(iter + 1, pqd_pass);
+      passes_local.push_back(pass);
     } else {
       passes_local.push_back(pass);
     }
@@ -334,7 +333,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       }
     }
   }
-
   for (auto& pass_name : passes_local) {
     optim.AddPass(pass_name);
   }

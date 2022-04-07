@@ -26,7 +26,7 @@ namespace lite {
 namespace mir {
 
 const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops = {
-    "mul", "lookup_table"};
+    "fc", "mul", "matmul", "matmul_v2", "lookup_table"};
 
 std::vector<std::string> PostQuantDynamicPass::quant_ops = {
     "conv2d", "mul", "lookup_table"};
