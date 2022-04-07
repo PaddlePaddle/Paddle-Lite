@@ -23,7 +23,7 @@
 namespace nnadapter {
 namespace operation {
 
-bool ValidateMulticlassNMSd(const core::Operation* operation) { return false; }
+bool ValidateMulticlassNMS(const core::Operation* operation) { return false; }
 
 int PrepareMulticlassNMS(core::Operation* operation) {
   MULTICLASS_NMS_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -38,23 +38,21 @@ int PrepareMulticlassNMS(core::Operation* operation) {
   auto size = N * M;
   output_shape.push_back(size);
   output_shape.push_back(6);
+  output_box_operand->type.dimensions.count = 2;
   output_box_operand->type.dimensions.data[0] = output_shape[0];
   output_box_operand->type.dimensions.data[1] = output_shape[1];
-
-  // Dynamic shape
-  if (input_operands[0]->type.dimensions.dynamic_count != 0) {
-    for (uint32_t i = 0; i < input_operands[0]->type.dimensions.dynamic_count;
-         i++) {
-      std::vector<int> output_shape(input_count, 0);
-      for (size_t j = 0; j < input_count; j++) {
-        output_shape[i] = input_operands[i]->type.dimensions.dynamic_data[i][0];
-      }
-      for (auto output_operand : output_operands) {
-        for (int j = 0; j < input_count; j++) {
-          output_operand->type.dimensions.dynamic_data[i][j] = output_shape[j];
-        }
-      }
-    }
+  output_nms_rois_num_operand->type.dimensions.count = 1;
+  output_nms_rois_num_operand->type.dimensions.data[0] = output_shape[0];
+  auto& output_box_type = output_box_operand->type;
+  output_box_type.precision = NNADAPTER_FLOAT32;
+  output_box_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  output_nms_rois_num_operand->type.precision = NNADAPTER_INT32;
+  output_nms_rois_num_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  if (return_index) {
+    output_index_operand->type.dimensions.count = 1;
+    output_index_operand->type.dimensions.data[0] = output_shape[0];
+    output_index_operand->type.precision = NNADAPTER_INT32;
+    output_index_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   }
   return NNADAPTER_NO_ERROR;
 }

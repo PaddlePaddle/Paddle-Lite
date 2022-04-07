@@ -539,6 +539,18 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "min_max_aspect_ratios_order"};
         output_args = {"Boxes", "Variances"};
         break;
+      case NNADAPTER_MULTICLASS_NMS3:
+        input_args = {"BBoxes",
+                      "Scores",
+                      "background_label",
+                      "keep_top_k",
+                      "nms_eta",
+                      "nms_threshold",
+                      "nms_top_k",
+                      "normalized",
+                      "score_threshold"};
+        output_args = {"Out", "NmsRoisNum", "Index"};
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -706,6 +718,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MESHGRID);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(MULTICLASS_NMS3);
     NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
@@ -738,6 +751,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TILE);
     NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(YOLO_BOX);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
@@ -829,8 +843,10 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
     default:
-      NNADAPTER_LOG(FATAL) << "Unhandle case: type="
-                           << OperandPrecisionCodeToString(type) << ".";
+      NNADAPTER_LOG(INFO) << "Unhandle case: type="
+                          << OperandPrecisionCodeToString(type) << ".";
+      // NNADAPTER_LOG(FATAL) << "Unhandle case: type="
+      //  << OperandPrecisionCodeToString(type) << ".";
       break;
   }
 #undef NNADAPTER_TYPE_TO_STRING
