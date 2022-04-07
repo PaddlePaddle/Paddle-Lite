@@ -114,7 +114,7 @@ void Optimizer::ApplyPasses(
     } else {
       // Check the pass whether it is supported for processing subblocks
       if (kSubblockUnsupportedPasses.count(pass->name()) ||
-           kSubblockSkippedPasses.count(pass->name())) {
+          kSubblockSkippedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
         for (auto& graph : *graphes) {
