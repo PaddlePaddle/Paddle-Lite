@@ -344,6 +344,8 @@ function make_publish_so {
     cmake $workspace \
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
+    echo ${CMAKE_COMMON_OPTIONS}
+    echo ${cmake_mutable_options}
 
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
@@ -477,6 +479,7 @@ function main {
             # ON or OFF, default OFF
             --with_strip=*)
                 BUILD_TAILOR="${i#*=}"
+                WITH_STRIP="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir
