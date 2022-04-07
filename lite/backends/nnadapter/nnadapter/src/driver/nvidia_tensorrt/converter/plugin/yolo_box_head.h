@@ -56,13 +56,13 @@ class YoloBoxHeadPluginCreator : public PluginCreator {
 };
 
 cudaError_t YoloBoxHead(const float* input,
-                     float* output,
-                     const int grid_size_x,
-                     const int grid_size_y,
-                     const int class_num,
-                     const int anchors_num,
-                     const float scale_x_y,
-                     cudaStream_t stream);
+                        float* output,
+                        const int grid_size_x,
+                        const int grid_size_y,
+                        const int class_num,
+                        const int anchors_num,
+                        const float scale_x_y,
+                        cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

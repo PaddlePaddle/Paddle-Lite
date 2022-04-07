@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace nnadapter {
-namespace operation {
+namespace nvidia_tensorrt {
 
 #define YOLO_BOX_HEAD_OPERATION_EXTRACT_INPUTS_OUTPUTS                        \
   auto& input_operands = operation->input_operands;                           \
@@ -53,5 +53,5 @@ namespace operation {
   /* Output */                                                                \
   auto output_operand = output_operands[0];                                   \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-}  // namespace operation
+}  // namespace nvidia_tensorrt
 }  // namespace nnadapter

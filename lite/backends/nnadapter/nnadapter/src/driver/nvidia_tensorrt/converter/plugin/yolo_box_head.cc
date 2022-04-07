@@ -66,13 +66,13 @@ int32_t YoloBoxHeadPlugin::enqueue(int batch_size,
   const int volume = input_dims_[0].d[1] * h * w;
   for (unsigned int batch = 0; batch < n; ++batch) {
     NNADAPTER_CHECK_EQ(YoloBoxHead(input_data + batch * volume,
-                                output_data + batch * volume,
-                                grid_size_x,
-                                grid_size_y,
-                                class_num_,
-                                anchors_num,
-                                scale_x_y_,
-                                stream),
+                                   output_data + batch * volume,
+                                   grid_size_x,
+                                   grid_size_y,
+                                   class_num_,
+                                   anchors_num,
+                                   scale_x_y_,
+                                   stream),
                        cudaSuccess);
   }
   return 0;
