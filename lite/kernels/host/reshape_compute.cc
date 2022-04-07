@@ -76,8 +76,7 @@ std::vector<int64_t> ValidateShape(const std::vector<int64_t> &shape,
   return output_dims;
 }
 
-template <>
-void ReshapeCompute<ReshapeOpType::TypeReshape>::GetCurrentShape(DDim &out_shape) {
+void ReshapeCompute::GetCurrentShape(DDim *out_shape) {
   std::vector<int64_t> final_shape{};
   auto &param = this->Param<operators::ReshapeParam>();
   const auto &shape_tensor_vct = param.shape_tensor_vct;
@@ -104,19 +103,13 @@ void ReshapeCompute<ReshapeOpType::TypeReshape>::GetCurrentShape(DDim &out_shape
     LOG(FATAL) << "GetCurrentShape error";
   }
   auto valid_shape = ValidateShape(final_shape, x_dims);
-  out_shape.ConstructFrom(valid_shape);
+  out_shape->ConstructFrom(valid_shape);
 }
 
-template <>
-void ReshapeCompute<ReshapeOpType::TypeFlatten>::GetCurrentShape(DDim &out_shape) {
-  return;
-}
-
-template <>
-void ReshapeCompute<ReshapeOpType::TypeReshape>::ReInitWhenNeeded() {
+void ReshapeCompute::ReInitWhenNeeded() {
   auto &param = this->Param<operators::ReshapeParam>();
   DDim output_shape{};
-  GetCurrentShape(output_shape);
+  GetCurrentShape(&output_shape);
   if (last_shape_ == output_shape) {
     return;
   }
@@ -126,13 +119,7 @@ void ReshapeCompute<ReshapeOpType::TypeReshape>::ReInitWhenNeeded() {
   last_shape_ = output_shape;
 }
 
-template <>
-void ReshapeCompute<ReshapeOpType::TypeFlatten>::ReInitWhenNeeded() {
-  return;
-}
-
-template<ReshapeOpType OpType>
-void ReshapeCompute<OpType>::Run() {
+void ReshapeBaseCompute::Run() {
   auto &param = this->Param<operators::ReshapeParam>();
   auto x = param.x;
   auto output = param.output;
@@ -178,13 +165,8 @@ void ReshapeCompute<OpType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using ReshapeReshape = paddle::lite::kernels::host::ReshapeCompute<ReshapeOpType::TypeReshape>;
-REGISTER_LITE_KERNEL(reshape,
-                     kHost,
-                     kAny,
-                     kAny,
-                     ReshapeReshape,
-                     def)
+using ReshapeReshape = paddle::lite::kernels::host::ReshapeCompute;
+REGISTER_LITE_KERNEL(reshape, kHost, kAny, kAny, ReshapeReshape, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -203,12 +185,7 @@ REGISTER_LITE_KERNEL(reshape,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(reshape2,
-                     kHost,
-                     kAny,
-                     kAny,
-                     ReshapeReshape,
-                     def)
+REGISTER_LITE_KERNEL(reshape2, kHost, kAny, kAny, ReshapeReshape, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -231,13 +208,8 @@ REGISTER_LITE_KERNEL(reshape2,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-using ReshapeFlatten = paddle::lite::kernels::host::ReshapeCompute<ReshapeOpType::TypeFlatten>;
-REGISTER_LITE_KERNEL(flatten,
-                     kHost,
-                     kAny,
-                     kAny,
-                     ReshapeFlatten,
-                     def)
+using ReshapeFlatten = paddle::lite::kernels::host::FlattenCompute;
+REGISTER_LITE_KERNEL(flatten, kHost, kAny, kAny, ReshapeFlatten, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -252,12 +224,7 @@ REGISTER_LITE_KERNEL(flatten,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(flatten2,
-                     kHost,
-                     kAny,
-                     kAny,
-                     ReshapeFlatten,
-                     def)
+REGISTER_LITE_KERNEL(flatten2, kHost, kAny, kAny, ReshapeFlatten, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),

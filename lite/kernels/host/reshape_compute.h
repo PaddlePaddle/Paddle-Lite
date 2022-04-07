@@ -16,17 +16,20 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
-enum class ReshapeOpType {TypeReshape, TypeFlatten};
-
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
-template <ReshapeOpType OpType>
-class ReshapeCompute
+
+class ReshapeBaseCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
+  virtual ~ReshapeBaseCompute() = default;
+};
+
+class ReshapeCompute : public ReshapeBaseCompute {
+ public:
   void ReInitWhenNeeded() override;
   virtual ~ReshapeCompute() = default;
 
@@ -34,7 +37,12 @@ class ReshapeCompute
   DDim last_shape_{};
 
  private:
-  void GetCurrentShape(DDim &out_shape);
+  void GetCurrentShape(DDim *out_shape);
+};
+
+class FlattenCompute : public ReshapeBaseCompute {
+ public:
+  virtual ~FlattenCompute() = default;
 };
 
 }  // namespace host
