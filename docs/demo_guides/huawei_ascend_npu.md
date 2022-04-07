@@ -1,4 +1,4 @@
-华为昇腾 NPU 部署示例
+# 华为昇腾 NPU 部署示例
 
 Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
 
@@ -554,6 +554,8 @@ $ npu-smi info
   **nnadapter_mixed_precision_quantization_config_path.txt：**
 
   ```shell
+  fc
+  conv2d
   softmax
   pool2d
   elementwise_add
