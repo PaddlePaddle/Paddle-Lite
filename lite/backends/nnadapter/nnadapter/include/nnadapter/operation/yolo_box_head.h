@@ -29,7 +29,7 @@ namespace operation {
   /* Input */                                                                 \
   auto input_operand = input_operands[0];                                     \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
-  /* anchors */                                                               \
+  /* Anchors */                                                               \
   auto anchors_operand = input_operands[1];                                   \
   NNADAPTER_VLOG(5) << "anchors: " << OperandToString(anchors_operand);       \
   auto anchors_count = anchors_operand->length / sizeof(int32_t);             \
@@ -39,7 +39,7 @@ namespace operation {
   for (size_t i = 0; i < anchors.size(); i++) {                               \
     NNADAPTER_VLOG(5) << "anchors[" << i << "]: " << anchors[i];              \
   }                                                                           \
-  /* various attrs */                                                         \
+  /* Various attrs */                                                         \
   auto class_num = *reinterpret_cast<int*>(input_operands[2]->buffer);        \
   NNADAPTER_VLOG(5) << "class_num: " << class_num;                            \
   auto conf_thresh = *reinterpret_cast<float*>(input_operands[3]->buffer);    \

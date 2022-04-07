@@ -17,67 +17,67 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-__global__ void yolohead_kernel(const float* input,
+__global__ void yolo_box_head_kernel(const float* input,
                                 float* output,
-                                const uint gridSizeX,
-                                const uint gridSizeY,
-                                const uint numOutputClasses,
-                                const uint numBBoxes,
+                                const uint grid_size_x,
+                                const uint grid_size_y,
+                                const uint class_num,
+                                const uint anchor_num,
                                 const float scale_x_y) {
   uint x_id = blockIdx.x * blockDim.x + threadIdx.x;
   uint y_id = blockIdx.y * blockDim.y + threadIdx.y;
   uint z_id = blockIdx.z * blockDim.z + threadIdx.z;
-  if ((x_id >= gridSizeX) || (y_id >= gridSizeY) || (z_id >= numBBoxes)) {
+  if ((x_id >= grid_size_x) || (y_id >= grid_size_y) || (z_id >= anchor_num)) {
     return;
   }
-  const int numGridCells = gridSizeX * gridSizeY;
-  const int bbindex = y_id * gridSizeX + x_id;
+  const int grids_num = grid_size_x * grid_size_y;
+  const int bbindex = y_id * grid_size_x + x_id;
   const float alpha = scale_x_y;
   const float beta = -0.5 * (scale_x_y - 1);
 
-  output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 0)] =
-      input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 0)] *
+  output[bbindex + grids_num * (z_id * (5 + class_num) + 0)] =
+      input[bbindex + grids_num * (z_id * (5 + class_num) + 0)] *
           alpha +
       beta;
-  output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 1)] =
-      input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 1)] *
+  output[bbindex + grids_num * (z_id * (5 + class_num) + 1)] =
+      input[bbindex + grids_num * (z_id * (5 + class_num) + 1)] *
           alpha +
       beta;
-  output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 2)] = pow(
-      input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 2)] * 2,
+  output[bbindex + grids_num * (z_id * (5 + class_num) + 2)] = pow(
+      input[bbindex + grids_num * (z_id * (5 + class_num) + 2)] * 2,
       2);
-  output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 3)] = pow(
-      input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 3)] * 2,
+  output[bbindex + grids_num * (z_id * (5 + class_num) + 3)] = pow(
+      input[bbindex + grids_num * (z_id * (5 + class_num) + 3)] * 2,
       2);
-  output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 4)] =
-      input[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + 4)];
+  output[bbindex + grids_num * (z_id * (5 + class_num) + 4)] =
+      input[bbindex + grids_num * (z_id * (5 + class_num) + 4)];
 
-  for (uint i = 0; i < numOutputClasses; ++i) {
-    output[bbindex + numGridCells * (z_id * (5 + numOutputClasses) + (5 + i))] =
+  for (uint i = 0; i < class_num; ++i) {
+    output[bbindex + grids_num * (z_id * (5 + class_num) + (5 + i))] =
         input[bbindex +
-              numGridCells * (z_id * (5 + numOutputClasses) + (5 + i))];
+              grids_num * (z_id * (5 + class_num) + (5 + i))];
   }
 }
 
-cudaError_t YoloHead(const float* input,
+cudaError_t YoloBoxHead(const float* input,
                      float* output,
-                     const uint gridSizeX,
-                     const uint gridSizeY,
-                     const uint numOutputClasses,
-                     const uint numBBoxes,
+                     const int grid_size_x,
+                     const int grid_size_y,
+                     const int class_num,
+                     const int anchor_num,
                      const float scale_x_y,
                      cudaStream_t stream) {
   dim3 block(16, 16, 4);
-  dim3 grid((gridSizeX / block.x) + 1,
-            (gridSizeY / block.y) + 1,
-            (numBBoxes / block.z) + 1);
+  dim3 grid((grid_size_x / block.x) + 1,
+            (grid_size_y / block.y) + 1,
+            (anchor_num / block.z) + 1);
 
-  yolohead_kernel<<<grid, block, 0, stream>>>(input,
+  yolo_box_head_kernel<<<grid, block, 0, stream>>>(input,
                                               output,
-                                              gridSizeX,
-                                              gridSizeY,
-                                              numOutputClasses,
-                                              numBBoxes,
+                                              grid_size_x,
+                                              grid_size_y,
+                                              class_num,
+                                              anchor_num,
                                               scale_x_y);
 
   return cudaGetLastError();

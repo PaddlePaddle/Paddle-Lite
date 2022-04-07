@@ -65,7 +65,7 @@ int32_t YoloBoxHeadPlugin::enqueue(int batch_size,
   float* output_data = static_cast<float*>(outputs[0]);
   const int volume = input_dims_[0].d[1] * h * w;
   for (unsigned int batch = 0; batch < n; ++batch) {
-    NNADAPTER_CHECK_EQ(YoloHead(input_data + batch * volume,
+    NNADAPTER_CHECK_EQ(YoloBoxHead(input_data + batch * volume,
                                 output_data + batch * volume,
                                 gridSizeX,
                                 gridSizeY,
