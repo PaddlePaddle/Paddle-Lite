@@ -53,5 +53,6 @@ namespace nvidia_tensorrt {
   /* Output */                                                                \
   auto output_operand = output_operands[0];                                   \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
