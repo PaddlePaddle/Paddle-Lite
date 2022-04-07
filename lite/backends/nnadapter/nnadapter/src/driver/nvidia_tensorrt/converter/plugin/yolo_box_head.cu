@@ -17,17 +17,17 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-__global__ void yolo_box_head_kernel(const float* input,
+__global__ void YoloBoxHeadKernel(const float* input,
                                 float* output,
                                 const uint grid_size_x,
                                 const uint grid_size_y,
                                 const uint class_num,
-                                const uint anchor_num,
+                                const uint anchors_num,
                                 const float scale_x_y) {
   uint x_id = blockIdx.x * blockDim.x + threadIdx.x;
   uint y_id = blockIdx.y * blockDim.y + threadIdx.y;
   uint z_id = blockIdx.z * blockDim.z + threadIdx.z;
-  if ((x_id >= grid_size_x) || (y_id >= grid_size_y) || (z_id >= anchor_num)) {
+  if ((x_id >= grid_size_x) || (y_id >= grid_size_y) || (z_id >= anchors_num)) {
     return;
   }
   const int grids_num = grid_size_x * grid_size_y;
@@ -64,20 +64,20 @@ cudaError_t YoloBoxHead(const float* input,
                      const int grid_size_x,
                      const int grid_size_y,
                      const int class_num,
-                     const int anchor_num,
+                     const int anchors_num,
                      const float scale_x_y,
                      cudaStream_t stream) {
   dim3 block(16, 16, 4);
   dim3 grid((grid_size_x / block.x) + 1,
             (grid_size_y / block.y) + 1,
-            (anchor_num / block.z) + 1);
+            (anchors_num / block.z) + 1);
 
-  yolo_box_head_kernel<<<grid, block, 0, stream>>>(input,
+  YoloBoxHeadKernel<<<grid, block, 0, stream>>>(input,
                                               output,
                                               grid_size_x,
                                               grid_size_y,
                                               class_num,
-                                              anchor_num,
+                                              anchors_num,
                                               scale_x_y);
 
   return cudaGetLastError();

@@ -58,24 +58,23 @@ int32_t YoloBoxHeadPlugin::enqueue(int batch_size,
   const int n = input_dims_[0].d[0];
   const int h = input_dims_[0].d[2];
   const int w = input_dims_[0].d[3];
-  const int gridSizeX = w;
-  const int gridSizeY = h;
-  const int numBBoxes = anchors_.size() / 2;
+  const int grid_size_x = w;
+  const int grid_size_y = h;
+  const int anchors_num = anchors_.size() / 2;
   const float* input_data = static_cast<const float*>(inputs[0]);
   float* output_data = static_cast<float*>(outputs[0]);
   const int volume = input_dims_[0].d[1] * h * w;
   for (unsigned int batch = 0; batch < n; ++batch) {
     NNADAPTER_CHECK_EQ(YoloBoxHead(input_data + batch * volume,
                                 output_data + batch * volume,
-                                gridSizeX,
-                                gridSizeY,
+                                grid_size_x,
+                                grid_size_y,
                                 class_num_,
-                                numBBoxes,
+                                anchors_num,
                                 scale_x_y_,
                                 stream),
                        cudaSuccess);
   }
-
   return 0;
 }
 

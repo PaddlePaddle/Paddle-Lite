@@ -60,7 +60,7 @@ cudaError_t YoloBoxHead(const float* input,
                      const int grid_size_x,
                      const int grid_size_y,
                      const int class_num,
-                     const int anchor_num,
+                     const int anchors_num,
                      const float scale_x_y,
                      cudaStream_t stream);
 
