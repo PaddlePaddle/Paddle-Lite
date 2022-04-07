@@ -39,6 +39,11 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
         x86_valid_places = [
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.X86, PrecisionType.INT8, DataLayoutType.NCHW)
@@ -74,21 +79,15 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         input_w = draw(st.integers(min_value=1, max_value=128))
         filter_m = input_c
         filter_c = 1
-        filter_h = draw(st.integers(min_value=1, max_value=7))
-        filter_w = draw(st.integers(min_value=1, max_value=7))
+        filter_h = draw(st.sampled_from([3, 5]))
+        filter_w = filter_h
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
         assume(input_h >= filter_h)
         assume(input_w >= filter_w)
         groups = input_c
-        paddings = draw(
-            st.lists(
-                st.integers(
-                    min_value=0, max_value=20), min_size=2, max_size=2))
-        dilations = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=10), min_size=2, max_size=2))
+        paddings = draw(st.sampled_from([[0, 0], [1, 1], [2, 2]]))
+        dilations = draw(st.sampled_from([[1, 1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(
             st.lists(

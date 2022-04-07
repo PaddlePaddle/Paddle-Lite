@@ -11,24 +11,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cmake_minimum_required(VERSION 3.12)
 
 enable_language(CUDA)
 
 set(DEVICE_NAME nvidia_tensorrt)
-add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
-add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
+add_definitions(-DDEVICE_NAME=${DEVICE_NAME})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Os -fvisibility=hidden -fvisibility-inlines-hidden -fexceptions -fasynchronous-unwind-tables -funwind-tables -Wl,--allow-shlib-undefined")
 
 include(dependencies.cmake)
 
+include_directories(.)
 aux_source_directory(converter CONVERTERS)
-aux_source_directory(optimizer OPTIMIZERS)
 aux_source_directory(converter/plugin PLUGINS)
-set(SRCS engine.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} ${PLUGINS} driver.cc calibrator.cc)
-set(DEPS ${NNADAPTER_OPERATIONS}
-         ${NNADAPTER_UTILITIES}
-         ${${DEVICE_NAME}_deps}
-         nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
+aux_source_directory(kernel/cuda CUDA_KERNELS)
+aux_source_directory(kernel/host HOST_KERNELS)
+aux_source_directory(optimizer OPTIMIZERS)
+set(SRCS engine.cc
+  utility.cc
+  ${CONVERTERS}
+  ${PLUGINS}
+  ${CUDA_KERNELS}
+  ${HOST_KERNELS}
+  ${OPTIMIZERS}
+  driver.cc
+  calibrator.cc
+  program.cc)
+set(DEPS ${DEPS} nnadapter)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
-target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group -Wl,-exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-all")
 set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

@@ -209,10 +209,6 @@ class TestNearestV2InterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target() in [TargetType.ARM]:
-                return True
-
-        def _teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
@@ -222,11 +218,7 @@ class TestNearestV2InterpOp(AutoScanTest):
                 return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
         self.add_ignore_check_case(

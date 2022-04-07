@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "driver/device.h"
-#include "driver/fake_device/engine.h"
+#include "engine.h"  // NOLINT
 #include "utility/logging.h"
 #include "utility/micros.h"
 
@@ -122,9 +122,8 @@ int ExecuteProgram(void* program,
 }  // namespace fake_device
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Paddle",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,

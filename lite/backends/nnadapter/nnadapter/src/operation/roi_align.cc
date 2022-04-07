@@ -16,15 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateRoiAlign(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateRoiAlign(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareRoiAlign(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareRoiAlign(core::Operation* operation) {
   ROI_ALIGN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -55,7 +58,7 @@ int PrepareRoiAlign(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteRoiAlign(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteRoiAlign(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

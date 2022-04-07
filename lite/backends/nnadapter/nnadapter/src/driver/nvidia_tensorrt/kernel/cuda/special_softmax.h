@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
+#include <map>
+#include <memory>
+#include "driver/nvidia_tensorrt/kernel/kernel.h"
+#include "driver/nvidia_tensorrt/utility.h"
 
-/*
- * FAKED_DDK is an example of HOW TO MAKE A NEW NNADAPTER DELEGATE DDK.
-*/
+namespace nnadapter {
+namespace nvidia_tensorrt {
+namespace cuda {
 
-#include "fake_ddk/exection.h"
-#include "fake_ddk/graph.h"
-#include "fake_ddk/operator.h"
-#include "fake_ddk/tensor.h"
-#include "fake_ddk/types.h"
+class SpecialSoftmaxKernel : public KernelBase {
+ public:
+  virtual ~SpecialSoftmaxKernel() {}
+
+  int Run(
+      core::Operation* operation,
+      std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) override;
+};
+
+}  // namespace cuda
+}  // namespace nvidia_tensorrt
+}  // namespace nnadapter

@@ -84,4 +84,4 @@ add_library(atc_ge_compiler SHARED IMPORTED GLOBAL)
 set_property(TARGET atc_ge_compiler PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE})
 
 # ACL libs should before ATC libs
-set(${DEVICE_NAME}_deps acl_ascendcl atc_ge_compiler)
+set(DEPS ${DEPS} acl_ascendcl atc_ge_compiler)

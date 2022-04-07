@@ -25,9 +25,11 @@
 namespace nnadapter {
 namespace operation {
 
-bool ValidateWhere(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateWhere(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareWhere(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareWhere(core::Operation* operation) {
   WHERE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -38,7 +40,7 @@ int PrepareWhere(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteWhere(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteWhere(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

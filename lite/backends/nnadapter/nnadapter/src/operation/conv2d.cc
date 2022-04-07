@@ -72,9 +72,11 @@ CalcConv2DOutputSize(int32_t input_size,
          1;
 }
 
-bool ValidateConv2D(const core::Operation* operation) { return true; }
+NNADAPTER_EXPORT bool ValidateConv2D(const core::Operation* operation) {
+  return true;
+}
 
-int PrepareConv2D(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareConv2D(core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -108,7 +110,7 @@ int PrepareConv2D(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteConv2D(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteConv2D(core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Allocate and calculate the output operands

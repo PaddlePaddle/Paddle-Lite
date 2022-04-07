@@ -47,7 +47,7 @@ void ElementwiseActivationFusePass::Apply(
 
   bool has_opencl = has_target(TARGET(kOpenCL));
   if (has_opencl) {
-    act_types.push_back("relu");
+    act_types.push_back("relu6");
     act_types.push_back("gelu");
   }
 

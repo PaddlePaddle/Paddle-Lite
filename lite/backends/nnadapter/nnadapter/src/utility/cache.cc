@@ -14,6 +14,7 @@
 
 #include "utility/cache.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/string.h"
 #include "utility/utility.h"
 
@@ -25,7 +26,7 @@ static const uint32_t NNADAPTER_CACHE_VERSION_CODE = 1;
 
 static inline uint64_t align4(uint64_t size) { return (size + 3) & ~3; }
 
-void Cache::Clear() { entries_.clear(); }
+NNADAPTER_EXPORT void Cache::Clear() { entries_.clear(); }
 
 bool Cache::Set(const std::string& key, const std::vector<uint8_t>& value) {
   if (entries_.count(key)) return false;
@@ -33,7 +34,9 @@ bool Cache::Set(const std::string& key, const std::vector<uint8_t>& value) {
   return true;
 }
 
-bool Cache::Set(const std::string& key, const void* value, uint64_t size) {
+NNADAPTER_EXPORT bool Cache::Set(const std::string& key,
+                                 const void* value,
+                                 uint64_t size) {
   if (entries_.count(key)) return false;
   entries_[key] = std::vector<uint8_t>();
   entries_[key].resize(size);
@@ -41,32 +44,36 @@ bool Cache::Set(const std::string& key, const void* value, uint64_t size) {
   return true;
 }
 
-bool Cache::Set(const std::string& key, const std::string& value) {
+NNADAPTER_EXPORT bool Cache::Set(const std::string& key,
+                                 const std::string& value) {
   if (entries_.count(key)) return false;
   entries_[key] = std::vector<uint8_t>(value.begin(), value.end());
   return true;
 }
 
-bool Cache::Get(const std::string& key, std::vector<uint8_t>* value) {
+NNADAPTER_EXPORT bool Cache::Get(const std::string& key,
+                                 std::vector<uint8_t>* value) {
   if (!entries_.count(key)) return false;
   *value = entries_[key];
   return true;
 }
 
-bool Cache::Get(const std::string& key, void* value, uint64_t size) {
+NNADAPTER_EXPORT bool Cache::Get(const std::string& key,
+                                 void* value,
+                                 uint64_t size) {
   if (!entries_.count(key)) return false;
   if (entries_[key].size() != size) return false;
   memcpy(value, entries_[key].data(), size);
   return true;
 }
 
-bool Cache::Get(const std::string& key, std::string* value) {
+NNADAPTER_EXPORT bool Cache::Get(const std::string& key, std::string* value) {
   if (!entries_.count(key)) return false;
   value->assign(entries_[key].begin(), entries_[key].end());
   return true;
 }
 
-uint64_t Cache::GetSerializedSize() {
+NNADAPTER_EXPORT uint64_t Cache::GetSerializedSize() {
   auto size = align4(sizeof(CacheHeader));
   for (const auto& e : entries_) {
     size += align4(sizeof(EntryHeader) + e.first.size() + e.second.size());
@@ -74,7 +81,7 @@ uint64_t Cache::GetSerializedSize() {
   return size;
 }
 
-bool Cache::Serialize(void* buffer, uint64_t size) {
+NNADAPTER_EXPORT bool Cache::Serialize(void* buffer, uint64_t size) {
   if (size < GetSerializedSize()) {
     NNADAPTER_LOG(ERROR) << "No enough space, expected " << GetSerializedSize()
                          << " but recevied " << size << " bytes.";
@@ -113,7 +120,7 @@ bool Cache::Serialize(void* buffer, uint64_t size) {
   return true;
 }
 
-bool Cache::Deserialize(void* buffer, uint64_t size) {
+NNADAPTER_EXPORT bool Cache::Deserialize(void* buffer, uint64_t size) {
   Clear();
   auto aligned_cache_header_size = align4(sizeof(CacheHeader));
   if (size < aligned_cache_header_size) {

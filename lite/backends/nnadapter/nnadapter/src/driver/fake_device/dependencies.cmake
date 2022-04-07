@@ -40,9 +40,9 @@ if(NNADAPTER_FAKE_DEVICE_SDK_ROOT)
   endif()
   add_library(fake_ddk SHARED IMPORTED GLOBAL)
   set_property(TARGET fake_ddk PROPERTY IMPORTED_LOCATION ${FAKE_DEVICE_SDK_DDK_FILE})
-
-  set(${DEVICE_NAME}_deps fake_ddk)
 else()
   include_directories("fake_ddk/include")
   add_subdirectory(fake_ddk)
 endif()
+
+set(DEPS ${DEPS} fake_ddk)

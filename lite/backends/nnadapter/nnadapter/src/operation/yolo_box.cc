@@ -18,14 +18,18 @@
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
+
 namespace nnadapter {
 namespace operation {
 
-bool ValidateYoloBox(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateYoloBox(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareYoloBox(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareYoloBox(core::Operation* operation) {
   YOLO_BOX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape of boxes and scores
@@ -46,12 +50,12 @@ int PrepareYoloBox(core::Operation* operation) {
   };
 
   infer_output_shape(input_operand->type.dimensions.data,
-                     scores_operand->type.dimensions.data,
-                     boxes_operand->type.dimensions.data);
+                     boxes_operand->type.dimensions.data,
+                     scores_operand->type.dimensions.data);
   for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
-                       scores_operand->type.dimensions.dynamic_data[i],
-                       boxes_operand->type.dimensions.dynamic_data[i]);
+                       boxes_operand->type.dimensions.dynamic_data[i],
+                       scores_operand->type.dimensions.dynamic_data[i]);
   }
   CopyOperandTypeWithPrecision(&boxes_type, input_operand->type);
   CopyOperandTypeWithPrecision(&scores_type, input_operand->type);
@@ -60,7 +64,7 @@ int PrepareYoloBox(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteYoloBox(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteYoloBox(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

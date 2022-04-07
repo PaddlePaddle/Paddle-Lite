@@ -16,15 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-bool ValidateStack(const core::Operation* operation) { return false; }
+NNADAPTER_EXPORT bool ValidateStack(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareStack(core::Operation* operation) {
+NNADAPTER_EXPORT int PrepareStack(core::Operation* operation) {
   STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -52,7 +55,7 @@ int PrepareStack(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteStack(core::Operation* operation) {
+NNADAPTER_EXPORT int ExecuteStack(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 

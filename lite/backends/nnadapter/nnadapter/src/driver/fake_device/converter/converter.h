@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/fake_device/utility.h"
+#include "utility.h"  // NOLINT
 
 namespace nnadapter {
 namespace fake_device {
@@ -26,34 +26,41 @@ namespace fake_device {
 class Converter {
  public:
   explicit Converter(
-      fake_ddk::nn::Graph* graph,
-      std::map<core::Operand*,
-               std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>* tensors)
+      fake_ddk::Graph* graph,
+      std::map<core::Operand*, std::vector<fake_ddk::Tensor*>>* tensors)
       : graph_(graph), tensors_(tensors) {}
   ~Converter() {}
 
-  // Convert a NNAdapter model to fake_ddk graph and tensors
+  // Convert a NNAdapter model to fake device graph and tensors
   int Apply(core::Model* model);
-  // Mapping a fake_ddk tensor to a NNAdapter operand
+  // Mapping a fake device tensor to a NNAdapter operand
   std::string GetTensorName(core::Operand* operand);
-  std::shared_ptr<fake_ddk::nn::Tensor> GetMappedTensor(core::Operand* operand);
-  std::shared_ptr<fake_ddk::nn::Tensor> UpdateTensorMap(
-      core::Operand* operand, std::shared_ptr<fake_ddk::nn::Tensor> tensor);
-  // Convert a NNAdapter operand to a fake_ddk tensor
-  std::shared_ptr<fake_ddk::nn::Tensor> ConvertOperand(
-      core::Operand* operand, std::vector<int32_t> dimensions = {});
-  // Add a fake_ddk operator into fake_ddk graph
-  int AddOperator(
-      fake_ddk::nn::OperatorType type,
-      std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> input_tensors,
-      std::vector<std::shared_ptr<fake_ddk::nn::Tensor>> output_tensors,
-      void* attrs,
-      std::string name = "");
+  fake_ddk::Tensor* GetMappedTensor(core::Operand* operand);
+  fake_ddk::Tensor* UpdateTensorMap(core::Operand* operand,
+                                    fake_ddk::Tensor* tensor);
+  // Create and add a fake device tensor
+  fake_ddk::Tensor* AddTensor(
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
+      fake_ddk::PrecisionType precision,
+      const float* quant_scales = nullptr,
+      const int32_t* zero_points = nullptr,
+      uint32_t scale_count = 0,
+      int channel_dim = -1,
+      void* buffer = nullptr,
+      fake_ddk::DataLayoutType layout = fake_ddk::DataLayoutType::NCHW);
+  // Convert a NNAdapter operand to a fake device tensor
+  fake_ddk::Tensor* ConvertOperand(core::Operand* operand,
+                                   std::vector<int32_t> dimensions = {});
+  // Create and add a fake device operator into fake device graph
+  fake_ddk::Operator* AddOperator(fake_ddk::OperatorType type,
+                                  std::vector<fake_ddk::Tensor*> input_tensors,
+                                  std::vector<fake_ddk::Tensor*> output_tensors,
+                                  void* attrs);
 
  private:
-  fake_ddk::nn::Graph* graph_{nullptr};
-  std::map<core::Operand*, std::vector<std::shared_ptr<fake_ddk::nn::Tensor>>>*
-      tensors_{nullptr};
+  fake_ddk::Graph* graph_{nullptr};
+  std::map<core::Operand*, std::vector<fake_ddk::Tensor*>>* tensors_{nullptr};
 };
 
 }  // namespace fake_device

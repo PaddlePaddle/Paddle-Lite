@@ -206,3 +206,11 @@ Tensor outputTensor = getOutput(0);
   - 如果编译选项没有打开 `with_extra` 的选项，可以打开 `with_extra` 的选项再尝试；如果仍存在缺少 `op` 的错误提示，则是目前 Paddle Lite 尚未支持该 `op` ，可以在 github repo 里提 issue 等待版本迭代，或者参考[添加 op ](../develop_guides/add_operation.md)来自行添 `op` 并重新编译。
 - 提示 `in_dims().size() == 4 || in_dims.size() == 5 test error`
   - 如果你是基于我们的 demo 工程替换模型以后出现这个问题，有可能是替换模型以后模型的输入和 Paddle Lite 接收的输入不匹配导致，可以参考[ issue 6406 ](https://github.com/PaddlePaddle/Paddle-Lite/issues/6406)来解决该问题。
+- 如果想进一步提高 APP 速度：
+  - 可以将 APP 的默认线程数由线程数 1 更新为多线程，如 2/4 线程。另外，APP 的 setting 界面提供了多线程选项，即可在 setting 界面进行线程数更新，不用重新编译和安装啦。
+  - 多线程使用限制：线程数最大值是手机大核处理器的个数，如小米 9，它由 4 个 A76 大核组成，即最大运行 4 个线程。
+  - 多线程预测库：GCC 编译，V7/V8 多线程均支持；clang 编译下，只支持V8 多线程，V7 多线程编译受限于 NDK，当前 NDK >= 17, 编译报错，问题来源 NDK 内部 clang 编译的寄存器数目限制。
+- 如果想用 FP16 模型推理：
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[源码编译文档](../source_compile/macos_compile_android.rst)，自行编译。
+  - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
+  - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行，即高端手机，如小米 9，华为 P30 等

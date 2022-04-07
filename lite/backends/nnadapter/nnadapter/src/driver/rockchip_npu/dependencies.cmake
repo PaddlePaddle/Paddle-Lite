@@ -47,4 +47,4 @@ endif()
 add_library(rknpu_ddk SHARED IMPORTED GLOBAL)
 set_property(TARGET rknpu_ddk PROPERTY IMPORTED_LOCATION ${ROCKCHIP_NPU_SDK_DDK_FILE})
 
-set(${DEVICE_NAME}_deps rknpu_ddk)
+set(DEPS ${DEPS} rknpu_ddk)

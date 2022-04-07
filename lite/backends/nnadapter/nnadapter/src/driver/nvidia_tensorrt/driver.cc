@@ -14,6 +14,7 @@
 
 #include "driver/device.h"
 #include "driver/nvidia_tensorrt/engine.h"
+#include "driver/nvidia_tensorrt/program.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
@@ -105,9 +106,8 @@ int ExecuteProgram(void* program,
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Nvidia",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,

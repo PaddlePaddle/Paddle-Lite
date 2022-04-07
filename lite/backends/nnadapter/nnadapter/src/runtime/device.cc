@@ -505,8 +505,7 @@ std::pair<void*, driver::Device*>* DeviceManager::Find(const char* name) {
     driver = &::NNADAPTER_AS_SYM2(BUILTIN_DEVICE_NAME);
   } else {
     // Load if the driver of target device is not registered.
-    std::string symbol =
-        std::string(NNADAPTER_AS_STR2(NNADAPTER_DEVICE_SYMBOL_PREFIX)) + name;
+    std::string symbol = std::string("__nnadapter_device__") + name;
     std::string path = std::string("lib") + name + std::string(".so");
     library = dlopen(path.c_str(), RTLD_NOW);
     if (!library) {

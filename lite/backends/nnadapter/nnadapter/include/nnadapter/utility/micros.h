@@ -31,6 +31,8 @@
 #endif
 
 #define NNADAPTER_AS_STR(x) #x
-#define NNADAPTER_AS_SYM(x) x
+// Add prefix to the module symbol of each of NNAdapter device HAL library, such
+// as "__nnadapter_driver__rockchip_npu"
+#define NNADAPTER_AS_SYM(x) __nnadapter_device__##x
 #define NNADAPTER_AS_STR2(x) NNADAPTER_AS_STR(x)
 #define NNADAPTER_AS_SYM2(x) NNADAPTER_AS_SYM(x)
