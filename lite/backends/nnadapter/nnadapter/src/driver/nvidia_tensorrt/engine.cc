@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include "driver/nvidia_tensorrt/optimizer/replace_softmax.h"
+#include "optimizer/fuse_yolo_box.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -128,6 +129,11 @@ int Program::BuildFromModel(core::Model* model) {
   // ReplaceSoftmaxWithNaiveSoftmax(model);
   // ReplaceSoftmaxWithSpecialSoftmax(model);
   // Prepare input/output types
+  NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  NNADAPTER_VLOG(5) << "FuseYoloBox";
+  FuseYoloBox(model);
+  NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+
   for (auto& operand : model->input_operands) {
     input_types_.push_back(operand->type);
   }
