@@ -60,6 +60,7 @@ enum {
    * Available since version 1.
    */
   NNADAPTER_SPECIAL_SOFTMAX,
+  NNADAPTER_YOLO_BOX_POST,
 };  // Custom operations type
 
 }  // namespace nnadapter

@@ -21,6 +21,7 @@
 #include <vector>
 #include "driver/nvidia_tensorrt/calibrator.h"
 #include "driver/nvidia_tensorrt/kernel/cuda/special_softmax.h"
+#include "driver/nvidia_tensorrt/kernel/cuda/yolo_box_post.h"
 #include "driver/nvidia_tensorrt/kernel/host/naive_softmax.h"
 #include "driver/nvidia_tensorrt/kernel/kernel.h"
 #include "driver/nvidia_tensorrt/utility.h"
