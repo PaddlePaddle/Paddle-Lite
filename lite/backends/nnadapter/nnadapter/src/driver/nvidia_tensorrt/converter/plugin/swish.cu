@@ -34,6 +34,24 @@ __global__ void swish_kernel(int num, const T* input, T* output, T beta) {
   }
 }
 
+int32_t SwishPlugin::enqueue(int batchSize,
+                             const void* const* inputs,
+                             void** outputs,
+                             void* workspace,
+                             cudaStream_t stream) noexcept {
+  int num = 1;
+  for (int i = 0; i < input_dims_[0].nbDims; i++) {
+    num *= input_dims_[0].d[i];
+  }
+  int threads = 1024;
+  int blocks = (num + threads - 1) / threads;
+  const float* input = static_cast<const float*>(inputs[0]);
+  float* output = static_cast<float*>(outputs[0]);
+  swish_kernel<float><<<blocks, threads, 0, stream>>>(
+      num, input, output, beta_);
+  return 0;
+}
+
 int32_t SwishPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
@@ -58,6 +76,10 @@ int32_t SwishPluginDynamic::enqueue(
 REGISTER_NNADAPTER_TENSORRT_PLUGIN(SwishPluginDynamic,
                                    SwishPluginDynamicCreator,
                                    "swish_plugin_dynamic");
+
+REGISTER_NNADAPTER_TENSORRT_PLUGIN(SwishPlugin,
+                                   SwishPluginCreator,
+                                   "swish_plugin");
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

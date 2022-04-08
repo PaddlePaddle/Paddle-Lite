@@ -18,6 +18,36 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+class SwishPlugin : public Plugin {
+ public:
+  SwishPlugin() = default;
+
+  explicit SwishPlugin(const float beta) : beta_(beta) {}
+
+  SwishPlugin(const void* serial_data, size_t serial_length) {
+    Deserialize(&serial_data, &serial_length, &beta_);
+  }
+
+  nvinfer1::IPluginV2* clone() const noexcept {
+    return new SwishPluginDynamic(beta_);
+  }
+
+  int enqueue(int batchSize,
+              const void* const* inputs,
+              void** outputs,
+              void* workspace,
+              cudaStream_t stream) noexcept;
+
+  const char* getPluginType() const noexcept;
+
+  size_t getSerializationSize() const noexcept { return SerializedSize(beta_); }
+
+  void serialize(void* buffer) const noexcept { Serialize(&buffer, beta_); };
+
+ private:
+  float beta_{1.0f};
+};
+
 class SwishPluginDynamic : public PluginDynamic {
  public:
   SwishPluginDynamic() = default;
@@ -50,6 +80,14 @@ class SwishPluginDynamic : public PluginDynamic {
 };
 
 class SwishPluginDynamicCreator : public PluginCreator {
+ public:
+  const char* getPluginName() const noexcept;
+  nvinfer1::IPluginV2* deserializePlugin(const char* name,
+                                         void const* serial_data,
+                                         size_t serial_length) noexcept;
+};
+
+class SwishPluginCreator : public PluginCreator {
  public:
   const char* getPluginName() const noexcept;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,

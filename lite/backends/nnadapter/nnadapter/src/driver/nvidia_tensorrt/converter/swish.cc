@@ -29,13 +29,19 @@ int ConvertSwish(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  SwishPluginDynamic swish_plugin(1.0f);
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
-  auto swish_layer =
-      converter->network()->addPluginV2(tensors.data(), 1, swish_plugin);
+  nvinfer1::IPluginV2Layer* swish_layer = nullptr;
+  if (IsOperandWithDynamicShape(input_operand)) {
+    SwishPluginDynamic swish_plugin(1.0f);
+    swish_layer =
+        converter->network()->addPluginV2(tensors.data(), 1, swish_plugin);
+  } else {
+    SwishPlugin swish_plugin(1.0f);
+    swish_layer =
+        converter->network()->addPluginV2(tensors.data(), 1, swish_plugin);
+  }
   NNADAPTER_CHECK(swish_layer);
-  auto output_tensor = swish_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  converter->UpdateTensorMap(output_operand, swish_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 
