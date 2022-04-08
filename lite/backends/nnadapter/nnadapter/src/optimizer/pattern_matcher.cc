@@ -27,7 +27,6 @@ PMNode &PMNode::operator>>(PMNode &right) {
   pattern_->AddEdge(this, &right);
   // automatically add out op link relation.
   if (right.IsOp()) {
-    // NNADAPTER_CHECK(!right.op_type_.empty());
     this->assert_is_op_input(right.op_type_);
   }
 
@@ -88,7 +87,7 @@ void PMPattern::AddEdge(PMNode *a, PMNode *b) {
   edges_.emplace_back(a, b);
 }
 
-void PatternMatcher::operator()(core::Model *graph,
+void PatternMatcher::operator()(Graph *graph,
                                 PatternMatcher::handle_t handler) {
   if (!MarkPMNodesInGraph(graph)) {
     return;
@@ -100,7 +99,7 @@ void PatternMatcher::operator()(core::Model *graph,
   RemoveOverlappedMatch(&subgraphs);
 
   if (subgraphs.empty()) return;
-  LOG(INFO) << "detected " << subgraphs.size() << " subgraph";
+  NNADAPTER_LOG(INFO) << "detected " << subgraphs.size() << " subgraph";
   int id = 0;
   for (auto &g : subgraphs) {
     NNADAPTER_VLOG(3) << "optimizing #" << id++ << " subgraph";
@@ -108,7 +107,7 @@ void PatternMatcher::operator()(core::Model *graph,
   }
 }
 
-bool PatternMatcher::MarkPMNodesInGraph(core::Model *graph) {
+bool PatternMatcher::MarkPMNodesInGraph(Graph *graph) {
   NNADAPTER_VLOG(3) << "mark pmnodes in graph";
   if (graph->nodes().empty()) return false;
   for (auto &node : graph->mutable_nodes()) {
@@ -118,7 +117,7 @@ bool PatternMatcher::MarkPMNodesInGraph(core::Model *graph) {
       }
     }
   }
-  // NNADAPTER_CHECK to early stop if some PMNode can't find matched Node.
+  // Check to early stop if some PMNode can't find matched Node.
   for (auto &pmnode : pattern_.nodes()) {
     if (!pmnodes2nodes_.count(pmnode.get())) {
       NNADAPTER_VLOG(4) << pmnode->name() << " can't find matched Node, early stop";
@@ -164,7 +163,7 @@ void PatternMatcher::ValidateByNodeRole(
     extra_input_vars_.emplace_back();
     for (auto &item : subgraph) {
       for (auto *x : item.second->inlinks) {
-        if (x->IsArg() && ios.count(x) == 0) {
+        if (x->IsOperand() && ios.count(x) == 0) {
           // extra weight var
           extra_input_vars_.back().push_back(x);
         }
@@ -365,7 +364,7 @@ PMNode &PMNode::LinksFrom(const std::vector<PMNode *> &others) {
 }
 
 PMNode *PMNode::assert_is_op() {
-  asserts_.emplace_back([](const Node *x) { return x && x->IsStmt(); });
+  asserts_.emplace_back([](const Node *x) { return x && x->IsOperation(); });
   return this;
 }
 
@@ -374,11 +373,11 @@ PMNode *PMNode::assert_only_one_output() {
   return this;
 }
 
-PMNode *PMNode::assert_is_op(const std::string &op_type) {
+PMNode *PMNode::assert_is_op(NNAdapterOperationType op_type) {
   asserts_.emplace_back([op_type](const Node *x) {
-    if (x && x->IsStmt()) {
-      auto *op_info = x->stmt()->op_info();
-      return op_info->Type() == op_type;
+    if (x && x->IsOperation()) {
+      auto *operation = x->operation();
+      return operation->type == op_type;
     } else {
       return false;
     }
@@ -386,11 +385,11 @@ PMNode *PMNode::assert_is_op(const std::string &op_type) {
   return this;
 }
 
-PMNode *PMNode::assert_is_not_op_type(const std::string &op_type) {
+PMNode *PMNode::assert_is_not_op_type(NNAdapterOperationType op_type) {
   asserts_.emplace_back([op_type](const Node *x) {
-    if (x && x->IsStmt()) {
-      auto *op_info = x->stmt()->op_info();
-      if (op_info->Type() == op_type) {
+    if (x && x->IsOperation()) {
+      auto *operation = x->operation();
+      if (operation->type == op_type) {
         return false;
       }
     }
@@ -400,31 +399,31 @@ PMNode *PMNode::assert_is_not_op_type(const std::string &op_type) {
 }
 
 PMNode *PMNode::assert_is_var() {
-  asserts_.emplace_back([](const Node *x) { return x && x->IsArg(); });
+  asserts_.emplace_back([](const Node *x) { return x && x->IsOperand(); });
   return this;
 }
 
 PMNode *PMNode::assert_var_not_persistable() {
   assert_is_var();
   asserts_.emplace_back([](const Node *x) {
-    return !x->arg()->is_weight && !x->arg()->is_persist;
+    return !IsConstantOperand(x->operand());
   });
   return this;
 }
 
 PMNode *PMNode::assert_is_persistable_var() {
   assert_is_var();
-  asserts_.emplace_back([=](const Node *x) { return x->arg()->is_weight; });
+  asserts_.emplace_back([=](const Node *x) { return IsConstantOperand(x->operand()) });
   return this;
 }
 
-PMNode *PMNode::assert_is_op_output(const std::string &op_type) {
+PMNode *PMNode::assert_is_op_output(NNAdapterOperationType &op_type) {
   assert_is_var();
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->inlinks) {
-      if (op && op->IsStmt()) {
-        auto *op_info = op->stmt()->op_info();
-        if (op_info->Type() == op_type) return true;
+      if (op && op->IsOperation()) {
+        auto *operation = x->operation();
+        if (operation->type == op_type) return true;
       }
     }
     return false;
@@ -434,44 +433,42 @@ PMNode *PMNode::assert_is_op_output(const std::string &op_type) {
 
 bool IsNthOutput(const Node *var,
                  const Node *op,
-                 const std::string &argument,
                  size_t nth) {
-  NNADAPTER_CHECK(var->IsArg());
-  NNADAPTER_CHECK(op->IsStmt());
-  auto op_info = op->stmt()->op_info();
-  if (!op_info->HasOutput(argument) || op_info->Output(argument).size() <= nth)
+  NNADAPTER_CHECK(var->IsOperand());
+  NNADAPTER_CHECK(op->IsOperation());
+  auto operation = op->operation();
+  auto output_operands = operation->output_operands;
+  if (!output_operands.count(var->operand()) || output_operands.size() <= nth)
     return false;
-  return var->arg()->name == op_info->Output(argument)[nth];
+  return var->operand() == output_operands[nth];
 }
 
 bool IsNthInput(const Node *var,
                 const Node *op,
-                const std::string &argument,
                 size_t nth) {
-  NNADAPTER_CHECK(var->IsArg());
-  NNADAPTER_CHECK(op->IsStmt());
-  auto op_info = op->stmt()->op_info();
-  if (!op_info->HasInput(argument) || op_info->Input(argument).size() <= nth)
+  NNADAPTER_CHECK(var->IsOperand());
+  NNADAPTER_CHECK(op->IsOperation());
+  auto op_info = op->operation();
+  auto input_operands = operation->input_operands;
+  if (!input_operands.count(var->operand()) || input_operands.size() <= nth)
     return false;
-  return var->arg()->name == op_info->Input(argument)[nth];
+  return var->operand() == input_operands[nth];
 }
 
-PMNode *PMNode::assert_is_op_input(const std::string &op_type,
-                                   const std::string &argument) {
+PMNode *PMNode::assert_is_op_input(NNAdapterOperationType op_type) {
   assert_is_var();
-  assert_is_op_nth_input(op_type, argument, 0);
+  assert_is_op_nth_input(op_type, 0);
   return this;
 }
 
-PMNode *PMNode::assert_is_op_nth_input(const std::string &op_type,
-                                       const std::string &argument,
+PMNode *PMNode::assert_is_op_nth_input(NNAdapterOperationType op_type,
                                        int nth) {
   assert_is_var();
   assert_is_op_input(op_type);
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->outlinks) {
-      if (op && op->IsStmt() && op->stmt()->op_info()->Type() == op_type &&
-          IsNthInput(x, op, argument, nth))
+      if (op && op->IsOperation() && op->operation()->type == op_type &&
+          IsNthInput(x, op, nth))
         return true;
     }
     return false;
@@ -479,21 +476,19 @@ PMNode *PMNode::assert_is_op_nth_input(const std::string &op_type,
   return this;
 }
 
-PMNode *PMNode::assert_is_op_output(const std::string &op_type,
-                                    const std::string &argument) {
+PMNode *PMNode::assert_is_op_output(NNAdapterOperationType op_type) {
   assert_is_var();
-  assert_is_op_nth_output(op_type, argument, 0);
+  assert_is_op_nth_output(op_type, 0);
   return this;
 }
 
-PMNode *PMNode::assert_is_op_nth_output(const std::string &op_type,
-                                        const std::string &argument,
+PMNode *PMNode::assert_is_op_nth_output(NNAdapterOperationType op_type,
                                         int nth) {
   assert_is_var();
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->inlinks) {
-      if (op && op->IsStmt() && op->stmt()->op_info()->Type() == op_type &&
-          IsNthOutput(x, op, argument, nth))
+      if (op && op->IsOperation() && op->operation()->type == op_type &&
+          IsNthOutput(x, op, nth))
         return true;
     }
     return false;
@@ -501,13 +496,13 @@ PMNode *PMNode::assert_is_op_nth_output(const std::string &op_type,
   return this;
 }
 
-PMNode *PMNode::assert_is_op_input(const std::string &op_type) {
+PMNode *PMNode::assert_is_op_input(NNAdapterOperationType op_type) {
   assert_is_var();
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->outlinks) {
-      if (op && op->IsStmt()) {
-        auto *op_info = op->stmt()->op_info();
-        if (op_info->Type() == op_type) {
+      if (op && op->IsOperation()) {
+        auto *operation = op->operation();
+        if (operation->type == op_type) {
           return true;
         }
       }
@@ -517,15 +512,15 @@ PMNode *PMNode::assert_is_op_input(const std::string &op_type) {
   return this;
 }
 
-bool HasInput(const Node &op, const std::string &argument) {
-  NNADAPTER_CHECK(op.IsStmt());
-  auto const &names = op.stmt()->op_info()->input_argnames();
-  if (std::find(names.begin(), names.end(), argument) == names.end())
-    return false;
-  return true;
-}
+// bool HasInput(const Node &op, const std::string &argument) {
+//   NNADAPTER_CHECK(op.IsOperation());
+//   auto const &names = op.operation()->input_argnames();
+//   if (std::find(names.begin(), names.end(), argument) == names.end())
+//     return false;
+//   return true;
+// }
 
-void GraphSafeRemoveNodes(core::Model *graph,
+void GraphSafeRemoveNodes(Graph *graph,
                           const std::set<const Node *> &nodes) {
   for (auto *node : nodes) {
     graph->RemoveNode(node);

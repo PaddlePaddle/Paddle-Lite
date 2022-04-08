@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
-#include "lite/utils/log/cp_logging.h"
-
+#include "optimizer/pattern_matcher_high_api.h"
+#include "utility/logging.h"
 namespace nnadapter {
 
 void FuseBase::PerformPatternMatcher(SSAGraph *graph) {
-  VLOG(4) << "\n" << matcher_.pattern().DotString();
+  NNADAPTER_VLOG(4) << "\n" << matcher_.pattern().DotString();
   // Get subgraphs and record the mir::Node pointers for each PMNode.
   auto handler = [&](const PatternMatcher::subgraph_t &subgraph, SSAGraph *g) {
     // get all the reigistered nodes.
@@ -39,7 +38,7 @@ void FuseBase::DeleteInterNodes(SSAGraph *graph) {
     }
   }
 
-  VLOG(4) << "keys: " << key2nodes_.size();
+  NNADAPTER_VLOG(4) << "keys: " << key2nodes_.size();
   std::set<const Node *> nodes2rm;
   for (auto &matched : key2nodes_) {
     for (const auto &key : keys) {
@@ -47,7 +46,7 @@ void FuseBase::DeleteInterNodes(SSAGraph *graph) {
     }
   }
 
-  VLOG(3) << "clean nodes " << nodes2rm.size();
+  NNADAPTER_VLOG(3) << "clean nodes " << nodes2rm.size();
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 

@@ -33,6 +33,7 @@
 #include "utility/utility.h"
 #include "utility/string.h"
 #include "utility/node.h"
+#include "utility/graph.h"
 #include "utility/replace_stl/stream.h"
 
 namespace nnadapter {
@@ -132,19 +133,11 @@ struct PMNode {
   PMNode* assert_only_one_output();
   PMNode* assert_is_op_output(NNAdapterOperationType op_type);
   PMNode* assert_is_op_input(NNAdapterOperationType op_type);
-  PMNode* assert_is_op_input(NNAdapterOperationType op_type,
-                             const std::string& argument);
-  PMNode* assert_is_op_output(NNAdapterOperationType op_type,
-                              const std::string& argument);
-
-  PMNode* assert_is_op_nth_input(NNAdapterOperationType op_type,
-                                 const std::string& argument,
-                                 int nth);
-  PMNode* assert_is_op_nth_output(NNAdapterOperationType op_type,
-                                  const std::string& argument,
-                                  int nth);
-  PMNode* assert_node_satisfied(
-      const std::function<bool(const Node*)>& condition) {
+  PMNode* assert_is_op_input(NNAdapterOperationType op_type);
+  PMNode* assert_is_op_output(NNAdapterOperationType op_type);
+  PMNode* assert_is_op_nth_input(NNAdapterOperationType op_type, int nth);
+  PMNode* assert_is_op_nth_output(NNAdapterOperationType op_type, int nth);
+  PMNode* assert_node_satisfied(const std::function<bool(const Node*)>& condition) {
     asserts_.push_back(condition);
     return this;
   }
@@ -270,16 +263,16 @@ class PatternMatcher {
 
   // Operate on the detected pattern.
   using handle_t =
-      std::function<void(const subgraph_t& /*hitted pattern*/, core::Model*)>;
+      std::function<void(const subgraph_t& /*hitted pattern*/, Graph*)>;
 
-  void operator()(core::Model* graph, handle_t handler);
+  void operator()(Graph* graph, handle_t handler);
 
   const PMPattern& pattern() const { return pattern_; }
   PMPattern* mutable_pattern() { return &pattern_; }
 
  private:
   // Mark the nodes that fits the pattern.
-  bool MarkPMNodesInGraph(core::Model* graph);
+  bool MarkPMNodesInGraph(Graph* graph);
 
   // Detect all the pattern and output the hit records.
   std::vector<subgraph_t> DetectPatterns();
@@ -311,14 +304,13 @@ class PatternMatcher {
 // Check whether a var node is a op node's nth input.
 bool IsNthInput(const Node& var,
                 const Node& op,
-                const std::string& argument,
                 int nth);
 
 // Check whether the op node has input of given name.
-bool HasInput(const Node& op, const std::string& argument);
+// bool HasInput(const Node& op, const std::string& argument);
 
 // Graph safely remove some nodes, will automatically clean up the edges.
-void GraphSafeRemoveNodes(core::Model* graph, const std::set<const Node*>& nodes);
+void GraphSafeRemoveNodes(Graph* graph, const std::set<const Node*>& nodes);
 
 // Some pre-defined patterns those can be reused in multiple passes.
 // The related Fluid Layer or Op should be one pattern here for better re-usage
