@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "utility/graph.h"
-#include "utility/logging.h"
-#include "utility/modeling.h"
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -150,67 +148,37 @@ Node *Graph::GraphCreateInstructNode(const core::Operation &op) {
 
 void Graph::Build(const core::Model) {
   NNADAPTER_CHECK(node_storage_.empty());
-
-  block_idx_ = block_idx;
-  auto weights = program.weights();
-  auto is_weight = [&](const std::string &name) -> bool {
-    auto it = std::find(weights.begin(), weights.end(), name);
-    if (it == weights.end()) return false;
-    return true;
-  };
-
-  auto var_type_map = program.var_type_map();
-  std::map<std::string, Node *> arg_update_node_map;
-  for (auto &op : program.ops(block_idx)) {
-    NNADAPTER_VLOG(3) << op->op_info()->Type();
-    auto *op_node = GraphCreateInstructNode(op, valid_places);
-    auto *op_info = op->op_info();
-    const auto &op_type = op_info->Type();
-    for (const auto &var_name : op_info->input_names()) {
+  auto operations = SortOperationsInTopologicalOrder(model);
+  std::map<core::Operand, Node* > arg_update_node_map;
+  for (auto* operation : operations) { 
+    auto *op_node = GraphCreateInstructNode(operation);
+    std::vector<core::Operand*> input_operands = operation->input_operands;
+    std::vector<core::Operand*> output_operands = operation->output_operands;
+    for (auto input_operand : input_operands) {
       Node *arg_node = nullptr;
-      if (arg_update_node_map.count(var_name)) {
-        arg_node = arg_update_node_map.at(var_name);
+      if (arg_update_node_map.count(input_operand)) {
+        arg_node = arg_update_node_map.at(input_operand);
       } else {
         node_storage_.emplace_back();
         arg_node = &node_storage_.back();
-        arg_node->AsArg(var_name, node_storage_.size() - 1);
-        arg_update_node_map[var_name] = arg_node;
+        arg_node->AsOperand(input_operand);
+        arg_update_node_map[input_operand] = arg_node;
       }
-      if (var_type_map.count(var_name)) {
-        if (!arg_node->arg()->type) {
-          arg_node->arg()->type = var_type_map[var_name];
-        }
-        // Store the original data type of the output tensors for
-        // type_precision_cast_pass, to keep the consistency between the
-        // output types of original graph and optimized graph's
-        if (op_type == "fetch") {
-          op->mutable_op_info()->SetAttr<int>(
-              "data_type",
-              static_cast<int>(var_type_map[var_name]->precision()));
-        }
-      }
-      if (is_weight(var_name)) arg_node->AsArg().is_weight = true;
-      NNADAPTER_CHECK(arg_node->IsRoleSet());
+      NNADAPTER_CHECK(arg_node->IsOperand());
       DirectedLink(arg_node, op_node);
     }
-    for (const auto &var_name : op->op_info()->output_names()) {
+    for (auto output_operand : output_operands) {
       node_storage_.emplace_back();
       auto *arg_node = &node_storage_.back();
-      arg_node->AsArg(var_name, node_storage_.size() - 1);
-      arg_update_node_map[var_name] = arg_node;
-      if (var_type_map.count(var_name) && !arg_node->arg()->type) {
-        arg_node->arg()->type = var_type_map[var_name];
-      }
-
-      if (is_weight(var_name)) arg_node->AsArg().is_weight = true;
-      NNADAPTER_CHECK(arg_node->IsRoleSet());
+      arg_node->AsOperand(output_operand);
+      arg_update_node_map[output_operand] = arg_node;
+      NNADAPTER_CHECK(arg_node->IsOperand());
       DirectedLink(op_node, arg_node);
     }
-    NNADAPTER_CHECK(NNADAPTER_CHECKLinksRoleSet());
+    NNADAPTER_CHECK(CheckLinksRoleSet());
   }
-
-  NNADAPTER_CHECK(NNADAPTER_CHECKNodesRoleSet());
-  NNADAPTER_CHECKValid();
+  NNADAPTER_CHECK(CheckNodesRoleSet());
+  CheckValid();
 }
 
 void Graph::RemoveNode(const Node *node) {
@@ -223,7 +191,6 @@ void Graph::RemoveNode(const Node *node) {
 
 void Graph::CloneFrom(const Graph &from) {
   node_storage_.clear();
-  arguments_.clear();
 
   std::map<const Node *, Node *> clone_node_map;
   for (const auto &node : from.node_storage_) {
@@ -253,13 +220,7 @@ void Graph::CloneFrom(const Graph &from) {
     }
   }
 
-  NNADAPTER_CHECKValid();
-}
-
-Node *Graph::Argument(const std::string &name) {
-  auto it = arguments_.find(name);
-  NNADAPTER_CHECK(it != arguments_.end()) << "no argument called " << name;
-  return it->second;
+  CheckValid();
 }
 
 std::vector<Node *> Graph::inputs() {
@@ -280,15 +241,6 @@ std::vector<Node *> Graph::outputs() {
     }
   }
   return res;
-}
-
-Node *Graph::RetrieveArgument(const std::string &arg) {
-  for (auto &node : node_storage_) {
-    if (node.IsOperand() && node.arg()->name == arg) {
-      return &node;
-    }
-  }
-  return nullptr;
 }
 
 bool Graph::CheckNodesRoleSet() {
@@ -314,10 +266,10 @@ bool Graph::CheckLinksRoleSet() {
   return true;
 }
 
-Node *Graph::NewArgumentNode(const std::string &name) {
+Node *Graph::NewArgumentNode() {
   node_storage_.emplace_back();
   auto &arg_node = node_storage_.back();
-  arg_node.AsArg(name, node_storage_.size() - 1);
+  arg_node.AsOperand();
   return &arg_node;
 }
 

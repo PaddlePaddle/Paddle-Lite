@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,22 +54,18 @@ class Graph {
   const std::list<Node> &nodes() const { return node_storage_; }
   std::list<Node> &mutable_nodes() { return node_storage_; }
 
-  Node *RetrieveArgument(const std::string &arg);
-
-  Node *NewArgumentNode(const std::string &name);
+  Node *NewArgumentNode();
   Node *NewInstructNode();
 
   void CheckValid() {
-    CHECK(CheckBidirectionalConnection());
-    CHECK(CheckNodesRoleSet());
-    CHECK(CheckLinksRoleSet());
+    NNADAPTER_CHECK(CheckBidirectionalConnection());
+    NNADAPTER_CHECK(CheckNodesRoleSet());
+    NNADAPTER_CHECK(CheckLinksRoleSet());
   }
 
-  Node *GraphCreateInstructNode(const std::shared_ptr<OpLite> &op,
-                                const std::vector<Place> &valid_places);
+  Node *GraphCreateInstructNode(const core::Operation &op);
 
  private:
-  Node *Argument(const std::string &name);
   // Check the bidirectional connection.
   bool CheckBidirectionalConnection();
   bool CheckNodesRoleSet();
@@ -89,7 +85,6 @@ class Graph {
 
  private:
   std::list<Node> node_storage_;
-  std::map<std::string, Node *> arguments_;
 };
 
 // Remove the link between a -> b.
