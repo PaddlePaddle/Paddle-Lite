@@ -25,8 +25,8 @@
 #include <vector>
 #ifdef __ANDROID__
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
-#endif
 #include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
+#endif
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
@@ -114,11 +114,11 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
 void Run(const std::string& model_file,
          const std::vector<std::vector<int64_t>>& input_shapes) {
   lite::Timer timer;
-  profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
-  float init_memory_usage = 0;
   PerfData perf_data;
   perf_data.init(FLAGS_repeats);
 #ifdef __ANDROID__
+  profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
+  float init_memory_usage = 0;
   std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
 #endif
   std::map<std::string, std::string> config;
@@ -313,7 +313,7 @@ void Run(const std::string& model_file,
   if (FLAGS_enable_memory_profile) {
     ss << "\nMemory Usage(unit: MB):\n";
     ss << "init  = " << std::setw(12) << init_memory_usage / 1024 << std::endl;
-    ss << "peak   = " << std::setw(12)
+    ss << "peak  = " << std::setw(12)
        << resource_monter.GetPeakMemUsageInKB() / 1024 << std::endl;
   }
   if (FLAGS_enable_memory_profile) resource_monter.Stop();
