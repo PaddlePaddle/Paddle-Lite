@@ -34,23 +34,6 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-// Malloc gpu memory according to max dims
-static void SetMaxDims(const NNAdapterOperandType& type, Tensor* tensor) {
-  // Get max dims
-  std::vector<int> shape;
-  auto& dims = type.dimensions;
-  if (dims.dynamic_count == 0) {
-    shape = std::vector<int>(dims.data, dims.data + dims.count);
-  } else {
-    NNADAPTER_CHECK_EQ(dims.dynamic_count, 3U);
-    shape = std::vector<int>(dims.dynamic_data[2],
-                             dims.dynamic_data[2] + dims.count);
-  }
-  // Set tensor
-  tensor->SetDateType(ConvertToNVDataType(type.precision));
-  tensor->Resize(shape);
-}
-
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
@@ -311,11 +294,22 @@ int TensorrtProgram::BuildFromCache() {
 int TensorrtProgram::Execute(
     std::vector<std::shared_ptr<Tensor>>* input_tensors,
     std::vector<std::shared_ptr<Tensor>>* output_tensors) {
-  // Malloc max output memory
+  // Set input dims
   int input_size = input_types_.size();
+  for (int i = 0; i < input_size; i++) {
+    auto shape = input_tensors->at(i)->Dims();
+    nvinfer1::Dims dims;
+    dims.nbDims = shape.size();
+    memcpy(dims.d, shape.data(), dims.nbDims * sizeof(int32_t));
+    execution_context_->setBindingDimensions(input_indices_.at(i), dims);
+  }
+  NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
+  // Get output dims
   int output_size = output_types_.size();
   for (int i = 0; i < output_size; i++) {
-    SetMaxDims(output_types_.at(i), output_tensors->at(i).get());
+    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
+    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
+    output_tensors->at(i)->Resize(shape);
   }
   // Prepare input/output buffers
   std::vector<void*> device_ptrs(input_size + output_size, nullptr);
@@ -328,23 +322,8 @@ int TensorrtProgram::Execute(
   for (auto ptr : device_ptrs) {
     NNADAPTER_CHECK(ptr);
   }
-  // Set input dims
-  for (int i = 0; i < input_size; i++) {
-    auto shape = input_tensors->at(i)->Dims();
-    nvinfer1::Dims dims;
-    dims.nbDims = shape.size();
-    memcpy(dims.d, shape.data(), dims.nbDims * sizeof(int32_t));
-    execution_context_->setBindingDimensions(input_indices_.at(i), dims);
-  }
-  NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
   // Execute model
   execution_context_->execute(1, device_ptrs.data());
-  // Get output dims
-  for (int i = 0; i < output_size; i++) {
-    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
-    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
-    output_tensors->at(i)->Resize(shape);
-  }
   return NNADAPTER_NO_ERROR;
 }
 
