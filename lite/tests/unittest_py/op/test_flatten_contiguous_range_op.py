@@ -109,7 +109,17 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                start_axis = program_config.ops[0].attrs["start_axis"]
+                if len(in_shape) == 1 or start_axis == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'start_axis == 0' on NvidiaTensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

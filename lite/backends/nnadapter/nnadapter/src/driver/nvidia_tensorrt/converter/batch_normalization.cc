@@ -39,25 +39,8 @@ int ConvertBatchNormalization(Converter* converter,
   NNADAPTER_CHECK(bias_ptr);
   NNADAPTER_CHECK(mean_ptr);
   NNADAPTER_CHECK(var_ptr);
-  // add suffle op
-  auto x_dim = input_operand->type.dimensions;
-  nvinfer1::IShuffleLayer* expand_layer = nullptr;
-  nvinfer1::IShuffleLayer* squeeze_layer = nullptr;
-  if (x_dim.count < 4) {
-    nvinfer1::Dims expand_shape;
-    expand_shape.nbDims = 4;
-    for (int i = 0; i < 4; i++) {
-      if (i < x_dim.count) {
-        expand_shape.d[i] = x_dim.data[i] < 0 ? 0 : x_dim.data[i];
-      } else {
-        expand_shape.d[i] = 1;
-      }
-    }
-    expand_layer = converter->network()->addShuffle(*input_tensor);
-    expand_layer->setReshapeDimensions(expand_shape);
-    input_tensor = expand_layer->getOutput(0);
-  }
   // prepare data
+  auto x_dim = input_operand->type.dimensions;
   NNADAPTER_CHECK_EQ(scale_operand->type.dimensions.data[0], x_dim.data[1]);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0], x_dim.data[1]);
   NNADAPTER_CHECK_EQ(mean_operand->type.dimensions.data[0], x_dim.data[1]);
@@ -84,19 +67,8 @@ int ConvertBatchNormalization(Converter* converter,
                                                 shift_w,
                                                 scale_w,
                                                 power_w,
-                                                1);
+                                                0);
   auto output_tensor = layer->getOutput(0);
-  // add suffle op, recover shape
-  if (x_dim.count < 4) {
-    nvinfer1::Dims squeeze_shape;
-    squeeze_shape.nbDims = x_dim.count;
-    for (int i = 0; i < squeeze_shape.nbDims; i++) {
-      squeeze_shape.d[i] = x_dim.data[i] < 0 ? 0 : x_dim.data[i];
-    }
-    squeeze_layer = converter->network()->addShuffle(*(layer->getOutput(0)));
-    squeeze_layer->setReshapeDimensions(squeeze_shape);
-    output_tensor = squeeze_layer->getOutput(0);
-  }
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

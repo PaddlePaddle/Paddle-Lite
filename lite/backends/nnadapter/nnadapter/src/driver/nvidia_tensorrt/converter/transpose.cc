@@ -22,6 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertTranspose(Converter* converter, core::Operation* operation) {
   TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(perm_data[0], 0);
 
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -29,8 +30,8 @@ int ConvertTranspose(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   nvinfer1::Permutation permutation;
-  for (int i = 0; i < perm_count; i++) {
-    permutation.order[i] = perm_data[i];
+  for (int i = 0; i < perm_count - 1; i++) {
+    permutation.order[i] = perm_data[i + 1] - 1;
   }
   auto transpose_layer = converter->network()->addShuffle(*input_tensor);
   transpose_layer->setFirstTranspose(permutation);

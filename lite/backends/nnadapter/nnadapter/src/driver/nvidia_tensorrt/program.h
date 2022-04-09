@@ -108,6 +108,7 @@ class TensorrtProgram : public ProgramBase {
   std::vector<int> output_indices_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  int max_batch_size_{1};
   bool with_dynamic_shape_{false};
 };
 

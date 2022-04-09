@@ -18,31 +18,29 @@ namespace nnadapter {
 namespace nvidia_tensorrt {
 
 template <typename T>
-__device__ inline T math_exp(T a);
+__device__ inline T MathExp(T a);
 
 template <>
-__device__ inline float math_exp<float>(float a) {
+__device__ inline float MathExp<float>(float a) {
   return expf(a);
 }
 
 template <typename T>
-__global__ void swish_kernel(int num, const T* input, T* output, T beta) {
+__global__ void SwishKernel(int num, const T* input, T* output, T beta) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < num) {
-    output[index] = input[index] /
-                    (static_cast<T>(1.0) + math_exp<T>(-beta * input[index]));
+    output[index] =
+        input[index] / (static_cast<T>(1.0) + MathExp<T>(-beta * input[index]));
   }
 }
 
-int32_t SwishPluginDynamic::enqueue(
-    const nvinfer1::PluginTensorDesc* input_desc,
-    const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
-    void* const* outputs,
-    void* workspace,
-    cudaStream_t stream) noexcept {
-  auto input_dims = input_desc[0].dims;
-  int num = 1;
+int SwishPlugin::enqueue(int batch_size,
+                         const void* const* inputs,
+                         void** outputs,
+                         void* workspace,
+                         cudaStream_t stream) noexcept {
+  auto input_dims = input_dims_[0];
+  int num = batch_size;
   for (int i = 0; i < input_dims.nbDims; i++) {
     num *= input_dims.d[i];
   }
@@ -50,14 +48,13 @@ int32_t SwishPluginDynamic::enqueue(
   int blocks = (num + threads - 1) / threads;
   const float* input = static_cast<const float*>(inputs[0]);
   float* output = static_cast<float*>(outputs[0]);
-  swish_kernel<float><<<blocks, threads, 0, stream>>>(
-      num, input, output, beta_);
+  SwishKernel<float><<<blocks, threads, 0, stream>>>(num, input, output, beta_);
   return 0;
 }
 
-REGISTER_NNADAPTER_TENSORRT_PLUGIN(SwishPluginDynamic,
-                                   SwishPluginDynamicCreator,
-                                   "swish_plugin_dynamic");
+REGISTER_NNADAPTER_TENSORRT_PLUGIN(SwishPlugin,
+                                   SwishPluginCreator,
+                                   "swish_plugin");
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
