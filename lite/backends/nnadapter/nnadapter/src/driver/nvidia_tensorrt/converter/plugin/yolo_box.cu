@@ -296,16 +296,6 @@ nvinfer1::DataType YoloBoxPluginDynamic::getOutputDataType(
   return input_types[0];
 }
 
-bool YoloBoxPluginDynamic::supportsFormatCombination(
-    int32_t pos,
-    const nvinfer1::PluginTensorDesc* in_out,
-    int32_t nb_inputs,
-    int32_t nb_outputs) noexcept {
-  NNADAPTER_CHECK_LT(pos, nb_inputs + nb_outputs);
-  NNADAPTER_CHECK(in_out);
-  return true;
-}
-
 REGISTER_NNADAPTER_TENSORRT_PLUGIN(YoloBoxPluginDynamic,
                                    YoloBoxPluginDynamicCreator,
                                    "yolo_box_plugin_dynamic");
