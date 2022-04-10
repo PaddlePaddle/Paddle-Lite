@@ -64,5 +64,13 @@ cudaError_t YoloBoxHead(const float* input,
                         const float scale_x_y,
                         cudaStream_t stream);
 
+cudaError_t YoloBoxHeadV3(const float* input,
+                          float* output,
+                          const int grid_size,
+                          const int grid_size_y,
+                          const int class_num,
+                          const int anchors_num,
+                          cudaStream_t stream);
+
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
