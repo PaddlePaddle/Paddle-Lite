@@ -25,23 +25,27 @@
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
-#include "utility/utility.h"
-#include "utility/string.h"
 #include "utility/node.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 
 class Graph {
  public:
+  Graph() = default;
+
+  ~Graph();
+
   // @param model: the nnadapter model with operands and operations)
-  void Build(core::Model model);
+  void Build(core::Model *model);
 
   void RemoveNode(const Node *node);
 
   // Clone from another Graph, all Node(s) are duplicated.
   void CloneFrom(const Graph &from);
 
-  std::vector<Node *> StmtTopologicalOrder();
+  std::vector<Node *> OperationTopologicalOrder();
 
   std::vector<Node *> NodeTopologicalOrder();
 
@@ -63,7 +67,7 @@ class Graph {
     NNADAPTER_CHECK(CheckLinksRoleSet());
   }
 
-  Node *GraphCreateInstructNode(const core::Operation &op);
+  Node *GraphCreateInstructNode(core::Operation &op);  // NOLINT
 
  private:
   // Check the bidirectional connection.

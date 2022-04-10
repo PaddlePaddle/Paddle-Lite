@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "optimizer/pattern_matcher.h"
+#include "utility/pattern_matcher.h"
 #include <algorithm>
 #include <array>
 #include <string>
 #include <vector>
-#include "utility/dot.h"
+#include "utility/debug.h"
 
 namespace nnadapter {
 
@@ -120,7 +120,8 @@ bool PatternMatcher::MarkPMNodesInGraph(Graph *graph) {
   // Check to early stop if some PMNode can't find matched Node.
   for (auto &pmnode : pattern_.nodes()) {
     if (!pmnodes2nodes_.count(pmnode.get())) {
-      NNADAPTER_VLOG(4) << pmnode->name() << " can't find matched Node, early stop";
+      NNADAPTER_VLOG(4) << pmnode->name()
+                        << " can't find matched Node, early stop";
       // return false;
     }
   }
@@ -136,7 +137,7 @@ void PatternMatcher::ValidateByNodeRole(
   subgraphs->erase(
       std::remove_if(subgraphs->begin(),
                      subgraphs->end(),
-                     [](const XPUPatternMatcher::subgraph_t &subgraph) -> bool {
+                     [](const PatternMatcher::subgraph_t &subgraph) -> bool {
                        // Collect the inlinks and outlinks.
                        std::set<Node *> ios;
                        for (auto &item : subgraph) {
@@ -224,7 +225,8 @@ std::vector<PatternMatcher::subgraph_t> PatternMatcher::DetectPatterns() {
   // Extend a PMNode to subgraphs by deducing the connection relations defined
   // in edges of PMNodes.
   for (const auto &edge : pattern_.edges()) {
-    NNADAPTER_VLOG(4) << "NNADAPTER_CHECK " << edge.first->name() << " -> " << edge.second->name();
+    NNADAPTER_VLOG(4) << "NNADAPTER_CHECK " << edge.first->name() << " -> "
+                      << edge.second->name();
     // TODO(Superjomn) Fix bug here, the groups might be duplicate here.
     // Each role has two PMNodes, which indicates two roles.
     // Detect two Nodes that can match these two roles and they are connected.
@@ -251,7 +253,8 @@ std::vector<PatternMatcher::subgraph_t> PatternMatcher::DetectPatterns() {
         }
       }
     }
-    NNADAPTER_VLOG(3) << "step " << step << " get records: " << cur_groups.size();
+    NNADAPTER_VLOG(3) << "step " << step
+                      << " get records: " << cur_groups.size();
   }
 
   for (auto &group : bi_records[step % 2]) {
@@ -289,7 +292,7 @@ void PatternMatcher::UniquePatterns(
     std::vector<std::pair<PMNode *, Node *>> sorted_keys(g.begin(), g.end());
     std::stable_sort(
         sorted_keys.begin(), sorted_keys.end(), GraphItemLessThan());
-    STL::stringstream ss;
+    std::stringstream ss;
     for (auto &item : sorted_keys) {
       ss << reinterpret_cast<size_t>(item.first) << ":"
          << reinterpret_cast<size_t>(item.second);
@@ -405,19 +408,19 @@ PMNode *PMNode::assert_is_var() {
 
 PMNode *PMNode::assert_var_not_persistable() {
   assert_is_var();
-  asserts_.emplace_back([](const Node *x) {
-    return !IsConstantOperand(x->operand());
-  });
+  asserts_.emplace_back(
+      [](const Node *x) { return !IsConstantOperand(x->operand()); });
   return this;
 }
 
 PMNode *PMNode::assert_is_persistable_var() {
   assert_is_var();
-  asserts_.emplace_back([=](const Node *x) { return IsConstantOperand(x->operand()) });
+  asserts_.emplace_back(
+      [=](const Node *x) { return IsConstantOperand(x->operand()); });
   return this;
 }
 
-PMNode *PMNode::assert_is_op_output(NNAdapterOperationType &op_type) {
+PMNode *PMNode::assert_is_op_output(NNAdapterOperationType op_type) {
   assert_is_var();
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->inlinks) {
@@ -431,34 +434,28 @@ PMNode *PMNode::assert_is_op_output(NNAdapterOperationType &op_type) {
   return this;
 }
 
-bool IsNthOutput(const Node *var,
-                 const Node *op,
-                 size_t nth) {
+bool IsNthOutput(const Node *var, const Node *op, size_t nth) {
   NNADAPTER_CHECK(var->IsOperand());
   NNADAPTER_CHECK(op->IsOperation());
   auto operation = op->operation();
   auto output_operands = operation->output_operands;
-  if (!output_operands.count(var->operand()) || output_operands.size() <= nth)
+  if (!std::count(
+          output_operands.begin(), output_operands.end(), var->operand()) ||
+      output_operands.size() <= nth)
     return false;
   return var->operand() == output_operands[nth];
 }
 
-bool IsNthInput(const Node *var,
-                const Node *op,
-                size_t nth) {
+bool IsNthInput(const Node *var, const Node *op, size_t nth) {
   NNADAPTER_CHECK(var->IsOperand());
   NNADAPTER_CHECK(op->IsOperation());
-  auto op_info = op->operation();
+  auto operation = op->operation();
   auto input_operands = operation->input_operands;
-  if (!input_operands.count(var->operand()) || input_operands.size() <= nth)
+  if (!std::count(
+          input_operands.begin(), input_operands.end(), var->operand()) ||
+      input_operands.size() <= nth)
     return false;
   return var->operand() == input_operands[nth];
-}
-
-PMNode *PMNode::assert_is_op_input(NNAdapterOperationType op_type) {
-  assert_is_var();
-  assert_is_op_nth_input(op_type, 0);
-  return this;
 }
 
 PMNode *PMNode::assert_is_op_nth_input(NNAdapterOperationType op_type,
@@ -473,12 +470,6 @@ PMNode *PMNode::assert_is_op_nth_input(NNAdapterOperationType op_type,
     }
     return false;
   });
-  return this;
-}
-
-PMNode *PMNode::assert_is_op_output(NNAdapterOperationType op_type) {
-  assert_is_var();
-  assert_is_op_nth_output(op_type, 0);
   return this;
 }
 
@@ -520,8 +511,7 @@ PMNode *PMNode::assert_is_op_input(NNAdapterOperationType op_type) {
 //   return true;
 // }
 
-void GraphSafeRemoveNodes(Graph *graph,
-                          const std::set<const Node *> &nodes) {
+void GraphSafeRemoveNodes(Graph *graph, const std::set<const Node *> &nodes) {
   for (auto *node : nodes) {
     graph->RemoveNode(node);
   }

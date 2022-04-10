@@ -20,6 +20,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
+#include "utility/graph.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -186,7 +187,6 @@ void Program::Clear() {
 
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
-
   // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
   if (!cache->buffer.empty()) {
     input_types_ = cache->input_types;
@@ -230,6 +230,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseMatMulAddIntoFullyConnected(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
+    std::unique_ptr<Graph> graph;
+    graph.reset(new Graph);
+    graph->Build(model);
+    NNADAPTER_VLOG(5) << "graph:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);
     NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);

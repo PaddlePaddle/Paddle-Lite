@@ -122,7 +122,7 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
     pool2d_operation_type = NNADAPTER_ADAPTIVE_MAX_POOL_2D;
     input_operands.push_back(return_indices_operand);
     input_operands.push_back(return_indices_type_operand);
-    output_operands.push_back(nullptr);
+    // output_operands.push_back(nullptr);
   } else if (pooling_type == "avg") {
     pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;
     input_operands.insert(input_operands.begin() + 6,
@@ -132,7 +132,7 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
     input_operands.insert(input_operands.begin() + 6, return_indices_operand);
     input_operands.insert(input_operands.begin() + 7,
                           return_indices_type_operand);
-    output_operands.push_back(nullptr);
+    // output_operands.push_back(nullptr);
   } else {
     LOG(FATAL) << "Unsupported pooling type: " << pooling_type;
     return UNSUPPORTED_FEATURE;

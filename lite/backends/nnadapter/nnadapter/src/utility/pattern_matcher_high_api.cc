@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "optimizer/pattern_matcher_high_api.h"
+#include "utility/pattern_matcher_high_api.h"
 #include "utility/logging.h"
+
 namespace nnadapter {
 
-void FuseBase::PerformPatternMatcher(SSAGraph *graph) {
+void FuseBase::PerformPatternMatcher(Graph *graph) {
   NNADAPTER_VLOG(4) << "\n" << matcher_.pattern().DotString();
   // Get subgraphs and record the mir::Node pointers for each PMNode.
-  auto handler = [&](const PatternMatcher::subgraph_t &subgraph, SSAGraph *g) {
+  auto handler = [&](const PatternMatcher::subgraph_t &subgraph, Graph *g) {
     // get all the reigistered nodes.
     key2nodes_.emplace_back();
     for (auto &item : nodes_) {
@@ -30,7 +31,7 @@ void FuseBase::PerformPatternMatcher(SSAGraph *graph) {
   matcher_(graph, handler);
 }
 
-void FuseBase::DeleteInterNodes(SSAGraph *graph) {
+void FuseBase::DeleteInterNodes(Graph *graph) {
   std::set<std::string> keys;
   for (auto &node : nodes_) {
     if (node.second->IsIntermediate()) {
@@ -61,7 +62,8 @@ PMNode *FuseBase::GetOrCreateNode(const std::string &key) {
   return it->second;
 }
 
-PMNode *FuseBase::OpNode(const std::string &key, const std::string &op_type) {
+PMNode *FuseBase::OpNode(const std::string &key,
+                         NNAdapterOperationType op_type) {
   GetOrCreateNode(key)->set_op_type(op_type);
   GetOrCreateNode(key)->AsOp(op_type);
   return GetOrCreateNode(key);

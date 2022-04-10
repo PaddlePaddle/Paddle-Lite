@@ -13,14 +13,21 @@
 // limitations under the License.
 
 #pragma once
+
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/optimizer/mir/node.h"
-#include "lite/core/optimizer/mir/pattern_matcher.h"
-#include "lite/core/optimizer/mir/ssa_graph.h"
+#include "utility/debug.h"
+#include "utility/graph.h"
+#include "utility/logging.h"
+#include "utility/micros.h"
+#include "utility/modeling.h"
+#include "utility/node.h"
+#include "utility/pattern_matcher.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 
@@ -31,7 +38,7 @@ class FuseBase {
   virtual ~FuseBase() = default;
 
   // Returns number of matched subgraphs
-  size_t operator()(SSAGraph* graph) {
+  size_t operator()(Graph* graph) {
     BuildPattern();
     PerformPatternMatcher(graph);
 
@@ -47,25 +54,25 @@ class FuseBase {
   virtual void BuildPattern() = 0;
 
   // Generate an operator desc with a matched subgraph.
-  virtual cpp::OpDesc GenOpDesc(const key2nodes_t& matched) {
-    return cpp::OpDesc();
-  }
+  // virtual cpp::OpDesc GenOpDesc(const key2nodes_t& matched) {
+  //   return cpp::OpDesc();
+  // }
 
   PMNode* OpNode(const std::string& key) {
     return GetOrCreateNode(key)->assert_is_op();
   }
 
-  PMNode* OpNode(const std::string& key, const std::string& op_type);
+  PMNode* OpNode(const std::string& key, NNAdapterOperationType op_type);
 
   PMNode* VarNode(const std::string& key);
 
  protected:
-  virtual void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) = 0;
+  virtual void InsertNewNode(Graph* graph, const key2nodes_t& matched) = 0;
 
-  void PerformPatternMatcher(SSAGraph* graph);
+  void PerformPatternMatcher(Graph* graph);
 
   // Delete nodes that are marked as Intermediate
-  void DeleteInterNodes(SSAGraph* graph);
+  void DeleteInterNodes(Graph* graph);
 
   PMNode* GetOrCreateNode(const std::string& key);
 

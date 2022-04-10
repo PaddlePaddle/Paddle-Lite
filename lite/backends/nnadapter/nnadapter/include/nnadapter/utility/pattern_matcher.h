@@ -14,27 +14,29 @@
 
 #pragma once
 
-#ifdef PADDLE_WITH_TESTING
+// #ifdef PADDLE_WITH_TESTING
 #include <gtest/gtest_prod.h>
-#endif
+// #endif
 
+#include <functional>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <numeric>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 #include "core/types.h"
 #include "utility/debug.h"
+#include "utility/graph.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
-#include "utility/utility.h"
-#include "utility/string.h"
 #include "utility/node.h"
-#include "utility/graph.h"
-#include "utility/replace_stl/stream.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 
@@ -133,11 +135,10 @@ struct PMNode {
   PMNode* assert_only_one_output();
   PMNode* assert_is_op_output(NNAdapterOperationType op_type);
   PMNode* assert_is_op_input(NNAdapterOperationType op_type);
-  PMNode* assert_is_op_input(NNAdapterOperationType op_type);
-  PMNode* assert_is_op_output(NNAdapterOperationType op_type);
   PMNode* assert_is_op_nth_input(NNAdapterOperationType op_type, int nth);
   PMNode* assert_is_op_nth_output(NNAdapterOperationType op_type, int nth);
-  PMNode* assert_node_satisfied(const std::function<bool(const Node*)>& condition) {
+  PMNode* assert_node_satisfied(
+      const std::function<bool(const Node*)>& condition) {
     asserts_.push_back(condition);
     return this;
   }
@@ -155,7 +156,7 @@ struct PMNode {
         pattern_(pattern),
         name_(name),
         type_(type) {
-    CHECK(teller_ != nullptr) << "invalid teller functer is set.";
+    NNADAPTER_CHECK(teller_ != nullptr) << "invalid teller functer is set.";
   }
 
   PMNode(PMNode&& other) = default;
@@ -212,20 +213,18 @@ class PMPattern {
   }
   PMNode* RetrieveNode(const std::string& id) const;
 
-  const std::vector<std::unique_ptr<PMNode> >& nodes() const { return nodes_; }
+  const std::vector<std::unique_ptr<PMNode>>& nodes() const { return nodes_; }
   const std::vector<edge_t>& edges() const { return edges_; }
 
   std::string DotString() const;
 
  private:
-#ifdef PADDLE_WITH_TESTING
   FRIEND_TEST(PMPattern, AddEdge);
   FRIEND_TEST(PMPattern, NewNode);
-#endif
 
   static std::string NewID() { return string_format("pmnode-%d", id_++); }
 
-  std::vector<std::unique_ptr<PMNode> > nodes_;
+  std::vector<std::unique_ptr<PMNode>> nodes_;
   std::vector<edge_t> edges_;
   std::map<std::string, PMNode*> node_map_;
   static size_t id_;
@@ -288,23 +287,19 @@ class PatternMatcher {
   // Validate whether the intermediate nodes are linked by external nodes.
   void ValidateByNodeRole(std::vector<subgraph_t>* subgraphs);
 
-#ifdef PADDLE_WITH_TESTING
   FRIEND_TEST(PatternMatcher, MarkPMNodesInGraph);
   FRIEND_TEST(PatternMatcher, DetectPatterns);
-#endif
 
  private:
   using hit_rcd_t =
       std::pair<Node* /*node in graph*/, PMNode* /*node in pattern*/>;
   PMPattern pattern_;
-  std::map<const PMNode*, std::set<Node*> > pmnodes2nodes_;
-  std::vector<std::vector<Node*> > extra_input_vars_;
+  std::map<const PMNode*, std::set<Node*>> pmnodes2nodes_;
+  std::vector<std::vector<Node*>> extra_input_vars_;
 };
 
 // Check whether a var node is a op node's nth input.
-bool IsNthInput(const Node& var,
-                const Node& op,
-                int nth);
+bool IsNthInput(const Node& var, const Node& op, int nth);
 
 // Check whether the op node has input of given name.
 // bool HasInput(const Node& op, const std::string& argument);
@@ -335,7 +330,7 @@ static std::string PMNodeName(const std::string& name_scope,
                               const std::string& repr,
                               size_t id,
                               const std::string& name) {
-  STL::stringstream ss;
+  std::stringstream ss;
   ss << name_scope << "/" << repr << "/" << id << "/" << name;
   return ss.str();
 }
@@ -343,7 +338,7 @@ static std::string PMNodeName(const std::string& name_scope,
 // The format is {name_scope}/{repr}/{id}
 static std::string PMNodeName(const std::string& name_scope,
                               const std::string& repr) {
-  STL::stringstream ss;
+  std::stringstream ss;
   ss << name_scope << "/" << repr << "/"
      << KeyCounter::Instance().IncCounter(repr);
   return ss.str();
@@ -352,7 +347,7 @@ static std::string PMNodeName(const std::string& name_scope,
 // name.
 // The format is {repr}/{id}
 static std::string UniqueKey(const std::string& repr) {
-  STL::stringstream ss;
+  std::stringstream ss;
   ss << repr << "/" << KeyCounter::Instance().IncCounter(repr);
   return ss.str();
 }
@@ -371,10 +366,10 @@ static std::string UniqueKey(const std::string& repr) {
 // arg: the argument declared by PATTERN_DECL_NODE in a pattern definition.
 // pat: the pattern object.
 #define GET_IR_NODE_FROM_SUBGRAPH(var, arg, pat)        \
-  CHECK(subgraph.count(pat.arg##_n()))                  \
+  NNADAPTER_CHECK(subgraph.count(pat.arg##_n()))        \
       << "Node not found for PMNode " pat.arg##_repr(); \
   Node* var = subgraph.at(pat.arg##_n());               \
-  CHECK(var) << "node " << #arg << "not exists in the sub-graph"
+  NNADAPTER_CHECK(var) << "node " << #arg << "not exists in the sub-graph"
 
 // The base class of all the patterns.
 struct PatternBase {

@@ -21,18 +21,25 @@
 
 namespace nnadapter {
 
+Graph::~Graph() { node_storage_.clear(); }
+
 bool Graph::CheckBidirectionalConnection() {
   NNADAPTER_VLOG(5) << "node count " << node_storage_.size();
   for (auto &node : node_storage_) {
-    if (node.IsOperation()) NNADAPTER_VLOG(5) << "Operation " << OperationIdToString(node.AsOperation());
-    if (node.IsOperand()) NNADAPTER_VLOG(5) << "Operand " << OperandIdToString(node.AsOperand());
+    if (node.IsOperation())
+      NNADAPTER_VLOG(5) << "Operation "
+                        << OperationIdToString(&node.AsOperation());
+    if (node.IsOperand())
+      NNADAPTER_VLOG(5) << "Operand " << OperandIdToString(&node.AsOperand());
     for (auto *in : node.inlinks) {
-      NNADAPTER_CHECK(in->outlinks.end() !=
-            std::find(in->outlinks.begin(), in->outlinks.end(), &node));
+      NNADAPTER_CHECK(in->outlinks.end() != std::find(in->outlinks.begin(),
+                                                      in->outlinks.end(),
+                                                      &node));
     }
     for (auto *out : node.outlinks) {
-      NNADAPTER_CHECK(out->inlinks.end() !=
-            std::find(out->inlinks.begin(), out->inlinks.end(), &node));
+      NNADAPTER_CHECK(out->inlinks.end() != std::find(out->inlinks.begin(),
+                                                      out->inlinks.end(),
+                                                      &node));
     }
   }
   return true;
@@ -53,10 +60,9 @@ std::map<Node *, std::set<Node *>> Graph::BuildOperationAdjList() {
         nodes.push_back(adj_n);
       }
     }
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](Node *node1, Node *node2) {
-          return node1 > node2;
-        });
+    std::stable_sort(nodes.begin(), nodes.end(), [](Node *node1, Node *node2) {
+      return node1 > node2;
+    });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
@@ -74,21 +80,19 @@ std::map<Node *, std::set<Node *>> Graph::BuildNodeAdjList() {
     for (auto &var : n.inlinks) {
       nodes.push_back(var);
     }
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](Node *node1, Node *node2) {
-          return node1 > node2;
-        });
+    std::stable_sort(nodes.begin(), nodes.end(), [](Node *node1, Node *node2) {
+      return node1 > node2;
+    });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
   return adj_list;
 }
 
-void Graph::SortHelper(
-    const std::map<Node *, std::set<Node *>> &adj_list,
-    Node *node,
-    std::set<Node *> *visited,
-    std::vector<Node *> *ret) {
+void Graph::SortHelper(const std::map<Node *, std::set<Node *>> &adj_list,
+                       Node *node,
+                       std::set<Node *> *visited,
+                       std::vector<Node *> *ret) {
   visited->insert(node);
 
   for (auto adj : adj_list.at(node)) {
@@ -136,45 +140,75 @@ std::vector<Node *> Graph::NodeTopologicalOrder() {
   return res;
 }
 
-Node *Graph::GraphCreateInstructNode(const core::Operation &op) {
+Node *Graph::GraphCreateInstructNode(core::Operation &op) {
   node_storage_.emplace_back();
+  NNADAPTER_LOG(INFO) << "1111111111111";
   auto &new_node = node_storage_.back();
+  NNADAPTER_LOG(INFO) << "1111111111111";
   node_storage_.back().AsOperation(op);
+  NNADAPTER_LOG(INFO) << "1111111111111";
 
   NNADAPTER_CHECK(new_node.inlinks.empty()) << "duplicate Build found";
   NNADAPTER_CHECK(new_node.outlinks.empty()) << "duplicate Build found";
   return &node_storage_.back();
 }
 
-void Graph::Build(const core::Model) {
+void Graph::Build(core::Model *model) {
   NNADAPTER_CHECK(node_storage_.empty());
   auto operations = SortOperationsInTopologicalOrder(model);
-  std::map<core::Operand, Node* > arg_update_node_map;
-  for (auto* operation : operations) { 
-    auto *op_node = GraphCreateInstructNode(operation);
-    std::vector<core::Operand*> input_operands = operation->input_operands;
-    std::vector<core::Operand*> output_operands = operation->output_operands;
-    for (auto input_operand : input_operands) {
+  NNADAPTER_LOG(INFO) << "finish SortOperationsInTopologicalOrder";
+  std::map<core::Operand *, Node *> arg_update_node_map;
+  for (auto *operation : operations) {
+    NNADAPTER_LOG(INFO) << "start operation: "
+                        << OperationTypeToString(operation->type);
+    auto *op_node = GraphCreateInstructNode(*operation);
+    NNADAPTER_LOG(INFO) << "1111111111111";
+    std::vector<core::Operand *> input_operands = operation->input_operands;
+    std::vector<core::Operand *> output_operands = operation->output_operands;
+    NNADAPTER_LOG(INFO) << "input_operands size" << input_operands.size();
+    NNADAPTER_LOG(INFO) << "output_operands size" << output_operands.size();
+    NNADAPTER_LOG(INFO) << "22222222";
+    for (auto *input_operand : input_operands) {
       Node *arg_node = nullptr;
+      NNADAPTER_LOG(INFO) << "22222111111";
       if (arg_update_node_map.count(input_operand)) {
+        NNADAPTER_LOG(INFO) << "22222111111";
         arg_node = arg_update_node_map.at(input_operand);
+        NNADAPTER_LOG(INFO) << "22222111111";
       } else {
+        NNADAPTER_LOG(INFO) << "22222111111";
         node_storage_.emplace_back();
+        NNADAPTER_LOG(INFO) << "22222111111";
         arg_node = &node_storage_.back();
-        arg_node->AsOperand(input_operand);
+        NNADAPTER_LOG(INFO) << "22222111111";
+        arg_node->AsOperand(*input_operand);
+        NNADAPTER_LOG(INFO) << "22222111111";
         arg_update_node_map[input_operand] = arg_node;
+        NNADAPTER_LOG(INFO) << "22222111111";
       }
+      NNADAPTER_LOG(INFO) << "22222111111";
       NNADAPTER_CHECK(arg_node->IsOperand());
+      NNADAPTER_LOG(INFO) << "22222111111";
       DirectedLink(arg_node, op_node);
+      NNADAPTER_LOG(INFO) << "22222111111";
     }
-    for (auto output_operand : output_operands) {
+    NNADAPTER_LOG(INFO) << "3333333333";
+    for (auto *output_operand : output_operands) {
+      NNADAPTER_LOG(INFO) << "33333311111";
       node_storage_.emplace_back();
+      NNADAPTER_LOG(INFO) << "33333311111";
       auto *arg_node = &node_storage_.back();
-      arg_node->AsOperand(output_operand);
+      NNADAPTER_LOG(INFO) << "33333311111";
+      arg_node->AsOperand(*output_operand);
+      NNADAPTER_LOG(INFO) << "33333311111";
       arg_update_node_map[output_operand] = arg_node;
+      NNADAPTER_LOG(INFO) << "33333311111";
       NNADAPTER_CHECK(arg_node->IsOperand());
+      NNADAPTER_LOG(INFO) << "33333311111";
       DirectedLink(op_node, arg_node);
+      NNADAPTER_LOG(INFO) << "33333311111";
     }
+    NNADAPTER_LOG(INFO) << "4444444444";
     NNADAPTER_CHECK(CheckLinksRoleSet());
   }
   NNADAPTER_CHECK(CheckNodesRoleSet());
@@ -197,13 +231,13 @@ void Graph::CloneFrom(const Graph &from) {
     if (node.IsOperand()) {
       node_storage_.emplace_back();
       auto &new_node = node_storage_.back();
-      new_node.AsOperand() = node.operand();
+      new_node.AsOperand(*node.operand());
       clone_node_map.emplace(&node, &new_node);
     } else {
-      const auto *operation = node.operation();
-      auto *new_node = GraphCreateInstructNode(operation);
+      auto *operation = node.operation();
+      auto *new_node = GraphCreateInstructNode(*operation);
       clone_node_map.emplace(&node, new_node);
-    } 
+    }
   }
 
   // Rebuild node inlinks/outlinks

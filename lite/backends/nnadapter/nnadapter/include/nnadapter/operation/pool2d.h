@@ -30,7 +30,7 @@ namespace operation {
     NNADAPTER_CHECK_EQ(output_count, 1);                                       \
   } else if (operation_type == NNADAPTER_MAX_POOL_2D) {                        \
     NNADAPTER_CHECK_EQ(input_count, 9);                                        \
-    NNADAPTER_CHECK_EQ(output_count, 2);                                       \
+    NNADAPTER_CHECK_EQ(output_count, 1);                                       \
   } else {                                                                     \
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "              \
                          << OperationTypeToString(operation->type)             \

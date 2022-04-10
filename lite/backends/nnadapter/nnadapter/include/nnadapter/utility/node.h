@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include "core/types.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -56,31 +57,31 @@ class Node {
     }
     if (other.IsOperation()) {
       auto& operation = other.AsOperation();
-      os << "Operation " << OperationIdToString(operation);
+      os << "Operation " << OperationIdToString(&operation);
     }
     if (other.IsOperand()) {
       auto& operand = other.AsOperand();
-      os << "Operand " << OperandIdToString(operand);
+      os << "Operand " << OperandIdToString(&operand);
     }
     return os;
   }
 
-  NNAdapterOperandType type;
-  void* buffer;
-  uint32_t length;
-  Hint hints[NNADAPTER_MAX_SIZE_OF_HINTS];
-
-  core::Operand& AsOperand(const core::Operand& var) {
+  core::Operand& AsOperand(core::Operand& var) {  // NOLINT
+    NNADAPTER_LOG(INFO) << "55555555";
     auto& operand = AsOperand();
-    CopyOperand(operand, var);
+    NNADAPTER_LOG(INFO) << "55555555";
+    NNADAPTER_LOG(INFO) << "before: " << OperandToString(&var);
+    CopyOperand(&operand, &var);
+    NNADAPTER_LOG(INFO) << "after: " << OperandToString(&operand);
+    NNADAPTER_LOG(INFO) << "55555555";
     return operand;
   }
 
-  core::Operation& AsOperation(const core::Operation& op) {
+  core::Operation& AsOperation(core::Operation& op) {  // NOLINT
     auto& operation = AsOperation();
-    operation.type = op_type.type;
-    operation.input_operands = op_type.input_operands;
-    operation.output_operands = op_type.output_operands;
+    operation.type = op.type;
+    operation.input_operands = op.input_operands;
+    operation.output_operands = op.output_operands;
     return operation;
   }
 
@@ -91,6 +92,8 @@ class Node {
       return *operand_;
     }
     role_ = Role::kOperand;
+    // core::Operand operand;
+    // memset(&operand, 0, sizeof(core::Operand));
     operand_.reset(new core::Operand);
     return *operand_;
   }
@@ -101,6 +104,8 @@ class Node {
       return *operation_;
     }
     role_ = Role::kOperation;
+    // core::Operation operation;
+    // memset(&operation.type, 0, sizeof(NNAdapterOperationType));
     operation_.reset(new core::Operation);
     return *operation_;
   }
