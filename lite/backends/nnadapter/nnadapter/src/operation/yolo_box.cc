@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,6 +67,5 @@ NNADAPTER_EXPORT int PrepareYoloBox(core::Operation* operation) {
 NNADAPTER_EXPORT int ExecuteYoloBox(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
-
 }  // namespace operation
 }  // namespace nnadapter

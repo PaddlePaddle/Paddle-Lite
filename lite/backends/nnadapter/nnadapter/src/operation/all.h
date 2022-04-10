@@ -246,5 +246,9 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ExecuteUnsqueeze)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
+REGISTER_OPERATION(MULTICLASS_NMS3,
+                   ValidateMulticlassNMS,
+                   PrepareMulticlassNMS,
+                   ExecuteMulticlassNMS)
 
 #endif  // NOLINT

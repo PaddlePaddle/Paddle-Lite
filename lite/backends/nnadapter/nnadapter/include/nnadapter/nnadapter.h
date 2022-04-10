@@ -2012,6 +2012,85 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+  /**
+   * Multi-class non maximum suppression (NMS) on a batched of boxes and scores.
+   * In the NMS step, this operator greedily selects a subset of detection
+   * bounding boxes that have high scores larger
+   * than score_threshold, if providing this threshold, then selects the largest
+   * nms_top_k confidences scores
+   * if nms_top_k is larger than -1. Then this operator pruns away boxes that
+   * have high IOU (intersection over union)
+   * overlap with already selected boxes by adaptive threshold NMS based on
+   * parameters of nms_threshold and nms_eta.
+   * Aftern NMS step, at most keep_top_k number of total bboxes are to be kept
+   * per image if keep_top_k is larger than -1.
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/fluid/layers/multiclass_nms_cn.html
+   *
+   * Inputs:
+   * * 0: bboxes, a NNADAPTER_FLOAT32 tensor.
+   * * Two types of bboxes are supported:
+   *     1. A 3-D Tensor with shape [N, M, 4/8/16/24/32] represents
+   * the predicted
+   *        locations of M bounding bboxes, N is the batch size. 
+   *        Each bounding box has four coordinate values and the layout
+   * is [xmin,
+   *        ymin, xmax, ymax], when box size equals to 4.
+   *     2. A 3-D Tensor with shape [M, C, 4]. M is the number of bounding
+   * boxes,
+   *        C is the class number
+   * * 1: scores,scores, a NNADAPTER_FLOAT32 tensor.
+   *      Two types of scores are supported:
+   *        1. A 3-D Tensor with shape [N, C, M] represents the predicted
+   * confidence
+   *           predictions. N is the batch size, C is the class number, M is
+   * number of
+   *           bounding boxes.
+   *           For each category there are total M scores which corresponding M
+   *           bounding boxes. In this case, input bboxes should be the first
+   * case with
+   *           shape [N, M, 4/8/16/24/32].
+   *        2. A 2-D LoDTensor with shape [M, C]. M is the number of bbox, C is
+   * the
+   *           class number. In this case, input bboxes should be the second
+   * case with
+   *           shape [M, C, 4].
+   * * 2: rois_num(optional), a NNADAPTER_INT32 tensor with shape [B], B is the
+   *      number of images. rois_nums exist only if bboxes and scores is in the
+   *      second case.
+   * * 3: background_label, a NNADAPTER_INT32 tensor with shape [1], the index
+   *      of background label. If set to 0, the background label will be
+   * ignored.
+   *      If set to -1, then all categories will be considered.
+   * * 4: score_threshold, a NNADAPTER_FLOAT32 tensor with shape [1], threshold
+   *      to filter out bounding boxes with low confidence score.
+   * * 5: nms_top_k, a NNADAPTER_INT32 tensor with shape [1], maximum number of
+   *      detections to be kept according to the confidences after the filtering
+   *      detections based on score_threshold.
+   * * 6: nms_threshold, a NNADAPTER_FLOAT32 tensor with shape [1], the
+   *      parameter for NMS.
+   * * 7: nms_eta, a NNADAPTER_FLOAT32 tensor with shape [1], the parameter for
+   *      adaptive NMS.
+   * * 8: keep_top_k, a NNADAPTER_INT32 tensor with shape [1], number of total
+   *      bboxes to be kept per image after NMS step. "-1" means keeping all
+   * bboxes
+   *      after NMS step.
+   * * 9: normalized, a NNADAPTER_BOOL8 tensor with shape [1], whether
+   *      detections are normalized.
+   * * 10: return_index,  a NNADAPTER_BOOL8 tensor with shape [1], whether to
+   *       return index of RoIs.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as bboxes, with shape [No, 6].
+   *      "No" is the number of all RoIs. Each row has 6 values: [label,
+   * confidence,
+   *      xmin, ymin, xmax, ymax]
+   * * 1: out_rois_num, a NNADAPTER_INT32 tensor with shape [B], B is the number
+   *      of images. The number of NMS RoIs in each image.
+   * * 2: index, a NNADAPTER_INT32 tensor with shape [No] represents the index
+   *      of selected bbox. The index is the absolute index cross batches. It is
+   *      valid only if "return_index" is true.
+   */
+  NNADAPTER_MULTICLASS_NMS3,
 
   /**
    * Generate YOLO detection boxes from output of YOLOv3 network.
@@ -2019,24 +2098,27 @@ typedef enum {
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32 tensor. a 4-D tensor with shape of [N, C,
-   * H, W]. The dimension(C) stores "box locations, confidence score and
-   * classification one-hot keys of each anchor box. Generally, X should be the
-   * output of YOLOv3 network.
+   *      H, W]. The dimension(C) stores "box locations, confidence score and
+   *      classification one-hot keys of each anchor box. Generally, X should be
+   * the
+   *      output of YOLOv3 network.
    * * 1: input1, imgsize, a NNADAPTER_INT32 tensor. a 2-D tensor with shape of
-   * [N, 2]. This tensor holds height and width of each input image used for
-   * resizing output box in input image scale.
+   *      [N, 2]. This tensor holds height and width of each input image used
+   * for
+   *      resizing output box in input image scale.
    * * 2: anchors, vector of NNADAPTER_INT32 scalar, the anchor width and
-   * height, it will be parsed pair by pair.
+   *      height, it will be parsed pair by pair.
    * * 3: class_num, a NNADAPTER_INT32 scalar, number of classes to predict.
    * * 4: conf_thresh, a NNADAPTER_FLOAT32 scalar, the confidence scores
-   * threshold of detection boxes, boxes with confidence scores under threshold
-   * should be ignored.
+   *      threshold of detection boxes, boxes with confidence scores under
+   * threshold
+   *      should be ignored.
    * * 5: downsample_ratio, a NNADAPTER_INT32 scalar, down-sampling rate from
-   * network input to this operation input.
+   *      network input to this operation input.
    * * 6: clip_bbox, a NNADAPTER_BOOL8 scalar, whether clip output bonding box
-   * in input(imgsize), default true.
+   *      in input(imgsize), default true.
    * * 7: scale_x_y, a NNADAPTER_FLOAT32 scalar, scale the center point of
-   * decoded bounding box, default 1.0.
+   *      decoded bounding box, default 1.0.
    * * 8: iou_aware, a NNADAPTER_BOOL8 scalar, whether use iou aware, default
    * false.
    * * 9: iou_aware_factor, a NNADAPTER_FLOAT32 scalar, iou aware factor,
@@ -2044,10 +2126,11 @@ typedef enum {
    *
    * Outputs:
    * * 0: boxes, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
-   * 4], N is the batch num, M is output box number, and the 3rd stores [xmin,
-   * ymin, xmax, ymax] coordinates of boxes.
+   * 4],
+   *      N is the batch num, M is output box number, and the 3rd stores [xmin,
+   *      ymin, xmax, ymax] coordinates of boxes.
    * * 1: scores, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
-   * class_num], N is the batch num, M is output box number.
+   *      class_num], N is the batch num, M is output box number.
    *
    * Available since version 1.
    */
