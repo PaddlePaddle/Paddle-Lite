@@ -40,7 +40,7 @@ class SparseConvOp : public OpLite {
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
-    auto filter_dims = param_.filter->dims();
+    auto filter_dims = param_.oc_nonzeros->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
     ch->input_shape = ch->DimToStr(input_dims);
@@ -59,10 +59,6 @@ class SparseConvOp : public OpLite {
     ch->macs = 2.f *
                output_dims.production() * input_dims[1] / param_.groups;
 
-    if (!param_.fuse_elementwise_op_type.empty()) {
-      ch->remark += param_.fuse_elementwise_op_type;
-      ch->macs += 1.0f * output_dims.production();
-    }
   }
 #endif
 
