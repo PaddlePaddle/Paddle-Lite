@@ -451,6 +451,9 @@ bool IsNthInput(const Node *var, const Node *op, size_t nth) {
   NNADAPTER_CHECK(op->IsOperation());
   auto operation = op->operation();
   auto input_operands = operation->input_operands;
+  NNADAPTER_LOG(INFO) << "var->operand():" << OperandToString(var->operand());
+  NNADAPTER_LOG(INFO) << "input_operands[nth]:"
+                      << OperandToString(input_operands[nth]);
   if (!std::count(
           input_operands.begin(), input_operands.end(), var->operand()) ||
       input_operands.size() <= nth)
@@ -464,6 +467,7 @@ PMNode *PMNode::assert_is_op_nth_input(NNAdapterOperationType op_type,
   assert_is_op_input(op_type);
   asserts_.emplace_back([=](const Node *x) {
     for (auto *op : x->outlinks) {
+      NNADAPTER_LOG(INFO) << *op;
       if (op && op->IsOperation() && op->operation()->type == op_type &&
           IsNthInput(x, op, nth))
         return true;

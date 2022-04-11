@@ -19,6 +19,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/test.h"
 #include "utility/debug.h"
 #include "utility/graph.h"
 #include "utility/logging.h"
@@ -227,13 +228,15 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
-    FuseMatMulAddIntoFullyConnected(model);
+    // FuseMatMulAddIntoFullyConnected(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     std::unique_ptr<Graph> graph;
     graph.reset(new Graph);
     graph->Build(model);
-    NNADAPTER_VLOG(5) << "graph:" << std::endl << Visualize(model);
+    TestFuser fuser;
+    fuser(graph.get());
+    return NNADAPTER_NO_ERROR;
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);
     NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);

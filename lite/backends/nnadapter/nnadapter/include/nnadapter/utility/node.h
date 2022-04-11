@@ -42,12 +42,12 @@ class Node {
 
   core::Operation* operation() const {
     NNADAPTER_CHECK(IsOperation());
-    return operation_.get();
+    return operation_;
   }
 
   core::Operand* operand() const {
     NNADAPTER_CHECK(IsOperand());
-    return operand_.get();
+    return operand_;
   }
 
   friend std::ostream& operator<<(std::ostream& os, Node& other) {
@@ -57,32 +57,25 @@ class Node {
     }
     if (other.IsOperation()) {
       auto& operation = other.AsOperation();
-      os << "Operation " << OperationIdToString(&operation);
+      os << "Operation " << OperationTypeToString(operation.type);
     }
     if (other.IsOperand()) {
       auto& operand = other.AsOperand();
-      os << "Operand " << OperandIdToString(&operand);
+      os << "Operand " << OperandToString(&operand);
     }
     return os;
   }
 
   core::Operand& AsOperand(core::Operand& var) {  // NOLINT
-    NNADAPTER_LOG(INFO) << "55555555";
-    auto& operand = AsOperand();
-    NNADAPTER_LOG(INFO) << "55555555";
-    NNADAPTER_LOG(INFO) << "before: " << OperandToString(&var);
-    CopyOperand(&operand, &var);
-    NNADAPTER_LOG(INFO) << "after: " << OperandToString(&operand);
-    NNADAPTER_LOG(INFO) << "55555555";
-    return operand;
+    role_ = Role::kOperand;
+    operand_ = &var;
+    return *operand_;
   }
 
   core::Operation& AsOperation(core::Operation& op) {  // NOLINT
-    auto& operation = AsOperation();
-    operation.type = op.type;
-    operation.input_operands = op.input_operands;
-    operation.output_operands = op.output_operands;
-    return operation;
+    role_ = Role::kOperation;
+    operation_ = &op;
+    return *operation_;
   }
 
   // Set roles.
@@ -92,9 +85,6 @@ class Node {
       return *operand_;
     }
     role_ = Role::kOperand;
-    // core::Operand operand;
-    // memset(&operand, 0, sizeof(core::Operand));
-    operand_.reset(new core::Operand);
     return *operand_;
   }
 
@@ -104,9 +94,6 @@ class Node {
       return *operation_;
     }
     role_ = Role::kOperation;
-    // core::Operation operation;
-    // memset(&operation.type, 0, sizeof(NNAdapterOperationType));
-    operation_.reset(new core::Operation);
     return *operation_;
   }
 
@@ -120,8 +107,8 @@ class Node {
 
  private:
   // Either operation_ or operand_ is used.
-  std::unique_ptr<core::Operation> operation_;
-  std::unique_ptr<core::Operand> operand_;
+  core::Operation* operation_;
+  core::Operand* operand_;
   Role role_{Role::kUnk};
 };
 
