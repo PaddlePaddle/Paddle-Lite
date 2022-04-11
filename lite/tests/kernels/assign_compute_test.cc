@@ -75,6 +75,8 @@ TEST(Assign, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 2e-5;
 #else
   return;
 #endif
