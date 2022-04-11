@@ -179,12 +179,11 @@ void XPUMmdnnSearchAttentionCompute::Run() {
                             batch,
                             mask);
   CHECK_EQ(r, 0);
-  r = xdnn::softmax2d_forward(ctx.GetRawContext(),
+  r = xdnn::softmax<float>(ctx.GetRawContext(),
                               attention_output,
                               seq_softmax_output,
-                              batch * max_seq,
-                              max_seq,
-                              true);
+                              {batch * max_seq, max_seq},
+                              1);
   CHECK_EQ(r, 0);
   r = xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
                                    0,
