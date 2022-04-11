@@ -25,8 +25,8 @@
 #include <vector>
 #ifdef __ANDROID__
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
-#include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
 #endif
+#include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
@@ -116,9 +116,9 @@ void Run(const std::string& model_file,
   lite::Timer timer;
   PerfData perf_data;
   perf_data.init(FLAGS_repeats);
-#ifdef __ANDROID__
   profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
   float init_memory_usage = 0;
+#ifdef __ANDROID__
   std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
 #endif
   std::map<std::string, std::string> config;
