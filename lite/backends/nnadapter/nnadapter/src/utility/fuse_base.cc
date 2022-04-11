@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "utility/pattern_matcher_high_api.h"
+#include "utility/fuse_base.h"
 #include "utility/logging.h"
 
 namespace nnadapter {

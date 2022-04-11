@@ -16,17 +16,16 @@
 
 #include <memory>
 #include <string>
-#include "utility/pattern_matcher_high_api.h"
+#include "utility/fuse_base.h"
 
 namespace nnadapter {
 
-class TestFuser : public FuseBase {
+class MatMulAddFuser : public FuseBase {
  public:
   void BuildPattern() override;
-  void InsertNewNode(Graph* graph, const key2nodes_t& matched) override;
-
- private:
-  // cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  void InsertNewNode(Graph* graph,
+                     core::Model* model,
+                     const key2nodes_t& matched) override;
 };
 
 }  // namespace nnadapter

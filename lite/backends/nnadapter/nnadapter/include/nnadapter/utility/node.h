@@ -102,9 +102,6 @@ class Node {
   bool IsOperation() const { return role_ == Role::kOperation; }
   bool IsOperand() const { return role_ == Role::kOperand; }
 
-  // remap to core::model
-  core::Model NodeToModelGraph();
-
  private:
   // Either operation_ or operand_ is used.
   core::Operation* operation_;

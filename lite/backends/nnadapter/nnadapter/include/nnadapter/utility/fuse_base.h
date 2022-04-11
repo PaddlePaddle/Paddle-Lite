@@ -19,15 +19,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "utility/debug.h"
-#include "utility/graph.h"
 #include "utility/logging.h"
-#include "utility/micros.h"
-#include "utility/modeling.h"
-#include "utility/node.h"
 #include "utility/pattern_matcher.h"
-#include "utility/string.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 
@@ -38,12 +31,12 @@ class FuseBase {
   virtual ~FuseBase() = default;
 
   // Returns number of matched subgraphs
-  size_t operator()(Graph* graph) {
+  size_t operator()(Graph* graph, core::Model* model) {
     BuildPattern();
     PerformPatternMatcher(graph);
 
     for (const auto& matched : key2nodes_) {
-      InsertNewNode(graph, matched);
+      InsertNewNode(graph, model, matched);
     }
 
     DeleteInterNodes(graph);
@@ -52,11 +45,6 @@ class FuseBase {
 
   // Build a PMPattern using PMNode.
   virtual void BuildPattern() = 0;
-
-  // Generate an operator desc with a matched subgraph.
-  // virtual cpp::OpDesc GenOpDesc(const key2nodes_t& matched) {
-  //   return cpp::OpDesc();
-  // }
 
   PMNode* OpNode(const std::string& key) {
     return GetOrCreateNode(key)->assert_is_op();
@@ -67,7 +55,9 @@ class FuseBase {
   PMNode* VarNode(const std::string& key);
 
  protected:
-  virtual void InsertNewNode(Graph* graph, const key2nodes_t& matched) = 0;
+  virtual void InsertNewNode(Graph* graph,
+                             core::Model* model,
+                             const key2nodes_t& matched) = 0;
 
   void PerformPatternMatcher(Graph* graph);
 

@@ -14,10 +14,6 @@
 
 #pragma once
 
-// #ifdef PADDLE_WITH_TESTING
-#include <gtest/gtest_prod.h>
-// #endif
-
 #include <functional>
 #include <iostream>
 #include <map>
@@ -219,9 +215,6 @@ class PMPattern {
   std::string DotString() const;
 
  private:
-  FRIEND_TEST(PMPattern, AddEdge);
-  FRIEND_TEST(PMPattern, NewNode);
-
   static std::string NewID() { return string_format("pmnode-%d", id_++); }
 
   std::vector<std::unique_ptr<PMNode>> nodes_;
@@ -286,9 +279,6 @@ class PatternMatcher {
 
   // Validate whether the intermediate nodes are linked by external nodes.
   void ValidateByNodeRole(std::vector<subgraph_t>* subgraphs);
-
-  FRIEND_TEST(PatternMatcher, MarkPMNodesInGraph);
-  FRIEND_TEST(PatternMatcher, DetectPatterns);
 
  private:
   using hit_rcd_t =

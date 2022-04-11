@@ -155,13 +155,9 @@ void Graph::Build(core::Model *model) {
   auto operations = SortOperationsInTopologicalOrder(model);
   std::map<core::Operand *, Node *> arg_update_node_map;
   for (auto *operation : operations) {
-    NNADAPTER_LOG(INFO) << "start operation: "
-                        << OperationTypeToString(operation->type);
     auto *op_node = GraphCreateInstructNode(*operation);
     std::vector<core::Operand *> input_operands = operation->input_operands;
     std::vector<core::Operand *> output_operands = operation->output_operands;
-    NNADAPTER_LOG(INFO) << "input_operands size" << input_operands.size();
-    NNADAPTER_LOG(INFO) << "output_operands size" << output_operands.size();
     for (auto *input_operand : input_operands) {
       Node *arg_node = nullptr;
       if (arg_update_node_map.count(input_operand)) {

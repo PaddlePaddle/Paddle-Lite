@@ -237,7 +237,6 @@ std::vector<PatternMatcher::subgraph_t> PatternMatcher::DetectPatterns() {
     // source -> target
     for (Node *source : pmnodes2nodes_[edge.first]) {
       for (Node *target : pmnodes2nodes_[edge.second]) {
-        // TODO(Superjomn) add some prune strategies.
         for (const auto &group : pre_groups) {
           if (IsNodesLink(source, target)) {
             HitGroup new_group = group;
@@ -247,7 +246,6 @@ std::vector<PatternMatcher::subgraph_t> PatternMatcher::DetectPatterns() {
               new_group.Register(source, edge.first);
               new_group.Register(target, edge.second);
               cur_groups.push_back(new_group);
-              // TODO(Superjomn) need to unique
             }
           }
         }
@@ -451,9 +449,6 @@ bool IsNthInput(const Node *var, const Node *op, size_t nth) {
   NNADAPTER_CHECK(op->IsOperation());
   auto operation = op->operation();
   auto input_operands = operation->input_operands;
-  NNADAPTER_LOG(INFO) << "var->operand():" << OperandToString(var->operand());
-  NNADAPTER_LOG(INFO) << "input_operands[nth]:"
-                      << OperandToString(input_operands[nth]);
   if (!std::count(
           input_operands.begin(), input_operands.end(), var->operand()) ||
       input_operands.size() <= nth)
@@ -506,14 +501,6 @@ PMNode *PMNode::assert_is_op_input(NNAdapterOperationType op_type) {
   });
   return this;
 }
-
-// bool HasInput(const Node &op, const std::string &argument) {
-//   NNADAPTER_CHECK(op.IsOperation());
-//   auto const &names = op.operation()->input_argnames();
-//   if (std::find(names.begin(), names.end(), argument) == names.end())
-//     return false;
-//   return true;
-// }
 
 void GraphSafeRemoveNodes(Graph *graph, const std::set<const Node *> &nodes) {
   for (auto *node : nodes) {
