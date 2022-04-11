@@ -40,19 +40,19 @@ void MatMulAddFuser::BuildPattern() {
                      ->assert_node_satisfied(matmul_inputs_teller);
   auto* add = OpNode("add", NNADAPTER_ADD);
   // Var node
-  auto* malmul_input_x = VarNode("matmul_x")
+  auto* matmul_input_x = VarNode("matmul_input_x")
                              ->assert_is_op_nth_input(NNADAPTER_MAT_MUL, 0)
                              ->assert_var_not_persistable()
                              ->AsInput();
-  auto* malmul_input_y = VarNode("matmul_y")
+  auto* matmul_input_y = VarNode("matmul_input_y")
                              ->assert_is_op_nth_input(NNADAPTER_MAT_MUL, 1)
                              ->assert_is_persistable_var()
                              ->AsInput();
-  auto* malmul_transpose_x = VarNode("malmul_transpose_x")
+  auto* matmul_transpose_x = VarNode("matmul_transpose_x")
                                  ->assert_is_op_nth_input(NNADAPTER_MAT_MUL, 2)
                                  ->assert_is_persistable_var()
                                  ->AsInput();
-  auto* malmul_transpose_y = VarNode("malmul_transpose_y")
+  auto* matmul_transpose_y = VarNode("matmul_transpose_y")
                                  ->assert_is_op_nth_input(NNADAPTER_MAT_MUL, 3)
                                  ->assert_is_persistable_var()
                                  ->AsInput();
@@ -61,22 +61,22 @@ void MatMulAddFuser::BuildPattern() {
                           ->assert_is_op_nth_input(NNADAPTER_ADD, 1)
                           ->assert_is_persistable_var()
                           ->AsInput();
-  auto* add_input_fuse_code = VarNode("add_fuse_code")
+  auto* add_input_fuse_code = VarNode("add_input_fuse_code")
                                   ->assert_is_op_nth_input(NNADAPTER_ADD, 2)
                                   ->assert_is_persistable_var()
                                   ->AsInput();
   auto* add_out = VarNode("add_out")->AsOutput();
   // create topology.
   std::vector<PMNode*> mul_inputs{
-      malmul_input_x, malmul_input_y, malmul_transpose_x, malmul_transpose_y};
+      matmul_input_x, matmul_input_y, matmul_transpose_x, matmul_transpose_y};
   std::vector<PMNode*> add_inputs{malmul_out, add_input_y, add_input_fuse_code};
   mul_inputs >> *matmul >> *malmul_out;
   add_inputs >> *add >> *add_out;
   // Some op specialities.
   matmul->AsIntermediate();
   add->AsIntermediate();
-  malmul_transpose_x->AsIntermediate();
-  malmul_transpose_y->AsIntermediate();
+  matmul_transpose_x->AsIntermediate();
+  matmul_transpose_y->AsIntermediate();
   malmul_out->AsIntermediate();
 }
 
@@ -118,10 +118,10 @@ void MatMulAddFuser::InsertNewNode(Graph* graph,
 
   // Create new fc op node for graph
   auto* new_op_node = graph->GraphCreateInstructNode(*fc_operation);
-  IR_NODE_LINK_TO(matched.at("matmul_x"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("matmul_y"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("matmul_input_x"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("matmul_input_y"), new_op_node);
   IR_NODE_LINK_TO(matched.at("add_input_y"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("add_fuse_code"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("add_input_fuse_code"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("add_out"));
 }
 
