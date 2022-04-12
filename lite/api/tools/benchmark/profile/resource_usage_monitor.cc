@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "resource_usage_monitor.h"
+#include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
 #include <iomanip>
 #include <iostream>
+#include <utility>
 
 namespace paddle {
 namespace lite_api {
@@ -29,7 +30,8 @@ ResourceUsageMonitor::ResourceUsageMonitor(int sampling_interval_ms,
       sampling_interval_(sampling_interval_ms) {
   is_supported_ = (sampler_ != nullptr && sampler_->IsSupported());
   if (!is_supported_) {
-    std::cout << "Getting memory usage isn't supported on this platform!\n";
+    std::cout << "Getting memory usage isn't supported on this platform!"
+              << std::endl;
     return;
   }
 }
@@ -37,10 +39,10 @@ ResourceUsageMonitor::ResourceUsageMonitor(int sampling_interval_ms,
 void ResourceUsageMonitor::Start() {
   if (!is_supported_) return;
   if (check_memory_thd_ != nullptr) {
-    std::cout << "Memory monitoring has already started!\n";
+    std::cout << "Memory monitoring has already started!" << std::endl;
     return;
   }
-  std::cout << "start monitoring memory!\n";
+  std::cout << "start monitoring memory!" << std::endl;
   stop_signal_ = false;
   check_memory_thd_.reset(new std::thread(([this]() {
     // Note we retrieve the memory usage at the very beginning of the thread.
@@ -61,10 +63,11 @@ void ResourceUsageMonitor::Start() {
 void ResourceUsageMonitor::Stop() {
   if (!is_supported_) return;
   if (check_memory_thd_ == nullptr) {
-    std::cout << "Memory monitoring hasn't started yet or has stopped!\n";
+    std::cout << "Memory monitoring hasn't started yet or has stopped!"
+              << std::endl;
     return;
   }
-  std::cout << "stop monitoring memory!\n";
+  std::cout << "stop monitoring memory!" << std::endl;
   StopInternal();
 }
 
@@ -77,6 +80,6 @@ void ResourceUsageMonitor::StopInternal() {
   check_memory_thd_.reset(nullptr);
 }
 
-}  // namespace paddle
-}  // namespace lite_api
 }  // namespace profile
+}  // namespace lite_api
+}  // namespace paddle

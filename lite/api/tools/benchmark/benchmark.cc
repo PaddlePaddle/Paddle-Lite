@@ -26,7 +26,9 @@
 #ifdef __ANDROID__
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
 #endif
+#ifdef __linux__
 #include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
+#endif
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
@@ -114,10 +116,12 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
 void Run(const std::string& model_file,
          const std::vector<std::vector<int64_t>>& input_shapes) {
   lite::Timer timer;
-  PerfData perf_data;
-  perf_data.init(FLAGS_repeats);
+#ifdef __linux__
   profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
   float init_memory_usage = 0;
+#endif
+  PerfData perf_data;
+  perf_data.init(FLAGS_repeats);
 #ifdef __ANDROID__
   std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
 #endif
@@ -127,9 +131,13 @@ void Run(const std::string& model_file,
 
   // Create predictor
   timer.Start();
+#ifdef __linux__
   if (FLAGS_enable_memory_profile) resource_monter.Start();
+#endif
   auto predictor = CreatePredictor(model_file);
+#ifdef __linux__
   init_memory_usage = resource_monter.GetPeakMemUsageInKB();
+#endif
   perf_data.set_init_time(timer.Stop());
 
   // Set inputs
@@ -310,6 +318,7 @@ void Run(const std::string& model_file,
   ss << "min   = " << std::setw(12) << perf_data.min_run_time() << std::endl;
   ss << "max   = " << std::setw(12) << perf_data.max_run_time() << std::endl;
   ss << "avg   = " << std::setw(12) << perf_data.avg_run_time() << std::endl;
+#ifdef __linux__
   if (FLAGS_enable_memory_profile) {
     ss << "\nMemory Usage(unit: MB):\n";
     ss << "init  = " << std::setw(12) << init_memory_usage / 1024 << std::endl;
@@ -317,6 +326,7 @@ void Run(const std::string& model_file,
        << resource_monter.GetPeakMemUsageInKB() / 1024 << std::endl;
   }
   if (FLAGS_enable_memory_profile) resource_monter.Stop();
+#endif
   std::cout << ss.str() << std::endl;
   StoreBenchmarkResult(ss.str());
 }
