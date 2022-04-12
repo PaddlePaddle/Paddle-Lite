@@ -43,7 +43,8 @@ class SparseConvOp : public OpLite {
     auto filter_dims = param_.oc_nonzeros->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
-    ch->input_shape = ch->DimToStr(input_dims);
+    ch->input_shape =
+        std::to_string(input_dims[1]) + "x" + ch->DimToStr(input_dims) + "x1x1";
     ch->output_shape = ch->DimToStr(output_dims);
     ch->filter_shape = ch->DimToStr(filter_dims);
     ch->remark = std::to_string(1) + "x" + std::to_string(1) + "p" +
@@ -53,7 +54,8 @@ class SparseConvOp : public OpLite {
                  std::to_string((*param_.dilations)[0]) +
                  (param_.bias ? "Bias" : "") +
                  ActivationTypeToStr(param_.activation_param.active_type);
-    // MACs = 2.f * kw * kh * batchsize * out_c * out_h * out_w * in_c / group
+    // MACs = 2.f * kw(1) * kh(1) * batchsize * out_c * out_h * out_w * in_c /
+    // group
     // GMACs = 1e-9f * MACs
     // GMACPS = 1e-6f * MACs / predict_ms
     ch->macs = 2.f * output_dims.production() * input_dims[1] / param_.groups;
