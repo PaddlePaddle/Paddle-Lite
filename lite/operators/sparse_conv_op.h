@@ -43,10 +43,10 @@ class SparseConvOp : public OpLite {
     auto filter_dims = param_.oc_nonzeros->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
-    ch->input_shape =
-        std::to_string(input_dims[1]) + "x" + ch->DimToStr(input_dims) + "x1x1";
+    ch->input_shape = ch->DimToStr(input_dims);
     ch->output_shape = ch->DimToStr(output_dims);
-    ch->filter_shape = ch->DimToStr(filter_dims);
+    ch->filter_shape = ch->DimToStr(filter_dims) + "x" +
+                       std::to_string(input_dims[1]) + "x1x1";
     ch->remark = std::to_string(1) + "x" + std::to_string(1) + "p" +
                  std::to_string((*param_.paddings)[0]) + "s" +
                  std::to_string(param_.strides[0]) + "g" +
