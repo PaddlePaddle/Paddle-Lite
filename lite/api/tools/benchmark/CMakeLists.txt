@@ -38,6 +38,9 @@ endif()
 
 FILE(GLOB_RECURSE BENCHMARK_SRC *.cc ../opt_base.cc)
 FILE(GLOB_RECURSE BENCHMARK_PRECISION_SRC precision_evaluation/*.cc)
+if(NOT(ARM_TARGET_OS STREQUAL "android"))
+    LIST(REMOVE_ITEM BENCHMARK_SRC ${BENCHMARK_PRECISION_SRC})
+endif()
 
 set(TARGET "benchmark_bin")
 lite_cc_binary(${TARGET} SRCS ${BENCHMARK_SRC}
