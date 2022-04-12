@@ -26,7 +26,7 @@ namespace lite {
 namespace mir {
 
 const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops = {
-    "mul", "lookup_table"};
+    "fc", "mul", "matmul", "matmul_v2", "lookup_table"};
 
 std::vector<std::string> PostQuantDynamicPass::quant_ops = {
     "conv2d", "mul", "lookup_table"};
@@ -39,9 +39,12 @@ void FindAbsMaxPerChannel(const Tensor& tensor,
                           int quant_axis,
                           std::vector<float>* res) {
   const DDim dims = tensor.dims();
-  CHECK(dims.size() == 2 || dims.size() == 4);
+  CHECK(dims.size() == 1 || dims.size() == 2 || dims.size() == 4);
   CHECK(tensor.precision() == PrecisionType::kFloat);
   CHECK(quant_axis == 0 || quant_axis == 1);
+  if (dims.size() == 1) {
+    CHECK(quant_axis == 0) << "when tensor is bias, quant_axis must be 0";
+  }
   CHECK(res);
 
   res->clear();
@@ -121,9 +124,15 @@ void PostQuantDynamicPerChannel(OpInfo* op_info,
                                 int quant_axis,
                                 int quant_bits) {
   const DDim weight_dims = weight->dims();
-  CHECK(weight_dims.size() == 2 || weight_dims.size() == 4);
+  // bias: weight_dims.size() = 1
+  // weight: weight_dims.size() = 2 or weight_dims.size() = 4
+  CHECK(weight_dims.size() == 1 || weight_dims.size() == 2 ||
+        weight_dims.size() == 4);
   CHECK(quant_axis == 0 || quant_axis == 1);
   CHECK(quant_bits == 8 || quant_bits == 16);
+  if (weight_dims.size() == 1) {
+    CHECK(quant_axis == 0) << "when weight is bias, quant_axis must be 0";
+  }
 
   // get scales
   float range = (1 << (quant_bits - 1)) - 1;
