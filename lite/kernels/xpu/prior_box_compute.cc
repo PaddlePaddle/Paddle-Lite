@@ -155,10 +155,10 @@ void PriorBoxCompute::Run() {
   float* xpu_variances_in =
       reinterpret_cast<float*>(variance_xpu_guard_->addr_);
   r = xdnn::broadcast<float>(ctx.GetRawContext(),
-                            xpu_variances_in,
-                            param.variances->mutable_data<float>(TARGET(kXPU)),
-                            {1, 4, 1},
-                            {height * width * prior_num, 4, 1});
+                             xpu_variances_in,
+                             param.variances->mutable_data<float>(TARGET(kXPU)),
+                             {1, 4, 1},
+                             {height * width * prior_num, 4, 1});
   CHECK_EQ(r, 0);
 }
 

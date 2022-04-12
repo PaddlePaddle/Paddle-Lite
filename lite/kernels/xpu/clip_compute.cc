@@ -35,11 +35,11 @@ void ClipCompute::Run() {
     max = max_tensor->data<float>()[0];
   }
   int r = xdnn::clip_v2<float>(ctx.GetRawContext(),
-                     param.x->data<float>(),
-                     param.out->mutable_data<float>(TARGET(kXPU)),
-                     param.x->numel(),
-                     min,
-                     max);
+                               param.x->data<float>(),
+                               param.out->mutable_data<float>(TARGET(kXPU)),
+                               param.x->numel(),
+                               min,
+                               max);
   CHECK_EQ(r, 0);
 }
 
