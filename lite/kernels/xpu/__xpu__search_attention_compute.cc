@@ -130,8 +130,8 @@ void XPUMmdnnSearchAttentionCompute::Run() {
   // do-findmax
   r = xdnn::findmax<float>(ctx.GetRawContext(),
                            group_padding_output,
-                           batch * max_seq * dim1,
-                           maxs_xpu);
+                           maxs_xpu,
+                           batch * max_seq * dim1);
   CHECK_EQ(r, 0);
   r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
       ctx.GetRawContext(),        /* ctx */
