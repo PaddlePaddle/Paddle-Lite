@@ -889,6 +889,8 @@ TEST(Activation_exp, precision) {
       dims.push_back(1);
     }
   }
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif

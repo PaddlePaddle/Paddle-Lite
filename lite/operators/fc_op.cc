@@ -126,6 +126,9 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.Prelu_alpha =
         const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
   }
+  if (param_.activation_type == "relu6") {
+    param_.alpha = op_desc.GetAttr<float>("alpha");
+  }
 
   // For Int8
   const OpInfo* op_info = static_cast<const OpInfo*>(&op_desc);
