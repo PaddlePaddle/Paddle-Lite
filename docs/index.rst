@@ -80,6 +80,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/rockchip_npu
   demo_guides/amlogic_npu
   demo_guides/verisilicon_timvx
+  demo_guides/android_nnapi
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
   demo_guides/bitmain

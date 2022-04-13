@@ -122,7 +122,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
     3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
     4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
     5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
-
+    6）下述命令行示例中涉及的设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
     在 ARM CPU 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
     $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu d3869b25
