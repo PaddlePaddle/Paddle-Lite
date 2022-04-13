@@ -227,7 +227,8 @@ void test_squeeze2(Place place, float abs_error) {
           for (int W : {5}) {
             for (bool inplace : {true, false}) {
 #ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
-              if (std::find(axes.begin(), axes.end(), 0)) continue;
+              if (std::find(axes.begin(), axes.end(), 0) != axes.end())
+                continue;
               if (axes.empty()) continue;
 #endif
               std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
