@@ -35,12 +35,12 @@ int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
   auto resize_layer = converter->network()->addResize(*input_tensor);
   NNADAPTER_CHECK(resize_layer);
   nvinfer1::Dims output_dims;
-  output_dims.nbDims = input_operand->type.dimensions.count;
+  output_dims.nbDims = output_operand->type.dimensions.count - 1;
   for (int32_t i = 0; i < output_dims.nbDims; i++) {
     output_dims.d[i] =
-        output_operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN
+        output_operand->type.dimensions.data[i + 1] == NNADAPTER_UNKNOWN
             ? -1
-            : output_operand->type.dimensions.data[i];
+            : output_operand->type.dimensions.data[i + 1];
   }
   resize_layer->setOutputDimensions(output_dims);
   resize_layer->setAlignCorners(align_corners);

@@ -26,30 +26,21 @@ int ConvertComparisons(Converter* converter, core::Operation* operation) {
   // Convert to trt tensors and node
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
-    input0_tensor = converter->ConvertOperand(input0_operand);
+    // Tensorrt elementwise layer's input tensors must have the same number of
+    // dimensions.
+    auto dims = GetAlignedDims(input0_operand->type.dimensions,
+                               input1_operand->type.dimensions);
+    dims.erase(dims.begin());
+    input0_tensor = converter->ConvertOperand(input0_operand, dims);
   }
   auto input1_tensor = converter->GetMappedTensor(input1_operand);
   if (!input1_tensor) {
     // Tensorrt elementwise layer's input tensors must have the same number of
     // dimensions.
-    auto dims0_data = input0_operand->type.dimensions.data;
-    auto dims0_count = input0_operand->type.dimensions.count;
-    std::vector<int32_t> dims0(dims0_data, dims0_data + dims0_count);
-    auto dims1_data = input1_operand->type.dimensions.data;
-    auto dims1_count = input1_operand->type.dimensions.count;
-    std::vector<int32_t> dims1(dims1_data, dims1_data + dims1_count);
-    for (size_t i = 0; i < dims0.size(); i++) {
-      if (dims1.size() < i + 1) {
-        dims1.insert(dims1.begin(), 1);
-        continue;
-      }
-      int data0 = dims0[dims0.size() - 1 - i];
-      int data1 = dims1[dims1.size() - 1 - i];
-      if (data0 != data1 && data0 != 1 && data1 != 1) {
-        dims1.push_back(1);
-      }
-    }
-    input1_tensor = converter->ConvertOperand(input1_operand, dims1);
+    auto dims = GetAlignedDims(input1_operand->type.dimensions,
+                               input0_operand->type.dimensions);
+    dims.erase(dims.begin());
+    input1_tensor = converter->ConvertOperand(input1_operand, dims);
   }
   std::map<NNAdapterOperationType, nvinfer1::ElementWiseOperation>
       elementwise_type_map{

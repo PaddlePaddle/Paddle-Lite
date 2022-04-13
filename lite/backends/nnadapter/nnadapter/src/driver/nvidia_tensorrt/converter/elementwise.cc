@@ -29,37 +29,18 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   if (!input0_tensor) {
     // Tensorrt elementwise layer's input tensors must have the same number of
     // dimensions.
-    auto dims0_count = input0_operand->type.dimensions.count;
-    auto dims1_count = input1_operand->type.dimensions.count;
-    auto dims0_data = input0_operand->type.dimensions.data;
-    std::vector<int32_t> dims(dims0_data, dims0_data + dims0_count);
-    for (size_t i = 0; i < dims.size(); i++) {
-      if (dims[i] == NNADAPTER_UNKNOWN) {
-        dims[i] = -1;
-      }
-    }
-    if (dims0_count < dims1_count) {
-      dims.insert(dims.begin(), dims1_count - dims0_count, 1);
-    }
+    auto dims = GetAlignedDims(input0_operand->type.dimensions,
+                               input1_operand->type.dimensions);
+    dims.erase(dims.begin());
     input0_tensor = converter->ConvertOperand(input0_operand, dims);
   }
   auto input1_tensor = converter->GetMappedTensor(input1_operand);
   if (!input1_tensor) {
     // Tensorrt elementwise layer's input tensors must have the same number of
     // dimensions.
-    auto dims0_count = input0_operand->type.dimensions.count;
-    auto dims1_count = input1_operand->type.dimensions.count;
-    NNADAPTER_CHECK_GE(dims0_count, dims1_count);
-    auto dims1_data = input1_operand->type.dimensions.data;
-    std::vector<int32_t> dims(dims1_data, dims1_data + dims1_count);
-    for (size_t i = 0; i < dims.size(); i++) {
-      if (dims[i] == NNADAPTER_UNKNOWN) {
-        dims[i] = -1;
-      }
-    }
-    if (dims1_count < dims0_count) {
-      dims.insert(dims.begin(), dims0_count - dims1_count, 1);
-    }
+    auto dims = GetAlignedDims(input1_operand->type.dimensions,
+                               input0_operand->type.dimensions);
+    dims.erase(dims.begin());
     input1_tensor = converter->ConvertOperand(input1_operand, dims);
   }
   std::map<NNAdapterOperationType, nvinfer1::ElementWiseOperation>

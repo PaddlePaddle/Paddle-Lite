@@ -156,6 +156,18 @@ class TestTransposeOp(AutoScanTest):
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
 
+        def _teller2(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["X_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(in_shape) == 1 or axis[0] != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axis[0] != 0' on nvidia_tensorrt."
+        )
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
 

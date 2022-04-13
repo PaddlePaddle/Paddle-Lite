@@ -22,6 +22,8 @@ namespace nvidia_tensorrt {
 
 int ConvertSoftmax(Converter* converter, core::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_GT(axis, 0);
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
@@ -29,8 +31,7 @@ int ConvertSoftmax(Converter* converter, core::Operation* operation) {
   }
   auto softmax_layer = converter->network()->addSoftMax(*input_tensor);
   NNADAPTER_CHECK(softmax_layer);
-  NNADAPTER_CHECK_GE(axis, 0);
-  softmax_layer->setAxes(1 << axis);
+  softmax_layer->setAxes(1 << (axis - 1));
   auto output_tensor = softmax_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

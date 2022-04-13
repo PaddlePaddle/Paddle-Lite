@@ -73,13 +73,6 @@ class TestStridedSliceOp(AutoScanTest):
                 st.integers(
                     min_value=0, max_value=3), min_size=1, max_size=4))
 
-        # nvidia_tensorrt must satisify the followings! 
-        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
-            assume(in_dtype != np.int64)
-            assume(len(np.unique(axes_data)) == len(axes_data))
-            assume(sorted(axes_data) == axes_data)
-            assume(in_shape[0] > starts_data[0])
-
         # whether this axis for runtime calculations
         infer_flags_data = draw(
             st.lists(
@@ -106,42 +99,36 @@ class TestStridedSliceOp(AutoScanTest):
         # So not add them to the input of the operator
         def generate_StartsTensor_data():
             if (choose_start == "StartsTensor_data"):
-                #inputs["StartsTensor"] = ["StartsTensor_data"]
                 return np.array(starts_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_EndsTensor_data():
             if (choose_end == "EndsTensor_data"):
-                #inputs["EndsTensor"] = ["EndsTensor_data"]
                 return np.array(ends_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_StridesTensor_data():
             if (choose_stride == "StridesTensor_data"):
-                #inputs["StridesTensor"] = ["StridesTensor_data"]
                 return np.array(strides_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_StartsTensorList_data():
             if (choose_start == "StartsTensorList_data"):
-                #inputs["StridesTensorList"] = ["StartsTensorList_data"]
                 return np.array(starts_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_EndsTensorList_data():
             if (choose_end == "EndsTensorList_data"):
-                #inputs["EndsTensorList"] = ["EndsTensorList_data"]
                 return np.array(ends_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_StridesTensorList_data():
             if (choose_stride == "StridesTensorList_data"):
-                #inputs["StridesTensorList"] = ["StridesTensorList_data"]
                 return np.array(strides_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
@@ -184,7 +171,18 @@ class TestStridedSliceOp(AutoScanTest):
         return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                in_type = program_config.inputs["input_data"].dtype
+                if len(in_shape) == 1 or 0 in axes or in_type == np.int64:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axes has 0' "
+            "or 'in_type == np.int64' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

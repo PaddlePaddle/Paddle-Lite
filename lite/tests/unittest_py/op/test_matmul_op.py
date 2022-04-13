@@ -264,18 +264,16 @@ class TestMulOp(AutoScanTest):
         return self.get_predictor_configs(), ["matmul"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data_x"].shape)
-            nnadapter_device_name = self.get_nnadapter_device_name()
-            if nnadapter_device_name == "nvidia_tensorrt":
-                y_shape = list(program_config.inputs["input_data_y"].shape)
-                if (len(x_shape) == 1 and
-                        len(y_shape) == 1) or len(x_shape) != len(y_shape):
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                x_shape = program_config.inputs["input_data_x"].shape
+                y_shape = program_config.inputs["input_data_y"].shape
+                if len(x_shape) < 3 or len(x_shape) != len(y_shape):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            " inputs with the same operation must have same number of dimensions."
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'x_shape_size != y_shape_size' or 'x_shape_size < 3' on nvidia_tensorrt."
         )
 
     def test(self, *args, **kwargs):

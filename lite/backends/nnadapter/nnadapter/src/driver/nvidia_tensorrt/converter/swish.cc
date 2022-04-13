@@ -29,7 +29,7 @@ int ConvertSwish(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  SwishPluginDynamic swish_plugin(1.0f);
+  SwishPlugin swish_plugin(1.0f);
   std::vector<nvinfer1::ITensor*> tensors{input_tensor};
   auto swish_layer =
       converter->network()->addPluginV2(tensors.data(), 1, swish_plugin);
