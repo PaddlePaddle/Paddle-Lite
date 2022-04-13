@@ -173,11 +173,20 @@ void Deserialize(const void** buffer,
                  std::vector<T>* value);
 
 // Only remain min/opt/max shapes
-void ConvertDynamicDimensions(NNAdapterOperandType* type);
+void ConvertDynamicDimensions(NNAdapterOperandDimensionType* dimensions);
+
+int GetMaxBatchSize(const NNAdapterOperandDimensionType& dimensions);
 
 core::Argument* FindArgumentByIndex(core::Argument* arguments,
                                     int index,
                                     uint32_t count);
+
+std::vector<int32_t> GetAlignedDims(
+    const NNAdapterOperandDimensionType& target_dimensions,
+    const NNAdapterOperandDimensionType& reference_dimensions);
+
+nvinfer1::Dims ConvertToNVDims(const NNAdapterOperandDimensionType& dimensions,
+                               bool ignore_batch = true);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

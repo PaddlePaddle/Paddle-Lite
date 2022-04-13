@@ -104,11 +104,12 @@ class TestArgMaxOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            set_dtype = program_config.ops[0].attrs["dtype"]
-            if predictor_config.target() == TargetType.NNAdapter:
-                if "nvidia_tensorrt" in self.get_nnadapter_device_name():
-                    if set_dtype != 2:
-                        return True
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                set_dtype = program_config.ops[0].attrs["dtype"]
+                in_shape = program_config.inputs["input_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if set_dtype != 2 or len(in_shape) == 1 or axis == 0:
+                    return True
 
         def _teller2(program_config, predictor_config):
             set_dtype = program_config.ops[0].attrs["dtype"]
@@ -126,7 +127,8 @@ class TestArgMaxOp(AutoScanTest):
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite only supports int-precision output on Nvidia.")
+            "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
+        )
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."

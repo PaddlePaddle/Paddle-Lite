@@ -115,16 +115,18 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_CHECK_EQ(SerializeToCache(&cache->buffer), NNADAPTER_NO_ERROR);
   }
   for (auto& type : input_types_) {
-    ConvertDynamicDimensions(&type);
+    ConvertDynamicDimensions(&type.dimensions);
+    max_batch_size_ =
+        std::max(max_batch_size_, GetMaxBatchSize(type.dimensions));
   }
   for (auto& type : output_types_) {
-    ConvertDynamicDimensions(&type);
+    ConvertDynamicDimensions(&type.dimensions);
   }
   return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromModel(core::Model* model) {
-  // Convert nnadapter standard ops to cunstom ops
+  // Convert nnadapter standard ops to custom ops
   // ReplaceSoftmaxWithNaiveSoftmax(model);
   // ReplaceSoftmaxWithSpecialSoftmax(model);
   // Prepare input/output types
@@ -187,19 +189,25 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
       return NNADAPTER_INVALID_DIMENSIONS;
     }
     // Check dimensions data
-    bool is_matched = true;
+    bool is_explicit_dims = true;
     int32_t* data = type.dimensions.data;
     int32_t* src_data = src_dimensions.data;
-    for (uint32_t j = 0; j < count; j++) {
-      if (data[j] != src_data[j]) {
-        is_matched = false;
+    if (data[0] > max_batch_size_) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    for (uint32_t j = 1; j < count; j++) {
+      if (src_data[i] == NNADAPTER_UNKNOWN) {
+        is_explicit_dims = false;
         break;
       }
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
     }
-    if (is_matched) continue;
+    if (is_explicit_dims) continue;
     // Check dynamic dymensions data
     NNADAPTER_CHECK_EQ(src_dimensions.dynamic_count, 3U);
-    for (uint32_t j = 0; j < count; j++) {
+    for (uint32_t j = 1; j < count; j++) {
       if (data[j] < src_dimensions.dynamic_data[1][j] ||
           data[j] > src_dimensions.dynamic_data[2][j]) {
         return NNADAPTER_INVALID_DIMENSIONS;

@@ -124,16 +124,17 @@ class TestClipOp(AutoScanTest):
         return self.get_predictor_configs(), ["clip"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            x_shape = int(len(program_config.inputs))
-            if predictor_config.target() == TargetType.NNAdapter:
-                if "nvidia_tensorrt" in self.get_nnadapter_device_name():
-                    if x_shape == 3:
-                        return True
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_num = len(program_config.inputs)
+                in_shape_size = len(program_config.inputs["input_data"].shape)
+                if in_num == 3 or in_shape_size == 1:
+                    return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "TensorRT doesn't support 3 input tensors for clip op.")
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support '3 input tensors' or 'in_shape_size == 1' on nvidia_tensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

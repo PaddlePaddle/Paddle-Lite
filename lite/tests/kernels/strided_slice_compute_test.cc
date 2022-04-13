@@ -438,11 +438,11 @@ class StridedSliceComputeTester : public arena::TestCase {
 };
 
 void test_slice(Place place, float abs_error) {
-  std::vector<int> axes({0, 1, 2});
-  std::vector<int> starts({2, 2, 2});
-  std::vector<int> strides({1, 1, 1});
-  std::vector<int> ends({5, 6, 7});
-  std::vector<int> infer_flags({1, 1, 1});
+  std::vector<int> axes({1, 2});
+  std::vector<int> starts({2, 2});
+  std::vector<int> strides({1, 1});
+  std::vector<int> ends({6, 7});
+  std::vector<int> infer_flags({1, 1});
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(
@@ -486,11 +486,11 @@ void test_slice_axes(Place place, float abs_error) {
 }
 
 void test_slice_decrease_axis(Place place, float abs_error) {
-  std::vector<int> axes({0});
+  std::vector<int> axes({1});
   std::vector<int> starts({0});
   std::vector<int> ends({1});
   std::vector<int> strides({1});
-  std::vector<int> decrease_axis({0});
+  std::vector<int> decrease_axis({1});
   std::vector<int> infer_flags({1});
   DDim dims({2, 3, 4, 5});
   std::unique_ptr<arena::TestCase> tester(

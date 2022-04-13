@@ -119,7 +119,19 @@ class TestSqueeze2Op(AutoScanTest):
         return self.get_predictor_configs(), ["squeeze2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(in_shape) == 1 \
+                    or 0 in axes \
+                    or -len(in_shape) in axes:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axes has 0' on nvidia_tensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=200)

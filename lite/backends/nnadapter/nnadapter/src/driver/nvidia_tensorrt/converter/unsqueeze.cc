@@ -28,15 +28,10 @@ int ConvertUnsqueeze(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_dims_data = output_operand->type.dimensions.data;
-  auto output_dims_count = output_operand->type.dimensions.count;
   auto unsqueeze_layer = converter->network()->addShuffle(*input_tensor);
-  nvinfer1::Dims reshape_dims;
-  reshape_dims.nbDims = output_dims_count;
-  memcpy(reshape_dims.d, output_dims_data, sizeof(int32_t) * output_dims_count);
-  unsqueeze_layer->setReshapeDimensions(reshape_dims);
-  auto output_tensor = unsqueeze_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  auto dims = ConvertToNVDims(output_operand->type.dimensions);
+  unsqueeze_layer->setReshapeDimensions(dims);
+  converter->UpdateTensorMap(output_operand, unsqueeze_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 

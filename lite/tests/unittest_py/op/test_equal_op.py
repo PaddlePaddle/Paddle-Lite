@@ -67,7 +67,6 @@ class TestEqualOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = []
         in_shape = draw(
             st.lists(
                 st.integers(

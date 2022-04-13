@@ -103,6 +103,12 @@ nvinfer1::ITensor* Converter::ConvertOperand(
         dims.d[i] = operand->type.dimensions.data[i];
       }
     }
+    if (IsModelInputOperand(operand)) {
+      dims.nbDims -= 1;
+      for (int i = 0; i < dims.nbDims; i++) {
+        dims.d[i] = dims.d[i + 1];
+      }
+    }
   } else {
     dims.nbDims = dimensions.size();
     memcpy(dims.d, dimensions.data(), dims.nbDims * sizeof(int32_t));
