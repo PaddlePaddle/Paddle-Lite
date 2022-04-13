@@ -85,6 +85,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/bitmain
   demo_guides/intel_fpga
   demo_guides/intel_openvino
+  demo_guides/nvidia_tensorrt
 
 .. toctree::
   :maxdepth: 1

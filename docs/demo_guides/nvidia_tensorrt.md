@@ -5,6 +5,7 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
 ## 支持现状
 
 ### 已支持的 GPU 类型
+
 - Jetson 全系列
 - Pascal/Volt/Turning 架构的 GPU, 即将支持 Ampere 架构 GPU。
 
@@ -26,6 +27,7 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
     - [ResNet50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz)
 
 ### 性能
+
 - 测试环境
   - 设备环境
     - NVIDIA Jetson AGX Xavier [16GB]
