@@ -105,14 +105,18 @@ add_subdirectory(nnadapter)
 # tricks to create headfiles for opt
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+    COMMAND python2 ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${CMAKE_BINARY_DIR}/all_kernel_faked_dir
     ${CMAKE_BINARY_DIR}/all_kernel_faked.h
     ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
     ${CMAKE_BINARY_DIR}/kernel_src_map.h
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(${error} not STREQUAL "")
+  message(FATAL_ERROR ${error})
+endif()
 
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
 lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
@@ -123,11 +127,15 @@ endif()
 
 # create headfile to restore ops info sorted by suppported platforms
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+    COMMAND python2 ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${ops_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
     ${LITE_BUILD_EXTRA}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(${error} not STREQUAL "")
+  message(FATAL_ERROR ${error})
+endif()
 #--------------------------------------------------------------------------------------------------

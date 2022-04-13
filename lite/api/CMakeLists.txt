@@ -3,7 +3,7 @@
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR}/lite/api/)
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+    COMMAND python2 ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h
@@ -11,16 +11,25 @@ execute_process(
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
     ${LITE_WITH_ARM82_FP16}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(${error} not STREQUAL "")
+  message(FATAL_ERROR ${error})
+endif()
+
 # A trick to generate the paddle_use_ops.h
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+    COMMAND python2 ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
     ${ops_src_list}
     ${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h
     "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(${error} not STREQUAL "")
+  message(FATAL_ERROR ${error})
+endif()
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 
 set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc)
