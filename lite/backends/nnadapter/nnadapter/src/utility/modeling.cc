@@ -535,6 +535,18 @@ NNADAPTER_EXPORT bool IsConstantOperand(core::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsConstantCopyOperand(core::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_CONSTANT_COPY;
+}
+
+NNADAPTER_EXPORT bool IsConstantReferenceOperand(core::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+}
+
+NNADAPTER_EXPORT bool IsTemporaryVariableOperand(core::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_TEMPORARY_VARIABLE;
+}
+
 NNADAPTER_EXPORT bool IsTemporaryShapeOperand(core::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE;
 }
