@@ -2489,7 +2489,8 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                 int32_t index,
                                 void* memory,
                                 void* (*access)(void* memory,
-                                                NNAdapterOperandType* type));
+                                                NNAdapterOperandType* type,
+                                                void* device_buffer));
 /**
  * Set the output memory and the function used to access it.
  *
@@ -2518,7 +2519,8 @@ int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                  int32_t index,
                                  void* memory,
                                  void* (*access)(void* memory,
-                                                 NNAdapterOperandType* type));
+                                                 NNAdapterOperandType* type,
+                                                 void* device_buffer));
 /**
  * Start to run the execution synchronously.
  *

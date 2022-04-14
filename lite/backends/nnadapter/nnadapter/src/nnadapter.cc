@@ -385,7 +385,9 @@ NNADAPTER_EXPORT int NNAdapterExecution_setInput(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -397,7 +399,9 @@ NNADAPTER_EXPORT int NNAdapterExecution_setOutput(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }

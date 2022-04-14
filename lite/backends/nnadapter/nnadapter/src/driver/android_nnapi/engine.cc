@@ -446,7 +446,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get the new dimensions
     auto& arg = input_arguments[i];
     NNAdapterOperandType new_type;
-    arg.access(arg.memory, &new_type);
+    arg.access(arg.memory, &new_type, nullptr);
     // Check whether the count and data of dimensions have been changed
     const NNAdapterOperandType& old_type = input_types_[arg.index];
     bool matched = MatchDimensions(new_type.dimensions.data,
@@ -497,7 +497,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
@@ -523,7 +523,7 @@ int Program::Execute(uint32_t input_count,
     // TODO(hong19860320) Get the dimensions of the outputs from NNAPI
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
     if (should_reset_execution) {

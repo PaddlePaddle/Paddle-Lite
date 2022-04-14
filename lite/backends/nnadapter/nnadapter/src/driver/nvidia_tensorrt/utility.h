@@ -80,15 +80,6 @@ struct TensorrtDeleter {
   }
 };
 
-struct CudaMemoryDeleter {
-  template <typename T>
-  void operator()(T* ptr) const {
-    if (ptr) {
-      NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
-    }
-  }
-};
-
 struct HostMemoryDeleter {
   template <typename T>
   void operator()(T* ptr) const {
@@ -101,7 +92,11 @@ struct HostMemoryDeleter {
 class Tensor {
  public:
   Tensor() {}
-  ~Tensor() {}
+  ~Tensor();
+
+  void SetData(void* cuda_buffer,
+               const std::vector<int32_t>& dims,
+               nvinfer1::DataType data_type);
 
   // Only support copy from cuda to host
   void* Data(bool return_cuda_buffer = true);
@@ -110,22 +105,16 @@ class Tensor {
 
   std::vector<int32_t> Dims() { return dims_; }
 
-  uint32_t Length() {
-    if (dims_.empty()) return 0;
-    uint32_t length = 1;
-    for (auto i : dims_) {
-      length *= static_cast<uint32_t>(i);
-    }
-    return length;
-  }
+  uint32_t Length();
 
-  void SetDateType(nvinfer1::DataType data_type) { data_type_ = data_type; }
+  void SetDataType(nvinfer1::DataType data_type) { data_type_ = data_type; }
 
   nvinfer1::DataType DateType() { return data_type_; }
 
  private:
-  std::unique_ptr<void, CudaMemoryDeleter> cuda_buffer_;
+  void* cuda_buffer_{nullptr};
   uint32_t cuda_buffer_length_{0};
+  bool own_cuda_buffer_{true};
   std::unique_ptr<void, HostMemoryDeleter> host_buffer_;
   uint32_t host_buffer_length_{0};
   nvinfer1::DataType data_type_{nvinfer1::DataType::kFLOAT};

@@ -97,12 +97,16 @@ class NNAdapterWrapper final {
       NNAdapterExecution* execution,
       int32_t index,
       void* memory,
-      void* (*access)(void* memory, NNAdapterOperandType* type));
+      void* (*access)(void* memory,
+                      NNAdapterOperandType* type,
+                      void* device_buffer));
   typedef int (*NNAdapterExecution_setOutput_fn)(
       NNAdapterExecution* execution,
       int32_t index,
       void* memory,
-      void* (*access)(void* memory, NNAdapterOperandType* type));
+      void* (*access)(void* memory,
+                      NNAdapterOperandType* type,
+                      void* device_buffer));
   typedef int (*NNAdapterExecution_compute_fn)(NNAdapterExecution* execution);
 
 #define NNADAPTER_DECLARE_FUNCTION(name) name##_fn name;
@@ -316,7 +320,9 @@ inline int NNAdapterExecution_setInput_invoke(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setInput(
       execution, index, memory, access);
 }
@@ -325,7 +331,9 @@ inline int NNAdapterExecution_setOutput_invoke(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setOutput(
       execution, index, memory, access);
 }
