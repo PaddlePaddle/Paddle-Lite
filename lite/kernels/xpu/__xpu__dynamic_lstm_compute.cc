@@ -26,6 +26,8 @@ namespace xpu {
 
 void XPUDynamicLstmCompute::PrepareForRun() {
   auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
 
   // transpose from weight_0[xdim, 4 * hdim] to transpose_weight_0[4 * hdim,
   // xdim]
@@ -139,22 +141,24 @@ void XPUDynamicLstmCompute::PrepareForRun() {
   auto weight_0_len = param.weight_0->numel();
   float max_weight_0 =
       paddle::lite::xpu::math::FindMaxAbs(weight_0_ptr, weight_0_len);
-  std::vector<float> max_weight_0_v(4, max_weight_0);
-  weight_0_max_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  std::vector<float> max_weight_0_v(max_ptr_size, max_weight_0);
+  weight_0_max_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   float* weight_0_max_addr = reinterpret_cast<float*>(weight_0_max_->addr_);
   XPU_CALL(xpu_memcpy(weight_0_max_addr,
                       max_weight_0_v.data(),
-                      4 * sizeof(float),
+                      max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   float max_weight_1 = paddle::lite::xpu::math::FindMaxAbs(
       param.weight_1->template data<float>(), param.weight_1->numel());
-  std::vector<float> max_weight_1_v(4, max_weight_1);
-  weight_1_max_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  std::vector<float> max_weight_1_v(max_ptr_size, max_weight_1);
+  weight_1_max_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   float* weight_1_max_addr = reinterpret_cast<float*>(weight_1_max_->addr_);
   XPU_CALL(xpu_memcpy(weight_1_max_addr,
                       max_weight_1_v.data(),
-                      4 * sizeof(float),
+                      max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 }
 
