@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "optimizer/pattern_matcher.h"
+#include <algorithm>
 #include <array>
 #include "utility/micros.h"
 #include "utility/modeling.h"

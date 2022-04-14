@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -105,9 +106,9 @@ class PatternMatcher {
     Pattern& operator=(const Pattern&) = delete;
     Pattern(const Pattern&) = delete;
     Pattern(Pattern&& other) = default;
-    bool intermediate{false};
-    NNAdapterOperationType type{NNADAPTER_UNKNOWN};
     std::vector<Edge>* edges;
+    NNAdapterOperationType type{NNADAPTER_UNKNOWN};
+    bool intermediate{false};
     std::vector<Condition> conditions;
   };
 
