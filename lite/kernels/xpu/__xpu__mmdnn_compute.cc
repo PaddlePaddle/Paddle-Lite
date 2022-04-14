@@ -200,7 +200,7 @@ class MMDNNFcOp {
              const float* in_max_by_caller = nullptr) {
     int r = 0;
     if (in_max_by_caller == nullptr) {
-      r = xdnn::findmax<float>(ctx, in, m * k_, in_max_);
+      r = xdnn::findmax<float>(ctx, in, in_max_, m * k_);
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
@@ -564,7 +564,7 @@ class MMDNNMatchConvTopk {
 
     int r = 0;
     r = xdnn::findmax<float>(
-        ctx, left->data<float>(), left_seqlen_sum * dim_in_, in_max_);
+        ctx, left->data<float>(), in_max_, left_seqlen_sum * dim_in_);
     CHECK_EQ(r, 0);
     r = xdnn::match_matrix_tensor<float, int16_t, int>(
         ctx,

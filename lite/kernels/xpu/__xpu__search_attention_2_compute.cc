@@ -107,7 +107,7 @@ void XPUMmdnnSearchAttention2Compute::Run() {
 
   int r = 0;
   r = xdnn::findmax<float>(
-      ctx.GetRawContext(), input_data, seqlen_sum * dim_, input_max_data);
+      ctx.GetRawContext(), input_data, input_max_data, seqlen_sum * dim_);
   CHECK_EQ(r, 0);
   r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
       ctx.GetRawContext(), /* context */

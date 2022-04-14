@@ -333,8 +333,8 @@ void XPUBiGRUCompute::Run() {
   int r =
       xdnn::findmax<float>(ctx.GetRawContext(),
                            param.input->data<float>(),
-                           param.input->numel(),
-                           reinterpret_cast<float*>(input_max_guard_->addr_));
+                           reinterpret_cast<float*>(input_max_guard_->addr_),
+                           param.input->numel());
   CHECK_EQ(r, 0);
   // FW_MUL
   MulRun(true);

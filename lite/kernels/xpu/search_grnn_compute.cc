@@ -207,7 +207,7 @@ void SearchGrnnCompute::Run() {
                       16 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   r = xdnn::findmax<float>(
-      ctx.GetRawContext(), new_emb, cap_l * cap_e, maxs_xpu);
+      ctx.GetRawContext(), new_emb, maxs_xpu, cap_l * cap_e);
   CHECK_EQ(r, 0);
 
   // precompute embedding to hidden
