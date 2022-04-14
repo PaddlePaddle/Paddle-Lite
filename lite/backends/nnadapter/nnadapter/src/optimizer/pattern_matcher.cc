@@ -33,7 +33,7 @@ NNADAPTER_EXPORT PatternMatcher::Pattern::Pattern(std::vector<Edge> *e,
                                                   NNAdapterOperationType t)
     : edges(e), type(t) {
   if (type != NNADAPTER_UNKNOWN) {
-    AsOperation(type);
+    IsOperation(type);
   }
 }
 
@@ -42,8 +42,8 @@ NNADAPTER_EXPORT PatternMatcher::Pattern &PatternMatcher::Pattern::operator>>(
   NNADAPTER_CHECK(this != &other) << "Can't link to the same pattern.";
   edges->emplace_back(this, &other);
   // Add out operation link automatically
-  if (other.IsOperation()) {
-    AsOperationInputOperand(other.type);
+  if (other.type != NNADAPTER_UNKNOWN) {
+    IsOperationInputOperand(other.type);
   }
   return other;
 }
@@ -65,7 +65,7 @@ NNADAPTER_EXPORT PatternMatcher::Pattern &operator>>(
   return self;
 }
 
-NNADAPTER_EXPORT bool PatternMatcher::Pattern::MeetAllConditions(
+NNADAPTER_EXPORT bool PatternMatcher::Pattern::MatchAllConditions(
     const Node *node) const {
   for (auto &condition : conditions) {
     if (!condition(node)) return false;
@@ -73,66 +73,70 @@ NNADAPTER_EXPORT bool PatternMatcher::Pattern::MeetAllConditions(
   return true;
 }
 
-NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::AsOperand() {
+NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperand() {
   conditions.emplace_back(
       [](const Node *node) { return node && node->IsOperand(); });
   return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsConstantOperand() {
-  AsOperand();
-  conditions.emplace_back(
-      [=](const Node *node) { return IsConstantOperand(node->operand); });
-  return this;
-}
-
-NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsVariableOperand() {
-  AsOperand();
-  conditions.emplace_back(
-      [=](const Node *node) { return !IsConstantOperand(node->operand); });
-  return this;
-}
-
-NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsConstantCopyOperand() {
-  AsOperand();
-  conditions.emplace_back(
-      [=](const Node *node) { return IsConstantCopyOperand(node->operand); });
-  return this;
-}
-
-NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsConstantReferenceOperand() {
-  AsOperand();
+PatternMatcher::Pattern::IsConstantOperand() {
+  IsOperand();
   conditions.emplace_back([=](const Node *node) {
-    return IsConstantReferenceOperand(node->operand);
+    return nnadapter::IsConstantOperand(node->operand);
   });
   return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsTemporaryVariableOperand() {
-  AsOperand();
+PatternMatcher::Pattern::IsVariableOperand() {
+  IsOperand();
   conditions.emplace_back([=](const Node *node) {
-    return IsTemporaryVariableOperand(node->operand);
+    return !nnadapter::IsConstantOperand(node->operand);
   });
   return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsTemporaryShapeOperand() {
-  AsOperand();
-  conditions.emplace_back(
-      [=](const Node *node) { return IsTemporaryShapeOperand(node->operand); });
+PatternMatcher::Pattern::IsConstantCopyOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsConstantCopyOperand(node->operand);
+  });
   return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsOperationInputOperand(NNAdapterOperationType type,
+PatternMatcher::Pattern::IsConstantReferenceOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsConstantReferenceOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsTemporaryVariableOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsTemporaryVariableOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsTemporaryShapeOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsTemporaryShapeOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsOperationInputOperand(NNAdapterOperationType type,
                                                  int index) {
-  AsOperand();
+  IsOperand();
   conditions.emplace_back([=](const Node *node) {
     for (auto op : node->outlinks) {
       if (op && op->IsOperation() && op->operation->type == type) {
@@ -152,9 +156,9 @@ PatternMatcher::Pattern::AsOperationInputOperand(NNAdapterOperationType type,
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsOperationOutputOperand(NNAdapterOperationType type,
+PatternMatcher::Pattern::IsOperationOutputOperand(NNAdapterOperationType type,
                                                   int index) {
-  AsOperand();
+  IsOperand();
   conditions.emplace_back([=](const Node *node) {
     for (auto op : node->inlinks) {
       if (op && op->IsOperation() && op->operation->type == type) {
@@ -173,7 +177,7 @@ PatternMatcher::Pattern::AsOperationOutputOperand(NNAdapterOperationType type,
   return this;
 }
 
-NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::AsOperation(
+NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
     NNAdapterOperationType type) {
   conditions.emplace_back([type](const Node *node) {
     return node && node->IsOperation() && node->operation->type == type;
@@ -182,23 +186,15 @@ NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::AsOperation(
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AddCustomCondition(const Condition &condition) {
-  conditions.push_back(condition);
-  return this;
-}
-
-NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::AsIntermediate() {
+PatternMatcher::Pattern::IsIntermediate() {
   intermediate = true;
   return this;
 }
 
-NNADAPTER_EXPORT bool PatternMatcher::Pattern::IsIntermediate() const {
-  return intermediate;
-}
-
-NNADAPTER_EXPORT bool PatternMatcher::Pattern::IsOperation() const {
-  return type != NNADAPTER_UNKNOWN;
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::MatchCondition(const Condition &condition) {
+  conditions.push_back(condition);
+  return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::CreatePattern(
@@ -221,7 +217,7 @@ NNADAPTER_EXPORT size_t PatternMatcher::Apply(core::Model *model) {
   ValidatePatterns(&subgraphs);
   RemoveOverlappedPatterns(&subgraphs);
   NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs matched!";
-  // Replace a new node with a matched subgraph, and collect the intermediate
+  // Replace a matched subgraph with a new node, and collect the intermediate
   // operands and operations to be removed.
   std::vector<std::map<std::string, Node *>> matches;
   std::set<core::Operand *> operands;
@@ -231,7 +227,7 @@ NNADAPTER_EXPORT size_t PatternMatcher::Apply(core::Model *model) {
     for (auto &pattern : patterns_) {
       auto node = subgraph.at(pattern.second.get());
       matches.back()[pattern.first] = node;
-      if (pattern.second->IsIntermediate()) {
+      if (pattern.second->intermediate) {
         if (node->IsOperand()) {
           operands.insert(node->operand);
         } else if (node->IsOperation()) {
@@ -297,12 +293,12 @@ NNADAPTER_EXPORT bool PatternMatcher::MarkPatterns(std::list<Node> *nodes) {
   if (!nodes || nodes->empty()) return false;
   for (auto &node : *nodes) {
     for (const auto &pattern : patterns_) {
-      if (pattern.second->MeetAllConditions(&node)) {
+      if (pattern.second->MatchAllConditions(&node)) {
         pattern2nodes_[pattern.second.get()].insert(&node);
       }
     }
   }
-  // Check to early stop if some PMNode can't find matched Node.
+  // Check to early stop if some patterns can't find the matched nodes.
   for (auto &pattern : patterns_) {
     if (!pattern2nodes_.count(pattern.second.get())) {
       NNADAPTER_VLOG(4) << "Can't find matched pattern, early stop!";
@@ -447,7 +443,7 @@ NNADAPTER_EXPORT void PatternMatcher::ValidatePatterns(
                          nodes.insert(pattern.second);
                        }
                        for (auto &pattern : subgraph) {
-                         if (pattern.first->IsIntermediate()) {
+                         if (pattern.first->intermediate) {
                            for (auto node : pattern.second->inlinks) {
                              if (!nodes.count(node)) {
                                return true;
@@ -472,7 +468,7 @@ NNADAPTER_EXPORT void PatternMatcher::RemoveOverlappedPatterns(
   for (const auto &subgraph : *subgraphs) {
     bool valid = true;
     for (auto &pattern : subgraph) {
-      if (pattern.first->IsIntermediate() && nodes.count(pattern.second)) {
+      if (pattern.first->intermediate && nodes.count(pattern.second)) {
         valid = false;
         break;
       }

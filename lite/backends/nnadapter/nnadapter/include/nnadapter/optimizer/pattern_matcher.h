@@ -49,27 +49,27 @@ class PatternMatcher {
   using Condition = std::function<bool(const Node*)>;
   /*
    * A pattern in a graph, which defined with pattern nodes and edges. Most
-   graph patterns can be divided into the nodes and the links between them.
+   * graph patterns can be divided into the nodes and the links between them.
    *
    * For example, the FullyConnected fusion need to filter the NNADAPTER_MATMUL
-   and NNADAPTER_ADD operations from the model, the NNADAPTER_MATMUL's output
-   should have only one consumer which is the NNADAPTER_ADD. This pattern can be
-   defined as with the following pseudo codes:
+   * and NNADAPTER_ADD operations from the model, the NNADAPTER_MATMUL's output
+   * should have only one consumer which is the NNADAPTER_ADD. This pattern can
+   * be
+   * defined as with the following pseudo codes:
    *   // Create two operation patterns
    *   matmul = CreatePattern("matmul", NNADAPTER_MATMUL);
    *   add = CreatePattern("add", NNADAPTER_ADD);
    *   // Create the operand patterns
    *   output = CreatePattern("output") \
-                  ->AsOperationOutputOperand(NNADAPTER_MATMUL, 0) \
-   *              ->AsOperationInputOperand(NNADAPTER_ADD, 0) \
-   *              ->AsIntermediate();
+   *              ->IsOperationOutputOperand(NNADAPTER_MATMUL, 0) \
+   *              ->IsOperationInputOperand(NNADAPTER_ADD, 0) \
+   *              ->IsIntermediate();
    *   // Create the topological connections for the patterns
    *   matmul >> output;
    *   output >> add;
    *
    * One can add more specific asserts for the pattern nodes or edges, both the
-   operation and operand pattern nodes can be ruled in
-   Pattern.AddCustomCondition(...).
+   * operation and operand pattern nodes can be ruled in MatchCondition(...).
    *
   */
   struct Pattern;
@@ -83,32 +83,27 @@ class PatternMatcher {
     Pattern& operator>>(std::vector<Pattern*>& others);
     // Link other patterns to self
     friend Pattern& operator>>(std::vector<Pattern*>& others, Pattern& self);
-    bool MeetAllConditions(const Node* node) const;
-    // The following functions are used to simplify the definition of
-    // conditions.
-    Pattern* AsOperand();
-    Pattern* AsConstantOperand();
-    Pattern* AsVariableOperand();
-    Pattern* AsConstantCopyOperand();
-    Pattern* AsConstantReferenceOperand();
-    Pattern* AsTemporaryVariableOperand();
-    Pattern* AsTemporaryShapeOperand();
-    Pattern* AsOperationInputOperand(NNAdapterOperationType type,
+    bool MatchAllConditions(const Node* node) const;
+    // Utility conditions
+    Pattern* IsOperand();
+    Pattern* IsOperation(NNAdapterOperationType type);
+    Pattern* IsConstantOperand();
+    Pattern* IsVariableOperand();
+    Pattern* IsConstantCopyOperand();
+    Pattern* IsConstantReferenceOperand();
+    Pattern* IsTemporaryVariableOperand();
+    Pattern* IsTemporaryShapeOperand();
+    Pattern* IsOperationInputOperand(NNAdapterOperationType type,
                                      int index = -1);
-    Pattern* AsOperationOutputOperand(NNAdapterOperationType type,
+    Pattern* IsOperationOutputOperand(NNAdapterOperationType type,
                                       int index = -1);
-    Pattern* AsOperation(NNAdapterOperationType type);
-    // Allow to add the custom condition
-    Pattern* AddCustomCondition(const Condition& condition);
     // Mark the pattern matched node to be deleted, so its inlinks and outlinks
     // should be inside a matched subgraph.
-    Pattern* AsIntermediate();
-    bool IsIntermediate() const;
-    bool IsOperation() const;
+    Pattern* IsIntermediate();
+    // Add a custom condition
+    Pattern* MatchCondition(const Condition& condition);
     Pattern& operator=(const Pattern&) = delete;
     Pattern(const Pattern&) = delete;
-
-   private:
     Pattern(Pattern&& other) = default;
     bool intermediate{false};
     NNAdapterOperationType type{NNADAPTER_UNKNOWN};

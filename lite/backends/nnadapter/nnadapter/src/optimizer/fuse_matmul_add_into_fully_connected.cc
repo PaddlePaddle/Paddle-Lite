@@ -36,43 +36,43 @@ void MatMulAddFuser::BuildPattern() {
   // Operation patterns
   auto matmul_pattern =
       CreatePattern("matmul", NNADAPTER_MAT_MUL)
-          ->AddCustomCondition([](const Node* node) -> bool {
+          ->MatchCondition([](const Node* node) -> bool {
             auto operation = node->operation;
             return operation && operation->input_operands.size() == 4 &&
                    operation->input_operands[0]->type.dimensions.count == 2 &&
                    operation->input_operands[1]->type.dimensions.count == 2;
           })
-          ->AsIntermediate();
-  auto add_pattern = CreatePattern("add", NNADAPTER_ADD)->AsIntermediate();
+          ->IsIntermediate();
+  auto add_pattern = CreatePattern("add", NNADAPTER_ADD)->IsIntermediate();
   // Operand patterns
   auto matmul_x_pattern = CreatePattern("matmul_x")
-                              ->AsOperationInputOperand(NNADAPTER_MAT_MUL, 0)
-                              ->AsVariableOperand();
+                              ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 0)
+                              ->IsVariableOperand();
   auto matmul_y_pattern = CreatePattern("matmul_y")
-                              ->AsOperationInputOperand(NNADAPTER_MAT_MUL, 1)
-                              ->AsConstantOperand();
+                              ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 1)
+                              ->IsConstantOperand();
   auto matmul_transpose_x_pattern =
       CreatePattern("matmul_transpose_x")
-          ->AsOperationInputOperand(NNADAPTER_MAT_MUL, 2)
-          ->AsConstantOperand()
-          ->AddCustomCondition([](const Node* node) -> bool {
+          ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 2)
+          ->IsConstantOperand()
+          ->MatchCondition([](const Node* node) -> bool {
             auto operand = node->operand;
             return operand && operand->buffer &&
                    !*reinterpret_cast<bool*>(operand->buffer);
           })
-          ->AsIntermediate();
+          ->IsIntermediate();
   auto matmul_transpose_y_pattern =
       CreatePattern("matmul_transpose_y")
-          ->AsOperationInputOperand(NNADAPTER_MAT_MUL, 3)
-          ->AsConstantOperand()
-          ->AsIntermediate();
-  auto matmul_output_pattern = CreatePattern("matmul_output")->AsIntermediate();
+          ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 3)
+          ->IsConstantOperand()
+          ->IsIntermediate();
+  auto matmul_output_pattern = CreatePattern("matmul_output")->IsIntermediate();
   auto add_y_pattern = CreatePattern("add_y")
-                           ->AsOperationInputOperand(NNADAPTER_ADD, 1)
-                           ->AsConstantOperand();
+                           ->IsOperationInputOperand(NNADAPTER_ADD, 1)
+                           ->IsConstantOperand();
   auto add_fuse_code_pattern = CreatePattern("add_fuse_code")
-                                   ->AsOperationInputOperand(NNADAPTER_ADD, 2)
-                                   ->AsConstantOperand();
+                                   ->IsOperationInputOperand(NNADAPTER_ADD, 2)
+                                   ->IsConstantOperand();
   auto add_output_pattern = CreatePattern("add_output");
   // Create the topological connections for the above patterns
   std::vector<Pattern*> matmul_input_patterns{matmul_x_pattern,
