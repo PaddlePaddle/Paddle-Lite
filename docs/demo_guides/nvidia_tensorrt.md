@@ -5,8 +5,9 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
 ## 支持现状
 
 ### 已支持的 GPU 类型
+
 - Jetson 全系列
-- Pascal/Volt/Turning 架构的 GPU, 即将支持 Ampere 架构 GPU。
+- Pascal/Volt/Turning 架构的 GPU, 即将支持 Ampere 架构 GPU
 
 ### 已支持的英伟达软件栈
 
@@ -26,33 +27,33 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
     - [ResNet50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz)
 
 ### 性能
+
 - 测试环境
   - 设备环境
     - NVIDIA Jetson AGX Xavier [16GB]
-      * Jetpack 4.4.1 [L4T 32.4.4]
-      * NV Power Mode: MAXN - Type: 0
+      - Jetpack 4.4.1 [L4T 32.4.4]
+      - NV Power Mode: MAXN - Type: 0
     - Board info:
-      * Type: AGX Xavier [16GB]
-      * CUDA GPU architecture (ARCH_BIN): 7.2
+      - Type: AGX Xavier [16GB]
+      - CUDA GPU architecture (ARCH_BIN): 7.2
     - Libraries:
-      * CUDA: 10.2.89
-      * cuDNN: 8.0.0.180
-      * TensorRT: 7.1.3.0
-      * Visionworks: 1.6.0.501
-      * OpenCV: 4.1.1 compiled CUDA: NO
-      * VPI: 0.4.4
-      * Vulkan: 1.2.70
-
+      - CUDA: 10.2.89
+      - cuDNN: 8.0.0.180
+      - TensorRT: 7.1.3.0
+      - Visionworks: 1.6.0.501
+      - OpenCV: 4.1.1 compiled CUDA: NO
+      - VPI: 0.4.4
+      - Vulkan: 1.2.70
   - 编译环境
-    * 操作系统: Ubuntu 18.04.4 LTS aarch64
-    * gcc: 7.5.0
-    * cmake: 3.23.0-rc4
+    - 操作系统: Ubuntu 18.04.4 LTS aarch64
+    - gcc: 7.5.0
+    - cmake: 3.23.0-rc4
 
 - 测试结果
-  
-  | Model | Input| Batch | Dataset | GPU FP16 Latency(ms) | DLA FP16 Latency(ms)  |
-  |---|---|---|---|---|---|
-  |ResNet50| 1,3,224,224 | 1 | ImageNet 2012 | 3.574 | 6.9214 |
+
+| Model | Input| Batch | Dataset | GPU FP16 Latency(ms) | DLA FP16 Latency(ms)  |
+|---|---|---|---|---|---|
+|ResNet50| 1,3,224,224 | 1 | ImageNet 2012 | 3.574 | 6.9214 |
 
 
 ### 已支持（或部分支持）的 Paddle 算子
