@@ -729,8 +729,6 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   }
   // 3. Delete nodes and edges
   std::set<const Node*> nodes2rm = {quant_op_node,
-                                    input_scale_node,
-                                    matched.at("quant_op_zero_point"),
                                     matched.at("quant_op_output"),
                                     matched.at("dequant_op"),
                                     output_var_node};
