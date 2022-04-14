@@ -731,14 +731,11 @@ void gemv_fp16(const float16_t *A,
   int out_cnt = M >> 2;
   int remain = M & 3;
   if (remain > 0) out_cnt++;
-  float16_t hard_parameter[8] = {offset,
-                                 offset,
-                                 offset,
-                                 offset,
-                                 threshold,
-                                 threshold,
-                                 threshold,
-                                 threshold};
+  float16_t hard_parameter[8];
+  for (int i = 0; i < 4; i++) {
+    hard_parameter[i] = offset;
+    hard_parameter[i + 4] = threshold;
+  }
   int stride = 1;
 
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
