@@ -50,7 +50,6 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
 
   auto is_test_type = op_desc.GetAttrType("is_test");
-  LOG(INFO) << "is_test_type: ";
   switch (is_test_type) {
     case OpDescAPI::AttrType::INT:
       param_.is_test = op_desc.GetAttr<int>("is_test");
