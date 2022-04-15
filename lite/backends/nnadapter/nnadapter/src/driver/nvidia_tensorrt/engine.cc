@@ -220,7 +220,8 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
 static void SetTensor(Tensor* tensor,
                       void* data_ptr,
                       const NNAdapterOperandType& type,
-                      bool is_device_buffer) {
+                      bool is_device_buffer,
+                      cudaStream_t stream) {
   auto dims = type.dimensions;
   std::vector<int32_t> shape(dims.data, dims.data + dims.count);
   auto data_type = ConvertToNVDataType(type.precision);
@@ -232,7 +233,8 @@ static void SetTensor(Tensor* tensor,
     uint32_t length =
         tensor->Length() * GetOperandPrecisionDataLength(type.precision);
     NNADAPTER_CHECK_EQ(
-        cudaMemcpy(tensor->Data(), data_ptr, length, cudaMemcpyHostToDevice),
+        cudaMemcpyAsync(
+            tensor->Data(), data_ptr, length, cudaMemcpyHostToDevice, stream),
         cudaSuccess);
   }
 }
@@ -245,6 +247,7 @@ int Program::Execute(uint32_t input_count,
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
   // 1. Feed inputs
+  cudaStream_t stream = context_->CudaStream();
   for (size_t i = 0; i < input_types_.size(); i++) {
     // Get input info
     auto arg = FindArgumentByIndex(input_arguments, i, input_count);
@@ -259,7 +262,8 @@ int Program::Execute(uint32_t input_count,
     if (!input_tensors_.count(index)) {
       input_tensors_[index] = std::shared_ptr<Tensor>(new Tensor());
     }
-    SetTensor(input_tensors_[index].get(), data_ptr, type, is_device_buffer);
+    SetTensor(
+        input_tensors_[index].get(), data_ptr, type, is_device_buffer, stream);
   }
   // 2. Execute sub_programs_ in order
   for (size_t i = 0; i < sub_programs_.size(); i++) {
@@ -292,7 +296,7 @@ int Program::Execute(uint32_t input_count,
         output_tensors.push_back(temporary_tensors_[output_index]);
       }
     }
-    sub_programs_[i]->Execute(&input_tensors, &output_tensors);
+    sub_programs_[i]->Execute(&input_tensors, &output_tensors, stream);
   }
   // 3. Fetch outputs
   for (size_t i = 0; i < output_types_.size(); i++) {
@@ -309,15 +313,18 @@ int Program::Execute(uint32_t input_count,
       arg->access(arg->memory, &type, output_tensor->Data());
     } else if (output_tensor->Data()) {
       auto host_ptr = arg->access(arg->memory, &type, nullptr);
-      NNADAPTER_CHECK_EQ(
-          cudaMemcpy(
-              host_ptr, output_tensor->Data(), length, cudaMemcpyDeviceToHost),
-          cudaSuccess);
+      NNADAPTER_CHECK_EQ(cudaMemcpyAsync(host_ptr,
+                                         output_tensor->Data(),
+                                         length,
+                                         cudaMemcpyDeviceToHost,
+                                         stream),
+                         cudaSuccess);
     } else {
       auto host_ptr = arg->access(arg->memory, &type, nullptr);
       memcpy(host_ptr, output_tensor->Data(false), length);
     }
   }
+  NNADAPTER_CHECK_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   return NNADAPTER_NO_ERROR;
 }
 

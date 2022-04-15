@@ -39,6 +39,7 @@
 #include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #endif
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -237,6 +238,25 @@ class Context<TargetType::kNNAdapter> {
     auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
     if (!var) return "";
     return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterContextGetParametersFunction(
+      Scope* scope,
+      const std::function<void(std::map<std::string, void*>*)>&
+          runtime_parameters) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_GET_PARATEMERS_FUNCTIONS");
+    CHECK(var);
+    auto data =
+        var->GetMutable<std::function<void(std::map<std::string, void*>*)>>();
+    CHECK(data);
+    *data = runtime_parameters;
+  }
+
+  static std::function<void(std::map<std::string, void*>*)>
+  NNAdapterContextGetParametersFunction(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_GET_PARATEMERS_FUNCTIONS");
+    if (!var) return std::function<void(std::map<std::string, void*>*)>();
+    return var->Get<std::function<void(std::map<std::string, void*>*)>>();
   }
 
   static void SetNNAdapterSubgraphPartitionConfigPath(

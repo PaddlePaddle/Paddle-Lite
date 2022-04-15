@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -87,6 +88,8 @@ class Engine {
   ::NNAdapterContext* context_{nullptr};
   std::vector<std::shared_ptr<Program>> programs_;
   std::string model_cache_dir_{""};
+  std::function<void(std::map<std::string, void*>*)>
+      runtime_parameters_function_;
 };
 
 }  // namespace nnadapter

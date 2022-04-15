@@ -43,7 +43,9 @@ class Device {
   int32_t GetVersion() const {
     return IsValid() ? device_->second->version : -1;
   }
-  int CreateContext(const char* properties, void** context);
+  int CreateContext(const char* properties,
+                    void* runtime_parameters_function,
+                    void** context);
   void DestroyContext(void* context);
   int ValidateProgram(void* context,
                       const core::Model* model,

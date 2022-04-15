@@ -91,6 +91,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         raw_predictor_->scope(), config.nnadapter_device_names());
     Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
         raw_predictor_->scope(), config.nnadapter_context_properties());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextGetParametersFunction(
+        raw_predictor_->scope(), config.runtime_parameters_function());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
         raw_predictor_->scope(), config.nnadapter_model_cache_dir());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(

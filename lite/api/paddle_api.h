@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -165,6 +166,7 @@ class LITE_API ConfigBase {
   // The NNAdapter context properties for device configuration, model
   // compilation and execution
   std::string nnadapter_context_properties_{};
+  std::function<void(std::map<std::string, void*>*)> runtime_parameters_;
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
   // Dynamic shapes of the NNAdapter model
@@ -274,6 +276,19 @@ class LITE_API ConfigBase {
   const std::string& nnadapter_context_properties() const {
     return nnadapter_context_properties_;
   }
+  // Set runtime_parameters_function for NNAdapter device to get runtime
+  // parameters.
+  // Such as "cuda_stream".
+  void set_runtime_parameters_function(
+      const std::function<void(std::map<std::string, void*>*)>&
+          runtime_parameters) {
+    runtime_parameters_ = runtime_parameters;
+  }
+  const std::function<void(std::map<std::string, void*>*)>&
+  runtime_parameters_function() const {
+    return runtime_parameters_;
+  }
+
   // Enable caching and set the directory to search and store the compiled
   // NNAdapter models in the file system.
   void set_nnadapter_model_cache_dir(const std::string& model_cache_dir) {

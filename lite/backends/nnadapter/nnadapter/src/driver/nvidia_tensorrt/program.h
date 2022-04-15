@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -37,7 +38,9 @@ class Device {
 
 class Context {
  public:
-  explicit Context(void* device, const char* properties);
+  explicit Context(void* device,
+                   const char* properties,
+                   void* runtime_parameters_function);
   ~Context() {}
 
   nvinfer1::DeviceType DeviceType() { return device_type_; }
@@ -47,10 +50,13 @@ class Context {
   std::string CalibrationDatasetPath() { return calibration_dataset_path_; }
   std::string CalibrationTablePath() { return calibration_table_path_; }
   size_t MaxWorkspaceSize() { return max_workspce_size_; }
+  cudaStream_t CudaStream();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  std::function<void(std::map<std::string, void*>*)>
+      runtime_parameters_function_;
   nvinfer1::DeviceType device_type_{nvinfer1::DeviceType::kGPU};
   int device_id_{0};
   PrecisionMode precision_{kFloat32};
@@ -67,7 +73,8 @@ class ProgramBase {
 
   virtual int Build() = 0;
   virtual int Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-                      std::vector<std::shared_ptr<Tensor>>* output_tensors) = 0;
+                      std::vector<std::shared_ptr<Tensor>>* output_tensors,
+                      cudaStream_t stream) = 0;
 };
 
 class TensorrtProgram : public ProgramBase {
@@ -80,7 +87,8 @@ class TensorrtProgram : public ProgramBase {
 
   int Build();
   int Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-              std::vector<std::shared_ptr<Tensor>>* output_tensors);
+              std::vector<std::shared_ptr<Tensor>>* output_tensors,
+              cudaStream_t stream);
 
  private:
   void Clear();
@@ -122,7 +130,8 @@ class CudaProgram : public ProgramBase {
 
   int Build();
   int Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-              std::vector<std::shared_ptr<Tensor>>* output_tensors);
+              std::vector<std::shared_ptr<Tensor>>* output_tensors,
+              cudaStream_t stream);
 
  private:
   void Clear();
@@ -148,7 +157,8 @@ class HostProgram : public ProgramBase {
 
   int Build();
   int Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-              std::vector<std::shared_ptr<Tensor>>* output_tensors);
+              std::vector<std::shared_ptr<Tensor>>* output_tensors,
+              cudaStream_t stream);
 
  private:
   void Clear();

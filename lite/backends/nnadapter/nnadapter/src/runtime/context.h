@@ -28,7 +28,9 @@ class Context {
     void* context;
     Device* device;
   } DeviceContext;
-  explicit Context(std::vector<Device*> devices, const std::string& properties);
+  explicit Context(std::vector<Device*> devices,
+                   const std::string& properties,
+                   void* runtime_parameters_function);
   ~Context();
   DeviceContext* GetDeviceContext(const char* name);
   DeviceContext* GetDeviceContext(int index);

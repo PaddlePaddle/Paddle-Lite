@@ -40,7 +40,8 @@ void Softmax(const T* input, T* output, const int num) {
 
 int NaiveSoftmaxKernel::Run(
     core::Operation* operation,
-    std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
+    std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map,
+    cudaStream_t stream) {
   NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_NAIVE_SOFTMAX);
   NAIVE_SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
