@@ -33,6 +33,10 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       mul_types.push_back("matmul");
       mul_types.push_back("matmul_v2");
     }
+    if (place.target == TARGET(kNNAdapter)) {
+      mul_types = {"mul"};
+      break;
+    }
   }
   act_types.push_back(false);
   for (auto op_type : mul_types) {
