@@ -147,8 +147,7 @@ class XPUFcFuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* max_output_tensor =
-        scope->MutableParent()->NewTensor(max_output_name);
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
     max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
