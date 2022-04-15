@@ -81,5 +81,4 @@ REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .ExcludeTargets({TARGET(kX86)})
 #endif
     .ExcludeTargets({TARGET(kBM)})
-    .ExcludeTargets({TARGET(kNNAdapter)})
     .BindKernel("fc");
