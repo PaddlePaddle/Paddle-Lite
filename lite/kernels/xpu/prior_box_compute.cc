@@ -72,6 +72,10 @@ void PriorBoxCompute::Run() {
   ar_num = aspect_ratios_vec.size();
   min_size_num = param.min_sizes.size();
   max_size_num = param.max_sizes.size();
+  CHECK_LE(min_size_num, 8);
+  if (max_size_num > 0) {
+    CHECK_LE(max_size_num, 8);
+  }
 
   bool is_clip = param.clip;
   auto image_dims = param.image->dims();
