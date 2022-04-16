@@ -370,6 +370,6 @@ void NNAdapterOpFusionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__nnadapter__op_fusion_pass,
+REGISTER_MIR_PASS(nnadapter_op_fusion_pass,
                   paddle::lite::mir::NNAdapterOpFusionPass)
     .BindTargets({TARGET(kNNAdapter)});
