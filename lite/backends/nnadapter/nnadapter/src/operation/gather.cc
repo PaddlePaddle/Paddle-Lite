@@ -38,36 +38,16 @@ NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
   auto& out_dims = output_operand->type.dimensions;
   int32_t in_count = in_dims.count;
   int32_t ids_count = ids_dims.count;
-  // out_dims.count = in_count + ids_count - 1;
+  out_dims.count = in_count + ids_count - 1;
 
   auto infer_output_shape = [&](const int32_t* in_dims_data,
                                 const int32_t* ids_dims_data,
                                 int32_t* out_dims_data) {
-    // memcpy(out_dims_data, in_dims_data, sizeof(int32_t) * axis);
-    // memcpy(out_dims_data + axis, ids_dims_data, sizeof(int32_t) * ids_count);
-    // memcpy(out_dims_data + axis + ids_count,
-    //        in_dims_data + axis + 1,
-    //        sizeof(int32_t) * (in_count - axis));
-    int inner_dim_size = 1;
-    int outer_dim_size = 1;
-    std::vector<int64_t> out_dim_vec;
-    for (int i = 0; i < axis; i++) {
-      inner_dim_size *= in_dims_data[i];
-      out_dim_vec.push_back(in_dims_data[i]);
-    }
-    int ids_numel = 1;
-    for (int i = 0; i < ids_count; i++) {
-      ids_numel *= ids_dims_data[i];
-    }
-    out_dim_vec.push_back(ids_numel);
-    for (int i = axis + 1; i < in_count; i++) {
-      outer_dim_size *= in_dims_data[i];
-      out_dim_vec.push_back(in_dims_data[i]);
-    }
-    out_dims.count = out_dim_vec.size();
-    for (int i = 0; i < out_dims.count; i++) {
-      out_dims_data[i] = out_dim_vec[i];
-    }
+    memcpy(out_dims_data, in_dims_data, sizeof(int32_t) * axis);
+    memcpy(out_dims_data + axis, ids_dims_data, sizeof(int32_t) * ids_count);
+    memcpy(out_dims_data + axis + ids_count,
+           in_dims_data + axis + 1,
+           sizeof(int32_t) * (in_count - axis));
   };
 
   infer_output_shape(in_dims.data, ids_dims.data, out_dims.data);

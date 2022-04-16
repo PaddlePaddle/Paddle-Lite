@@ -48,21 +48,21 @@ class GatherComputeTest : public arena::TestCase {
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
     auto index = scope->FindTensor(index_);
-    // auto axis = scope->FindTensor(axis_);
+    auto axis = scope->FindTensor(axis_);
     auto x_dims = x->dims();
     auto index_dims = index->dims();
     CHECK(index_dims.size() == 1 ||
           (index_dims.size() == 2 && index_dims[1] == 1));
-    // CHECK_EQ(index_dims.size(), 1);
-    if (1) {
-      // auto* axis_data = axis->template data<A>();
+    CHECK_EQ(index_dims.size(), 1);
+    if (axis_dims_.production() == 1) {
+      auto* axis_data = axis->template data<A>();
       auto* index_data = index->template data<R>();
       auto* input_data = x->template data<T>();
 
       int index_size = index->numel();
       int input_size = x->numel();
       auto input_dim = x->dims();
-      int axis_index = 1;
+      int axis_index = axis_data[0];
       int inner_dim_size = 1;
       int outer_dim_size = 1;
       std::vector<int64_t> out_dim_vec;
@@ -126,7 +126,6 @@ class GatherComputeTest : public arena::TestCase {
     if (axis_dims_.production() == 1) {
       op_desc->SetInput("Axis", {axis_});
     }
-    op_desc->SetAttr("axis", 1);
     op_desc->SetOutput("Out", {out_});
   }
 
@@ -173,8 +172,6 @@ TEST(Gather, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-3;
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -193,11 +190,10 @@ TEST(Gather, precision) {
 
   for (auto x_dims : std::vector<std::vector<int64_t>>{
            {5, 7, 10, 12}, {8, 12, 16}, {12, 17}}) {
-    for (auto index_dims : std::vector<std::vector<int64_t>>{{1}, {7}, {10}}) {
+    for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if (defined(LITE_WITH_NPU) || defined(LITE_WITH_NNADAPTER))
         axis_dims = {{0}};
-        index_dims = {5, 1};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");
 #else
