@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/quantization_parameters_propagation_pass.h"
+#include "lite/core/optimizer/mir/nnadapter_quantization_parameters_propagation_pass.h"
 #include <cmath>
+#include <string>
 #include <unordered_set>
+#include <vector>
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
@@ -59,7 +61,7 @@ static float GetOutputThreshold(const OpInfo* op_info,
   return op_info->GetAttr<float>(threshold_name);
 }
 
-void QuantizationParametersPropagationPass::Apply(
+void NNAdapterQuantizationParametersPropagationPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
   // Propagete the input scale which is from fake_quantize_xxx and
@@ -137,6 +139,7 @@ void QuantizationParametersPropagationPass::Apply(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(quantization_parameters_propagation_pass,
-                  paddle::lite::mir::QuantizationParametersPropagationPass)
+REGISTER_MIR_PASS(
+    nnadapter_quantization_parameters_propagation_pass,
+    paddle::lite::mir::NNAdapterQuantizationParametersPropagationPass)
     .BindTargets({TARGET(kNNAdapter)});

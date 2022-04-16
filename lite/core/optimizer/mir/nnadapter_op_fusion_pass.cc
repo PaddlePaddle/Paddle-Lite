@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/op_conversion_pass.h"
+#include "lite/core/optimizer/mir/nnadapter_op_fusion_pass.h"
 #include <cmath>
 #include <memory>
+#include <string>
 #include <vector>
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
@@ -352,7 +353,7 @@ void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
   // fuser(graph);
 }
 
-void OpConversionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void NNAdapterOpFusionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   ApplyMulElementwiseAddFuser(graph.get());
   ApplyMatmulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
@@ -369,5 +370,6 @@ void OpConversionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(op_conversion_pass, paddle::lite::mir::OpConversionPass)
+REGISTER_MIR_PASS(__nnadapter__op_fusion_pass,
+                  paddle::lite::mir::NNAdapterOpFusionPass)
     .BindTargets({TARGET(kNNAdapter)});

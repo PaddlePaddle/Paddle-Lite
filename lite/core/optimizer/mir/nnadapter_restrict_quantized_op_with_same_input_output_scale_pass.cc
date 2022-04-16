@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/restrict_quantized_op_with_same_input_output_scale_pass.h"
+#include "lite/core/optimizer/mir/nnadapter_restrict_quantized_op_with_same_input_output_scale_pass.h"
 #include <cmath>
+#include <limits>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -111,7 +113,7 @@ void UpdateInputOutputScales(
   }
 }
 
-void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
+void NNAdapterRestrictQuantizedOpWithSameInputOutputScalePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
   const std::unordered_set<std::string> restricted_quantized_op_types = {
@@ -170,6 +172,6 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(
-    restrict_quantized_op_with_same_input_output_scale_pass,
-    paddle::lite::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
+    nnadapter_restrict_quantized_op_with_same_input_output_scale_pass,
+    paddle::lite::mir::NNAdapterRestrictQuantizedOpWithSameInputOutputScalePass)
     .BindTargets({TARGET(kRKNPU), TARGET(kNNAdapter)});

@@ -145,17 +145,24 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "scale_calc_offline_pass",
        "unsqueeze_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
-       "op_conversion_pass",
-       // Only for fully quantized model, infer the output scale and fix the
-       // attribute 'enable_int8' for all of the quantized ops.
-       "quantization_parameters_propagation_pass",
-       // Apply the constraints for the quantized ops(such as concat) that the
-       // inputs and outputs must have the same scale.
-       "restrict_quantized_op_with_same_input_output_scale_pass",
-       "quantization_parameters_removal_pass",
-       // If you want to add a pass on the above list, please notify
-       // @hong19860320 or @zhupengyang for code review
+       // A minimal set of op fusion pass.
+       "nnadapter_op_fusion_pass",
+       // For the fully quantization model, the quantization parameters of the
+       // quantized ops are inferred by the propagation method according to the
+       // input scales and out_threashold.
+       "nnadapter_quantization_parameters_propagation_pass",
+       // Restrict the quantized ops(such as concat) that their inputs and
+       // outputs must have the same scale.
+       "nnadapter_restrict_quantized_op_with_same_input_output_scale_pass",
+       // Based on the custom mixed precision configuration information, remove
+       // the quantization parameters of some quantized ops to force them to run
+       // at fp32 precision.
+       "nnadapter_quantization_parameters_removal_pass",
+       // Subgraph partition based on operator support information defined in
+       // lite/kernels/nnadapter/converter/all.h
        "nnadapter_subgraph_pass",
+       // Please notify @hong19860320 and @zhupengyang for code review if you
+       // want to insert a pass in the above passes.
        "remove_scale1_pass",
        "adaptive_1x1_pool2d_convert_global_pass",  //
        "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",

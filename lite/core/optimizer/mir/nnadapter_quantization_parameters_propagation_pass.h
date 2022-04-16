@@ -15,24 +15,13 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-class NPUSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class BMSubgraphPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
-
-class MLUSubgraphPass : public ProgramPass {
+class NNAdapterQuantizationParametersPropagationPass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };

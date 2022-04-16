@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,34 @@
 
 #pragma once
 
-#include <limits>
-#include <map>
 #include <memory>
+#include <set>
 #include <string>
-#include <vector>
 #include "lite/core/optimizer/mir/pass.h"
-#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-class QuantizationParametersPropagationPass : public mir::StmtPass {
+/*
+ * Clear ops' quant information by config file
+ *
+ * for ops to clear quant info
+ * before:
+ *   in_var(int8) -> op(int8) -> out_var(int8)
+ * after:
+ *   in_var(int8) -> op -> out_var
+ */
+class NNAdapterQuantizationParametersRemovalPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+ private:
+  std::string GetMixedPrecisionQuantizationConfig(Scope* scope);
+  std::set<Node*> GetTargetNodesFromMixedPrecisionQuantizationConfig(
+      const std::unique_ptr<SSAGraph>& graph,
+      const std::string& mixed_precision_quantization_config);
+  void ClearQuantInfo(paddle::lite::mir::Node* node);
 };
 
 }  // namespace mir
