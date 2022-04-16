@@ -29,7 +29,7 @@ class SplitTester : public arena::TestCase {
   std::string axis_tensor_;
   std::vector<std::string> sections_tensor_list_;
   DDim x_dims_;
-  int axis_ = 0;
+  int axis_ = 1;
   int num_ = 1;
   std::vector<int> sections_;
 
@@ -199,9 +199,9 @@ template <class T = float>
 void TestSplitAxis(Place place,
                    float abs_error,
                    const std::string& alias = "def") {
-  std::vector<std::vector<int64_t>> x_shapes{{4}, {4, 6, 8, 10}};
+  std::vector<std::vector<int64_t>> x_shapes{{4, 6, 8, 10}};
   for (auto x_shape : x_shapes) {
-    for (auto axis : {-4, -1, 0, 1, 2, 3}) {
+    for (auto axis : {-1, 1, 2, 3}) {
       if (axis >= static_cast<int>(x_shape.size()) ||
           axis < -static_cast<int>(x_shape.size())) {
         continue;
@@ -269,6 +269,14 @@ TEST(Split_test, precision) {
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
   TestSplitBase<float>(place, abs_error);

@@ -53,6 +53,7 @@ int Converter::Apply(core::Model* model) {
         break;
     }
   }
+  NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
   // Reset input tensors name
   for (size_t i = 0; i < model->input_operands.size(); i++) {
     auto& operand = model->input_operands.at(i);
@@ -61,15 +62,26 @@ int Converter::Apply(core::Model* model) {
     std::string name = "input" + std::to_string(i);
     tensor->setName(name.c_str());
   }
+  NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
   // Mark output
+  NNADAPTER_LOG(INFO) << "model->output_operands.size():"
+                      << model->output_operands.size();
   for (size_t i = 0; i < model->output_operands.size(); i++) {
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
     auto& operand = model->output_operands.at(i);
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
     NNADAPTER_CHECK(tensors_->count(operand));
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA operand:" << &operand;
     auto tensor = tensors_->at(operand).back();
+    NNADAPTER_CHECK(tensor);
     std::string name = "output" + std::to_string(i);
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
     tensor->setName(name.c_str());
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
     network_->markOutput(*tensor);
+    NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
   }
+  NNADAPTER_LOG(INFO) << "AAAAAAAAAAA";
   return NNADAPTER_NO_ERROR;
 }
 
