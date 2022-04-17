@@ -350,6 +350,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
+  return ;
   impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
