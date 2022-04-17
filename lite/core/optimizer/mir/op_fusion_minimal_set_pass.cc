@@ -214,8 +214,6 @@ class Conv2dElementwiseAddFuser : public FuseBase {
     auto conv2d_node = matched.at("conv2d");
     auto conv2d_op = conv2d_node->stmt()->op();
     auto scope = conv2d_op->scope();
-    auto conv2d_input_node = matched.at("conv2d_input");
-    auto conv2d_input_name = conv2d_input_node->arg()->name;
     auto conv2d_filter_node = matched.at("conv2d_filter");
     auto conv2d_filter_name = conv2d_filter_node->arg()->name;
     auto conv2d_filter_var = scope->FindVar(conv2d_filter_name);
@@ -262,15 +260,6 @@ class Conv2dElementwiseAddFuser : public FuseBase {
         elementwise_add_y_data[i] += conv2d_bias_data[i];
       }
     }
-    // Get input scales from conv2d op.
-    std::vector<float> conv2d_input_scales;
-    std::vector<float> conv2d_filter_scales;
-    if (conv2d_desc.HasInputScale(conv2d_input_name)) {
-      conv2d_input_scales = conv2d_desc.GetInputScale(conv2d_input_name);
-    }
-    if (conv2d_desc.HasInputScale(conv2d_filter_name)) {
-      conv2d_filter_scales = conv2d_desc.GetInputScale(conv2d_filter_name);
-    }
     // Get the output threshold from elementwise_add op.
     float elementwise_add_out_out_threshold = -1.0f;
     if (elementwise_add_desc.HasAttr("out_threshold")) {
@@ -285,16 +274,8 @@ class Conv2dElementwiseAddFuser : public FuseBase {
           elementwise_add_desc.GetAttr<float>("Out0_threshold");
     }
     // Update the conv2d op desc and links
-    conv2d_desc.SetInput("Input", {conv2d_input_name});
-    conv2d_desc.SetInput("Filter", {conv2d_filter_name});
     conv2d_desc.SetInput("Bias", {elementwise_add_y_name});
     conv2d_desc.SetOutput("Output", {elementwise_add_out_name});
-    if (!conv2d_input_scales.empty()) {
-      conv2d_desc.SetInputScale(conv2d_input_name, conv2d_input_scales);
-    }
-    if (!conv2d_filter_scales.empty()) {
-      conv2d_desc.SetInputScale(conv2d_filter_name, conv2d_filter_scales);
-    }
     if (elementwise_add_out_out_threshold > 0.f) {
       conv2d_desc.SetAttr("out_threshold", elementwise_add_out_out_threshold);
     }
@@ -309,6 +290,87 @@ class Conv2dElementwiseAddFuser : public FuseBase {
 
  private:
   std::string conv2d_type_{"conv2d"};
+  bool has_bias_{false};
+};
+
+class Conv2dActivationFuser : public FuseBase {
+ public:
+  explicit Conv2dActivationFuser(const std::string& conv2d_type,
+                                 const std::string& act_type,
+                                 bool has_bias)
+      : conv2d_type_(conv2d_type), act_type_(act_type), has_bias_(has_bias) {}
+
+  void BuildPattern() override {
+    // Create the pattern nodes.
+    auto conv2d_node = OpNode("conv2d", conv2d_type_);
+    auto conv2d_input_node =
+        VarNode("conv2d_input")->assert_is_op_input(conv2d_type_, "Input");
+    auto conv2d_filter_node =
+        VarNode("conv2d_filter")->assert_is_op_input(conv2d_type_, "Filter");
+    auto conv2d_output_node = VarNode("conv2d_output")
+                                  ->assert_is_op_output(conv2d_type_, "Output")
+                                  ->assert_is_op_input(act_type_, "X")
+                                  ->AsIntermediate();
+    auto act_node = OpNode("act", act_type_)->AsIntermediate();
+    auto act_out_node =
+        VarNode("act_out")->assert_is_op_output(act_type_, "Out");
+    // Create the topological connections for the above pattern nodes.
+    std::vector<PMNode*> conv2d_inputs{conv2d_input_node, conv2d_filter_node};
+    if (has_bias_) {
+      auto conv2d_bias_node = VarNode("conv2d_bias")
+                                  ->assert_is_op_input(conv2d_type_, "Bias")
+                                  ->assert_is_persistable_var();
+      conv2d_inputs.emplace_back(conv2d_bias_node);
+    }
+    conv2d_inputs >> *conv2d_node >> *conv2d_output_node;
+    *conv2d_output_node >> *act_node >> *act_out_node;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto conv2d_node = matched.at("conv2d");
+    auto conv2d_op = conv2d_node->stmt()->op();
+    auto act_node = matched.at("act");
+    auto act_out_node = matched.at("act_out");
+    auto act_out_name = act_out_node->arg()->name;
+    // Get the attributes from conv2d op and act op.
+    auto conv2d_desc = *conv2d_node->stmt()->op_info();
+    auto act_desc = *act_node->stmt()->op_info();
+    // Get the output threshold from act op.
+    float act_out_out_threshold = -1.0f;
+    if (act_desc.HasAttr("out_threshold")) {
+      act_out_out_threshold = act_desc.GetAttr<float>("out_threshold");
+    }
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    float act_out_Out0_threshold = -1.0f;
+    if (act_desc.HasAttr("Out0_threshold")) {
+      act_out_Out0_threshold = act_desc.GetAttr<float>("Out0_threshold");
+    }
+    // Update the conv2d op desc and links
+    conv2d_desc.SetAttr("with_act", true);
+    conv2d_desc.SetAttr("act_type", act_type_);
+    if (act_type_ == "relu") {
+      conv2d_desc.SetAttr("fuse_relu", true);
+    }
+    if (act_type_ == "relu6") {
+      float alpha = act_desc.GetAttr<float>("threshold");
+      conv2d_desc.SetAttr("fuse_brelu_threshold", alpha);
+    }
+    conv2d_desc.SetOutput("Output", {act_out_name});
+    if (act_out_out_threshold > 0.f) {
+      conv2d_desc.SetAttr("out_threshold", act_out_out_threshold);
+    }
+    if (act_out_Out0_threshold > 0.f) {
+      conv2d_desc.SetAttr("Out0_threshold", act_out_Out0_threshold);
+    }
+    auto& valid_places = conv2d_op->valid_places();
+    conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
+    IR_OP_VAR_LINK(conv2d_node, act_out_node);
+  }
+
+ private:
+  std::string conv2d_type_{"conv2d"};
+  std::string act_type_{"relu"};
   bool has_bias_{false};
 };
 
@@ -344,8 +406,16 @@ void ApplyConv2dElementwiseAddFuser(SSAGraph* graph) {
 }
 
 void ApplyConv2dActivationFuser(SSAGraph* graph) {
-  // Conv2dActivationFuser fuser;
-  // fuser(graph);
+  for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
+    for (auto act_type : {"relu", "relu1", "relu6"}) {
+      for (auto has_bias : {true, false}) {
+        VLOG(5) << "conv_type:" << conv_type << "act_type:" << act_type
+                << " has_bias:" << has_bias;
+        Conv2dActivationFuser fuser(conv_type, act_type, has_bias);
+        fuser(graph);
+      }
+    }
+  }
 }
 
 void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
