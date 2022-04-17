@@ -62,6 +62,7 @@ namespace arm {
 
 template <>
 void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
+  return;
   PARAM_INIT
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
