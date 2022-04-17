@@ -274,7 +274,7 @@ class Conv2dBatchNormFuser : public FuseBase {
     auto batch_norm_desc = *batch_norm_node->stmt()->op_info();
     auto conv2d_groups = conv2d_desc.GetAttr<int>("groups");
     auto batch_norm_eps = batch_norm_desc.GetAttr<float>("epsilon");
-    size_t conv2d_output_channel_size = conv2d_filter_dims[0];
+    auto conv2d_output_channel_size = conv2d_filter_dims[0];
     if (conv2d_type_ == "conv2d_transpose") {
       conv2d_output_channel_size = conv2d_filter_dims[1] * conv2d_groups;
     }
@@ -298,14 +298,16 @@ class Conv2dBatchNormFuser : public FuseBase {
     // eps)
     // beta[channel_idx] = (-mean[channel_idx]) * alpha[channel_idx]
     Tensor batch_norm_alpha_tensor, batch_norm_beta_tensor;
-    batch_norm_alpha_tensor.Resize({conv2d_output_channel_size});
-    batch_norm_beta_tensor.Resize({conv2d_output_channel_size});
+    batch_norm_alpha_tensor.Resize(
+        std::vector<int64_t>({conv2d_output_channel_size}));
+    batch_norm_beta_tensor.Resize(
+        std::vector<int64_t>({conv2d_output_channel_size}));
     auto batch_norm_alpha_data = batch_norm_alpha_tensor.mutable_data<float>();
     auto batch_norm_beta_data = batch_norm_beta_tensor.mutable_data<float>();
     auto batch_norm_scale_data = batch_norm_scale_tensor.data<float>();
     auto batch_norm_mean_data = batch_norm_mean_tensor.data<float>();
     auto batch_norm_variance_data = batch_norm_variance_tensor.data<float>();
-    for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+    for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
       batch_norm_alpha_data[i] =
           batch_norm_scale_data[i] /
           std::sqrt(batch_norm_variance_data[i] + batch_norm_eps);
@@ -318,12 +320,12 @@ class Conv2dBatchNormFuser : public FuseBase {
       auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<int8_t>();
       if (conv2d_type_ == "conv2d_transpose") {
       } else {
-        size_t conv2d_filter_inner_size =
+        auto conv2d_filter_inner_size =
             conv2d_filter_dims.production() / conv2d_output_channel_size;
-        for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+        for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
           conv2d_filter_scales[i] *= fabsf(batch_norm_alpha_data[i]);
           if (batch_norm_alpha_data[i] >= 0.f) continue;
-          for (size_t j = 0; j < conv2d_filter_inner_size; j++) {
+          for (int64_t j = 0; j < conv2d_filter_inner_size; j++) {
             conv2d_filter_data[i * conv2d_filter_inner_size + j] *= -1;
           }
         }
@@ -332,10 +334,10 @@ class Conv2dBatchNormFuser : public FuseBase {
       auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<float>();
       if (conv2d_type_ == "conv2d_transpose") {
       } else {
-        size_t conv2d_filter_inner_size =
+        int64_t conv2d_filter_inner_size =
             conv2d_filter_dims.production() / conv2d_output_channel_size;
-        for (size_t i = 0; i < conv2d_output_channel_size; i++) {
-          for (size_t j = 0; j < conv2d_filter_inner_size; j++) {
+        for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
+          for (int64_t j = 0; j < conv2d_filter_inner_size; j++) {
             conv2d_filter_data[i * conv2d_filter_inner_size + j] *=
                 batch_norm_alpha_data[i];
           }
@@ -353,12 +355,12 @@ class Conv2dBatchNormFuser : public FuseBase {
       CHECK_EQ(conv2d_bias_dims.size(), 1);
       CHECK_EQ(conv2d_bias_dims[0], conv2d_output_channel_size);
       auto conv2d_bias_data = conv2d_bias_tensor.data<float>();
-      for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+      for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
         batch_norm_bias_data[i] +=
             batch_norm_alpha_data[i] * conv2d_bias_data[i];
       }
     }
-    for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+    for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
       batch_norm_bias_data[i] += batch_norm_beta_data[i];
     }
     // Update the conv2d op desc and links
@@ -464,7 +466,7 @@ class Conv2dElementwiseAddFuser : public FuseBase {
     auto conv2d_desc = *conv2d_node->stmt()->op_info();
     auto elementwise_add_desc = *elementwise_add_node->stmt()->op_info();
     auto conv2d_groups = conv2d_desc.GetAttr<int>("groups");
-    size_t conv2d_output_channel_size = conv2d_filter_dims[0];
+    auto conv2d_output_channel_size = conv2d_filter_dims[0];
     if (conv2d_type_ == "conv2d_transpose") {
       conv2d_output_channel_size = conv2d_filter_dims[1] * conv2d_groups;
     }
@@ -488,7 +490,7 @@ class Conv2dElementwiseAddFuser : public FuseBase {
       auto conv2d_bias_data = conv2d_bias_tensor.data<float>();
       auto elementwise_add_y_data =
           elementwise_add_y_tensor->mutable_data<float>();
-      for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+      for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
         elementwise_add_y_data[i] += conv2d_bias_data[i];
       }
     }
