@@ -138,6 +138,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       {"lite_quant_dequant_fuse_pass",
        "weight_quantization_preprocess_pass",
        "op_transformation_pass",
+       "identity_scale_eliminate_pass",
        "assign_value_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "fill_constant_calc_offline_pass",
@@ -183,7 +184,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_shuffle_channel_fuse_pass",              //
        "lite_transpose_softmax_transpose_fuse_pass",  //
        "lite_interpolate_fuse_pass",                  //
-       "identity_scale_eliminate_pass",               //
        "lite_scales_fuse_pass",                       //
        "lite_sequence_reverse_embedding_fuse_pass",   //
        "elementwise_mul_constant_eliminate_pass",     //

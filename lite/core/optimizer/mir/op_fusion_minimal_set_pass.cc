@@ -151,6 +151,74 @@ class MulElementwiseAddFuser : public FuseBase {
   }
 };
 
+class FCActivationFuser : public FuseBase {
+ public:
+  explicit FCActivationFuser(const std::string& act_type)
+      : act_type_(act_type) {}
+
+  void BuildPattern() override {
+    // Create the pattern nodes.
+    auto fc_node = OpNode("fc", "fc");
+    auto fc_input_node = VarNode("fc_input")->assert_is_op_input("fc", "Input");
+    auto fc_w_node = VarNode("fc_w")
+                         ->assert_is_op_input("fc", "W")
+                         ->assert_is_persistable_var();
+    auto fc_bias_node = VarNode("fc_bias")
+                            ->assert_is_op_input("fc", "Bias")
+                            ->assert_is_persistable_var();
+    auto fc_out_node = VarNode("fc_out")
+                           ->assert_is_op_output("fc", "Out")
+                           ->assert_is_op_input(act_type_, "X")
+                           ->AsIntermediate();
+    auto act_node = OpNode("act", act_type_)->AsIntermediate();
+    auto act_out_node =
+        VarNode("act_out")->assert_is_op_output(act_type_, "Out");
+    // Create the topological connections for the above pattern nodes.
+    std::vector<PMNode*> fc_inputs{fc_input_node, fc_w_node, fc_bias_node};
+    fc_inputs >> *fc_node >> *fc_out_node;
+    *fc_out_node >> *act_node >> *act_out_node;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto fc_node = matched.at("fc");
+    auto fc_op = fc_node->stmt()->op();
+    auto act_node = matched.at("act");
+    auto act_out_node = matched.at("act_out");
+    auto act_out_name = act_out_node->arg()->name;
+    // Get the attributes from fc op and act op.
+    auto fc_desc = *fc_node->stmt()->op_info();
+    auto act_desc = *act_node->stmt()->op_info();
+    // Update the fc op desc and links
+    fc_desc.SetAttr("with_act", true);
+    fc_desc.SetAttr("act_type", act_type_);
+    if (act_type_ == "relu") {
+      fc_desc.SetAttr("fuse_relu", true);
+    }
+    if (act_type_ == "relu6") {
+      float alpha = act_desc.GetAttr<float>("threshold");
+      fc_desc.SetAttr("fuse_brelu_threshold", alpha);
+    }
+    fc_desc.SetOutput("Out", {act_out_name});
+    // Get the output threshold from act op.
+    if (act_desc.HasAttr("out_threshold")) {
+      fc_desc.SetAttr("out_threshold",
+                      act_desc.GetAttr<float>("out_threshold"));
+    }
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (act_desc.HasAttr("Out0_threshold")) {
+      fc_desc.SetAttr("Output0_threshold",
+                      act_desc.GetAttr<float>("Out0_threshold"));
+    }
+    auto& valid_places = fc_op->valid_places();
+    fc_node->stmt()->ResetOp(fc_desc, valid_places);
+    IR_OP_VAR_LINK(fc_node, act_out_node);
+  }
+
+ private:
+  std::string act_type_{"relu"};
+};
+
 class Conv2dBatchNormFuser : public FuseBase {
  public:
   explicit Conv2dBatchNormFuser(const std::string& conv2d_type,
@@ -319,6 +387,21 @@ class Conv2dBatchNormFuser : public FuseBase {
       conv2d_filter_scales = conv2d_desc.GetInputScale(conv2d_filter_name);
       auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<int8_t>();
       if (conv2d_type_ == "conv2d_transpose") {
+        int64_t conv2d_input_channel_size =
+            conv2d_filter_dims[0] / conv2d_groups;
+        int64_t conv2d_filter_inner_size =
+            conv2d_filter_dims[2] * conv2d_filter_dims[3];
+        for (int64_t i = 0; i < conv2d_input_channel_size; i++) {
+          for (int64_t j = 0; j < conv2d_output_channel_size; j++) {
+            conv2d_filter_scales[j] *= fabsf(batch_norm_alpha_data[j]);
+            if (batch_norm_alpha_data[i] >= 0.f) continue;
+            for (int64_t k = 0; k < conv2d_filter_inner_size; k++) {
+              conv2d_filter_data[i * conv2d_output_channel_size *
+                                     conv2d_filter_inner_size +
+                                 j * conv2d_filter_inner_size + k] *= -1;
+            }
+          }
+        }
       } else {
         auto conv2d_filter_inner_size =
             conv2d_filter_dims.production() / conv2d_output_channel_size;
@@ -333,6 +416,20 @@ class Conv2dBatchNormFuser : public FuseBase {
     } else {
       auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<float>();
       if (conv2d_type_ == "conv2d_transpose") {
+        int64_t conv2d_input_channel_size =
+            conv2d_filter_dims[0] / conv2d_groups;
+        int64_t conv2d_filter_inner_size =
+            conv2d_filter_dims[2] * conv2d_filter_dims[3];
+        for (int64_t i = 0; i < conv2d_input_channel_size; i++) {
+          for (int64_t j = 0; j < conv2d_output_channel_size; j++) {
+            for (int64_t k = 0; k < conv2d_filter_inner_size; k++) {
+              conv2d_filter_data[i * conv2d_output_channel_size *
+                                     conv2d_filter_inner_size +
+                                 j * conv2d_filter_inner_size + k] *=
+                  batch_norm_alpha_data[j];
+            }
+          }
+        }
       } else {
         int64_t conv2d_filter_inner_size =
             conv2d_filter_dims.production() / conv2d_output_channel_size;
@@ -609,8 +706,11 @@ void ApplyMatmulElementwiseAddFuser(SSAGraph* graph) {
 }
 
 void ApplyFCActivationFuser(SSAGraph* graph) {
-  // FCActivationFuser fuser;
-  // fuser(graph);
+  for (auto act_type : {"relu", "relu1", "relu6"}) {
+    VLOG(5) << "act_type:" << act_type;
+    FCActivationFuser fuser(act_type);
+    fuser(graph);
+  }
 }
 
 void ApplyConv2dBatchNormFuser(SSAGraph* graph) {
