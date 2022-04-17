@@ -21,7 +21,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-class NNAdapterOpFusionPass : public ProgramPass {
+class QuantizationParametersPropagationPass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };

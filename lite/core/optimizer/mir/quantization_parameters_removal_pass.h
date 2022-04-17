@@ -32,7 +32,7 @@ namespace mir {
  * after:
  *   in_var(int8) -> op -> out_var
  */
-class NNAdapterQuantizationParametersRemovalPass : public ProgramPass {
+class QuantizationParametersRemovalPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 

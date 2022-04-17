@@ -146,18 +146,18 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "unsqueeze_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
        // A minimal set of op fusion pass.
-       "nnadapter_op_fusion_pass",
+       "op_fusion_minimal_set_pass",
        // For the fully quantization model, the quantization parameters of the
        // quantized ops are inferred by the propagation method according to the
        // input scales and out_threashold.
-       "nnadapter_quantization_parameters_propagation_pass",
+       "quantization_parameters_propagation_pass",
        // Restrict the quantized ops(such as concat) that their inputs and
        // outputs must have the same scale.
-       "nnadapter_restrict_quantized_op_with_same_input_output_scale_pass",
+       "restrict_quantized_op_with_same_input_output_scale_pass",
        // Based on the custom mixed precision configuration information, remove
        // the quantization parameters of some quantized ops to force them to run
        // at fp32 precision.
-       "nnadapter_quantization_parameters_removal_pass",
+       "quantization_parameters_removal_pass",
        // Subgraph partition based on operator support information defined in
        // lite/kernels/nnadapter/converter/all.h
        "nnadapter_subgraph_pass",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/nnadapter_quantization_parameters_removal_pass.h"
+#include "lite/core/optimizer/mir/quantization_parameters_removal_pass.h"
 #include <vector>
 #include "lite/core/optimizer/mir/pass_registry.h"
 
@@ -20,7 +20,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void NNAdapterQuantizationParametersRemovalPass::Apply(
+void QuantizationParametersRemovalPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   Scope* scope = nullptr;
   for (auto& node : graph->nodes()) {
@@ -58,7 +58,7 @@ void NNAdapterQuantizationParametersRemovalPass::Apply(
 }
 
 std::string
-NNAdapterQuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
+QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     Scope* scope) {
   std::string mixed_precision_quantization_config;
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
@@ -91,7 +91,7 @@ NNAdapterQuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
   return mixed_precision_quantization_config;
 }
 
-std::set<Node*> NNAdapterQuantizationParametersRemovalPass::
+std::set<Node*> QuantizationParametersRemovalPass::
     GetTargetNodesFromMixedPrecisionQuantizationConfig(
         const std::unique_ptr<SSAGraph>& graph,
         const std::string& mixed_precision_quantization_config) {
@@ -162,7 +162,7 @@ std::set<Node*> NNAdapterQuantizationParametersRemovalPass::
   return target_nodes;
 }
 
-void NNAdapterQuantizationParametersRemovalPass::ClearQuantInfo(
+void QuantizationParametersRemovalPass::ClearQuantInfo(
     paddle::lite::mir::Node* node) {
   if (node->IsArg()) return;
   auto op_desc = node->AsStmt().mutable_op_info();
@@ -195,6 +195,6 @@ void NNAdapterQuantizationParametersRemovalPass::ClearQuantInfo(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(nnadapter_quantization_parameters_removal_pass,
-                  paddle::lite::mir::NNAdapterQuantizationParametersRemovalPass)
+REGISTER_MIR_PASS(quantization_parameters_removal_pass,
+                  paddle::lite::mir::QuantizationParametersRemovalPass)
     .BindTargets({TARGET(kNNAdapter)});

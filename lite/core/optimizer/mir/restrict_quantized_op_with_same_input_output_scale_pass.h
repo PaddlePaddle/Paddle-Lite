@@ -68,8 +68,7 @@ namespace mir {
 //                           |
 //                           v
 
-class NNAdapterRestrictQuantizedOpWithSameInputOutputScalePass
-    : public mir::StmtPass {
+class RestrictQuantizedOpWithSameInputOutputScalePass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };

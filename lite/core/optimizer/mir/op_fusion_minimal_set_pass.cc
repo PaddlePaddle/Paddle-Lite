@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/nnadapter_op_fusion_pass.h"
+#include "lite/core/optimizer/mir/op_fusion_minimal_set_pass.h"
 #include <cmath>
 #include <memory>
 #include <string>
@@ -353,7 +353,7 @@ void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
   // fuser(graph);
 }
 
-void NNAdapterOpFusionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   ApplyMulElementwiseAddFuser(graph.get());
   ApplyMatmulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
@@ -370,6 +370,6 @@ void NNAdapterOpFusionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(nnadapter_op_fusion_pass,
-                  paddle::lite::mir::NNAdapterOpFusionPass)
+REGISTER_MIR_PASS(op_fusion_minimal_set_pass,
+                  paddle::lite::mir::OpFusionMinimalSetPass)
     .BindTargets({TARGET(kNNAdapter)});
