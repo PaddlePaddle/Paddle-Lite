@@ -2316,7 +2316,7 @@ int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
 int NNAdapterContext_create(NNAdapterDevice** devices,
                             uint32_t num_devices,
                             const char* properties,
-                            void* runtime_parameters_function,
+                            int (*callback)(int event_id, void* user_data),
                             NNAdapterContext** context);
 /**
  * Release the context.

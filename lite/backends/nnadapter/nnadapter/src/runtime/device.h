@@ -44,7 +44,7 @@ class Device {
     return IsValid() ? device_->second->version : -1;
   }
   int CreateContext(const char* properties,
-                    void* runtime_parameters_function,
+                    int (*callback)(int event_id, void* user_data),
                     void** context);
   void DestroyContext(void* context);
   int ValidateProgram(void* context,

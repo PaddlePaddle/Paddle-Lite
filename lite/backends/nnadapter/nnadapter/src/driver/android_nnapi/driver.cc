@@ -40,7 +40,7 @@ void CloseDevice(void* device) {
 
 int CreateContext(void* device,
                   const char* properties,
-                  void* runtime_parameters_function,
+                  int (*callback)(int event_id, void* user_data),
                   void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;

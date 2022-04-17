@@ -21,14 +21,13 @@ namespace runtime {
 
 Context::Context(std::vector<Device*> devices,
                  const std::string& properties,
-                 void* runtime_parameters_function)
+                 int (*callback)(int event_id, void* user_data))
     : properties_(properties) {
   for (size_t i = 0; i < devices.size(); i++) {
     auto device = devices[i];
     void* context = nullptr;
     NNADAPTER_CHECK_EQ(
-        device->CreateContext(
-            properties_.c_str(), runtime_parameters_function, &context),
+        device->CreateContext(properties_.c_str(), callback, &context),
         NNADAPTER_NO_ERROR);
     device_contexts_.push_back({context, device});
   }

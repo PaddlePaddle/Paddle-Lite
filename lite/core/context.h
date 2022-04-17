@@ -240,23 +240,20 @@ class Context<TargetType::kNNAdapter> {
     return var->Get<std::string>();
   }
 
-  static void SetNNAdapterContextGetParametersFunction(
-      Scope* scope,
-      const std::function<void(std::map<std::string, void*>*)>&
-          runtime_parameters) {
-    auto var = scope->Var("NNADAPTER_CONTEXT_GET_PARATEMERS_FUNCTIONS");
+  static void SetNNAdapterContextCallback(
+      Scope* scope, int (*context_callback)(int event_id, void* user_data)) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_CALLBACK");
     CHECK(var);
-    auto data =
-        var->GetMutable<std::function<void(std::map<std::string, void*>*)>>();
+    auto data = var->GetMutable<int (*)(int event_id, void* user_data)>();
     CHECK(data);
-    *data = runtime_parameters;
+    *data = context_callback;
   }
 
-  static std::function<void(std::map<std::string, void*>*)>
-  NNAdapterContextGetParametersFunction(Scope* scope) {
-    auto var = scope->FindVar("NNADAPTER_CONTEXT_GET_PARATEMERS_FUNCTIONS");
-    if (!var) return std::function<void(std::map<std::string, void*>*)>();
-    return var->Get<std::function<void(std::map<std::string, void*>*)>>();
+  static int (*NNAdapterContextCallback(Scope* scope))(int event_id,  // NOLINT
+                                                       void* user_data) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_CALLBACK");
+    if (!var) return nullptr;
+    return var->Get<int (*)(int event_id, void* user_data)>();
   }
 
   static void SetNNAdapterSubgraphPartitionConfigPath(

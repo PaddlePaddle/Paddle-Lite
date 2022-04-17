@@ -292,7 +292,7 @@ void CloseDevice(void* device) {
 
 int CreateContext(void* device,
                   const char* properties,
-                  void* runtime_parameters_function,
+                  int (*callback)(int event_id, void* user_data),
                   void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
@@ -402,11 +402,11 @@ Device::Device(const std::string& name) {
 Device::~Device() { device_ = nullptr; }
 
 int Device::CreateContext(const char* properties,
-                          void* runtime_parameters_function,
+                          int (*callback)(int event_id, void* user_data),
                           void** context) {
   if (device_ && context) {
     return device_->second->create_context(
-        device_->first, properties, runtime_parameters_function, context);
+        device_->first, properties, callback, context);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }

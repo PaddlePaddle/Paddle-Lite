@@ -166,7 +166,7 @@ class LITE_API ConfigBase {
   // The NNAdapter context properties for device configuration, model
   // compilation and execution
   std::string nnadapter_context_properties_{};
-  std::function<void(std::map<std::string, void*>*)> runtime_parameters_;
+  int (*context_callback_)(int event_id, void* user_data){nullptr};  // NOLINT
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
   // Dynamic shapes of the NNAdapter model
@@ -276,17 +276,24 @@ class LITE_API ConfigBase {
   const std::string& nnadapter_context_properties() const {
     return nnadapter_context_properties_;
   }
-  // Set runtime_parameters_function for NNAdapter device to get runtime
+  // Set nnadapter_context_callback for NNAdapter device to get runtime
   // parameters.
-  // Such as "cuda_stream".
-  void set_runtime_parameters_function(
-      const std::function<void(std::map<std::string, void*>*)>&
-          runtime_parameters) {
-    runtime_parameters_ = runtime_parameters;
+  // For example:
+  // cudaStream_t cuda_stream;
+  // cudaStreamCreate(&cuda_stream);
+  // int context_callback(int event_id, void* user_data) {
+  //   if (event_id == 0x0100) {
+  //     *(std::reinterpret_cast<cudaStream_t*>(user_data)) = cuda_stream;
+  //   }
+  //   return 0;
+  // }
+  void set_nnadapter_context_callback(
+      int (*context_callback)(int event_id, void* user_data)) {
+    context_callback_ = context_callback;
   }
-  const std::function<void(std::map<std::string, void*>*)>&
-  runtime_parameters_function() const {
-    return runtime_parameters_;
+  int (*nnadapter_context_callback() const)(int event_id,  // NOLINT
+                                            void* user_data) {
+    return context_callback_;
   }
 
   // Enable caching and set the directory to search and store the compiled

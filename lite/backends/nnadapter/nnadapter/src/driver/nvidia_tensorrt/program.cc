@@ -36,13 +36,9 @@ namespace nvidia_tensorrt {
 
 Context::Context(void* device,
                  const char* properties,
-                 void* runtime_parameters_function)
+                 int (*callback)(int event_id, void* user_data))
     : device_(device) {
-  if (runtime_parameters_function) {
-    runtime_parameters_function_ =
-        *reinterpret_cast<std::function<void(std::map<std::string, void*>*)>*>(
-            runtime_parameters_function);
-  }
+  callback_ = callback;
   // Extract the runtime parameters from the context properties
   NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
@@ -111,14 +107,13 @@ Context::Context(void* device,
 }
 
 cudaStream_t Context::CudaStream() {
-  if (runtime_parameters_function_) {
-    std::map<std::string, void*> runtime_parameters;
-    runtime_parameters_function_(&runtime_parameters);
-    if (runtime_parameters.count("cuda_stream")) {
-      return static_cast<cudaStream_t>(runtime_parameters["cuda_stream"]);
-    }
+  if (callback_) {
+    cudaStream_t cuda_stream;
+    NNADAPTER_CHECK_EQ(
+        callback_(NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM, &cuda_stream), 0);
+    return cuda_stream;
   }
-  NNADAPTER_LOG(WARNING) << "Not find specified cuda_stream.";
+  NNADAPTER_VLOG(1) << "Not find specified cuda_stream.";
   return nullptr;
 }
 

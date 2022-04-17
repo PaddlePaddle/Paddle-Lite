@@ -40,7 +40,7 @@ class Context {
  public:
   explicit Context(void* device,
                    const char* properties,
-                   void* runtime_parameters_function);
+                   int (*callback)(int event_id, void* user_data));
   ~Context() {}
 
   nvinfer1::DeviceType DeviceType() { return device_type_; }
@@ -55,8 +55,7 @@ class Context {
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  std::function<void(std::map<std::string, void*>*)>
-      runtime_parameters_function_;
+  int (*callback_)(int event_id, void* user_data){nullptr};  // NOLINT
   nvinfer1::DeviceType device_type_{nvinfer1::DeviceType::kGPU};
   int device_id_{0};
   PrecisionMode precision_{kFloat32};

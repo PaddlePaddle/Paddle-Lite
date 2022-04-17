@@ -30,7 +30,7 @@ typedef struct Device {
   void (*close_device)(void* device);
   int (*create_context)(void* device,
                         const char* properties,
-                        void* runtime_parameters_function,
+                        int (*callback)(int event_id, void* user_data),
                         void** context);
   void (*destroy_context)(void* context);
   int (*validate_program)(void* context,

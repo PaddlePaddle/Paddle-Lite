@@ -53,6 +53,8 @@ namespace nvidia_tensorrt {
 // Max workspace size, for example: "1048576"
 #define NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE "NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE"
 
+#define NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM 0x0100
+
 // Supported places
 typedef enum {
   kTensorrt = 0,

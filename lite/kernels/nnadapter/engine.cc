@@ -315,17 +315,15 @@ Engine::Engine(KernelContext* ctx,
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
-  // Get the runtime_parameters_function from the scope
-  runtime_parameters_function_ =
-      ctx->As<NNAdapterContext>().NNAdapterContextGetParametersFunction(
-          exec_scope_);
+  // Get the context_callback from the scope
+  context_callback_ =
+      ctx->As<NNAdapterContext>().NNAdapterContextCallback(exec_scope_);
   // Create a context with multiple devices
-  NNAdapterContext_create_invoke(
-      devices_.data(),
-      devices_.size(),
-      context_properties.c_str(),
-      runtime_parameters_function_ ? &runtime_parameters_function_ : nullptr,
-      &context_);
+  NNAdapterContext_create_invoke(devices_.data(),
+                                 devices_.size(),
+                                 context_properties.c_str(),
+                                 context_callback_,
+                                 &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
