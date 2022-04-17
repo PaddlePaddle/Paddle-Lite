@@ -206,8 +206,8 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 | [STDCSeg](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/v2.3/stdcseg.tar.gz) | 457.75             | 21.626                     | 529.451                | 17.376                        |
 | [U-Net](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleSeg/unet_cityscapes_1024x512_160k.tgz) | 50527.6            | 986.409                    | 34502                  | 977.992                       |
 | [PP-TSN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleVideo/v2.2.0/ppTSN.tar.gz) | 69786.5            | 807.352                    | 53438                  | 644.648                       |
-
-
+| [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz) | -                  | -                          | -                      | 4.58                          |
+| [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz) | -                  | -                          | -                      | 2.53                          |
 
 ### 已支持（或部分支持）的 Paddle 算子
 
@@ -225,9 +225,7 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 
 - 安装Atlas 300I 推理卡的驱动和固件包（Driver 和 Firmware)
 
-- 配套驱动和固件包下载：https://www.hiascend.com/hardware/firmware-drivers?tag=community（社区版）
-      https://www.hiascend.com/hardware/firmware-drivers?tag=commercial（商业版）
-
+- 配套驱动和固件包下载：https://www.hiascend.com/hardware/firmware-drivers?tag=community（社区版）、https://www.hiascend.com/hardware/firmware-drivers?tag=commercial（商业版）
   - 驱动：A300-3010-npu-driver_21.0.1_ubuntu18.04-x86_64.run（x86）
 
   - 固件：A300-3000-3010-npu-firmware_1.77.22.6.220.run
@@ -484,15 +482,17 @@ $ npu-smi info
 
 ## 高级特性
 
-- 动态 Shape
+- Dynamic Shape
 
-  在模型推理时，对于每次处理输入 shape 的 batch size、宽高或维度不固定的场景，用户可以在创建 Predictor 的时候，设置动态 shape 信息。动态 shape 特性可以实现同一模型面对不同的输入 shape 时的推理，而不用再次组网编译。
+  某些模型（例如：CV 类的PPOCR、NLP 类的BERT、ERNIE等模型）能够支持不同的输入尺寸，因此，为了避免每次推理时因输入尺寸变化而导致的模型重新生成的问题，在推理前需要使用 set_nnadapter_dynamic_info 接口设置额外的 dynamic shape 信息。
 
-  - 档位（CANN Version ≥ 3.3.0)
+  目前昇腾NPU支持 Dynamic Shape 特性，根据 CANN 版本的不同，提供下列两种方式的设置。
+
+  - 通过档位方式支持 Dynamic Shape（CANN Version ≥ 3.3.0)
 
     CANN 早期版本实现的不是真正意义上的动态 shape，而是基于档位方式提供有限的模型输入 shape 范围。
 
-    **使用方式：**假设模型有三个输入，输入名分别为 x1、x2 和 x3，模型想在 64，128，192，224 四个档位下推理。
+    **使用方式：**假设模型有三个输入，输入名分别为 x1、x2 和 x3（模型实际输入名需用 Netron 可视化模型后查看），模型想在 64，128，192，224 四个档位下推理。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -505,11 +505,11 @@ $ npu-smi info
     mobile_config.set_nnadapter_dynamic_shape_info(dynamic_shape_info);
     ```
 
-  - Shape Range（CANN Version ≥ 5.1.1.RC1)（试用特性）
+  - 通过 Shape Range 方式支持 Dynamic Shape（CANN Version ≥ 5.1.1.RC1)（试用特性）
 
     在最新的 CANN 版本，昇腾提供了 Shape Range 特性，实现了更广泛意义上的动态 shape。但该特性还未成熟，调通的模型有限，开发者若有兴趣可自行尝试。
 
-    **使用方式一：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需设置nnadapter_context_properties，开启DYNAMIC_SHAPE_RANGE特性。
+    **使用方式一：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -539,7 +539,9 @@ $ npu-smi info
 
 - 混合精度
 
-  支持量化模型的推理。
+  支持量化模型的推理，要求模型必须是由 PaddleSlim 产出的量化模型，例如：[resnet50_int8_per_layer](http://paddlelite-demo.bj.bcebos.com/devices/generic/models/resnet50_int8_per_layer.tar.gz)、[mobilenet_v1_int8_224_per_layer](http://paddlelite-demo.bj.bcebos.com/devices/generic/models/mobilenet_v1_int8_224_per_layer.tar.gz)模型。
+
+  
 
   **使用方式：**
 
@@ -551,7 +553,7 @@ $ npu-smi info
   cxx_config.set_nnadapter_mixed_precision_quantization_config_path(nnadapter_mixed_precision_quantization_config_path);
   ```
 
-  **nnadapter_mixed_precision_quantization_config_path.txt：**
+  **nnadapter_mixed_precision_quantization_config_path.txt：** (该文件代表下面所列算子运行在 int8 精度上)
 
   ```shell
   fc
@@ -566,7 +568,7 @@ $ npu-smi info
 
   - HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS：
 
-    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。
+    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。设备 ID 是指当前机器中可用的昇腾芯片 ID，例如 1 块 Atlas 300I 卡包含 4 颗 Ascend310 芯片，因此，可以将 HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS 设置为 0~3，而 1 块 Atlas 300I pro 卡只有一颗 Ascend 710 芯片，因此只能设置为 0
 
   - HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
 
