@@ -112,19 +112,6 @@ class MulElementwiseAddFuser : public FuseBase {
     if (fc_desc.HasInputScale(mul_y_name)) {
       mul_y_scales = fc_desc.GetInputScale(mul_y_name);
     }
-    // Get the output threshold from elementwise_add op.
-    float elementwise_add_out_out_threshold = -1.0f;
-    if (elementwise_add_desc.HasAttr("out_threshold")) {
-      elementwise_add_out_out_threshold =
-          elementwise_add_desc.GetAttr<float>("out_threshold");
-    }
-    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
-    // to unify the name of the output threshold.
-    float elementwise_add_out_Out0_threshold = -1.0f;
-    if (elementwise_add_desc.HasAttr("Out0_threshold")) {
-      elementwise_add_out_Out0_threshold =
-          elementwise_add_desc.GetAttr<float>("Out0_threshold");
-    }
     // Modify the mul op desc for a new fc op.
     fc_desc.mutable_inputs()->clear();
     fc_desc.mutable_outputs()->clear();
@@ -140,11 +127,16 @@ class MulElementwiseAddFuser : public FuseBase {
     if (!mul_y_scales.empty()) {
       fc_desc.SetInputScale(mul_y_name, mul_y_scales);
     }
-    if (elementwise_add_out_out_threshold > 0.f) {
-      fc_desc.SetAttr("out_threshold", elementwise_add_out_out_threshold);
+    // Get the output threshold from elementwise_add op.
+    if (elementwise_add_desc.HasAttr("out_threshold")) {
+      fc_desc.SetAttr("out_threshold",
+                      elementwise_add_desc.GetAttr<float>("out_threshold"));
     }
-    if (elementwise_add_out_Out0_threshold > 0.f) {
-      fc_desc.SetAttr("Out0_threshold", elementwise_add_out_Out0_threshold);
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (elementwise_add_desc.HasAttr("Out0_threshold")) {
+      fc_desc.SetAttr("Out0_threshold",
+                      elementwise_add_desc.GetAttr<float>("Out0_threshold"));
     }
     // Create a new fc op with the op desc, and replace the matched subgraph
     // nodes.
@@ -159,19 +151,259 @@ class MulElementwiseAddFuser : public FuseBase {
   }
 };
 
-class Conv2dElementwiseAddFuser : public FuseBase {
+class Conv2dBatchNormFuser : public FuseBase {
  public:
-  explicit Conv2dElementwiseAddFuser(const std::string& conv2d_type,
-                                     bool has_bias)
-      : conv2d_type_(conv2d_type), has_bias_(has_bias) {}
+  explicit Conv2dBatchNormFuser(const std::string& conv2d_type,
+                                bool conv2d_bias,
+                                const std::string& batch_norm_type)
+      : conv2d_type_(conv2d_type),
+        conv2d_bias_(conv2d_bias),
+        batch_norm_type_(batch_norm_type) {}
 
   void BuildPattern() override {
     // Create the pattern nodes.
     auto conv2d_node = OpNode("conv2d", conv2d_type_);
     auto conv2d_input_node =
         VarNode("conv2d_input")->assert_is_op_input(conv2d_type_, "Input");
-    auto conv2d_filter_node =
-        VarNode("conv2d_filter")->assert_is_op_input(conv2d_type_, "Filter");
+    auto conv2d_filter_node = VarNode("conv2d_filter")
+                                  ->assert_is_op_input(conv2d_type_, "Filter")
+                                  ->assert_is_persistable_var();
+    auto conv2d_output_node = VarNode("conv2d_output")
+                                  ->assert_is_op_output(conv2d_type_, "Output")
+                                  ->assert_is_op_input(batch_norm_type_, "X")
+                                  ->AsIntermediate();
+    auto batch_norm_node =
+        OpNode("batch_norm", batch_norm_type_)->AsIntermediate();
+    auto batch_norm_scale_node =
+        VarNode("batch_norm_scale")
+            ->assert_is_op_input(batch_norm_type_, "Scale")
+            ->assert_is_persistable_var()
+            ->AsIntermediate();
+    auto batch_norm_bias_node =
+        VarNode("batch_norm_bias")
+            ->assert_is_op_input(batch_norm_type_, "Bias")
+            ->assert_is_persistable_var();
+    auto batch_norm_mean_node =
+        VarNode("batch_norm_mean")
+            ->assert_is_op_input(batch_norm_type_, "Mean")
+            ->assert_is_persistable_var()
+            ->AsIntermediate();
+    auto batch_norm_variance_node =
+        VarNode("batch_norm_variance")
+            ->assert_is_op_input(batch_norm_type_, "Variance")
+            ->assert_is_persistable_var()
+            ->AsIntermediate();
+    auto batch_norm_y_node =
+        VarNode("batch_norm_y")->assert_is_op_output(batch_norm_type_, "Y");
+    auto batch_norm_mean_out_node =
+        VarNode("batch_norm_mean_out")
+            ->assert_is_op_output(batch_norm_type_, "MeanOut")
+            ->AsIntermediate();
+    auto batch_norm_variance_out_node =
+        VarNode("batch_norm_variance_out")
+            ->assert_is_op_output(batch_norm_type_, "VarianceOut")
+            ->AsIntermediate();
+    auto batch_norm_saved_mean_node =
+        VarNode("batch_norm_saved_mean")
+            ->assert_is_op_output(batch_norm_type_, "SavedMean")
+            ->AsIntermediate();
+    auto batch_norm_saved_variance_node =
+        VarNode("batch_norm_saved_variance")
+            ->assert_is_op_output(batch_norm_type_, "SavedVariance")
+            ->AsIntermediate();
+    // Create the topological connections for the above pattern nodes.
+    std::vector<PMNode*> conv2d_inputs{conv2d_input_node, conv2d_filter_node};
+    if (conv2d_bias_) {
+      auto conv2d_bias_node = VarNode("conv2d_bias")
+                                  ->assert_is_op_input(conv2d_type_, "Bias")
+                                  ->assert_is_persistable_var()
+                                  ->AsIntermediate();
+      conv2d_inputs.emplace_back(conv2d_bias_node);
+    }
+    std::vector<PMNode*> batch_norm_inputs{conv2d_output_node,
+                                           batch_norm_scale_node,
+                                           batch_norm_bias_node,
+                                           batch_norm_mean_node,
+                                           batch_norm_variance_node};
+    std::vector<PMNode*> batch_norm_outputs{batch_norm_y_node,
+                                            batch_norm_mean_out_node,
+                                            batch_norm_variance_out_node,
+                                            batch_norm_saved_mean_node,
+                                            batch_norm_saved_variance_node};
+    conv2d_inputs >> *conv2d_node >> *conv2d_output_node;
+    batch_norm_inputs >> *batch_norm_node >> batch_norm_outputs;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto conv2d_node = matched.at("conv2d");
+    auto conv2d_op = conv2d_node->stmt()->op();
+    auto scope = conv2d_op->scope();
+    auto conv2d_filter_node = matched.at("conv2d_filter");
+    auto conv2d_filter_name = conv2d_filter_node->arg()->name;
+    auto conv2d_filter_var = scope->FindVar(conv2d_filter_name);
+    auto conv2d_filter_tensor = conv2d_filter_var->GetMutable<lite::Tensor>();
+    auto conv2d_filter_dims = conv2d_filter_tensor->dims();
+    auto batch_norm_node = matched.at("batch_norm");
+    auto batch_norm_node_op = batch_norm_node->stmt()->op();
+    auto batch_norm_scale_node = matched.at("batch_norm_scale");
+    auto batch_norm_scale_name = batch_norm_scale_node->arg()->name;
+    auto batch_norm_scale_var = scope->FindVar(batch_norm_scale_name);
+    auto batch_norm_scale_tensor = batch_norm_scale_var->Get<lite::Tensor>();
+    auto batch_norm_scale_dims = batch_norm_scale_tensor.dims();
+    auto batch_norm_bias_node = matched.at("batch_norm_bias");
+    auto batch_norm_bias_name = batch_norm_bias_node->arg()->name;
+    auto batch_norm_bias_var = scope->FindVar(batch_norm_bias_name);
+    auto batch_norm_bias_tensor =
+        batch_norm_bias_var->GetMutable<lite::Tensor>();
+    auto batch_norm_bias_dims = batch_norm_bias_tensor->dims();
+    auto batch_norm_mean_node = matched.at("batch_norm_mean");
+    auto batch_norm_mean_name = batch_norm_mean_node->arg()->name;
+    auto batch_norm_mean_var = scope->FindVar(batch_norm_mean_name);
+    auto batch_norm_mean_tensor = batch_norm_mean_var->Get<lite::Tensor>();
+    auto batch_norm_mean_dims = batch_norm_mean_tensor.dims();
+    auto batch_norm_variance_node = matched.at("batch_norm_variance");
+    auto batch_norm_variance_name = batch_norm_variance_node->arg()->name;
+    auto batch_norm_variance_var = scope->FindVar(batch_norm_variance_name);
+    auto batch_norm_variance_tensor =
+        batch_norm_variance_var->Get<lite::Tensor>();
+    auto batch_norm_variance_dims = batch_norm_variance_tensor.dims();
+    auto batch_norm_y_node = matched.at("batch_norm_y");
+    auto batch_norm_y_name = batch_norm_y_node->arg()->name;
+    // Get the attributes from conv2d op and batch_norm op.
+    auto conv2d_desc = *conv2d_node->stmt()->op_info();
+    auto batch_norm_desc = *batch_norm_node->stmt()->op_info();
+    auto conv2d_groups = conv2d_desc.GetAttr<int>("groups");
+    auto batch_norm_eps = batch_norm_desc.GetAttr<float>("epsilon");
+    size_t conv2d_output_channel_size = conv2d_filter_dims[0];
+    if (conv2d_type_ == "conv2d_transpose") {
+      conv2d_output_channel_size = conv2d_filter_dims[1] * conv2d_groups;
+    }
+    if (batch_norm_scale_dims[0] != conv2d_output_channel_size ||
+        batch_norm_bias_dims[0] != conv2d_output_channel_size ||
+        batch_norm_mean_dims[0] != conv2d_output_channel_size ||
+        batch_norm_variance_dims[0] != conv2d_output_channel_size) {
+      SKIP_DELETE_INTERMEDIATE_NODES
+      LOG(WARNING) << "Op fusion failed! The dimension of the input Scale, "
+                      "Bias, Mean and Variance of "
+                   << batch_norm_type_ << " should be ["
+                   << conv2d_output_channel_size << "], but recieve ["
+                   << batch_norm_scale_dims[0] << "], ["
+                   << batch_norm_bias_dims[0] << "], ["
+                   << batch_norm_mean_dims[0] << "] and ["
+                   << batch_norm_variance_dims[0] << "]!";
+      return;
+    }
+    // Compute the alpha and beta of batch_norm op as the following formula:
+    // alpha[channel_idx] = scale[channel_idx] / (sqrt(variance[channel_idx]) +
+    // eps)
+    // beta[channel_idx] = (-mean[channel_idx]) * alpha[channel_idx]
+    Tensor batch_norm_alpha_tensor, batch_norm_beta_tensor;
+    batch_norm_alpha_tensor.Resize({conv2d_output_channel_size});
+    batch_norm_beta_tensor.Resize({conv2d_output_channel_size});
+    auto batch_norm_alpha_data = batch_norm_alpha_tensor.mutable_data<float>();
+    auto batch_norm_beta_data = batch_norm_beta_tensor.mutable_data<float>();
+    auto batch_norm_scale_data = batch_norm_scale_tensor.data<float>();
+    auto batch_norm_mean_data = batch_norm_mean_tensor.data<float>();
+    auto batch_norm_variance_data = batch_norm_variance_tensor.data<float>();
+    for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+      batch_norm_alpha_data[i] =
+          batch_norm_scale_data[i] /
+          std::sqrt(batch_norm_variance_data[i] + batch_norm_eps);
+      batch_norm_beta_data[i] =
+          (-batch_norm_mean_data[i]) * batch_norm_alpha_data[i];
+    }
+    std::vector<float> conv2d_filter_scales;
+    if (conv2d_desc.HasInputScale(conv2d_filter_name)) {
+      conv2d_filter_scales = conv2d_desc.GetInputScale(conv2d_filter_name);
+      auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<int8_t>();
+      if (conv2d_type_ == "conv2d_transpose") {
+      } else {
+        size_t conv2d_filter_inner_size =
+            conv2d_filter_dims.production() / conv2d_output_channel_size;
+        for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+          conv2d_filter_scales[i] *= fabsf(batch_norm_alpha_data[i]);
+          if (batch_norm_alpha_data[i] >= 0.f) continue;
+          for (size_t j = 0; j < conv2d_filter_inner_size; j++) {
+            conv2d_filter_data[i * conv2d_filter_inner_size + j] *= -1;
+          }
+        }
+      }
+    } else {
+      auto conv2d_filter_data = conv2d_filter_tensor->mutable_data<float>();
+      if (conv2d_type_ == "conv2d_transpose") {
+      } else {
+        size_t conv2d_filter_inner_size =
+            conv2d_filter_dims.production() / conv2d_output_channel_size;
+        for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+          for (size_t j = 0; j < conv2d_filter_inner_size; j++) {
+            conv2d_filter_data[i * conv2d_filter_inner_size + j] *=
+                batch_norm_alpha_data[i];
+          }
+        }
+      }
+    }
+    // Merge bias values if bias already exists in conv2d
+    auto batch_norm_bias_data = batch_norm_bias_tensor->mutable_data<float>();
+    if (conv2d_bias_) {
+      auto conv2d_bias_node = matched.at("conv2d_bias");
+      auto conv2d_bias_name = conv2d_bias_node->arg()->name;
+      auto conv2d_bias_var = scope->FindVar(conv2d_bias_name);
+      auto conv2d_bias_tensor = conv2d_bias_var->Get<lite::Tensor>();
+      auto conv2d_bias_dims = conv2d_bias_tensor.dims();
+      CHECK_EQ(conv2d_bias_dims.size(), 1);
+      CHECK_EQ(conv2d_bias_dims[0], conv2d_output_channel_size);
+      auto conv2d_bias_data = conv2d_bias_tensor.data<float>();
+      for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+        batch_norm_bias_data[i] +=
+            batch_norm_alpha_data[i] * conv2d_bias_data[i];
+      }
+    }
+    for (size_t i = 0; i < conv2d_output_channel_size; i++) {
+      batch_norm_bias_data[i] += batch_norm_beta_data[i];
+    }
+    // Update the conv2d op desc and links
+    conv2d_desc.SetInput("Bias", {batch_norm_bias_name});
+    conv2d_desc.SetOutput("Output", {batch_norm_y_name});
+    if (!conv2d_filter_scales.empty()) {
+      conv2d_desc.SetInputScale(conv2d_filter_name, conv2d_filter_scales);
+    }
+    // Set the output threshold from batch_norm op.
+    if (batch_norm_desc.HasAttr("out_threshold")) {
+      conv2d_desc.SetAttr("out_threshold",
+                          batch_norm_desc.GetAttr<float>("out_threshold"));
+    }
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (batch_norm_desc.HasAttr("Y0_threshold")) {
+      conv2d_desc.SetAttr("Output0_threshold",
+                          batch_norm_desc.GetAttr<float>("Y0_threshold"));
+    }
+    auto& valid_places = conv2d_op->valid_places();
+    conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
+    IR_NODE_LINK_TO(batch_norm_bias_node, conv2d_node);
+    IR_OP_VAR_LINK(conv2d_node, batch_norm_y_node);
+  }
+
+ private:
+  std::string conv2d_type_{"conv2d"};
+  bool conv2d_bias_{false};
+  std::string batch_norm_type_{"batch_norm"};
+};
+
+class Conv2dElementwiseAddFuser : public FuseBase {
+ public:
+  explicit Conv2dElementwiseAddFuser(const std::string& conv2d_type,
+                                     bool conv2d_bias)
+      : conv2d_type_(conv2d_type), conv2d_bias_(conv2d_bias) {}
+
+  void BuildPattern() override {
+    // Create the pattern nodes.
+    auto conv2d_node = OpNode("conv2d", conv2d_type_);
+    auto conv2d_input_node =
+        VarNode("conv2d_input")->assert_is_op_input(conv2d_type_, "Input");
+    auto conv2d_filter_node = VarNode("conv2d_filter")
+                                  ->assert_is_op_input(conv2d_type_, "Filter")
+                                  ->assert_is_persistable_var();
     auto conv2d_output_node = VarNode("conv2d_output")
                                   ->assert_is_op_output(conv2d_type_, "Output")
                                   ->assert_is_op_input("elementwise_add", "X")
@@ -196,7 +428,7 @@ class Conv2dElementwiseAddFuser : public FuseBase {
             ->assert_is_op_output("elementwise_add", "Out");
     // Create the topological connections for the above pattern nodes.
     std::vector<PMNode*> conv2d_inputs{conv2d_input_node, conv2d_filter_node};
-    if (has_bias_) {
+    if (conv2d_bias_) {
       auto conv2d_bias_node = VarNode("conv2d_bias")
                                   ->assert_is_op_input(conv2d_type_, "Bias")
                                   ->assert_is_persistable_var()
@@ -239,13 +471,13 @@ class Conv2dElementwiseAddFuser : public FuseBase {
     if (elementwise_add_y_dims[0] != conv2d_output_channel_size) {
       SKIP_DELETE_INTERMEDIATE_NODES
       LOG(WARNING) << "Op fusion failed! The dimension of the input Y of "
-                      "elementwise_add should be "
-                   << conv2d_output_channel_size << ", but recieve ["
+                      "elementwise_add should be ["
+                   << conv2d_output_channel_size << "], but recieve ["
                    << elementwise_add_y_dims[0] << "]!";
       return;
     }
     // Merge bias values if bias already exists in conv2d
-    if (has_bias_) {
+    if (conv2d_bias_) {
       auto conv2d_bias_node = matched.at("conv2d_bias");
       auto conv2d_bias_name = conv2d_bias_node->arg()->name;
       auto conv2d_bias_var = scope->FindVar(conv2d_bias_name);
@@ -260,27 +492,20 @@ class Conv2dElementwiseAddFuser : public FuseBase {
         elementwise_add_y_data[i] += conv2d_bias_data[i];
       }
     }
-    // Get the output threshold from elementwise_add op.
-    float elementwise_add_out_out_threshold = -1.0f;
-    if (elementwise_add_desc.HasAttr("out_threshold")) {
-      elementwise_add_out_out_threshold =
-          elementwise_add_desc.GetAttr<float>("out_threshold");
-    }
-    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
-    // to unify the name of the output threshold.
-    float elementwise_add_out_Out0_threshold = -1.0f;
-    if (elementwise_add_desc.HasAttr("Out0_threshold")) {
-      elementwise_add_out_Out0_threshold =
-          elementwise_add_desc.GetAttr<float>("Out0_threshold");
-    }
     // Update the conv2d op desc and links
     conv2d_desc.SetInput("Bias", {elementwise_add_y_name});
     conv2d_desc.SetOutput("Output", {elementwise_add_out_name});
-    if (elementwise_add_out_out_threshold > 0.f) {
-      conv2d_desc.SetAttr("out_threshold", elementwise_add_out_out_threshold);
+    // Get the output threshold from elementwise_add op.
+    if (elementwise_add_desc.HasAttr("out_threshold")) {
+      conv2d_desc.SetAttr("out_threshold",
+                          elementwise_add_desc.GetAttr<float>("out_threshold"));
     }
-    if (elementwise_add_out_Out0_threshold > 0.f) {
-      conv2d_desc.SetAttr("Out0_threshold", elementwise_add_out_Out0_threshold);
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (elementwise_add_desc.HasAttr("Out0_threshold")) {
+      conv2d_desc.SetAttr(
+          "Output0_threshold",
+          elementwise_add_desc.GetAttr<float>("Out0_threshold"));
     }
     auto& valid_places = conv2d_op->valid_places();
     conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
@@ -290,23 +515,26 @@ class Conv2dElementwiseAddFuser : public FuseBase {
 
  private:
   std::string conv2d_type_{"conv2d"};
-  bool has_bias_{false};
+  bool conv2d_bias_{false};
 };
 
 class Conv2dActivationFuser : public FuseBase {
  public:
   explicit Conv2dActivationFuser(const std::string& conv2d_type,
-                                 const std::string& act_type,
-                                 bool has_bias)
-      : conv2d_type_(conv2d_type), act_type_(act_type), has_bias_(has_bias) {}
+                                 bool conv2d_bias,
+                                 const std::string& act_type)
+      : conv2d_type_(conv2d_type),
+        conv2d_bias_(conv2d_bias),
+        act_type_(act_type) {}
 
   void BuildPattern() override {
     // Create the pattern nodes.
     auto conv2d_node = OpNode("conv2d", conv2d_type_);
     auto conv2d_input_node =
         VarNode("conv2d_input")->assert_is_op_input(conv2d_type_, "Input");
-    auto conv2d_filter_node =
-        VarNode("conv2d_filter")->assert_is_op_input(conv2d_type_, "Filter");
+    auto conv2d_filter_node = VarNode("conv2d_filter")
+                                  ->assert_is_op_input(conv2d_type_, "Filter")
+                                  ->assert_is_persistable_var();
     auto conv2d_output_node = VarNode("conv2d_output")
                                   ->assert_is_op_output(conv2d_type_, "Output")
                                   ->assert_is_op_input(act_type_, "X")
@@ -316,7 +544,7 @@ class Conv2dActivationFuser : public FuseBase {
         VarNode("act_out")->assert_is_op_output(act_type_, "Out");
     // Create the topological connections for the above pattern nodes.
     std::vector<PMNode*> conv2d_inputs{conv2d_input_node, conv2d_filter_node};
-    if (has_bias_) {
+    if (conv2d_bias_) {
       auto conv2d_bias_node = VarNode("conv2d_bias")
                                   ->assert_is_op_input(conv2d_type_, "Bias")
                                   ->assert_is_persistable_var();
@@ -335,17 +563,6 @@ class Conv2dActivationFuser : public FuseBase {
     // Get the attributes from conv2d op and act op.
     auto conv2d_desc = *conv2d_node->stmt()->op_info();
     auto act_desc = *act_node->stmt()->op_info();
-    // Get the output threshold from act op.
-    float act_out_out_threshold = -1.0f;
-    if (act_desc.HasAttr("out_threshold")) {
-      act_out_out_threshold = act_desc.GetAttr<float>("out_threshold");
-    }
-    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
-    // to unify the name of the output threshold.
-    float act_out_Out0_threshold = -1.0f;
-    if (act_desc.HasAttr("Out0_threshold")) {
-      act_out_Out0_threshold = act_desc.GetAttr<float>("Out0_threshold");
-    }
     // Update the conv2d op desc and links
     conv2d_desc.SetAttr("with_act", true);
     conv2d_desc.SetAttr("act_type", act_type_);
@@ -357,11 +574,16 @@ class Conv2dActivationFuser : public FuseBase {
       conv2d_desc.SetAttr("fuse_brelu_threshold", alpha);
     }
     conv2d_desc.SetOutput("Output", {act_out_name});
-    if (act_out_out_threshold > 0.f) {
-      conv2d_desc.SetAttr("out_threshold", act_out_out_threshold);
+    // Get the output threshold from act op.
+    if (act_desc.HasAttr("out_threshold")) {
+      conv2d_desc.SetAttr("out_threshold",
+                          act_desc.GetAttr<float>("out_threshold"));
     }
-    if (act_out_Out0_threshold > 0.f) {
-      conv2d_desc.SetAttr("Out0_threshold", act_out_Out0_threshold);
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (act_desc.HasAttr("Out0_threshold")) {
+      conv2d_desc.SetAttr("Output0_threshold",
+                          act_desc.GetAttr<float>("Out0_threshold"));
     }
     auto& valid_places = conv2d_op->valid_places();
     conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
@@ -370,8 +592,8 @@ class Conv2dActivationFuser : public FuseBase {
 
  private:
   std::string conv2d_type_{"conv2d"};
+  bool conv2d_bias_{false};
   std::string act_type_{"relu"};
-  bool has_bias_{false};
 };
 
 void ApplyMulElementwiseAddFuser(SSAGraph* graph) {
@@ -390,28 +612,41 @@ void ApplyFCActivationFuser(SSAGraph* graph) {
 }
 
 void ApplyConv2dBatchNormFuser(SSAGraph* graph) {
-  // Conv2dBatchNormFuser fuser;
-  // fuser(graph);
+  for (auto conv2d_bias : {true, false}) {
+    for (auto conv2d_type :
+         {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
+      for (auto batch_norm_type : {"batch_norm", "sync_batch_norm"}) {
+        VLOG(5) << "conv2d_type:" << conv2d_type
+                << " conv2d_bias:" << conv2d_bias
+                << " batch_norm_type:" << batch_norm_type;
+        Conv2dBatchNormFuser fuser(conv2d_type, conv2d_bias, batch_norm_type);
+        fuser(graph);
+      }
+    }
+  }
 }
 
 void ApplyConv2dElementwiseAddFuser(SSAGraph* graph) {
-  // The case of has_bias=true should be handled first
-  for (auto has_bias : {true, false}) {
-    for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
-      VLOG(5) << "conv_type:" << conv_type << " has_bias:" << has_bias;
-      Conv2dElementwiseAddFuser fuser(conv_type, has_bias);
+  // The case of conv2d_bias=true should be handled first
+  for (auto conv2d_bias : {true, false}) {
+    for (auto conv2d_type :
+         {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
+      VLOG(5) << "conv2d_type:" << conv2d_type
+              << " conv2d_bias:" << conv2d_bias;
+      Conv2dElementwiseAddFuser fuser(conv2d_type, conv2d_bias);
       fuser(graph);
     }
   }
 }
 
 void ApplyConv2dActivationFuser(SSAGraph* graph) {
-  for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
-    for (auto act_type : {"relu", "relu1", "relu6"}) {
-      for (auto has_bias : {true, false}) {
-        VLOG(5) << "conv_type:" << conv_type << "act_type:" << act_type
-                << " has_bias:" << has_bias;
-        Conv2dActivationFuser fuser(conv_type, act_type, has_bias);
+  for (auto conv2d_bias : {true, false}) {
+    for (auto conv2d_type :
+         {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
+      for (auto act_type : {"relu", "relu1", "relu6"}) {
+        VLOG(5) << "conv2d_type:" << conv2d_type
+                << " conv2d_bias:" << conv2d_bias << " act_type:" << act_type;
+        Conv2dActivationFuser fuser(conv2d_type, conv2d_bias, act_type);
         fuser(graph);
       }
     }
