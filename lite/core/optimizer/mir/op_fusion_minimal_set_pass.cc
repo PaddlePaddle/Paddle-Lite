@@ -33,15 +33,48 @@ namespace mir {
 
 class MulElementwiseAddFuser : public FuseBase {
  public:
+  explicit MulElementwiseAddFuser(const std::string& mul_type)
+      : mul_type_(mul_type) {}
+
   void BuildPattern() override {
     // Create the pattern nodes.
-    auto mul_node = OpNode("mul", "mul")->AsIntermediate();
-    auto mul_x_node = VarNode("mul_x")->assert_is_op_input("mul", "X");
+    auto mul_node = OpNode("mul", mul_type_)->AsIntermediate();
+    if (mul_type_ == "mul") {
+      mul_node->assert_node_satisfied([](const Node* node) -> bool {
+        auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+        auto y_name = op_desc.Input("Y").front();
+        auto scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+        auto y_tensor = scope->FindVar(y_name)->Get<lite::Tensor>();
+        auto y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
+        return y_tensor.persistable() && y_tensor.dims().size() == 2 &&
+               y_num_col_dims == 1;
+      });
+    } else if (mul_type_ == "matmul" || mul_type_ == "matmul_v2") {
+      mul_node->assert_node_satisfied([=](const Node* node) -> bool {
+        auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+        auto y_name = op_desc.Input("Y").front();
+        auto scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+        auto y_tensor = scope->FindVar(y_name)->Get<lite::Tensor>();
+        bool has_alpha = false;
+        if (op_desc.HasAttr("alpha")) {
+          has_alpha = std::fabs(op_desc.GetAttr<float>("alpha") - 1.0) >= 1e-5f;
+        }
+        auto transpose_x = op_desc.GetAttr<bool>(
+            mul_type_ == "matmul" ? "transpose_X" : "trans_x");
+        auto transpose_y = op_desc.GetAttr<bool>(
+            mul_type_ == "matmul" ? "transpose_Y" : "trans_y");
+        return y_tensor.persistable() && y_tensor.dims().size() == 2 &&
+               !has_alpha && !transpose_x && !transpose_y;
+      });
+    } else {
+      LOG(FATAL) << "Only supports mul, matmul and matmul_v2!";
+    }
+    auto mul_x_node = VarNode("mul_x")->assert_is_op_input(mul_type_, "X");
     auto mul_y_node = VarNode("mul_y")
-                          ->assert_is_op_input("mul", "Y")
+                          ->assert_is_op_input(mul_type_, "Y")
                           ->assert_is_persistable_var();
     auto mul_out_node = VarNode("mul_out")
-                            ->assert_is_op_output("mul", "Out")
+                            ->assert_is_op_output(mul_type_, "Out")
                             ->assert_is_op_input("elementwise_add", "X")
                             ->AsIntermediate();
     auto elementwise_add_node =
@@ -51,8 +84,7 @@ class MulElementwiseAddFuser : public FuseBase {
               auto y_name = op_desc.Input("Y").front();
               auto scope = const_cast<Node*>(node)->AsStmt().op()->scope();
               auto y_tensor = scope->FindVar(y_name)->Get<lite::Tensor>();
-              if (!y_tensor.persistable()) return false;
-              return y_tensor.dims().size() == 1;
+              return y_tensor.persistable() && y_tensor.dims().size() == 1;
             })
             ->AsIntermediate();
     auto elementwise_add_y_node =
@@ -121,7 +153,9 @@ class MulElementwiseAddFuser : public FuseBase {
     fc_desc.SetInput("W", {mul_y_name});
     fc_desc.SetInput("Bias", {elementwise_add_y_name});
     fc_desc.SetOutput("Out", {elementwise_add_out_name});
-    fc_desc.SetAttr("in_num_col_dims", fc_desc.GetAttr<int>("x_num_col_dims"));
+    fc_desc.SetAttr(
+        "in_num_col_dims",
+        mul_type_ == "mul" ? fc_desc.GetAttr<int>("x_num_col_dims") : 1);
     if (!mul_x_scales.empty()) {
       fc_desc.SetInputScale(mul_x_name, mul_x_scales);
     }
@@ -149,6 +183,9 @@ class MulElementwiseAddFuser : public FuseBase {
     IR_NODE_LINK_TO(elementwise_add_y_node, fc_node);
     IR_OP_VAR_LINK(fc_node, elementwise_add_out_node);
   }
+
+ private:
+  std::string mul_type_{"mul"};
 };
 
 class FCActivationFuser : public FuseBase {
@@ -816,13 +853,11 @@ class ReshapeTransposeReshapeFuser : public FuseBase {
 };
 
 void ApplyMulElementwiseAddFuser(SSAGraph* graph) {
-  MulElementwiseAddFuser fuser;
-  fuser(graph);
-}
-
-void ApplyMatmulElementwiseAddFuser(SSAGraph* graph) {
-  // MatmulElementwiseAddFuser fuser;
-  // fuser(graph);
+  for (auto mul_type : {"mul", "matmul", "matmul_v2"}) {
+    VLOG(5) << "mul_type:" << mul_type;
+    MulElementwiseAddFuser fuser(mul_type);
+    fuser(graph);
+  }
 }
 
 void ApplyFCActivationFuser(SSAGraph* graph) {
@@ -886,7 +921,6 @@ void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
 
 void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   ApplyMulElementwiseAddFuser(graph.get());
-  ApplyMatmulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
   ApplyConv2dBatchNormFuser(graph.get());
   ApplyConv2dElementwiseAddFuser(graph.get());
