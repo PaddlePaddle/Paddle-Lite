@@ -16,6 +16,8 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -43,6 +45,62 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
     dims.erase(dims.begin());
     input1_tensor = converter->ConvertOperand(input1_operand, dims);
   }
+  // In order to solve the problem that the result is wrong after elementwise is
+  // fused into scale
+  if ((IsConstantOperand(input0_operand) &&
+       !IsConstantOperand(input1_operand)) ||
+      (!IsConstantOperand(input0_operand) &&
+       IsConstantOperand(input1_operand))) {
+    auto input0_dims_count = input0_operand->type.dimensions.count;
+    auto input1_dims_count = input0_operand->type.dimensions.count;
+    NNADAPTER_CHECK(input0_dims_count == input1_dims_count)
+        << "The input dims count of elementwise should be equal. But "
+           "input0_dims_count != input1_dims_count, "
+        << input0_dims_count << " != " << input1_dims_count;
+    int channel_axis = input0_dims_count > 1 ? 1 : 0;
+    nvinfer1::IScaleLayer* scale_layer = nullptr;
+    if (IsConstantOperand(input0_operand) &&
+        !IsConstantOperand(input1_operand)) {
+      int scale_weight_count =
+          input0_operand->length /
+          GetOperandPrecisionDataLength(input0_operand->type.precision);
+      std::vector<float> zero_data(scale_weight_count, 0);
+      auto offset_weight =
+          converter->AddWeights(zero_data.data(), zero_data.size());
+      auto power_weight =
+          converter->AddWeights(zero_data.data(), zero_data.size());
+      auto scale_weight = converter->OperandToWeights(input0_operand);
+      scale_layer =
+          converter->network()->addScaleNd(*input1_tensor,
+                                           nvinfer1::ScaleMode::kELEMENTWISE,
+                                           offset_weight,
+                                           scale_weight,
+                                           power_weight,
+                                           channel_axis);
+    } else if (!IsConstantOperand(input0_operand) &&
+               IsConstantOperand(input1_operand)) {
+      int scale_weight_count =
+          input1_operand->length /
+          GetOperandPrecisionDataLength(input1_operand->type.precision);
+      std::vector<float> zero_data(scale_weight_count, 0);
+      auto offset_weight =
+          converter->AddWeights(zero_data.data(), zero_data.size());
+      auto power_weight =
+          converter->AddWeights(zero_data.data(), zero_data.size());
+      auto scale_weight = converter->OperandToWeights(input1_operand);
+      scale_layer =
+          converter->network()->addScaleNd(*input0_tensor,
+                                           nvinfer1::ScaleMode::kELEMENTWISE,
+                                           offset_weight,
+                                           scale_weight,
+                                           power_weight,
+                                           channel_axis);
+    }
+    auto output_tensor = scale_layer->getOutput(0);
+    converter->UpdateTensorMap(output_operand, output_tensor);
+    return NNADAPTER_NO_ERROR;
+  }
+
   std::map<NNAdapterOperationType, nvinfer1::ElementWiseOperation>
       elementwise_type_map{
           {NNADAPTER_ADD, nvinfer1::ElementWiseOperation::kSUM},
