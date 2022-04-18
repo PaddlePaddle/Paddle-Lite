@@ -44,18 +44,27 @@ void MulCompute::Run() {
   int k = x_matrix.dims()[1];
   int n = y_matrix.dims()[1];
 
-  int r =
-      xdnn::fc_int16(ctx.GetRawContext(), /* context */
-                     false,               /* TransA */
-                     false,               /* TransB */
-                     m,
-                     n,
-                     k,
-                     1.0f,                   /* alpha */
-                     x_matrix.data<float>(), /* A */
-                     y_matrix.data<float>(), /* B */
-                     0.0f,                   /* beta */
-                     param.output->mutable_data<float>(TARGET(kXPU)) /* C */);
+  int r = xdnn::fc_fusion<float, float, float, int16_t>(
+      ctx.GetRawContext(),                              // ctx
+      x_matrix.data<float>(),                           // x
+      y_matrix.data<float>(),                           // w
+      param.output->mutable_data<float>(TARGET(kXPU)),  // y
+      m,                                                // m
+      n,                                                // n
+      k,                                                // k
+      false,                                            // x_trans
+      false,                                            // w_trans
+      nullptr,                                          // x_maxptr
+      nullptr,                                          // w_maxptr
+      nullptr,                                          // y_maxptr
+      k,                                                // ldx
+      n,                                                // ldw
+      n,                                                // ldy
+      1.0f,                                             // alpha
+      0.0f,                                             // beta
+      nullptr,                                          // bias
+      xdnn::Activation_t::LINEAR);                      // act
+
   CHECK_EQ(r, 0);
 }
 
