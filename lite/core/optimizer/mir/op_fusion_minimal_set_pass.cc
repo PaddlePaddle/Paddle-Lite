@@ -770,7 +770,7 @@ class ReshapeTransposeReshapeFuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    auto first_reshape_node = matched.at("frst_reshape");
+    auto first_reshape_node = matched.at("first_reshape");
     auto first_reshape_x_node = matched.at("first_reshape_x");
     auto first_reshape_x_name = first_reshape_x_node->arg()->name;
     auto last_reshape_node = matched.at("last_reshape");
