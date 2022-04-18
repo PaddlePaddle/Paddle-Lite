@@ -75,6 +75,7 @@ class MulElementwiseAddFuser : public FuseBase {
     auto mul_node = matched.at("mul");
     auto mul_op = mul_node->stmt()->op();
     auto scope = mul_op->scope();
+    auto& valid_places = mul_op->valid_places();
     auto mul_x_node = matched.at("mul_x");
     auto mul_x_name = mul_x_node->arg()->name;
     auto mul_y_node = matched.at("mul_y");
@@ -141,7 +142,6 @@ class MulElementwiseAddFuser : public FuseBase {
     // Create a new fc op with the op desc, and replace the matched subgraph
     // nodes.
     auto fc_op = LiteOpRegistry::Global().Create("fc");
-    auto& valid_places = mul_op->valid_places();
     fc_op->Attach(fc_desc, scope);
     auto fc_node = graph->GraphCreateInstructNode(fc_op, valid_places);
     IR_NODE_LINK_TO(mul_x_node, fc_node);
@@ -182,6 +182,7 @@ class FCActivationFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     auto fc_node = matched.at("fc");
     auto fc_op = fc_node->stmt()->op();
+    auto& valid_places = fc_op->valid_places();
     auto act_node = matched.at("act");
     auto act_out_node = matched.at("act_out");
     auto act_out_name = act_out_node->arg()->name;
@@ -210,7 +211,6 @@ class FCActivationFuser : public FuseBase {
       fc_desc.SetAttr("Output0_threshold",
                       act_desc.GetAttr<float>("Out0_threshold"));
     }
-    auto& valid_places = fc_op->valid_places();
     fc_node->stmt()->ResetOp(fc_desc, valid_places);
     IR_OP_VAR_LINK(fc_node, act_out_node);
   }
@@ -306,6 +306,7 @@ class Conv2dBatchNormFuser : public FuseBase {
     auto conv2d_node = matched.at("conv2d");
     auto conv2d_op = conv2d_node->stmt()->op();
     auto scope = conv2d_op->scope();
+    auto& valid_places = conv2d_op->valid_places();
     auto conv2d_filter_node = matched.at("conv2d_filter");
     auto conv2d_filter_name = conv2d_filter_node->arg()->name;
     auto conv2d_filter_var = scope->FindVar(conv2d_filter_name);
@@ -477,7 +478,6 @@ class Conv2dBatchNormFuser : public FuseBase {
       conv2d_desc.SetAttr("Output0_threshold",
                           batch_norm_desc.GetAttr<float>("Y0_threshold"));
     }
-    auto& valid_places = conv2d_op->valid_places();
     conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
     IR_NODE_LINK_TO(batch_norm_bias_node, conv2d_node);
     IR_OP_VAR_LINK(conv2d_node, batch_norm_y_node);
@@ -545,6 +545,7 @@ class Conv2dElementwiseAddFuser : public FuseBase {
     auto conv2d_node = matched.at("conv2d");
     auto conv2d_op = conv2d_node->stmt()->op();
     auto scope = conv2d_op->scope();
+    auto& valid_places = conv2d_op->valid_places();
     auto conv2d_filter_node = matched.at("conv2d_filter");
     auto conv2d_filter_name = conv2d_filter_node->arg()->name;
     auto conv2d_filter_var = scope->FindVar(conv2d_filter_name);
@@ -606,7 +607,6 @@ class Conv2dElementwiseAddFuser : public FuseBase {
           "Output0_threshold",
           elementwise_add_desc.GetAttr<float>("Out0_threshold"));
     }
-    auto& valid_places = conv2d_op->valid_places();
     conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
     IR_NODE_LINK_TO(elementwise_add_y_node, conv2d_node);
     IR_OP_VAR_LINK(conv2d_node, elementwise_add_out_node);
@@ -656,6 +656,7 @@ class Conv2dActivationFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     auto conv2d_node = matched.at("conv2d");
     auto conv2d_op = conv2d_node->stmt()->op();
+    auto& valid_places = conv2d_op->valid_places();
     auto act_node = matched.at("act");
     auto act_out_node = matched.at("act_out");
     auto act_out_name = act_out_node->arg()->name;
@@ -684,7 +685,6 @@ class Conv2dActivationFuser : public FuseBase {
       conv2d_desc.SetAttr("Output0_threshold",
                           act_desc.GetAttr<float>("Out0_threshold"));
     }
-    auto& valid_places = conv2d_op->valid_places();
     conv2d_node->stmt()->ResetOp(conv2d_desc, valid_places);
     IR_OP_VAR_LINK(conv2d_node, act_out_node);
   }
@@ -693,6 +693,126 @@ class Conv2dActivationFuser : public FuseBase {
   std::string conv2d_type_{"conv2d"};
   bool conv2d_bias_{false};
   std::string act_type_{"relu"};
+};
+
+class ReshapeTransposeReshapeFuser : public FuseBase {
+ public:
+  explicit ReshapeTransposeReshapeFuser(const std::string& first_reshape_type,
+                                        const std::string& transpose_type,
+                                        const std::string& last_reshape_type)
+      : first_reshape_type_(first_reshape_type),
+        transpose_type_(transpose_type),
+        last_reshape_type_(last_reshape_type) {}
+
+  void BuildPattern() override {
+    // Create the pattern nodes.
+    auto first_reshape_node = OpNode("first_reshape", first_reshape_type_)
+                                  ->assert_op_attr_satisfied<std::vector<int>>(
+                                      "shape",
+                                      [](const std::vector<int>& attr) {
+                                        return attr.size() >= 5 && attr[1] > 0;
+                                      })
+                                  ->AsIntermediate();
+    auto first_reshape_x_node =
+        VarNode("first_reshape_x")
+            ->assert_is_op_input(first_reshape_type_, "X");
+    auto first_reshape_out_node =
+        VarNode("first_reshape_out")
+            ->assert_is_op_output(first_reshape_type_, "Out")
+            ->assert_is_op_input(transpose_type_, "X")
+            ->AsIntermediate();
+    auto transpose_node =
+        OpNode("transpose", transpose_type_)
+            ->assert_op_attr_satisfied<std::vector<int>>(
+                "axis",
+                [](const std::vector<int>& attr) {
+                  return attr.size() >= 5 && attr[1] == 2 && attr[2] == 1;
+                })
+            ->AsIntermediate();
+    auto transpose_out_node = VarNode("transpose_out")
+                                  ->assert_is_op_output(transpose_type_, "Out")
+                                  ->assert_is_op_input(last_reshape_type_, "X")
+                                  ->AsIntermediate();
+    auto last_reshape_node =
+        OpNode("last_reshape", last_reshape_type_)
+            ->assert_op_attr_satisfied<std::vector<int>>(
+                "shape",
+                [](const std::vector<int>& attr) { return attr.size() >= 4; })
+            ->AsIntermediate();
+    auto last_reshape_out_node =
+        VarNode("last_reshape_out")
+            ->assert_is_op_output(last_reshape_type_, "Out");
+    // Create the topological connections for the above pattern nodes.
+    *first_reshape_x_node >> *first_reshape_node >> *first_reshape_out_node >>
+        *transpose_node >> *transpose_out_node >> *last_reshape_node >>
+        *last_reshape_out_node;
+    if (first_reshape_type_ == "reshape2") {
+      auto first_reshape_xshape =
+          VarNode("first_reshape_xshape")
+              ->assert_is_op_output(first_reshape_type_, "XShape")
+              ->AsIntermediate();
+      *first_reshape_node >> *first_reshape_xshape;
+    }
+    if (transpose_type_ == "transpose2") {
+      auto transpose_xshape =
+          VarNode("transpose_xshape")
+              ->assert_is_op_output(transpose_type_, "XShape")
+              ->AsIntermediate();
+      *transpose_node >> *transpose_xshape;
+    }
+    if (last_reshape_type_ == "reshape2") {
+      auto last_reshape_xshape =
+          VarNode("last_reshape_xshape")
+              ->assert_is_op_output(last_reshape_type_, "XShape")
+              ->AsIntermediate();
+      *last_reshape_node >> *last_reshape_xshape;
+    }
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto first_reshape_node = matched.at("frst_reshape");
+    auto first_reshape_x_node = matched.at("first_reshape_x");
+    auto first_reshape_x_name = first_reshape_x_node->arg()->name;
+    auto last_reshape_node = matched.at("last_reshape");
+    auto last_reshape_op = last_reshape_node->stmt()->op();
+    auto scope = last_reshape_op->scope();
+    auto& valid_places = last_reshape_op->valid_places();
+    auto last_reshape_out_node = matched.at("last_reshape_out");
+    auto last_reshape_out_name = last_reshape_out_node->arg()->name;
+    // Get the attributes from the last rehape op.
+    auto first_reshape_desc = *first_reshape_node->stmt()->op_info();
+    auto last_reshape_desc = *last_reshape_node->stmt()->op_info();
+    // Create the shuffle_channel op desc.
+    cpp::OpDesc shuffle_channel_desc;
+    shuffle_channel_desc.SetType("shuffle_channel");
+    shuffle_channel_desc.SetInput("X", {first_reshape_x_name});
+    shuffle_channel_desc.SetOutput("Out", {last_reshape_out_name});
+    shuffle_channel_desc.SetAttr(
+        "group", first_reshape_desc.GetAttr<std::vector<int>>("shape")[1]);
+    // Get the output threshold from the last reshape op.
+    if (last_reshape_desc.HasAttr("out_threshold")) {
+      shuffle_channel_desc.SetAttr(
+          "out_threshold", last_reshape_desc.GetAttr<float>("out_threshold"));
+    }
+    // Compatible with a certain version of PaddleSlim, so @wanghaoshuang needs
+    // to unify the name of the output threshold.
+    if (last_reshape_desc.HasAttr("Out0_threshold")) {
+      shuffle_channel_desc.SetAttr(
+          "Out0_threshold", last_reshape_desc.GetAttr<float>("Out0_threshold"));
+    }
+    auto shuffle_channel_op =
+        LiteOpRegistry::Global().Create("shuffle_channel");
+    shuffle_channel_op->Attach(shuffle_channel_desc, scope);
+    auto shuffle_channel_node =
+        graph->GraphCreateInstructNode(shuffle_channel_op, valid_places);
+    IR_NODE_LINK_TO(first_reshape_x_node, shuffle_channel_node);
+    IR_OP_VAR_LINK(shuffle_channel_node, last_reshape_out_node);
+  }
+
+ private:
+  std::string first_reshape_type_{"reshape"};
+  std::string transpose_type_{"transpose"};
+  std::string last_reshape_type_{"reshape"};
 };
 
 void ApplyMulElementwiseAddFuser(SSAGraph* graph) {
@@ -756,8 +876,12 @@ void ApplyConv2dActivationFuser(SSAGraph* graph) {
 }
 
 void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
-  // ReshapeTransposeReshapeFuser fuser;
-  // fuser(graph);
+  ReshapeTransposeReshapeFuser reshape_transpose_reshape_fuser(
+      "reshape", "transpose", "reshape");
+  reshape_transpose_reshape_fuser(graph);
+  ReshapeTransposeReshapeFuser reshape2_transpose2_reshape2_fuser(
+      "reshape2", "transpose2", "reshape2");
+  reshape2_transpose2_reshape2_fuser(graph);
 }
 
 void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
