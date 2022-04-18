@@ -65,6 +65,9 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"google_xnnpack"});
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"intel_openvino"});
 #else
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"builtin_device"});

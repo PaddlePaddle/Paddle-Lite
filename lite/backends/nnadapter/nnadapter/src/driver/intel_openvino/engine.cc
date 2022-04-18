@@ -34,8 +34,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
   if (!selected_device_names.empty()) {
     selected_device_names_ =
         string_split<std::string>(selected_device_names, ",");
-  } else {
-    selected_device_names_ = std::vector<std::string>({0});
   }
   NNADAPTER_CHECK_GE(selected_device_names_.size(), 1);
   // Only supports specifying one device

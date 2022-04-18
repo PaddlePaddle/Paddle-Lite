@@ -258,6 +258,8 @@ TEST(squeeze, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -291,6 +293,8 @@ TEST(squeeze2, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
