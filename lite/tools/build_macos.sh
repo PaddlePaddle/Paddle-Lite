@@ -119,18 +119,25 @@ function build_opt {
     prepare_thirdparty
     mkdir -p build.opt
     cd build.opt
+    opt_arch=$(echo `uname -a` | awk -F " " '{print $15}')
+    with_x86=OFF
+    if [ $opt_arch == "arm64" ]; then
+       with_x86=OFF
+    else
+       with_x86=ON
+    fi
     cmake .. -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
-      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_X86=${with_x86} \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
 }
 
 function make_armosx {
+    prepare_thirdparty
     if [ "${BUILD_PYTHON}" == "ON" ]; then
-      prepare_thirdparty
       BUILD_EXTRA=ON
       LITE_ON_TINY_PUBLISH=OFF
     fi
