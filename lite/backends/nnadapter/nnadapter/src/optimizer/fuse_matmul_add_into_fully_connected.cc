@@ -69,7 +69,11 @@ void MatMulAddFuser::BuildPattern() {
   auto matmul_output_pattern = CreatePattern("matmul_output")->IsIntermediate();
   auto add_y_pattern = CreatePattern("add_y")
                            ->IsOperationInputOperand(NNADAPTER_ADD, 1)
-                           ->IsConstantOperand();
+                           ->IsConstantOperand()
+                           ->MatchCondition([](const Node* node) -> bool {
+                             auto operand = node->operand;
+                             return operand->type.dimensions.count == 1;
+                           });
   auto add_fuse_code_pattern = CreatePattern("add_fuse_code")
                                    ->IsOperationInputOperand(NNADAPTER_ADD, 2)
                                    ->IsConstantOperand();
