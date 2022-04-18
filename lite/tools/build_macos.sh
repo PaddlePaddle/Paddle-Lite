@@ -104,7 +104,6 @@ function prepare_thirdparty {
 function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
-  WITH_OPENCL=ON
   LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
