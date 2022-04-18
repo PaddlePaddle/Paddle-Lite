@@ -177,6 +177,7 @@ function make_armosx {
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_M1=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DPY_VERSION=$PY_VERSION \
             -DLITE_WITH_LOG=$WITH_LOG \
