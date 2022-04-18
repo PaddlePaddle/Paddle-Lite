@@ -112,7 +112,11 @@ execute_process(
     ${CMAKE_BINARY_DIR}/all_kernel_faked.h
     ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
     ${CMAKE_BINARY_DIR}/kernel_src_map.h
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+  message(FATAL_ERROR ${error})
+endif()
 
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
 lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
@@ -129,5 +133,9 @@ execute_process(
     ${ops_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
     ${LITE_BUILD_EXTRA}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
 #--------------------------------------------------------------------------------------------------
