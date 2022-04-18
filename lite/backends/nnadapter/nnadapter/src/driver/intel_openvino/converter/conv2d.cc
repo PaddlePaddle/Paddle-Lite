@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Copyright (C) 2018-2022 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+//
 
 #include "operation/conv2d.h"
 #include "driver/intel_openvino/converter/converter.h"
@@ -22,6 +25,9 @@ namespace intel_openvino {
 
 int ConvertConv2D(Converter* converter, core::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  NNADAPTER_CHECK(filter_layout == NNADAPTER_NCHW);
+  NNADAPTER_CHECK_EQ((output_channel_size % group), 0);
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],
@@ -58,30 +64,62 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   auto ov_pads_end =
       ov::CoordinateDiff({static_cast<std::ptrdiff_t>(pad_height_bottom),
                           static_cast<std::ptrdiff_t>(pad_width_right)});
-  auto conv2d_op = std::make_shared<default_opset::Convolution>(*input_tensor,
-                                                                *filter_tensor,
-                                                                ov_strides,
-                                                                ov_pads_begin,
-                                                                ov_pads_end,
-                                                                ov_diliations,
-                                                                ov_auto_pad);
-  auto output_tensor = MAP_OUTPUT(output_operand, conv2d_op, 0);
+
+  // For group > 1, reshape filter.
+  // Filters' layout is [O,I,W,H].
+  // Divide O with groups:
+  // grouped_O = O / groups.
+  // The final grouped filters' layout is [groups, grouped_O, I, W, H].
+  std::shared_ptr<Operator> conv2d_op;
+  if (group > 1) {
+    auto group_tensor = converter->AddConstantTensor<int64_t>({1}, {group});
+    auto filter_ihw_tensor = converter->AddConstantTensor<int64_t>(
+        {3}, {filter_channel_size, filter_height, filter_width});
+    auto grouped_o_tensor = converter->AddConstantTensor<int64_t>(
+        {1}, {output_channel_size / group});
+    auto target_filter_shape = std::make_shared<default_opset::Concat>(
+        TensorVector{*group_tensor, *grouped_o_tensor, *filter_ihw_tensor}, 0);
+    auto reshape_filter = std::make_shared<default_opset::Reshape>(
+        *filter_tensor, target_filter_shape, false);
+    conv2d_op =
+        std::make_shared<default_opset::GroupConvolution>(*input_tensor,
+                                                          reshape_filter,
+                                                          ov_strides,
+                                                          ov_pads_begin,
+                                                          ov_pads_end,
+                                                          ov_diliations,
+                                                          ov_auto_pad);
+  } else {
+    conv2d_op = std::make_shared<default_opset::Convolution>(*input_tensor,
+                                                             *filter_tensor,
+                                                             ov_strides,
+                                                             ov_pads_begin,
+                                                             ov_pads_end,
+                                                             ov_diliations,
+                                                             ov_auto_pad);
+  }
   // Bias
   auto bias_tensor = converter->ConvertOperand(bias_operand);
   auto unsqueeze_op = converter->AddUnsqueezeOperator(
       bias_tensor, std::vector<int64_t>({0, 2, 3}));
-  auto add_op = std::make_shared<default_opset::Add>(*output_tensor,
-                                                     unsqueeze_op->output(0));
-  output_tensor = MAP_OUTPUT(output_operand, add_op, 0);
+  auto add_op =
+      std::make_shared<default_opset::Add>(conv2d_op, unsqueeze_op->output(0));
+  auto output_tensor = MAP_OUTPUT(output_operand, add_op, 0);
   // Fuse activation
+  std::shared_ptr<Operator> act_op;
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                             \
-  case NNADAPTER_FUSED_##type: {                                               \
-    auto act_op = std::make_shared<default_opset::class_name>(*output_tensor); \
-    MAP_OUTPUT(output_operand, act_op, 0);                                     \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                        \
+  case NNADAPTER_FUSED_##type: {                                          \
+    act_op = std::make_shared<default_opset::class_name>(*output_tensor); \
+    MAP_OUTPUT(output_operand, act_op, 0);                                \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
 #undef CONVERT_UNARY_ACTIVATION
+    case NNADAPTER_FUSED_RELU6:
+      act_op =
+          std::make_shared<default_opset::Clamp>(*output_tensor, 0.0f, 6.0f);
+      MAP_OUTPUT(output_operand, act_op, 0);
+      break;
     case NNADAPTER_FUSED_NONE:
       break;
     default:

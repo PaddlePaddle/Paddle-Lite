@@ -280,7 +280,8 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
       for (auto groups : {2, 3, 6}) {
 #if defined(LITE_WITH_NPU) || defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
     defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU) ||                            \
-    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT) ||                             \
+    defined(NNADAPTER_WITH_INTEL_OPENVINO)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -524,6 +525,8 @@ TEST(Conv2d, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
