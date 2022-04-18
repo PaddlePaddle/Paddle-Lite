@@ -37,14 +37,13 @@ class Eliminator : public FuseBase {
         OpNode("scale", "scale")
             ->assert_node_satisfied([](const Node* node) -> bool {
               auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
-              bool is_scale_1_bias_0 =
-                  op_desc.HasAttr("scale") && op_desc.HasAttr("bias") &&
-                  fabs(op_desc.GetAttr<float>("scale") - 1.0f) <= 1e-5f &&
-                  fabs(op_desc.GetAttr<float>("bias")) <= 1e-5f;
+              auto scale = op_desc.GetAttr<float>("scale");
+              auto bias = op_desc.GetAttr<float>("bias");
               bool with_act = (op_desc.HasAttr("with_act") &&
                                op_desc.GetAttr<bool>("with_act")) ||
                               op_desc.HasAttr("fuse_relu");
-              return is_scale_1_bias_0 && !with_act;
+              return std::fabs(scale - 1.0f) <= 1e-5f &&
+                     std::fabs(bias) <= 1e-5f && !with_act;
             });
     auto* out = VarNode("out")->assert_is_op_output("scale", "Out");
 
