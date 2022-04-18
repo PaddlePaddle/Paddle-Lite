@@ -19,13 +19,18 @@
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareConcat(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateConcat(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareConcat(core::Operation* operation) {
   CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -132,6 +137,10 @@ int PrepareConcat(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteConcat(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

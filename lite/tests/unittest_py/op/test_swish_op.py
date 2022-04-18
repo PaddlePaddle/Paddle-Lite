@@ -66,6 +66,8 @@ class TestSwishOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -79,6 +81,8 @@ class TestSwishOp(AutoScanTest):
         W = draw(st.integers(min_value=1, max_value=128))
         in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
         beta_data = draw(st.floats(min_value=0.0, max_value=1.0))
+        if self.get_target() == "NNAdapter":
+            beta_data = 1.0
         swish_op = OpConfig(
             type="swish",
             inputs={"X": ["input_data"]},
@@ -99,16 +103,26 @@ class TestSwishOp(AutoScanTest):
         return self.get_predictor_configs(), ["swish"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
+        def teller1(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data"].shape)
             if predictor_config.target() == TargetType.Metal:
                 if x_shape[0] != 1 or len(x_shape) != 4:
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
+
+        def teller2(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                if len(in_shape) == 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

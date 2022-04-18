@@ -105,9 +105,8 @@ int ExecuteProgram(void* program,
 }  // namespace kunlunxin_xtcl
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Kunlunxin",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
@@ -115,6 +114,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::kunlunxin_xtcl::CloseDevice,
     .create_context = nnadapter::kunlunxin_xtcl::CreateContext,
     .destroy_context = nnadapter::kunlunxin_xtcl::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::kunlunxin_xtcl::CreateProgram,
     .destroy_program = nnadapter::kunlunxin_xtcl::DestroyProgram,
     .execute_program = nnadapter::kunlunxin_xtcl::ExecuteProgram,

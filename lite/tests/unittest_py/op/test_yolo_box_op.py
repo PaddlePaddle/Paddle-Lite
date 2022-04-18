@@ -51,6 +51,9 @@ class TestYoloBoxOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
 
+        # self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        # self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
+
         # having diff 
         # metal_places = [
         #     Place(TargetType.Metal, PrecisionType.FP32,

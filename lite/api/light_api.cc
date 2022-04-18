@@ -285,8 +285,9 @@ void LightPredictor::DequantizeWeight() {
               input_scale_name = input_scale_name_alias;
               input_name = input_name.substr(0, found);
             }
-            auto input_tensor =
-                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+            Variable* scope_var = scope_->FindVar(input_name);
+            CHECK(scope_var != nullptr);
+            auto input_tensor = scope_var->GetMutable<lite::Tensor>();
             CHECK(input_tensor != nullptr);
             tmp_tensor.CopyDataFrom(*input_tensor);
             auto scale_list =
@@ -345,6 +346,9 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "depthwise_conv2d",
                                     "conv2d_transpose",
                                     "fc",
+                                    "mul",
+                                    "matmul",
+                                    "matmul_v2",
                                     "gru",
                                     "sequence_conv",
                                     "elementwise_add",

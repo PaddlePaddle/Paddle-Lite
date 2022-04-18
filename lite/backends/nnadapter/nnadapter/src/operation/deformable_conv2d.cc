@@ -36,7 +36,12 @@ NNADAPTER_EXPORT int32_t DeformableConvOutputSize(int32_t input_size,
   return (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
 }
 
-int PrepareDeformableConv2D(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateDeformableConv2D(
+    const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareDeformableConv2D(core::Operation* operation) {
   DEFORMABLE_CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -66,6 +71,10 @@ int PrepareDeformableConv2D(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteDeformableConv2D(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

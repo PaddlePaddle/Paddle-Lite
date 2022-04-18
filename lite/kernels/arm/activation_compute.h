@@ -60,7 +60,8 @@ class SigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~SigmoidCompute() = default;
 };
 
-class TanhCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType ptype>
+class TanhCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
   using param_t = operators::ActivationParam;
 

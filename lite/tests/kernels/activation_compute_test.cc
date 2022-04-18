@@ -465,6 +465,8 @@ TEST(Activation_relu, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  abs_error = 5e-2;
 #else
   return;
 #endif
@@ -498,6 +500,8 @@ TEST(Activation_relu, precision) {
 TEST(Activation_leaky_relu, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -508,6 +512,13 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -522,8 +533,7 @@ TEST(Activation_leaky_relu, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     for (auto slope : {0.01, 0.1}) {
       TestAct(place,
               "def",
@@ -616,6 +626,8 @@ TEST(Activation_prelu, precision) {
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -624,6 +636,13 @@ TEST(Activation_sigmoid, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -638,8 +657,7 @@ TEST(Activation_sigmoid, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     TestAct(place,
             "def",
             0.01,
@@ -657,6 +675,8 @@ TEST(Activation_sigmoid, precision) {
 TEST(Activation_tanh, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -667,6 +687,13 @@ TEST(Activation_tanh, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -681,8 +708,7 @@ TEST(Activation_tanh, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     TestAct(place,
             "def",
             0.01,
@@ -701,6 +727,8 @@ TEST(Activation_swish, precision) {
   Place place;
   float abs_error = 2e-5;
   std::vector<float> coefs{0.01, 0.1};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -709,6 +737,14 @@ TEST(Activation_swish, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
   coefs = {1.};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  coefs = {1.};
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -718,8 +754,7 @@ TEST(Activation_swish, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     for (auto coef : coefs) {
       TestAct(place,
               "def",
@@ -739,6 +774,8 @@ TEST(Activation_swish, precision) {
 TEST(Activation_relu6, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -751,6 +788,13 @@ TEST(Activation_relu6, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -765,8 +809,7 @@ TEST(Activation_relu6, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     TestAct(place,
             "def",
             0.01,
@@ -784,6 +827,8 @@ TEST(Activation_relu6, precision) {
 TEST(Activation_log, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -792,6 +837,13 @@ TEST(Activation_log, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
 #else
   return;
 #endif
@@ -804,8 +856,7 @@ TEST(Activation_log, precision) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     TestAct(place,
             "def",
             0.01,
@@ -823,12 +874,23 @@ TEST(Activation_log, precision) {
 TEST(Activation_exp, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -837,8 +899,7 @@ TEST(Activation_exp, precision) {
 #else
   return;
 #endif
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+  for (auto dims : test_dims) {
     TestAct(place,
             "def",
             0.01,

@@ -69,7 +69,11 @@ NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
   }
 }
 
-int PrepareExpand(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateExpand(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareExpand(core::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -113,6 +117,10 @@ int PrepareExpand(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteExpand(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

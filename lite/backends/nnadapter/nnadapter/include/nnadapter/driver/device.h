@@ -30,6 +30,9 @@ typedef struct Device {
   void (*close_device)(void* device);
   int (*create_context)(void* device, const char* properties, void** context);
   void (*destroy_context)(void* context);
+  int (*validate_program)(void* context,
+                          const core::Model* model,
+                          bool* supported_operations);
   int (*create_program)(void* context,
                         core::Model* model,
                         core::Cache* cache,

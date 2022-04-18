@@ -37,6 +37,7 @@ typedef enum {
   NNADAPTER_INVALID_PARAMETER = 3,
   NNADAPTER_DEVICE_NOT_FOUND = 4,
   NNADAPTER_DEVICE_INTERNAL_ERROR = 5,
+  NNADAPTER_FEATURE_NOT_SUPPORTED = 6
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
@@ -131,7 +132,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_ABS,
+  NNADAPTER_ABS = 0,
 
   /**
    * Applies adaptive 2-D average pooling across the input according to input
@@ -1364,6 +1365,63 @@ typedef enum {
   NNADAPTER_POW,
 
   /**
+   * Prior box operator Generate prior boxes for SSD(Single Shot MultiBox
+   * Detector) algorithm.
+   * https://arxiv.org/abs/1512.02325.
+   * Each position of the input produce N prior boxes, N is determined by the
+   * count of min_sizes, max_sizes and aspect_ratios,
+   * The size of the box is in range(min_size, max_size) interval, which is
+   * generated in sequence according to the aspect_ratios.
+   *
+   * Inputs:
+   * * 0: Input, a NNADAPTER_FLOAT32 tensor,
+   * the input feature data of PriorBoxOp, The layout is NCHW.
+   * * 1: Image, a NNADAPTER_FLOAT32 tensor,
+   * the input image data of PriorBoxOp, The layout is NCHW.
+   * * 2: min_sizes, a NNADAPTER_FLOAT32 tensor, List of min sizes of generated
+   * prior boxes.
+   * * 3: max_sizes, a NNADAPTER_FLOAT32 tensor, List of max sizes of generated
+   * prior boxes.
+   * * 4: aspect_ratios, a NNADAPTER_FLOAT32 tensor, List of aspect ratios of
+   * generated
+   * prior boxes.
+   * * 5: variances, a NNADAPTER_FLOAT32 tensor, List of variances to be encoded
+   * in prior
+   * boxes.
+   * * 6: flip, a NNADAPTER_BOOL scalar, Whether to flip aspect ratios, Default
+   * is True.
+   * * 7: clip, a NNADAPTER_BOOL scalar, Whether to clip out-of-boundary boxes,
+   * Default is True.
+   * * 8: step_w, a NNADAPTER_FLOAT32 scalar, Prior boxes step across width, 0.0
+   * for auto
+   * calculation, Default is 0.0.
+   * * 9: step_h, a NNADAPTER_FLOAT32 scalar, Prior boxes step across height,
+   * 0.0 for auto
+   * calculation, Default is 0.0.
+   * * 10: offset, a NNADAPTER_FLOAT32 scalar, Prior boxes center offset,
+   * Default is 0.5.
+   * * 11: min_max_aspect_ratios_order, a NNADAPTER_BOOL scalar, If set True,
+   * the output prior box
+   * is in order of [min, max, aspect_ratios], which is consistent with
+   * Caffe.Please note,
+   * this order affects the weights order of convolution layer followed by and
+   * does not affect the final detection results, Default is False.
+   *
+   * Outputs:
+   * * 0: Boxes, a Boxes NNADAPTER_FLOAT32 tensor .
+   * the output prior boxes of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position.
+   * * 1: Variances, a Variances NNADAPTER_FLOAT32 tensor .
+   * the expanded variances of PriorBoxOp. The layout is [H, W, num_priors, 4].
+   * H is the height of input, W is the width of input, num_priors
+   * is the box count of each position."
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRIOR_BOX,
+
+  /**
    * Applies the prelu activation to the input tensor. The output is calculated
    * using this formula:
    * output = input, if input >=0;
@@ -1954,6 +2012,46 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_XOR,
+
+  /**
+   * Generate YOLO detection boxes from output of YOLOv3 network.
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32 tensor. a 4-D tensor with shape of [N, C,
+   * H, W]. The dimension(C) stores "box locations, confidence score and
+   * classification one-hot keys of each anchor box. Generally, X should be the
+   * output of YOLOv3 network.
+   * * 1: input1, imgsize, a NNADAPTER_INT32 tensor. a 2-D tensor with shape of
+   * [N, 2]. This tensor holds height and width of each input image used for
+   * resizing output box in input image scale.
+   * * 2: anchors, vector of NNADAPTER_INT32 scalar, the anchor width and
+   * height, it will be parsed pair by pair.
+   * * 3: class_num, a NNADAPTER_INT32 scalar, number of classes to predict.
+   * * 4: conf_thresh, a NNADAPTER_FLOAT32 scalar, the confidence scores
+   * threshold of detection boxes, boxes with confidence scores under threshold
+   * should be ignored.
+   * * 5: downsample_ratio, a NNADAPTER_INT32 scalar, down-sampling rate from
+   * network input to this operation input.
+   * * 6: clip_bbox, a NNADAPTER_BOOL8 scalar, whether clip output bonding box
+   * in input(imgsize), default true.
+   * * 7: scale_x_y, a NNADAPTER_FLOAT32 scalar, scale the center point of
+   * decoded bounding box, default 1.0.
+   * * 8: iou_aware, a NNADAPTER_BOOL8 scalar, whether use iou aware, default
+   * false.
+   * * 9: iou_aware_factor, a NNADAPTER_FLOAT32 scalar, iou aware factor,
+   * default 0.5.
+   *
+   * Outputs:
+   * * 0: boxes, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
+   * 4], N is the batch num, M is output box number, and the 3rd stores [xmin,
+   * ymin, xmax, ymax] coordinates of boxes.
+   * * 1: scores, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
+   * class_num], N is the batch num, M is output box number.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_YOLO_BOX,
 } NNAdapterOperationCode;
 
 /**
@@ -2294,6 +2392,16 @@ int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
                                             NNAdapterOperand** input_operands,
                                             uint32_t output_count,
                                             NNAdapterOperand** output_operands);
+
+/**
+ * Check whether the operations of the target model are supported by the target
+ * devices.
+ *
+ * Available since version 1.
+ */
+int NNAdapterModel_getSupportedOperations(const NNAdapterModel* model,
+                                          NNAdapterContext* context,
+                                          bool* supported_operations);
 
 /**
  * Compile the model to the device-specific binary program or load the cached

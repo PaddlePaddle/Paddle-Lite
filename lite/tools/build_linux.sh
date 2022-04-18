@@ -62,6 +62,8 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 NNADAPTER_WITH_INTEL_OPENVINO=OFF
 # /opt/intel/openvino_<version>
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
+NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
@@ -96,7 +98,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
@@ -217,6 +219,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+                        -DNNADAPTER_WITH_FAKE_DEVICE=$NNADAPTER_WITH_FAKE_DEVICE \
+                        -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
                         -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
                         -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
@@ -226,6 +230,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
                         -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
+                        -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -570,6 +576,14 @@ function main {
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_fake_device=*)
+                NNADAPTER_WITH_FAKE_DEVICE="${i#*=}"
+                shift
+                ;;
+            --nnadapter_fake_device_sdk_root=*)
+                NNADAPTER_FAKE_DEVICE_SDK_ROOT="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_nvidia_tensorrt=*)
                 NNADAPTER_WITH_NVIDIA_TENSORRT="${i#*=}"
                 shift
@@ -605,6 +619,14 @@ function main {
                 ;;
             --nnadapter_intel_openvino_sdk_root=*)
                 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_google_xnnpack=*)
+                NNADAPTER_WITH_GOOGLE_XNNPACK="${i#*=}"
+                shift
+                ;;
+            --nnadapter_google_xnnpack_src_git_tag=*)
+                NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

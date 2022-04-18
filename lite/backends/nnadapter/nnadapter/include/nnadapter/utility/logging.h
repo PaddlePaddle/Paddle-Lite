@@ -88,10 +88,10 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 namespace nnadapter {
 namespace logging {
 
-struct NNAdapterException : public std::exception {
+struct Exception : public std::exception {
   const std::string exception_prefix = "NNAdapter C++ Exception: \n";
   std::string message;
-  explicit NNAdapterException(const char* detail) {
+  explicit Exception(const char* detail) {
     message = exception_prefix + std::string(detail);
   }
   const char* what() const noexcept { return message.c_str(); }

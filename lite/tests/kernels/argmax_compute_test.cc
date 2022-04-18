@@ -181,6 +181,9 @@ void TestArgmax(const Place& place,
              std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4, 5}}) {
           int x_size = x_shape.size();
           if (axis < -x_size || axis >= x_size) continue;
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+          if (axis == 0 || axis == -static_cast<int>(x_shape.size())) continue;
+#endif
           for (std::string alias : aliases) {
             std::unique_ptr<arena::TestCase> tester(new ArgmaxComputeTester(
                 place, alias, axis, keepdims, dtype, DDim(x_shape)));
@@ -201,6 +204,12 @@ TEST(Argmax, precision) {
   aliases = {"def"};
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   TestArgmax(place, aliases, {2});
   return;
 #else

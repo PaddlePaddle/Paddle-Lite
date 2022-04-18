@@ -63,6 +63,7 @@ void bilinear_interp(const float* src,
   float fy = 0.0f;
   int sx = 0;
   int sy = 0;
+  int loop_cnt_idx = w_out;
   if (with_align) {
     scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
     scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
@@ -72,7 +73,12 @@ void bilinear_interp(const float* src,
       sx = static_cast<int>(fx);
       fx -= sx;
       xofs[dx * 2] = sx;
-      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
+      if ((sx + 1) < w_in - 1) {
+        xofs[dx * 2 + 1] = sx + 1;
+      } else {
+        loop_cnt_idx = (loop_cnt_idx == w_out) ? dx : loop_cnt_idx;
+        xofs[dx * 2 + 1] = w_in - 1;
+      }
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -96,7 +102,12 @@ void bilinear_interp(const float* src,
       sx = static_cast<int>(fx);
       fx -= sx;
       xofs[dx * 2] = sx;
-      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
+      if ((sx + 1) < w_in - 1) {
+        xofs[dx * 2 + 1] = sx + 1;
+      } else {
+        loop_cnt_idx = (loop_cnt_idx == w_out) ? dx : loop_cnt_idx;
+        xofs[dx * 2 + 1] = w_in - 1;
+      }
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -139,24 +150,25 @@ void bilinear_interp(const float* src,
     float* rows1p = rows1;
 
     int dx = 0;
+    int idx = dx * 2;
+    int sx0 = xofs[idx];
+    int sx1 = xofs[idx + 1];
     // w_bound loop
-    for (; dx + 1 < w_bound; dx += 2) {
+    for (; dx + 1 < w_bound && dx + 1 < loop_cnt_idx; dx += 2) {
       auto idx = dx * 2;
       int sx = xofs[idx];
-      int sx1 = xofs[idx + 1];
       int sxn = xofs[idx + 2];
-      int sxn1 = xofs[idx + 3];
+      const float* s0p = s0 + sx;
+      const float* s1p = s1 + sx;
+      const float* s0np = s0 + sxn;
+      const float* s1np = s1 + sxn;
+      float32x2_t _s0 = vld1_f32(s0p);
+      float32x2_t _s1 = vld1_f32(s1p);
+      float32x2_t _s0n = vld1_f32(s0np);
+      float32x2_t _s1n = vld1_f32(s1np);
 
-      float32x4_t _s0s0n;
-      _s0s0n[0] = *(s0 + sx);
-      _s0s0n[1] = *(s0 + sx1);
-      _s0s0n[2] = *(s0 + sxn);
-      _s0s0n[3] = *(s0 + sxn1);
-      float32x4_t _s1s1n;
-      _s1s1n[0] = *(s1 + sx);
-      _s1s1n[1] = *(s1 + sx1);
-      _s1s1n[2] = *(s1 + sxn);
-      _s1s1n[3] = *(s1 + sxn1);
+      float32x4_t _s0s0n = vcombine_f32(_s0, _s0n);
+      float32x4_t _s1s1n = vcombine_f32(_s1, _s1n);
 
       float32x4_t _a = vld1q_f32(alphap);
       float32x4_t _ms0 = vmulq_f32(_s0s0n, _a);
@@ -301,22 +313,21 @@ void bilinear_interp(const float* src,
 
     int dx = 0;
     // w_bound loop
-    for (; dx + 1 < w_bound; dx += 2) {
+    for (; dx + 1 < w_bound && dx + 1 < loop_cnt_idx; dx += 2) {
       int idx = dx * 2;
       int sx = xofs[idx];
-      int sx1 = xofs[idx + 1];
       int sxn = xofs[idx + 2];
-      int sxn1 = xofs[idx + 3];
-      float32x4_t _s0s0n;
-      _s0s0n[0] = *(s0 + sx);
-      _s0s0n[1] = *(s0 + sx1);
-      _s0s0n[2] = *(s0 + sxn);
-      _s0s0n[3] = *(s0 + sxn1);
-      float32x4_t _s1s1n;
-      _s1s1n[0] = *(s1 + sx);
-      _s1s1n[1] = *(s1 + sx1);
-      _s1s1n[2] = *(s1 + sxn);
-      _s1s1n[3] = *(s1 + sxn1);
+      const float* s0p = s0 + sx;
+      const float* s1p = s1 + sx;
+      const float* s0np = s0 + sxn;
+      const float* s1np = s1 + sxn;
+      float32x2_t _s0 = vld1_f32(s0p);
+      float32x2_t _s1 = vld1_f32(s1p);
+      float32x2_t _s0n = vld1_f32(s0np);
+      float32x2_t _s1n = vld1_f32(s1np);
+
+      float32x4_t _s0s0n = vcombine_f32(_s0, _s0n);
+      float32x4_t _s1s1n = vcombine_f32(_s1, _s1n);
 
       float32x4_t _a = vld1q_f32(alphap);
       float32x4_t _ms0 = vmulq_f32(_s0s0n, _a);

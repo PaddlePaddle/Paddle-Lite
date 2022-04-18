@@ -31,7 +31,8 @@ class TestNearestV2InterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
@@ -109,6 +110,29 @@ class TestNearestV2InterpOp(AutoScanTest):
         assume(scale2 * X_shape[3] > 1.0)
         assume(test_case != 2)
 
+        nnadapter_device_name = self.get_nnadapter_device_name()
+        if nnadapter_device_name == "nvidia_tensorrt":
+            nearest_interp_v2 = OpConfig(
+                type="nearest_interp_v2",
+                inputs={"X": ["input_data_x"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "data_layout": data_layout,
+                    "scale": [scale1, scale2],
+                    "out_w": out_w,
+                    "out_h": out_h,
+                    "interp_method": interp_method,
+                    "align_corners": False
+                })
+            program_config = ProgramConfig(
+                ops=[nearest_interp_v2],
+                weights={},
+                inputs={
+                    "input_data_x": TensorConfig(data_gen=generate_input1)
+                },
+                outputs={"output_data"})
+            return program_config
+
         if test_case == 1:
             nearest_interp_v2 = OpConfig(
                 type="nearest_interp_v2",
@@ -185,20 +209,21 @@ class TestNearestV2InterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
-            if predictor_config.target() in [TargetType.ARM]:
-                return True
-
-        def _teller2(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
+        def _teller3(program_config, predictor_config):
+            nnadapter_device_name = self.get_nnadapter_device_name()
+            if nnadapter_device_name == "nvidia_tensorrt":
+                return True
+
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
         self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

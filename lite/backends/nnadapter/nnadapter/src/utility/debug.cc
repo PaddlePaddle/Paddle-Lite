@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include "driver/nvidia_tensorrt/operation/type.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -508,9 +509,51 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"condition", "input0", "input1"};
         output_args = {"output"};
         break;
+      case NNADAPTER_YOLO_BOX:
+        input_args = {
+            "input",
+            "imgsize",
+            "anchors",
+            "class_num",
+            "conf_thresh",
+            "downsample_ratio",
+            "clip_bbox",
+            "scale_x_y",
+            "iou_aware",
+            "iou_aware_factor",
+        };
+        output_args = {"boxes", "scores"};
+        break;
+      case NNADAPTER_PRIOR_BOX:
+        input_args = {"Input",
+                      "Image",
+                      "min_sizes",
+                      "max_sizes",
+                      "aspect_ratios",
+                      "variances",
+                      "flip",
+                      "clip",
+                      "step_w",
+                      "step_h",
+                      "offset",
+                      "min_max_aspect_ratios_order"};
+        output_args = {"Boxes", "Variances"};
+        break;
       default:
-        NNADAPTER_LOG(FATAL) << "unsupported op: "
-                             << static_cast<int>(operation->type);
+        if (operation->type < 0) {
+          input_args.resize(input_count);
+          for (int i = 0; i < input_count; i++) {
+            input_args[i] = string_format("input%d", i);
+          }
+          output_args.resize(output_count);
+          for (int i = 0; i < output_count; i++) {
+            output_args[i] = string_format("output%d", i);
+          }
+        } else {
+          NNADAPTER_LOG(FATAL) << "unsupported op: "
+                               << static_cast<int>(operation->type);
+        }
+        break;
     }
     for (size_t i = 0; i < input_count; i++) {
       auto* operand = input_operands[i];
@@ -666,6 +709,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
+    NNADAPTER_TYPE_TO_STRING(PRIOR_BOX);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(PRELU);
     NNADAPTER_TYPE_TO_STRING(QUANTIZE);
@@ -697,7 +741,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
-      name = "UNKNOWN";
+      name = type < 0 ? string_format("CUSTOM(type=%d)", type) : "UNKNOWN";
       break;
   }
   return name;

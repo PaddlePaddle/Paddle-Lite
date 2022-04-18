@@ -66,7 +66,7 @@ void SearchFcCompute::Run() {
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::findmax<float>(
-      ctx.GetRawContext(), bottom_data, batch * _in, maxs_xpu);
+      ctx.GetRawContext(), bottom_data, maxs_xpu, batch * _in);
   CHECK_EQ(r, 0);
   r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
       ctx.GetRawContext(), /* ctx */

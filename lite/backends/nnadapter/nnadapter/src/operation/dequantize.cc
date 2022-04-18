@@ -16,13 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareDequantize(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateDequantize(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareDequantize(core::Operation* operation) {
   DEQUANTIZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -30,6 +35,10 @@ int PrepareDequantize(core::Operation* operation) {
   output_operand->type.precision = NNADAPTER_FLOAT32;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteDequantize(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

@@ -13,10 +13,42 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/utility.h"
-#include "utility/debug.h"
+#include <algorithm>
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+void* Tensor::Data(bool return_cuda_buffer) {
+  uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
+  if (return_cuda_buffer) {
+    if (host_buffer_length_ > 0 && cuda_buffer_length_ == 0) {
+      // Host tensor should not return cuda buffer
+      return nullptr;
+    }
+    if (dst_length > cuda_buffer_length_) {
+      void* data{nullptr};
+      NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
+      cuda_buffer_.reset(data);
+      cuda_buffer_length_ = dst_length;
+    }
+    return cuda_buffer_.get();
+  } else {
+    if (dst_length > host_buffer_length_) {
+      void* data = malloc(dst_length);
+      host_buffer_.reset(data);
+      host_buffer_length_ = dst_length;
+    }
+    if (cuda_buffer_length_ > 0) {
+      NNADAPTER_CHECK_GE(host_buffer_length_, cuda_buffer_length_);
+      NNADAPTER_CHECK_EQ(cudaMemcpy(host_buffer_.get(),
+                                    cuda_buffer_.get(),
+                                    cuda_buffer_length_,
+                                    cudaMemcpyDeviceToHost),
+                         cudaSuccess);
+    }
+    return host_buffer_.get();
+  }
+}
 
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
                     const char* msg) noexcept {
@@ -75,6 +107,11 @@ nvinfer1::DataType ConvertToNVDataType(
   return output_precision;
 }
 
+template <>
+nvinfer1::DataType GetNVDateType<float>() {
+  return nvinfer1::DataType::kFLOAT;
+}
+
 uint32_t GetNVTypeSize(nvinfer1::DataType type) {
   switch (type) {
     case nvinfer1::DataType::kINT32:
@@ -116,6 +153,7 @@ void Serialize(void** buffer, const T value) {
 }
 template void Serialize(void** buffer, const int32_t value);
 template void Serialize(void** buffer, const int64_t value);
+template void Serialize(void** buffer, const size_t value);
 template void Serialize(void** buffer, const bool value);
 template void Serialize(void** buffer, const float value);
 
@@ -126,6 +164,7 @@ void Serialize(void** buffer, const std::vector<T>& value) {
   std::memcpy(*buffer, value.data(), nbyte);
   reinterpret_cast<char*&>(*buffer) += nbyte;
 }
+template void Serialize(void** buffer, const std::vector<uint8_t>& value);
 template void Serialize(void** buffer, const std::vector<int32_t>& value);
 template void Serialize(void** buffer, const std::vector<int64_t>& value);
 template void Serialize(void** buffer, const std::vector<float>& value);
@@ -143,6 +182,9 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           int64_t* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
+                          size_t* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           bool* value);
@@ -166,6 +208,9 @@ void Deserialize(const void** buffer,
 }
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
+                          std::vector<uint8_t>* value);
+template void Deserialize(const void** buffer,
+                          size_t* buffer_size,
                           std::vector<int32_t>* value);
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
@@ -173,6 +218,86 @@ template void Deserialize(const void** buffer,
 template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           std::vector<float>* value);
+
+void ConvertDynamicDimensions(NNAdapterOperandDimensionType* dimensions) {
+  if (dimensions->dynamic_count == 0) return;
+  int count = dimensions->count;
+  int dynamic_count = dimensions->dynamic_count;
+  auto& dynamic_data = dimensions->dynamic_data;
+  std::vector<int32_t> opt_shape(dynamic_data[0], dynamic_data[0] + count);
+  std::vector<int32_t> min_shape(opt_shape);
+  std::vector<int32_t> max_shape(opt_shape);
+  for (int i = 1; i < dynamic_count; i++) {
+    for (int j = 0; j < count; j++) {
+      if (dynamic_data[i][j] < min_shape[j]) {
+        min_shape[j] = dynamic_data[i][j];
+      }
+      if (dynamic_data[i][j] > max_shape[j]) {
+        max_shape[j] = dynamic_data[i][j];
+      }
+    }
+  }
+  memcpy(dynamic_data[0], min_shape.data(), sizeof(int32_t) * count);
+  memcpy(dynamic_data[1], opt_shape.data(), sizeof(int32_t) * count);
+  memcpy(dynamic_data[2], max_shape.data(), sizeof(int32_t) * count);
+  dimensions->dynamic_count = 3;
+}
+
+int GetMaxBatchSize(const NNAdapterOperandDimensionType& dimensions) {
+  int max_batch_size = std::max(1, dimensions.data[0]);
+  for (int i = 0; i < dimensions.dynamic_count; i++) {
+    max_batch_size = std::max(max_batch_size, dimensions.dynamic_data[i][0]);
+  }
+  return max_batch_size;
+}
+
+core::Argument* FindArgumentByIndex(core::Argument* arguments,
+                                    int index,
+                                    uint32_t count) {
+  for (uint32_t i = 0; i < count; i++) {
+    if (arguments[i].index == index) {
+      return &arguments[i];
+    }
+  }
+  return static_cast<core::Argument*>(nullptr);
+}
+
+std::vector<int32_t> GetAlignedDims(
+    const NNAdapterOperandDimensionType& target_dimensions,
+    const NNAdapterOperandDimensionType& reference_dimensions) {
+  auto dims0_count = target_dimensions.count;
+  auto dims1_count = reference_dimensions.count;
+  auto dims0_data = target_dimensions.data;
+  std::vector<int32_t> dims(dims0_data, dims0_data + dims0_count);
+  for (size_t i = 0; i < dims.size(); i++) {
+    if (dims[i] == NNADAPTER_UNKNOWN) {
+      dims[i] = -1;
+    }
+  }
+  if (dims0_count < dims1_count) {
+    dims.insert(dims.begin(), dims1_count - dims0_count, 1);
+  }
+  return dims;
+}
+
+nvinfer1::Dims ConvertToNVDims(const NNAdapterOperandDimensionType& dimensions,
+                               bool ignore_batch) {
+  int count = dimensions.count;
+  auto data = dimensions.data;
+  for (int i = 1; i < count; i++) {
+    NNADAPTER_CHECK_NE(data[i], NNADAPTER_UNKNOWN);
+  }
+  nvinfer1::Dims dims;
+  if (ignore_batch) {
+    dims.nbDims = count - 1;
+    memcpy(dims.d, data + 1, dims.nbDims * sizeof(int32_t));
+  } else {
+    NNADAPTER_CHECK_NE(data[0], NNADAPTER_UNKNOWN);
+    dims.nbDims = count;
+    memcpy(dims.d, data, dims.nbDims * sizeof(int32_t));
+  }
+  return dims;
+}
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

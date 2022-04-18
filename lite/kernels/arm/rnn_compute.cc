@@ -114,7 +114,6 @@ static void preprocess(ARMContext* ctx,
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto input_dims = input->dims();
@@ -140,7 +139,7 @@ static void preprocess(ARMContext* ctx,
                          false,
                          act_param,
                          ctx);
-  lite::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
+  lite::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, nullptr);
 
   if ("GRU" == mode) {
     Tensor bias_tmp_hh;
@@ -152,10 +151,9 @@ static void preprocess(ARMContext* ctx,
     std::memset(
         bias_ptr + bias_offt, 0, (bias_hh.numel() - bias_offt) * sizeof(float));
     lite::arm::math::fill_bias_fc(
-        o_data, bias_tmp_hh.data<float>(), m, n, flag_act);
+        o_data, bias_tmp_hh.data<float>(), m, n, nullptr);
   } else {
-    lite::arm::math::fill_bias_fc(
-        o_data, bias_hh.data<float>(), m, n, flag_act);
+    lite::arm::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, nullptr);
   }
 }
 
@@ -308,7 +306,6 @@ static void lstm_cell(ARMContext* ctx,
                       Tensor* last_c_act,
                       Tensor* output,
                       const Tensor* bias_hh) {
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();
@@ -395,7 +392,6 @@ static void gru_cell(ARMContext* ctx,
                      Tensor* output,
                      const Tensor* bias_hh,
                      Tensor* weight_hh_gru) {
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();

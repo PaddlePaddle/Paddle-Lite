@@ -16,19 +16,29 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareGroupNormalization(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateGroupNormalization(
+    const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareGroupNormalization(core::Operation* operation) {
   GROUP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteGroupNormalization(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

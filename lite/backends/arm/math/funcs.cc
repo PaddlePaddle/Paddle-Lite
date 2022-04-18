@@ -20,53 +20,109 @@ namespace lite {
 namespace arm {
 namespace math {
 
+#define LOADA_DATA_16                         \
+  float32x4_t vin1 = vld1q_f32(ptr_out);      \
+  float32x4_t vb1 = vld1q_f32(ptr_bias);      \
+  float32x4_t vin2 = vld1q_f32(ptr_out + 4);  \
+  float32x4_t vb2 = vld1q_f32(ptr_bias + 4);  \
+  float32x4_t vin3 = vld1q_f32(ptr_out + 8);  \
+  float32x4_t vb3 = vld1q_f32(ptr_bias + 8);  \
+  float32x4_t vin4 = vld1q_f32(ptr_out + 12); \
+  float32x4_t vb4 = vld1q_f32(ptr_bias + 12); \
+  float32x4_t vout1 = vaddq_f32(vin1, vb1);   \
+  float32x4_t vout2 = vaddq_f32(vin2, vb2);   \
+  float32x4_t vout3 = vaddq_f32(vin3, vb3);   \
+  float32x4_t vout4 = vaddq_f32(vin4, vb4);
+#define RELU_16                    \
+  vout1 = vmaxq_f32(vout1, vzero); \
+  vout2 = vmaxq_f32(vout2, vzero); \
+  vout3 = vmaxq_f32(vout3, vzero); \
+  vout4 = vmaxq_f32(vout4, vzero);
+#define RELU6_16                    \
+  vout1 = vminq_f32(vout1, valpha); \
+  vout2 = vminq_f32(vout2, valpha); \
+  vout3 = vminq_f32(vout3, valpha); \
+  vout4 = vminq_f32(vout4, valpha);
+#define STORE_16                  \
+  vst1q_f32(ptr_out, vout1);      \
+  vst1q_f32(ptr_out + 4, vout2);  \
+  vst1q_f32(ptr_out + 8, vout3);  \
+  vst1q_f32(ptr_out + 12, vout4); \
+  ptr_out += 16;                  \
+  ptr_bias += 16;
+#define LOADA_DATA_4                     \
+  float32x4_t vin1 = vld1q_f32(ptr_out); \
+  float32x4_t vb1 = vld1q_f32(ptr_bias); \
+  float32x4_t vout1 = vaddq_f32(vin1, vb1);
+#define RELU_4 vout1 = vmaxq_f32(vout1, vzero);
+#define RELU6_4 vout1 = vminq_f32(vout1, valpha);
+#define STORE_4              \
+  vst1q_f32(ptr_out, vout1); \
+  ptr_out += 4;              \
+  ptr_bias += 4;
+
 template <>
-void fill_bias_fc<float>(
-    float *out, const float *bias, int num, int channel, bool flag_relu) {
+void fill_bias_fc(float *out,
+                  const float *bias,
+                  int num,
+                  int channel,
+                  const operators::ActivationParam *act_param) {
   int cnt = channel >> 4;
   int remain = channel & 15;
-  if (flag_relu) {
+  int cnt_num = remain >> 2;
+  int cnt_rem = remain & 3;
+
+  if (act_param != nullptr && act_param->has_active) {
     float32x4_t vzero = vdupq_n_f32(0.f);
-    for (int j = 0; j < num; ++j) {
-      const float *ptr_bias = bias;
-      float *ptr_out = out + j * channel;
-
-      for (int i = 0; i < cnt; ++i) {
-        float32x4_t vin1 = vld1q_f32(ptr_out);
-        float32x4_t vb1 = vld1q_f32(ptr_bias);
-
-        float32x4_t vin2 = vld1q_f32(ptr_out + 4);
-        float32x4_t vb2 = vld1q_f32(ptr_bias + 4);
-
-        float32x4_t vin3 = vld1q_f32(ptr_out + 8);
-        float32x4_t vb3 = vld1q_f32(ptr_bias + 8);
-
-        float32x4_t vin4 = vld1q_f32(ptr_out + 12);
-        float32x4_t vb4 = vld1q_f32(ptr_bias + 12);
-
-        float32x4_t vout1 = vaddq_f32(vin1, vb1);
-        float32x4_t vout2 = vaddq_f32(vin2, vb2);
-        float32x4_t vout3 = vaddq_f32(vin3, vb3);
-        float32x4_t vout4 = vaddq_f32(vin4, vb4);
-
-        vout1 = vmaxq_f32(vout1, vzero);
-        vout2 = vmaxq_f32(vout2, vzero);
-        vout3 = vmaxq_f32(vout3, vzero);
-        vout4 = vmaxq_f32(vout4, vzero);
-
-        vst1q_f32(ptr_out, vout1);
-        vst1q_f32(ptr_out + 4, vout2);
-        vst1q_f32(ptr_out + 8, vout3);
-        vst1q_f32(ptr_out + 12, vout4);
-
-        ptr_out += 16;
-        ptr_bias += 16;
+    if (act_param->active_type == lite_api::ActivationType::kRelu) {
+      for (int j = 0; j < num; ++j) {
+        const float *ptr_bias = bias;
+        float *ptr_out = out + j * channel;
+        for (int i = 0; i < cnt; ++i) {
+          LOADA_DATA_16
+          RELU_16
+          STORE_16
+        }
+        for (int i = 0; i < cnt_num; ++i) {
+          LOADA_DATA_4
+          RELU_4
+          STORE_4
+        }
+        for (int i = 0; i < cnt_rem; ++i) {
+          *ptr_out += *(ptr_bias++);
+          *ptr_out = *ptr_out > 0.f ? *ptr_out : 0.f;
+          ptr_out++;
+        }
       }
-      for (int i = 0; i < remain; ++i) {
-        *ptr_out += *(ptr_bias++);
-        *ptr_out = *ptr_out > 0.f ? *ptr_out : 0.f;
-        ptr_out++;
+    } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+      float alpha = act_param->Relu_clipped_coef;
+      float32x4_t valpha = vdupq_n_f32(act_param->Relu_clipped_coef);
+      for (int j = 0; j < num; ++j) {
+        const float *ptr_bias = bias;
+        float *ptr_out = out + j * channel;
+        for (int i = 0; i < cnt; ++i) {
+          LOADA_DATA_16
+          RELU_16
+          RELU6_16
+          STORE_16
+        }
+        for (int i = 0; i < cnt_num; ++i) {
+          LOADA_DATA_4
+          RELU_4
+          RELU6_4
+          STORE_4
+        }
+        for (int i = 0; i < cnt_rem; ++i) {
+          *ptr_out += *(ptr_bias++);
+          *ptr_out =
+              *ptr_out > 0.f ? ((*ptr_out < alpha) ? *ptr_out : alpha) : 0.f;
+          ptr_out++;
+        }
       }
+    } else {
+      LOG(FATAL) << "This act_type: "
+                 << static_cast<int>(act_param->active_type)
+                 << " doesn't support";
     }
   } else {
     for (int j = 0; j < num; ++j) {
@@ -74,130 +130,27 @@ void fill_bias_fc<float>(
       float *ptr_out = out + j * channel;
 
       for (int i = 0; i < cnt; ++i) {
-        float32x4_t vin1 = vld1q_f32(ptr_out);
-        float32x4_t vb1 = vld1q_f32(ptr_bias);
-
-        float32x4_t vin2 = vld1q_f32(ptr_out + 4);
-        float32x4_t vb2 = vld1q_f32(ptr_bias + 4);
-
-        float32x4_t vin3 = vld1q_f32(ptr_out + 8);
-        float32x4_t vb3 = vld1q_f32(ptr_bias + 8);
-
-        float32x4_t vin4 = vld1q_f32(ptr_out + 12);
-        float32x4_t vb4 = vld1q_f32(ptr_bias + 12);
-
-        float32x4_t vout1 = vaddq_f32(vin1, vb1);
-        float32x4_t vout2 = vaddq_f32(vin2, vb2);
-        float32x4_t vout3 = vaddq_f32(vin3, vb3);
-        float32x4_t vout4 = vaddq_f32(vin4, vb4);
-
-        vst1q_f32(ptr_out, vout1);
-        vst1q_f32(ptr_out + 4, vout2);
-        vst1q_f32(ptr_out + 8, vout3);
-        vst1q_f32(ptr_out + 12, vout4);
-
-        ptr_out += 16;
-        ptr_bias += 16;
+        LOADA_DATA_16
+        STORE_16
       }
-      for (int i = 0; i < remain; ++i) {
+      for (int i = 0; i < cnt_num; ++i) {
+        LOADA_DATA_4
+        STORE_4
+      }
+      for (int i = 0; i < cnt_rem; ++i) {
         *(ptr_out++) += *(ptr_bias++);
       }
     }
   }
 }
-
-template <>
-void fill_bias_fc<int>(
-    int *out, const int *bias, int num, int channel, bool flag_relu) {
-  int cnt = channel >> 4;
-  int remain = channel & 15;
-  if (flag_relu) {
-    for (int j = 0; j < num; ++j) {
-      const int *ptr_bias = bias;
-      int *ptr_out = out + j * channel;
-
-      int32x4_t vzero = vdupq_n_s32(0);
-
-      for (int i = 0; i < cnt; ++i) {
-        int32x4_t vin1 = vld1q_s32(ptr_out);
-        int32x4_t vb1 = vld1q_s32(ptr_bias);
-
-        int32x4_t vin2 = vld1q_s32(ptr_out + 4);
-        int32x4_t vb2 = vld1q_s32(ptr_bias + 4);
-
-        int32x4_t vin3 = vld1q_s32(ptr_out + 8);
-        int32x4_t vb3 = vld1q_s32(ptr_bias + 8);
-
-        int32x4_t vin4 = vld1q_s32(ptr_out + 12);
-        int32x4_t vb4 = vld1q_s32(ptr_bias + 12);
-
-        int32x4_t vout1 = vaddq_s32(vin1, vb1);
-        int32x4_t vout2 = vaddq_s32(vin2, vb2);
-        int32x4_t vout3 = vaddq_s32(vin3, vb3);
-        int32x4_t vout4 = vaddq_s32(vin4, vb4);
-
-        vout1 = vmaxq_s32(vout1, vzero);
-        vout2 = vmaxq_s32(vout2, vzero);
-        vout3 = vmaxq_s32(vout3, vzero);
-        vout4 = vmaxq_s32(vout4, vzero);
-
-        vst1q_s32(ptr_out, vout1);
-        vst1q_s32(ptr_out + 4, vout2);
-        vst1q_s32(ptr_out + 8, vout3);
-        vst1q_s32(ptr_out + 12, vout4);
-
-        ptr_out += 16;
-        ptr_bias += 16;
-      }
-      for (int i = 0; i < remain; ++i) {
-        *ptr_out += *(ptr_bias++);
-        *ptr_out = *ptr_out > 0 ? *ptr_out : 0;
-        ptr_out++;
-      }
-    }
-  } else {
-    for (int j = 0; j < num; ++j) {
-      const int *ptr_bias = bias;
-      int *ptr_out = out + j * channel;
-
-      int32x4_t vout1;
-      int32x4_t vout2;
-      int32x4_t vout3;
-      int32x4_t vout4;
-
-      for (int i = 0; i < cnt; ++i) {
-        int32x4_t vin1 = vld1q_s32(ptr_out);
-        int32x4_t vb1 = vld1q_s32(ptr_bias);
-
-        int32x4_t vin2 = vld1q_s32(ptr_out + 4);
-        int32x4_t vb2 = vld1q_s32(ptr_bias + 4);
-
-        int32x4_t vin3 = vld1q_s32(ptr_out + 8);
-        int32x4_t vb3 = vld1q_s32(ptr_bias + 8);
-
-        int32x4_t vin4 = vld1q_s32(ptr_out + 12);
-        int32x4_t vb4 = vld1q_s32(ptr_bias + 12);
-
-        vout1 = vaddq_s32(vin1, vb1);
-        vout2 = vaddq_s32(vin2, vb2);
-        vout3 = vaddq_s32(vin3, vb3);
-        vout4 = vaddq_s32(vin4, vb4);
-
-        vst1q_s32(ptr_out, vout1);
-        vst1q_s32(ptr_out + 4, vout2);
-        vst1q_s32(ptr_out + 8, vout3);
-        vst1q_s32(ptr_out + 12, vout4);
-
-        ptr_out += 16;
-        ptr_bias += 16;
-      }
-      for (int i = 0; i < remain; ++i) {
-        *(ptr_out++) += *(ptr_bias++);
-      }
-    }
-  }
-}
-
+#undef LOADA_DATA_16
+#undef RELU_16
+#undef RELU6_16
+#undef STORE_16
+#undef LOADA_DATA_4
+#undef RELU_4
+#undef RELU6_4
+#undef STORE_4
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

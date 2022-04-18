@@ -105,9 +105,8 @@ int ExecuteProgram(void* program,
 }  // namespace mediatek_apu
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "MediaTek",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
@@ -115,6 +114,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::mediatek_apu::CloseDevice,
     .create_context = nnadapter::mediatek_apu::CreateContext,
     .destroy_context = nnadapter::mediatek_apu::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::mediatek_apu::CreateProgram,
     .destroy_program = nnadapter::mediatek_apu::DestroyProgram,
     .execute_program = nnadapter::mediatek_apu::ExecuteProgram,

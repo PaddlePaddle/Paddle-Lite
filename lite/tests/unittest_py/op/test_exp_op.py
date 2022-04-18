@@ -63,6 +63,8 @@ class TestExpOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -94,7 +96,7 @@ class TestExpOp(AutoScanTest):
         return self.get_predictor_configs(), ["exp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
+        def teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_shape = list(program_config.inputs["input_data"].shape)
             if target_type == TargetType.Metal:
@@ -102,9 +104,19 @@ class TestExpOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
+
+        def teller2(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                if len(in_shape) == 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

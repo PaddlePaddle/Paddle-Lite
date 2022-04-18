@@ -16,13 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareQuantize(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateQuantize(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareQuantize(core::Operation* operation) {
   QUANTIZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -38,6 +43,10 @@ int PrepareQuantize(core::Operation* operation) {
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteQuantize(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

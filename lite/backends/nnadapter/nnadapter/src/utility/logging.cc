@@ -14,6 +14,7 @@
 
 #include "utility/logging.h"
 #include <iomanip>
+#include "utility/micros.h"
 
 namespace nnadapter {
 namespace logging {
@@ -51,15 +52,15 @@ void gen_log(std::ostream& log_stream_,
   }
 }
 
-LogMessage::LogMessage(const char* file,
-                       const char* func,
-                       int lineno,
-                       const char* level)
+NNADAPTER_EXPORT LogMessage::LogMessage(const char* file,
+                                        const char* func,
+                                        int lineno,
+                                        const char* level)
     : level_(level) {
   gen_log(log_stream_, file, func, lineno, level);
 }
 
-LogMessage::~LogMessage() {
+NNADAPTER_EXPORT LogMessage::~LogMessage() {
   log_stream_ << '\n';
 #if defined(ANDROID) || defined(__ANDROID__)
   if (level_ == "I") {
@@ -76,20 +77,20 @@ LogMessage::~LogMessage() {
   fprintf(stderr, "%s", log_stream_.str().c_str());
 }
 
-LogMessageFatal::~LogMessageFatal() noexcept(false) {
+NNADAPTER_EXPORT LogMessageFatal::~LogMessageFatal() noexcept(false) {
   log_stream_ << '\n';
 #if defined(ANDROID) || defined(__ANDROID__)
   ANDROID_LOG_F(log_stream_.str().c_str());
 #endif
   fprintf(stderr, "%s", log_stream_.str().c_str());
-  throw NNAdapterException(log_stream_.str().c_str());
+  throw Exception(log_stream_.str().c_str());
   abort();
 }
 
-VLogMessage::VLogMessage(const char* file,
-                         const char* func,
-                         int lineno,
-                         const int32_t level_int) {
+NNADAPTER_EXPORT VLogMessage::VLogMessage(const char* file,
+                                          const char* func,
+                                          int lineno,
+                                          const int32_t level_int) {
   const char* GLOG_v = std::getenv("GLOG_v");
   GLOG_v_int = (GLOG_v && atoi(GLOG_v) > 0) ? atoi(GLOG_v) : 0;
   this->level_int = level_int;
@@ -100,7 +101,7 @@ VLogMessage::VLogMessage(const char* file,
   gen_log(log_stream_, file, func, lineno, level);
 }
 
-VLogMessage::~VLogMessage() {
+NNADAPTER_EXPORT VLogMessage::~VLogMessage() {
   if (GLOG_v_int < this->level_int) {
     return;
   }

@@ -48,8 +48,9 @@ class TestSqueeze2Op(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -75,6 +76,11 @@ class TestSqueeze2Op(AutoScanTest):
             for num in input_axis:
                 num = num if num >= 0 else num + len(in_shape)
                 assume(num < len(in_shape))
+        # "nvidia_tensorrt" must satisfies theses 
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            for i in range(len(input_axis)):
+                in_shape[input_axis[i]] = 1
+            input_type = "float32"
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
@@ -113,7 +119,19 @@ class TestSqueeze2Op(AutoScanTest):
         return self.get_predictor_configs(), ["squeeze2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(in_shape) == 1 \
+                    or 0 in axes \
+                    or -len(in_shape) in axes:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axes has 0' on nvidia_tensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=200)

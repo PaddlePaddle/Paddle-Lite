@@ -51,7 +51,8 @@ class TestSliceOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
         '''
         #All of metal inputs error.
         metal_places = [
@@ -184,7 +185,18 @@ class TestSliceOp(AutoScanTest):
         return self.get_predictor_configs(), ["slice"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                input_num = len(program_config.ops[0].inputs)
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if input_num != 1 or len(in_shape) == 1 or 0 in axes:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'input_num > 1' or 'in_shape_size ==1' "
+            "or 'axes has 0' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

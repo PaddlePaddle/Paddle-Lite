@@ -232,9 +232,9 @@ class SliceComputeTester : public arena::TestCase {
 };
 
 void test_slice(Place place) {
-  std::vector<int> axes({0, 1, 2});
-  std::vector<int> starts({2, 2, 2});
-  std::vector<int> ends({5, 6, 7});
+  std::vector<int> axes({1, 2});
+  std::vector<int> starts({2, 2});
+  std::vector<int> ends({6, 7});
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
@@ -256,10 +256,10 @@ void test_slice_axes(Place place) {
 }
 
 void test_slice_decrease_axis(Place place) {
-  std::vector<int> axes({0});
+  std::vector<int> axes({1});
   std::vector<int> starts({0});
   std::vector<int> ends({1});
-  std::vector<int> decrease_axis({0});
+  std::vector<int> decrease_axis({1});
   DDim dims({2, 3, 4, 5});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
       place, "def", axes, starts, ends, decrease_axis, dims));
@@ -315,6 +315,10 @@ TEST(Slice, precision) {
   test_slice_axes(place);
   test_slice_decrease_axis(place);
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   test_slice(place);
   test_slice_axes(place);
   test_slice_decrease_axis(place);

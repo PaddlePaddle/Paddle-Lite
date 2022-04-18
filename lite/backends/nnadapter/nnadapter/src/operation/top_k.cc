@@ -16,13 +16,18 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareTopK(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateTopK(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareTopK(core::Operation* operation) {
   TOP_K_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
@@ -42,6 +47,10 @@ int PrepareTopK(core::Operation* operation) {
       static_cast<NNAdapterOperandPrecisionCode>(return_indices_dtype);
   NNADAPTER_VLOG(5) << "indices: " << OperandToString(indices_operand);
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteTopK(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

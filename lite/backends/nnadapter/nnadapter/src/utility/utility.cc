@@ -15,6 +15,7 @@
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
 #endif
+#include "fstream"
 #include "utility/debug.h"
 #include "utility/micros.h"
 #include "utility/string.h"
@@ -117,6 +118,16 @@ NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantType(
 NNADAPTER_EXPORT bool IsConstantOperandType(const NNAdapterOperandType& type) {
   return type.lifetime == NNADAPTER_CONSTANT_COPY ||
          type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+}
+
+NNADAPTER_EXPORT bool IsModelInputOperandType(
+    const NNAdapterOperandType& type) {
+  return type.lifetime == NNADAPTER_MODEL_INPUT;
+}
+
+NNADAPTER_EXPORT bool IsModelOutputOperandType(
+    const NNAdapterOperandType& type) {
+  return type.lifetime == NNADAPTER_MODEL_OUTPUT;
 }
 
 NNADAPTER_EXPORT bool IsDynamicShapeOperandType(
@@ -536,6 +547,31 @@ NNADAPTER_EXPORT bool WriteFile(const std::string& path,
   }
   fclose(fp);
   return true;
+}
+
+NNADAPTER_EXPORT std::vector<std::string> ReadLines(
+    const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  if (!ifile.is_open()) {
+    NNADAPTER_LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
+  std::vector<std::string> res;
+  std::string tmp;
+  while (getline(ifile, tmp)) res.push_back(tmp);
+  ifile.close();
+  return res;
+}
+
+NNADAPTER_EXPORT void WriteLines(const std::vector<std::string>& lines,
+                                 const std::string& filename) {
+  std::ofstream ofile(filename.c_str());
+  if (!ofile.is_open()) {
+    NNADAPTER_LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
+  for (const auto& line : lines) {
+    ofile << line << "\n";
+  }
+  ofile.close();
 }
 
 NNADAPTER_EXPORT std::string GetStringFromEnv(const std::string& str,

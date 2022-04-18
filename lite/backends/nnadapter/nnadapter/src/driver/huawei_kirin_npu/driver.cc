@@ -105,9 +105,8 @@ int ExecuteProgram(void* program,
 }  // namespace huawei_kirin_npu
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Huawei",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
@@ -115,6 +114,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::huawei_kirin_npu::CloseDevice,
     .create_context = nnadapter::huawei_kirin_npu::CreateContext,
     .destroy_context = nnadapter::huawei_kirin_npu::DestroyContext,
+    .validate_program = 0,
     .create_program = nnadapter::huawei_kirin_npu::CreateProgram,
     .destroy_program = nnadapter::huawei_kirin_npu::DestroyProgram,
     .execute_program = nnadapter::huawei_kirin_npu::ExecuteProgram,

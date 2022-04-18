@@ -60,6 +60,23 @@ void DestroyContext(void* context) {
   }
 }
 
+int ValidateProgram(void* context,
+                    const core::Model* model,
+                    bool* supported_operations) {
+  NNADAPTER_LOG(INFO) << "Validate program for android_nnapi.";
+  if (!context || !model || !supported_operations) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = reinterpret_cast<Context*>(context);
+  auto p = new Program(c);
+  if (!p) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  int result = p->Validate(model, supported_operations);
+  delete p;
+  return result;
+}
+
 int CreateProgram(void* context,
                   core::Model* model,
                   core::Cache* cache,
@@ -105,9 +122,8 @@ int ExecuteProgram(void* program,
 }  // namespace android_nnapi
 }  // namespace nnadapter
 
-NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DEVICE_SYMBOL) = {
-    .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
+NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
+    .name = NNADAPTER_AS_STR2(DEVICE_NAME),
     .vendor = "Google",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
@@ -115,6 +131,7 @@ NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(
     .close_device = nnadapter::android_nnapi::CloseDevice,
     .create_context = nnadapter::android_nnapi::CreateContext,
     .destroy_context = nnadapter::android_nnapi::DestroyContext,
+    .validate_program = nnadapter::android_nnapi::ValidateProgram,
     .create_program = nnadapter::android_nnapi::CreateProgram,
     .destroy_program = nnadapter::android_nnapi::DestroyProgram,
     .execute_program = nnadapter::android_nnapi::ExecuteProgram,

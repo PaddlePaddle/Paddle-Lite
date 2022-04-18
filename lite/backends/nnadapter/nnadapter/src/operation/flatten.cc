@@ -16,20 +16,26 @@
 #include "core/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
-int PrepareFlatten(core::Operation* operation) {
+NNADAPTER_EXPORT bool ValidateFlatten(const core::Operation* operation) {
+  return false;
+}
+
+NNADAPTER_EXPORT int PrepareFlatten(core::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Infer the shape and type of output operands
   CopyOperandTypeWithQuantParams(&output_operand->type, input_operand->type);
   end_axis =
       end_axis < 0 ? input_operand->type.dimensions.count + end_axis : end_axis;
   output_operand->type.dimensions.count =
       input_operand->type.dimensions.count - end_axis + start_axis;
-  // Infer the shape and type of output operands
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions,
                                 const uint32_t input_dimension_count,
@@ -68,6 +74,10 @@ int PrepareFlatten(core::Operation* operation) {
   }
 
   return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int ExecuteFlatten(core::Operation* operation) {
+  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

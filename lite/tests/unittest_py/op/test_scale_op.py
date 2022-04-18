@@ -69,8 +69,9 @@ class TestScaleOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -80,6 +81,9 @@ class TestScaleOp(AutoScanTest):
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
             ) == PrecisionType.FP16 and x_dtype != np.float32:
+                return False
+        if target_type == TargetType.NNAdapter:
+            if program_config.inputs["input_data"].dtype != np.float32:
                 return False
         return True
 
@@ -154,7 +158,7 @@ class TestScaleOp(AutoScanTest):
         return self.get_predictor_configs(), ["scale"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
+        def teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_shape = list(program_config.inputs["input_data"].shape)
             in_data_type = program_config.inputs["input_data"].dtype
@@ -162,30 +166,39 @@ class TestScaleOp(AutoScanTest):
                 if len(in_shape) != 4 or in_data_type != "float32":
                     return True
 
-        def _teller2(program_config, predictor_config):
+        def teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             if target_type == TargetType.Metal:
                 return True
 
-        def _teller3(program_config, predictor_config):
+        def teller3(program_config, predictor_config):
             target_type = predictor_config.target()
             x_dtype = program_config.inputs["input_data"].dtype
             if target_type == TargetType.OpenCL:
                 if x_dtype == np.int32 or x_dtype == np.int64:
                     return True
 
+        def teller4(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                if len(in_shape) == 1:
+                    return True
+
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case. We need to fix it as soon as possible."
         )
         self.add_ignore_check_case(
-            _teller2, IgnoreReasons.ACCURACY_ERROR,
+            teller2, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
         self.add_ignore_check_case(
-            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op when dtype is int32 or int64 on Opencl. "
         )
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
@@ -193,6 +206,9 @@ class TestScaleOp(AutoScanTest):
         if target_str in ["OpenCL", "Metal"]:
             # Make sure to generate enough valid cases for specific targets
             max_examples = 2000
+        elif target_str in ["NNAdapter"]:
+            # Make sure to generate enough valid cases for specific targets
+            max_examples = 300
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)
 

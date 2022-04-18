@@ -13,15 +13,23 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-class ReluPluginDynamic : public PluginDynamic {
+class YoloBoxPluginDynamic : public PluginDynamic {
  public:
-  ReluPluginDynamic();
-  ReluPluginDynamic(const void* serial_data, size_t serial_length);
+  YoloBoxPluginDynamic(const std::vector<int32_t>& anchors,
+                       int class_num,
+                       float conf_thresh,
+                       int downsample_ratio,
+                       bool clip_bbox,
+                       float scale_x_y,
+                       bool iou_aware,
+                       float iou_aware_factor);
+  YoloBoxPluginDynamic(const void* serial_data, size_t serial_length);
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                   const nvinfer1::PluginTensorDesc* output_desc,
@@ -30,9 +38,33 @@ class ReluPluginDynamic : public PluginDynamic {
                   void* workspace,
                   cudaStream_t stream) noexcept;
   const char* getPluginType() const noexcept;
+  size_t getSerializationSize() const noexcept;
+  void serialize(void* buffer) const noexcept;
+
+  nvinfer1::DimsExprs getOutputDimensions(
+      int32_t output_index,
+      const nvinfer1::DimsExprs* inputs,
+      int32_t nb_inputs,
+      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
+
+  int32_t getNbOutputs() const noexcept;
+
+  nvinfer1::DataType getOutputDataType(int32_t index,
+                                       const nvinfer1::DataType* input_types,
+                                       int32_t nb_inputs) const noexcept;
+
+ private:
+  std::vector<int32_t> anchors_;
+  int class_num_;
+  float conf_thresh_;
+  int downsample_ratio_;
+  bool clip_bbox_;
+  float scale_x_y_;
+  bool iou_aware_;
+  float iou_aware_factor_;
 };
 
-class ReluPluginDynamicCreator : public PluginCreator {
+class YoloBoxPluginDynamicCreator : public PluginCreator {
  public:
   const char* getPluginName() const noexcept;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
