@@ -354,7 +354,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;

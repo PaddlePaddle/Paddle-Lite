@@ -165,7 +165,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -201,7 +201,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     // Re-initialize the input tensors when the dimensions of inputs are changed
     // if dynamic shape is supported
@@ -228,7 +228,7 @@ int Program::Execute(uint32_t input_count,
     // 'access' function to re-allocate the host output memory
     output_shapes[arg.index] = std::vector<int64_t>(
         type->dimensions.data, type->dimensions.data + type->dimensions.count);
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto tensor = &output_tensors_[arg.index];
     tensor->data = buffer;
