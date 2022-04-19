@@ -1,6 +1,6 @@
 # 华为昇腾 NPU 部署示例
 
-Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -18,7 +18,7 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 - Atlas 300I Pro（CANN Version ≥ 5.0.2.alpha005)
 - Atlas 300T 训练卡（CANN Version ≥  5.0.2.alpha005)
 
-### 已支持的版本
+### 已验证支持的版本
 
 - CANN 版本 ≥ 3.3.0
 - 固件与驱动版本 ≥ 1.0.9.alpha
@@ -122,40 +122,40 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 性能仅供参考,以实际运行效果为准。
 
 
-| 模型                     | Intel CPU性能 (ms) | x86 + Ascend310 性能 (ms） | 鲲鹏 920 CPU 性能 (ms) | 鲲鹏920 + Ascend310 性能 (ms) |
-| ------------------------ | ------------------ | -------------------------- | ---------------------- | ----------------------------- |
-| AlexNet                  | 81.16              | 4.32                       | 67.39                  | 3.64                          |
-| DenseNet121              | 529.45             | 7.81                       | 157.62                 | 6.23                          |
-| EfficientNet_b0          | 167.59             | 21.08                      | 85.98                  | 7.14                          |
-| ERNIE-TINY               | -                  | 12.31                      | 347.47                 | 10.72                         |
-| ESRGAN                   | 41774.81           | 103.75                     | 9755.14                | 103.06                        |
-| GoogLeNet                | 104.55             | 2.65                       | 71.24                  | 2.40                          |
-| HigherHRNet              | 6760.83            | 386.02                     | 6482.55                | 396.17                        |
-| HRNet                    | 1245.54            | 12.58                      | 752.93                 | 12.08                         |
-| Inception-v3             | 415.00             | 5.91                       | 159.40                 | 3.46                          |
-| Inception-v4             | 1082.00            | 9.00                       | 706.72                 | 6.72                          |
-| MobileNet-v1             | 33.88              | 3.06                       | 35.08                  | 1.43                          |
-| MobileNet-v2             | 25.67              | 3.82                       | 25.27                  | 1.74                          |
-| MobileNetV3_large_x1_0   | 43.53              | 8.96                       | 20.46                  | 2.83                          |
-| MobileNetV3_small_x1_0   | 29.38              | 6.38                       | 8.66                   | 2.24                          |
-| ch_ppocr_mobile_v2.0_det | 359.16             | 10.75                      | 129.01                 | 10.78                         |
-| ch_ppocr_mobile_v2.0_ret | 32.39              | 8.75                       | 15.05                  | 5.87                          |
-| ResNet-101               | 528.43             | 7.33                       | 401.14                 | 4.27                          |
-| ResNet-18                | 136.10             | 2.84                       | 89.41                  | 1.59                          |
-| ResNet-50                | 258.21             | 5.66                       | 229.04                 | 2.87                          |
-| ResNeXt50                | 353.43             | 5.32                       | 261.28                 | 3.10                          |
-| ShuffleNetv2             | 37.93              | 5.41                       | 14.12                  | 4.06                          |
-| SqueezeNet-v1            | 51.12              | 3.06                       | 40.50                  | 1.49                          |
-| SSD-MobileNetV1(1.8)     | 64.82              | 6.56                       | 70.40                  | 6.19                          |
-| SSD-MobileNetV1(2.0+)    | 70.72              | 8.79                       | 73.16                  | 8.17                          |
-| SSD-VGG16                | 1999.32            | 27.35                      | 1001.06                | 25.93                         |
-| VGG16                    | 1204.23            | 10.53                      | 443.20                 | 9.43                          |
-| VGG19                    | 1512.82            | 11.50                      | 667.20                 | 10.23                         |
-| YOLOv3-DarkNet53         | 4241.35            | 38.46                      | 2806.42                | 34.47                         |
-| YOLOv3-MobileNetV1       | 1181.56            | 27.20                      | 941.62                 | 23.13                         |
-| YOLOv3-MobileNetV3       | 1396.57            | 27.97                      | 789.02                 | 27.06                         |
-| YOLOv3-ResNet50_vd       | 15521.84           | 55.41                      | 2444.08                | 48.96                         |
-| YOLOv4                   | 7389.54            | 77.80                      | 5503.77                | 71.78                         |
+| 模型                                                         | Intel CPU性能 (ms) | x86 + Ascend310 性能 (ms） | 鲲鹏 920 CPU 性能 (ms) | 鲲鹏920 + Ascend310 性能 (ms) |
+| ------------------------------------------------------------ | ------------------ | -------------------------- | ---------------------- | ----------------------------- |
+| [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz) | 81.16              | 4.32                       | 67.39                  | 3.64                          |
+| [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz) | 529.45             | 7.81                       | 157.62                 | 6.23                          |
+| [EfficientNetB0](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/EfficientNetB0.tgz) | 167.59             | 21.08                      | 85.98                  | 7.14                          |
+| [ERNIE-TINY](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_tiny.tgz) | -                  | 12.31                      | 347.47                 | 10.72                         |
+| [ESRGAN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleGAN/esrgan_psnr_x4_div2k.tgz) | 41774.81           | 103.75                     | 9755.14                | 103.06                        |
+| [GoogLeNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/GoogLeNet.tgz) | 104.55             | 2.65                       | 71.24                  | 2.40                          |
+| [HigherHRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/higherhrnet_hrnet_w32_640.tgz) | 6760.83            | 386.02                     | 6482.55                | 396.17                        |
+| [HRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/hrnet_w32_384x288.tgz) | 1245.54            | 12.58                      | 752.93                 | 12.08                         |
+| [Inception-v3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV3.tgz) | 415.00             | 5.91                       | 159.40                 | 3.46                          |
+| [Inception-v4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV4.tgz) | 1082.00            | 9.00                       | 706.72                 | 6.72                          |
+| [MobileNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV1.tgz) | 33.88              | 3.06                       | 35.08                  | 1.43                          |
+| [MobileNet-v2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV2.tgz) | 25.67              | 3.82                       | 25.27                  | 1.74                          |
+| [MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_large_x1_0.tgz) | 43.53              | 8.96                       | 20.46                  | 2.83                          |
+| [MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_small_x1_0.tgz) | 29.38              | 6.38                       | 8.66                   | 2.24                          |
+| [ch_ppocr_mobile_v2.0_det](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_det_infer.tgz) | 359.16             | 10.75                      | 129.01                 | 10.78                         |
+| [ch_ppocr_mobile_v2.0_rec](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_rec_infer.tgz) | 32.39              | 8.75                       | 15.05                  | 5.87                          |
+| [ResNet-101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz) | 528.43             | 7.33                       | 401.14                 | 4.27                          |
+| [ResNet-18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet18.tgz) | 136.10             | 2.84                       | 89.41                  | 1.59                          |
+| [ResNet-50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz) | 258.21             | 5.66                       | 229.04                 | 2.87                          |
+| [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz) | 353.43             | 5.32                       | 261.28                 | 3.10                          |
+| [ShuffleNetV2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ShuffleNetV2_x1_0.tgz) | 37.93              | 5.41                       | 14.12                  | 4.06                          |
+| [SqueezeNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/SqueezeNet1_0.tgz) | 51.12              | 3.06                       | 40.50                  | 1.49                          |
+| [SSD-MobileNetV1(1.8)](http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) | 64.82              | 6.56                       | 70.40                  | 6.19                          |
+| [SSD-MobileNetV1(2.0+)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_mobilenet_v1_300_120e_voc.tgz) | 70.72              | 8.79                       | 73.16                  | 8.17                          |
+| [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz) | 1999.32            | 27.35                      | 1001.06                | 25.93                         |
+| [VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG16.tgz) | 1204.23            | 10.53                      | 443.20                 | 9.43                          |
+| [VGG19](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG19.tgz) | 1512.82            | 11.50                      | 667.20                 | 10.23                         |
+| [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz) | 4241.35            | 38.46                      | 2806.42                | 34.47                         |
+| [YOLOv3-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v1_270e_coco.tgz) | 1181.56            | 27.20                      | 941.62                 | 23.13                         |
+| [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v3_large_270e_coco.tgz) | 1396.57            | 27.97                      | 789.02                 | 27.06                         |
+| [YOLOv3-ResNet50_vd](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz) | 15521.84           | 55.41                      | 2444.08                | 48.96                         |
+| [YOLOv4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov4_cspdarknet.tgz) | 7389.54            | 77.80                      | 5503.77                | 71.78                         |
 
 
 
@@ -213,7 +213,7 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
-## 参考示例演示（以 CANN 3.3.0 为例）
+## 参考示例演示（以社区版 CANN 5.1.RC1.alpha001 为例）
 
 测试设备（Atlas300I 推理卡）
 
@@ -222,22 +222,20 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
 ### 准备设备环境（如 ubuntu18.04-x86_64）
 
 - Atlas 300I 推理卡[规格说明书](https://e.huawei.com/cn/products/cloud-computing-dc/atlas/atlas-300-ai)
-
 - 安装Atlas 300I 推理卡的驱动和固件包（Driver 和 Firmware)
-
-- 配套驱动和固件包下载：https://www.hiascend.com/hardware/firmware-drivers?tag=community（社区版）、https://www.hiascend.com/hardware/firmware-drivers?tag=commercial（商业版）
-  - 驱动：A300-3010-npu-driver_21.0.1_ubuntu18.04-x86_64.run（x86）
-
-  - 固件：A300-3000-3010-npu-firmware_1.77.22.6.220.run
-
+- 配套驱动和固件包下载：
+  - https://www.hiascend.com/hardware/firmware-drivers?tag=community（社区版）
+  - https://www.hiascend.com/hardware/firmware-drivers?tag=commercial（商业版）
+  - 驱动：A300-3010-npu-driver_21.0.4_linux-x86_64.run
+  - 固件：A300-3010-npu-firmware_1.80.22.2.220.run
 - 安装驱动和固件包：
 
 ```shell
 # 增加可执行权限
 $ chmod +x *.run
 # 安装驱动和固件包
-$ ./A300-3010-npu-driver_21.0.1_ubuntu18.04-x86_64.run --full
-$ ./A300-3000-3010-npu-firmware_1.77.22.6.220.run --full
+$ ./A300-3010-npu-driver_21.0.4_linux-x86_64.run --full
+$ ./A300-3010-npu-firmware_1.80.22.2.220.run --full
 # 重启服务器
 $ reboot
 # 查看驱动信息，确认安装成功
@@ -250,17 +248,17 @@ $ npu-smi info
 
 - 为了保证编译环境一致，建议使用Docker开发环境进行配置；
 
-- 若想使用新版本的 CANN，请自行更新 Dockerfile 文件内的 CANN 下载路径；
+- 若想使用新版本的 CANN，请自行更新 Dockerfile 文件内的 CANN 下载路径，当前 Dockerfile 内默认为 [CANN 5.1.RC1.alpha001](https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/5.1.RC1.alpha001/Ascend-cann-toolkit_5.1.RC1.alpha001_linux-x86_64.run)；
 
 - for arm64
 
   ```shell
   # 下载 Dockerfile
-  $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/kunpeng920_arm/Ascend_ubuntu18.04_aarch64.Dockerfile
+  $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/kunpeng920_arm/Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile
   # 通过 Dockerfile 生成镜像
-  $ docker build --network=host -f Ascend_ubuntu18.04_aarch64.Dockerfile -t paddlelite/ascend_aarch64:cann_3.3.0 .
+  $ docker build --network=host -f Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_aarch64:cann_5.1.1.alpha001 .
   # 创建容器
-  $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_3.3.0 /bin/bash
+  $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_5.1.1.alpha001 /bin/bash
   # 进入容器
   $ docker exec -it ascend-aarch64 /bin/bash
   # 确认容器的 Ascend 环境是否创建成功
@@ -271,11 +269,11 @@ $ npu-smi info
 
   ```shell
   # 下载 Dockerfile
-  $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/intel_x86/Ascend_ubuntu18.04_x86.Dockerfile
+  $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/intel_x86/Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile
   # 通过 Dockerfile 生成镜像
-  $ docker build --network=host -f Ascend_ubuntu18.04_x86.Dockerfile -t paddlelite/ascend_x86:cann_3.3.0 .
+  $ docker build --network=host -f Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_x86:cann_5.1.1.alpha001 .
   # 创建容器
-  $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_3.3.0 /bin/bash
+  $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_5.1.1.alpha001 /bin/bash
   # 进入容器
   $ docker exec -it ascend-x86 /bin/bash
   # 确认容器的 Ascend 环境是否创建成功
@@ -286,7 +284,7 @@ $ npu-smi info
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)(该 demo 的默认预编译库基于 CANN 5.1.RC1.alpha001 版本)，解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -511,6 +509,8 @@ $ npu-smi info
 
     **使用方式一：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
 
+    下例表示 x1 输入的最后一个维度在[100,150]的范围变化，x2 输入的最后一个维度在[25,50]的范围变化。
+
     ```c++
     // Run inference by using light api with MobileConfig
     paddle::lite_api::MobileConfig mobile_config;
@@ -553,11 +553,11 @@ $ npu-smi info
   cxx_config.set_nnadapter_mixed_precision_quantization_config_path(nnadapter_mixed_precision_quantization_config_path);
   ```
 
-  **nnadapter_mixed_precision_quantization_config_path.txt：** (该文件代表下面所列算子运行在 int8 精度上)
+  **nnadapter_mixed_precision_quantization_config_path.txt：** 该文件表示在全量化模型里，昇腾硬件无法支持量化的算子。
+
+  目前昇腾硬件运行全量化模型时，除 conv2d 和 fc 算子可运行在 INT8 精度下外，其余算子均需运行在 FP16 或 FP32 精度上。
 
   ```shell
-  fc
-  conv2d
   softmax
   pool2d
   elementwise_add
@@ -568,7 +568,7 @@ $ npu-smi info
 
   - HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS：
 
-    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。设备 ID 是指当前机器中可用的昇腾芯片 ID，例如 1 块 Atlas 300I 卡包含 4 颗 Ascend310 芯片，因此，可以将 HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS 设置为 0~3，而 1 块 Atlas 300I pro 卡只有一颗 Ascend 710 芯片，因此只能设置为 0
+    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。设备 ID 是指当前机器中可用的昇腾芯片 ID，例如 1 块 Atlas 300I 卡包含 4 颗 Ascend310 芯片，因此，可以将 HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS 设置为 0~3，而 1 块 Atlas 300I pro 卡只有一颗 Ascend 710 芯片，因此只能设置为 0。
 
   - HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
 
@@ -596,11 +596,11 @@ $ npu-smi info
 
   - HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT
 
-    使能全局weight压缩，AICore支持Weight压缩功能，模型转换时通过使能该参数，可以对Weight进行数据压缩，在进行算子计算时，对Weight进行解压缩，从而达到减少带宽、提高性能的目的
+    使能全局weight压缩，AICore支持Weight压缩功能，模型转换时通过使能该参数，可以对Weight进行数据压缩，在进行算子计算时，对Weight进行解压缩，从而达到减少带宽、提高性能的目的。
 
   - HUAWEI_ASCEND_NPU_AUTO_TUNE_MODE
 
-    设置算子的自动调优模式：控制TBE算子编译时，是否对算子进行调优，以便在昇腾AI处理器上寻找最好的性能配置，[详见参数配置](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/51RC1alpha003/infacldevg/atctool/atlasatc_16_0092.html)
+    设置算子的自动调优模式：控制TBE算子编译时，是否对算子进行调优，以便在昇腾AI处理器上寻找最好的性能配置，[详见参数配置](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/51RC1alpha003/infacldevg/atctool/atlasatc_16_0092.html)。
 
   - HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE
 
@@ -625,4 +625,3 @@ $ npu-smi info
 ## 其他说明
 
 - 华为达芬奇架构的 NPU 内部大量采用 `float16` 进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失。
-- 我们正在持续增加能够适配 Ascend IR 的 Paddle 算子 `bridge/converter`，以便适配更多 Paddle 模型，同时华为研发同学也在持续对 Ascend IR 性能进行优化。
