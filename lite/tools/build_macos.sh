@@ -114,9 +114,30 @@ function set_benchmark_options {
   fi
 }
 
+function build_opt {
+    cd $workspace
+    prepare_thirdparty
+    mkdir -p build.opt
+    cd build.opt
+    opt_arch=$(echo `uname -a` | awk -F " " '{print $15}')
+    with_x86=OFF
+    if [ $opt_arch == "arm64" ]; then
+       with_x86=OFF
+    else
+       with_x86=ON
+    fi
+    cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DLITE_WITH_X86=${with_x86} \
+      -DWITH_MKL=OFF
+    make opt -j$NUM_PROC
+}
+
 function make_armosx {
+    prepare_thirdparty
     if [ "${BUILD_PYTHON}" == "ON" ]; then
-      prepare_thirdparty
       BUILD_EXTRA=ON
       LITE_ON_TINY_PUBLISH=OFF
     fi
@@ -292,7 +313,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                    |"
+    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                     |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
@@ -302,6 +323,8 @@ function print_usage {
     echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
     echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
     echo -e "|                                                                                                                                      |"
+    echo -e "|  compiling for macos OPT tool:                                                                              |"
+    echo -e "|     ./lite/tools/build_macos.sh build_optimize_tool                                                                              |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
@@ -431,6 +454,10 @@ function main {
                make_x86
                shift
                ;;
+            build_optimize_tool)
+                build_opt
+                shift
+                ;;
             help)
                 print_usage
                 exit 0
