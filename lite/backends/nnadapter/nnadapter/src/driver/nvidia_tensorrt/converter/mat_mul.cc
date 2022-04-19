@@ -16,6 +16,7 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -35,9 +36,19 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   nvinfer1::MatrixOperation matrix_operation_x =
       transpose_x ? nvinfer1::MatrixOperation::kTRANSPOSE
                   : nvinfer1::MatrixOperation::kNONE;
+  int x_dims_count = x_operand->type.dimensions.count;
+  if (!IsConstantOperand(x_operand) && x_dims_count == 2) {
+    NNADAPTER_CHECK(!transpose_x);
+    matrix_operation_x = nvinfer1::MatrixOperation::kVECTOR;
+  }
   nvinfer1::MatrixOperation matrix_operation_y =
       transpose_y ? nvinfer1::MatrixOperation::kTRANSPOSE
                   : nvinfer1::MatrixOperation::kNONE;
+  int y_dims_count = y_operand->type.dimensions.count;
+  if (!IsConstantOperand(y_operand) && y_dims_count == 2) {
+    NNADAPTER_CHECK(!transpose_y);
+    matrix_operation_y = nvinfer1::MatrixOperation::kVECTOR;
+  }
   auto matmul_layer = converter->network()->addMatrixMultiply(
       *x_tensor, matrix_operation_x, *y_tensor, matrix_operation_y);
   NNADAPTER_CHECK(matmul_layer);
