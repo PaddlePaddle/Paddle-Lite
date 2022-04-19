@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include <algorithm>
+
 #include "driver/nvidia_tensorrt/converter/plugin/split.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
 template <typename T>
-__device__ int upper_bound(T const* vals, int n, T const& key) {
+__device__ int UpperBound(T const* vals, int n, T const& key) {
   int i = 0;
   while (n > 0) {
     int m = n / 2;
@@ -37,13 +38,13 @@ __device__ int upper_bound(T const* vals, int n, T const& key) {
 // The following part of the code refers to onnx-tensorrt
 // https://github.com/onnx/onnx-tensorrt/blob/master/Split.cu
 template <typename T>
-__global__ void split_kernel(int nsegment,
-                             int const* __restrict__ segment_offsets,
-                             T const* __restrict__ idata,
-                             T* const* odatas,
-                             int inner_cols,
-                             int axis_shape,
-                             int outer_rows) {
+__global__ void SplitKernel(int nsegment,
+                            int const* __restrict__ segment_offsets,
+                            T const* __restrict__ idata,
+                            T* const* odatas,
+                            int inner_cols,
+                            int axis_shape,
+                            int outer_rows) {
   int x0 = threadIdx.x + blockIdx.x * blockDim.x;
   int src_y0 = threadIdx.y + blockIdx.y * blockDim.y;
   int z0 = threadIdx.z + blockIdx.z * blockDim.z;
@@ -51,7 +52,7 @@ __global__ void split_kernel(int nsegment,
     for (int src_y = src_y0; src_y < axis_shape;
          src_y += blockDim.y * gridDim.y) {
       for (int x = x0; x < inner_cols; x += blockDim.x * gridDim.x) {
-        int segment = upper_bound(segment_offsets, nsegment, src_y) - 1;
+        int segment = UpperBound(segment_offsets, nsegment, src_y) - 1;
         int dst_y = src_y - segment_offsets[segment];
         int dst_ny = segment_offsets[segment + 1] - segment_offsets[segment];
         odatas[segment][x + inner_cols * (dst_y + dst_ny * z)] =
@@ -105,27 +106,15 @@ int SplitPlugin::enqueue(int batch_size,
   dim3 grid(std::min((inner_cols_ - 1) / block.x + 1, 65535u),
             std::min((axis_shape_ - 1) / block.y + 1, 65535u),
             std::min((outer_rows_ - 1) / block.z + 1, 65535u));
-  split_kernel<<<grid, block, 0, stream>>>(dev_segment_offsets_.size(),
-                                           dev_segment_offsets_ptr,
-                                           input_ptr,
-                                           output_ptrs,
-                                           inner_cols_,
-                                           axis_shape_,
-                                           outer_rows);
+  SplitKernel<<<grid, block, 0, stream>>>(dev_segment_offsets_.size(),
+                                          dev_segment_offsets_ptr,
+                                          input_ptr,
+                                          output_ptrs,
+                                          inner_cols_,
+                                          axis_shape_,
+                                          outer_rows);
   return 0;
 }
-
-nvinfer1::Dims SplitPlugin::getOutputDimensions(int index,
-                                                const nvinfer1::Dims* inputs,
-                                                int nb_input_dims) noexcept {
-  nvinfer1::Dims output_dims = inputs[0];
-  output_dims.d[axis_] = size_splits_.at(index);
-  return output_dims;
-}
-
-REGISTER_NNADAPTER_TENSORRT_PLUGIN(SplitPlugin,
-                                   SplitPluginCreator,
-                                   "split_plugin");
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter
