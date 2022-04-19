@@ -79,6 +79,10 @@ class FillConstantComputeTester : public arena::TestCase {
     } else {
       out_shape = shape_;
     }
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    // Trt out should have batchsize
+    out_shape.insert(out_shape.begin(), 1);
+#endif
     out->Resize(out_shape);
 
     switch (dtype_) {
