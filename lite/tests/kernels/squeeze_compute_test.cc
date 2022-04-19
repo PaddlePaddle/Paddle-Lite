@@ -200,7 +200,7 @@ void test_squeeze(Place place, float abs_error) {
   for (std::vector<int> axes : {std::vector<int>({}),
                                 std::vector<int>({0}),
                                 std::vector<int>({0, -2})}) {
-    for (int N : {1}) {
+    for (int N : {3}) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
@@ -221,7 +221,7 @@ void test_squeeze2(Place place, float abs_error) {
   for (std::vector<int> axes : {std::vector<int>({}),
                                 std::vector<int>({2}),
                                 std::vector<int>({0, -2})}) {
-    for (int N : {1}) {
+    for (int N : {3}) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
