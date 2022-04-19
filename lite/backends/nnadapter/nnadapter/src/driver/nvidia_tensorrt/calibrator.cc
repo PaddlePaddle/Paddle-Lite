@@ -42,31 +42,13 @@ Int8EntropyCalibrator::Int8EntropyCalibrator(int batch_size,
     lists.resize(static_cast<int>(lists.size() / batch_size) * batch_size);
     input_file_names_.resize(string_split(lists.front(), ";").size());
     for (size_t i = 0; i < lists.size(); i++) {
-      auto input_info = string_split(lists.at(i), ";");
-      NNADAPTER_CHECK_EQ(input_info.size(), input_file_names_.size());
-      for (size_t j = 0; j < input_info.size(); j++) {
-        auto file_name = string_split(input_info.at(j), ":").back();
-        input_file_names_.at(j).push_back(file_name);
+      auto file_names = string_split(lists.at(i), ";");
+      NNADAPTER_CHECK_EQ(file_names.size(), input_file_names_.size());
+      for (size_t j = 0; j < file_names.size(); j++) {
+        input_file_names_.at(j).push_back(file_names[j]);
       }
     }
-    // Malloc input buffer
-    auto input_info = string_split(lists.front(), ";");
-    for (size_t i = 0; i < input_info.size(); i++) {
-      auto shape =
-          string_split<int>(string_split(input_info.at(i), ":").at(0), ",");
-      auto precision = string_split(input_info.at(i), ":").at(1);
-      std::map<std::string, int> precision_length_map{
-          {"float32", 4}, {"float16", 2}, {"int8", 1}};
-      int size = std::accumulate(
-                     shape.begin(), shape.end(), 1, std::multiplies<int>()) *
-                 precision_length_map.at(precision);
-      void* data_ptr{nullptr};
-      NNADAPTER_CHECK_EQ(cudaMalloc(&data_ptr, size), cudaSuccess);
-      std::shared_ptr<void> device_buffer(data_ptr, [](void* ptr) {
-        NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
-      });
-      device_buffers_.push_back(device_buffer);
-    }
+    device_buffers_.resize(input_file_names_.size());
   }
 }
 
@@ -85,6 +67,16 @@ bool Int8EntropyCalibrator::getBatch(void* bindings[],
         dataset_path_ + "/" + input_file_names_.at(0).at(index_ + i);
     NNADAPTER_CHECK(ReadFile(file_path, &host_data));
     host_buffer.insert(host_buffer.end(), host_data.begin(), host_data.end());
+  }
+  if (!device_buffers_.at(0).get()) {
+    void* data_ptr{nullptr};
+    NNADAPTER_CHECK_EQ(cudaMalloc(&data_ptr, host_buffer.size()), cudaSuccess);
+    std::shared_ptr<void> device_buffer(data_ptr, [](void* ptr) {
+      if (ptr) {
+        NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
+      }
+    });
+    device_buffers_.at(0) = device_buffer;
   }
   void* device_buffer = device_buffers_.at(0).get();
   NNADAPTER_CHECK_EQ(cudaMemcpy(device_buffer,
