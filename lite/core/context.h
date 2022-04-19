@@ -39,6 +39,7 @@
 #include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #endif
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -237,6 +238,22 @@ class Context<TargetType::kNNAdapter> {
     auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
     if (!var) return "";
     return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterContextCallback(
+      Scope* scope, int (*context_callback)(int event_id, void* user_data)) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_CALLBACK");
+    CHECK(var);
+    auto data = var->GetMutable<int (*)(int event_id, void* user_data)>();
+    CHECK(data);
+    *data = context_callback;
+  }
+
+  static int (*NNAdapterContextCallback(Scope* scope))(int event_id,  // NOLINT
+                                                       void* user_data) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_CALLBACK");
+    if (!var) return nullptr;
+    return var->Get<int (*)(int event_id, void* user_data)>();
   }
 
   static void SetNNAdapterSubgraphPartitionConfigPath(
