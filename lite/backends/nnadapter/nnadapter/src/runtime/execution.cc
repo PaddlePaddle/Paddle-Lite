@@ -21,7 +21,8 @@ namespace runtime {
 int Execution::SetInput(int32_t index,
                         void* memory,
                         void* (*access)(void* memory,
-                                        NNAdapterOperandType* type)) {
+                                        NNAdapterOperandType* type,
+                                        void* device_buffer)) {
   core::Argument* argument = nullptr;
   for (auto& input_argument : input_arguments_) {
     if (input_argument.index == index) {
@@ -42,7 +43,8 @@ int Execution::SetInput(int32_t index,
 int Execution::SetOutput(int32_t index,
                          void* memory,
                          void* (*access)(void* memory,
-                                         NNAdapterOperandType* type)) {
+                                         NNAdapterOperandType* type,
+                                         void* device_buffer)) {
   core::Argument* argument = nullptr;
   for (auto& output_argument : output_arguments_) {
     if (output_argument.index == index) {

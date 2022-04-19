@@ -39,12 +39,15 @@ void CloseDevice(void* device) {
   }
 }
 
-int CreateContext(void* device, const char* properties, void** context) {
+int CreateContext(void* device,
+                  const char* properties,
+                  int (*callback)(int event_id, void* user_data),
+                  void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto d = reinterpret_cast<Device*>(device);
-  auto c = new Context(d, properties);
+  auto c = new Context(d, properties, callback);
   if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(FATAL) << "Failed to create context for nvidia_tensorrt.";

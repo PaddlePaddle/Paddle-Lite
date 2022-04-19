@@ -138,7 +138,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -173,7 +173,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto host_ptr = arg.access(arg.memory, &type);
+    auto host_ptr = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(type);
     auto& input_memory = input_memory_[arg.index];
@@ -210,7 +210,7 @@ int Program::Execute(uint32_t input_count,
     // TODO(hong19860320) Get the dimensions of the outputs from imgdnn
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
-    auto host_ptr = arg.access(arg.memory, type);
+    auto host_ptr = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);
     auto& output_memory = output_memory_[arg.index];

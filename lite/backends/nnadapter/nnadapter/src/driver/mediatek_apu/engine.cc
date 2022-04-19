@@ -238,7 +238,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -272,7 +272,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
@@ -296,7 +296,7 @@ int Program::Execute(uint32_t input_count,
     // TODO(hong19860320) Get the dimensions of the outputs from imgdnn
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
     NNADAPTER_CHECK_EQ(NeuronExecution_setOutput_invoke(
