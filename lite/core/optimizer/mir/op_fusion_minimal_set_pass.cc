@@ -227,14 +227,10 @@ class FCActivationFuser : public FuseBase {
     auto fc_desc = *fc_node->stmt()->op_info();
     auto act_desc = *act_node->stmt()->op_info();
     // Update the fc op desc and links
-    fc_desc.SetAttr("with_act", true);
-    fc_desc.SetAttr("act_type", act_type_);
-    if (act_type_ == "relu") {
-      fc_desc.SetAttr("fuse_relu", true);
-    }
+    fc_desc.SetAttr("activation_type", act_type_);
     if (act_type_ == "relu6") {
       float alpha = act_desc.GetAttr<float>("threshold");
-      fc_desc.SetAttr("fuse_brelu_threshold", alpha);
+      fc_desc.SetAttr("alpha", alpha);
     }
     fc_desc.SetOutput("Out", {act_out_name});
     // Get the output threshold from act op.
