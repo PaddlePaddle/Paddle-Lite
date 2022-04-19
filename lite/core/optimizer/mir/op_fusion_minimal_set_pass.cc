@@ -110,6 +110,8 @@ class MulElementwiseAddFuser : public FuseBase {
     auto& valid_places = mul_op->valid_places();
     auto mul_x_node = matched.at("mul_x");
     auto mul_x_name = mul_x_node->arg()->name;
+    auto mul_x_var = scope->FindVar(mul_x_name);
+    auto mul_x_dims = mul_x_var->Get<lite::Tensor>().dims();
     auto mul_y_node = matched.at("mul_y");
     auto mul_y_name = mul_y_node->arg()->name;
     auto mul_y_var = scope->FindVar(mul_y_name);
@@ -153,9 +155,10 @@ class MulElementwiseAddFuser : public FuseBase {
     fc_desc.SetInput("W", {mul_y_name});
     fc_desc.SetInput("Bias", {elementwise_add_y_name});
     fc_desc.SetOutput("Out", {elementwise_add_out_name});
-    fc_desc.SetAttr(
-        "in_num_col_dims",
-        mul_type_ == "mul" ? fc_desc.GetAttr<int>("x_num_col_dims") : 1);
+    fc_desc.SetAttr("in_num_col_dims",
+                    mul_type_ == "mul"
+                        ? fc_desc.GetAttr<int>("x_num_col_dims")
+                        : (static_cast<int>(mul_x_dims.size()) - 1));
     if (!mul_x_scales.empty()) {
       fc_desc.SetInputScale(mul_x_name, mul_x_scales);
     }
