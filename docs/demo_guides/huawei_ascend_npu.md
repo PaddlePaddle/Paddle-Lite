@@ -610,7 +610,7 @@ $ npu-smi info
 
     当开启 Dynamic Shape Range 后，指定输入输出所分配的内存大小。若不指定则采用默认值4 * 3 * 1024 * 1024 bytes。
 
-  使用方式：
+  **使用方式：**
 
   ```c++
   // Run inference by using light api with MobileConfig
