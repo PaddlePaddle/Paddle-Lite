@@ -376,7 +376,6 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 |                           __xpu__multi_encoder| | | |Y| | | | | | | | | | | | |
 |                           __xpu__multi_softmax| | | |Y| | | | | | | | | | | | |
 |                                __xpu__resnet50| | | |Y| | | | | | | | | | | | |
-|                             __xpu__resnet_cbam| | | |Y| | | | | | | | | | | | |
 |                                __xpu__sfa_head| | | |Y| | | | | | | | | | | | |
 |                            __xpu__softmax_topk| | | |Y| | | | | | | | | | | | |
 |                __xpu__squeeze_excitation_block| | | |Y| | | | | | | | | | | | |

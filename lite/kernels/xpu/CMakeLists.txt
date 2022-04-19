@@ -95,7 +95,6 @@ add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
-add_kernel(__xpu__resnet_cbam_compute_xpu XPU extra SRCS __xpu__resnet_cbam_compute.cc)
 add_kernel(__xpu__multi_encoder_compute_xpu XPU extra SRCS __xpu__multi_encoder_compute.cc)
 add_kernel(__xpu__embedding_with_eltwise_add_compute_xpu XPU extra SRCS __xpu__embedding_with_eltwise_add_compute.cc)
 add_kernel(__xpu__fc_compute_xpu XPU extra SRCS __xpu__fc_compute.cc)
