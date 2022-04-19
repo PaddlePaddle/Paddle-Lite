@@ -28,10 +28,18 @@ int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  CHECK(input_operand);
+  auto input_type = converter->GetOperandType(input_operand);
   // Axes
   std::vector<int32_t> axes;
-  if (op->HasAttr("axes")) {
+  if (op->HasAttr("axes") && !op->GetAttr<std::vector<int>>("axes").empty()) {
     axes = op->GetAttr<std::vector<int>>("axes");
+  } else {
+    for (int32_t i = 1; i < input_type->dimensions.count; ++i) {
+      if (input_type->dimensions.data[i] == 1) {
+        axes.push_back(i);
+      }
+    }
   }
   // Output
   auto out_name = op->Output("Out").front();
