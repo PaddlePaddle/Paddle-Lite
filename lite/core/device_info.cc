@@ -489,7 +489,6 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   }
   int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
   if (syscallret) {
-    fprintf(stderr, "syscall error %d\n", syscallret);
     return -1;
   }
   return 0;
