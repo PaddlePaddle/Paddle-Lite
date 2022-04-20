@@ -2,7 +2,7 @@
 
 常见的稀疏方式可分为结构化稀疏和非结构化稀疏。前者在某个特定维度（特征通道、卷积核等等）上对卷积、矩阵乘法做剪枝操作，然后生成一个更小的模型结构，这样可以复用已有的卷积、矩阵乘计算，无需特殊实现推理算子；后者以每一个参数为单元稀疏化，然而并不会改变参数矩阵的形状，只是变成了含有大量零值的稀疏矩阵，所以更依赖于推理库、硬件对于稀疏后矩阵运算的加速能力。更多介绍请参照[这篇技术文章](https://mp.weixin.qq.com/s/l__C5IOu3z7uQdcWKnViOw)。
 
-本文从推理的视角，介绍如何基于 PaddleLite 的系列工具，在稀疏模型上获得更优性能。
+本文从推理的视角，介绍如何基于 Paddle Lite 的系列工具，在稀疏模型上获得更优性能。
 
 ## 非结构化稀疏训练
 
@@ -17,8 +17,8 @@
 
 使用步骤：
 
--  产出量化模型：使用 PaddleSlim 调用稀疏化训练接口，产出稀疏模型
--  量化模型预测：使用 Paddle-Lite 加载稀疏模型进行预测推理
+-  产出稀疏模型：使用 PaddleSlim 调用稀疏训练接口，产出稀疏模型
+-  稀疏模型预测：使用 Paddle Lite 加载稀疏模型进行预测推理
 
 优点：
 
@@ -37,20 +37,20 @@
 
 温馨提示：如果您是初次接触 PaddlePaddle 框架，建议首先学习[使用文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)。
 
-使用 PaddleSlim 模型压缩工具训练量化模型，请参考文档：
+使用 PaddleSlim 模型压缩工具训练稀疏模型，请参考文档：
 * 稀疏训练接口说[动态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/dygraph/pruners/unstructured_pruner.rst)|[静态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/static/prune/unstructured_prune_api.rst)
 * 稀疏训练Demo [动态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/dygraph/unstructured_pruning)| [静态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/unstructured_prune)
 
 
 ### 3 使用 Paddle-Lite 运行稀疏模型推理
 
-首先，使用 Paddle-Lite 提供的模型转换工具（model_optimize_tool）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+首先，使用 Paddle Lite 提供的模型转换工具（model_optimize_tool）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
 
 #### 3.1 模型转换
 
-参考[模型转换](../user_guides/model_optimize_tool)准备模型转换工具，建议从 Release 页面下载。
+参考[模型转换](../user_guides/model_optimize_tool.md)准备模型转换工具，建议从 Release 页面下载。
 
-参考[模型转换](../user_guides/model_optimize_tool)使用模型转换工具，参数按照实际情况设置。比如在安卓手机ARM端进行预测，模型转换的命令为：
+参考[模型转换](../user_guides/model_optimize_tool.md)使用模型转换工具，参数按照实际情况设置。比如在安卓手机ARM端进行预测，模型转换的命令为：
 
 ```bash
 ./OPT --model_dir=./mobilenet_v1_quant \
@@ -69,14 +69,14 @@
 
 #### 3.2 稀疏模型预测
 
-和 FP32 模型一样，转换后的稀疏模型可以在 Android APP 中加载预测，建议参考[C++ Demo](./cpp_demo)。
+和 FP32 模型一样，转换后的稀疏模型可以在 Android APP 中加载预测，建议参考[C++ Demo](./cpp_demo.md)。
 
 
 ### FAQ
 
 **问题**：为什么模型优化(*.nb文件)后，稀疏 FP32 模型的体积比稠密 FP32 小了，但是稀疏 INT8 模型的体积反而比稠密 INT8 模型体积大了？
 
-**解答**：这是可能出现的现象，因为稀疏格式中，我们需要存储一些 INT32 类型的 index，所以理论上75%稀疏度以下时，模型体积是会有些增大的。
+**解答**：这是可能出现的现象，因为稀疏格式中，我们虽然节省了部分 INT8 参数的存储空间，但是引入了 INT32 类型的 index，所以理论上75%稀疏度以下时，INT8 模型体积是会有些增大的。
 
 **问题**：当前非结构化稀疏的适用范围是什么
   
