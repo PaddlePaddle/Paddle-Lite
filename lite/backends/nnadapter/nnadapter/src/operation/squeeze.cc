@@ -41,7 +41,7 @@ NNADAPTER_EXPORT int PrepareSqueeze(core::Operation* operation) {
     size_t axes_count = axes.size();
     std::set<int32_t> squeezed_dims;
     if (axes_count == 0) {
-      for (size_t idx = 1; idx < input_dimensions_count; ++idx) {
+      for (size_t idx = 0; idx < input_dimensions_count; ++idx) {
         if (input_dimensions[idx] == 1) {
           squeezed_dims.insert(idx);
         }

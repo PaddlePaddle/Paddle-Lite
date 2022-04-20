@@ -31,6 +31,15 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  // Check input_operand batchsize == 1
+  if (input_operand->type.dimensions.data[0] == 1 && !axes_operand) {
+    output_operand->type.dimensions.count += 1;
+    for (int32_t i = output_operand->type.dimensions.count - 1; i > 0; i--) {
+      output_operand->type.dimensions.data[i] =
+          output_operand->type.dimensions.data[i - 1];
+    }
+    output_operand->type.dimensions.data[0] = 1;
+  }
   auto squeeze_layer = converter->network()->addShuffle(*input_tensor);
   NNADAPTER_CHECK(squeeze_layer);
   auto dims = ConvertToNVDims(output_operand->type.dimensions);
