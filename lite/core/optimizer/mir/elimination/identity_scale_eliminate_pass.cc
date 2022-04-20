@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
@@ -33,18 +32,9 @@ class Eliminator : public FuseBase {
                        ->assert_is_not_op_type("scale");
     // TODO(Superjomn) check has only one output
     auto* x = VarNode("x")->assert_is_op_input("scale", "X");
-    auto* scale_op =
-        OpNode("scale", "scale")
-            ->assert_node_satisfied([](const Node* node) -> bool {
-              auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
-              auto scale = op_desc.GetAttr<float>("scale");
-              auto bias = op_desc.GetAttr<float>("bias");
-              bool with_act = (op_desc.HasAttr("with_act") &&
-                               op_desc.GetAttr<bool>("with_act")) ||
-                              op_desc.HasAttr("fuse_relu");
-              return std::fabs(scale - 1.0f) <= 1e-5f &&
-                     std::fabs(bias) <= 1e-5f && !with_act;
-            });
+    auto* scale_op = OpNode("scale", "scale")
+                         ->assert_op_attr<float>("scale", 1.)
+                         ->assert_op_attr<float>("bias", 0.);
     auto* out = VarNode("out")->assert_is_op_output("scale", "Out");
 
     *pre_op >> *x >> *scale_op >> *out;
