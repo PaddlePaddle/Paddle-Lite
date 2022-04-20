@@ -33,7 +33,7 @@
 
 ### 2 产出稀疏模型
 
-目前，PaddleSlim 的稀疏训练主要针对 1x1卷积，对应算子是 conv2d。Paddle-Lite 支持运行 PaddleSlim 稀疏训练产出的模型，可以加快模型在移动端的执行速度。
+目前，PaddleSlim 的稀疏训练主要针对 1x1卷积，对应算子是 conv2d。Paddle Lite 支持运行 PaddleSlim 稀疏训练产出的模型，可以加快模型在移动端的执行速度。
 
 温馨提示：如果您是初次接触 PaddlePaddle 框架，建议首先学习[使用文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)。
 
@@ -42,7 +42,7 @@
 * 稀疏训练Demo [动态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/dygraph/unstructured_pruning)| [静态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/unstructured_prune)
 
 
-### 3 使用 Paddle-Lite 运行稀疏模型推理
+### 3 使用 Paddle Lite 运行稀疏模型推理
 
 首先，使用 Paddle Lite 提供的模型转换工具（model_optimize_tool）将稀疏模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
 
