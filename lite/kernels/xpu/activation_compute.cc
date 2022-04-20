@@ -113,13 +113,20 @@ void ReciprocalCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r =
-      xdnn::activation_forward(ctx.GetRawContext(),
-                               xdnn::Activation_t::RECIPROCAL,
-                               param.X->numel(),
-                               param.X->data<float>(),
-                               param.Out->mutable_data<float>(TARGET(kXPU)));
+  float* xpu_factor = nullptr;
+  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  int x_len = param.X->numel();
+  int r = 0;
+  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, 1.0f);
   CHECK_EQ(r, 0);
+  r = xdnn::broadcast_div(ctx.GetRawContext(),
+                          xpu_factor,
+                          param.X->data<float>(),
+                          param.Out->mutable_data<float>(TARGET(kXPU)),
+                          {1},
+                          {x_len});
+  CHECK_EQ(r, 0);
+  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SqrtCompute::Run() {
@@ -148,28 +155,30 @@ void PowCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  xdnn::Activation_t act_type(xdnn::Activation_t::ACT_POW);
-  act_type.pow_factor = param.factor;
-
-  int r =
-      xdnn::activation_forward(ctx.GetRawContext(),
-                               act_type,
-                               param.X->numel(),
-                               param.X->data<float>(),
-                               param.Out->mutable_data<float>(TARGET(kXPU)));
+  float* xpu_factor = nullptr;
+  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  int x_len = param.X->numel();
+  int r = 0;
+  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, param.factor);
   CHECK_EQ(r, 0);
+  r = xdnn::broadcast_pow(ctx.GetRawContext(),
+                          param.X->data<float>(),
+                          xpu_factor,
+                          param.Out->mutable_data<float>(TARGET(kXPU)),
+                          {x_len},
+                          {1});
+  CHECK_EQ(r, 0);
+  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SignCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r =
-      xdnn::activation_forward(ctx.GetRawContext(),
-                               xdnn::Activation_t::SIGN,
-                               param.X->numel(),
-                               param.X->data<float>(),
-                               param.Out->mutable_data<float>(TARGET(kXPU)));
+  int r = xdnn::sign(ctx.GetRawContext(),
+                     param.X->data<float>(),
+                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->numel());
   CHECK_EQ(r, 0);
 }
 

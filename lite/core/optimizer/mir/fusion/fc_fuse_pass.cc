@@ -29,6 +29,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_int8 = false;
   bool has_arm = false;
   bool has_weight_quant = false;
+  bool is_nnadapter = false;
   for (auto& place : graph->valid_places()) {
     if (place.target != TARGET(kMLU)) {
       act_types.push_back("relu");
@@ -39,6 +40,9 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       if (place.precision == PRECISION(kInt8)) {
         has_int8 = true;
       }
+    }
+    if (place.target == TARGET(kNNAdapter)) {
+      is_nnadapter = true;
     }
   }
   act_types.push_back("");
@@ -52,7 +56,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       }
     }
   }
-  if (!(has_int8 && has_weight_quant) && has_arm) {
+  if (!(has_int8 && has_weight_quant) && has_arm && !is_nnadapter) {
     // only support FP32/FP16
     mul_types.push_back("matmul");
     mul_types.push_back("matmul_v2");

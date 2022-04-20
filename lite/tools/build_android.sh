@@ -66,6 +66,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# option of convert_to_ssa_graph
+WITH_CONVERT_TO_SSA=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -267,7 +269,8 @@ function make_tiny_publish_so {
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DANDROID_STL_TYPE=$ANDROID_STL \
-      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -359,7 +362,8 @@ function make_full_publish_so {
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -393,6 +397,7 @@ function print_usage {
     echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
+    echo -e "|     --with_convert_to_ssa: (OFF|ON); controls whether to modify input model graph which is not DAG to SSA graph, default is OFF           |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to support time profile, default is OFF                                               |"
@@ -640,6 +645,10 @@ function main {
             # controls whether to compile cplus static library, default is OFF
             --with_static_lib=*)
                 WITH_STATIC_LIB="${i#*=}"
+                shift
+                ;;
+            --with_convert_to_ssa=*)
+                WITH_CONVERT_TO_SSA="${i#*=}"
                 shift
                 ;;
             help)
