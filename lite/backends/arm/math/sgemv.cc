@@ -2082,7 +2082,7 @@ void sgemv(const int M,
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
-  bool has_a53 = ctx->has_a53_valid();
+  bool has_a53 = ctx->has_a53_valid() && ctx->arch() == kA53;
   bool has_a35 = (ctx->arch() == kA35);
 
   int cnt = N >> 3;
