@@ -44,7 +44,7 @@
 
 ### 3 使用 Paddle-Lite 运行稀疏模型推理
 
-首先，使用 Paddle Lite 提供的模型转换工具（model_optimize_tool）将量化模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
+首先，使用 Paddle Lite 提供的模型转换工具（model_optimize_tool）将稀疏模型转换成移动端预测的模型，然后加载转换后的模型进行预测部署。
 
 #### 3.1 模型转换
 
