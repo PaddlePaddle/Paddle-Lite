@@ -375,7 +375,7 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
   if (!FLAGS_uncombined_model_dir.empty()) {
     opt.SetModelDir(FLAGS_uncombined_model_dir);
   } else {
-    model_dir = FLAGS_model_file.substr(0, FLAGS_model_file.find("/"));
+    model_dir = FLAGS_model_file.substr(0, FLAGS_model_file.rfind("/"));
     opt.SetModelFile(FLAGS_model_file);
     opt.SetParamFile(FLAGS_param_file);
   }
