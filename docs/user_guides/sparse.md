@@ -38,7 +38,7 @@
 温馨提示：如果您是初次接触 PaddlePaddle 框架，建议首先学习[使用文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)。
 
 使用 PaddleSlim 模型压缩工具训练稀疏模型，请参考文档：
-* 稀疏训练接口说[动态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/dygraph/pruners/unstructured_pruner.rst)|[静态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/static/prune/unstructured_prune_api.rst)
+* 稀疏训练接口 [动态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/dygraph/pruners/unstructured_pruner.rst)|[静态图](https://github.com/PaddlePaddle/PaddleSlim/blob/develop/docs/zh_cn/api_cn/static/prune/unstructured_prune_api.rst)
 * 稀疏训练Demo [动态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/dygraph/unstructured_pruning)| [静态图](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/unstructured_prune)
 
 
