@@ -31,6 +31,52 @@ namespace mir {
     }                                  \
   }
 
+class IdentityScaleEliminator : public FuseBase {
+ public:
+  void BuildPattern() override {
+    // Create the pattern nodes.
+    auto prev_node = OpNode("prev")
+                         ->assert_is_not_op_type("conditional_block")
+                         ->assert_is_not_op_type("while")
+                         ->assert_is_not_op_type("scale");
+    auto scale_x_node =
+        VarNode("scale_x")->assert_is_op_input("scale", "X")->AsIntermediate();
+    auto scale_node =
+        OpNode("scale", "scale")
+            ->assert_node_satisfied([](const Node* node) -> bool {
+              auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+              auto scale = op_desc.GetAttr<float>("scale");
+              auto bias = op_desc.GetAttr<float>("bias");
+              bool with_act = (op_desc.HasAttr("with_act") &&
+                               op_desc.GetAttr<bool>("with_act")) ||
+                              op_desc.HasAttr("fuse_relu");
+              return std::fabs(scale - 1.0f) <= 1e-5f &&
+                     std::fabs(bias) <= 1e-5f && !with_act;
+            });
+    auto scale_out_node =
+        VarNode("scale_out")->assert_is_op_output("scale", "Out");
+    // Create the topological connections for the above pattern nodes.
+    *prev_node >> *scale_x_node >> *scale_node >> *scale_out_node;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto prev_node = matched.at("prev");
+    auto prev_op = prev_node->stmt()->op();
+    auto& valid_places = prev_op->valid_places();
+    auto scale_node = matched.at("scale");
+    auto scale_x_node = matched.at("scale_x");
+    auto scale_x_name = scale_x_node->arg()->name;
+    auto scale_out_node = matched.at("scale_out");
+    auto scale_out_name = scale_out_node->arg()->name;
+    // Remove the scale op and link the previous op to the output
+    auto prev_desc = *prev_node->stmt()->op_info();
+    prev_desc.UpdateAllOutputs(scale_x_name, scale_out_name);
+    prev_node->stmt()->ResetOp(prev_desc, valid_places);
+    GraphSafeRemoveNodes(graph, {scale_node});
+    IR_NODE_LINK_TO(prev_node, scale_out_node);
+  }
+};
+
 class MulElementwiseAddFuser : public FuseBase {
  public:
   explicit MulElementwiseAddFuser(const std::string& mul_type)
@@ -859,6 +905,11 @@ void ApplyMulElementwiseAddFuser(SSAGraph* graph) {
   }
 }
 
+void ApplyIdentityScaleEliminator(SSAGraph* graph) {
+  IdentityScaleEliminator fuser;
+  fuser(graph);
+}
+
 void ApplyFCActivationFuser(SSAGraph* graph) {
   for (auto act_type : {"relu", "relu1", "relu6"}) {
     VLOG(5) << "act_type:" << act_type;
@@ -919,6 +970,7 @@ void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
 }
 
 void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  ApplyIdentityScaleEliminator(graph.get());
   ApplyMulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
   ApplyConv2dBatchNormFuser(graph.get());
