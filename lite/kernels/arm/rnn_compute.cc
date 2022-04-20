@@ -797,6 +797,12 @@ void RnnCompute::Run() {
       RUN_RNN_LAYER(i, output_holder, false, 0);
     }
   }
+
+  lite::arm::math::concat_func<float>(last_h_unbind_t, 0, state[0]);
+  if ("LSTM" == mode) {
+    lite::arm::math::concat_func<float>(last_c_unbind_t, 0, state[1]);
+  }
+
   // output_holder != output
   if (num_layers % 2 == 0) {
     output->CopyDataFrom(*output_holder);
