@@ -106,9 +106,6 @@ void FcCompute<PType, OutType>::ReInitWhenNeeded() {
 
   m_ = x_dims.Slice(0, in_num_col_dims).production();
   k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
-  // LOG(INFO) << "in_num_col_dims: " << param.in_num_col_dims << ", x_dims: "
-  // << x_dims;
-  // LOG(INFO) << "w_dims: " << w_dims;
   CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
   CHECK_EQ(k_, static_cast<int>(w_dims[0]));
@@ -260,7 +257,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     b_data = bias_.data<float>();
   }
   operators::ActivationParam act_param;
-  // lite_api::ActivationType act;
   act_param.has_active = false;
   if (param.activation_type == "relu") {
     act_param.has_active = true;
