@@ -674,7 +674,7 @@ void MobileConfig::set_model_from_buffer(const std::string &x) {
 }
 
 void MobileConfig::set_model_from_buffer(std::string &&x) {
-  lite_model_file_ = std::move(x);
+  lite_model_file_ = std::forward<std::string>(x);
   model_from_memory_ = true;
 }
 
