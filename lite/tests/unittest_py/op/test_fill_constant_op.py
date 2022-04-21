@@ -140,7 +140,7 @@ class TestFillConstantOp(AutoScanTest):
         return self.get_predictor_configs(), ["fill_constant"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
+        def teller1(program_config, predictor_config):
             if self.get_nnadapter_device_name() == "nvidia_tensorrt":
                 dtype = program_config.ops[0].attrs["dtype"]
                 in_num = len(program_config.inputs)
@@ -148,7 +148,7 @@ class TestFillConstantOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'shape is form tensor' or 'value is from tensor' "
             "or 'dtype is not float32' on nvidia_tensorrt.")
 

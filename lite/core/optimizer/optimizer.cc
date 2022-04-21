@@ -190,8 +190,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
-       "__xpu__sfa_head_meanstd_fuse_pass",
-       "__xpu__sfa_head_moment_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
        "__xpu__multi_encoder_fuse_pass",

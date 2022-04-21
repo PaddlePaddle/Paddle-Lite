@@ -102,7 +102,6 @@ add_kernel(__xpu__search_attention_compute_xpu XPU extra SRCS __xpu__search_atte
 add_kernel(__xpu__search_attention_2_compute_xpu XPU extra SRCS __xpu__search_attention_2_compute.cc)
 add_kernel(__xpu__mmdnn_compute_xpu XPU extra SRCS __xpu__mmdnn_compute.cc)
 add_kernel(__xpu__conv2d_compute_xpu XPU extra SRCS __xpu__conv2d_compute.cc)
-add_kernel(__xpu__sfa_head_compute_xpu XPU extra SRCS __xpu__sfa_head_compute.cc)
 add_kernel(__xpu__softmax_topk_compute_xpu XPU extra SRCS __xpu__softmax_topk_compute.cc)
 add_kernel(__xpu__generate_sequence_compute_xpu XPU extra SRCS __xpu__generate_sequence_compute.cc)
 add_kernel(__xpu__logit_compute_xpu XPU extra SRCS __xpu__logit_compute.cc)

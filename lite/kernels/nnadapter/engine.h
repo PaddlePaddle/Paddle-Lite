@@ -88,7 +88,6 @@ class Engine {
   ::NNAdapterContext* context_{nullptr};
   std::vector<std::shared_ptr<Program>> programs_;
   std::string model_cache_dir_{""};
-  int (*context_callback_)(int event_id, void* user_data){nullptr};  // NOLINT
 };
 
 }  // namespace nnadapter
