@@ -49,9 +49,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   if (!has_scale && !has_bias) {
-    auto output_operand = converter->AddOutputOperand(out_name);
-    converter->AddOperation(
-        NNADAPTER_ASSIGN, {input_operand}, {output_operand});
+    converter->UpdateOperandMap(out_name, input_operand);
   } else if (has_scale) {
     // Scale operand
     NNAdapterOperand* scale_operand = nullptr;
