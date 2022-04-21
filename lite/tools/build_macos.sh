@@ -175,7 +175,6 @@ function make_armosx {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_OPENMP=OFF \
-            -DLITE_THREAD_POOL=ON \
             -DWITH_ARM_DOTPROD=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_M1=ON \
