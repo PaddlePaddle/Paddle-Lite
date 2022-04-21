@@ -193,12 +193,12 @@ class TestConv2dOp(AutoScanTest):
                     return True
 
         def _teller3(program_config, predictor_config):
-            nnadapter_device_name = self.get_nnadapter_device_name()
             groups = program_config.ops[0].attrs["groups"]
             filter_shape = list(program_config.weights["filter_data"].shape)
-            if nnadapter_device_name == "nvidia_tensorrt" and (
-                    filter_shape[0] % groups == 0):
-                return True
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                if (groups > 1 and filter_shape[0] != groups) \
+                    or filter_shape[2] != filter_shape[3]:
+                    return True
 
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
