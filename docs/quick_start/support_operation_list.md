@@ -112,27 +112,6 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 
 | OP_name| ARM | OpenCL | Metal | 百度XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| 
-|                                   __xpu__bigru| | | |Y| | | | | | | | | | | |      
-|                                  __xpu__conv2d| | | |Y| | | | | | | | | | | |      
-|                    __xpu__dynamic_lstm_fuse_op| | | |Y| | | | | | | | | | | |      
-|              __xpu__embedding_with_eltwise_add| | | |Y| | | | | | | | | | | |      
-|                                      __xpu__fc| | | |Y| | | | | | | | | | | |      
-|                       __xpu__generate_sequence| | | |Y| | | | | | | | | | | |      
-|                                   __xpu__logit| | | |Y| | | | | | | | | | | |      
-|                       __xpu__mmdnn_bid_emb_att| | | |Y| | | | | | | | | | | |      
-|                  __xpu__mmdnn_bid_emb_grnn_att| | | |Y| | | | | | | | | | | |      
-|                 __xpu__mmdnn_bid_emb_grnn_att2| | | |Y| | | | | | | | | | | |      
-|                   __xpu__mmdnn_match_conv_topk| | | |Y| | | | | | | | | | | |      
-|                         __xpu__mmdnn_merge_all| | | |Y| | | | | | | | | | | |      
-|                  __xpu__mmdnn_search_attention| | | |Y| | | | | | | | | | | |      
-|                 __xpu__mmdnn_search_attention2| | | |Y| | | | | | | | | | | |      
-|                           __xpu__multi_encoder| | | |Y| | | | | | | | | | | |      
-|                           __xpu__multi_softmax| | | |Y| | | | | | | | | | | |      
-|                                __xpu__resnet50| | | |Y| | | | | | | | | | | |      
-|                             __xpu__resnet_cbam| | | |Y| | | | | | | | | | | |      
-|                                __xpu__sfa_head| | | |Y| | | | | | | | | | | |      
-|                            __xpu__softmax_topk| | | |Y| | | | | | | | | | | |      
-|                __xpu__squeeze_excitation_block| | | |Y| | | | | | | | | | | |      
 |                                            abs|Y|Y| |Y|Y| | | | |Y| | |Y| | |      
 |                                           acos| |Y| | | | | | | | | | | | | |      
 |                               anchor_generator| | | |Y|Y| | | | | | | | | | |      
@@ -299,3 +278,24 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 |                                    where_index| | | | |Y| | | | | | | | | | |      
 |                                          while| | | | |Y| | | | | | | | | | |      
 |                                 write_to_array| | | |Y|Y| | | | | | | | | | |      
+|                                   __xpu__bigru| | | |Y| | | | | | | | | | | |      
+|                                  __xpu__conv2d| | | |Y| | | | | | | | | | | |      
+|                    __xpu__dynamic_lstm_fuse_op| | | |Y| | | | | | | | | | | |      
+|              __xpu__embedding_with_eltwise_add| | | |Y| | | | | | | | | | | |      
+|                                      __xpu__fc| | | |Y| | | | | | | | | | | |      
+|                       __xpu__generate_sequence| | | |Y| | | | | | | | | | | |      
+|                                   __xpu__logit| | | |Y| | | | | | | | | | | |      
+|                       __xpu__mmdnn_bid_emb_att| | | |Y| | | | | | | | | | | |      
+|                  __xpu__mmdnn_bid_emb_grnn_att| | | |Y| | | | | | | | | | | |      
+|                 __xpu__mmdnn_bid_emb_grnn_att2| | | |Y| | | | | | | | | | | |      
+|                   __xpu__mmdnn_match_conv_topk| | | |Y| | | | | | | | | | | |      
+|                         __xpu__mmdnn_merge_all| | | |Y| | | | | | | | | | | |      
+|                  __xpu__mmdnn_search_attention| | | |Y| | | | | | | | | | | |      
+|                 __xpu__mmdnn_search_attention2| | | |Y| | | | | | | | | | | |      
+|                           __xpu__multi_encoder| | | |Y| | | | | | | | | | | |      
+|                           __xpu__multi_softmax| | | |Y| | | | | | | | | | | |      
+|                                __xpu__resnet50| | | |Y| | | | | | | | | | | |      
+|                             __xpu__resnet_cbam| | | |Y| | | | | | | | | | | |      
+|                                __xpu__sfa_head| | | |Y| | | | | | | | | | | |      
+|                            __xpu__softmax_topk| | | |Y| | | | | | | | | | | |      
+|                __xpu__squeeze_excitation_block| | | |Y| | | | | | | | | | | |      
