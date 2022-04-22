@@ -76,7 +76,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/fpga
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
-  demo_guides/baidu_xpu
+  demo_guides/kunlunxin_xpu
   demo_guides/rockchip_npu
   demo_guides/amlogic_npu
   demo_guides/verisilicon_timvx
