@@ -103,23 +103,23 @@ bool NNAdapterSubgraphOpTeller(const std::string& device_name,
                                SSAGraph* graph,
                                Node* node,
                                Scope* scope) {
-  auto op_info = node->AsStmt().op_info();
-  auto op_type = op_info->Type();
-  // Add extra op filter for each device
-  if (device_name == "nvidia_tensorrt") {
-    if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
-      auto filter_name = op_info->Input("Filter").front();
-      auto filter_tensor = scope->FindMutableTensor(filter_name);
-      auto filter_dims = filter_tensor->dims();
-      auto filter_width = filter_dims[3];
-      auto filter_height = filter_dims[2];
-      if (filter_width != filter_height) return false;
-      auto output_channel_size = filter_dims[0];
-      auto groups = op_info->GetAttr<int>("groups");
-      int multiplier = output_channel_size / groups;
-      if (groups != 1 && multiplier != 1) return false;
-    }
-  }
+  // auto op_info = node->AsStmt().op_info();
+  // auto op_type = op_info->Type();
+  // // Add extra op filter for each device
+  // if (device_name == "nvidia_tensorrt") {
+  //   if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
+  //     auto filter_name = op_info->Input("Filter").front();
+  //     auto filter_tensor = scope->FindMutableTensor(filter_name);
+  //     auto filter_dims = filter_tensor->dims();
+  //     auto filter_width = filter_dims[3];
+  //     auto filter_height = filter_dims[2];
+  //     if (filter_width != filter_height) return false;
+  //     auto output_channel_size = filter_dims[0];
+  //     auto groups = op_info->GetAttr<int>("groups");
+  //     int multiplier = output_channel_size / groups;
+  //     if (groups != 1 && multiplier != 1) return false;
+  //   }
+  // }
   return true;
 }
 

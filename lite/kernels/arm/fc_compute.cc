@@ -379,6 +379,31 @@ void fc_trans_weights<PRECISION(kFP16)>(const Tensor& tin, Tensor* tout) {
 
 template <>
 void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param1 = this->template Param<operators::FcParam>();
+  auto filter_tensor = param1.w;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
+  if (param1.bias) {
+    auto bias_tensor = param1.bias;
+    if (bias_tensor->precision() != PRECISION(kFP16)) {
+      Tensor tmp_tensor;
+      tmp_tensor.CopyDataFrom(*bias_tensor);
+      bias_tensor->clear();
+      bias_tensor->set_precision(PRECISION(kFP16));
+      float16_t* fp_data = bias_tensor->mutable_data<float16_t>();
+      const float* in_data = tmp_tensor.data<float>();
+      lite::arm::math::fp16::fp32_to_fp16(
+          in_data, fp_data, bias_tensor->numel());
+    }
+  }
   ReInitWhenNeeded();
 }
 
