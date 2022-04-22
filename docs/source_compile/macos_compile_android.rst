@@ -42,12 +42,13 @@ macOS 环境下编译适用于 Android 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
-* gcc、git、make、curl、unzip、java
-* CMake（请使用 3.10 或以上版本）
-* 编译 Android: Android NDK (支持 ndk-r17c 及之后的所有 ndk 版本)
+* gcc、g++ == 8.2.0
+* CMake >= 3.10
+* Android NDK >= r17c
+* git、make、curl、unzip、java
 
 环境安装命令
 ^^^^^^^^^^^^
