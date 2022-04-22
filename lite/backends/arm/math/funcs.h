@@ -391,8 +391,11 @@ inline float32x4_t vpaddq_f32(float32x4_t a, float32x4_t b) {
 }
 
 template <typename T>
-void fill_bias_fc(
-    T* tensor, const T* bias, int num, int channel, bool flag_relu);
+void fill_bias_fc(T* tensor,
+                  const T* bias,
+                  int num,
+                  int channel,
+                  const operators::ActivationParam* act_param);
 
 template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
 inline float32x4_t vactive_f32(const float32x4_t& x) {

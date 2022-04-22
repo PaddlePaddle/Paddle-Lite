@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/fusion/fc_fuse_pass.h"
+#include <list>
 #include <memory>
 #include <vector>
 #include "lite/core/optimizer/mir/fusion/fc_fuser.h"
@@ -24,21 +25,42 @@ namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> mul_types{"mul"};
-  std::vector<bool> act_types;
+  std::vector<std::string> act_types;
+  bool has_int8 = false;
+  bool has_arm = false;
+  bool has_weight_quant = false;
   for (auto& place : graph->valid_places()) {
     if (place.target != TARGET(kMLU)) {
-      act_types.push_back(true);
+      act_types.push_back("relu");
     }
     if (place.target == TARGET(kARM)) {
-      mul_types.push_back("matmul");
-      mul_types.push_back("matmul_v2");
+      has_arm = true;
+      act_types.push_back("relu6");
+      if (place.precision == PRECISION(kInt8)) {
+        has_int8 = true;
+      }
     }
     if (place.target == TARGET(kNNAdapter)) {
       mul_types = {"mul"};
       break;
     }
   }
-  act_types.push_back(false);
+  act_types.push_back("");
+  const std::list<mir::Node>& nodes = graph->nodes();
+  for (auto& node : nodes) {
+    if (node.IsStmt()) {
+      auto* op_info = (node.stmt())->op_info();
+      if (op_info->HasAttr("quantization_type")) {
+        has_weight_quant = true;
+        break;
+      }
+    }
+  }
+  if (!(has_int8 && has_weight_quant) && has_arm) {
+    // only support FP32/FP16
+    mul_types.push_back("matmul");
+    mul_types.push_back("matmul_v2");
+  }
   for (auto op_type : mul_types) {
     for (auto act_type : act_types) {
       fusion::FcFuser fuser(op_type, act_type);
