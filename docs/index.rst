@@ -60,6 +60,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/quant_aware
   user_guides/model_visualization
   user_guides/profiler
+  user_guides/sparse
 
 .. toctree::
   :maxdepth: 1
