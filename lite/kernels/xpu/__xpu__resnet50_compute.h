@@ -36,6 +36,8 @@ class XPUResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   std::vector<const int16_t *> arg_filter_;
   std::vector<const float *> arg_max_filter_;
   std::vector<const float *> arg_bias_;
+  std::vector<const float *> arg_max_x_(55, nullptr);
+  std::vector<const float *> arg_max_y_(55, nullptr);
 };
 
 }  // namespace xpu
