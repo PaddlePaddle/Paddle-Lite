@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
+#include <algorithm>
 #include <utility>
 #include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
@@ -60,6 +60,8 @@ class SplitPlugin : public Plugin {
 
   int initialize() noexcept;
 
+  void terminate() noexcept;
+
   nvinfer1::Dims getOutputDimensions(int index,
                                      const nvinfer1::Dims* inputs,
                                      int nb_input_dims) noexcept;
@@ -70,9 +72,8 @@ class SplitPlugin : public Plugin {
   int outer_rows_;
   int inner_cols_;
   int axis_shape_;
-  std::vector<int> segment_offsets_;
-  thrust::device_vector<int> dev_segment_offsets_;
-  thrust::device_vector<float*> dev_output_ptrs_;
+  int* dev_segment_offsets_;
+  float** dev_output_ptrs_;
 };
 
 class SplitPluginCreator : public PluginCreator {
@@ -82,6 +83,17 @@ class SplitPluginCreator : public PluginCreator {
                                          void const* serial_data,
                                          size_t serial_length) noexcept;
 };
+
+template <typename T>
+cudaError_t Split(const T* input,
+                  T* const* outputs,
+                  int* segment_offsets,
+                  int nsegment,
+                  int inner_cols,
+                  int axis_shape,
+                  int outer_rows,
+                  int batch_size,
+                  cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

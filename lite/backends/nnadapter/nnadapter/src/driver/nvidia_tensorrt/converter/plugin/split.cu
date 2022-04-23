@@ -62,59 +62,41 @@ __global__ void SplitKernel(int nsegment,
   }
 }
 
-int SplitPlugin::initialize() noexcept {
-  // notice input dims is [C, H, W]
-  nvinfer1::Dims dims = input_dims_[0];
-  outer_rows_ = 1;
-  inner_cols_ = 1;
-  for (int i = 0; i < axis_; ++i) {
-    outer_rows_ *= dims.d[i];
-  }
-  for (int i = axis_ + 1; i < dims.nbDims; ++i) {
-    inner_cols_ *= dims.d[i];
-  }
-  std::vector<int> segment_offsets(1, 0);
-  for (int i = 0; i < this->getNbOutputs(); ++i) {
-    segment_offsets.push_back(segment_offsets.back() + size_splits_[i]);
-  }
-  axis_shape_ = dims.d[axis_];
-  dev_segment_offsets_ = segment_offsets;
-  segment_offsets_ = std::move(segment_offsets);
-  dev_output_ptrs_.resize(this->getNbOutputs(), nullptr);
-  return 0;
-}
-
-int SplitPlugin::enqueue(int batch_size,
-                         const void* const* inputs,
-                         void** outputs,
-                         void* workspace,
-                         cudaStream_t stream) noexcept {
-  const int* dev_segment_offsets_ptr =
-      thrust::raw_pointer_cast(&dev_segment_offsets_[0]);
-  float const* input_ptr = reinterpret_cast<float const*>(inputs[0]);
-  float* const* host_outputs = reinterpret_cast<float* const*>(outputs);
-  float** output_ptrs = thrust::raw_pointer_cast(&dev_output_ptrs_[0]);
-  cudaMemcpyAsync(output_ptrs,
-                  host_outputs,
-                  dev_output_ptrs_.size() * sizeof(float*),
-                  cudaMemcpyHostToDevice,
-                  stream);
-
-  int outer_rows = outer_rows_ * batch_size;
+template <typename T>
+cudaError_t Split(const T* input,
+                  T* const* outputs,
+                  int* segment_offsets,
+                  int nsegment,
+                  int inner_cols,
+                  int axis_shape,
+                  int outer_rows,
+                  int batch_size,
+                  cudaStream_t stream) {
+  int batch_outer_rows = outer_rows * batch_size;
 
   dim3 block(32, 16);
-  dim3 grid(std::min((inner_cols_ - 1) / block.x + 1, 65535u),
-            std::min((axis_shape_ - 1) / block.y + 1, 65535u),
-            std::min((outer_rows_ - 1) / block.z + 1, 65535u));
-  SplitKernel<<<grid, block, 0, stream>>>(dev_segment_offsets_.size(),
-                                          dev_segment_offsets_ptr,
-                                          input_ptr,
-                                          output_ptrs,
-                                          inner_cols_,
-                                          axis_shape_,
-                                          outer_rows);
-  return 0;
+  dim3 grid(std::min((inner_cols - 1) / block.x + 1, 65535u),
+            std::min((axis_shape - 1) / block.y + 1, 65535u),
+            std::min((outer_rows - 1) / block.z + 1, 65535u));
+  SplitKernel<<<grid, block, 0, stream>>>(nsegment,
+                                          segment_offsets,
+                                          input,
+                                          outputs,
+                                          inner_cols,
+                                          axis_shape,
+                                          batch_outer_rows);
+  return cudaGetLastError();
 }
+
+template cudaError_t Split(const float* input,
+                           float* const* outputs,
+                           int* segment_offsets,
+                           int nsegment,
+                           int inner_cols,
+                           int axis_shape,
+                           int outer_rows,
+                           int batch_size,
+                           cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

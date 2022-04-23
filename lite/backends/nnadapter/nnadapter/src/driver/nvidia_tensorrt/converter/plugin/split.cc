@@ -14,10 +14,64 @@
 
 #include "driver/nvidia_tensorrt/converter/plugin/split.h"
 
-#include <algorithm>
-
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+int SplitPlugin::initialize() noexcept {
+  // notice input dims is [C, H, W]
+  nvinfer1::Dims dims = input_dims_[0];
+  outer_rows_ = 1;
+  inner_cols_ = 1;
+  for (int i = 0; i < axis_; ++i) {
+    outer_rows_ *= dims.d[i];
+  }
+  for (int i = axis_ + 1; i < dims.nbDims; ++i) {
+    inner_cols_ *= dims.d[i];
+  }
+  std::vector<int> segment_offsets(1, 0);
+  for (int i = 0; i < this->getNbOutputs(); ++i) {
+    segment_offsets.push_back(segment_offsets.back() + size_splits_[i]);
+  }
+  axis_shape_ = dims.d[axis_];
+  cudaMalloc(reinterpret_cast<void**>(&dev_segment_offsets_),
+             segment_offsets.size() * sizeof(int));
+  cudaMemcpy(dev_segment_offsets_,
+             segment_offsets.data(),
+             segment_offsets.size() * sizeof(int),
+             cudaMemcpyHostToDevice);
+  return 0;
+}
+
+void SplitPlugin::terminate() noexcept {
+  cudaFree(dev_segment_offsets_);
+  cudaFree(dev_output_ptrs_);
+}
+
+int SplitPlugin::enqueue(int batch_size,
+                         const void* const* inputs,
+                         void** outputs,
+                         void* workspace,
+                         cudaStream_t stream) noexcept {
+  float const* input_ptr = reinterpret_cast<float const*>(inputs[0]);
+  float* const* outputs_ptr = reinterpret_cast<float* const*>(outputs);
+  cudaMalloc(reinterpret_cast<void**>(&dev_output_ptrs_),
+             size_splits_.size() * sizeof(float*));
+  cudaMemcpyAsync(dev_output_ptrs_,
+                  outputs_ptr,
+                  size_splits_.size() * sizeof(float*),
+                  cudaMemcpyHostToDevice,
+                  stream);
+  Split(input_ptr,
+        dev_output_ptrs_,
+        dev_segment_offsets_,
+        size_splits_.size(),
+        inner_cols_,
+        axis_shape_,
+        outer_rows_,
+        batch_size,
+        stream);
+  return 0;
+}
 
 nvinfer1::Dims SplitPlugin::getOutputDimensions(int index,
                                                 const nvinfer1::Dims* inputs,
