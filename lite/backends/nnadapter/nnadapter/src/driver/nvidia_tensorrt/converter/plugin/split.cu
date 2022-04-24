@@ -27,7 +27,7 @@ __device__ int UpperBound(T const* vals, int n, T const& key) {
     int j = i + m;
     if (!(key < vals[j])) {
       i = j + 1;
-      n -= m + 1;
+      n -= (m + 1);
     } else {
       n = m;
     }

@@ -29,7 +29,11 @@ class SplitTester : public arena::TestCase {
   std::string axis_tensor_;
   std::vector<std::string> sections_tensor_list_;
   DDim x_dims_;
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   int axis_ = 1;
+#else
+  int axis_ = 0;
+#endif
   int num_ = 1;
   std::vector<int> sections_;
 
@@ -199,13 +203,18 @@ template <class T = float>
 void TestSplitAxis(Place place,
                    float abs_error,
                    const std::string& alias = "def") {
-  std::vector<std::vector<int64_t>> x_shapes{{4, 6, 8, 10}};
+  std::vector<std::vector<int64_t>> x_shapes{{4}, {4, 6, 8, 10}};
   for (auto x_shape : x_shapes) {
-    for (auto axis : {-1, 1, 2, 3}) {
+    for (auto axis : {-4, -1, 0, 1, 2, 3}) {
       if (axis >= static_cast<int>(x_shape.size()) ||
           axis < -static_cast<int>(x_shape.size())) {
         continue;
       }
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+      if (x_shape.size() == 1 || axis == 0 || axis + x_shape.size() == 0) {
+        continue;
+      }
+#endif
       TestSplit<T>(place, abs_error, alias, DDim(x_shape), axis);
     }
   }
