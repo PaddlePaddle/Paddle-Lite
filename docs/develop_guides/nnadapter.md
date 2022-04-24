@@ -720,102 +720,111 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
 ### NNAdapter 标准算子详细说明
 - NNADAPTER_ABS
 
-  Applies the abs activation to the input tensor element-wise. The output is calculated using this formula: output = abs(input)
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-  - Outputs:
-    - 0: output, the result with the same type as two inputs.
+  逐元素取绝对值: `output` = abs(`input`) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D
 
-  Applies adaptive 2-D average pooling across the input according to input and output size.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in, H_in, W_in].
-    - 1: output_shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
-  - Outputs:
-    - 0: output, a tensor with the same shape and type as input.
+  二维自适应平均池化。
+  - 输入：
+    - 0 ： input ，输入操作数，形状：[N, C_in, H_in, W_in] ，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： output_shape ，输出操作数的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，取值： 两个元素的值分别表示 H_out 和 W_out 。
+  - 输出：
+    - 0 ： output ，输出操作数，形状： [N, C_in, H_out, W_out] ，类型与输入操作数 `input` 相同。
 
 - NNADAPTER_ADAPTIVE_MAX_POOL_2D
 
-  Applies adaptive 2-D max pooling across the input according to input and output size.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in, H_in, W_in].
-    - 1: output_shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
-    - 2: return_indices, a NNADAPTER_BOOL8 scalar, whether to return index of output, default to false.
-    - 3: return_indices_dtype, a NNADAPTER_INT32 scalar, must be one of NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64, specifies the dtype of the indices.
-  - Outputs:
-    - 0: output, a tensor with the same shape and type as input.
-    - 1: indices, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor, with the same shape as output, indicates the indices of the current feature map.
+  二维自适应最大池化。
+  - 输入：
+    - 0 ： input ，输入操作数，形状： [N, C_in, H_in, W_in] ，类型： NNADAPTER_TENSOR_FLOAT32 ， NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： output_shape ，输出操作数的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，取值： 两个元素的值分别表示 H_out 和 W_out 。
+    - 2 ： return_indices ，是否输出最大值的索引，形状： [1] ，类型： NNADAPTER_BOOL8 ，取值： true 、false ，默认为 false 。
+    - 3 ： return_indices_dtype ，最大值的索引的类型，形状为 [1] ，类型： NNADAPTER_INT32 ，取值： NNADAPTER_TENSOR_INT32 或 NNADAPTER_TENSOR_INT64 。
+  - 输出：
+    - 0 ： output ，输出操作数，形状： [N, C_in, H_out, W_out] ，类型与输入操作数 `input` 相同。
+    - 1 ： indices ，输出最大值的索引操作数， 是否输出由输入操作数 `return_indices` 决定，形状与输出操作数 `output` 相同，类型：NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，由输入操作数 `return_indices_dtype` 决定。
 
 - NNADAPTER_ADD
 
-  Performs element-wise binary addition(with Numpy-style broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-  - Inputs:
-    - 0: input0, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: input1, a tensor with the same type as input0.
-    - 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the result, must be one of NNAdapterFuseCode values.
-  - Outputs:
-    - 0: output, the result with the same type as two inputs.
+  逐元素相加： `output` = `input0` + `input1` ，广播规则与 Numpy https://numpy.org/doc/stable/user/basics.broadcasting.html 相同。
+  - 输入：
+    - 0 ： input0 ，输入操作数 0 ，类型： NNADAPTER_TENSOR_FLOAT32 、NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： input1 ，输入操作数 1 ，类型与输入操作数 `input0` 相同。
+    - 2 ： fuse_code ，融合的激活函数类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterFuseCode` 类型的任意值， `NNADAPTER_FUSED_NONE` 、 `NNADAPTER_FUSED_RELU` 、 `NNADAPTER_FUSED_RELU1` 、 `NNADAPTER_FUSED_RELU6` 。
+  - 输出：
+    - 0 ： output ， 输出操作数，形状：由输入操作数 `input0` 和  `input1` 广播后的形状决定，类型与输入操作数 `input0` 和 `input1` 相同。
+
+- NNADAPTER_AND
+
+  逐元素逻辑与： `output` = `input0` && `input1` ，广播规则与 Numpy https://numpy.org/doc/stable/user/basics.broadcasting.html 相同。
+  - 输入：
+    - 0 ： input0 ，输入操作数 0 ，类型： NNADAPTER_BOOL8 。
+    - 1 ： input1 ，输入操作数 1 ，类型与输入操作数 `input0` 相同。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由输入操作数 `input0` 和 `input1` 广播后的形状决定，类型与输入操作数 `input0` 和 `input1` 相同。
 
 - NNADAPTER_ARG_MAX
 
-  Computes the indices of the max elements of the input tensor’s element along the provided axis.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: axis, a NNADAPTER_TENSOR_INT32 scalar, the axis in which to compute the arg indices, it should be in range [-R, R), where R is the rank of input, negative value works the same way as axis+R.
-    - 2: keepdim, a NNADAPTER_BOOL8 scalar, keep the reduced dimension or not, If TRUE, keep the reduced dimension.
-    - 3: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64, specifies the dtype of the result,default to NNADAPTER_TENSOR_INT64.
-  - Outputs:
-    - 0: output, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor.
+  沿给定 `axis` 轴计算输入操作数 `input` 的最大元素的索引值。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： axis ， 在 `axis` 轴上计算最大元素的索引值， 形状： [1] ，类型： NNADAPTER_INT32 ，取值： axis 的有效范围是 [-R, R） ， R 是输入操作数 `input` 的维度，当 axis 为负数时，效果与 axis + R 一致。
+    - 2 ： keepdim ，是否保留 `axis` 轴，如果保留，则输出操作数在该轴上的尺寸是 1 ，形状： [1] ，类型： NNADAPTER_BOOL8 ，取值： true 、 false 。
+    - 3 ： dtype ，输出的索引值的数据类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值： NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，默认为 NNADAPTER_TENSOR_INT64 。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由输入操作数 `input` 和 `keepdim` 决定，类型： NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，由输入操作数 `dtype` 决定。
 
 - NNADAPTER_ARG_MIN
 
-  Computes the indices of the min elements of the input tensor’s element along the provided axis.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: axis, a NNADAPTER_TENSOR_INT32 scalar. the axis in which to compute the arg indices, it should be in range [-R, R), where R is the rank of input, negative value works the same way as axis+R.
-    - 2: keepdim, a NNADAPTER_BOOL8 scalar, keep the reduced dimension or not, If TRUE, keep the reduced dimension.
-    - 3: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64, specifies the dtype of the result, default to NNADAPTER_TENSOR_INT64.
-  - Outputs:
-    - 0: output, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor.
+  沿给定 `axis` 轴计算输入操作数 `input` 的最小元素的索引值。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： axis ， 在 `axis` 轴上计算最小元素的索引值， 形状： [1] ，类型： NNADAPTER_INT32 ，取值：axis 的有效范围是 [-R, R） ， R 是输入操作数 `input` 的维度，当 axis 为负数时，效果与 axis + R 一致。
+    - 2 ： keepdim ，是否保留操作的轴，形状： [1] ，类型： NNADAPTER_BOOL8 ， 取值： true 、 false 。
+    - 3 ： dtype ，输出的索引值的数据类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值：NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，默认为 NNADAPTER_TENSOR_INT64 。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由输入操作数 `input` 和 `keepdim` 决定，类型： NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 ，由输入操作数 `dtype` 决定.
 
 - NNADAPTER_ASSIGN
 
-  Copy the input to the output.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-  - Outputs:
-    - 0: output, a tensor with the same shape and type as input.
+  将输入操作数的数据拷贝至输出操作数。
+  - 输入：
+    - 0 ： input ，输入操作数，数据类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_EQUAL
 
-  Performs element-wise binary equal relational operation(with Numpy-style broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html). The output is calculated using this formula: output = input0 == input1
-  - Inputs:
-    - 0: input0, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_BOOL8, NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64,NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: input1, a tensor with the same type as input0.
-  - Outputs:
-    - 0: output, a NNADAPTER_TENSOR_BOOL8 tensor.
+  逐元素关系等于： `output` = `input0` == `input1` ，与 Numpy 的广播规则 https://numpy.org/doc/stable/user/basics.broadcasting.html 相同。
+  - 输入：
+    - 0 ： input0 ，输入操作数 0 ，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_BOOL8 、NNADAPTER_TENSOR_INT32 、 NNADAPTER_TENSOR_INT64 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： input1 ，输入操作数 1 ，类型与输入操作数 `input0` 相同。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由输入操作数 `input0` 和 `input1` 广播后的形状决定，类型： NNADAPTER_TENSOR_BOOL8 。
 
 - NNADAPTER_AVERAGE_POOL_2D
 
-  Applies a 2-D average pooling across the input according to kernel sizes, stride sizes, and pad lengths.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in, H_in, W_in].
-    - 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that paddings is used. 1 means "SAME". 2 means "VALID". It must be one of NNAdapterAutoPadCode values.
-    - 2: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data {height_top, height_bottom, width_left, width_right}, or with shape[0] and no data.
-    - 3: kernel_shape, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data {kernel_height, kernel_width}.
-    - 4: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data {height_stride, width_stride}.
-    - 5: ceil_mode, a NNADAPTER_BOOL8 scalar, whether to use ceil or floor (default) to compute the output shape, default to false.
-    - 6: count_include_pad, a NNADAPTER_BOOL8 scalar, whether include pad pixels when calculating values for the edges, default to false.
-    - 7: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode values.
-  - Outputs:
-    - 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its type is the same as input.
-      - When ceil_mode=false,
+  二维平均池化。
+  - 输入：
+    - 0 ： input ，输入操作数，形状： [N, C_in, H_in, W_in] ，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
+    - 2 ： pads ，填充大小，可选，形状： [4] ， 类型： NNADAPTER_TENSOR_INT32 ，取值：四个元素的值分别表示 height_top ， height_bottom ， width_left ， width_right 。
+    - 3 ： kernel_shape ， 核的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 ，取值： 两个元素的值分别表示 kernel_height ， kernel_width 。
+    - 4 ： strides ， 步长的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 ，取值：两个元素的值分别表示 height_stride ， width_stride 。
+    - 5 ： ceil_mode ，是否用 ceil 函数计算输出的高和宽，形状： [1] ，类型：NNADAPTER_BOOL8 ， 取值： true 、 false ，默认是 false 。
+    - 6 ： count_include_pad ，计算时是否包含填充区域，形状： [1] ，类型： NNADAPTER_BOOL8 ，取值： true 、 false ，默认是 false 。
+    - 7 ： fuse_code ， 融合的激活函数类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterFuseCode` 类型的任意值， `NNADAPTER_FUSED_NONE` 、 `NNADAPTER_FUSED_RELU` 、 `NNADAPTER_FUSED_RELU1` 、 `NNADAPTER_FUSED_RELU6` 。
+  - 输出：
+    - 0 ： output ，输出操作出，形状： [N, C_out, H_out, W_out] ，类型与输入操作数 `input` 相同 。
+      - 当 ceil_mode 为 false 时，
 
         H_out = floor((H_in + padding_height_top + padding_height_bottom - filter_height) / stride_height + 1)
 
         W_out = floor((W_in + padding_width_left + padding_width_right - filter_width) / stride_width + 1)
-      - When ceil_mode=true,
+      - 当 ceil_mode 为 true 时，
 
         H_out = ceil((H_in + padding_height_top + padding_height_bottom - filter_height) / stride_height + 1)
 
@@ -823,67 +832,76 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
 
 - NNADAPTER_BATCH_NORMALIZATION
 
-  Applies Batch Normalization over a 4D input (a mini-batch of 2D inputs with additional channel dimension) as described in the paper Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-    - 1: scale, a 1-D tensor with shape [C]. 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
-    - 2: bias, a 1-D tensor with shape [C]. 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
-    - 3: mean, a 1-D tensor with shape [C]. 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
-    - 4: variance, a 1-D tensor with shape [C]. 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
-    - 5: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5. The small value added to the variance to prevent division by zero.
-  - Outputs:
-    - 0: output, a tensor with the same shape and type as input.
+  批正则化，根据均值和方差对批数据的每个通道进行正则化，具体实现方式请参考论文 Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift https://arxiv.org/pdf/1502.03167.pdf 。
+  - 输入：
+    - 0 ： input ， 输入操作数， 形状：[N, C ,...] ，输入维度要求大于 2 ，类型：NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： scale ， 缩放， 形状： [C] ， 类型： NNADAPTER_TENSOR_FLOAT32 。
+    - 2 ： bias ， 偏移， 形状： [C] ， 类型： NNADAPTER_TENSOR_FLOAT32 。
+    - 3 ： mean ， 均值， 形状： [C] ， 类型： NNADAPTER_TENSOR_FLOAT32 。
+    - 4 ： variance ， 方差， 形状： [C] ，类型： NNADAPTER_TENSOR_FLOAT32 。
+    - 5 ： epsilon ， 加上方差上防止发生除零错误的极小值，形状： [1] ，类型： NNADAPTER_FLOAT32 ，取值：任意浮点数，默认为 1e-5。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_CAST
 
-  The operator casts the elements of `input` to a data type specified by the `dtype` argument.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_BOOL8, NNADAPTER_TENSOR_INT8, NNADAPTER_TENSOR_UINT8, NNADAPTER_TENSOR_INT16, NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64, NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_FLOAT64 tensor.
-    - 1: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_INT32, NNADAPTER_INT64, NNADAPTER_FLOAT32, NNADAPTER_FLOAT64 etc. Specifies the dtype of the result.
-  - Outputs:
-    - 0: output, a tensor with the same shape as input.
+  数据类型转换。
+  - 输入：
+    - 0 ： input ， 输入操作数， 类型： NNADAPTER_BOOL8 、 NNADAPTER_INT8 、 NNADAPTER_UINT8 、 NNADAPTER_INT16 、 NNADAPTER_INT32 、 NNADAPTER_INT64 、 NNADAPTER_FLOAT16 、 NNADAPTER_FLOAT32 、 NNADAPTER_FLOAT64 。
+    - 1 ： dtype ，目标类型， 形状： [1] ， 类型： NNADAPTER_INT32 ， 取值： NNADAPTER_BOOL8 、 NNADAPTER_INT8 、 NNADAPTER_UINT8 、 NNADAPTER_INT16 、 NNADAPTER_INT32 、 NNADAPTER_INT64 、 NNADAPTER_FLOAT16 、 NNADAPTER_FLOAT32 、 NNADAPTER_FLOAT64  、 NNADAPTER_FLOAT64 。
+  - 输出：
+    - 0 ： output ，输出操作数， 类型与 `dtype` 相同，形状和 `input` 相同。
+
+- NNADAPTER_CHANNEL_SHUFFLE
+
+  通道混洗重排，它将输入通道分成 `group` 个子组，并通过逐一从每个子组中选择元素来获得新的顺序： C_out[k * group + g] = C_in[g * size + k] ，其中 size = C_in / group ，具体实现请参考论文 https://arxiv.org/pdf/1707.01083.pdf 。
+  - 输入：
+    - 0 ： input ， 输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： group ， 子组的数目，必须整除 `input` 的通道数，形状： [1] ，类型： NNADAPTER_FLOAT32。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_CLIP
 
-  Clip all elements in input into the range [min, max]. The output is calculated using this formula: output = MIN(MAX(input, min), max).
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: min, a 1-D tensor with the same type as input with shape[1].
-    - 2: max, a 1-D tensor with the same type as input with shape[1].
-  - Outputs:
-    - 0: output, a tensor with the same shape and type as input.
+  对所有元素进行剪裁，使其限制在 [`min`, `max`] 内： `output` = min(max(`input`, `min`), `max`) 。
+  - 输入：
+    - 0 ： input ， 输入操作数， 类型： NNADAPTER_TENSOR_FLOAT32 、NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： min ， 裁剪的最小值， 形状： [1] ， 类型与 `input` 相同。
+    - 2 ： max ， 裁剪的最大值， 形状： [1] ， 类型与 `input` 相同。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_CONCAT
 
-  Concatenates a list of tensors into a single tensor along the given dimension. All input tensors must have the same shape, except for the dimension size of the axis to concatenate on.
-  - Inputs:
-    - 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along which axis to concat on. It should be in range [-R, R), where R is the rank of input, negative value works the same way as axis+R.
-  - Outputs:
-    - 0: output, the result with the same type as the inputs.
+  沿 `axis` 轴将多个输入进行拼接。
+  - 输入：
+    - 0 ~ n-1 ： input0 ~ inputn-1， 输入 0 ~ n-1 个的操作数，形状：除 `axis` 轴的维度不同，所有输入的其它维度数必须相同，类型：NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： axis ，沿该轴进行拼接，形状： [1] ，类型： NNADAPTER_INT32 ，取值：axis 的有效范围是 [-R, R） ， R 是输入操作数 `input` 的维度，当 axis 为负数时，效果与 axis + R 一致。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input0` ~ `inputn-1` 的类型相同。
 
 - NNADAPTER_CONV_2D
 
-  Performs a normal or depthwise 2-D convolution operation. The CONV_2D op computes a 2-D convolution based on the input, filter, strides, paddings, dilations, groups and etc.
-  - Inputs:
-    - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in, H_in, W_in].
-    - 1: filter, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL 4-D tensor.
-      - For a normal convolution, the filter's shape is [C_out, C_in, filter_height, filter_width], where C_out and C_in is the number of the channels of output and input, filter_height and filter_width is the filter's kernel size in the 'H' and 'W' dimension.
-      - For a depthwise convolution, the filter's shape is [C_out, 1, filter_height, filter_width], where C_out is the number of the channels of output, filter_height and filter_width is the filter's kernel size in the 'H' and 'W' dimension.
-    - 2: bias, a 1-D tensor with shape [C_out].
-      - If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
-      - If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale == input_scale * filter_scale.
-      - If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL, its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, and bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-    - 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that paddings is used. 1 means "SAME". 2 means "VALID". It must be one of NNAdapterAutoPadCode.
-    - 4: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data {height_top, height_bottom, width_left, width_right}, or with shape[0] and no data.
-    - 5: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data {height_stride, width_stride}.
-    - 6: group, a NNADAPTER_INT32 scalar.
-      - For a normal convolution, group must be 1.
-      - For a depthwise convolution, the formula should be satisfied: group=C_out=C_in.
-    - 7: dilations, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data {dilations_height, dilations_width}.
-    - 8: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode values.
-  - Outputs:
-    - 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its type is the same as input.
+  二维卷积。
+  - 输入：
+    - 0 ： input ，输入操作数，形状： [N, C_in, H_in, W_in] ，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： filter ，卷积核参数，类型： NNADAPTER_TENSOR_FLOAT32 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 、 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ，形状满足如下约束：
+      - 如果是常规卷积，那么形状是 [C_out, C_in, filter_height, filter_width] ，其中 C_out 和 C_in 分别表示输出和输出的通道数， filter_height 和 filter_width 分别是卷积核的高和宽。
+      - 如果是深度可分离卷积，那么形状是 [C_out, 1, filter_height, filter_width] ，其中 C_out 是输出通道数， filter_height 和 filter_width 分别是卷积核的高和宽。
+    - 2 ： bias ，偏置，形状： [C_out] ，类型满足如下约束：
+      - 如果输入类型是 NNADAPTER_TENSOR_FLOAT32 ，那么类型和输入一致。
+      - 如果卷积核类型是 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ，那么类型为 NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER ，且 bias_scale == input_scale * filter_scale 。
+      - 如果卷积核类型是 NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ，那么类型为 NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL ，且对于每个输出通道 i ，满足：bias_scale[i] = input_scale * filter_scale[i] 。
+    - 3 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
+    - 4 ： pads ， 填充大小，可选，形状： [4] ， 类型： NNADAPTER_TENSOR_INT32 ，取值：四个元素的值分别表示 height_top ， height_bottom ， width_left ， width_right 。
+    - 5 ： strides ，步长的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 ，取值：两个元素的值分别表示 height_stride ， width_stride 。
+    - 6 ： group， 卷积分组数， 形状： [1] ，类型： NNADAPTER_INT32 ，取值满足如下约束：
+      - 如果是常规卷积，那么 `group` 必须为 1 。
+      - 如果是深度可分离卷积，那么必须满足: `group` = C_out = C_in.
+    - 7 ： dilations ， 空洞的高和宽，形状： [2] ，类型： NNADAPTER_TENSOR_INT32 ，取值： 两个元素的值分别表示 dilations_height ， dilations_width。
+    - 8 ： fuse_code ， 融合的激活函数类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterFuseCode` 类型的任意值， `NNADAPTER_FUSED_NONE` 、 `NNADAPTER_FUSED_RELU` 、 `NNADAPTER_FUSED_RELU1` 、 `NNADAPTER_FUSED_RELU6` 。
+  - 输出：
+    - 0 ： output ， 输出操作数，类型与输入 `input` 相同，形状： [N, C_out, H_out, W_out]，计算公式如下：
 
       H_out = (H_in + padding_height_top + padding_height_bottom - (dilation_height * (filter_height - 1) + 1)) / stride_height + 1
 
