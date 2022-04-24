@@ -149,6 +149,10 @@ bool UpdateModelOutputOperands(core::Model* model,
                                core::Operand* new_operand);
 // Check if it is a constant operand
 bool IsConstantOperand(core::Operand* operand);
+bool IsConstantCopyOperand(core::Operand* operand);
+bool IsConstantReferenceOperand(core::Operand* operand);
+// Check if it is a temporary variable operand
+bool IsTemporaryVariableOperand(core::Operand* operand);
 // Check if it is a temporary shape operand
 bool IsTemporaryShapeOperand(core::Operand* operand);
 bool IsModelInputOperand(core::Operand* operand);

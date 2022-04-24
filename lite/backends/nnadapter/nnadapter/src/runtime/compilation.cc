@@ -44,7 +44,9 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY =
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
 
-void* AccessSubmodelInput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelInput(void* memory,
+                          NNAdapterOperandType* type,
+                          void* device_buffer) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
@@ -62,7 +64,9 @@ void* AccessSubmodelInput(void* memory, NNAdapterOperandType* type) {
   return buffer->data;
 }
 
-void* AccessSubmodelOutput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelOutput(void* memory,
+                           NNAdapterOperandType* type,
+                           void* device_buffer) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
@@ -142,7 +146,8 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
       const std::vector<int>& indexes,
       std::vector<core::Argument>* arguments,
       std::vector<std::shared_ptr<Buffer>>* buffers,
-      void* (*access)(void* memory, NNAdapterOperandType* type)) {
+      void* (*access)(
+          void* memory, NNAdapterOperandType* type, void* device_buffer)) {
     for (size_t i = 0; i < indexes.size(); i++) {
       core::Argument arg;
       arg.index = i;

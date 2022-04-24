@@ -25,14 +25,14 @@ class HardSwishPlugin : public Plugin {
   HardSwishPlugin(const void* serial_data, size_t serial_length);
   ~HardSwishPlugin();
   const char* getPluginType() const noexcept;
-  int enqueue(int batchSize,
+  int enqueue(int batch_size,
               const void* const* inputs,
               void** outputs,
               void* workspace,
               cudaStream_t stream) noexcept;
   size_t getSerializationSize() const noexcept;
   void serialize(void* buffer) const noexcept;
-  IPluginV2* clone() const noexcept;
+  nvinfer1::IPluginV2* clone() const noexcept;
 
  private:
   float alpha_;

@@ -92,7 +92,6 @@ class DropoutComputeTester : public arena::TestCase {
 };
 
 TEST(Dropout, precision) {
-  LOG(INFO) << "test dropout op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
@@ -103,6 +102,8 @@ TEST(Dropout, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -118,7 +119,7 @@ TEST(Dropout, precision) {
     for (auto dropout_prob : {0., 0.2, 1.}) {
       for (auto dropout_implementation :
            {"downgrade_in_infer", "upscale_in_train"}) {
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NPU) || defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
         if (dims.size() < 2) continue;
 #endif
 #if defined(LITE_WITH_NNADAPTER)

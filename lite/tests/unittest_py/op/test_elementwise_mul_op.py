@@ -173,6 +173,22 @@ class TestElementwiseMulOp(AutoScanTest):
             "Lite does not support this op in a specific case on Metal. We need to fix it as soon as possible."
         )
 
+        def _teller2(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                x_shape = program_config.inputs["input_data_x"].shape
+                y_shape = program_config.inputs["input_data_y"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(x_shape) == 1 \
+                    or len(x_shape) != len(y_shape) \
+                    or x_shape[0] != y_shape[0] \
+                    or axis == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'x_shape_size == 1' or 'x_shape_size != y_shape_size' "
+            "or 'x_shape[0] != y_shape[0]' or 'axis == 0' on NvidiaTensorrt.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 150

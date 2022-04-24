@@ -263,18 +263,16 @@ class TestMatmulV2Op(AutoScanTest):
             "Lite does not support this op in a specific case on arm when x_dims=1 and x_trans=true. We need to fix it as soon as possible."
         )
 
-        def _teller4(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data_x"].shape)
-            nnadapter_device_name = self.get_nnadapter_device_name()
-            if nnadapter_device_name == "nvidia_tensorrt":
-                y_shape = list(program_config.inputs["input_data_y"].shape)
-                if (len(x_shape) == 1 and
-                        len(y_shape) == 1) or len(x_shape) != len(y_shape):
+        def _teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                x_shape = program_config.inputs["input_data_x"].shape
+                y_shape = program_config.inputs["input_data_y"].shape
+                if len(x_shape) < 3 or len(x_shape) != len(y_shape):
                     return True
 
         self.add_ignore_check_case(
-            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            " inputs with the same operation must have same number of dimensions."
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'x_shape_size != y_shape_size' or 'x_shape_size < 3' on nvidia_tensorrt."
         )
 
     def test(self, *args, **kwargs):

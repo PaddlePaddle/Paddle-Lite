@@ -322,7 +322,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(arg->memory);
     NNADAPTER_CHECK(arg->access);
     auto type = input_types->at(i);
-    auto host_ptr = arg->access(arg->memory, &type);
+    auto host_ptr = arg->access(arg->memory, &type, nullptr);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(type);
     // Reallocate dataset memory space in dynamic_shape_range mode if the
@@ -430,7 +430,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimensions.count);
     ConvertACLDimsToGEDims(
         dimensions, type->dimensions.data, &type->dimensions.count);
-    auto host_ptr = arg->access(arg->memory, type);
+    auto host_ptr = arg->access(arg->memory, type, nullptr);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);
     // Reallocate dataset memory space in dynamic_shape_range mode if the

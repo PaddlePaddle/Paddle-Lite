@@ -115,16 +115,18 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_CHECK_EQ(SerializeToCache(&cache->buffer), NNADAPTER_NO_ERROR);
   }
   for (auto& type : input_types_) {
-    ConvertDynamicDimensions(&type);
+    ConvertDynamicDimensions(&type.dimensions);
+    max_batch_size_ =
+        std::max(max_batch_size_, GetMaxBatchSize(type.dimensions));
   }
   for (auto& type : output_types_) {
-    ConvertDynamicDimensions(&type);
+    ConvertDynamicDimensions(&type.dimensions);
   }
   return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromModel(core::Model* model) {
-  // Convert nnadapter standard ops to cunstom ops
+  // Convert nnadapter standard ops to custom ops
   // ReplaceSoftmaxWithNaiveSoftmax(model);
   // ReplaceSoftmaxWithSpecialSoftmax(model);
   // Prepare input/output types
@@ -179,7 +181,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto arg = FindArgumentByIndex(input_arguments, i, input_count);
     NNAdapterOperandType type;
-    arg->access(arg->memory, &type);
+    arg->access(arg->memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     auto& src_dimensions = input_types_.at(i).dimensions;
@@ -187,19 +189,25 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
       return NNADAPTER_INVALID_DIMENSIONS;
     }
     // Check dimensions data
-    bool is_matched = true;
+    bool is_explicit_dims = true;
     int32_t* data = type.dimensions.data;
     int32_t* src_data = src_dimensions.data;
-    for (uint32_t j = 0; j < count; j++) {
-      if (data[j] != src_data[j]) {
-        is_matched = false;
+    if (data[0] > max_batch_size_) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    for (uint32_t j = 1; j < count; j++) {
+      if (src_data[i] == NNADAPTER_UNKNOWN) {
+        is_explicit_dims = false;
         break;
       }
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
     }
-    if (is_matched) continue;
+    if (is_explicit_dims) continue;
     // Check dynamic dymensions data
     NNADAPTER_CHECK_EQ(src_dimensions.dynamic_count, 3U);
-    for (uint32_t j = 0; j < count; j++) {
+    for (uint32_t j = 1; j < count; j++) {
       if (data[j] < src_dimensions.dynamic_data[1][j] ||
           data[j] > src_dimensions.dynamic_data[2][j]) {
         return NNADAPTER_INVALID_DIMENSIONS;
@@ -210,17 +218,25 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
 }
 
 static void SetTensor(Tensor* tensor,
-                      void* host_ptr,
-                      const NNAdapterOperandType& type) {
+                      void* data_ptr,
+                      const NNAdapterOperandType& type,
+                      bool is_device_buffer,
+                      cudaStream_t stream) {
   auto dims = type.dimensions;
   std::vector<int32_t> shape(dims.data, dims.data + dims.count);
-  tensor->Resize(shape);
-  tensor->SetDateType(ConvertToNVDataType(type.precision));
-  uint32_t length =
-      tensor->Length() * GetOperandPrecisionDataLength(type.precision);
-  NNADAPTER_CHECK_EQ(
-      cudaMemcpy(tensor->Data(), host_ptr, length, cudaMemcpyHostToDevice),
-      cudaSuccess);
+  auto data_type = ConvertToNVDataType(type.precision);
+  if (is_device_buffer) {
+    tensor->SetData(data_ptr, shape, data_type);
+  } else {
+    tensor->Resize(shape);
+    tensor->SetDataType(data_type);
+    uint32_t length =
+        tensor->Length() * GetOperandPrecisionDataLength(type.precision);
+    NNADAPTER_CHECK_EQ(
+        cudaMemcpyAsync(
+            tensor->Data(), data_ptr, length, cudaMemcpyHostToDevice, stream),
+        cudaSuccess);
+  }
 }
 
 int Program::Execute(uint32_t input_count,
@@ -231,19 +247,23 @@ int Program::Execute(uint32_t input_count,
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
   // 1. Feed inputs
+  cudaStream_t stream = context_->CudaStream();
   for (size_t i = 0; i < input_types_.size(); i++) {
     // Get input info
     auto arg = FindArgumentByIndex(input_arguments, i, input_count);
     NNADAPTER_CHECK(arg) << "Input argument " << i << " does not exist!";
     auto type = input_types_.at(i);
-    auto host_ptr = arg->access(arg->memory, &type);
-    NNADAPTER_CHECK(host_ptr);
+    bool is_device_buffer = false;
+    auto data_ptr = arg->access(arg->memory, &type, &is_device_buffer);
+    io_use_device_buffer_ |= is_device_buffer;
+    NNADAPTER_CHECK(data_ptr);
     // Fill input tensor
     int index = -static_cast<int>(i) - 1;
     if (!input_tensors_.count(index)) {
       input_tensors_[index] = std::shared_ptr<Tensor>(new Tensor());
     }
-    SetTensor(input_tensors_[index].get(), host_ptr, type);
+    SetTensor(
+        input_tensors_[index].get(), data_ptr, type, is_device_buffer, stream);
   }
   // 2. Execute sub_programs_ in order
   for (size_t i = 0; i < sub_programs_.size(); i++) {
@@ -276,7 +296,7 @@ int Program::Execute(uint32_t input_count,
         output_tensors.push_back(temporary_tensors_[output_index]);
       }
     }
-    sub_programs_[i]->Execute(&input_tensors, &output_tensors);
+    sub_programs_[i]->Execute(&input_tensors, &output_tensors, stream);
   }
   // 3. Fetch outputs
   for (size_t i = 0; i < output_types_.size(); i++) {
@@ -287,18 +307,24 @@ int Program::Execute(uint32_t input_count,
     NNAdapterOperandType type = output_types_.at(i);
     type.dimensions.count = dims.size();
     memcpy(type.dimensions.data, dims.data(), dims.size() * sizeof(int32_t));
-    auto host_ptr = arg->access(arg->memory, &type);
-    auto length = GetOperandTypeBufferLength(type);
     auto output_tensor = output_tensors_.at(index);
-    if (output_tensor->Data() != nullptr) {
-      NNADAPTER_CHECK_EQ(
-          cudaMemcpy(
-              host_ptr, output_tensor->Data(), length, cudaMemcpyDeviceToHost),
-          cudaSuccess);
+    auto length = GetOperandTypeBufferLength(type);
+    if (output_tensor->Data() && io_use_device_buffer_) {
+      arg->access(arg->memory, &type, output_tensor->Data());
+    } else if (output_tensor->Data()) {
+      auto host_ptr = arg->access(arg->memory, &type, nullptr);
+      NNADAPTER_CHECK_EQ(cudaMemcpyAsync(host_ptr,
+                                         output_tensor->Data(),
+                                         length,
+                                         cudaMemcpyDeviceToHost,
+                                         stream),
+                         cudaSuccess);
     } else {
+      auto host_ptr = arg->access(arg->memory, &type, nullptr);
       memcpy(host_ptr, output_tensor->Data(false), length);
     }
   }
+  NNADAPTER_CHECK_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   return NNADAPTER_NO_ERROR;
 }
 

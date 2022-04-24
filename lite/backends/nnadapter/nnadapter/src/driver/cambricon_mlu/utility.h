@@ -16,6 +16,7 @@
 
 #include <cn_api.h>
 #include <cnrt.h>
+#include <common.h>
 #include <interface_builder.h>
 #include <interface_network.h>
 #include <interface_runtime.h>

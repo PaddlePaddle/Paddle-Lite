@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include "optimizer/pattern_matcher.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
@@ -24,98 +25,101 @@
 
 namespace nnadapter {
 
-NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {
-  std::vector<core::Operation*> operations =
-      SortOperationsInTopologicalOrder(model);
-  for (auto operation : operations) {
-    NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
-                      << " ...";
-    if (operation->type == NNADAPTER_MAT_MUL) {
-      auto& input_operands = operation->input_operands;
-      auto& output_operands = operation->output_operands;
-      NNADAPTER_CHECK_EQ(input_operands.size(), 4);
-      NNADAPTER_CHECK_EQ(output_operands.size(), 1);
-      auto x_operand = input_operands[0];
-      auto y_operand = input_operands[1];
-      if (IsConstantOperand(x_operand) || !IsConstantOperand(y_operand)) {
-        NNADAPTER_VLOG(5) << "Only support x is tensor and y is persistable";
-        continue;
-      }
-      if (x_operand->type.dimensions.count != 2 ||
-          y_operand->type.dimensions.count != 2) {
-        NNADAPTER_VLOG(5)
-            << "Only support x's dims count and y's dims count is 2.";
-        continue;
-      }
-      auto transpose_x_operand = input_operands[2];
-      auto transpose_y_operand = input_operands[3];
-      auto mat_mul_out_operand = output_operands[0];
-      auto mat_mul_consumers = GetOperandConsumers(model, mat_mul_out_operand);
-      if (mat_mul_consumers.size() == 0) {
-        continue;
-      }
-      bool can_fuse = true;
-      std::map<core::Operation*, std::vector<core::Operand*>> operation_map;
-      // Process multiple add operation
-      for (auto add_operation : mat_mul_consumers) {
-        if (add_operation->type != NNADAPTER_ADD) {
-          can_fuse = false;
-          break;
-        }
-        auto& add_input_operands = add_operation->input_operands;
-        auto& add_output_operands = add_operation->output_operands;
-        NNADAPTER_CHECK_EQ(add_input_operands.size(), 3);
-        NNADAPTER_CHECK_EQ(add_output_operands.size(), 1);
-        auto bias_operand = add_input_operands[1];
-        if (!IsConstantOperand(bias_operand)) {
-          can_fuse = false;
-          break;
-        }
-        auto fuse_code_operand = add_input_operands[2];
-        if (*reinterpret_cast<bool*>(transpose_x_operand->buffer)) {
-          auto x_shape_count = x_operand->type.dimensions.count;
-          if (x_shape_count < 2) {
-            can_fuse = false;
-            break;
-          }
-          std::vector<int32_t> permutation;
-          for (int32_t i = 0; i < x_shape_count - 2; i++) {
-            permutation.push_back(i);
-          }
-          permutation.push_back(x_shape_count - 1);
-          permutation.push_back(x_shape_count - 2);
-          TransposeOperand(x_operand, permutation);
-        }
-        // If the transpose_y operand is false, transform the dimension to adapt
-        // fc
-        if (!*reinterpret_cast<bool*>(transpose_y_operand->buffer)) {
-          if (y_operand->type.dimensions.count != 2) {
-            can_fuse = false;
-            break;
-          }
-          TransposeOperand(y_operand, std::vector<int32_t>({1, 0}));
-        }
-        // Add FC operation into map
-        operation_map[add_operation] = {
-            x_operand, y_operand, bias_operand, fuse_code_operand};
-      }
-      if (!can_fuse) {
-        continue;
-      }
-      for (auto it = operation_map.begin(); it != operation_map.end(); ++it) {
-        auto fc_operation = AddOperation(model);
-        fc_operation->type = NNADAPTER_FULLY_CONNECTED;
-        fc_operation->input_operands = it->second;
-        fc_operation->output_operands = it->first->output_operands;
-        RemoveOperation(model, it->first);
-      }
-      // Clean
-      RemoveOperand(model, transpose_x_operand);
-      RemoveOperand(model, transpose_y_operand);
-      RemoveOperand(model, mat_mul_out_operand);
-      RemoveOperation(model, operation);
-    }
+class MatMulAddFuser : public PatternMatcher {
+ public:
+  void BuildPattern() override;
+  bool HandleMatchedResults(core::Model* model,
+                            const std::map<std::string, Node*>& nodes) override;
+};
+
+void MatMulAddFuser::BuildPattern() {
+  // Operation patterns
+  auto matmul_pattern =
+      CreatePattern("matmul", NNADAPTER_MAT_MUL)
+          ->MatchCondition([](const Node* node) -> bool {
+            auto operation = node->operation;
+            return operation && operation->input_operands.size() == 4 &&
+                   operation->input_operands[0]->type.dimensions.count == 2 &&
+                   operation->input_operands[1]->type.dimensions.count == 2;
+          })
+          ->IsIntermediate();
+  auto add_pattern = CreatePattern("add", NNADAPTER_ADD)->IsIntermediate();
+  // Operand patterns
+  auto matmul_x_pattern = CreatePattern("matmul_x")
+                              ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 0)
+                              ->IsVariableOperand();
+  auto matmul_y_pattern = CreatePattern("matmul_y")
+                              ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 1)
+                              ->IsConstantOperand();
+  auto matmul_transpose_x_pattern =
+      CreatePattern("matmul_transpose_x")
+          ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 2)
+          ->IsConstantOperand()
+          ->MatchCondition([](const Node* node) -> bool {
+            auto operand = node->operand;
+            return operand && operand->buffer &&
+                   !*reinterpret_cast<bool*>(operand->buffer);
+          })
+          ->IsIntermediate();
+  auto matmul_transpose_y_pattern =
+      CreatePattern("matmul_transpose_y")
+          ->IsOperationInputOperand(NNADAPTER_MAT_MUL, 3)
+          ->IsConstantOperand()
+          ->IsIntermediate();
+  auto matmul_output_pattern = CreatePattern("matmul_output")->IsIntermediate();
+  auto add_y_pattern = CreatePattern("add_y")
+                           ->IsOperationInputOperand(NNADAPTER_ADD, 1)
+                           ->IsConstantOperand()
+                           ->MatchCondition([](const Node* node) -> bool {
+                             auto operand = node->operand;
+                             return operand->type.dimensions.count == 1;
+                           });
+  auto add_fuse_code_pattern = CreatePattern("add_fuse_code")
+                                   ->IsOperationInputOperand(NNADAPTER_ADD, 2)
+                                   ->IsConstantOperand();
+  auto add_output_pattern = CreatePattern("add_output");
+  // Create the topological connections for the above patterns
+  std::vector<Pattern*> matmul_input_patterns{matmul_x_pattern,
+                                              matmul_y_pattern,
+                                              matmul_transpose_x_pattern,
+                                              matmul_transpose_y_pattern};
+  std::vector<Pattern*> add_input_patterns{
+      matmul_output_pattern, add_y_pattern, add_fuse_code_pattern};
+  matmul_input_patterns >> *matmul_pattern >> *matmul_output_pattern;
+  add_input_patterns >> *add_pattern >> *add_output_pattern;
+}
+
+bool MatMulAddFuser::HandleMatchedResults(
+    core::Model* model, const std::map<std::string, Node*>& nodes) {
+  // Get the operands and operations from the matched subgraph nodes.
+  auto matmul_operation = nodes.at("matmul")->operation;
+  auto matmul_x_operand = matmul_operation->input_operands[0];
+  auto matmul_y_operand = matmul_operation->input_operands[1];
+  auto matmul_transpose_y_operand = matmul_operation->input_operands[3];
+  auto add_operation = nodes.at("add")->operation;
+  auto add_bias_operand = add_operation->input_operands[1];
+  auto add_fuse_code_operand = add_operation->input_operands[2];
+  auto add_output_operand = add_operation->output_operands[0];
+  if (!*reinterpret_cast<bool*>(matmul_transpose_y_operand->buffer)) {
+    TransposeOperand(matmul_y_operand, std::vector<int32_t>({1, 0}));
   }
+  // Create a new FullyConnected operation and replace the matched subgraph
+  // nodes.
+  auto* fully_connected_operation = AddOperation(model);
+  fully_connected_operation->type = NNADAPTER_FULLY_CONNECTED;
+  fully_connected_operation->input_operands = {matmul_x_operand,
+                                               matmul_y_operand,
+                                               add_bias_operand,
+                                               add_fuse_code_operand};
+  fully_connected_operation->output_operands = {add_output_operand};
+  // The matched intermediate operands and operations will be deleted only when
+  // it returns true.
+  return true;
+}
+
+NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {
+  MatMulAddFuser mat_mul_add_fuser;
+  mat_mul_add_fuser.Apply(model);
 }
 
 }  // namespace nnadapter

@@ -161,7 +161,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
 
   - full_publish 编译
     ```shell
-    $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_intel_openvino=ON nnadapter_intel_openvino_sdk_root=/opt/intel/openvino_2022 full_publish
+    $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_intel_openvino=ON --nnadapter_intel_openvino_sdk_root=/opt/intel/openvino_2022 full_publish
     ```
 
   - 替换头文件和库

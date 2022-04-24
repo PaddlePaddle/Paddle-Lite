@@ -30,12 +30,12 @@ HardSwishPlugin::HardSwishPlugin(const void* serial_data,
 
 HardSwishPlugin::~HardSwishPlugin() {}
 
-int HardSwishPlugin::enqueue(int batchSize,
+int HardSwishPlugin::enqueue(int batch_size,
                              const void* const* inputs,
                              void** outputs,
                              void* workspace,
                              cudaStream_t stream) noexcept {
-  int num = 1;
+  int num = batch_size;
   for (int i = 0; i < input_dims_[0].nbDims; i++) {
     num *= input_dims_[0].d[i];
   }

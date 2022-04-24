@@ -182,14 +182,17 @@ class TestConcatOp(AutoScanTest):
         )
 
         def _teller2(program_config, predictor_config):
-            nnadapter_device_name = self.get_nnadapter_device_name()
-            if nnadapter_device_name == "nvidia_tensorrt":
-                if "axis_tensor_data" in program_config.inputs.keys():
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in0_shape = program_config.inputs["input_data0"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if "axis_tensor_data" in program_config.inputs.keys() \
+                    or len(in0_shape) == 1 \
+                    or axis == 0:
                     return True
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "TensorRT is not supported AxisTensor input. We need to fix it as soon as possible."
+            "Lite does not support 'AxisTensor input' or 'in_shape_size == 1' or 'axis == 0'."
         )
 
     def test(self, *args, **kwargs):

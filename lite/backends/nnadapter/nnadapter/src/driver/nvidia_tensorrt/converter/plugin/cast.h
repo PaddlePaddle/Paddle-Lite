@@ -14,12 +14,34 @@
 
 #pragma once
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
-
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/debug.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+class CastPlugin : public Plugin {
+ public:
+  CastPlugin();
+  CastPlugin(nvinfer1::DataType intype, nvinfer1::DataType outype);
+  CastPlugin(const void* serial_data, size_t serial_length);
+  ~CastPlugin();
+  const char* getPluginType() const noexcept;
+  bool supportsFormat(nvinfer1::DataType type,
+                      nvinfer1::PluginFormat format) const noexcept;
+  int enqueue(int batch_size,
+              const void* const* inputs,
+              void** outputs,
+              void* workspace,
+              cudaStream_t stream) noexcept;
+  size_t getSerializationSize() const noexcept;
+  void serialize(void* buffer) const noexcept;
+  nvinfer1::IPluginV2* clone() const noexcept;
+
+ private:
+  nvinfer1::DataType intype_;
+  nvinfer1::DataType outtype_;
+};
 
 class CastPluginDynamic : public PluginDynamic {
  public:
@@ -52,6 +74,17 @@ class CastPluginDynamicCreator : public PluginCreator {
                                          void const* serial_data,
                                          size_t serial_length) noexcept;
 };
+
+class CastPluginCreator : public PluginCreator {
+ public:
+  const char* getPluginName() const noexcept;
+  nvinfer1::IPluginV2* deserializePlugin(const char* name,
+                                         void const* serial_data,
+                                         size_t serial_length) noexcept;
+};
+
+template <typename Tin, typename Tout>
+cudaError_t Cast(const Tin* input, Tout* output, int num, cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

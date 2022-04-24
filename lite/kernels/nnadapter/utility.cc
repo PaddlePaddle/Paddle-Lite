@@ -687,7 +687,6 @@ void ConvertDDimToNNDimensions(const DDim& input_dimensions,
   if (output_dimension_count) {
     *output_dimension_count = input_dimensions.size();
   }
-  *output_dimension_count = input_dimensions.size();
   for (size_t i = 0; i < input_dimensions.size(); i++) {
     output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
   }

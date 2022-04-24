@@ -22,6 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertConcat(Converter* converter, core::Operation* operation) {
   CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_GT(axis, 0) << "only support axis > 0";
 
   // Convert to trt tensors and node
   std::vector<nvinfer1::ITensor*> input_itensors;
@@ -36,8 +37,7 @@ int ConvertConcat(Converter* converter, core::Operation* operation) {
   auto concat_layer = converter->network()->addConcatenation(
       input_itensors.data(), input_itensors.size());
   NNADAPTER_CHECK(concat_layer);
-  NNADAPTER_CHECK_GE(axis, 0) << "axis cannot be negative";
-  concat_layer->setAxis(axis);
+  concat_layer->setAxis(axis - 1);
   auto output_tensor = concat_layer->getOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

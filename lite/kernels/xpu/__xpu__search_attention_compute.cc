@@ -130,8 +130,8 @@ void XPUMmdnnSearchAttentionCompute::Run() {
   // do-findmax
   r = xdnn::findmax<float>(ctx.GetRawContext(),
                            group_padding_output,
-                           batch * max_seq * dim1,
-                           maxs_xpu);
+                           maxs_xpu,
+                           batch * max_seq * dim1);
   CHECK_EQ(r, 0);
   r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
       ctx.GetRawContext(),        /* ctx */
@@ -179,12 +179,11 @@ void XPUMmdnnSearchAttentionCompute::Run() {
                             batch,
                             mask);
   CHECK_EQ(r, 0);
-  r = xdnn::softmax2d_forward(ctx.GetRawContext(),
-                              attention_output,
-                              seq_softmax_output,
-                              batch * max_seq,
-                              max_seq,
-                              true);
+  r = xdnn::softmax<float>(ctx.GetRawContext(),
+                           attention_output,
+                           seq_softmax_output,
+                           {batch * max_seq, max_seq},
+                           1);
   CHECK_EQ(r, 0);
   r = xdnn::search_aligned_mat_mul(ctx.GetRawContext(),
                                    0,

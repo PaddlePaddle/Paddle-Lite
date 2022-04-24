@@ -140,18 +140,17 @@ class TestFillConstantOp(AutoScanTest):
         return self.get_predictor_configs(), ["fill_constant"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            dtype = program_config.ops[0].attrs["dtype"]
-            is_shape_tensor = "ShapeTensor" in list(program_config.inputs.keys(
-            ))
-            if self.get_nnadapter_device_name(
-            ) == "nvidia_tensorrt" and dtype != 5:
-                return True
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                dtype = program_config.ops[0].attrs["dtype"]
+                in_num = len(program_config.inputs)
+                if dtype != 5 or in_num != 0:
+                    return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "nvidia_tensorrt does now support shape is form tensor now and dtype must be float"
-        )
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'shape is form tensor' or 'value is from tensor' "
+            "or 'dtype is not float32' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

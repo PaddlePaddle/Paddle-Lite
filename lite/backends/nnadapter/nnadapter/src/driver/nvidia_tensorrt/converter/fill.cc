@@ -13,52 +13,53 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/converter/plugin/fill.h"
-#include <iostream>
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "operation/fill.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
+
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+template <typename T>
+nvinfer1::Weights GenerateWeight(core::Operand* value_operand,
+                                 const NNAdapterOperandDimensionType& dims,
+                                 Converter* converter) {
+  auto value_data = reinterpret_cast<T*>(value_operand->buffer);
+  size_t value_size = value_operand->length / sizeof(T);
+  int64_t size = ProductionOfDimensions(dims.data, dims.count);
+  if (value_size != static_cast<size_t>(size)) {
+    NNADAPTER_CHECK_EQ(value_size, 1U);
+    std::vector<T> value(size, *value_data);
+    auto weight = converter->AddWeights(value);
+    return weight;
+  } else {
+    auto weight = converter->AddWeights(value_data, value_size);
+    return weight;
+  }
+}
+
 int ConvertFill(Converter* converter, core::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand));
+  NNADAPTER_CHECK(IsConstantOperand(value_operand));
 
   // Convert to trt tensors and node
-  auto value_tensor = converter->GetMappedTensor(value_operand);
-  if (!value_tensor) {
-    value_tensor = converter->ConvertOperand(value_operand);
-  }
-  std::vector<int32_t> shape_dims;
-  if (IsConstantOperand(shape_operand)) {
-    NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
-    int shape_rank = output_operand->type.dimensions.count;
-    shape_dims.resize(shape_rank);
-    auto shape_data = output_operand->type.dimensions.data;
-    memcpy(&shape_dims[0], shape_data, sizeof(int32_t) * shape_rank);
+  auto precision = value_operand->type.precision;
+  auto out_dims = output_operand->type.dimensions;
+  nvinfer1::Weights weight;
+  if (precision == NNADAPTER_FLOAT32) {
+    weight = GenerateWeight<float>(value_operand, out_dims, converter);
   } else {
-    NNADAPTER_LOG(FATAL)
-        << "fill nvidia_tensorrt doesn't support shape is from tensor now\n";
+    NNADAPTER_LOG(FATAL) << "Not support precision: "
+                         << OperandPrecisionCodeToString(precision);
   }
-
-  float value;
-  bool bool_value_tensor;
-  std::vector<nvinfer1::ITensor*> tensors;
-  if (IsConstantOperand(value_operand)) {
-    value = *(static_cast<float*>(value_operand->buffer));
-    bool_value_tensor = false;
-  } else {
-    bool_value_tensor = true;
-    tensors.push_back(value_tensor);
-  }
-
-  FillPluginDynamic fill_plugin(value, bool_value_tensor, shape_dims);
-  auto fill_layer =
-      converter->network()->addPluginV2(tensors.data(), 1, fill_plugin);
-  NNADAPTER_CHECK(fill_layer);
-  auto output_tensor = fill_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  auto dims = ConvertToNVDims(output_operand->type.dimensions, false);
+  auto constant_layer = converter->network()->addConstant(dims, weight);
+  NNADAPTER_CHECK(constant_layer);
+  converter->UpdateTensorMap(output_operand, constant_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 

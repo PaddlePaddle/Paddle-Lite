@@ -32,7 +32,8 @@ int ConvertReduce(Converter* converter, core::Operation* operation) {
   uint32_t axis_mask = 0;
   NNADAPTER_CHECK_LE(axes_size, 32);
   for (int i = 0; i < axes_size; i++) {
-    axis_mask |= 1 << axes_data[i];
+    NNADAPTER_CHECK_GT(axes_data[i], 0);
+    axis_mask |= 1 << (axes_data[i] - 1);
   }
   switch (operation->type) {
 #define CONVERT_REDUCE(type, reduce_type)                      \
