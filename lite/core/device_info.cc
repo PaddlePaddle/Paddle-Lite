@@ -92,6 +92,10 @@ LITE_THREAD_LOCAL int64_t DeviceInfo::count_ = 0;
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 2048 * 1024;
 const int DEFAULT_L3_CACHE_SIZE = 0;
+#elif defined(LITE_WITH_M1)
+const int DEFAULT_L1_CACHE_SIZE = 128 * 1024;
+const int DEFAULT_L2_CACHE_SIZE = 4096 * 1024;
+const int DEFAULT_L3_CACHE_SIZE = 0;
 #else
 const int DEFAULT_L1_CACHE_SIZE = 32 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 512 * 1024;
@@ -117,7 +121,7 @@ int get_cpu_num() {
     cpu_num = 1;
   }
   return cpu_num;
-#elif defined(TARGET_IOS)
+#elif defined(TARGET_IOS) || defined(LITE_WITH_M1)
   int cpu_num = 0;
   size_t len = sizeof(cpu_num);
   sysctlbyname("hw.ncpu", &cpu_num, &len, NULL, 0);
@@ -148,7 +152,7 @@ size_t get_mem_size() {
   }
   fclose(fp);
   return memsize;
-#elif defined(TARGET_IOS)
+#elif defined(TARGET_IOS) || defined(LITE_WITH_M1)
   // to be implemented
   printf("not implemented, set to default 4GB\n");
   return 4096 * 1024;
@@ -235,6 +239,10 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
 #elif defined(TARGET_IOS)
   for (int i = 0; i < cpu_num; ++i) {
     archs->at(i) = kAPPLE;
+  }
+#elif defined(LITE_WITH_M1)
+  for (int i = 0; i < cpu_num; ++i) {
+    archs->at(i) = kX1;
   }
 #endif
 }
@@ -1133,6 +1141,10 @@ int DeviceInfo::Setup() {
 #else
 #ifdef TARGET_IOS
   dev_name_ = "Apple";
+#elif defined(LITE_WITH_M1)
+  dev_name_ = "M1";
+  SetDotInfo(1, 1);
+  SetFP16Info(1, 1);
 #else
   dev_name_ = "Unknown";
 #endif
