@@ -379,7 +379,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
 
 ## 附录
 
-### NNAdapter API 详细说明
+### NNAdapter API
 - NNAdapter_getVersion
   ```c++
   int NNAdapter_getVersion(uint32_t* version)
@@ -717,7 +717,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
     - execution：执行计划实例。
   - 返回值：无。
 
-### NNAdapter 标准算子详细说明
+### NNAdapter 标准算子
 - NNADAPTER_ABS
 
   逐元素取绝对值: `output` = abs(`input`) 。
