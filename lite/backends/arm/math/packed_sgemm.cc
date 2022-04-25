@@ -5040,7 +5040,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
                 ///! leakey relu
                 "13:                           \n"
                 "cmp    %w[flag_act],  #3      \n" FADD_8
-                "bne    14f\n"
+                "bne    15f\n"
                 "ld1    {v1.4s},  [%[alpha]]   \n" /* leakey relu alpha */
                 LEAKY1 LEAKY2
                 "b      20f                    \n" /* leakey relu end */
