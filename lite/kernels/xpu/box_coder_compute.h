@@ -25,9 +25,14 @@ class BoxCoderCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::BoxCoderParam;
 
+  void PrepareForRun() override;
+
   virtual void Run();
 
   virtual ~BoxCoderCompute() = default;
+
+ private:
+  XPUScratchPadGuard variance_xpu_guard_;
 };
 
 }  // namespace xpu
