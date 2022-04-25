@@ -184,7 +184,6 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
       ```shell
       # For Jetson AGX Xavier arm64
       (Arm cpu only)
-      $ ./build.sh linux arm64
       $ ./run.sh resnet50_fp32_224 linux arm64 cpu
         warmup: 1 repeat: 5, average: 289.136005 ms, max: 295.342010 ms, min: 285.328003 ms
         results: 3
@@ -210,7 +209,6 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
       
       # For RTX4000 amd64
       (Intel cpu only)
-      $ ./build.sh linux amd64
       $ ./run.sh resnet50_fp32_224 linux amd64 cpu
         warmup: 1 repeat: 5, average: 192.425604 ms, max: 215.518005 ms, min: 176.852005 ms
         results: 3
@@ -304,7 +302,6 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
     ```shell
       # For Jetson AGX Xavier arm64
       (Arm cpu only)
-      $ ./build.sh linux arm64
       $ ./run.sh yolov3_darknet53_270e_coco_fp32_608 linux arm64 cpu
         warmup: 1 repeat: 5, average: 3340.893359 ms, max: 3370.016113 ms, min: 3315.264893 ms
         results: 3
@@ -330,7 +327,6 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
       
       # For RTX4000 amd64
       (Intel cpu only)
-      $ ./build.sh linux amd64
       $ ./run.sh yolov3_darknet53_270e_coco_fp32_608 linux amd64 cpu
         warmup: 1 repeat: 5, average: 2063.369971 ms, max: 2313.992920 ms, min: 1978.823975 ms
         results: 3
@@ -457,7 +453,7 @@ Paddle Lite 已支持 NVIDIA TensorRT 预测部署。 其接入原理是在线�
       ```shell
       $ export NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda" # 替换成自己环境的 cuda 路径
       $ export NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt" # 替换成自己环境的 tensorrt 路径
-      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_nvidia_tensorrt=ON -- nnadapter_nvidia_cuda_root=$NNADAPTER_NVIDIA_CUDA_ROOT --nnadapter_nvidia_tensorrt_root=$NNADAPTER_NVIDIA_TENSORRT_ROOT full_publish
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_nvidia_tensorrt=ON --nnadapter_nvidia_cuda_root=$NNADAPTER_NVIDIA_CUDA_ROOT --nnadapter_nvidia_tensorrt_root=$NNADAPTER_NVIDIA_TENSORRT_ROOT full_publish
       ```
 
     - 替换头文件和库
