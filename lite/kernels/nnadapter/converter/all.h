@@ -318,7 +318,7 @@ REGISTER_CONVERTER(concat,
 REGISTER_CONVERTER(split,
                    ConvertSplit,
                    "huawei_kirin_npu,huawei_ascend_npu,kunlunxin_xtcl,"
-                   "verisilicon_timvx,cambricon_mlu");
+                   "verisilicon_timvx,cambricon_mlu,nvidia_tensorrt");
 REGISTER_CONVERTER(calib, ConvertCalib, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(nearest_interp,
                    ConvertInterpolate,
