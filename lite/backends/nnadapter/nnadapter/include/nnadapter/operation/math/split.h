@@ -15,6 +15,8 @@
 #pragma once
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <vector>
 
 namespace nnadapter {
@@ -47,7 +49,7 @@ static int split(const T* input_data,
 
     auto* in_ptr = input_data + stride;
     for (int i = 0; i < n; i++) {
-      memcpy(output_data, in_ptr, sizeof(T) * step_out);
+      std::memcpy(output_data, in_ptr, sizeof(T) * step_out);
       in_ptr += step_in;
       output_data += step_out;
     }

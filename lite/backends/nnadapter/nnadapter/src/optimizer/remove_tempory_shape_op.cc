@@ -26,23 +26,37 @@ void RemoveTemporyShapeOp(core::Model *model) {
   NNADAPTER_LOG(INFO) << "Execute RemoveTemporyShapeOp pass";
   std::vector<core::Operation *> operations =
       SortOperationsInTopologicalOrder(model);
-  std::set<std::vector<core::Operand *>> remove_operands;
-  std::set<core::Operation *> remove_operations;
-  // whitelist operands
-  std::set<core::Operand *> white_operands;
+  // Determine whether the model is a dynamic shape model
   for (auto operation : operations) {
+    auto input_operands = operation->input_operands;
+    auto output_operands = operation->output_operands;
+    for (auto operand : input_operands) {
+      if (operand && IsTemporaryVariableOperand(operand) &&
+          IsOperandWithDynamicShape(operand)) {
+        NNADAPTER_LOG(WARNING) << "Unsupported for dynamic shape model";
+        return;
+      }
+    }
+  }
+  // Operand that will not be removed
+  std::set<core::Operand *> white_operands;
+  std::set<core::Operand *> remove_operands;
+  std::set<core::Operation *> remove_operations;
+  // Collect operands and operations that need to be deleted
+  for (auto operation : operations) {
+    auto input_operands = operation->input_operands;
+    auto output_operands = operation->output_operands;
     if (operation->type == NNADAPTER_SHAPE) {
-      remove_operands.insert(operation->output_operands);
+      for (auto operand : output_operands) {
+        remove_operands.insert(operand);
+      }
       remove_operations.insert(operation);
     } else if (operation->type == NNADAPTER_RESIZE_LINEAR ||
                operation->type == NNADAPTER_RESIZE_NEAREST) {
-      auto input_operands = operation->input_operands;
       white_operands.insert(input_operands[1]);
       white_operands.insert(input_operands[2]);
     } else {
       bool is_tempory_shape_op = true;
-      auto input_operands = operation->input_operands;
-      auto output_operands = operation->output_operands;
       for (auto input_operand : input_operands) {
         if (IsTemporaryVariableOperand(input_operand)) {
           is_tempory_shape_op = false;
@@ -57,35 +71,39 @@ void RemoveTemporyShapeOp(core::Model *model) {
         }
       }
       if (is_tempory_shape_op) {
-        remove_operands.insert(operation->input_operands);
-        remove_operands.insert(operation->output_operands);
+        for (auto operand : input_operands) {
+          remove_operands.insert(operand);
+        }
+        for (auto operand : output_operands) {
+          remove_operands.insert(operand);
+        }
         remove_operations.insert(operation);
       }
     }
   }
-
-  for (auto remove_operand_vec : remove_operands) {
-    for (auto remove_operand : remove_operand_vec) {
-      if (!white_operands.count(remove_operand)) {
-        RemoveOperand(model, remove_operand);
-        NNADAPTER_VLOG(5) << "remove_operand: "
-                          << OperandIdToString(remove_operand);
-      } else {
-        auto &temporary_shape = *(GetTemporaryShape(remove_operand));
-        auto precision = remove_operand->type.precision;
-        if (precision == NNADAPTER_INT32) {
-          remove_operand->length =
-              temporary_shape.count * static_cast<uint32_t>(sizeof(int32_t));
-        } else if (precision == NNADAPTER_FLOAT32) {
-          remove_operand->length =
-              temporary_shape.count * static_cast<uint32_t>(sizeof(float));
-        } else if (precision == NNADAPTER_INT64) {
-          remove_operand->length =
-              temporary_shape.count * static_cast<uint32_t>(sizeof(int64_t));
-        }
-        remove_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
-        remove_operand->buffer = reinterpret_cast<void *>(temporary_shape.data);
+  // Clean
+  for (auto remove_operand : remove_operands) {
+    if (!white_operands.count(remove_operand)) {
+      RemoveOperand(model, remove_operand);
+      NNADAPTER_VLOG(5) << "remove_operand: "
+                        << OperandIdToString(remove_operand);
+    } else {
+      auto &temporary_shape = *(GetTemporaryShape(remove_operand));
+      auto precision = remove_operand->type.precision;
+      if (precision == NNADAPTER_INT32) {
+        remove_operand->length =
+            temporary_shape.count * static_cast<uint32_t>(sizeof(int32_t));
+      } else if (precision == NNADAPTER_FLOAT32) {
+        remove_operand->length =
+            temporary_shape.count * static_cast<uint32_t>(sizeof(float));
+      } else if (precision == NNADAPTER_INT64) {
+        remove_operand->length =
+            temporary_shape.count * static_cast<uint32_t>(sizeof(int64_t));
       }
+      remove_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+      remove_operand->buffer = malloc(remove_operand->length);
+      memcpy(
+          remove_operand->buffer, temporary_shape.data, remove_operand->length);
     }
   }
   for (auto remove_operation : remove_operations) {
