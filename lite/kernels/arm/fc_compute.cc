@@ -205,17 +205,25 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            act_param,
                            &ctx);
     if (param.bias) {
-      bool flag_act = false;
       if (param.activation_type == "relu") {
-        flag_act = true;
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu;
+      } else if (param.activation_type == "relu6") {
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu6;
+        act_param.Relu_clipped_coef = param.alpha;
       }
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
+      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
     }
   } else {
     if (param.activation_type == "relu") {
-      act_param.active_type = lite_api::ActivationType::kRelu;
       act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu;
+    } else if (param.activation_type == "relu6") {
+      act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu6;
+      act_param.Relu_clipped_coef = param.alpha;
     }
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
@@ -248,13 +256,15 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
-  bool flag_relu = false;
   operators::ActivationParam act_param;
-  lite_api::ActivationType act;
   act_param.has_active = false;
   if (param.activation_type == "relu") {
-    act = lite_api::ActivationType::kRelu;
-    flag_relu = true;
+    act_param.has_active = true;
+    act_param.active_type = lite_api::ActivationType::kRelu;
+  } else if (param.activation_type == "relu6") {
+    act_param.has_active = true;
+    act_param.active_type = lite_api::ActivationType::kRelu6;
+    act_param.Relu_clipped_coef = param.alpha;
   }
   if (flag_gemm_) {
     lite::arm::math::gemm_s8(false,
@@ -272,7 +282,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_relu);
+      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
@@ -306,16 +316,15 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
-  // b_data = param.bias->data<float>();
-  bool flag_relu = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
-  lite_api::ActivationType act;
   if (param.activation_type == "relu") {
-    flag_relu = true;
     act_param.has_active = true;
     act_param.active_type = lite_api::ActivationType::kRelu;
-    act = lite_api::ActivationType::kRelu;
+  } else if (param.activation_type == "relu6") {
+    act_param.has_active = true;
+    act_param.active_type = lite_api::ActivationType::kRelu6;
+    act_param.Relu_clipped_coef = param.alpha;
   }
   if (flag_gemm_) {
     CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
@@ -383,13 +392,7 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float16_t>();
   }
-  bool flag_act = false;
   operators::ActivationParam act_param;
-  if (param.activation_type == "relu") {
-    act_param.active_type = lite_api::ActivationType::kRelu;
-    act_param.has_active = true;
-    flag_act = true;
-  }
   if (flag_gemm_) {
     act_param.has_active = false;
     lite::arm::math::fp16::sgemm_fp16(false,
@@ -411,9 +414,25 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                       &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
+      if (param.activation_type == "relu") {
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu;
+      } else if (param.activation_type == "relu6") {
+        act_param.has_active = true;
+        act_param.active_type = lite_api::ActivationType::kRelu6;
+        act_param.Relu_clipped_coef = param.alpha;
+      }
+      lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
     }
   } else {
+    if (param.activation_type == "relu") {
+      act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu;
+    } else if (param.activation_type == "relu6") {
+      act_param.has_active = true;
+      act_param.active_type = lite_api::ActivationType::kRelu6;
+      act_param.Relu_clipped_coef = param.alpha;
+    }
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
@@ -426,7 +445,7 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                        0.f,
                                        param.bias != nullptr,
                                        b_data,
-                                       flag_act,
+                                       act_param.has_active,
                                        act_param,
                                        &ctx);
     }

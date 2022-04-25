@@ -102,14 +102,24 @@ with open(kernels_list_path) as f:
 with open(faked_kernels_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
-        with open(path.strip()) as g:
-            c = g.read()
-            kernel_parser = RegisterLiteKernelParser(c)
-            kernel_parser.parse("ON", "ON")
-            for k in kernel_parser.kernels:
-                if hasattr(TargetType, k.target):
-                    index = getattr(TargetType, k.target)
-                    valid_ops[index].append(k.op_type)
+        if (sys.version[0] == '3'):
+            with open(path.strip(), encoding='utf-8') as g:
+                c = g.read()
+                kernel_parser = RegisterLiteKernelParser(c)
+                kernel_parser.parse("ON", "ON")
+                for k in kernel_parser.kernels:
+                    if hasattr(TargetType, k.target):
+                        index = getattr(TargetType, k.target)
+                        valid_ops[index].append(k.op_type)
+        else:
+            with open(path.strip()) as g:
+                c = g.read()
+                kernel_parser = RegisterLiteKernelParser(c)
+                kernel_parser.parse("ON", "ON")
+                for k in kernel_parser.kernels:
+                    if hasattr(TargetType, k.target):
+                        index = getattr(TargetType, k.target)
+                        valid_ops[index].append(k.op_type)
 
 # clear the repeated ops
 for target in valid_targets:

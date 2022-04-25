@@ -611,46 +611,46 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "vld1.16 {d16-d17}, [%[voffset]]\n"   \
   "vldr     d18, [%[voffset], #16]\n"   \
   "vldr     d19, [%[voffset], #24]\n"   \
-  "vmul.f16 q14, q0, %q[valpha]\n"      \
-  "vmul.f16 q15, q1, %q[valpha]\n"      \
-  "vadd.f16 q10, q0,  q8\n"             \
+  "vmul.f16 q10, q0, %q[valpha]\n"      \
+  "vadd.f16 q11, q0,  q8\n"             \
+  "vmul.f16 q12, q1, %q[valpha]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q0,  q10, q11\n"            \
   "vadd.f16 q11, q1,  q8\n"             \
-  "vadd.f16 q12, q2,  q8\n"             \
-  "vadd.f16 q13, q3,  q8\n"             \
-  "vmax.f16 q10, q10, %q[vzero]\n"      \
+  "vmul.f16 q10, q2, %q[valpha]\n"      \
   "vmax.f16 q11, q11, %q[vzero]\n"      \
-  "vmax.f16 q12, q12, %q[vzero]\n"      \
-  "vmax.f16 q13, q13, %q[vzero]\n"      \
-  "vmin.f16 q10, q10, q9\n"             \
   "vmin.f16 q11, q11, q9\n"             \
-  "vmin.f16 q12, q12, q9\n"             \
-  "vmin.f16 q13, q13, q9\n"             \
-  "vmul.f16 q0,  q10, q14\n"            \
-  "vmul.f16 q14, q2, %q[valpha]\n"      \
-  "vmul.f16 q1,  q11, q15\n"            \
-  "vmul.f16 q15, q3, %q[valpha]\n"      \
-  "vadd.f16 q10, q4,  q8\n"             \
+  "vmul.f16 q1,  q12, q11\n"            \
+  "vadd.f16 q11, q2,  q8\n"             \
+  "vmul.f16 q12, q3, %q[valpha]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q2,  q10, q11\n"            \
+  "vadd.f16 q11, q3,  q8\n"             \
+  "vmul.f16 q10, q4, %q[valpha]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q3,  q12, q11\n"            \
+  "vadd.f16 q11, q4,  q8\n"             \
+  "vmul.f16 q12, q5, %q[valpha]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q4,  q10, q11\n"            \
   "vadd.f16 q11, q5,  q8\n"             \
-  "vmul.f16 q2,  q12, q14\n"            \
-  "vmul.f16 q3,  q13, q15\n"            \
-  "vadd.f16 q12, q6,  q8\n"             \
-  "vadd.f16 q13, q7,  q8\n"             \
-  "vmax.f16 q10, q10, %q[vzero]\n"      \
+  "vmul.f16 q10, q6, %q[valpha]\n"      \
   "vmax.f16 q11, q11, %q[vzero]\n"      \
-  "vmax.f16 q12, q12, %q[vzero]\n"      \
-  "vmax.f16 q13, q13, %q[vzero]\n"      \
-  "vmul.f16 q14, q4, %q[valpha]\n"      \
-  "vmul.f16 q15, q5, %q[valpha]\n"      \
-  "vmin.f16 q10, q10, q9\n"             \
   "vmin.f16 q11, q11, q9\n"             \
-  "vmin.f16 q12, q12, q9\n"             \
-  "vmin.f16 q13, q13, q9\n"             \
-  "vmul.f16 q8,  q6, %q[valpha]\n"      \
-  "vmul.f16 q9,  q7, %q[valpha]\n"      \
-  "vmul.f16 q4,  q10, q14\n"            \
-  "vmul.f16 q5,  q11, q15\n"            \
-  "vmul.f16 q6,  q12, q8\n"             \
-  "vmul.f16 q7,  q13, q9\n"
+  "vmul.f16 q5,  q12, q11\n"            \
+  "vadd.f16 q11, q6,  q8\n"             \
+  "vmul.f16 q12, q7, %q[valpha]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q6,  q10, q11\n"            \
+  "vadd.f16 q11, q7,  q8\n"             \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmul.f16 q7,  q12, q11\n"
 
 #define STORE_C8                       \
   "vst1.16 {d0-d1},   [%[doutc0r0]]!\n"  \
@@ -818,14 +818,22 @@ static void write_to_oc8_fp16(const float16_t* din,
   float16x8_t vthreshold = vdupq_n_f16(threshold);
 #else
   float16_t tmp0[64] = {0.f};
-  float16_t voffset[8] = {offset,
-                          offset,
-                          offset,
-                          offset,
-                          threshold,
-                          threshold,
-                          threshold,
-                          threshold};
+  float16_t voffset[16] = {offset,
+                           offset,
+                           offset,
+                           offset,
+                           offset,
+                           offset,
+                           offset,
+                           offset,
+                           threshold,
+                           threshold,
+                           threshold,
+                           threshold,
+                           threshold,
+                           threshold,
+                           threshold,
+                           threshold};
 #endif
   if (ce > channel) {
     switch (7 - (channel - cs)) {
