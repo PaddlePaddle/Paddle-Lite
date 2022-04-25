@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <math.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <vector>
 #include "operation/math/dequantize.h"
@@ -57,7 +57,7 @@ static int log_softmax(const T* input_data,
     offset = start;
     T sum_value = 0;
     for (int j = 0; j < axis_count; j++) {
-      output_data[offset] = exp(input_data[offset] - max_value);
+      output_data[offset] = std::exp(input_data[offset] - max_value);
       sum_value += output_data[offset];
       offset += inner_count;
     }
@@ -76,13 +76,6 @@ int log_softmax(const int8_t* input_data,
                 float input_scale,
                 int axis,
                 int8_t* output_data,
-                float output_scale);
-
-int log_softmax(const float* input_data,
-                const std::vector<int32_t>& input_shape,
-                float input_scale,
-                int axis,
-                float* output_data,
                 float output_scale);
 
 }  // namespace math

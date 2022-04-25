@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ class LogSoftmaxComputeTest : public arena::TestCase {
       offset = start;
       float sum_data = 0.f;
       for (int j = 0; j < axis_size; j++) {
-        out_data[offset] = exp(x_data[offset] - max_data);
+        out_data[offset] = std::exp(x_data[offset] - max_data);
         sum_data += out_data[offset];
         offset += inner_num;
       }

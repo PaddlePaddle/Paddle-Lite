@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ int ConvertLogSoftmax(Converter* converter, core::Operation* operation) {
   auto log_softmax_op =
       converter->AddOperator<ge::op::LogSoftmaxV2>(output_operand);
   log_softmax_op->set_attr_axes({axis});
-  SET_INPUT(log_softmax_op, x, input_operator);
-  MAP_OUTPUT(log_softmax_op, y, output_operand);
+  SET_INPUT(log_softmax_op, logits, input_operator);
+  MAP_OUTPUT(log_softmax_op, logsoftmax, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
