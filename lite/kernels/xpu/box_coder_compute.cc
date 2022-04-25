@@ -27,7 +27,7 @@ void BoxCoderCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   std::vector<float> variance = param.variance;
 
-  CHECK_EQ(variance.size() == 4 || variance.size() == 0, true);
+  CHECK_EQ((variance.size() == 4) || (variance.size() == 0), true);
   if (variance.size() == 4) {
     variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
     XPU_CALL(xpu_memcpy(variance_xpu_guard_->addr_,
@@ -79,16 +79,16 @@ void BoxCoderCompute::Run() {
                                            normalized);
     CHECK_EQ(r, 0);
   } else if (code_type == "decode_center_size") {
-    int r = xdnn::box_coder_decode<float>(ctx.GetRawContext(),
-                                          prior_box->data<float>(),
-                                          target_box->data<float>(),
-                                          prior_box_var_ptr,
-                                          variance_xpu_ptr,
-                                          output,
-                                          row,
-                                          col,
-                                          axis,
-                                          normalized);
+    int r = xdnn::box_coder_decoder<float>(ctx.GetRawContext(),
+                                           prior_box->data<float>(),
+                                           target_box->data<float>(),
+                                           prior_box_var_ptr,
+                                           variance_xpu_ptr,
+                                           output,
+                                           row,
+                                           col,
+                                           axis,
+                                           normalized);
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "box_coder don't support this code_type: " << code_type;
