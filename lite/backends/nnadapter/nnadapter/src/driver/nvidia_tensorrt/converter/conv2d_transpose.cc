@@ -24,7 +24,7 @@ namespace nvidia_tensorrt {
 int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // TensorRT doesn't support output_channel_size % groups != 0 case
-  NNADAPTER_CHECK_EQ((group % output_channel_size), 0);
+  NNADAPTER_CHECK_EQ((output_channel_size % group), 0);
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
   auto output_dimensions = output_operand->type.dimensions.data;
   NNADAPTER_CHECK_NE(output_dimensions[0], NNADAPTER_UNKNOWN)

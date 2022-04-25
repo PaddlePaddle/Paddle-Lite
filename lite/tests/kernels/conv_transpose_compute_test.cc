@@ -436,7 +436,6 @@ TEST(Conv_transpose, precision) {
   TestConvTransposeKsize(place, abs_error);
   TestConvTransposeStrides(place, abs_error);
   TestConvTransposePaddings(place, abs_error);
-  TestConvTransposeGroups(place, abs_error);
   TestConvTransposeDilations(place, abs_error);
   TestConvTransposePaddingAlgorithm(place, abs_error);
   return;
