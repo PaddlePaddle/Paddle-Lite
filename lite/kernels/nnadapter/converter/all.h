@@ -69,10 +69,11 @@ REGISTER_CONVERTER(
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_"
     "openvino,google_xnnpack");
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
-REGISTER_CONVERTER(conv2d_transpose,
-                   ConvertConv2dTranspose,
-                   "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
-                   "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi");
+REGISTER_CONVERTER(
+    conv2d_transpose,
+    ConvertConv2dTranspose,
+    "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
+    "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi,nvidia_tensorrt");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
