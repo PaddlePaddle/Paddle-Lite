@@ -636,8 +636,8 @@ void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
     int big_core_cache_size0 = va_arg(arg_ptr, int);
     int big_core_cache_size1 = va_arg(arg_ptr, int);
     int little_core_cache_size = va_arg(arg_ptr, int);
-    (*cache)[big_core_ids_[0]] = big_core_cache_size0;
-    for (int i = 1; i < big_core_num; ++i) {
+    (*cache)[big_core_ids_[big_core_num - 1]] = big_core_cache_size0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
       (*cache)[big_core_ids_[i]] = big_core_cache_size1;
     }
     for (int i = 0; i < little_core_num; ++i) {
@@ -674,8 +674,8 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
     ARMArch little_core_arch = (ARMArch)va_arg(arg_ptr, int);
     int big_core_num = big_core_ids_.size();
     int little_core_num = little_core_ids_.size();
-    archs_[big_core_ids_[0]] = big_core_arch0;
-    for (int i = 1; i < big_core_num; ++i) {
+    archs_[big_core_ids_[big_core_num - 1]] = big_core_arch0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
       archs_[big_core_ids_[i]] = big_core_arch1;
     }
     for (int i = 0; i < little_core_num; ++i) {
