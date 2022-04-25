@@ -120,7 +120,7 @@ TEST(Softmax, precision) {
     int ndims = x_dims.size();
     for (int axis = -1; axis < ndims; axis++) {
 #if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-      if (axis == 0 && axis + ndims == 0) continue;
+      if (axis == 0 || axis + ndims == 0) continue;
 #endif
       std::unique_ptr<arena::TestCase> tester(
           new LogSoftmaxComputeTest(place, "def", DDim(x_dims), axis));
