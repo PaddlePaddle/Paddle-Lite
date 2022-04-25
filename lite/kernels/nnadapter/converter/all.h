@@ -389,7 +389,9 @@ REGISTER_CONVERTER(shuffle_channel,
                    ConvertShuffleChannel,
                    "huawei_ascend_npu,verisilicon_timvx,huawei_kirin_npu");
 REGISTER_CONVERTER(yolo_box, ConvertYoloBox, "nvidia_tensorrt");
-REGISTER_CONVERTER(log_softmax, ConvertLogSoftmax, "nvidia_tensorrt");
+REGISTER_CONVERTER(log_softmax,
+                   ConvertLogSoftmax,
+                   "huawei_ascend_npu,nvidia_tensorrt");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

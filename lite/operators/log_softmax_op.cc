@@ -33,8 +33,6 @@ bool LogSoftmaxOp::CheckShape() const {
 bool LogSoftmaxOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   param_.output->Resize(param_.x->dims());
-  auto out_lod = param_.output->mutable_lod();
-  *out_lod = param_.x->lod();
   return true;
 }
 
