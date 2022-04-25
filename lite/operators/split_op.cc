@@ -44,14 +44,14 @@ bool SplitOp::InferShapeImpl() const {
     axis += in_dims.size();
   }
   // update sections
-  int infer_num = 0;
+  int infer_num = std::count(sections.begin(), sections.end(), -1);
+  CHECK_LT(infer_num, 2);
   for (int i = 0; i < sections.size(); i++) {
     if (sections[i] == -1) {
       sections[i] =
           in_dims[axis] - std::accumulate(sections.begin(), sections.end(), 1);
     }
   }
-  CHECK_LT(infer_num, 2);
   // update sections end
 
   const int outs_number = outs.size();
