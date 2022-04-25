@@ -342,6 +342,7 @@ struct SparseConvParam : ParamBase {
   lite::Tensor* output{};
   int first_ic{0};
   int flag_semi{0};
+  int op_type{0};
   std::vector<int> strides{1, 1};
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};

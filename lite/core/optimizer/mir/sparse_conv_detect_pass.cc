@@ -604,50 +604,94 @@ void SparseConvDetectPass::CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
 
 void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->IsStmt() && node->AsStmt().op_type() == "conv2d") {
+    auto op_type = node->stmt()->op_type();
+    if (node->IsStmt() && ((op_type == "conv2d") || (op_type == "fc"))) {
       auto* scope = node->stmt()->op()->scope();
       auto conv_op_desc = node->stmt()->mutable_op_info();
       auto x = conv_op_desc->Input("Input").front();
-      auto w = conv_op_desc->Input("Filter").front();
-      auto y = conv_op_desc->Output("Output").front();
+      std::string w;
+      std::string y;
+      if (op_type == "conv2d") {
+        w = conv_op_desc->Input("Filter").front();
+        y = conv_op_desc->Output("Output").front();
+      }
+      int in_num_col_dims = 1;
+      if (op_type == "fc") {
+        w = conv_op_desc->Input("W").front();
+        y = conv_op_desc->Output("Out").front();
+        in_num_col_dims = conv_op_desc->GetAttr<int>("in_num_col_dims");
+      }
       auto x_tensor = scope->FindVar(x)->Get<lite::Tensor>();
       auto w_tensor = scope->FindVar(w)->Get<lite::Tensor>();
       auto x_dims = x_tensor.dims();
       auto weight_dims = w_tensor.dims();
-      auto groups = conv_op_desc->GetAttr<int>("groups");
-      auto strides = conv_op_desc->GetAttr<std::vector<int>>("strides");
-      auto paddings = conv_op_desc->GetAttr<std::vector<int>>("paddings");
+      int groups = 1;
+      std::vector<int> strides;
+      std::vector<int> paddings;
+      if (op_type == "conv2d") {
+        groups = conv_op_desc->GetAttr<int>("groups");
+        strides = conv_op_desc->GetAttr<std::vector<int>>("strides");
+        paddings = conv_op_desc->GetAttr<std::vector<int>>("paddings");
+      }
       auto ch_out = weight_dims[0];
       auto ch_in = weight_dims[1] * groups;
       auto kh = weight_dims[2];
       auto kw = weight_dims[3];
       auto im_size = x_dims[2] * x_dims[3];
       int weight_num = ch_out * ch_in * kh * kw;
+      if (op_type == "fc") {
+        ch_out = weight_dims[1];
+        ch_in = weight_dims[0];
+        weight_num = ch_out * ch_in;
+      }
       bool use_int8 = (w_tensor.precision() == PrecisionType::kInt8);
       bool use_fp32 = (w_tensor.precision() == PrecisionType::kFloat);
       if (!(use_int8 || use_fp32)) {
         VLOG(4) << "The sparse conv detect pass now only support fp32 and int8";
         continue;
       }
-      if (!(kw == 1 && kh == 1)) {
-        VLOG(4) << "The kernel size of the supported sparse conv must be 1x1";
-        continue;
-      }
-      if (groups != 1) {
-        VLOG(4) << "The groups of the supported sparse conv must be 1";
-        continue;
-      }
-      if (!(strides[0] == 1 && strides[1] == 1)) {
-        VLOG(4) << "The strides of the supported sparse conv must be 1";
-        continue;
-      }
-      if (!(paddings[0] == 0 && paddings[1] == 0)) {
-        VLOG(4) << "The paddings of the supported sparse conv must be 0";
-        continue;
+      if (op_type == "conv2d") {
+        if (!(kw == 1 && kh == 1)) {
+          VLOG(4) << "The kernel size of the supported sparse conv must be 1x1";
+          continue;
+        }
+        if (groups != 1) {
+          VLOG(4) << "The groups of the supported sparse conv must be 1";
+          continue;
+        }
+        if (!(strides[0] == 1 && strides[1] == 1)) {
+          VLOG(4) << "The strides of the supported sparse conv must be 1";
+          continue;
+        }
+        if (!(paddings[0] == 0 && paddings[1] == 0)) {
+          VLOG(4) << "The paddings of the supported sparse conv must be 0";
+          continue;
+        }
       }
       if (!(ch_out > 0 && ch_in > 0)) {
         VLOG(4) << "The input and output channels must be larger than 0";
         continue;
+      }
+      if (op_type == "fc") {
+        if (use_int8) {
+          std::vector<int8_t> temp(weight_num, 0);
+          int8_t* weights = const_cast<int8_t*>(w_tensor.data<int8_t>());
+          for (int i = 0; i < ch_out; i++) {
+            for (int j = 0; j < ch_in; j++) {
+              temp[i * ch_in + j] = weights[i + j * ch_out];
+            }
+          }
+          memcpy(weights, temp.data(), weight_num);
+        } else if (use_fp32) {
+          std::vector<float> temp(weight_num, 0.f);
+          float* weights = const_cast<float*>(w_tensor.data<float>());
+          for (int i = 0; i < ch_out; i++) {
+            for (int j = 0; j < ch_in; j++) {
+              temp[i * ch_in + j] = weights[i + j * ch_out];
+            }
+          }
+          memcpy(weights, temp.data(), weight_num * sizeof(float));
+        }
       }
       int zero_num;
       int num_build_nonzeroes = 0;
@@ -812,14 +856,45 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         }
       }
       // Copy inputs/outputs scales
-      if (conv_op_desc->HasAttr("enable_int8")) {
+      if (conv_op_desc->HasAttr("enable_int8") && op_type == "conv2d") {
         CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "Input0_scale");
         CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "Filter0_scale");
         CopyOutputScaleFromOpInfo(&op_desc, conv_op_desc, "Output0_scale");
       }
+      if (conv_op_desc->HasAttr("enable_int8") && op_type == "fc") {
+        CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "Input0_scale");
+        CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "W0_scale");
+        CopyOutputScaleFromOpInfo(&op_desc, conv_op_desc, "Out0_scale");
+      }
 
       op_desc.SetAttr<int>("first_ic", first_ic);
       op_desc.SetAttr<int>("flag_semi", flag_semi);
+      if (op_type == "conv2d") {
+        op_desc.SetAttr<int>("op_type", 0);
+      }
+
+      if (op_type == "fc") {
+        op_desc.SetAttr<int>("op_type", 1);
+        if (!op_desc.HasAttr("strides")) {
+          std::vector<int> temp_stride = {1, 1};
+          op_desc.SetAttr<std::vector<int>>("strides", temp_stride);
+        }
+
+        if (!op_desc.HasAttr("paddings")) {
+          std::vector<int> paddings = {0, 0};
+          op_desc.SetAttr<std::vector<int>>("paddings", paddings);
+        }
+
+        if (!op_desc.HasAttr("groups")) {
+          op_desc.SetAttr<int>("groups", 1);
+        }
+
+        if (!op_desc.HasAttr("dilations")) {
+          std::vector<int> temp_dilations = {1, 1};
+          op_desc.SetAttr<std::vector<int>>("dilations", temp_dilations);
+        }
+      }
+
       sparse_conv2d_op->Attach(op_desc, node->stmt()->op()->scope());
       auto* sparse_op_node = graph->GraphCreateInstructNode(
           sparse_conv2d_op, graph->valid_places());
