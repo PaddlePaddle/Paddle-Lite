@@ -49,6 +49,14 @@ class SSAGraph : GraphBase {
 
   std::vector<mir::Node *> StmtTopologicalOrder();
 
+  std::vector<mir::Node *> StmtTopologicalOrderV2(){
+    std::vector<mir::Node *>ret;
+    for(auto &it : node_storage_)
+     if(it.IsStmt())
+      ret.push_back(&it);
+    return ret;
+  }
+
   std::vector<mir::Node *> NodeTopologicalOrder();
 
   // The inputs of the graph.

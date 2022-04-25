@@ -36,7 +36,8 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 #endif
   if (nodes_in_order.empty()) {
-    nodes_in_order = graph->StmtTopologicalOrder();
+    // nodes_in_order = graph->StmtTopologicalOrder();
+    nodes_in_order = graph->StmtTopologicalOrderV2();
   }
 
   insts_.emplace_back();
