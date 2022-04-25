@@ -36,6 +36,9 @@ int ConvertGather(Converter* converter, OpInfo* op, Scope* scope) {
   if (HasInput(op, scope, "Axis")) {
     auto axis_name = op->Input("Axis").front();
     axis_operand = converter->AddInputOperand(scope, axis_name);
+  } else if (op->HasAttr("axis")) {
+    auto axis = op->GetAttr<int>("axis");
+    axis_operand = converter->AddConstantOperand(axis);
   } else {
     axis_operand = converter->AddConstantOperand<int32_t>(0);
   }
