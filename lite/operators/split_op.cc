@@ -45,19 +45,13 @@ bool SplitOp::InferShapeImpl() const {
   }
   // update sections
   int infer_num = 0;
-  int infer_index = -1;
-  int other_sum = 0;
-  for (int i = 0; i < sections.size(); i++)
-  {
-    if (sections[i] == -1) 
-    {
-      infer_num += 1;
-      infer_index = i;
+  for (int i = 0; i < sections.size(); i++) {
+    if (sections[i] == -1) {
+      sections[i] = in_dims[axis] -
+                    std::accumulate(sections.begin(), sections.end(), 0) - 1;
     }
-    else other_sum += sections[i];
   }
   CHECK_LT(infer_num, 2);
-  sections[infer_index] = in_dims[axis] - other_sum;
   // update sections end
 
   const int outs_number = outs.size();
