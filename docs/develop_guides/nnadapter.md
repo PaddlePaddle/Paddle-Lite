@@ -1,201 +1,236 @@
 # NNAdapter：飞桨推理 AI 硬件统一适配框架
 
+**摘要：** 近年来，深度学习框架对多硬件的支持加快了 AI 硬件在各领域的落地，为了让更多硬件加入到飞桨硬件生态大家庭，本文介绍了一种新的硬件适配方案————NNAdapter: 飞桨推理 AI 硬件统一适配框架，旨在进一步降低硬件厂商适配门槛、开发和沟通成本。
+
 ## 背景
-- 在[新增硬件](./add_hardware)章节中曾提到 Paddle Lite 的硬件适配主要分为算子和子图两种方式，特别是 AI 硬件，近两年来我们基于子图方式完成了华为麒麟 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 和比特大陆 NPU 在 Paddle Lite 上的适配。但在与硬件厂商合作过程中，逐渐发现了该方案的不足之处，主要涉及以下两大方面：
-  - 适配门槛高、周期长
-    - 要求硬件厂商对 Paddle Lite 有较深的了解，涵盖框架运行机制、硬件接入方案、编译系统等方面。
-    - 获取 Paddle 模型、算子定义、量化实现方式等信息所花费的沟通成本过高。
-  - 适配代码与框架过度耦合，且存在重复开发、代码维护成本过高
-    - 适配一个新的硬件并跑通一个分类模型，总的新增/修改文件数共 48 ，其中推理框架的文件修改数高达 25 。
-    -  Paddle 算子转硬件算子存在重复开发，且一旦 Paddle 算子发生升级，就需要对已支持的所有硬件的相关代码进行适配，维护成本过高。
-    - 量化方式（ Paddle 仅支持对称量化，而大部分 SoC 类 NPU 支持非对称量化）、数据布局（例如联发科 APU 仅支持 NHWC ，而 Paddle 大部分模型为 NCHW 格式）的转换等模块存在重复实现，不利于各硬件间的共享达到缩减适配周期、降低维护成本的目的。
+随着深度学习技术在各领域的广泛应用，涌现了很多比 CPU， GPU 传统架构更高效的 AI 专用芯片，例如华为昇腾 310 NPU、百度昆仑 XPU、寒武纪 MLU 和谷歌 TPU 等。
+
+但良好的软件生态是 AI 硬件获得成功的关键，它不仅取决于硬件厂商自身软件栈的成熟度，更依赖于是否能够获得深度学习框架的广泛支持，因为后者能够帮助用户简化业务部署过程，降低因硬件差异带来的迁移成本，快速获得更高的性能和能效收益，但如何让厂商以较低成本快速完成硬件适配，又是对深度学习框架提出的一个考验。
+
+目前，飞桨推理框架根据硬件厂商提供的接口层级，将硬件适配分为算子和子图两种方式：前者一般适用于 CPU 、GPU 这类提供低级接口的如通用编程语言/指令集、数学库和算子库的硬件；后者则适用于提供图级别如模型组网、生成接口的硬件，例如：英伟达的 TensorRT、华为昇腾的 CANN 的 GE graph 和英特尔的 OpenVINO 等，它的优点是屏蔽了硬件细节，模型的优化、生成和执行均由厂商的 SDK 完成，对负责硬件适配的研发人员的能力要求较低，让推理框架更多关注通用优化方法的研究和框架的开发。
+
+近两年来，飞桨轻量推理框架 Paddle Lite 基于子图方式完成了华为昇腾 NPU、华为麒麟 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 和比特大陆 NPU 等硬件的适配，但在与硬件厂商合作过程中，逐渐发现了该方案的一些不足之处，主要涉及以下两个方面：
+- 适配门槛高、沟通成本高
+  - 要求硬件厂商深入了解推理框架的内部实现、运行机制和编译系统；
+  - 硬件厂商获取推理框架的模型、算子定义、量化实现方式等信息所花费的沟通成本较高。
+- 与框架过度耦合、存在重复开发、代码维护成本过高
+  - 适配一个新的硬件并跑通一个简单的分类模型，推理框架的文件修改数占总文件修改数的比例高达 50% ；
+  - 推理框架算子转硬件算子存在重复开发，并且当推理框架算子发生变更时，需要对所有硬件的适配代码进行升级，厂商维护成本较高；
+  - 量化方式、数据布局的转换等通用模块存在重复开发，不仅带来更多的开发工作，而且质量参差不齐的代码将进一步增加厂商维护成本，降低框架的鲁棒性。
 
 ## 简介
-- NNAdapter 是什么？
-  - 由一系列 C 接口组成的、支撑各种深度学习框架在各种硬件（特别是 AI ASIC 芯片）完成高效推理的通用接口，它是建立深度学习推理框架和硬件的桥梁，包含 API 、Runtime 、HAL 三层，以及模型中间表示层的标准算子定义。
+### NNAdapter 是什么？
+由一系列 C 接口组成的、支撑各种深度学习框架在各种硬件（特别是 AI ASIC 芯片）完成高效推理的通用接口，它是建立深度学习推理框架和硬件的桥梁，实现了推理框架和硬件适配解耦，包含 API 、标准算子定义、 Runtime 和 HAL 标准接口定义四个重要组成部分。
 
-- NNAdapter 的目的是什么？
-  - 降低接入门槛，不要求硬件厂商深入了解 Paddle Lite 框架，只需了解 NNAdapter 的标准算子定义、HAL层标准接口定义、 Runtime 与 HAL 层的调用关系即可。
-  - 减少适配工作量，缩短适配周期，只需完成硬件的 HAL 层库的开发即可。
-  - 与推理框架解耦，降低维护成本。
-
-- NNAdapter 做了哪些工作？
-  - 标准化向上（推理框架）的接口，包括设备管理、模型组网、生成和执行的一系列 C 接口。
-  - 标准化算子定义，提供稳定的、文档丰富的中间表示层的算子定义（主要参考 ONNX 、 Paddle 、 PyTorch 和 TensorFlow 的算子），方便硬件厂商快速完成算子映射/转换。
-  - 标准化向下（硬件）抽象层（ HAL ）的接口定义，实现对硬件设备的抽象和封装（屏蔽硬件细节），为 NNAdapter 在不同硬件设备提供统一的访问接口。
-
-## 功能模块
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
 
-### NNAdapter API
-- 类似于 Google 的 Android NNAPI 、NVIDIA 的 TensorRT 、 Intel 的 OpenVINO ，为了实现与推理框架的完全解耦，方便适配不同的推理框架，需要提供包含设备管理、统一设备上下文、模型组网、编译和执行等在内的、完备的、稳定的 API （参考 NNAPI 命名规则），实现从设备初始化、模型组网、设备代码生成、执行、获取结果一系列完整的模型推理链条的打通。
+### NNAdapter 的目的是什么？
+- **降低接入门槛**、**减少沟通成本**：推理框架与硬件适配解耦，不要求硬件厂商深入了解推理框架，只需了解 NNAdapter 的标准算子定义、HAL层标准接口定义、 Runtime 与 HAL 层的调用关系；
+- **减少适配层代码**、**缩短适配周期**：推理框架与硬件适配解耦，使得硬件厂商仅需关注较薄的硬件 HAL 层代码的开发，减少了硬件适配的工作量；
+- **降低维护成本**：推理框架与硬件适配解耦，框架的变更和算子升级均被 NNAdapter 与框架的适配层统一吸收，硬件 HAL 层代码不受影响，大大提高了适配层的可维护性。
 
-  - 设备管理
-    - 查询设备基本信息（名称、厂商、加速卡类型、 HAL 版本），完成设备的初始化等。
-    - NNAdapterDevice_acquire 、 NNAdapterDevice_release 、 NNAdapterDevice_getName 、 NNAdapterDevice_getVendor 、 NNAdapterDevice_getType 、 NNAdapterDevice_getVersion
+### NNAdapter 做了哪些工作？
+- **标准化向上（推理框架）的接口**，由设备、多设备统一上下文、模型组网、编译和生成、执行等一系列 C 接口组成；
+- **标准化算子定义**，提供稳定的、详细的中间表示层的算子定义（主要参考 ONNX 、 PaddlePaddle 、 PyTorch 和 TensorFlow 的算子），方便硬件厂商快速完成算子映射/转换；
+- **标准化向下（硬件）抽象层（ HAL ）的接口定义**，实现对硬件设备的抽象和封装（屏蔽硬件细节），为 NNAdapter 在不同硬件设备提供统一的访问接口。
+
+## 重要组成部分
+### API
+类似于 Google 的 Android NNAPI 、NVIDIA 的 TensorRT 、 Intel 的 OpenVINO ，为了实现与推理框架的完全解耦，方便适配不同的推理框架，需要提供包含设备管理、多设备统一上下文管理、模型组网、编译和生成、执行等在内的、完备的、稳定的 API （参考 NNAPI 命名规则），实现从设备初始化、多设备统一上下文的创建、模型中间表达的建立、设备代码的生成和执行、结果的获取等一系列完整的模型推理链条的打通。具体的，包含以下几类 API （详细说明见『附录』的『 NNAdapter API 』章节）：
+
+- 设备管理
+
+  查询设备基本信息，包括设备名称、厂商名称、加速卡类型和 HAL 库版本，以及设备的获取和初始化等。
+  ```c++
+  NNAdapterDevice_acquire, NNAdapterDevice_release, NNAdapterDevice_getName, NNAdapterDevice_getVendor, NNAdapterDevice_getType, NNAdapterDevice_getVersion
+  ```
    
-  - 统一设备上下文
-    - 建立多种设备统一的设备上下文，可配置设备、编译、运行等基本参数，用于后续的模型编译和执行。
-    - NNAdapterContext_create 、 NNAdapterContext_destroy
+- 多设备统一上下文管理
 
-  - 模型组网
-    - 创建与设备无关的、统一的模型的中间表达，实现推理框架模型的表达向NNAdapter模型表达的转换，具体是向模型实例中添加操作符实例（神经网络模型的算子）、操作数实例（神经网络模型的张量）进行模型组网。
-    - NNAdapterModel_create 、 NNAdapterModel_destroy 、 NNAdapterModel_finish 、 NNAdapterModel_addOperand 、 NNAdapterModel_setOperandValue 、 NNAdapterModel_getOperandType 、 NNAdapterModel_addOperation 、 NNAdapterModel_identifyInputsAndOutputs
-
-  - 模型编译
-    - 创建模型编译配置，将模型编译生成适用于目标设备的程序代码，编译过程是通过设备HAL层库调用厂商 SDK 完成的。
-    - NNAdapterCompilation_create 、 NNAdapterCompilation_destroy 、 NNAdapterCompilation_finish 、 NNAdapterCompilation_queryInputsAndOutputs
-
-  - 模型执行
-    - 基于已编译好的设备程序代码，创建执行计划并设置输入、输出，运行后将结果返回给推理框架。
-    - NNAdapterExecution_create 、 NNAdapterExecution_destroy 、 NNAdapterExecution_setInput 、 NNAdapterExecution_setOutput 、 NNAdapterExecution_compute
-
-  注意：每个 API 的详细说明可以参考『附录』中的『 NNAdapter API 详细说明』章节。
-
-### NNAdapter 标准算子
-- 为了建立独立与推理框架的、设备无关的、统一的模型的中间表达，要求对 NNAdapter 模型中算子进行标准化，涉及数学、图像、神经网络等类别。
-
-  例如：
-
+  创建多种设备统一的设备上下文，通过 Key-value 字串的方式为每种设备配置设备运行、模型编译和执行等参数。
   ```c++
-  typedef enum {
-    ...
-    /**
-      * Performs element-wise binary addition(with Numpy-style broadcasting
-      * https://numpy.org/doc/stable/user/basics.broadcasting.html).
-      *
-      * Inputs:
-      * * 0: input0, a NNADAPTER_FLOAT32,
-      * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-      * * 1: input1, a tensor with the same type as input0.
-      * * 2: fuse_code, a NNADAPTER_INT32 scalar, specifies the activation to the
-      * result, must be one of NNAdapterFuseCode values.
-      *
-      * Outputs:
-      * * 0: output, the result with the same type as two inputs.
-      *
-      * Available since version 1.
-      */
-    NNADAPTER_ADD,
-    ...
-  } NNAdapterOperationCode;
+  NNAdapterContext_create, NNAdapterContext_destroy
   ```
 
-  上述代码摘选自 [nnadapter.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/include/nnadapter/nnadapter.h) ，描述了`逐元素相加操作符 ADD `的基本功能、输入操作数、输出操作数和适用的 NNAdapter 版本，值得注意的是：操作符的输入、输出操作数列表中的每一个操作数需要严格按照定义的顺序排列。
+- 模型组网
 
-  注意：每个标准算子的详细定义可以参考『附录』中的『 NNAdapter 标准算子详细说明』章节，最新算子定义可以在 nnadapter.h 中查询。
-
-### NNAdapter Runtime
-- NNAdapter Runtime 的作用不仅是将 NNAdapter API 的调用翻译成模型、操作数、操作符的中间表达以及设备 HAL 层接口的调用，还包括设备 HAL 层库的注册、模型的多种设备间的异构和模型缓存的序列化和反序列化。
-  - 设备 HAL 层库的注册：用户进程的模型在某个设备上执行第一次推理时，会调用 `NNAdapterDevice_acquire` 创建设备实例，此时， Runtime 的 [DeviceManager](https://github.com/PaddlePaddle/Paddle-Lite/blob/18976ff66009980c2f894761dd6a8d1f5a96b8d8/lite/backends/nnadapter/nnadapter/runtime/device.h#L71) 会发现该设备的 HAL 库没有被加载，就会[通过设备名加载 HAL 库](https://github.com/PaddlePaddle/Paddle-Lite/blob/18976ff66009980c2f894761dd6a8d1f5a96b8d8/lite/backends/nnadapter/nnadapter/runtime/device.cc#L119)，然后根据 HAL 库规定的[设备接口描述符号命名规则](https://github.com/PaddlePaddle/Paddle-Lite/blob/18976ff66009980c2f894761dd6a8d1f5a96b8d8/lite/backends/nnadapter/nnadapter/runtime/device.cc#L117)解析并获得该设备的[设备接口描述实例的首地址](https://github.com/PaddlePaddle/Paddle-Lite/blob/18976ff66009980c2f894761dd6a8d1f5a96b8d8/lite/backends/nnadapter/nnadapter/runtime/device.cc#L127)，进而获得目标设备的基本信息和各功能函数地址，最后将它注册到 `DeviceManager` 由其统一管理。
-  - 模型的多种设备间的异构：到目前为止，推理框架下发到 NNAdapter 的模型只能运行在某一种设备上，但为了进一步实现多种设备间的异构（即同一个硬件的不同运算单元，例如联发科芯片的 DSP 和 APU），我们预留了基于设备的操作符支持列表的[模型子图分割处理过程](https://github.com/PaddlePaddle/Paddle-Lite/blob/18976ff66009980c2f894761dd6a8d1f5a96b8d8/lite/backends/nnadapter/nnadapter/runtime/compilation.cc#L138)。
-  - 模型缓存的序列化和反序列化：Runtime 通过设备 HAL 层库调用厂商 SDK 将模型编译、生成设备程序的过程的耗时通常比较长，它一般与模型规模成正比，与芯片 CPU 的处理能力成反比，例如 `MobileNetV1` 模型在的 RK1808 芯片上的编译耗时大约在15秒左右，而 `ResNet50` 模型的耗时更是达到分钟级别。因此，模型的在线编译和生成将大大增加推理框架在用户进程启动后的第一次推理耗时，这在一些应用中是不可接受的，为了避免这个问题，NNAdapter Runtime 支持将已编译的设备代码缓存到设备的文件系统中，在下一次模型编译时将直接加载缓存文件进行恢复，其中就涉及缓存文件的[序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/95766be607af68cd515d824e42426dc54a363cb0/lite/backends/nnadapter/nnadapter/runtime/compilation.cc#L252)和[反序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/95766be607af68cd515d824e42426dc54a363cb0/lite/backends/nnadapter/nnadapter/runtime/compilation.cc#L326)过程。
-
-### NNAdapter HAL 标准接口定义
-- 为了屏蔽硬件细节，向 NNAdapter Runtime 提供统一的设备访问接口，我们在 Runtime 和 厂商 SDK 之间建立了 NNAdapter HAL （即硬件抽象层），它是由 C 结构体实现的统一设备接口描述、模型、操作数和操作符的中间表达等数据结构组成，代码如下所示（访问 [types.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/include/nnadapter/core/types.h) 获得最新代码）：
-
+  为了实现与推理框架中模型表达方式的解耦，建立与设备无关的、统一的 NNAdapter 模型 `Model` 的中间表达，需要基于如下 API 将推理框架的模型中的算子、张量对象转化为 NNAdapter 的操作符 `Operation` 和操作数 `Operand`。
   ```c++
-  typedef struct Operand {
-    NNAdapterOperandType type;
-    void* buffer;
-    uint32_t length;
-  } Operand;
-
-  typedef struct Argument {
-    int index;
-    void* memory;
-    void* (*access)(void* memory, NNAdapterOperandType* type);
-  } Argument;
-
-  typedef struct Operation {
-    NNAdapterOperationType type;
-    std::vector<Operand*> input_operands;
-    std::vector<Operand*> output_operands;
-  } Operation;
-
-  typedef struct Cache {
-    const char* token;
-    const char* dir;
-    std::vector<NNAdapterOperandType> input_types;
-    std::vector<NNAdapterOperandType> output_types;
-    std::vector<uint8_t> buffer;
-  } Cache;
-
-  typedef struct Model {
-    std::list<Operand> operands;
-    std::list<Operation> operations;
-    std::vector<Operand*> input_operands;
-    std::vector<Operand*> output_operands;
-  } Model;
-
-  typedef struct Device {
-    // Properties
-    const char* name;
-    const char* vendor;
-    NNAdapterDeviceType type;
-    int32_t version;
-    // Interfaces
-    int (*open_device)(void** device);
-    void (*close_device)(void* device);
-    int (*create_context)(void* device, const char* properties, void** context);
-    void (*destroy_context)(void* context);
-    int (*create_program)(void* context, Model* model, Cache* cache, void** program);
-    void (*destroy_program)(void* program);
-    int (*execute_program)(void* program, uint32_t input_count, Argument* input_arguments, uint32_t output_count, Argument* output_arguments);
-  } Device;
+  NNAdapterModel_create, NNAdapterModel_destroy, NNAdapterModel_finish, NNAdapterModel_addOperand, NNAdapterModel_setOperandValue, NNAdapterModel_getOperandType, NNAdapterModel_addOperation, NNAdapterModel_identifyInputsAndOutputs
   ```
 
-  - 模型、操作数和操作符的中间表达
+- 模型编译和生成
 
-    为了实现 NNAdapter Runtime 和 NNAdapter HAL 对模型的统一表达，采用了较为简单的 C 结构体的表示方法定义了 `Model` (模型) 、`Operand` （操作数）和 `Operation` （操作符）：
+  基于创建的模型编译实例，通过在 HAL 层库中调用厂商 SDK 实现 NNAdapter 模型的中间表达向目标设备代码的转换。
+  ```c++
+  NNAdapterCompilation_create, NNAdapterCompilation_destroy, NNAdapterCompilation_finish, NNAdapterCompilation_queryInputsAndOutputs
+  ```
 
-    - 一个模型由若干个操作数和操作符组成，其中模型的输入、输出操作数被特殊标记，并按照顺序依次存储，但操作符不一定是按照拓扑顺序存储的。
+- 模型执行
 
-      - 可以借助 [SortOperationsInTopologicalOrder](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/modeling.cc#L649) 实现操作符的拓扑排序。例如在华为昇腾 HAL 层的 [对多输出的算子插入 dummy 的 ADD 算子的优化器](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.cc#L27) ，需要首先调用 SortOperationsInTopologicalOrder 才能获得经过拓扑排序后的操作符列表。
+  创建执行计划实例，设置输入、输出，执行目标设备代码后将结果返回给推理框架。
+  ```c++
+  NNAdapterExecution_create, NNAdapterExecution_destroy, NNAdapterExecution_setInput, NNAdapterExecution_setOutput, NNAdapterExecution_compute
+  ```
+
+### 标准算子定义
+为了建立独立于推理框架的、与设备无关的、Runtime 层与 HAL 层统一的模型中间表达，除了需要定义模型和它包含的操作数和操作符的数据结构，还要对已支持的操作符的类型及参数列表进行标准化。
+
+目前 NNAdapter 参考 ONNX 、PaddlePaddle 、Pytorch 和 TensorFlow 的算子定义完成了 65 个（后续会陆续增加）操作符的定义，形式如下所示（每个标准算子的详细定义见『附录』的『 NNAdapter 标准算子』章节）：
+
+```c++
+typedef enum {
+  ...
+  /**
+    * Performs element-wise binary addition(with Numpy-style broadcasting
+    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+    *
+    * Inputs:
+    * * 0: input0, a NNADAPTER_FLOAT32,
+    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+    * * 1: input1, a tensor with the same type as input0.
+    * * 2: fuse_code, a NNADAPTER_INT32 scalar, specifies the activation to the
+    * result, must be one of NNAdapterFuseCode values.
+    *
+    * Outputs:
+    * * 0: output, the result with the same type as two inputs.
+    *
+    * Available since version 1.
+    */
+  NNADAPTER_ADD,
+  ...
+} NNAdapterOperationCode;
+```
+
+上述代码节选自 [nnadapter.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/include/nnadapter/nnadapter.h#L181) ，它描述了 `逐元素相加操作符 ADD` 的基本功能、输入操作数列表、输出操作数列表和所适用的版本。需要注意的是，在模型组网创建一个操作符时，输入、输出操作数列表中的每一个操作数需要严格按照定义的顺序给定。
+
+### Runtime
+Runtime 作为 API 和 HAL 层的桥梁，其作用不仅是将 API 的调用翻译成模型、操作数、操作符的中间表达以及设备 HAL 层接口的调用，还包括设备 HAL 层库的注册、模型缓存的序列化和反序列化。
+
+- 设备 HAL 层库的注册
+
+  用户进程的模型在某个设备上执行第一次推理时， Runtime 的 [DeviceManager](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/device.cc#L502) 发现该设备的 HAL 层库没有被加载，则会根据[设备名找到并加载 HAL 库](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/device.cc#L515)，再依据约定的[设备接口描述符号命名规则](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/device.cc#L514)解析并获得该设备的[设备接口描述实例的首地址](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/device.cc#L523)，进而获得设备的基本信息和各功能函数地址，最后将它注册到 `DeviceManager` 由其统一管理。
+
+- 多种设备间的异构
+
+  目前已支持多种设备间的异构，即同一个硬件的不同运算单元，例如联发科芯片的 DSP 和 APU，它将根据每一种设备支持的操作符列表进行[子图划分](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/compilation.cc#L429)， 按照拓扑顺序在不同的设备中执行模型片段。
+
+- 模型缓存的序列化和反序列化
+
+  Runtime 通过设备 HAL 层库调用厂商 SDK 将模型的中间表示转为设备代码的过程通常耗时较长，一般与模型规模成正比，与芯片 CPU 的处理能力成反比，例如 `MobileNetV1` 全量化模型在的 RK1808 芯片上的编译耗时大约在15秒左右，而 `ResNet50` 全量化模型的耗时更是达到分钟级别。因此，模型的在线编译和生成大大增加了用户进程启动后的第一次推理耗时，这在一些应用中是不可接受的，为了避免这个问题，Runtime 支持将已编译的设备代码缓存到文件系统中，而在下一次模型编译时直接加载该缓存文件，这就涉及到缓存文件的[序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/compilation.cc#L454)和[反序列化](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/runtime/compilation.cc#L544)过程。
+
+### HAL 标准接口定义
+为了屏蔽硬件细节，向 Runtime 提供统一的设备访问接口，我们在 Runtime 和 厂商 SDK 之间建立了 HAL 硬件抽象层，它是由 C 结构体实现的统一设备接口描述、模型、操作数和操作符的中间表达等数据结构组成，代码如下所示（访问 [types.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/include/nnadapter/core/types.h) 和 [device.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/include/nnadapter/driver/device.h) 获得最新代码）：
+
+```c++
+typedef struct Operand {
+  NNAdapterOperandType type;
+  void* buffer;
+  uint32_t length;
+} Operand;
+
+typedef struct Argument {
+  int index;
+  void* memory;
+  void* (*access)(void* memory, NNAdapterOperandType* type);
+} Argument;
+
+typedef struct Operation {
+  NNAdapterOperationType type;
+  std::vector<Operand*> input_operands;
+  std::vector<Operand*> output_operands;
+} Operation;
+
+typedef struct Cache {
+  const char* token;
+  const char* dir;
+  std::vector<NNAdapterOperandType> input_types;
+  std::vector<NNAdapterOperandType> output_types;
+  std::vector<uint8_t> buffer;
+} Cache;
+
+typedef struct Model {
+  std::list<Operand> operands;
+  std::list<Operation> operations;
+  std::vector<Operand*> input_operands;
+  std::vector<Operand*> output_operands;
+} Model;
+
+typedef struct Device {
+  // Properties
+  const char* name;
+  const char* vendor;
+  NNAdapterDeviceType type;
+  int32_t version;
+  // Interfaces
+  int (*open_device)(void** device);
+  void (*close_device)(void* device);
+  int (*create_context)(void* device, const char* properties, int (*callback)(int event_id, void* user_data), void** context);
+  void (*destroy_context)(void* context);
+  int (*create_program)(void* context, Model* model, Cache* cache, void** program);
+  void (*destroy_program)(void* program);
+  int (*execute_program)(void* program, uint32_t input_count, Argument* input_arguments, uint32_t output_count, Argument* output_arguments);
+} Device;
+```
+- 模型、操作数和操作符的中间表达
+
+  为了便于 Runtime 和 HAL 层之间的沟通，还需要建立模型的统一表达，目前采用了较为简单的 C 结构体的表示方法定义了模型 `Model` 、操作数 `Operand` 和操作符 `Operation` ，其中：
+
+  1）一个模型由若干个操作数、操作符组成模型的输入、输出操作数会被额外按照顺序依次存储，但操作符不一定是按照拓扑顺序存储的，您可以借助 [SortOperationsInTopologicalOrder](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/include/nnadapter/utility/modeling.h#L211) 实现操作符的拓扑排序。例如在华为昇腾 HAL 层的 [对多输出的算子插入 dummy 的 ADD 算子的优化器](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.cc#L26) 的实现中，需要首先调用 SortOperationsInTopologicalOrder 才能获得经过拓扑排序后的操作符列表。而为了方便调试，您还可以通过 [Visualize](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/include/nnadapter/utility/debug.h#L23) 将模型数据结构输出为 DOT 格式字符串，将其复制到 [webgraphviz](http://www.webgraphviz.com/) 即可绘制模型拓扑结构。例如在华为昇腾 HAL 层的 [打印优化前后的模型拓扑结构](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/engine.cc#L232) 代码；
+
+  2）一个操作符由操作符类型、输入操作数列表和输出操作数列表组成，需要特别注意的是，操作数列表中的元素顺序需要严格按照操作符的定义的顺序依次存放。
+
+- 设备接口描述
+
+  为 Runtime 在不同硬件提供统一的访问接口，需要对硬件的功能进行抽象和封装，涉及设备基本信息和标准功能接口，以下是昇腾 310 HAL 层设备接口描述结构体的实现（访问 [driver.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/driver.cc) 获得最新代码）：
   
-      - 为了方便调试，可以通过 [Visualize](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/debug.cc#L158) 将模型数据结构输出为 DOT 格式字符串，将其复制到 [webgraphviz](http://www.webgraphviz.com/) 即可绘制模型拓扑结构。例如在华为昇腾 HAL 层的 [打印优化前后的模型拓扑结构](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/engine.cc#L88) 代码。
+  ```c++
+  ...
+  export "C" nnadapter::hal::Device __nnadapter_device__huawei_ascend_npu = {
+    .name = "huawei_ascend_npu",
+    .vendor = "Huawei",
+    .type = NNADAPTER_ACCELERATOR,
+    .version = 1,
+    .open_device = nnadapter::huawei_ascend_npu::OpenDevice,
+    .close_device = nnadapter::huawei_ascend_npu::CloseDevice,
+    .create_context = nnadapter::huawei_ascend_npu::CreateContext,
+    .destroy_context = nnadapter::huawei_ascend_npu::DestroyContext,
+    .create_program = nnadapter::huawei_ascend_npu::CreateProgram,
+    .destroy_program = nnadapter::huawei_ascend_npu::DestroyProgram,
+    .execute_program = nnadapter::huawei_ascend_npu::ExecuteProgram,
+  };
+  ```
 
-    - 一个操作符由操作符类型、输入、输出操作数列表组成，需要特别注意的是，操作数列表中的元素顺序需要严格按照操作符的定义的顺序依次存放。
+  在注册一个新的设备时，要求对 `Device` 结构的所有成员进行赋值，涉及设备基本信息和从 `open_device` 到 `execute_program` 的设备标准功能接口的设置，特别是后者，它们被 Runtime 调用的时机如下图所示（详细过程可参考下一章节的『应用程序、 Paddle Lite 、NNAdapter 和硬件 SDK 之间的详细调用过程』）。
 
-  - 设备接口描述
+  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
 
-    为 NNAdapter Runtune 在不同硬件提供统一的访问接口，需要对硬件的功能进行抽象和封装，涉及设备基本信息和标准功能接口，以下是昇腾 310 HAL 层设备接口描述结构体的实现（摘选自 [driver.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/driver.cc) ）：
-  
-    ```c++
-    ...
-    export "C" nnadapter::hal::Device huawei_ascend_npu = {
-      .name = "huawei_ascend_npu",
-      .vendor = "Huawei",
-      .type = NNADAPTER_ACCELERATOR,
-      .version = 1,
-      .open_device = nnadapter::huawei_ascend_npu::OpenDevice,
-      .close_device = nnadapter::huawei_ascend_npu::CloseDevice,
-      .create_context = nnadapter::huawei_ascend_npu::CreateContext,
-      .destroy_context = nnadapter::huawei_ascend_npu::DestroyContext,
-      .create_program = nnadapter::huawei_ascend_npu::CreateProgram,
-      .destroy_program = nnadapter::huawei_ascend_npu::DestroyProgram,
-      .execute_program = nnadapter::huawei_ascend_npu::ExecuteProgram,
-    };
-    ```
-
-    在注册一个新的设备时，要求对 `Device` 结构的所有成员进行赋值，特别是 `open_device` 、`close_device` 到 `execute_program` 的函数指针的设置，这些函数被调用的时机如下图所示。
-
-    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
-
-    其详细过程可以参考下一章节的『应用程序、 Paddle Lite 、NNAdapter 和硬件 SDK 之间的详细调用过程』。
-
-## NNAdapter 在 Paddle Lite 的实现
-### 整体实现方案
-
-NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可以参考[新增硬件](./add_hardware)章节的『子图接入方式』。
+## Paddle Lite 中的具体实现
+### 方案实现
+如下图所示，目前 NNAdapter 作为一个后端以子图方式接入到 Paddle Lite 中，如下步骤简单描述了 Paddle Lite 从模型的加载和解析、图优化、子图算子的执行，再到 NNAdapter HAL 层库调用硬件 SDK 执行的整个过程：
 
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
 
-### Paddle Lite 、NNAdapter 各功能模块和已支持的硬件之间的关系
+- 模型文件的加载和解析
 
-![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch_detail.png)
+  Paddle 模型由程序 `Program` 、块 `Block` 、算子 `Operator` 和变量 `Variable` 组成，程序由若干块组成，块由若干算子和变量组成，变量包括中间变量和持久化变量，如卷积的权值，经序列化保存后形成 Combined 和 Non-combined 两种形式的模型文件， Non-combined 形式的模型由一个网络拓扑结构文件 __model__ 和一系列以变量名命名的参数文件组成， Combined 形式的模型由一个网络拓扑结构文件 __model__ 和一个合并后的参数文件 __params__ 组成，其中网络拓扑结构文件是基于 [Protocol Buffers](https://github.com/protocolbuffers/protobuf) 格式以 [Paddle proto 文件](https://github.com/PaddlePaddle/Paddle/blob/c5f0293cf318a8d68b7b6c9bfab58cbd744000f7/paddle/fluid/framework/framework.proto)描述的规则序列化后的文件。
+
+- 计算图的转化
+
+  将每个块按照如下规则生成对应的计算图的过程：每个算子或变量都对应计算图的一个节点，节点间的有向边由算子的输入、输出决定（依赖关系确定边的方向），算子节点与变量节点相邻。
+
+- 图分析和优化
+
+  将一系列 pass （优化器，用于描述一个计算图变换得到另一个计算图的处理过程）按照一定的顺序依次应用到每个块对应的计算图的过程，包括量化信息处理、算子融合、 Kernel 选择、类型转化、上下文创建、内存复用优化和子图检测等，实现不同设备的适配、高效的计算和更少的内存占用。其中，子图检测作为 NNAdapter 的关键模块，承担着硬件子图划分的工作，具体地，基于设备已支持的算子列表，将连续支持的算子融合形成一个子图，并在子图算子执行时将其转为 NNAdapter 模型下发给设备 HAL 层库实现子图向设备代码的转换。
+
+- 运行时程序的生成和执行
+
+  按照拓扑顺序遍历优化后的计算图，生成算子和 Kernel 列表的过程。
 
 ### 用户视角下各编译产物之间的调用关系
+下图描述了用户视角下的 Paddle Lite 推理框架、 NNAdapter Runtime 和 NNAdapter 硬件 HAL 层库之间的调用关系。
+
+用户 APP 首先调用 Paddle Lite 动态库 libpaddle_full_api_shared.so 和 libpaddle_light_api_shared.so 并设置 NNAdapter 设备名称，在其首次推理时会加载 NNAdapter Runtime 动态库 libnnadapter.so ，然后根据用户设置的设备名称加载 NNAdapter 硬件 HAL 层动态库，例如华为昇腾 310 NPU 的 HAL 层库 libhuawei_ascend_npu.so ，最后调用硬件厂商的软件栈完成推理，例如华为昇腾 310 NPU 的 CANN 框架的 libascendcl.so 。
 
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_and_nnadapter_dynamic_shared_library.png)
 
@@ -205,16 +240,16 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
     ```c++
     bool check_nnadapter_device_name(const std::string& device_name)
     ```
-    通过设备名称查询设备是否可用，设备名称包括 `huawei_ascend_npu` , `huawei_kirin_npu` , `amlogic_npu` , `rockchip_npu` , `mediatek_apu` , `imagination_nna` 等，已支持设备的最新列表可在 [NNAdapter HAL](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver) 中查询。
+    通过设备名称查询设备是否可用，设备名称包括 `huawei_ascend_npu` , `huawei_kirin_npu` , `amlogic_npu` , `rockchip_npu` , `mediatek_apu` , `imagination_nna` 等，已支持设备的最新列表可在 [NNAdapter HAL](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver) 中查询。
     - 参数：
-      - device_name：设备 HAL 层库的名称，例如： [huawei_ascend_npu](https://github.com/PaddlePaddle/Paddle-Lite/blob/34639deaf036e2daf4429205c1bc77958e0b1e0f/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/CMakeLists.txt#L15) 。
+      - device_name：设备 HAL 层库的名称，例如： [huawei_ascend_npu](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/CMakeLists.txt#L16) 。
     - 返回值：设备可用则返回 TRUE 。
 
   - set_nnadapter_device_names
     ```c++
     void set_nnadapter_device_names(const std::vector<std::string>& device_names)
     ```
-    设置模型在哪些设备中运行（当前版本只支持第一个设备）。
+    设置模型在哪些设备中运行。
     - 参数：
       - device_names：设备名称列表。
     - 返回值：无。
@@ -226,7 +261,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
     ```
     将设备参数传递给设备 HAL 层库。
     - 参数：
-      - context_properties：以 Key-value 字串的形式表示设备参数，例如：如果希望使用昇腾 310 卡的第 0 个核心，可以设置 "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;" 。
+      - context_properties：以 Key-value 字串的形式表示设备参数，例如：如果希望使用 Atlas 300 I 3000/3010 加速卡（由四颗昇腾 310 芯片组成）的第 0 个昇腾 310 芯片，可以设置 "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;" 。
     - 返回值：无。
 
 - 模型缓存
@@ -245,7 +280,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
     ```
     设置模型缓存的标识和数据，子图在编译生成设备程序时，如果成功匹配到 `model_cache_token` ，则跳过模型编译步骤，直接使用缓存数据恢复设备程序（需要设备 HAL 层库的支持），该接口通常用于从内存中设置解密后的模型缓存数据。
     - 参数：
-      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考 [ model_cache_token 的计算](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/kernels/nnadapter/engine.cc#L33)。
       - model_cache_buffer： `model_cache_token` 对应子图和设备的模型缓存数据。
     - 返回值：无。
 
@@ -319,7 +354,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
     注意：该接口仅用于 cxxconfig 加载 Paddle 模型生成 nb 模型或直接推理时使用。
 
     - 参数：
-      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考 [ model_cache_token 的计算](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/kernels/nnadapter/engine.cc#L33)。
       - model_cache_buffer： `model_cache_token` 对应子图和设备的模型缓存数据。
     - 返回值：无。
 
@@ -353,26 +388,167 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
 
 ## 基于 NNAdapter 的硬件适配实践
 ### 一般流程
-- 从 [driver](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver) 目录中的复制一份 HAL 作为参考（服务端硬件可以参考华为昇腾 NPU `huawei_ascend_npu` ， SoC 类硬件可以参考晶晨 NPU `amlogic_npu` 或 华为麒麟 NPU `huawei_kirin_npu` ）。
+- 从 [driver](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver) 目录中的复制一份 HAL 作为参考（AI 加速卡类硬件可以参考华为昇腾 NPU `huawei_ascend_npu` ， SoC 类硬件可以参考晶晨 NPU `amlogic_npu` 或 华为麒麟 NPU `huawei_kirin_npu` ）。
 
 - 基于参考硬件的 HAL 代码开发目标硬件的 HAL ，主要涉及 cmake 脚本的修改、 设备接口的实现（设备初始化、模型转换、编译和执行）。
   - 模型转换：将 NNAdapter HAL 中的 `Model` 转成厂商 SDK 中的模型的表示，其工作主要在于实现 `Operation` 到厂商 SDK 中的算子的表示的转换器，例如：华为昇腾 NPU HAL 中的 `NNADAPTER_ADD` 操作符到 CANN SDK 的 `ge::op::Add` 的转换，代码涉及以下三个部分：
-    - [NNADAPTER_ADD 到 ge::op::Add 的转换器的实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/elementwise.cc#L23) 和 [NNADAPTER_ADD 到 ge::op::Add 的转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/all.h#L21) ：在 HAL 层的 `Model` 到厂商 SDK 模型转换步骤的 `Operation` 转换过程中，用于保证正确调用指定的转换器生成并添加厂商 SDK 的算子表示，进而基于厂商 SDK 完成模型转换。
-    - [Paddle 算子 elementwise_add 到 NNADAPTER_ADD 转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/kernels/nnadapter/converter/all.h#L55)  ：具体是在转换器注册的设备名称字串中添加目标硬件的名称，其主要用于在 Paddle 模型的子图分割阶段中告诉子图分割算法哪些 Paddle 算子可以放在哪些硬件上执行，即哪些算子可以融合成一个 NNAdapter 子图，且在 NNAdapter 算子 Kernel 执行时，能够该子图转换为 NNAdapter 模型，进而传递到硬件的 HAL 层做进一步的转换。
+    - [NNADAPTER_ADD 到 ge::op::Add 的转换器的实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/converter/elementwise.cc#L23) 和 [NNADAPTER_ADD 到 ge::op::Add 的转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/converter/all.h#L21) ：在 HAL 层的 `Model` 到厂商 SDK 模型转换步骤的 `Operation` 转换过程中，用于保证正确调用指定的转换器生成并添加厂商 SDK 的算子表示，进而基于厂商 SDK 完成模型转换。
+    - [Paddle 算子 elementwise_add 到 NNADAPTER_ADD 转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/kernels/nnadapter/converter/all.h#L98)  ：具体是在转换器注册的设备名称字串中添加目标硬件的名称，其主要用于在 Paddle 模型的子图分割阶段中告诉子图分割算法哪些 Paddle 算子可以放在哪些硬件上执行，即哪些算子可以融合成一个 NNAdapter 子图，且在 NNAdapter 算子 Kernel 执行时，能够该子图转换为 NNAdapter 模型，进而传递到硬件的 HAL 层做进一步的转换。
 
 - 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需开发一个 `NNADAPTER_SOFTMAX` 的转换器即可），需要验证 HAL 层到厂商 SDK 的链路是否打通，为方便厂商和用户测试，我们提供了包含图像分类和目标检测模型的 Demo 的压缩包，它支持 NNAdapter 目前已支持的所有硬件，覆盖 x86 Linux 、ARM Linux 和 Android 系统，可以本地执行或基于 ssh 或 adb 方式推送到远端设备上执行，各硬件的文档均涉及 Demo 的使用方法，具体可以访问：[华为昇腾 NPU](../demo_guides/huawei_ascend_npu) 、[华为麒麟 NPU](../demo_guides/huawei_kirin_npu) 、[晶晨 NPU](../demo_guides/amlogic_npu) 、[瑞芯微 NPU](../demo_guides/rockchip_npu) 、[联发科 APU](../demo_guides/mediatek_apu) 和[颖脉 NNA](../demo_guides/imagination_nna) 等。
   - 模型、算子转换器调试方法：调试 Demo 中的模型有时候并不是一帆风顺，可能在模型转换过程中出现 `core dump` ，也可能在模型跑通后发现结果无法与 CPU 结果对齐，这些问题尝尝源于部分 NNAdapter 操作符到厂商 SDK 算子的转换器的 BUG 导致的，有效的解决办法是：先将模型中所有 Paddle 算子强制跑在 CPU 上，然后根据模型拓扑顺序，逐步将 Paddle 算子放在目标硬件上执行，通过二分法、排除法最终定位到有问题的算子转换器上，具体可以参考上一章节中『自定义子图分割』。
 
 - 添加算子、模型的单元测试
   - 添加算子单元测试：为了持续验证每一个算子转化器能否正常工作，覆盖 Paddle 算子的所有功能，需要增加目标硬件的算子单元测试，具体步骤如下：
-    - 单元测试新增目标硬件的支持：[增加目标硬件宏定义](https://github.com/PaddlePaddle/Paddle-Lite/blob/361dccf78867a9d63415c20a683371dce56d6e5d/lite/core/test/arena/framework.cc#L38)、[单测设置目标硬件名称](https://github.com/PaddlePaddle/Paddle-Lite/blob/1091e14b66782d3fd8f5ade6a767d5ca36ab3b15/lite/core/test/arena/framework.cc#L38)。
-    - 在目标算子单测增加宏定义和精度验证阈值，例如：在 softmax 单测增加华为昇腾 NPU 的支持，仅需添加[ 2 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/361dccf78867a9d63415c20a683371dce56d6e5d/lite/tests/kernels/softmax_compute_test.cc#L105)。
-  - 添加模型单元测试：为了验证新合入的代码对已支持的模型是否有影响（正常跑通且精度对齐），需要在指定模型的单元测试中增加对目标硬件的支持，例如：在 MobileNetV1 模型增加华为昇腾 NPU 的支持，仅需添加[ 3~4 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/361dccf78867a9d63415c20a683371dce56d6e5d/lite/tests/api/test_mobilenet_v1_fp32_nnadapter.cc#L50)（注意：全量化模型的单测为 `test_mobilenet_v1_int8_per_channel_nnadapter` 和 `test_mobilenet_v1_int8_per_layer_nnadapter` ）。
+    - 单元测试新增目标硬件的支持：[增加目标硬件宏定义](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/cmake/configure.cmake#L221)、[单测设置目标硬件名称](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/core/test/arena/framework.cc#L36)。
+    - 在目标算子单测增加宏定义和精度验证阈值，例如：在 softmax 单测增加华为昇腾 NPU 的支持，仅需添加[ 2 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/tests/kernels/softmax_compute_test.cc#L105)。
+  - 添加模型单元测试：为了验证新合入的代码对已支持的模型是否有影响（正常跑通且精度对齐），需要在指定模型的单元测试中增加对目标硬件的支持，例如：在 MobileNetV1 模型增加华为昇腾 NPU 的支持，仅需添加[ 3~4 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/tests/api/test_mobilenet_v1_fp32_v1_8_nnadapter.cc#L51)（注意：全量化模型的单测为 `test_mobilenet_v1_int8_per_channel_nnadapter` 和 `test_mobilenet_v1_int8_per_layer_nnadapter` ）。
   - 为了实现持续交付，需要向飞桨团队提供至少3套测试硬件，用于目标硬件的测试环境并加入到 Paddle Lite CI 系统。
 
-- 增加硬件说明文档，例如：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/docs/demo_guides/huawei_ascend_npu.md?plain=1#L3)。
+- 添加用户说明文档，示例：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/docs/demo_guides/huawei_ascend_npu.md?plain=1#L3)。
 
-- 提交代码：具体是向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite)发起 Pull request，具体可以参考[新增硬件](./add_hardware)的『代码提交、Review 、合入机制、CI 机制』章节配置编译和代码提交环境，并按照规范提交代码，由飞桨团队同学 reivew 后方可合入主线代码。
+- 提交代码和文档：当代码和文档都已经准备好了后，就可以向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite) 发起 Pull request 了，但只有飞桨研发同学完成 code reivew 后方可合入主线，具体方法如下：
+  - 参考[Docker 统一环境搭建](../source_compile/docker_env)准备 Docker 开发环境（注意：必须使用 Paddle Lite Docker 容器环境，因为代码提交时将使用 git pre-commit hooks 进行代码风格检查，而它使用的 clang-format 被严格限制在 3.8 版本）
+  - 注册 [github](https://www.github.com/) 账户，将 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码仓库 Fork 到自己的账户.
+  - 将自己 github 账户的 Paddle Lite 仓库克隆到本地。
+    ```
+    # git clone https://github.com/UserName/Paddle-Lite
+    # cd Paddle-Lite
+    ```
+  - 创建本地分支：从 develop 分支创建一个新的本地分支，命名规则为 UserName/FeatureName ，例如 hongming/print_ssa_graph
+    ```
+    $ git checkout -b UserName/FeatureName
+    ```
+  - 启用 pre-commit 钩子： [pre-commit](http://pre-commit.com/) 作为 git 预提交钩子，帮助我们在 git commit 时进行自动代码（ C++，Python ）格式化和其它检查（如每个文件只有一个 EOL ，Git 中不要添加大文件等），可通过以下命令进行安装（注意：pre-commit 测试是 Travis-CI 中单元测试的一部分，不满足钩子的 PR 不能被提交到 Paddle Lite ）：
+    ```
+    $ pip install pre-commit
+    $ pre-commit install
+    ```
+  - 修改代码：提交代码前通过 git status 和 git diff 命令查看代码改动是否符合预期，避免提交不必要或错误的修改。
+    ```
+    $ git status
+    On branch hongming/print_ssa_graph
+    Changes not staged for commit:
+      (use "git add <file>..." to update what will be committed)
+      (use "git checkout -- <file>..." to discard changes in working directory)
+      (commit or discard the untracked or modified content in submodules)
+
+            modified:   lite/core/optimizer/optimizer.h
+
+    $ git diff
+    diff --git a/lite/core/optimizer/optimizer.h b/lite/core/optimizer/optimizer.h
+    index 00e9e07..1b273af 100644
+    --- a/lite/core/optimizer/optimizer.h
+    +++ b/lite/core/optimizer/optimizer.h
+    @@ -55,7 +55,8 @@ class Optimizer {
+
+         if (passes.empty()) {
+           std::vector<std::string> passes_local{
+    -          {"lite_quant_dequant_fuse_pass",     //
+    +          {"graph_visualze",
+    +           "lite_quant_dequant_fuse_pass",     //
+                "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+    ```
+  - 提交代码：git add 命令添加需要修改的文件，放弃提交可用 git reset 命令，放弃修改可使用 git checkout -- [file_name] 命令，每次代码提交时都需要填写说明，以便让他人知道这次提交做了哪些修改，可通过 git commit 命令完成，修改提交说明可通过 git commit --amend 命令；为了触发 CI ，提交说明最后结束前必须回车换行，然后添加 test=develop ，如果本次提交的 Pull request 仅修改 doc 目录下的文档，则额外加上 test=document_fix 加快 CI 流水线。
+    ```
+    $ git add lite/core/optimizer/optimizer.h
+
+    $ git status
+    On branch hongming/print_ssa_graph
+    Changes to be committed:
+      (use "git reset HEAD <file>..." to unstage)
+
+            modified:   lite/core/optimizer/optimizer.h
+
+    $ git commit -m "Add graph_visualze pass to output ssa graph
+    > test=develop"
+    CRLF end-lines remover...................................................Passed
+    Check for added large files..............................................Passed
+    Check for merge conflicts................................................Passed
+    Check for broken symlinks................................................Passed
+    Detect Private Key.......................................................Passed
+    Fix End of Files.........................................................Passed
+    clang-format.............................................................Passed
+    cpplint..................................................................Passed
+    copyright_checker........................................................Passed
+    [hongming/print_ssa_graph 75ecdce] Add graph_visualze pass to output ssa graph test=develop
+     1 file changed, 2 insertions(+), 1 deletion(-)
+    ```
+  - 同步本地仓库代码：在准备发起 Pull Request 前，需要将原仓库 [https://github.com/PaddlePaddle/Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 的 develop 分支的最新代码同步到本地仓库的新建分支。首先通过 git remote -v 命令查看当前远程仓库的名字，然后通过 git remote add 命令添加原 Paddle Lite 仓库地址，最后使用 git fetch 和 git pull 命令将本地分支更新到最新代码。
+    ```
+    $ git remote -v
+    origin  https://github.com/UserName/Paddle-Lite.git (fetch)
+    origin  https://github.com/UserName/Paddle-Lite.git (push)
+
+    $ git remote add upstream https://github.com/PaddlePaddle/Paddle-Lite
+
+    $ git remote
+    origin
+    upstream
+
+    $ git fetch upstream
+    remote: Enumerating objects: 105, done.
+    remote: Counting objects: 100% (105/105), done.
+    remote: Compressing objects: 100% (6/6), done.
+    remote: Total 142 (delta 99), reused 100 (delta 99), pack-reused 37
+    Receiving objects: 100% (142/142), 52.47 KiB | 2.00 KiB/s, done.
+    Resolving deltas: 100% (103/103), completed with 45 local objects.
+    From https://github.com/PaddlePaddle/Paddle-Lite
+      a1527e8..d6cdb1e  develop    -> upstream/develop
+      2136df9..17a58b6  gh-pages   -> upstream/gh-pages
+      1091ab8..55be873  image-sr-v2 -> upstream/image-sr-v2
+     * [new branch]      release/v2.2.0 -> upstream/release/v2.2.0
+     * [new tag]         v2.2.0     -> v2.2.0
+
+    $ git branch
+    develop
+    * hongming/print_ssa_graph
+
+    $ git pull upstream develop
+    From https://github.com/PaddlePaddle/Paddle-Lite
+     * branch            develop    -> FETCH_HEAD
+    Removing lite/kernels/npu/bridges/transpose_op_test.cc
+    Removing lite/kernels/npu/bridges/batch_norm_op_test.cc
+    Merge made by the 'recursive' strategy.
+     lite/kernels/npu/bridges/batch_norm_op_test.cc | 168 ------------------------------------------------------------------------------------------------
+     lite/kernels/npu/bridges/transpose_op.cc       |   2 +-
+     lite/kernels/npu/bridges/transpose_op_test.cc  | 153 ---------------------------------------------------------------------------------------
+     lite/tests/kernels/CMakeLists.txt              |   4 +--
+     lite/tests/kernels/batch_norm_compute_test.cc  |   2 ++
+     lite/tests/kernels/transpose_compute_test.cc   |  44 ++++++++++++-------------
+     mobile/test/CMakeLists.txt                     |   6 ++++
+     mobile/test/net/test_mobilenet_male2fe.cpp     |  66 ++++++++++++++++++++++++++++++++++++++
+     8 files changed, 99 insertions(+), 346 deletions(-)
+     delete mode 100644 lite/kernels/npu/bridges/batch_norm_op_test.cc
+     delete mode 100644 lite/kernels/npu/bridges/transpose_op_test.cc
+     create mode 100644 mobile/test/net/test_mobilenet_male2fe.cpp
+    ```
+  - Push 到远程仓库：将本地的修改推送到自己账户下的 Paddle Lite 仓库，即 https://github.com/UserName/Paddle-Lite 。
+    ```
+    $ git branch
+    develop
+    * hongming/print_ssa_graph
+
+    $ git push origin hongming/print_ssa_graph
+    Counting objects: 8, done.
+    Delta compression using up to 2 threads.
+    Compressing objects: 100% (8/8), done.
+    Writing objects: 100% (8/8), 868 bytes | 0 bytes/s, done.
+    Total 8 (delta 6), reused 0 (delta 0)
+    remote: Resolving deltas: 100% (6/6), completed with 6 local objects.
+    remote: 
+    remote: Create a pull request for 'hongming/print_ssa_graph' on GitHub by visiting:
+    remote:      https://github.com/UserName/Paddle-Lite/pull/new/hongming/print_ssa_graph
+    remote: 
+    To https://github.com/UserName/Paddle-Lite.git
+     * [new branch]      hongming/print_ssa_graph -> hongming/print_ssa_graph
+    ```
+  - 发起 Pull Request ：登录 github ，在自己账户下找到并进入 UserName/Paddle-Lite 仓库，这时会自动提示创建 Pull Request ，点击 Create Pull Request 按钮，一般来说会自动选择比较更改的仓库和分支，如果需要手动设置，可将 base repository 选择为 PaddlePaddle/Paddle-Lite ， base 分支为 develop ，然后将 head repository 选择为 UserName/Paddle-Lite ，compare分支为 hongming/print_ssa_graph 。 PR（Pull Request） 的标题必须用英文概括本次提交的修改内容，例如修复了什么问题，增加了什么功能。同时，为了便于其他人快速得知该PR影响了哪些模块，应该在标题前添加中括号 + 模块名称进行标识，例如 "[HuaweiKirinNPU][KunlunxinXPU] Temporarily toggle printing ssa graph, test=develop" 。 PR 的描述必须详细描述本次修改的原因/背景、解决方法、对其它模块会产生何种影响（例如生成库的大小增量是多少），性能优化的 PR 需要有性能对比数据等。
+  - 签署 CLA 协议：在首次向 Paddle Lite 提交 Pull Request 时，您需要您签署一次 CLA(Contributor License Agreement) 协议，以保证您的代码可以被合入。
+  - 等待 CI 测试完成：您在 Pull Request 中每提交一次新的 commit 后，都会触发一系列 CI 流水线（根据场景/硬件的不同，一般会有多个流水线），它将会在几个小时内完成，只需保证带有 Required 的流水线通过即可。例如下图所示，每项流水线测试通过后，都会在前面打勾，否则打叉，可点击 Details 查看日志定位错误原因：
+  ![](https://user-images.githubusercontent.com/9973393/113404216-631e0f00-93da-11eb-8dad-fb47c8f512de.png)
+  - PR Review ：每个 PR 需要至少一个评审人 apporve 后才能进行代码合入，而且在请评审人 review 代码前，必须保证 CI 测试完成并通过全部测试项，否则评审人一般不做评审。根据 PR 修改的模块不同，代码评审人选择也不一样。例如：涉及到 Core 和 API 模块，需要 @Superjomn 进行 Review ，涉及到 Subgraph 相关的修改，需要 @hong19860320 或 @zhupengyang 进行 Review 。评审人的每个意见都必须回复，同意评审意见且按其修改完的，给个简单的 Done 即可，对评审意见不同意的，请给出您自己的反驳理由。
+  - PR 合入：一般 PR 会有多次 commit ，原则上是尽量少的 commit ，且每个 commit 的内容不能太随意。在合入代码时，需要对多个 commit 进行 squash commits after push ，该 PR 在评审人 approve 且 CI 完全通过后，会出现 "Squash and Merge" 按钮，如上图所示，届时可以联系 Paddle 同学完成 PR 的合入。
 
 ### 示例
 - 基于 MagicMind 的寒武纪 MLU 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/6947)
@@ -801,7 +977,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
   二维平均池化。
   - 输入：
     - 0 ： input ，输入操作数，形状： [N, C_in, H_in, W_in] ，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
-    - 1 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
+    - 1 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入的形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
     - 2 ： pads ，填充大小，可选，形状： [4] ，类型： NNADAPTER_INT32 ，取值：四个元素的值分别表示 height_top ， height_bottom ， width_left ， width_right 。
     - 3 ： kernel_shape ，核的高和宽，形状： [2] ，类型： NNADAPTER_INT32 ，取值： 两个元素的值分别表示 kernel_height ， kernel_width 。
     - 4 ： strides ，步长的高和宽，形状： [2] ，类型： NNADAPTER_INT32 ，取值：两个元素的值分别表示 stride_height ， stride_width 。
@@ -883,7 +1059,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
       - 如果输入类型是 NNADAPTER_FLOAT32 ，那么类型和输入一致。
       - 如果卷积核类型是 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ，那么类型为 NNADAPTER_QUANT_INT32_SYMM_PER_LAYER ，且 bias_scale == input_scale * filter_scale 。
       - 如果卷积核类型是 NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ，那么类型为 NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL ，且对于每个输出通道 i ，满足：bias_scale[i] = input_scale * filter_scale[i] 。
-    - 3 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
+    - 3 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入的形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
     - 4 ： pads ，填充大小，可选，形状： [4] ， 类型： NNADAPTER_INT32 ，取值：四个元素的值分别表示 height_top ， height_bottom ， width_left ， width_right 。
     - 5 ： strides ，步长的高和宽，形状： [2] ，类型： NNADAPTER_INT32 ，取值：两个元素的值分别表示 stride_height ， stride_width 。
     - 6 ： group ，卷积分组数， 形状： [1] ，类型： NNADAPTER_INT32 ，取值满足如下约束：
@@ -908,7 +1084,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
       - 如果输入类型是 NNADAPTER_FLOAT32 ，那么类型和输入一致。
       - 如果卷积核类型是 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ，那么类型为 NNADAPTER_QUANT_INT32_SYMM_PER_LAYER ，且 bias_scale == input_scale * filter_scale 。
       - 如果卷积核类型是 NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ，那么类型为 NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL ，且对于每个输出通道 i ，满足：bias_scale[i] = input_scale * filter_scale[i] 。
-    - 3 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出���输入形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
+    - 3 ： auto_pad ，填充模式，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `NNAdapterAutoPadCode` 类型的任意值， `NNADAPTER_AUTO_PAD_NONE` 表示由输入操作数 `pads` 显式指定填充大小， `NNADAPTER_AUTO_PAD_SAME` 表示自动计算填充大小保证输出与输入的形状相同，`NNADAPTER_AUTO_PAD_VALID` 表示不填充。
     - 4 ： pads ，填充大小，可选，形状： [4] ， 类型： NNADAPTER_INT32 ，取值：四个元素的值分别表示 height_top ， height_bottom ， width_left ， width_right 。
     - 5 ： strides ，步长的高和宽，形状： [2] ，类型： NNADAPTER_INT32 ，取值：两个元素的值分别表示 stride_height ， stride_width 。
     - 6 ： group ，卷积分组数， 形状： [1] ，类型： NNADAPTER_INT32 ，取值满足如下约束：
