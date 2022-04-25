@@ -45,12 +45,19 @@ Linux x86 环境下编译适用于 Android 的库
 推荐环境
 ^^^^^^^^
 
+C++ 环境
+""""""""
 
 * gcc、g++ == 8.2.0
 * CMake >= 3.10
 * Android NDK >= r17c（注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
 * git、make、wget、python、adb
-* Java Environment
+
+java 环境
+""""""""
+
+* Jdk == 1.8.0
+* Gradle == 4.1.2
 
 环境安装命令
 ^^^^^^^^^^^^
