@@ -123,10 +123,12 @@ class TestCastOp(AutoScanTest):
         )
 
         def _teller2(program_config, predictor_config):
-            in_dtype = program_config.ops[0].attrs["in_dtype"]
-            out_dtype = program_config.ops[0].attrs["out_dtype"]
             if self.get_nnadapter_device_name() == "nvidia_tensorrt":
-                if [in_dtype, out_dtype] not in [[2, 5], [5, 2]]:
+                in_shape = program_config.inputs["input_data"].shape
+                in_dtype = program_config.ops[0].attrs["in_dtype"]
+                out_dtype = program_config.ops[0].attrs["out_dtype"]
+                if len(in_shape) == 1 \
+                    or [in_dtype, out_dtype] not in [[2, 5], [5, 2]]:
                     return True
 
         self.add_ignore_check_case(

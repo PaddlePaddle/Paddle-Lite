@@ -29,15 +29,11 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   if (!IsOperandWithDynamicShape(input_operand)) {
-    nvinfer1::Dims flatten_dim;
-    flatten_dim.nbDims = output_operand->type.dimensions.count;
-    for (int i = 0; i < output_operand->type.dimensions.count; ++i) {
-      flatten_dim.d[i] = output_operand->type.dimensions.data[i];
-    }
     auto flatten_layer = converter->network()->addShuffle(*input_tensor);
-    flatten_layer->setReshapeDimensions(flatten_dim);
-    auto output_tensor = flatten_layer->getOutput(0);
-    converter->UpdateTensorMap(output_operand, output_tensor);
+    NNADAPTER_CHECK(flatten_layer);
+    auto dims = ConvertToNVDims(output_operand->type.dimensions);
+    flatten_layer->setReshapeDimensions(dims);
+    converter->UpdateTensorMap(output_operand, flatten_layer->getOutput(0));
   } else {
     if (start_axis < 0) start_axis += input_operand->type.dimensions.count;
     if (end_axis < 0) end_axis += input_operand->type.dimensions.count;

@@ -18,11 +18,33 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+class HardSwishPlugin : public Plugin {
+ public:
+  HardSwishPlugin();
+  HardSwishPlugin(float alpha, float beta);
+  HardSwishPlugin(const void* serial_data, size_t serial_length);
+  ~HardSwishPlugin();
+  const char* getPluginType() const noexcept;
+  int enqueue(int batch_size,
+              const void* const* inputs,
+              void** outputs,
+              void* workspace,
+              cudaStream_t stream) noexcept;
+  size_t getSerializationSize() const noexcept;
+  void serialize(void* buffer) const noexcept;
+  nvinfer1::IPluginV2* clone() const noexcept;
+
+ private:
+  float alpha_;
+  float beta_;
+};
+
 class HardSwishPluginDynamic : public PluginDynamic {
  public:
   HardSwishPluginDynamic();
   HardSwishPluginDynamic(float alpha, float beta);
   HardSwishPluginDynamic(const void* serial_data, size_t serial_length);
+  ~HardSwishPluginDynamic();
   nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                   const nvinfer1::PluginTensorDesc* output_desc,
@@ -39,6 +61,14 @@ class HardSwishPluginDynamic : public PluginDynamic {
   float beta_;
 };
 
+class HardSwishPluginCreator : public PluginCreator {
+ public:
+  const char* getPluginName() const noexcept;
+  nvinfer1::IPluginV2* deserializePlugin(const char* name,
+                                         void const* serial_data,
+                                         size_t serial_length) noexcept;
+};
+
 class HardSwishPluginDynamicCreator : public PluginCreator {
  public:
   const char* getPluginName() const noexcept;
@@ -46,6 +76,10 @@ class HardSwishPluginDynamicCreator : public PluginCreator {
                                          void const* serial_data,
                                          size_t serial_length) noexcept;
 };
+
+template <typename T>
+cudaError_t HardSwish(
+    const T* input, T* output, int num, T alpha, T beta, cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

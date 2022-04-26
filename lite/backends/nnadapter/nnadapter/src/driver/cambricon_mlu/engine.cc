@@ -160,7 +160,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -198,7 +198,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto tensor_name = input_names_[arg.index];
     auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
@@ -225,7 +225,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
     if (IsDeviceMemory(outputs[i])) {

@@ -24,6 +24,7 @@ namespace nvidia_tensorrt {
 
 int ConvertSlice(Converter* converter, core::Operation* operation) {
   SLICE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
 
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -34,31 +35,26 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   auto dims_data = input_operand->type.dimensions.data;
   auto dims_count = input_operand->type.dimensions.count;
   nvinfer1::Dims new_starts_dims;
-  nvinfer1::Dims new_ends_dims;
   nvinfer1::Dims new_steps_dims;
   nvinfer1::Dims out_dims;
   std::vector<int32_t> new_axes(axes, axes + axes_count);
-  new_starts_dims.nbDims = dims_count;
-  new_ends_dims.nbDims = dims_count;
-  new_steps_dims.nbDims = dims_count;
-  out_dims.nbDims = dims_count;
+  new_starts_dims.nbDims = dims_count - 1;
+  new_steps_dims.nbDims = dims_count - 1;
+  out_dims.nbDims = dims_count - 1;
   int j = 0;
-  for (int i = 0; i < dims_count; i++) {
-    if (std::find(new_axes.begin(), new_axes.end(), i) == new_axes.end()) {
+  for (int i = 0; i < dims_count - 1; i++) {
+    if (std::find(new_axes.begin(), new_axes.end(), i + 1) == new_axes.end()) {
       new_starts_dims.d[i] = 0;
-      new_ends_dims.d[i] = dims_data[i];
       new_steps_dims.d[i] = 1;
     } else {
       new_starts_dims.d[i] =
-          starts[j] < 0 ? starts[j] + dims_data[i] : starts[j];
-      new_ends_dims.d[i] = ends[j] >= dims_data[i] ? dims_data[i] : ends[j];
+          starts[j] < 0 ? starts[j] + dims_data[i + 1] : starts[j];
       new_steps_dims.d[i] = steps[j];
       j++;
     }
   }
-  NNADAPTER_CHECK(!IsOperandWithDynamicShape(output_operand));
-  memcpy(&out_dims.d[0],
-         output_operand->type.dimensions.data,
+  memcpy(out_dims.d,
+         output_operand->type.dimensions.data + 1,
          sizeof(int32_t) * out_dims.nbDims);
 
   auto slice_layer = converter->network()->addSlice(

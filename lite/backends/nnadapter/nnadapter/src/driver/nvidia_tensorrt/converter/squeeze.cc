@@ -24,6 +24,7 @@ namespace nvidia_tensorrt {
 
 int ConvertSqueeze(Converter* converter, core::Operation* operation) {
   SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
 
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -31,15 +32,10 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto squeeze_layer = converter->network()->addShuffle(*input_tensor);
-  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
-  nvinfer1::Dims out_dims;
-  out_dims.nbDims = output_operand->type.dimensions.count;
-  memcpy(&out_dims.d[0],
-         output_operand->type.dimensions.data,
-         sizeof(int32_t) * out_dims.nbDims);
-  squeeze_layer->setReshapeDimensions(out_dims);
-  auto output_tensor = squeeze_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  NNADAPTER_CHECK(squeeze_layer);
+  auto dims = ConvertToNVDims(output_operand->type.dimensions);
+  squeeze_layer->setReshapeDimensions(dims);
+  converter->UpdateTensorMap(output_operand, squeeze_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 

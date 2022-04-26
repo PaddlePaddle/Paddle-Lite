@@ -257,9 +257,10 @@ REGISTER_CONVERTER(less_than,
 REGISTER_CONVERTER(reduce_mean,
                    ConvertReduce,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
-REGISTER_CONVERTER(reduce_sum,
-                   ConvertReduce,
-                   "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
+REGISTER_CONVERTER(
+    reduce_sum,
+    ConvertReduce,
+    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(scale,

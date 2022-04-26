@@ -96,6 +96,9 @@ template <class T = float>
 void test_stack(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
   for (float axis : {0, 1, 3, 4}) {
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    if (axis == 0) continue;
+#endif
     std::unique_ptr<arena::TestCase> tester(
         new StackComputeTester<T>(place, "def", axis));
     arena::Arena arena(std::move(tester), place, abs_error);

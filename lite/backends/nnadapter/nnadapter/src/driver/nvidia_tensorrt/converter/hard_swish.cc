@@ -17,6 +17,7 @@
 #include "operation/hard_sigmoid_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
@@ -28,13 +29,31 @@ int ConvertHardSwish(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  HardSwishPluginDynamic hard_swish_plugin(alpha, beta);
-  std::vector<nvinfer1::ITensor*> tensors{input_tensor};
-  auto hard_swish_layer =
-      converter->network()->addPluginV2(tensors.data(), 1, hard_swish_plugin);
+  auto hard_sigmoid_layer = converter->network()->addActivation(
+      *input_tensor, nvinfer1::ActivationType::kHARD_SIGMOID);
+  NNADAPTER_CHECK(hard_sigmoid_layer);
+  hard_sigmoid_layer->setAlpha(alpha);
+  hard_sigmoid_layer->setBeta(beta);
+  auto hard_swish_layer = converter->network()->addElementWise(
+      *input_tensor,
+      *hard_sigmoid_layer->getOutput(0),
+      nvinfer1::ElementWiseOperation::kPROD);
   NNADAPTER_CHECK(hard_swish_layer);
-  auto output_tensor = hard_swish_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  // Here is an example to use plugin
+  // std::vector<nvinfer1::ITensor*> tensors{input_tensor};
+  // nvinfer1::IPluginV2Layer* hard_swish_layer = nullptr;
+  // if (IsOperandWithDynamicShape(input_operand)) {
+  //   HardSwishPluginDynamic hard_swish_plugin(alpha, beta);
+  //   hard_swish_layer =
+  //       converter->network()->addPluginV2(tensors.data(), 1,
+  //       hard_swish_plugin);
+  // } else {
+  //   HardSwishPlugin hard_swish_plugin(alpha, beta);
+  //   hard_swish_layer =
+  //       converter->network()->addPluginV2(tensors.data(), 1,
+  //       hard_swish_plugin);
+  // }
+  converter->UpdateTensorMap(output_operand, hard_swish_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 

@@ -14,11 +14,57 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include "driver/nvidia_tensorrt/utility.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
+
+class Plugin : public nvinfer1::IPluginV2 {
+ public:
+  Plugin();
+  Plugin(const void* serial_data, size_t serial_length);
+  ~Plugin();
+  // Override funcs in IPluginV2
+  virtual const char* getPluginType() const noexcept = 0;
+  const char* getPluginVersion() const noexcept;
+  int32_t getNbOutputs() const noexcept;
+  virtual nvinfer1::Dims getOutputDimensions(int index,
+                                             const nvinfer1::Dims* inputs,
+                                             int nb_input_dims) noexcept;
+  virtual bool supportsFormat(nvinfer1::DataType type,
+                              nvinfer1::PluginFormat format) const noexcept;
+  virtual void configureWithFormat(const nvinfer1::Dims* input_dims,
+                                   int nb_inputs,
+                                   const nvinfer1::Dims* output_dims,
+                                   int nb_outputs,
+                                   nvinfer1::DataType type,
+                                   nvinfer1::PluginFormat format,
+                                   int max_batch_size) noexcept;
+  virtual int initialize() noexcept;
+  virtual void terminate() noexcept;
+  virtual size_t getWorkspaceSize(int max_batch_size) const noexcept;
+  virtual int enqueue(int batch_size,
+                      const void* const* inputs,
+                      void** outputs,
+                      void* workspace,
+                      cudaStream_t stream) noexcept = 0;
+  virtual size_t getSerializationSize() const noexcept;
+  virtual void serialize(void* buffer) const noexcept;
+  virtual void destroy() noexcept;
+  virtual IPluginV2* clone() const noexcept = 0;
+  virtual void setPluginNamespace(const char* plugin_namespace) noexcept;
+  virtual const char* getPluginNamespace() const noexcept;
+
+ protected:
+  std::vector<nvinfer1::Dims> input_dims_;
+  nvinfer1::DataType data_type_;
+  nvinfer1::PluginFormat data_format_;
+
+ private:
+  std::string namespace_;
+};
 
 class PluginDynamic : public nvinfer1::IPluginV2DynamicExt {
  public:

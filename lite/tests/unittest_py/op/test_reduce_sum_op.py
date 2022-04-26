@@ -38,6 +38,8 @@ class TestReduceSumOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -51,7 +53,8 @@ class TestReduceSumOp(AutoScanTest):
                     min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
         axis_list = draw(
-            st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
+            st.sampled_from([[-1], [-2], [-3], [-4], [-2, -1], [-3, -2], [0],
+                             [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
         reduce_all_data = True if axis_list == None or axis_list == [] else False
 
@@ -81,7 +84,19 @@ class TestReduceSumOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_sum"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in_shape = program_config.inputs["input_data"].shape
+                axis_list = program_config.ops[0].attrs["dim"]
+                if len(in_shape) == 1 \
+                    or 0 in axis_list \
+                    or -len(in_shape) in axis_list:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axis has 0' on nvidia_tensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

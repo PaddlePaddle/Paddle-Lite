@@ -135,6 +135,13 @@ class TestSoftmaxOp(AutoScanTest):
                 if x_shape[1] % 4 != 0:
                     return True
 
+        def teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in_shape = program_config.inputs["input_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(in_shape) == 1 or axis == 0 or axis == -len(in_shape):
+                    return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
@@ -142,6 +149,10 @@ class TestSoftmaxOp(AutoScanTest):
         self.add_ignore_check_case(
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axis == 0' on nvidia_tensorrt."
         )
 
     def test(self, *args, **kwargs):

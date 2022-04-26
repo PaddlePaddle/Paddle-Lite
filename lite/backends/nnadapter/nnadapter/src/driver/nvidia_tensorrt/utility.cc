@@ -13,24 +13,44 @@
 // limitations under the License.
 
 #include "driver/nvidia_tensorrt/utility.h"
+#include <algorithm>
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+Tensor::~Tensor() {
+  if (own_cuda_buffer_ && cuda_buffer_) {
+    cudaFree(cuda_buffer_);
+  }
+}
+
+void Tensor::SetData(void* cuda_buffer,
+                     const std::vector<int32_t>& dims,
+                     nvinfer1::DataType data_type) {
+  NNADAPTER_CHECK(cuda_buffer);
+  NNADAPTER_CHECK(!dims.empty());
+  cuda_buffer_ = cuda_buffer;
+  dims_ = dims;
+  data_type_ = data_type;
+  cuda_buffer_length_ = Length() * GetNVTypeSize(data_type_);
+  own_cuda_buffer_ = false;
+}
+
 void* Tensor::Data(bool return_cuda_buffer) {
   uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
   if (return_cuda_buffer) {
-    if (host_buffer_length_ > 0 && cuda_buffer_length_ == 0) {
-      // Host tensor should not return cuda buffer
-      return nullptr;
-    }
+    NNADAPTER_CHECK(!(host_buffer_length_ > 0 && cuda_buffer_length_ == 0))
+        << "Host tensor should not return cuda buffer";
     if (dst_length > cuda_buffer_length_) {
-      void* data{nullptr};
-      NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
-      cuda_buffer_.reset(data);
+      NNADAPTER_CHECK(own_cuda_buffer_)
+          << "Should not reset external device buffer.";
+      if (cuda_buffer_) {
+        cudaFree(cuda_buffer_);
+      }
+      NNADAPTER_CHECK_EQ(cudaMalloc(&cuda_buffer_, dst_length), cudaSuccess);
       cuda_buffer_length_ = dst_length;
     }
-    return cuda_buffer_.get();
+    return cuda_buffer_;
   } else {
     if (dst_length > host_buffer_length_) {
       void* data = malloc(dst_length);
@@ -40,13 +60,22 @@ void* Tensor::Data(bool return_cuda_buffer) {
     if (cuda_buffer_length_ > 0) {
       NNADAPTER_CHECK_GE(host_buffer_length_, cuda_buffer_length_);
       NNADAPTER_CHECK_EQ(cudaMemcpy(host_buffer_.get(),
-                                    cuda_buffer_.get(),
+                                    cuda_buffer_,
                                     cuda_buffer_length_,
                                     cudaMemcpyDeviceToHost),
                          cudaSuccess);
     }
     return host_buffer_.get();
   }
+}
+
+uint32_t Tensor::Length() {
+  if (dims_.empty()) return 0;
+  uint32_t length = 1;
+  for (auto i : dims_) {
+    length *= static_cast<uint32_t>(i);
+  }
+  return length;
 }
 
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
@@ -218,11 +247,11 @@ template void Deserialize(const void** buffer,
                           size_t* buffer_size,
                           std::vector<float>* value);
 
-void ConvertDynamicDimensions(NNAdapterOperandType* type) {
-  if (type->dimensions.dynamic_count == 0) return;
-  int count = type->dimensions.count;
-  int dynamic_count = type->dimensions.dynamic_count;
-  auto& dynamic_data = type->dimensions.dynamic_data;
+void ConvertDynamicDimensions(NNAdapterOperandDimensionType* dimensions) {
+  if (dimensions->dynamic_count == 0) return;
+  int count = dimensions->count;
+  int dynamic_count = dimensions->dynamic_count;
+  auto& dynamic_data = dimensions->dynamic_data;
   std::vector<int32_t> opt_shape(dynamic_data[0], dynamic_data[0] + count);
   std::vector<int32_t> min_shape(opt_shape);
   std::vector<int32_t> max_shape(opt_shape);
@@ -239,7 +268,15 @@ void ConvertDynamicDimensions(NNAdapterOperandType* type) {
   memcpy(dynamic_data[0], min_shape.data(), sizeof(int32_t) * count);
   memcpy(dynamic_data[1], opt_shape.data(), sizeof(int32_t) * count);
   memcpy(dynamic_data[2], max_shape.data(), sizeof(int32_t) * count);
-  type->dimensions.dynamic_count = 3;
+  dimensions->dynamic_count = 3;
+}
+
+int GetMaxBatchSize(const NNAdapterOperandDimensionType& dimensions) {
+  int max_batch_size = std::max(1, dimensions.data[0]);
+  for (int i = 0; i < dimensions.dynamic_count; i++) {
+    max_batch_size = std::max(max_batch_size, dimensions.dynamic_data[i][0]);
+  }
+  return max_batch_size;
 }
 
 core::Argument* FindArgumentByIndex(core::Argument* arguments,
@@ -251,6 +288,43 @@ core::Argument* FindArgumentByIndex(core::Argument* arguments,
     }
   }
   return static_cast<core::Argument*>(nullptr);
+}
+
+std::vector<int32_t> GetAlignedDims(
+    const NNAdapterOperandDimensionType& target_dimensions,
+    const NNAdapterOperandDimensionType& reference_dimensions) {
+  auto dims0_count = target_dimensions.count;
+  auto dims1_count = reference_dimensions.count;
+  auto dims0_data = target_dimensions.data;
+  std::vector<int32_t> dims(dims0_data, dims0_data + dims0_count);
+  for (size_t i = 0; i < dims.size(); i++) {
+    if (dims[i] == NNADAPTER_UNKNOWN) {
+      dims[i] = -1;
+    }
+  }
+  if (dims0_count < dims1_count) {
+    dims.insert(dims.begin(), dims1_count - dims0_count, 1);
+  }
+  return dims;
+}
+
+nvinfer1::Dims ConvertToNVDims(const NNAdapterOperandDimensionType& dimensions,
+                               bool ignore_batch) {
+  int count = dimensions.count;
+  auto data = dimensions.data;
+  for (int i = 1; i < count; i++) {
+    NNADAPTER_CHECK_NE(data[i], NNADAPTER_UNKNOWN);
+  }
+  nvinfer1::Dims dims;
+  if (ignore_batch) {
+    dims.nbDims = count - 1;
+    memcpy(dims.d, data + 1, dims.nbDims * sizeof(int32_t));
+  } else {
+    NNADAPTER_CHECK_NE(data[0], NNADAPTER_UNKNOWN);
+    dims.nbDims = count;
+    memcpy(dims.d, data, dims.nbDims * sizeof(int32_t));
+  }
+  return dims;
 }
 
 }  // namespace nvidia_tensorrt

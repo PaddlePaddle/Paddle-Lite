@@ -17,26 +17,11 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-HardSwishPluginDynamic::HardSwishPluginDynamic() {}
-
-HardSwishPluginDynamic::HardSwishPluginDynamic(float alpha, float beta)
-    : alpha_(alpha), beta_(beta) {}
-
-HardSwishPluginDynamic::HardSwishPluginDynamic(const void* serial_data,
-                                               size_t serial_length) {
-  Deserialize(&serial_data, &serial_length, &alpha_);
-  Deserialize(&serial_data, &serial_length, &beta_);
-}
-
-nvinfer1::IPluginV2DynamicExt* HardSwishPluginDynamic::clone() const noexcept {
-  return new HardSwishPluginDynamic(alpha_, beta_);
-}
-
 template <typename T, unsigned TPB>
-__global__ void hard_swish_kernel(
-    int n, const T* input, T* output, T alpha, T beta) {
+__global__ void HardSwishKernel(
+    const T* input, T* output, int num, T alpha, T beta) {
   const int idx = blockIdx.x * TPB + threadIdx.x;
-  if (idx < n) {
+  if (idx < num) {
     output[idx] = input[idx] * alpha + beta;
     output[idx] =
         output[idx] < static_cast<T>(1) ? output[idx] : static_cast<T>(1);
@@ -46,39 +31,22 @@ __global__ void hard_swish_kernel(
   }
 }
 
-int32_t HardSwishPluginDynamic::enqueue(
-    const nvinfer1::PluginTensorDesc* input_desc,
-    const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
-    void* const* outputs,
-    void* workspace,
-    cudaStream_t stream) noexcept {
-  auto input_dims = input_desc[0].dims;
-  int num = 1;
-  for (int i = 0; i < input_dims.nbDims; i++) {
-    num *= input_dims.d[i];
-  }
+template <typename T>
+cudaError_t HardSwish(
+    const T* input, T* output, int num, T alpha, T beta, cudaStream_t stream) {
   const int block_size = 256;
   const int grid_size = (num + block_size - 1) / block_size;
-  const float* input = static_cast<const float*>(inputs[0]);
-  float* output = static_cast<float*>(outputs[0]);
-  hard_swish_kernel<float, block_size><<<grid_size, block_size, 0, stream>>>(
-      num, input, output, alpha_, beta_);
-  return 0;
+  HardSwishKernel<T, block_size><<<grid_size, block_size, 0, stream>>>(
+      input, output, num, alpha, beta);
+  return cudaGetLastError();
 }
 
-size_t HardSwishPluginDynamic::getSerializationSize() const noexcept {
-  return SerializedSize(alpha_) + SerializedSize(beta_);
-}
-
-void HardSwishPluginDynamic::serialize(void* buffer) const noexcept {
-  Serialize(&buffer, alpha_);
-  Serialize(&buffer, beta_);
-}
-
-REGISTER_NNADAPTER_TENSORRT_PLUGIN(HardSwishPluginDynamic,
-                                   HardSwishPluginDynamicCreator,
-                                   "hard_swish_plugin_dynamic");
+template cudaError_t HardSwish(const float* input,
+                               float* output,
+                               int num,
+                               float alpha,
+                               float beta,
+                               cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

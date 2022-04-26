@@ -22,6 +22,7 @@ namespace nvidia_tensorrt {
 
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
@@ -29,14 +30,9 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   }
   auto reshape_layer = converter->network()->addShuffle(*input_tensor);
   NNADAPTER_CHECK(reshape_layer);
-  nvinfer1::Dims reshape_dims;
-  reshape_dims.nbDims = shape_operand->length / sizeof(int32_t);
-  memcpy(reshape_dims.d,
-         shape_operand->buffer,
-         sizeof(int32_t) * reshape_dims.nbDims);
-  reshape_layer->setReshapeDimensions(reshape_dims);
-  auto output_tensor = reshape_layer->getOutput(0);
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  auto dims = ConvertToNVDims(output_operand->type.dimensions);
+  reshape_layer->setReshapeDimensions(dims);
+  converter->UpdateTensorMap(output_operand, reshape_layer->getOutput(0));
   return NNADAPTER_NO_ERROR;
 }
 

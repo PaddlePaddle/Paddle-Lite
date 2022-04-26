@@ -34,24 +34,11 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-// Malloc gpu memory according to max dims
-static void SetMaxDims(const NNAdapterOperandType& type, Tensor* tensor) {
-  // Get max dims
-  std::vector<int> shape;
-  auto& dims = type.dimensions;
-  if (dims.dynamic_count == 0) {
-    shape = std::vector<int>(dims.data, dims.data + dims.count);
-  } else {
-    NNADAPTER_CHECK_EQ(dims.dynamic_count, 3U);
-    shape = std::vector<int>(dims.dynamic_data[2],
-                             dims.dynamic_data[2] + dims.count);
-  }
-  // Set tensor
-  tensor->SetDateType(ConvertToNVDataType(type.precision));
-  tensor->Resize(shape);
-}
-
-Context::Context(void* device, const char* properties) : device_(device) {
+Context::Context(void* device,
+                 const char* properties,
+                 int (*callback)(int event_id, void* user_data))
+    : device_(device) {
+  callback_ = callback;
   // Extract the runtime parameters from the context properties
   NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
@@ -119,6 +106,17 @@ Context::Context(void* device, const char* properties) : device_(device) {
           : GetUInt64FromEnv(NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE);
 }
 
+cudaStream_t Context::CudaStream() {
+  if (callback_) {
+    cudaStream_t cuda_stream;
+    NNADAPTER_CHECK_EQ(
+        callback_(NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM, &cuda_stream), 0);
+    return cuda_stream;
+  }
+  NNADAPTER_VLOG(1) << "Not find specified cuda_stream.";
+  return nullptr;
+}
+
 void TensorrtProgram::Clear() {
   tensors_.clear();
   input_indices_.clear();
@@ -147,12 +145,12 @@ int TensorrtProgram::Build() {
   for (size_t i = 0; i < input_count; i++) {
     auto operand = model_->input_operands.at(i);
     input_types_.at(i) = operand->type;
-    ConvertDynamicDimensions(&input_types_.at(i));
+    ConvertDynamicDimensions(&input_types_.at(i).dimensions);
   }
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model_->output_operands.at(i);
     output_types_.at(i) = operand->type;
-    ConvertDynamicDimensions(&output_types_.at(i));
+    ConvertDynamicDimensions(&output_types_.at(i).dimensions);
   }
   // 3. Create execution_context_
   execution_context_.reset(engine_->createExecutionContext());
@@ -180,7 +178,16 @@ void TensorrtProgram::CompleteConfig() {
       auto type = operand->type;
       auto& dimensions = type.dimensions;
       if (dimensions.dynamic_count == 0) continue;
-      ConvertDynamicDimensions(&type);
+      dimensions.count -= 1;
+      for (int i = 0; i < dimensions.count; i++) {
+        dimensions.data[i] = dimensions.data[i + 1];
+      }
+      for (int i = 0; i < dimensions.dynamic_count; i++) {
+        for (int j = 0; j < dimensions.count; j++) {
+          dimensions.dynamic_data[i][j] = dimensions.dynamic_data[i][j + 1];
+        }
+      }
+      ConvertDynamicDimensions(&type.dimensions);
       NNADAPTER_CHECK_EQ(dimensions.dynamic_count, 3);
       // need not to delete by user
       auto profile = builder_->createOptimizationProfile();
@@ -254,10 +261,20 @@ void TensorrtProgram::CompleteConfig() {
 }
 
 int TensorrtProgram::BuildFromModel() {
+  // Get dynamic shape info and max batch size
   for (auto operand : model_->input_operands) {
-    if (IsOperandWithDynamicShape(operand)) {
-      with_dynamic_shape_ = true;
-      break;
+    int count = operand->type.dimensions.count;
+    auto dims = operand->type.dimensions.data;
+    for (int i = 0; i < count; i++) {
+      if (dims[i] == NNADAPTER_UNKNOWN) {
+        with_dynamic_shape_ = true;
+      }
+    }
+    auto dynamic_count = operand->type.dimensions.dynamic_count;
+    auto dynamic_data = operand->type.dimensions.dynamic_data;
+    max_batch_size_ = std::max(max_batch_size_, dims[0]);
+    for (int i = i; i < dynamic_count; i++) {
+      max_batch_size_ = std::max(max_batch_size_, dynamic_data[i][0]);
     }
   }
   // 1. Optimize the model_
@@ -269,12 +286,13 @@ int TensorrtProgram::BuildFromModel() {
   // 2. Build model_, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));
   NNADAPTER_CHECK(builder_);
-  if (context_->Precision() == kInt8) {
-    network_.reset(builder_->createNetworkV2(0U));
-  } else {
+  builder_->setMaxBatchSize(max_batch_size_);
+  if (with_dynamic_shape_) {
     network_.reset(builder_->createNetworkV2(
         1U << static_cast<int>(
             nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH)));
+  } else {
+    network_.reset(builder_->createNetworkV2(0U));
   }
   NNADAPTER_CHECK(network_);
   // Convert a NNAdapter model_ to a tensorrt network
@@ -310,12 +328,27 @@ int TensorrtProgram::BuildFromCache() {
 
 int TensorrtProgram::Execute(
     std::vector<std::shared_ptr<Tensor>>* input_tensors,
-    std::vector<std::shared_ptr<Tensor>>* output_tensors) {
-  // Malloc max output memory
+    std::vector<std::shared_ptr<Tensor>>* output_tensors,
+    cudaStream_t stream) {
+  // Set input dims
+  int batch_size = 1;
   int input_size = input_types_.size();
+  for (int i = 0; i < input_size; i++) {
+    auto shape = input_tensors->at(i)->Dims();
+    batch_size = shape[0];
+    nvinfer1::Dims dims;
+    dims.nbDims = shape.size() - 1;
+    memcpy(dims.d, shape.data() + 1, dims.nbDims * sizeof(int32_t));
+    execution_context_->setBindingDimensions(input_indices_.at(i), dims);
+  }
+  NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
+  // Get output dims
   int output_size = output_types_.size();
   for (int i = 0; i < output_size; i++) {
-    SetMaxDims(output_types_.at(i), output_tensors->at(i).get());
+    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
+    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
+    shape.insert(shape.begin(), batch_size);
+    output_tensors->at(i)->Resize(shape);
   }
   // Prepare input/output buffers
   std::vector<void*> device_ptrs(input_size + output_size, nullptr);
@@ -328,22 +361,12 @@ int TensorrtProgram::Execute(
   for (auto ptr : device_ptrs) {
     NNADAPTER_CHECK(ptr);
   }
-  // Set input dims
-  for (int i = 0; i < input_size; i++) {
-    auto shape = input_tensors->at(i)->Dims();
-    nvinfer1::Dims dims;
-    dims.nbDims = shape.size();
-    memcpy(dims.d, shape.data(), dims.nbDims * sizeof(int32_t));
-    execution_context_->setBindingDimensions(input_indices_.at(i), dims);
-  }
-  NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
   // Execute model
-  execution_context_->execute(1, device_ptrs.data());
-  // Get output dims
-  for (int i = 0; i < output_size; i++) {
-    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
-    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
-    output_tensors->at(i)->Resize(shape);
+  if (!with_dynamic_shape_) {
+    execution_context_->enqueue(
+        batch_size, device_ptrs.data(), stream, nullptr);
+  } else {
+    execution_context_->enqueueV2(device_ptrs.data(), stream, nullptr);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -377,7 +400,8 @@ int CudaProgram::Build() {
 }
 
 int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-                         std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+                         std::vector<std::shared_ptr<Tensor>>* output_tensors,
+                         cudaStream_t stream) {
   for (auto& operand : model_->operands) {
     if (!tensors_.count(&operand)) {
       tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());
@@ -394,7 +418,6 @@ int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
   for (size_t i = 0; i < kernels_.size(); i++) {
     NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &tensors_),
                        NNADAPTER_NO_ERROR);
-    cudaDeviceSynchronize();
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -428,7 +451,9 @@ int HostProgram::Build() {
 }
 
 int HostProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-                         std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+                         std::vector<std::shared_ptr<Tensor>>* output_tensors,
+                         cudaStream_t stream) {
+  NNADAPTER_CHECK_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   for (auto& operand : model_->operands) {
     if (!tensors_.count(&operand)) {
       tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());
