@@ -12,97 +12,97 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 
 | OP_name| ARM | OpenCL | Metal | 昆仑芯XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU | 芯原TIM-VX | Android NN API| 英特尔OpenVINO | 英伟达TensorRT |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -|
-|                   affine_channel|Y| | | | | | | | | | | | | | | | |      
-|                      affine_grid|Y| | | | | | | | | | | | | | | | |      
-|                          arg_max|Y|Y|Y|Y|Y| | | |Y|Y| | |Y| | | |Y|      
-|                     assign_value| | | |Y|Y| |Y| | | | | | | | | | |      
-|                       batch_norm|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | |Y|Y|      
-|                  bilinear_interp|Y|Y|Y|Y| |Y|Y| | |Y| | |Y| | | |Y|      
-|               bilinear_interp_v2|Y|Y|Y|Y| |Y| | | |Y| | |Y| | | |Y|      
-|                        box_coder|Y|Y|Y|Y|Y|Y|Y| | | | | | | | | | |      
-|                            calib|Y| | |Y| |Y| | |Y|Y| | | | | | | |      
-|                             cast| | |Y|Y|Y| |Y| |Y|Y| | |Y| | | |Y|      
-|                           concat|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                           conv2d|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                 conv2d_transpose|Y|Y|Y|Y| |Y|Y| | |Y|Y| |Y| |Y| | |      
-|                density_prior_box| | | |Y|Y|Y|Y| | | | | | | | | | |      
-|                 depthwise_conv2d|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
-|       depthwise_conv2d_transpose|Y|Y| | | | |Y| | | | | | | | | | |      
-|                          dropout|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | | |Y|      
-|                  elementwise_add|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                  elementwise_div|Y|Y|Y|Y| |Y|Y| | |Y|Y|Y|Y|Y|Y| |Y|      
-|             elementwise_floordiv|Y|Y| | | |Y| | | | | | | | | | | |      
-|                  elementwise_max|Y|Y| |Y| |Y| | | |Y| | |Y|Y| | | |      
-|                  elementwise_min|Y|Y| | | |Y| | | |Y| | |Y|Y| | | |      
-|                  elementwise_mod|Y|Y| | | |Y| | | | | | | | | | | |      
-|                  elementwise_mul|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y| |Y|      
-|                  elementwise_pow|Y|Y| | | |Y| | | |Y| | |Y| | | |Y|      
-|                  elementwise_sub|Y|Y|Y|Y| |Y|Y| | |Y|Y|Y|Y|Y|Y| |Y|      
-|                              elu|Y| | | |Y| | | | | | | | | | | | |      
-|                              erf|Y| | | | | | | | | | | | | | | | |      
-|                           expand| |Y| | |Y| | | | | | | | | | | | |      
-|                        expand_as| | | | |Y| | | | | | | | | | | | |      
-|                               fc|Y|Y|Y| | |Y| | |Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                             feed| | |Y| |Y| | | | | | | | | | | | |      
-|                            fetch| | |Y| |Y| | | | | | | | | | | | |      
-|                    fill_constant| | | |Y|Y| |Y| | |Y| | | | | | |Y|      
-|    fill_constant_batch_size_like| | | |Y|Y| | | | |Y| | | | | | | |      
-|                          flatten| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                         flatten2| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|         flatten_contiguous_range| | | |Y|Y| | | | |Y|Y|Y|Y| |Y| |Y|      
-|fusion_elementwise_add_activation|Y|Y|Y| | |Y| | | |Y|Y|Y|Y|Y|Y| | |      
-|fusion_elementwise_div_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | |      
-|fusion_elementwise_max_activation|Y| | | | |Y| | | |Y| | |Y|Y| | | |      
-|fusion_elementwise_min_activation|Y| | | | |Y| | | |Y| | |Y|Y| | | |      
-|fusion_elementwise_mul_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | |      
-|fusion_elementwise_pow_activation| | | | | | | | | |Y| | |Y| | | | |      
-|fusion_elementwise_sub_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | |      
-|                     grid_sampler|Y|Y| |Y| |Y| | | | | | | | | | | |      
-|                    instance_norm|Y|Y| |Y| |Y| | | |Y| | | | | | | |      
-|                          io_copy| |Y|Y|Y| | | | |Y| | | | | | | | |      
-|                     io_copy_once| |Y|Y|Y| | | | | | | | | | | | | |      
-|                           layout|Y|Y| | | |Y| | |Y| | | | | | | | |      
-|                      layout_once|Y|Y| | | | | | | | | | | | | | | |      
-|                       leaky_relu|Y|Y|Y|Y|Y|Y|Y| |Y|Y| | |Y| | | |Y|      
-|                 lod_array_length| | | |Y|Y| | | | | | | | | | | | |      
-|                           matmul|Y|Y|Y|Y| |Y|Y| | |Y| | |Y|Y| | |Y|      
-|                              mul|Y| | |Y| |Y|Y| | |Y| | | | | | |Y|      
-|                   multiclass_nms| | | | |Y| |Y| | | | | | | | | | |      
-|                  multiclass_nms2| | | | |Y| |Y| | | | | | | | | | |      
-|                  multiclass_nms3| | | | |Y| | | | | | | | | | | | |      
-|                   nearest_interp|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | | |Y|      
-|                nearest_interp_v2|Y|Y|Y|Y| |Y| | | |Y| | |Y| | | |Y|      
-|                            pad2d|Y|Y|Y|Y|Y| | | | |Y| | |Y| | | | |      
-|                           pool2d|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                            prelu|Y|Y| |Y|Y| | | | |Y| | |Y| | | | |      
-|                        prior_box|Y| | |Y|Y| |Y| | | | | | | | | |Y|      
-|                            range| | | | |Y| | | | |Y| | | | | | | |      
-|                      reduce_mean|Y|Y|Y|Y| |Y|Y| | |Y| | |Y| | | | |      
-|                             relu|Y|Y|Y|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                            relu6|Y|Y|Y|Y|Y|Y| | |Y|Y|Y|Y|Y|Y|Y| |Y|      
-|                          reshape| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y|Y|Y| |Y|      
-|                         reshape2| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y|Y|Y| |Y|      
-|                            scale|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                        search_fc| | | |Y| | | | | | | | | | | | | |      
-|        sequence_topk_avg_pooling| | | |Y| |Y| | | | | | | | | | | |      
-|                  shuffle_channel|Y|Y|Y| |Y| | | | |Y| | |Y| | | | |      
-|                          sigmoid|Y|Y|Y|Y|Y|Y|Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                            slice|Y|Y|Y|Y| |Y|Y| |Y|Y| | | | | | |Y|      
-|                          softmax|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|      
-|                         softplus|Y| | | |Y| | | | |Y| | |Y| | | | |      
-|                          squeeze| |Y| |Y|Y| |Y| |Y|Y| | |Y| | | |Y|      
-|                         squeeze2| |Y| |Y|Y| |Y| |Y|Y| | |Y| | | |Y|      
-|                            stack| | | |Y|Y|Y| | | |Y| | | | | | |Y|      
-|                         subgraph| | | | | | | | |Y| | | | | | | | |      
-|                  sync_batch_norm|Y|Y| | | |Y| | | | | | | | | | | |      
-|                             tanh|Y|Y| |Y|Y|Y| | | |Y|Y|Y|Y| |Y| |Y|      
-|                 thresholded_relu|Y| | | |Y| | | | | | | | | | | | |      
-|                        transpose|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                       transpose2|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y| |Y|      
-|                        unsqueeze| |Y| |Y|Y| | | | |Y| | | | | | |Y|      
-|                       unsqueeze2| |Y| |Y|Y| | | | |Y| | | | | | |Y|      
-|                       write_back| | | | |Y| | | | | | | | | | | | |      
-|                         yolo_box|Y|Y|Y|Y|Y| |Y| | | | | | | | | |Y|      
+|                   affine_channel|Y| | | | | | | | | | | | | | | | | | |      
+|                      affine_grid|Y| | | | | | | | | | | | | | | | | | |      
+|                          arg_max|Y|Y|Y|Y|Y| | | |Y|Y| | |Y| | | | | |Y|      
+|                     assign_value| | | |Y|Y| |Y| | | | | | | | | | | | |      
+|                       batch_norm|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | |Y| |Y|Y|      
+|                  bilinear_interp|Y|Y|Y|Y| |Y|Y| | |Y| | |Y| | |Y| | |Y|      
+|               bilinear_interp_v2|Y|Y|Y|Y| |Y| | | |Y| | |Y| | |Y| | |Y|      
+|                        box_coder|Y|Y|Y|Y|Y|Y|Y| | | | | | | | | | | | |      
+|                            calib|Y| | |Y| |Y| | |Y|Y| | | | | | | | | |      
+|                             cast| | |Y|Y|Y| |Y| |Y|Y| | |Y| | | | | |Y|      
+|                           concat|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                           conv2d|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                 conv2d_transpose|Y|Y|Y|Y| |Y|Y| | |Y|Y| |Y| |Y|Y|Y| | |      
+|                density_prior_box| | | |Y|Y|Y|Y| | | | | | | | | | | | |      
+|                 depthwise_conv2d|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|       depthwise_conv2d_transpose|Y|Y| | | | |Y| | | | | | | | | | | | |      
+|                          dropout|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | |Y|Y| |Y|      
+|                  elementwise_add|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                  elementwise_div|Y|Y|Y|Y| |Y|Y| | |Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|             elementwise_floordiv|Y|Y| | | |Y| | | | | | | | | | | | | |      
+|                  elementwise_max|Y|Y| |Y| |Y| | | |Y| | |Y|Y| |Y|Y| | |      
+|                  elementwise_min|Y|Y| | | |Y| | | |Y| | |Y|Y| |Y|Y| | |      
+|                  elementwise_mod|Y|Y| | | |Y| | | | | | | | | | | | | |      
+|                  elementwise_mul|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|                  elementwise_pow|Y|Y| | | |Y| | | |Y| | |Y| | |Y| | |Y|      
+|                  elementwise_sub|Y|Y|Y|Y| |Y|Y| | |Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|                              elu|Y| | | |Y| | | | | | | | | | | | | | |      
+|                              erf|Y| | | | | | | | | | | | | | | | | | |      
+|                           expand| |Y| | |Y| | | | | | | | | | | | | | |      
+|                        expand_as| | | | |Y| | | | | | | | | | | | | | |      
+|                               fc|Y|Y|Y| | |Y| | |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                             feed| | |Y| |Y| | | | | | | | | | | | | | |      
+|                            fetch| | |Y| |Y| | | | | | | | | | | | | | |      
+|                    fill_constant| | | |Y|Y| |Y| | |Y| | | | | | | | |Y|      
+|    fill_constant_batch_size_like| | | |Y|Y| | | | |Y| | | | | |Y| | | |      
+|                          flatten| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                         flatten2| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|         flatten_contiguous_range| | | |Y|Y| | | | |Y|Y|Y|Y| |Y|Y| | |Y|      
+|fusion_elementwise_add_activation|Y|Y|Y| | |Y| | | |Y|Y|Y|Y|Y|Y| | | | |      
+|fusion_elementwise_div_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | | | |      
+|fusion_elementwise_max_activation|Y| | | | |Y| | | |Y| | |Y|Y| | | | | |      
+|fusion_elementwise_min_activation|Y| | | | |Y| | | |Y| | |Y|Y| | | | | |      
+|fusion_elementwise_mul_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | | | |      
+|fusion_elementwise_pow_activation| | | | | | | | | |Y| | |Y| | | | | | |      
+|fusion_elementwise_sub_activation|Y|Y| | | |Y| | | |Y|Y|Y|Y|Y|Y| | | | |      
+|                     grid_sampler|Y|Y| |Y| |Y| | | | | | | | | | | | | |      
+|                    instance_norm|Y|Y| |Y| |Y| | | |Y| | | | | | | | | |      
+|                          io_copy| |Y|Y|Y| | | | |Y| | | | | | | | | | |      
+|                     io_copy_once| |Y|Y|Y| | | | | | | | | | | | | | | |      
+|                           layout|Y|Y| | | |Y| | |Y| | | | | | | | | | |      
+|                      layout_once|Y|Y| | | | | | | | | | | | | | | | | |      
+|                       leaky_relu|Y|Y|Y|Y|Y|Y|Y| |Y|Y| | |Y| | |Y| | |Y|      
+|                 lod_array_length| | | |Y|Y| | | | | | | | | | | | | | |      
+|                           matmul|Y|Y|Y|Y| |Y|Y| | |Y| | |Y|Y| |Y| | |Y|      
+|                              mul|Y| | |Y| |Y|Y| | |Y| | | | | | | | |Y|      
+|                   multiclass_nms| | | | |Y| |Y| | | | | | | | | | | | |      
+|                  multiclass_nms2| | | | |Y| |Y| | | | | | | | | | | | |      
+|                  multiclass_nms3| | | | |Y| | | | | | | | | | | | | | |      
+|                   nearest_interp|Y|Y|Y|Y| |Y|Y| |Y|Y| | |Y| | |Y| | |Y|      
+|                nearest_interp_v2|Y|Y|Y|Y| |Y| | | |Y| | |Y| | |Y| | |Y|      
+|                            pad2d|Y|Y|Y|Y|Y| | | | |Y| | |Y| | | | | | |      
+|                           pool2d|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                            prelu|Y|Y| |Y|Y| | | | |Y| | |Y| | | | | | |      
+|                        prior_box|Y| | |Y|Y| |Y| | | | | | | | | | | |Y|      
+|                            range| | | | |Y| | | | |Y| | | | | | | | | |      
+|                      reduce_mean|Y|Y|Y|Y| |Y|Y| | |Y| | |Y| | | | | | |      
+|                             relu|Y|Y|Y|Y|Y|Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                            relu6|Y|Y|Y|Y|Y|Y| | |Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|                          reshape| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|                         reshape2| |Y|Y|Y|Y| |Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y| |Y|      
+|                            scale|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                        search_fc| | | |Y| | | | | | | | | | | | | | | |      
+|        sequence_topk_avg_pooling| | | |Y| |Y| | | | | | | | | | | | | |      
+|                  shuffle_channel|Y|Y|Y| |Y| | | | |Y| | |Y| | |Y| | | |      
+|                          sigmoid|Y|Y|Y|Y|Y|Y|Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                            slice|Y|Y|Y|Y| |Y|Y| |Y|Y| | | | | |Y| | |Y|      
+|                          softmax|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|Y|      
+|                         softplus|Y| | | |Y| | | | |Y| | |Y| | | | | | |      
+|                          squeeze| |Y| |Y|Y| |Y| |Y|Y| | |Y| | |Y|Y| |Y|      
+|                         squeeze2| |Y| |Y|Y| |Y| |Y|Y| | |Y| | |Y|Y| |Y|      
+|                            stack| | | |Y|Y|Y| | | |Y| | | | | | | | |Y|      
+|                         subgraph| | | | | | | | |Y| | | | | | | | | | |      
+|                  sync_batch_norm|Y|Y| | | |Y| | | | | | | | | | | | | |      
+|                             tanh|Y|Y| |Y|Y|Y| | | |Y|Y|Y|Y| |Y| |Y| |Y|      
+|                 thresholded_relu|Y| | | |Y| | | | | | | | | | | | | | |      
+|                        transpose|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                       transpose2|Y|Y|Y|Y| |Y|Y| |Y|Y|Y|Y|Y| |Y|Y|Y| |Y|      
+|                        unsqueeze| |Y| |Y|Y| | | | |Y| | | | | |Y|Y| |Y|      
+|                       unsqueeze2| |Y| |Y|Y| | | | |Y| | | | | |Y|Y| |Y|      
+|                       write_back| | | | |Y| | | | | | | | | | | | | | |      
+|                         yolo_box|Y|Y|Y|Y|Y| |Y| | | | | | | | | | | |Y|      
 
 
 ### 附加算子
