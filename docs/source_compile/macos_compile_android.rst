@@ -45,10 +45,17 @@ macOS 环境下编译适用于 Android 的库
 推荐环境
 ^^^^^^^^
 
+C++ 环境
+""""""""
 * gcc、g++ == 8.2.0
 * CMake >= 3.10
 * Android NDK >= r17c
 * git、make、curl、unzip、java
+
+java 环境
+""""""""
+* Jdk == 1.8.0
+* Gradle == 4.1.2
 
 环境安装命令
 ^^^^^^^^^^^^
