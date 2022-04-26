@@ -128,6 +128,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_select_input_compute SRCS select_input_compute_test.cc)
     lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc)
     lite_cc_test(test_kernel_where_compute SRCS where_compute_test.cc)
+    lite_cc_test(test_kernel_log_softmax_compute SRCS log_softmax_compute_test.cc)
     # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc)
     # TODO: fix tensor_array_to_tensor unittest
     
