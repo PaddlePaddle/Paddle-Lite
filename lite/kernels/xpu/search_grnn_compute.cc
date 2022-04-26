@@ -106,7 +106,6 @@ void SearchGrnnCompute::Run() {
   auto* wh = param.wh;
   auto* top = param.out;
   auto* tmp_buffer = param.tmp_buffer;
-  auto* idx_sorted_by_width = param.idx_sorted_by_width;
   auto* layout_input = param.layout_input;
   int cap_h = param.num_hidden;
   int cap_e = param.num_input;
