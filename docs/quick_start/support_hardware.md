@@ -145,6 +145,15 @@ Paddle Lite 支持英特尔 OpenVINO 预测部署
 
 - [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)
 
+## Android NNAPI
+
+Paddle Lite 支持 Android NNAPI，支持列表如下：
+- 支持设备：Android 8.1(Oreo) 及以上的终端设备（Android SDK version 需在 27 及以上）
+
+### Android NNAPI 环境准备及示例程序
+
+- [Paddle Lite 使用 Android NNAPI 预测部署](../demo_guides/android_nnapi)
+
 ## 联发科 (MediaTek) APU
 
 Paddle Lite 支持 联发科 (MediaTek) APU，支持列表如下：
@@ -154,6 +163,15 @@ Paddle Lite 支持 联发科 (MediaTek) APU，支持列表如下：
 ### 联发科 (MediaTek) APU 环境准备及示例程序
 
 - [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)
+
+## 芯原 TIM-VX
+
+Paddle Lite 支持 芯原 TIM-VX，支持列表如下：
+- 支持芯片：搭载了芯原 NPU 的 SoC，驱动版本需为 6.4.4.3
+
+### 芯原 TIM-VX 环境准备及示例程序
+
+- [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
 
 ## 晶晨（Amlogic）NPU
 

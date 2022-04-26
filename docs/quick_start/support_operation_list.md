@@ -10,7 +10,7 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 
 以 ARM CPU 为例，如果模型中某个算子没有 ARM 端 Kernel，但是有 Host 端 Kernel，那么模型优化阶段该算子会选择 Host 端 Kernel，该模型还是可以顺利部署。
 
-| OP_name| ARM | OpenCL | Metal | 昆仑芯XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU | 芯原TIM-VX | Android NN API| 英特尔OpenVINO | 英伟达TensorRT |
+| OP_name| ARM | OpenCL | Metal | 昆仑芯XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU | 芯原TIM-VX | Android NNAPI| 英特尔OpenVINO | 英伟达TensorRT |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -|
 |                   affine_channel|Y| | | | | | | | | | | | | | | | | | |      
 |                      affine_grid|Y| | | | | | | | | | | | | | | | | | |      
@@ -110,7 +110,7 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 加上附加算子共计 278 个，需要在编译时打开 `--with_extra=ON` 开关才会编译，具体请参考[参数详情](../source_compile/compile_options)。
 
 
-| OP_name| ARM | OpenCL | Metal | 昆仑芯XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU | 芯原TIM-VX | Android NN API | 英特尔OpenVINO | 英伟达TensorRT |
+| OP_name| ARM | OpenCL | Metal | 昆仑芯XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU | 芯原TIM-VX | Android NNAPI | 英特尔OpenVINO | 英伟达TensorRT |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -| -|
 |                                            abs|Y|Y| |Y|Y| | | | |Y| | |Y| | | | | | |      
 |                                           acos| |Y| | | | | | | | | | | | | | | | | |  
