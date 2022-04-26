@@ -269,6 +269,13 @@ void CxxPaddleApiImpl::Run() {
   raw_predictor_->Run();
 }
 
+std::map<std::string, std::vector<std::string>> CxxPaddleApiImpl::Get_op_info() {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+#endif
+  return raw_predictor_->Get_op_info();
+}
+
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor =

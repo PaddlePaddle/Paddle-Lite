@@ -390,6 +390,7 @@ void BindLiteCxxPredictor(py::module *m) {
       .def("get_input_by_name", &CxxPaddleApiImpl::GetInputByName)
       .def("get_output_by_name", &CxxPaddleApiImpl::GetOutputByName)
       .def("run", &CxxPaddleApiImpl::Run)
+      .def("get_op_info", &CxxPaddleApiImpl::Get_op_info)
       .def("get_version", &CxxPaddleApiImpl::GetVersion)
       .def("save_optimized_pb_model",
            [](CxxPaddleApiImpl &self, const std::string &output_dir) {

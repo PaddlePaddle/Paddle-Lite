@@ -130,7 +130,13 @@ class OpLite : public Registry {
                     lite::Tensor **output_var);
 
   virtual ~OpLite() = default;
+  std::vector<const Tensor *> get_input_tensor_ptrs() {
+    return this->input_tensor_ptrs_cache_;
+  }
 
+  std::vector<Tensor *> get_output_tensor_ptrs() {
+    return this->output_tensor_ptrs_cache_; 
+  }
  protected:
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;

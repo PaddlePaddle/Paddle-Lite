@@ -182,6 +182,30 @@ class LITE_API Predictor {
     ClearTensorArray(program_desc_);
   }
 
+  std::map<std::string, std::vector<std::string>> Get_op_info(){
+    if (!program_generated_) {
+      GenRuntimeProgram();
+    }
+    CheckInputValid();
+
+#ifdef LITE_WITH_XPU
+    std::vector<std::vector<int64_t>> query_shape;
+    for (size_t i = 0; i < input_names_.size(); i++) {
+      query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
+    }
+    lite::TargetWrapperXPU::MallocL3Cache(query_shape);
+#endif
+
+    std::map<std::string, std::vector<std::string>> res = program_->Get_op_info();
+
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::FreeL3Cache();
+#endif
+
+    ClearTensorArray(program_desc_);
+    return res;
+  }
+
 #ifdef LITE_WITH_METAL
   void ConfigMetalContext(const lite_api::CxxConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
@@ -292,7 +316,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       const std::string& name) const;
 
   void Run() override;
-
+  std::map<std::string, std::vector<std::string>> Get_op_info();
   /// \brief Release all tmp tensor to compress the size of the memory pool.
   /// The memory pool is considered to be composed of a list of chunks, if
   /// the chunk is not occupied, it can be released.

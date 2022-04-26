@@ -479,6 +479,76 @@ void RuntimeProgram::Run() {
 #endif
 }
 
+std::map<std::string, std::vector<std::string>> RuntimeProgram::Get_op_info() {
+#ifdef LITE_WITH_PRECISION_PROFILE
+  auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
+  std::string precision_profiler_summary =
+      inst_precision_profiler.GetSummaryHeader();
+#endif
+
+#ifdef LITE_WITH_NVTX
+  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
+  if (annotator.IsEnabled()) {
+    annotation_one_loop.generate(register_layer_names_.back(),
+                                 lite::Color::Engine);
+  }
+#endif
+
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
+    int idx = -1;
+
+    std::map<std::string, std::vector<std::string>> res;  
+    auto& insts = instructions_[kRootBlockIdx];
+    for (auto& inst : insts) {
+      ++idx;
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+    if (inst.is_feed_fetch_op()) continue;
+#endif
+#ifdef LITE_WITH_NVTX
+    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+    nvtxStringHandle_t registered_name = register_layer_names_[idx];
+    if (annotator.IsEnabled()) {
+    annotation.generate(registered_name, lite::Color::Runner);
+    }
+#endif
+#ifdef LITE_WITH_CUDA
+    if (inst.need_sync()) {
+    inst.Sync();
+    }
+#endif
+
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
+#ifdef LITE_WITH_OPENCL
+    // delegate flush judgement to specify target , it is too heavy for Inst
+    inst.Flush(idx);
+#endif
+      std::pair<std::string, std::vector<std::string>> op_info_shape;  
+      op_info_shape = inst.Get_op_info();
+      res.insert(op_info_shape);
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
+
+#ifdef LITE_WITH_PRECISION_PROFILE
+#ifndef LITE_WITH_FPGA
+    if (inst.op()->Type() != "while") {
+    precision_profiler_summary +=
+        inst_precision_profiler.GetInstPrecision(&inst);
+    }
+#endif
+#endif  // LITE_WITH_PRECISION_PROFILE
+    }
+    return res;
+}
+
 void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
@@ -665,6 +735,41 @@ void Instruction::Run() {
     first_epoch_for_profiler_ = false;
   }
 #endif
+}
+
+std::pair<std::string, std::vector<std::string>> Instruction::Get_op_info() {
+
+  std::pair<std::string, std::vector<std::string>> res;  
+
+  CHECK(op_) << "op null";
+  CHECK(kernel_) << "kernel null";
+  
+  if (first_epoch_) {
+    first_epoch_ = false;
+    CHECK(op_->CheckShape());
+  }
+
+  if (op_->run_once() && has_run_) {
+    return res;
+  }
+
+  op_->InferShape();
+
+  const OpInfo *op_info_temp = op_->op_info();
+  std::vector<std::string> inputs = op_info_temp->input_names();
+  std::vector<std::string> outputs = op_info_temp->output_names();
+  
+  std::string res_key = op_->Type() + "+" + outputs[0];
+  std::vector<std::string> res_value;
+  for(auto it : op_->get_input_tensor_ptrs())
+    res_value.push_back(it->dims().repr());
+  for(auto it : op_->get_output_tensor_ptrs())
+    res_value.push_back(it->dims().repr());
+  res = std::make_pair(res_key, res_value);
+  
+  kernel_->Launch();
+  has_run_ = true;
+  return res;
 }
 
 STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
