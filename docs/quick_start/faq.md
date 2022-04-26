@@ -14,6 +14,15 @@
 
 答：gcc 编译模式下，V7/V8 多线程均支持；clang 编译模式下，V8 支持多线程，V7 只支持单线程
 
+4、使用 Opt 工具时或者在模型运行阶段，想要看到更多的 LOG 信息怎么办？
+
+答：使用 Opt 工具之前，通过在终端输入 export GLOG_v=4，模型优化阶段就会输出更详细的 LOG 信息；
+运行阶段，则首先需要编译或者下载带有 LOG 的预编译库，[Paddle Lite 预编译库下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)，同时在终端输入 export GLOG_v=4 后，模型运行阶段就会输出更详细的 LOG。
+
+5、在 ios 设备上跑模型失败，报出 feed op 不支持怎么办？
+
+答：建议在 demo 中添加这两个头文件后： `#include "paddle_use_kernels.h"` `#include "paddle_use_ops.h"` 再进行测试，同时注意 `paddle_use_kernels.h` 和 `paddle_use_ops.h` 仅能被一个 cpp 文件包含一次。如果两个 cpp 文件都包含则会报错。
+
 ### 模型转换
 
 1、使用 OPT 工具转换模型报错怎么办？
