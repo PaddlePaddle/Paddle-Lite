@@ -1,4 +1,4 @@
-NNAdapter 支持 Android NN API
+NNAdapter 支持 Android NNAPI
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
@@ -8,7 +8,7 @@ NNAdapter 支持 Android NN API
      - 可选范围
      - 默认值
    * - nnadapter_with_android_nnapi
-     - 是否编译 Android NN API 的 NNAdapter HAL 库
+     - 是否编译 Android NNAPI 的 NNAdapter HAL 库
      - OFF / ON
      - OFF
 
