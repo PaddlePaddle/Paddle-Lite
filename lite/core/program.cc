@@ -500,12 +500,12 @@ std::map<std::string, std::vector<std::string>> RuntimeProgram::Get_op_info() {
   monitor.inferStart();
 #endif
 
-    int idx = -1;
+  int idx = -1;
 
-    std::map<std::string, std::vector<std::string>> res;  
-    auto& insts = instructions_[kRootBlockIdx];
-    for (auto& inst : insts) {
-      ++idx;
+  std::map<std::string, std::vector<std::string>> res;
+  auto& insts = instructions_[kRootBlockIdx];
+  for (auto& inst : insts) {
+    ++idx;
 #if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
 #endif
@@ -513,12 +513,12 @@ std::map<std::string, std::vector<std::string>> RuntimeProgram::Get_op_info() {
     NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
     nvtxStringHandle_t registered_name = register_layer_names_[idx];
     if (annotator.IsEnabled()) {
-    annotation.generate(registered_name, lite::Color::Runner);
+      annotation.generate(registered_name, lite::Color::Runner);
     }
 #endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
-    inst.Sync();
+      inst.Sync();
     }
 #endif
 
@@ -530,9 +530,9 @@ std::map<std::string, std::vector<std::string>> RuntimeProgram::Get_op_info() {
     // delegate flush judgement to specify target , it is too heavy for Inst
     inst.Flush(idx);
 #endif
-      std::pair<std::string, std::vector<std::string>> op_info_shape;  
-      op_info_shape = inst.Get_op_info();
-      res.insert(op_info_shape);
+    std::pair<std::string, std::vector<std::string>> op_info_shape;
+    op_info_shape = inst.Get_op_info();
+    res.insert(op_info_shape);
 #ifdef LITE_WITH_FPGA
     monitor.postRun(inst);
 #endif
@@ -540,13 +540,13 @@ std::map<std::string, std::vector<std::string>> RuntimeProgram::Get_op_info() {
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     if (inst.op()->Type() != "while") {
-    precision_profiler_summary +=
-        inst_precision_profiler.GetInstPrecision(&inst);
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
     }
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
-    }
-    return res;
+  }
+  return res;
 }
 
 void Program::Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
@@ -738,12 +738,11 @@ void Instruction::Run() {
 }
 
 std::pair<std::string, std::vector<std::string>> Instruction::Get_op_info() {
-
-  std::pair<std::string, std::vector<std::string>> res;  
+  std::pair<std::string, std::vector<std::string>> res;
 
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
-  
+
   if (first_epoch_) {
     first_epoch_ = false;
     CHECK(op_->CheckShape());
@@ -755,18 +754,18 @@ std::pair<std::string, std::vector<std::string>> Instruction::Get_op_info() {
 
   op_->InferShape();
 
-  const OpInfo *op_info_temp = op_->op_info();
+  const OpInfo* op_info_temp = op_->op_info();
   std::vector<std::string> inputs = op_info_temp->input_names();
   std::vector<std::string> outputs = op_info_temp->output_names();
-  
+
   std::string res_key = op_->Type() + "+" + outputs[0];
   std::vector<std::string> res_value;
-  for(auto it : op_->get_input_tensor_ptrs())
+  for (auto it : op_->get_input_tensor_ptrs())
     res_value.push_back(it->dims().repr());
-  for(auto it : op_->get_output_tensor_ptrs())
+  for (auto it : op_->get_output_tensor_ptrs())
     res_value.push_back(it->dims().repr());
   res = std::make_pair(res_key, res_value);
-  
+
   kernel_->Launch();
   has_run_ = true;
   return res;

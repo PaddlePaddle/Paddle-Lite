@@ -182,7 +182,7 @@ class LITE_API Predictor {
     ClearTensorArray(program_desc_);
   }
 
-  std::map<std::string, std::vector<std::string>> Get_op_info(){
+  std::map<std::string, std::vector<std::string>> Get_op_info() {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
@@ -196,7 +196,8 @@ class LITE_API Predictor {
     lite::TargetWrapperXPU::MallocL3Cache(query_shape);
 #endif
 
-    std::map<std::string, std::vector<std::string>> res = program_->Get_op_info();
+    std::map<std::string, std::vector<std::string>> res =
+        program_->Get_op_info();
 
 #ifdef LITE_WITH_XPU
     lite::TargetWrapperXPU::FreeL3Cache();

@@ -269,7 +269,8 @@ void CxxPaddleApiImpl::Run() {
   raw_predictor_->Run();
 }
 
-std::map<std::string, std::vector<std::string>> CxxPaddleApiImpl::Get_op_info() {
+std::map<std::string, std::vector<std::string>>
+CxxPaddleApiImpl::Get_op_info() {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
