@@ -207,30 +207,6 @@ void SliceCompute<T, PType>::Run() {
     }
   }
 
-  // resize out dims
-  if (decrease_axis.size() > 0) {
-    if (decrease_axis.size() == static_cast<size_t>(in_dims.size())) {
-      std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
-      out->Resize(DDim(vec_origin_out_shape));
-    } else {
-      std::vector<int64_t> vec_origin_out_shape(
-          out_dims.size() + decrease_axis.size(), -1);
-
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        vec_origin_out_shape[decrease_axis[i]] = 1;
-      }
-
-      int index = 0;
-      for (size_t i = 0; i < vec_origin_out_shape.size(); ++i) {
-        if (vec_origin_out_shape[i] == -1) {
-          vec_origin_out_shape[i] = out_dims[index];
-          ++index;
-        }
-      }
-
-      out->Resize(DDim(vec_origin_out_shape));
-    }
-  }
   auto new_out_dims = out->dims();
   const auto* x_data = in->template data<T>();
   auto* o_data = out->template mutable_data<T>();
