@@ -40,7 +40,7 @@ class Context {
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  std::vector<std::string> selected_device_names_{};
+  std::vector<std::string> selected_device_names_{"CPU"};
 };
 
 class Program {
