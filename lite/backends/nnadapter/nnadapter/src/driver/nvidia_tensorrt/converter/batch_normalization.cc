@@ -40,21 +40,21 @@ int ConvertBatchNormalization(Converter* converter,
   NNADAPTER_CHECK(mean_ptr);
   NNADAPTER_CHECK(var_ptr);
   auto input_tensor_dim = input_tensor->getDimensions();
-  // Add shuffle operator to reshape data into 4 dimensions
+  // Add shuffle operator to reshape data into 3 dimensions
   nvinfer1::IShuffleLayer* expand_layer = nullptr;
-  if (input_tensor_dim.nbDims < 4) {
-    nvinfer1::Dims expand_shape;
-    expand_shape.nbDims = 4;
-    for (int i = 0; i < 4; i++) {
+  if (input_tensor_dim.nbDims < 3) {
+    nvinfer1::Dims unsqueeze_shape;
+    unsqueeze_shape.nbDims = 3;
+    for (int i = 0; i < 3; i++) {
       if (i < input_tensor_dim.nbDims) {
-        expand_shape.d[i] =
+        unsqueeze_shape.d[i] =
             input_tensor_dim.d[i] < 0 ? 0 : input_tensor_dim.d[i];
       } else {
-        expand_shape.d[i] = 1;
+        unsqueeze_shape.d[i] = 1;
       }
     }
     expand_layer = converter->network()->addShuffle(*input_tensor);
-    expand_layer->setReshapeDimensions(expand_shape);
+    expand_layer->setReshapeDimensions(unsqueeze_shape);
     input_tensor = expand_layer->getOutput(0);
   }
   // Add batch_normalization op using ScaleNd operator
@@ -92,7 +92,7 @@ int ConvertBatchNormalization(Converter* converter,
   auto output_tensor = layer->getOutput(0);
   // Add shuffle operator to recover shape
   nvinfer1::IShuffleLayer* squeeze_layer = nullptr;
-  if (input_tensor_dim.nbDims < 4) {
+  if (input_tensor_dim.nbDims < 3) {
     nvinfer1::Dims squeeze_shape;
     squeeze_shape.nbDims = input_tensor_dim.nbDims;
     for (int i = 0; i < squeeze_shape.nbDims; i++) {
