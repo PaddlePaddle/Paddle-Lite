@@ -90,23 +90,16 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
              const int cnt,
              const bool repeat_flag) {
   lite::Timer timer;
-  bool has_validation_set = FLAGS_validation_set.empty();
-  if (!has_validation_set) {
-    timer.Start();
-    task->PreProcess(predictor, config, image_files, cnt);
-    perf_data->set_pre_process_time(timer.Stop());
-  }
-
+  timer.Start();
+  task->PreProcess(predictor, config, image_files, cnt);
+  perf_data->set_pre_process_time(timer.Stop());
   timer.Start();
   predictor->Run();
   perf_data->set_run_time(timer.Stop());
-
-  if (!has_validation_set) {
-    timer.Start();
-    task->PostProcess(
-        predictor, config, image_files, word_labels, cnt, repeat_flag);
-    perf_data->set_post_process_time(timer.Stop());
-  }
+  timer.Start();
+  task->PostProcess(
+      predictor, config, image_files, word_labels, cnt, repeat_flag);
+  perf_data->set_post_process_time(timer.Stop());
 }
 #endif
 
@@ -171,6 +164,7 @@ void Run(const std::string& model_file,
 #endif
   }
 
+  bool has_validation_set = !(FLAGS_validation_set.empty());
   // Warmup
   for (int i = 0; i < FLAGS_warmup; ++i) {
 #ifdef __ANDROID__
@@ -188,21 +182,27 @@ void Run(const std::string& model_file,
     timer.SleepInMs(FLAGS_run_delay);
   }
 
-  // Run
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  if (has_validation_set) {
+    for (int i = 0; i < FLAGS_repeats; ++i) {
 #ifdef __ANDROID__
-    RunImpl(predictor,
-            &perf_data,
-            task.get(),
-            config,
-            image_files,
-            word_labels,
-            i,
-            true);
+      RunImpl(predictor,
+              &perf_data,
+              task.get(),
+              config,
+              image_files,
+              word_labels,
+              i,
+              true);
 #else
-    RunImpl(predictor, &perf_data);
+      RunImpl(predictor, &perf_data);
 #endif
-    timer.SleepInMs(FLAGS_run_delay);
+      timer.SleepInMs(FLAGS_run_delay);
+    }
+  } else {
+    for (int i = 0; i < FLAGS_repeats; ++i) {
+      RunImpl(predictor, &perf_data);
+      timer.SleepInMs(FLAGS_run_delay);
+    }
   }
 
   // Get output
