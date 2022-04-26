@@ -56,8 +56,6 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"nvidia_tensorrt"});
-  ctx_->As<NNAdapterContext>().SetNNAdapterContextProperties(
-      scope, "NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE=1073741824");
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"kunlunxin_xtcl"});

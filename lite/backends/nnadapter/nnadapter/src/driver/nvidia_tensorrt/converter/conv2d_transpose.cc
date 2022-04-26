@@ -26,19 +26,6 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   // TensorRT doesn't support output_channel_size % groups != 0 case
   NNADAPTER_CHECK_EQ((output_channel_size % group), 0);
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
-  auto output_dimensions = output_operand->type.dimensions.data;
-  NNADAPTER_CHECK_NE(output_dimensions[0], NNADAPTER_UNKNOWN)
-      << "output_dimensions[0] is unknown, dynamic shape is still not "
-         "supported.";
-  NNADAPTER_CHECK_NE(output_dimensions[1], NNADAPTER_UNKNOWN)
-      << "output_dimensions[1] is unknown, dynamic shape is still not "
-         "supported.";
-  NNADAPTER_CHECK_NE(output_dimensions[2], NNADAPTER_UNKNOWN)
-      << "output_dimensions[2] is unknown, dynamic shape is still not "
-         "supported.";
-  NNADAPTER_CHECK_NE(output_dimensions[3], NNADAPTER_UNKNOWN)
-      << "output_dimensions[3] is unknown, dynamic shape is still not "
-         "supported.";
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],
