@@ -262,7 +262,7 @@ struct SoftmaxParam : ParamBase {
 
 // For LogSoftmax op
 struct LogSoftmaxParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
 };

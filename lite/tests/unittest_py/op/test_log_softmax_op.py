@@ -38,11 +38,6 @@ class TestLogSoftmaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.NNAdapter:
-            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
-                if len(x_shape) < 2:
-                    return False
         return True
 
     def sample_program_configs(self, draw):
@@ -85,7 +80,7 @@ class TestLogSoftmaxOp(AutoScanTest):
             if self.get_nnadapter_device_name() == "nvidia_tensorrt":
                 in_shape = program_config.inputs["input_data"].shape
                 axis = program_config.ops[0].attrs["axis"]
-                if len(in_shape) == 1 or axis == 0 or axis == -len(in_shape):
+                if len(in_shape) < 2 or axis == 0 or axis == -len(in_shape):
                     return True
 
         self.add_ignore_check_case(
