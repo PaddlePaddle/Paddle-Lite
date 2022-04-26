@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -165,6 +166,8 @@ class LITE_API ConfigBase {
   // The NNAdapter context properties for device configuration, model
   // compilation and execution
   std::string nnadapter_context_properties_{};
+  int (*nnadapter_context_callback_)(int event_id,
+                                     void* user_data){nullptr};  // NOLINT
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
   // Dynamic shapes of the NNAdapter model
@@ -274,6 +277,26 @@ class LITE_API ConfigBase {
   const std::string& nnadapter_context_properties() const {
     return nnadapter_context_properties_;
   }
+  // Set nnadapter_context_callback for NNAdapter device to get runtime
+  // parameters.
+  // For example:
+  // cudaStream_t cuda_stream;
+  // cudaStreamCreate(&cuda_stream);
+  // int nnadapter_context_callback(int event_id, void* user_data) {
+  //   if (event_id == 0x0100) {
+  //     *(std::reinterpret_cast<cudaStream_t*>(user_data)) = cuda_stream;
+  //   }
+  //   return 0;
+  // }
+  void set_nnadapter_context_callback(
+      int (*nnadapter_context_callback)(int event_id, void* user_data)) {
+    nnadapter_context_callback_ = nnadapter_context_callback;
+  }
+  int (*nnadapter_context_callback() const)(int event_id,  // NOLINT
+                                            void* user_data) {
+    return nnadapter_context_callback_;
+  }
+
   // Enable caching and set the directory to search and store the compiled
   // NNAdapter models in the file system.
   void set_nnadapter_model_cache_dir(const std::string& model_cache_dir) {

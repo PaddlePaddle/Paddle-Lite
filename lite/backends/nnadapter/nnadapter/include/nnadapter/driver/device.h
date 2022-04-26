@@ -28,7 +28,10 @@ typedef struct Device {
   // Interfaces
   int (*open_device)(void** device);
   void (*close_device)(void* device);
-  int (*create_context)(void* device, const char* properties, void** context);
+  int (*create_context)(void* device,
+                        const char* properties,
+                        int (*callback)(int event_id, void* user_data),
+                        void** context);
   void (*destroy_context)(void* context);
   int (*validate_program)(void* context,
                           const core::Model* model,

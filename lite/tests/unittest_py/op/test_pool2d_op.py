@@ -201,6 +201,17 @@ class TestPool2dOp(AutoScanTest):
             "Paddle does not support this op in a specific case. We have fedback to the Paddle developer."
         )
 
+        def teller4(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if program_config.ops[0].attrs["adaptive"] == True \
+                    or program_config.ops[0].attrs["ceil_mode"] == True:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'adaptive == True' or 'ceil_mode == True' on nvidia_tensorrt."
+        )
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 100

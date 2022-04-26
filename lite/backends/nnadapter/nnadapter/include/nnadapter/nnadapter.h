@@ -2316,6 +2316,7 @@ int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
 int NNAdapterContext_create(NNAdapterDevice** devices,
                             uint32_t num_devices,
                             const char* properties,
+                            int (*callback)(int event_id, void* user_data),
                             NNAdapterContext** context);
 /**
  * Release the context.
@@ -2489,7 +2490,8 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                 int32_t index,
                                 void* memory,
                                 void* (*access)(void* memory,
-                                                NNAdapterOperandType* type));
+                                                NNAdapterOperandType* type,
+                                                void* device_buffer));
 /**
  * Set the output memory and the function used to access it.
  *
@@ -2518,7 +2520,8 @@ int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                  int32_t index,
                                  void* memory,
                                  void* (*access)(void* memory,
-                                                 NNAdapterOperandType* type));
+                                                 NNAdapterOperandType* type,
+                                                 void* device_buffer));
 /**
  * Start to run the execution synchronously.
  *

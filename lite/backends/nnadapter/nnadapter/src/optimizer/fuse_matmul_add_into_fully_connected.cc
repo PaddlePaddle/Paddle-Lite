@@ -28,8 +28,8 @@ namespace nnadapter {
 class MatMulAddFuser : public PatternMatcher {
  public:
   void BuildPattern() override;
-  void InsertNewNode(core::Model* model,
-                     const std::map<std::string, Node*>& nodes) override;
+  bool HandleMatchedResults(core::Model* model,
+                            const std::map<std::string, Node*>& nodes) override;
 };
 
 void MatMulAddFuser::BuildPattern() {
@@ -69,7 +69,11 @@ void MatMulAddFuser::BuildPattern() {
   auto matmul_output_pattern = CreatePattern("matmul_output")->IsIntermediate();
   auto add_y_pattern = CreatePattern("add_y")
                            ->IsOperationInputOperand(NNADAPTER_ADD, 1)
-                           ->IsConstantOperand();
+                           ->IsConstantOperand()
+                           ->MatchCondition([](const Node* node) -> bool {
+                             auto operand = node->operand;
+                             return operand->type.dimensions.count == 1;
+                           });
   auto add_fuse_code_pattern = CreatePattern("add_fuse_code")
                                    ->IsOperationInputOperand(NNADAPTER_ADD, 2)
                                    ->IsConstantOperand();
@@ -85,9 +89,9 @@ void MatMulAddFuser::BuildPattern() {
   add_input_patterns >> *add_pattern >> *add_output_pattern;
 }
 
-void MatMulAddFuser::InsertNewNode(core::Model* model,
-                                   const std::map<std::string, Node*>& nodes) {
-  // Get the operands and operations from the matched subgraph nodes
+bool MatMulAddFuser::HandleMatchedResults(
+    core::Model* model, const std::map<std::string, Node*>& nodes) {
+  // Get the operands and operations from the matched subgraph nodes.
   auto matmul_operation = nodes.at("matmul")->operation;
   auto matmul_x_operand = matmul_operation->input_operands[0];
   auto matmul_y_operand = matmul_operation->input_operands[1];
@@ -100,7 +104,7 @@ void MatMulAddFuser::InsertNewNode(core::Model* model,
     TransposeOperand(matmul_y_operand, std::vector<int32_t>({1, 0}));
   }
   // Create a new FullyConnected operation and replace the matched subgraph
-  // nodes
+  // nodes.
   auto* fully_connected_operation = AddOperation(model);
   fully_connected_operation->type = NNADAPTER_FULLY_CONNECTED;
   fully_connected_operation->input_operands = {matmul_x_operand,
@@ -108,6 +112,9 @@ void MatMulAddFuser::InsertNewNode(core::Model* model,
                                                add_bias_operand,
                                                add_fuse_code_operand};
   fully_connected_operation->output_operands = {add_output_operand};
+  // The matched intermediate operands and operations will be deleted only when
+  // it returns true.
+  return true;
 }
 
 NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {

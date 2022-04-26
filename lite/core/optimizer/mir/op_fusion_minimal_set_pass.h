@@ -14,31 +14,18 @@
 
 #pragma once
 
-#include <string>
-#include "lite/core/op_lite.h"
+#include <memory>
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace mir {
 
-class XPUResNetCbamOp : public OpLite {
+class OpFusionMinimalSetPass : public ProgramPass {
  public:
-  XPUResNetCbamOp() {}
-  explicit XPUResNetCbamOp(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "ResNetCbam"; }
-
- private:
-  mutable XPUResNetCbamParam param_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace operators
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

@@ -56,6 +56,8 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 # Nvidia TensorRT options
 NNADAPTER_NVIDIA_CUDA_SDK_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="/usr/local/tensorrt"
+# Intel OpenVINO options
+NNADAPTER_INTEL_OPENVINO_SDK_ROOT="/opt/intel/openvino_2022"
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -784,8 +786,72 @@ function nvidia_tensorrt_build_and_test() {
         local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-        export ASCEND_SLOG_PRINT_TO_STDOUT=0
-        export ASCEND_GLOBAL_LOG_LEVEL=1
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
+# Intel OpenVINO 
+function intel_openvino_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+        else
+            echo "$arch isn't supported by Intel OpenVINO!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_INTEL_OPENVINO=ON \
+            -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libintel_openvino.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
         export GLOG_v=$UNIT_TEST_LOG_LEVEL
         local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
         for test_name in $(cat $TESTS_FILE); do
@@ -1610,6 +1676,10 @@ function main() {
             NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="${i#*=}"
             shift
             ;;
+        --nnadapter_intel_openvino_sdk_root=*)
+            NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+            shift
+            ;;
         android_cpu_build_and_test)
             android_cpu_build_and_test
             shift
@@ -1672,6 +1742,10 @@ function main() {
             ;;
         google_xnnpack_build_and_test)
             google_xnnpack_build_and_test
+            shift
+            ;;
+        intel_openvino_build_and_test)
+            intel_openvino_build_and_test
             shift
             ;;
         *)

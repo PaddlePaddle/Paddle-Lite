@@ -23,6 +23,7 @@ namespace nvidia_tensorrt {
 
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(!IsConstantOperand(x_operand));
 
   // Convert to trt tensors and node
   auto x_tensor = converter->GetMappedTensor(x_operand);
@@ -31,7 +32,18 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   }
   auto y_tensor = converter->GetMappedTensor(y_operand);
   if (y_tensor == nullptr) {
-    y_tensor = converter->ConvertOperand(y_operand);
+    uint32_t x_dims_count = x_operand->type.dimensions.count;
+    uint32_t y_dims_count = y_operand->type.dimensions.count;
+    auto y_dims_data = y_operand->type.dimensions.data;
+    std::vector<int32_t> y_dims(y_dims_data, y_dims_data + y_dims_count);
+    if (IsConstantOperand(y_operand)) {
+      if (y_dims_count + 1 < x_dims_count) {
+        y_dims.insert(y_dims.begin(), x_dims_count - y_dims_count - 1, 1);
+      }
+    } else {
+      y_dims.erase(y_dims.begin());
+    }
+    y_tensor = converter->ConvertOperand(y_operand, y_dims);
   }
   nvinfer1::MatrixOperation matrix_operation_x =
       transpose_x ? nvinfer1::MatrixOperation::kTRANSPOSE

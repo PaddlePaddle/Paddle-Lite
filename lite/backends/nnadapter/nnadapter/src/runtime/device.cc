@@ -197,7 +197,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get the new dimensions
     auto& arg = input_arguments[i];
     NNAdapterOperandType new_type;
-    arg.access(arg.memory, &new_type);
+    arg.access(arg.memory, &new_type, nullptr);
     // Check whether the rank of input operands have been changed
     const NNAdapterOperandType& old_type =
         model_.first->input_operands[arg.index]->type;
@@ -224,7 +224,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.access);
     auto operand = model_.first->input_operands[arg.index];
     auto type = &operand->type;
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     type->lifetime = NNADAPTER_CONSTANT_REFERENCE;
     operand->buffer = buffer;
@@ -263,7 +263,7 @@ int Program::Execute(uint32_t input_count,
     auto operand = model_.first->output_operands[arg.index];
     auto type = &operand->type;
     auto length = GetOperandTypeBufferLength(*type);
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     memcpy(buffer, operand->buffer, length);
   }
@@ -290,7 +290,10 @@ void CloseDevice(void* device) {
   }
 }
 
-int CreateContext(void* device, const char* properties, void** context) {
+int CreateContext(void* device,
+                  const char* properties,
+                  int (*callback)(int event_id, void* user_data),
+                  void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -398,9 +401,12 @@ Device::Device(const std::string& name) {
 
 Device::~Device() { device_ = nullptr; }
 
-int Device::CreateContext(const char* properties, void** context) {
+int Device::CreateContext(const char* properties,
+                          int (*callback)(int event_id, void* user_data),
+                          void** context) {
   if (device_ && context) {
-    return device_->second->create_context(device_->first, properties, context);
+    return device_->second->create_context(
+        device_->first, properties, callback, context);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
