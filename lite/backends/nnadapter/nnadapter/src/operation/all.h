@@ -150,6 +150,10 @@ REGISTER_OPERATION(LOG,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
+REGISTER_OPERATION(LOG_SOFTMAX,
+                   ValidateLogSoftmax,
+                   PrepareLogSoftmax,
+                   ExecuteLogSoftmax)
 REGISTER_OPERATION(LP_NORMALIZATION,
                    ValidateLpNormalization,
                    PrepareLpNormalization,
