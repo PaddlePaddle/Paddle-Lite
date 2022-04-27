@@ -706,8 +706,21 @@ bool DeviceInfo::SetCPUInfoByName() {
     big_core_ids_ = {4, 5, 6, 7};
     little_core_ids_ = {0, 1, 2, 3};
     cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
-    SetArchInfo(2, kA76, kA55);
-    SetCacheInfo(0, 2, 192 * 1024, 256 * 1024);
+    SetArchInfo(3, kGold_Prime, kGold, kSilver);
+    SetCacheInfo(0, 3, 512 * 1024, 256 * 1024, 128 * 1024);
+    SetCacheInfo(1, 3, 512 * 1024, 256 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 2 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  } else if (dev_name_.find("SA8195") != std::string::npos) {  // sa8195
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kGold_Prime, kSilver);
+    SetCacheInfo(0, 2, 512 * 1024, 128 * 1024);
     SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
     SetCacheInfo(2, 1, 4 * 1024 * 1024);
     SetFP16Info(1, 1);
