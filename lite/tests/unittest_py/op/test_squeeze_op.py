@@ -117,7 +117,8 @@ class TestSqueezeOp(AutoScanTest):
                 axes = program_config.ops[0].attrs["axes"]
                 if len(in_shape) == 1 \
                     or 0 in axes \
-                    or -len(in_shape) in axes:
+                    or -len(in_shape) in axes \
+                    or (in_shape[0] == 1 and len(axes)==0):
                     return True
 
         self.add_ignore_check_case(

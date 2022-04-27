@@ -35,36 +35,41 @@ class SplitPlugin : public Plugin {
     Deserialize(&serial_data, &serial_length, &size_splits_);
   }
 
-  nvinfer1::IPluginV2* clone() const noexcept {
+  nvinfer1::IPluginV2* clone() const TRT_NOEXCEPT {
     return new SplitPlugin(axis_, size_splits_);
   }
 
   int enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+              void const* const* inputs,
+              void* const* outputs,
+#else
               const void* const* inputs,
               void** outputs,
+#endif
               void* workspace,
-              cudaStream_t stream) noexcept;
+              cudaStream_t stream) TRT_NOEXCEPT;
 
-  const char* getPluginType() const noexcept;
+  const char* getPluginType() const TRT_NOEXCEPT;
 
-  size_t getSerializationSize() const noexcept {
+  size_t getSerializationSize() const TRT_NOEXCEPT {
     return SerializedSize(axis_) + SerializedSize(size_splits_);
   }
 
-  void serialize(void* buffer) const noexcept {
+  void serialize(void* buffer) const TRT_NOEXCEPT {
     Serialize(&buffer, axis_);
     Serialize(&buffer, size_splits_);
   };
 
-  int32_t getNbOutputs() const noexcept { return size_splits_.size(); }
+  int32_t getNbOutputs() const TRT_NOEXCEPT { return size_splits_.size(); }
 
-  int initialize() noexcept;
+  int initialize() TRT_NOEXCEPT;
 
-  void terminate() noexcept;
+  void terminate() TRT_NOEXCEPT;
 
   nvinfer1::Dims getOutputDimensions(int index,
                                      const nvinfer1::Dims* inputs,
-                                     int nb_input_dims) noexcept;
+                                     int nb_input_dims) TRT_NOEXCEPT;
 
  private:
   int32_t axis_;
@@ -78,10 +83,10 @@ class SplitPlugin : public Plugin {
 
 class SplitPluginCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 template <typename T>

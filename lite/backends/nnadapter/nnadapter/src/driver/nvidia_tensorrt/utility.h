@@ -17,6 +17,7 @@
 #include <NvInfer.h>
 #include <NvInferPlugin.h>
 #include <cuda_runtime_api.h>
+#include <cudnn.h>
 #include <memory>
 #include <vector>
 #include "core/types.h"
@@ -55,6 +56,20 @@ namespace nvidia_tensorrt {
 
 #define NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM 0x0100
 
+#define TENSORRT_VERSION_GE(major, minor, patch, build)          \
+  (((NV_TENSORRT_MAJOR > major) ||                               \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR > minor) || \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR == minor && \
+     NV_TENSORRT_PATCH > patch) ||                               \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR == minor && \
+     NV_TENSORRT_PATCH == patch && NV_TENSORRT_BUILD >= build)))
+
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+#define TRT_NOEXCEPT noexcept
+#else
+#define TRT_NOEXCEPT
+#endif
+
 // Supported places
 typedef enum {
   kTensorrt = 0,
@@ -72,7 +87,7 @@ typedef enum {
 struct TensorrtDeleter {
   template <typename T>
   void operator()(T* obj) const {
-#if TENSORRT_MAJOR_VERSION >= 8
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
     delete obj;
 #else
     if (obj) {
@@ -126,9 +141,9 @@ class Tensor {
 class TrtLogger : public nvinfer1::ILogger {
  public:
   void log(nvinfer1::ILogger::Severity severity,
-           const char* msg) noexcept override;
+           const char* msg) TRT_NOEXCEPT override;
 
-  static TrtLogger* Global() noexcept {
+  static TrtLogger* Global() TRT_NOEXCEPT {
     static TrtLogger* logger = new TrtLogger;
     return logger;
   }
