@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include "lite/core/optimizer/mir/dot.h"
 
 namespace paddle {
 namespace lite {
@@ -40,8 +41,9 @@ bool SSAGraph::CheckBidirectionalConnection() {
   return true;
 }
 
-std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
-  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+std::map<mir::Node *, std::set<mir::Node *>, NodeComp>
+SSAGraph::BuildOperationAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *>, NodeComp> adj_list;
 
   for (auto &n : mutable_nodes()) {
     if (!n.IsStmt()) continue;
@@ -57,7 +59,7 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
     }
     std::stable_sort(
         nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
-          return node1 > node2;
+          return node1->get_id() < node2->get_id();
         });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
@@ -65,8 +67,9 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
   return adj_list;
 }
 
-std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
-  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+std::map<mir::Node *, std::set<mir::Node *>, NodeComp>
+SSAGraph::BuildNodeAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *>, NodeComp> adj_list;
 
   for (auto &n : mutable_nodes()) {
     if (adj_list.find(&n) == adj_list.end()) {
@@ -78,7 +81,7 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
     }
     std::stable_sort(
         nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
-          return node1 > node2;
+          return node1->get_id() < node2->get_id();
         });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
@@ -87,7 +90,7 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
 }
 
 void SSAGraph::SortHelper(
-    const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
+    const std::map<mir::Node *, std::set<mir::Node *>, NodeComp> &adj_list,
     mir::Node *node,
     std::set<mir::Node *> *visited,
     std::vector<mir::Node *> *ret) {
@@ -167,9 +170,11 @@ void SSAGraph::Build(const Program &program,
 
   auto var_type_map = program.var_type_map();
   std::map<std::string, mir::Node *> arg_update_node_map;
+  int num_node_created = 0;
   for (auto &op : program.ops(block_idx)) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);
+    op_node->set_id(num_node_created++);
     auto *op_info = op->op_info();
     const auto &op_type = op_info->Type();
     for (const auto &var_name : op_info->input_names()) {
@@ -179,6 +184,7 @@ void SSAGraph::Build(const Program &program,
       } else {
         node_storage_.emplace_back();
         arg_node = &node_storage_.back();
+        arg_node->set_id(num_node_created++);
         arg_node->AsArg(var_name, node_storage_.size() - 1);
         arg_update_node_map[var_name] = arg_node;
       }
@@ -202,6 +208,7 @@ void SSAGraph::Build(const Program &program,
     for (const auto &var_name : op->op_info()->output_names()) {
       node_storage_.emplace_back();
       auto *arg_node = &node_storage_.back();
+      arg_node->set_id(num_node_created++);
       arg_node->AsArg(var_name, node_storage_.size() - 1);
       arg_update_node_map[var_name] = arg_node;
       if (var_type_map.count(var_name) && !arg_node->arg()->type) {
@@ -333,6 +340,49 @@ Node *SSAGraph::NewInstructNode() {
   return &node_storage_.back();
 }
 
+std::string SSAGraph::dump() {
+  paddle::lite::mir::Dot dot;
+  using Attr = paddle::lite::mir::Dot::Attr;
+  const std::vector<Attr> op_attrs{Attr("style", "filled"),
+                                   Attr("fillcolor", "yellow")};
+  const std::vector<Attr> var_attrs{Attr("style", "filled"),
+                                    Attr("fillcolor", "gray"),
+                                    Attr("shape", "record")};
+  const std::vector<Attr> edge_attrs{};
+  for (auto &it : node_storage_) {
+    if (!it.IsArg()) continue;
+    if (it.arg()->is_weight) continue;
+    dot.AddNode(std::to_string(it.get_id()), var_attrs, it.arg()->name);
+  }
+  for (auto &it : node_storage_) {
+    if (!it.IsStmt()) continue;
+    const std::string op_type = it.stmt()->op_type();
+    dot.AddNode(std::to_string(it.get_id()), op_attrs, op_type);
+    if (op_type == "feed") {
+      for (auto out : it.outlinks)
+        dot.AddEdge(std::to_string(it.get_id()),
+                    std::to_string(out->get_id()),
+                    edge_attrs);
+    } else if (op_type == "fetch") {
+      for (auto in : it.inlinks)
+        dot.AddEdge(std::to_string(in->get_id()),
+                    std::to_string(it.get_id()),
+                    edge_attrs);
+    } else {
+      for (auto in : it.inlinks) {
+        if (in->arg()->is_weight) continue;
+        dot.AddEdge(std::to_string(in->get_id()),
+                    std::to_string(it.get_id()),
+                    edge_attrs);
+      }
+      for (auto out : it.outlinks)
+        dot.AddEdge(std::to_string(it.get_id()),
+                    std::to_string(out->get_id()),
+                    edge_attrs);
+    }
+  }
+  return dot.Build();
+}
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
