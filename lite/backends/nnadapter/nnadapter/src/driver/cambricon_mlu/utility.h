@@ -19,6 +19,7 @@
 #include <common.h>
 #include <interface_builder.h>
 #include <interface_network.h>
+#include <interface_plugin.h>
 #include <interface_runtime.h>
 #include <memory>
 #include <vector>

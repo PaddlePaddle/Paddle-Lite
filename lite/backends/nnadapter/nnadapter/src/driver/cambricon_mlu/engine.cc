@@ -20,6 +20,7 @@
 #include <vector>
 #include "driver/cambricon_mlu/converter.h"
 #include "driver/cambricon_mlu/optimizer/convert_datalayout_nchw_to_nhwc.h"
+#include "driver/cambricon_mlu/optimizer/fix_multiclass_nms.h"
 #include "driver/cambricon_mlu/optimizer/fix_quantized_ops.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
@@ -94,6 +95,7 @@ int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   FixQuantizedOps(model);
+  FixMulticlassNMS(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
@@ -225,6 +227,8 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
+    auto out_dims = outputs[i]->GetDimensions();
+    type->dimensions.data[0] = out_dims[0];
     auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();

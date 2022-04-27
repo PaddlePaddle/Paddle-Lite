@@ -288,12 +288,12 @@ REGISTER_CONVERTER(transpose,
                    ConvertTranspose,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,android_"
-                   "nnapi,nvidia_tensorrt,intel_openvino,qualcomm_qnn");
+                   "nnapi,nvidia_tensorrt,intel_openvino,qualcomm_qnn,cambricon_mlu");
 REGISTER_CONVERTER(transpose2,
                    ConvertTranspose,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,android_"
-                   "nnapi,nvidia_tensorrt,intel_openvino,qualcomm_qnn");
+                   "nnapi,nvidia_tensorrt,intel_openvino,qualcomm_qnn,cambricon_mlu");
 REGISTER_CONVERTER(
     shape,
     ConvertShape,
@@ -415,10 +415,12 @@ REGISTER_CONVERTER(softplus,
 REGISTER_CONVERTER(shuffle_channel,
                    ConvertShuffleChannel,
                    "huawei_ascend_npu,verisilicon_timvx,huawei_kirin_npu");
-REGISTER_CONVERTER(yolo_box, ConvertYoloBox, "nvidia_tensorrt");
+REGISTER_CONVERTER(yolo_box, ConvertYoloBox, "nvidia_tensorrt,cambricon_mlu");
 REGISTER_CONVERTER(log_softmax,
                    ConvertLogSoftmax,
                    "huawei_ascend_npu,nvidia_tensorrt");
+REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "cambricon_mlu");
+REGISTER_CONVERTER(multiclass_nms3, ConvertMulticlassNms, "cambricon_mlu");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");
