@@ -36,22 +36,14 @@ Linux x86 环境下编译适用于 ARM Linux 的库
 适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
 因为本教程使用 Host 环境为 x86 架构，因此下面仅介绍交叉编译 ARM Linux 方式。
 
-环境要求
+推荐环境
 ^^^^^^^^
 
-**参考环境**
-
-* Ubuntu 系统（参考使用 16.04 版本）
-
-* 交叉编译工具 （如 aarch64-xxxx-gcc、aarch64-xxxx-g++等 参考使用 5.4.0 版本）
-
-* python (参考使用 3.7 版本)
-
-* make （ 参考使用 4.1 版本 ）
-
-* cmake（参考使用 3.10 或以上版本）
-
-* git、wget、scp
+* Ubuntu == 16.04
+* aarch64-xxxx-gcc、aarch64-xxxx-g++ == 5.4.0
+* python == 3.7
+* cmake >= 3.10
+* git、make、wget、scp
 
 
 环境安装命令
