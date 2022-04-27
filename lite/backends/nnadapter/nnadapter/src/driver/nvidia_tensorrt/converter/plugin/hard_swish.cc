@@ -28,13 +28,18 @@ HardSwishPlugin::HardSwishPlugin(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &beta_);
 }
 
-HardSwishPlugin::~HardSwishPlugin() {}
+HardSwishPlugin::~HardSwishPlugin() TRT_NOEXCEPT {}
 
 int HardSwishPlugin::enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+                             void const* const* inputs,
+                             void* const* outputs,
+#else
                              const void* const* inputs,
                              void** outputs,
+#endif
                              void* workspace,
-                             cudaStream_t stream) noexcept {
+                             cudaStream_t stream) TRT_NOEXCEPT {
   int num = batch_size;
   for (int i = 0; i < input_dims_[0].nbDims; i++) {
     num *= input_dims_[0].d[i];
@@ -46,16 +51,16 @@ int HardSwishPlugin::enqueue(int batch_size,
   return 0;
 }
 
-size_t HardSwishPlugin::getSerializationSize() const noexcept {
+size_t HardSwishPlugin::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(alpha_) + SerializedSize(beta_);
 }
 
-void HardSwishPlugin::serialize(void* buffer) const noexcept {
+void HardSwishPlugin::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, alpha_);
   Serialize(&buffer, beta_);
 }
 
-nvinfer1::IPluginV2* HardSwishPlugin::clone() const noexcept {
+nvinfer1::IPluginV2* HardSwishPlugin::clone() const TRT_NOEXCEPT {
   return new HardSwishPlugin(alpha_, beta_);
 }
 
@@ -70,19 +75,20 @@ HardSwishPluginDynamic::HardSwishPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &beta_);
 }
 
-HardSwishPluginDynamic::~HardSwishPluginDynamic() {}
+HardSwishPluginDynamic::~HardSwishPluginDynamic() TRT_NOEXCEPT {}
 
-nvinfer1::IPluginV2DynamicExt* HardSwishPluginDynamic::clone() const noexcept {
+nvinfer1::IPluginV2DynamicExt* HardSwishPluginDynamic::clone() const
+    TRT_NOEXCEPT {
   return new HardSwishPluginDynamic(alpha_, beta_);
 }
 
 int32_t HardSwishPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
+    void const* const* inputs,
     void* const* outputs,
     void* workspace,
-    cudaStream_t stream) noexcept {
+    cudaStream_t stream) TRT_NOEXCEPT {
   auto input_dims = input_desc[0].dims;
   int num = 1;
   for (int i = 0; i < input_dims.nbDims; i++) {
@@ -95,11 +101,11 @@ int32_t HardSwishPluginDynamic::enqueue(
   return 0;
 }
 
-size_t HardSwishPluginDynamic::getSerializationSize() const noexcept {
+size_t HardSwishPluginDynamic::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(alpha_) + SerializedSize(beta_);
 }
 
-void HardSwishPluginDynamic::serialize(void* buffer) const noexcept {
+void HardSwishPluginDynamic::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, alpha_);
   Serialize(&buffer, beta_);
 }
