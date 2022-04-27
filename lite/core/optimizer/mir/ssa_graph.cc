@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include "lite/core/optimizer/mir/dot.h"
 
 namespace paddle {
 namespace lite {
@@ -40,13 +41,14 @@ bool SSAGraph::CheckBidirectionalConnection() {
   return true;
 }
 
-std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
-  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+SSAGraph::BuildOperationAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp> adj_list;
 
   for (auto &n : mutable_nodes()) {
     if (!n.IsStmt()) continue;
     if (adj_list.find(&n) == adj_list.end()) {
-      adj_list[&n] = std::set<mir::Node *>();
+      adj_list[&n] = std::set<mir::Node *, NodeComp>();
     }
     std::vector<mir::Node *> nodes;
     for (auto &var : n.inlinks) {
@@ -55,31 +57,24 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
         nodes.push_back(adj_n);
       }
     }
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
-          return node1 > node2;
-        });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
   return adj_list;
 }
 
-std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
-  std::map<mir::Node *, std::set<mir::Node *>> adj_list;
+std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+SSAGraph::BuildNodeAdjList() {
+  std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp> adj_list;
 
   for (auto &n : mutable_nodes()) {
     if (adj_list.find(&n) == adj_list.end()) {
-      adj_list[&n] = std::set<mir::Node *>();
+      adj_list[&n] = std::set<mir::Node *, NodeComp>();
     }
     std::vector<mir::Node *> nodes;
     for (auto &var : n.inlinks) {
       nodes.push_back(var);
     }
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](mir::Node *node1, mir::Node *node2) {
-          return node1 > node2;
-        });
     adj_list[&n].insert(std::make_move_iterator(nodes.begin()),
                         std::make_move_iterator(nodes.end()));
   }
@@ -87,7 +82,8 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
 }
 
 void SSAGraph::SortHelper(
-    const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
+    const std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+        &adj_list,
     mir::Node *node,
     std::set<mir::Node *> *visited,
     std::vector<mir::Node *> *ret) {
@@ -144,6 +140,7 @@ Node *SSAGraph::GraphCreateInstructNode(
   // TODO(Superjomn) remove one valid_places here.
   op->SetValidPlaces(valid_places);
   auto &new_node = node_storage_.back();
+  new_node.set_id(node_storage_.size() - 1);
   auto kernels = op->CreateKernels(valid_places);
   node_storage_.back().AsStmt(op->op_type_, std::move(kernels), op);
 
@@ -330,9 +327,53 @@ Node *SSAGraph::NewArgumentNode(const std::string &name) {
 
 Node *SSAGraph::NewInstructNode() {
   node_storage_.emplace_back();
+  node_storage_.back().set_id(node_storage_.size() - 1);
   return &node_storage_.back();
 }
 
+std::string SSAGraph::dump() {
+  paddle::lite::mir::Dot dot;
+  using Attr = paddle::lite::mir::Dot::Attr;
+  const std::vector<Attr> op_attrs{Attr("style", "filled"),
+                                   Attr("fillcolor", "yellow")};
+  const std::vector<Attr> var_attrs{Attr("style", "filled"),
+                                    Attr("fillcolor", "gray"),
+                                    Attr("shape", "record")};
+  const std::vector<Attr> edge_attrs{};
+  for (auto &it : node_storage_) {
+    if (!it.IsArg()) continue;
+    if (it.arg()->is_weight) continue;
+    dot.AddNode(std::to_string(it.get_id()), var_attrs, it.arg()->name);
+  }
+  for (auto &it : node_storage_) {
+    if (!it.IsStmt()) continue;
+    const std::string op_type = it.stmt()->op_type();
+    dot.AddNode(std::to_string(it.get_id()), op_attrs, op_type);
+    if (op_type == "feed") {
+      for (auto out : it.outlinks)
+        dot.AddEdge(std::to_string(it.get_id()),
+                    std::to_string(out->get_id()),
+                    edge_attrs);
+    } else if (op_type == "fetch") {
+      for (auto in : it.inlinks)
+        dot.AddEdge(std::to_string(in->get_id()),
+                    std::to_string(it.get_id()),
+                    edge_attrs);
+    } else {
+      for (auto in : it.inlinks) {
+        if (in->arg()->is_weight) continue;
+        dot.AddEdge(std::to_string(in->get_id()),
+                    std::to_string(it.get_id()),
+                    edge_attrs);
+      }
+      for (auto out : it.outlinks)
+        dot.AddEdge(std::to_string(it.get_id()),
+                    std::to_string(out->get_id()),
+                    edge_attrs);
+    }
+  }
+  return dot.Build();
+}
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

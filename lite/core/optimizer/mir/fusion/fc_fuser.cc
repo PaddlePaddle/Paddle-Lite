@@ -135,6 +135,7 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   fc_op->Attach(op_desc, scope);
 
   auto* new_op_node = graph->GraphCreateInstructNode(fc_op, valid_places);
+  new_op_node->set_id(matched.at("mul")->get_id());
 
   IR_NODE_LINK_TO(matched.at("W"), new_op_node);
   IR_NODE_LINK_TO(matched.at("x"), new_op_node);
