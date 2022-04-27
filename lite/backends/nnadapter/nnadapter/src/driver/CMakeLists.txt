@@ -69,3 +69,7 @@ endif()
 if(NNADAPTER_WITH_GOOGLE_XNNPACK)
   add_subdirectory(google_xnnpack)
 endif()
+
+if(NNADAPTER_WITH_EEASYTECH_NPU)
+  add_subdirectory(eeasytech_npu)
+endif()

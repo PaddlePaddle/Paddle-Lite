@@ -38,6 +38,8 @@ ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://gith
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
 NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
+NNADAPTER_WITH_EEASYTECH_NPU=ON
+NNADAPTER_EEASYTECH_NPU_SDK_ROOT="$(pwd)/eznpu_ddk"
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
@@ -210,6 +212,8 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
                         -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_EEASYTECH_NPU=$NNADAPTER_WITH_EEASYTECH_NPU \
+                        -DNNADAPTER_EEASYTECH_NPU_SDK_ROOT=$NNADAPTER_EEASYTECH_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
@@ -584,6 +588,14 @@ function main {
                 ;;
             --nnadapter_verisilicon_timvx_viv_sdk_url=*)
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_eeasytech_npu=*)
+                NNADAPTER_WITH_EEASYTECH_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_eeasytech_npu_sdk_root=*)
+                NNADAPTER_EEASYTECH_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_fake_device=*)
