@@ -104,11 +104,17 @@ Paddle Lite 支持华为达芬奇架构麒麟 NPU，支持列表如下：
 
 ## 华为 (Huawei) 昇腾 NPU
 
-Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上进行预测部署
-- 支持设备：
-  * Ascend 310：Atlas 300I 推理卡（型号：3000/3010)
-  * Atlas 200 DK 开发者套件
-  * Atlas 800 推理服务器（型号：3000/3010）
+Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署
+- 支持芯片
+  * Ascend 310 （CANN Version ≥  3.3.0）
+  * Ascend 710 （CANN Version ≥  5.0.2.alpha005)
+  * Ascend 910 （CANN Version ≥  5.0.2.alpha005)
+- 已验证的支持设备
+  * Atlas 300I 推理卡（型号：3000/3010)（CANN Version ≥  3.3.0）
+  * Atlas 200 DK 开发者套件（CANN Version ≥  3.3.0）
+  * Atlas 800 推理服务器（型号：3000/3010）（CANN Version ≥  3.3.0）
+  * Atlas 300I Pro（CANN Version ≥ 5.0.2.alpha005)
+  * Atlas 300T 训练卡（CANN Version ≥  5.0.2.alpha005)
 
 ### 华为 (Huawei) 昇腾 NPU 环境准备及示例程序
 
