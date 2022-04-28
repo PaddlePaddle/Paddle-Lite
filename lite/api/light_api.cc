@@ -316,7 +316,14 @@ void LightPredictor::DequantizeWeight() {
             } else if (op_type == "fc" || op_type == "mul" ||
                        op_type == "lookup_table") {
               int64_t chin = input_tensor->dims()[0];
-              int64_t chout = input_tensor->dims()[1];
+              int64_t chout = input_tensor->numel() / chin;
+              if (input_tensor->dims().size() > 1) {
+                chout = input_tensor->dims()[1];
+              } else {
+                // swap
+                chout = chin;
+                chin = 1;
+              }
               CHECK_EQ(scale_list.size(), chout);
               if (quantize_weight_bits == 8) {
                 const int8_t* int_data = tmp_tensor.data<int8_t>();
