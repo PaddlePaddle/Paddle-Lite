@@ -27,7 +27,8 @@ void BoxCoderCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   std::vector<float> variance = param.variance;
 
-  CHECK_EQ((variance.size() == 4) || (variance.size() == 0), true);
+  CHECK((variance.size() == 4) || (variance.size() == 0)) << "variance_size is "
+                                                          << variance.size();
   if (variance.size() == 4) {
     variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
     XPU_CALL(xpu_memcpy(variance_xpu_guard_->addr_,
