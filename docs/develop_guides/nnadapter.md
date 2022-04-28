@@ -547,6 +547,7 @@ typedef struct Device {
 
 ### 示例
 - Fake device HAL 和 DDK 的[参考实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/24b36c58d93921949cbe5c1b4285d4392f37b453/lite/backends/nnadapter/nnadapter/src/driver/fake_device)
+- 亿智 NPU 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/8960)
 - Intel OpenVINO 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/8552) 、[用户文档](https://github.com/PaddlePaddle/Paddle-Lite/pull/8744) 、 [添加算子](https://github.com/PaddlePaddle/Paddle-Lite/pull/8941) 、 [添加单测和 CI 流水线](https://github.com/PaddlePaddle/Paddle-Lite/pull/8917)
 - Android NNAPI 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/8390) 、 [用户文档](https://github.com/PaddlePaddle/Paddle-Lite/pull/8831)
 - Verisilicon TIM-VX 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/7706)
