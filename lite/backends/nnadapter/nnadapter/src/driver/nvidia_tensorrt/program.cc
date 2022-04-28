@@ -301,7 +301,7 @@ int TensorrtProgram::BuildFromModel() {
   // Create config_ and set options
   CompleteConfig();
 // Serialize to plan_
-#if TENSORRT_MAJOR_VERSION >= 8
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
   plan_.reset(builder_->buildSerializedNetwork(*network_, *config_));
   NNADAPTER_CHECK(plan_);
   runtime_.reset(nvinfer1::createInferRuntime(*TrtLogger::Global()));

@@ -47,7 +47,8 @@ YoloBoxPluginDynamic::YoloBoxPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &iou_aware_factor_);
 }
 
-nvinfer1::IPluginV2DynamicExt* YoloBoxPluginDynamic::clone() const noexcept {
+nvinfer1::IPluginV2DynamicExt* YoloBoxPluginDynamic::clone() const
+    TRT_NOEXCEPT {
   return new YoloBoxPluginDynamic(anchors_,
                                   class_num_,
                                   conf_thresh_,
@@ -62,7 +63,7 @@ nvinfer1::DimsExprs YoloBoxPluginDynamic::getOutputDimensions(
     int32_t output_index,
     const nvinfer1::DimsExprs* inputs,
     int32_t nb_inputs,
-    nvinfer1::IExprBuilder& expr_builder) noexcept {
+    nvinfer1::IExprBuilder& expr_builder) TRT_NOEXCEPT {
   NNADAPTER_CHECK(inputs);
   nvinfer1::DimsExprs outdims;
   outdims.nbDims = 3;
@@ -226,10 +227,10 @@ __global__ void yolobox_kernel_value(int n,
 int32_t YoloBoxPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
+    void const* const* inputs,
     void* const* outputs,
     void* workspace,
-    cudaStream_t stream) noexcept {
+    cudaStream_t stream) TRT_NOEXCEPT {
   const int n = input_desc[0].dims.d[0];
   const int h = input_desc[0].dims.d[2];
   const int w = input_desc[0].dims.d[3];
@@ -270,13 +271,13 @@ int32_t YoloBoxPluginDynamic::enqueue(
   return 0;
 }
 
-size_t YoloBoxPluginDynamic::getSerializationSize() const noexcept {
+size_t YoloBoxPluginDynamic::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(anchors_) + sizeof(class_num_) + sizeof(conf_thresh_) +
          sizeof(downsample_ratio_) + sizeof(clip_bbox_) + sizeof(scale_x_y_) +
          sizeof(iou_aware_) + sizeof(iou_aware_factor_);
 }
 
-void YoloBoxPluginDynamic::serialize(void* buffer) const noexcept {
+void YoloBoxPluginDynamic::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, anchors_);
   Serialize(&buffer, class_num_);
   Serialize(&buffer, conf_thresh_);
@@ -287,12 +288,12 @@ void YoloBoxPluginDynamic::serialize(void* buffer) const noexcept {
   Serialize(&buffer, iou_aware_factor_);
 }
 
-int32_t YoloBoxPluginDynamic::getNbOutputs() const noexcept { return 2; }
+int32_t YoloBoxPluginDynamic::getNbOutputs() const TRT_NOEXCEPT { return 2; }
 
 nvinfer1::DataType YoloBoxPluginDynamic::getOutputDataType(
     int32_t index,
     const nvinfer1::DataType* input_types,
-    int32_t nb_inputs) const noexcept {
+    int32_t nb_inputs) const TRT_NOEXCEPT {
   return input_types[0];
 }
 

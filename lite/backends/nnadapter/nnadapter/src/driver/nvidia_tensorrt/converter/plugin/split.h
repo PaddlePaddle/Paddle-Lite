@@ -13,23 +13,30 @@
 // limitations under the License.
 
 #pragma once
+
+#include <algorithm>
+#include <utility>
+#include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-class SwishPlugin : public Plugin {
+class SplitPlugin : public Plugin {
  public:
-  SwishPlugin() = default;
+  SplitPlugin() = default;
 
-  explicit SwishPlugin(const float beta) : beta_(beta) {}
+  explicit SplitPlugin(const int32_t axis, const std::vector<int>& size_splits)
+      : axis_(axis), size_splits_(size_splits) {}
 
-  SwishPlugin(const void* serial_data, size_t serial_length) {
-    Deserialize(&serial_data, &serial_length, &beta_);
+  SplitPlugin(const void* serial_data, size_t serial_length) {
+    Deserialize(&serial_data, &serial_length, &axis_);
+    Deserialize(&serial_data, &serial_length, &size_splits_);
   }
 
   nvinfer1::IPluginV2* clone() const TRT_NOEXCEPT {
-    return new SwishPlugin(beta_);
+    return new SplitPlugin(axis_, size_splits_);
   }
 
   int enqueue(int batch_size,
@@ -46,24 +53,52 @@ class SwishPlugin : public Plugin {
   const char* getPluginType() const TRT_NOEXCEPT;
 
   size_t getSerializationSize() const TRT_NOEXCEPT {
-    return SerializedSize(beta_);
+    return SerializedSize(axis_) + SerializedSize(size_splits_);
   }
 
   void serialize(void* buffer) const TRT_NOEXCEPT {
-    Serialize(&buffer, beta_);
+    Serialize(&buffer, axis_);
+    Serialize(&buffer, size_splits_);
   };
 
+  int32_t getNbOutputs() const TRT_NOEXCEPT { return size_splits_.size(); }
+
+  int initialize() TRT_NOEXCEPT;
+
+  void terminate() TRT_NOEXCEPT;
+
+  nvinfer1::Dims getOutputDimensions(int index,
+                                     const nvinfer1::Dims* inputs,
+                                     int nb_input_dims) TRT_NOEXCEPT;
+
  private:
-  float beta_{1.0f};
+  int32_t axis_;
+  std::vector<int32_t> size_splits_;
+  int outer_rows_;
+  int inner_cols_;
+  int axis_shape_;
+  int* dev_segment_offsets_;
+  float** dev_output_ptrs_;
 };
 
-class SwishPluginCreator : public PluginCreator {
+class SplitPluginCreator : public PluginCreator {
  public:
   const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
                                          size_t serial_length) TRT_NOEXCEPT;
 };
+
+template <typename T>
+cudaError_t Split(const T* input,
+                  T* const* outputs,
+                  int* segment_offsets,
+                  int nsegment,
+                  int inner_cols,
+                  int axis_shape,
+                  int outer_rows,
+                  int batch_size,
+                  cudaStream_t stream);
 
 }  // namespace nvidia_tensorrt
 }  // namespace nnadapter

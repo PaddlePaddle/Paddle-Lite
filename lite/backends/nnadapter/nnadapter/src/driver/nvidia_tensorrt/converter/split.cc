@@ -12,30 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/nvidia_tensorrt/converter/plugin/cast.h"
-#include <iostream>
+#include "operation/split.h"
 #include "driver/nvidia_tensorrt/converter/converter.h"
-#include "operation/cast.h"
+#include "driver/nvidia_tensorrt/converter/plugin/split.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-int ConvertCast(Converter* converter, core::Operation* operation) {
-  CAST_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSplit(Converter* converter, core::Operation* operation) {
+  SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(split_operand))
+      << "Only support split_opeand is constant.";
+  NNADAPTER_CHECK_GT(axis, 0) << "Only support axis > 0";
 
   // Convert to trt tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto cast_layer = converter->network()->addIdentity(*input_tensor);
-  NNADAPTER_CHECK(cast_layer);
-  auto output_tensor = cast_layer->getOutput(0);
-  output_tensor->setType(ConvertToNVDataType(output_operand->type.precision));
-  converter->UpdateTensorMap(output_operand, output_tensor);
+  SplitPlugin split_plugin(axis - 1, split);
+  std::vector<nvinfer1::ITensor*> tensors{input_tensor};
+  auto split_layer =
+      converter->network()->addPluginV2(tensors.data(), 1, split_plugin);
+  NNADAPTER_CHECK(split_layer);
+  int split_count = split.size();
+  for (uint32_t i = 0; i < split_count; i++) {
+    auto output_tensor = split_layer->getOutput(i);
+    converter->UpdateTensorMap(output_operands[i], output_tensor);
+  }
+
   return NNADAPTER_NO_ERROR;
 }
 
