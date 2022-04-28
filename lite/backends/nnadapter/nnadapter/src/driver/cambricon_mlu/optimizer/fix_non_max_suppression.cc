@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/cambricon_mlu/optimizer/fix_multiclass_nms.h"
+#include "driver/cambricon_mlu/optimizer/fix_non_max_suppression.h"
 #include <cmath>
 #include <map>
 #include <string>
@@ -44,13 +44,13 @@ namespace cambricon_mlu {
 *       roi_align                                                                                  roi_align
 */
 // clang-format on
-void FixMulticlassNMS(core::Model* model) {
+void FixNonMaxSuppression(core::Model* model) {
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
-    if (operation->type == NNADAPTER_MULTICLASS_NMS3) {
+    if (operation->type == NNADAPTER_NON_MAX_SUPPRESSION) {
       auto& input_operands = operation->input_operands;
       auto& output_operands = operation->output_operands;
       NNADAPTER_CHECK_EQ(input_operands.size(), 11);

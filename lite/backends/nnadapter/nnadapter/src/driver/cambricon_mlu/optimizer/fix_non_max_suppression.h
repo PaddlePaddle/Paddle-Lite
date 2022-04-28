@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-void FixMulticlassNMS(core::Model* model);
+void FixNonMaxSuppression(core::Model* model);
 
 }  // namespace cambricon_mlu
 }  // namespace nnadapter

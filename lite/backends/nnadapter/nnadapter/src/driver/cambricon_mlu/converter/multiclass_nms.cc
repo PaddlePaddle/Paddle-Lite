@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/multiclass_nms.h"
 #include "driver/cambricon_mlu/converter.h"
+#include "operation/non_max_suppression.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertMulticlassNMS(Converter* converter, core::Operation* operation) {
-  MULTICLASS_NMS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertNonMaxSuppression(Converter* converter, core::Operation* operation) {
+  NON_MAX_SUPPRESSION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto box_tensor = converter->GetMappedTensor(bboxes_operand);
@@ -34,7 +34,8 @@ int ConvertMulticlassNMS(Converter* converter, core::Operation* operation) {
 
   auto multiclass_nms_node =
       converter->network()->AddIMulticlassNmsNode(box_tensor, score_tensor);
-  NNADAPTER_CHECK(multiclass_nms_node) << "Failed to add multiclass_nms node.";
+  NNADAPTER_CHECK(multiclass_nms_node)
+      << "Failed to add non_max_suppression node.";
   multiclass_nms_node->SetNumEntry(5);
   multiclass_nms_node->SetBackGroundLabelVal(
       static_cast<int64_t>(background_label));

@@ -17,7 +17,7 @@
 namespace nnadapter {
 namespace operation {
 
-#define MULTICLASS_NMS_OPERATION_EXTRACT_INPUTS_OUTPUTS                        \
+#define NON_MAX_SUPPRESSION_OPERATION_EXTRACT_INPUTS_OUTPUTS                   \
   auto& input_operands = operation->input_operands;                            \
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \

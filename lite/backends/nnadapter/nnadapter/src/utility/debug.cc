@@ -541,7 +541,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "min_max_aspect_ratios_order"};
         output_args = {"Boxes", "Variances"};
         break;
-      case NNADAPTER_MULTICLASS_NMS3:
+      case NNADAPTER_NON_MAX_SUPPRESSION:
         input_args = {"BBoxes",
                       "Scores",
                       "background_label",
@@ -721,7 +721,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MESHGRID);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
-    NNADAPTER_TYPE_TO_STRING(MULTICLASS_NMS3);
+    NNADAPTER_TYPE_TO_STRING(NON_MAX_SUPPRESSION);
     NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);

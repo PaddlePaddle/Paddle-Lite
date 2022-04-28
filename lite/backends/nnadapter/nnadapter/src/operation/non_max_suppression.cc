@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/multiclass_nms.h"
+#include "operation/non_max_suppression.h"
 #include <vector>
 #include "core/types.h"
 #include "utility/debug.h"
@@ -23,10 +23,12 @@
 namespace nnadapter {
 namespace operation {
 
-bool ValidateMulticlassNMS(const core::Operation* operation) { return false; }
+bool ValidateNonMaxSuppression(const core::Operation* operation) {
+  return false;
+}
 
-int PrepareMulticlassNMS(core::Operation* operation) {
-  MULTICLASS_NMS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int PrepareNonMaxSuppression(core::Operation* operation) {
+  NON_MAX_SUPPRESSION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
   std::vector<int> output_shape;
@@ -54,7 +56,7 @@ int PrepareMulticlassNMS(core::Operation* operation) {
   return NNADAPTER_NO_ERROR;
 }
 
-int ExecuteeMulticlassNMS(core::Operation* operation) {
+int ExecuteNonMaxSuppression(core::Operation* operation) {
   return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
