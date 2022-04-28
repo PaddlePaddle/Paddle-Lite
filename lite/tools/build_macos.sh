@@ -104,7 +104,6 @@ function prepare_thirdparty {
 function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
-  WITH_OPENCL=ON
   LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -197,8 +196,9 @@ function make_armosx {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_OPENMP=OFF \
-            -DWITH_ARM_DOTPROD=OFF \
+            -DWITH_ARM_DOTPROD=ON \
             -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_M1=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DPY_VERSION=$PY_VERSION \
             -DLITE_WITH_LOG=$WITH_LOG \

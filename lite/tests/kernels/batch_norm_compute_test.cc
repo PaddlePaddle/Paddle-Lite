@@ -172,6 +172,8 @@ TEST(BatchNorm, precision) {
   abs_error = 1e-1;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif

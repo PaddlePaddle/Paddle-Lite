@@ -297,6 +297,10 @@ if (LITE_WITH_ARM82_FP16)
   add_definitions("-DLITE_WITH_ARM82_FP16")
 endif(LITE_WITH_ARM82_FP16)
 
+if (LITE_WITH_M1)
+add_definitions("-DLITE_WITH_M1")
+endif(LITE_WITH_M1)
+
 if (WITH_CONVERT_TO_SSA STREQUAL ON)
   add_definitions("-DWITH_CONVERT_TO_SSA")
 endif(WITH_CONVERT_TO_SSA)

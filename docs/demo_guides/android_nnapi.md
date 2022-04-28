@@ -1,15 +1,15 @@
-# Android NN API 部署示例
+# Android NNAPI 部署示例
 
-Paddle Lite 已支持 Android NN API 的预测部署。
-其接入原理是加载并分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Android NN API 进行网络构建，在线生成并执行模型。
-需要注意由于不同 SoC 芯片对 Android NN API 的支持程度不同，其底层各个计算 IP（CPU、GPU、DSP、NPU 等）对 Android NN API 的支持也不同，性能也会有较大区别。
-用户可以在运行日志中，搜索关键字『Available devices:』来查看当前 SoC 对 Android NN API 的支持情况。
+Paddle Lite 已支持 Android NNAPI 的预测部署。
+其接入原理是加载并分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Android NNAPI 进行网络构建，在线生成并执行模型。
+需要注意由于不同 SoC 芯片对 Android NNAPI 的支持程度不同，其底层各个计算 IP（CPU、GPU、DSP、NPU 等）对 Android NNAPI 的支持也不同，性能也会有较大区别。
+用户可以在运行日志中，搜索关键字『Available devices:』来查看当前 SoC 对 Android NNAPI 的支持情况。
 
 ## 支持现状
 
 ### 已支持的设备
 
-- 所有支持 Android NN API 的终端设备，Android SDK version 需在 27 及以上。
+- 所有支持 Android NNAPI 的终端设备，系统版本 Android 8.1(Oreo) 及以上，Android SDK version 需在 27 及以上。
 
 ### 已支持的 Paddle 模型
 
@@ -38,9 +38,9 @@ Paddle Lite 已支持 Android NN API 的预测部署。
   - warmup=1，repeats=5，统计平均时间，单位是 ms
   - 线程数为 1，`paddle::lite_api::PowerMode CPU_POWER_MODE` 设置为 ` paddle::lite_api::PowerMode::LITE_POWER_HIGH`
   - 分类模型的输入图像维度是{1, 3, 224, 224}，检测模型的维度是{1, 3, 300, 300}
-  - 华为 Kirin NPU 对 Android NN API 的支持程度较高，但是由于其量化方式与 Paddle 有较大出入，量化模型无法发挥 NPU 加速特性，所以 fp32 模型性能较好
-  - 高通 骁龙系列芯片（855 以后），DSP，GPU 等 IP 支持 Android NN API，但其 HTA|HTP 暂不支持 Android NN API
-  - 不同 SoC 对 Android NN API 的支持程度不同，如下仅举例华为 Kirin990-5G 和 高通 骁龙865
+  - 华为 Kirin NPU 对 Android NNAPI 的支持程度较高，但是由于其量化方式与 Paddle 有较大出入，量化模型无法发挥 NPU 加速特性，所以 fp32 模型性能较好
+  - 高通 骁龙系列芯片（855 以后），DSP，GPU 等 IP 支持 Android NNAPI，但其 HTA|HTP 暂不支持 Android NNAPI
+  - 不同 SoC 对 Android NNAPI 的支持程度不同，如下仅举例华为 Kirin990-5G 和 高通 骁龙865
 
 - 测试结果
 
@@ -102,7 +102,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
             - armeabi-v7a
               - include
               - lib
-                - android_nnapi # NNAdapter 运行时库、Android NN API device HAL 库
+                - android_nnapi # NNAdapter 运行时库、Android NNAPI device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libandroid_nnapi.so # NNAdapter device HAL 库
               - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
@@ -113,7 +113,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
   ```
 
 - Android shell 端的示例程序
-  - 按照以下命令分别运行转换后的 ARM CPU 模型和 Android NN API 模型，比较它们的性能和结果；
+  - 按照以下命令分别运行转换后的 ARM CPU 模型和 Android NNAPI 模型，比较它们的性能和结果；
 
     ```shell
     注意：
@@ -141,7 +141,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
       Prediction time: 102.615802 ms
       Postprocess time: 0.280000 ms
 
-    基于 Android NN API 上运行 mobilenetv1 全量化模型
+    基于 Android NNAPI 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
     $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a android_nnapi d3869b25
       ...
@@ -178,7 +178,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
 
 - 通过 Paddle 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[ mobilenet_v1_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
 - 如果需要使用量化模型，则参考[模型量化-静态离线量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 DSP 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)；
-- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Android NN API 模型，仅需要将 `valid_targets` 设置为 andriod_nnapi, arm 即可。
+- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Android NNAPI 模型，仅需要将 `valid_targets` 设置为 andriod_nnapi, arm 即可。
 
   ```shell
   # 注意：
@@ -191,9 +191,9 @@ Paddle Lite 已支持 Android NN API 的预测部署。
       --valid_targets=android_nnapi,arm
   ```
 
-- 注意：opt 生成的模型只是标记了 Android NN API 支持的 Paddle 算子，并没有真正生成 Android NN API 模型，只有在执行时才会将标记的 Paddle 算子转成 `Android NN API` 调用实现组网，最终生成并执行模型。
+- 注意：opt 生成的模型只是标记了 Android NNAPI 支持的 Paddle 算子，并没有真正生成 Android NNAPI 模型，只有在执行时才会将标记的 Paddle 算子转成 `Android NNAPI` 调用实现组网，最终生成并执行模型。
 
-### 更新支持 Android NN API 的 Paddle Lite 库
+### 更新支持 Android NNAPI 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码；
 
@@ -203,7 +203,7 @@ Paddle Lite 已支持 Android NN API 的预测部署。
   $ git checkout <release-version-tag>
   ```
 
-- 编译并生成 `PaddleLite+Android NN API` for armv8 and armv7 的部署库
+- 编译并生成 `PaddleLite+Android NNAPI` for armv8 and armv7 的部署库
 
   - For armv8
     - tiny_publish 编译方式
@@ -259,4 +259,4 @@ Paddle Lite 已支持 Android NN API 的预测部署。
 
 ## 其它说明
 
-- 不同 SoC 芯片对 Android NN API 的支持差异较大，目前移动端芯片支持较好，边缘端、车载等需要根据具体芯片情况确认。
+- 不同 SoC 芯片对 Android NNAPI 的支持差异较大，目前移动端芯片支持较好，边缘端、车载等需要根据具体芯片情况确认。

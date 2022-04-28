@@ -49,6 +49,9 @@ typedef enum {
   kA76 = 76,
   kA77 = 77,
   kA78 = 78,
+  kGold = 79,
+  kGold_Prime = 80,
+  kSilver = 81,
   kARMArch_UNKOWN = -1
 } ARMArch;
 

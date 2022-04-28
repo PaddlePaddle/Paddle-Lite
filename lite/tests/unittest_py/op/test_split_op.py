@@ -56,7 +56,8 @@ class TestSplitOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -201,6 +202,19 @@ class TestSplitOp(AutoScanTest):
         self.add_ignore_check_case(
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case. We need to fix it as soon as possible."
+        )
+
+        def _teller3(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                in_dtype = program_config.inputs["input_data"].dtype
+                if len(in_shape) == 1 or axis == 0 or in_dtype != np.float32:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axis == 0' or 'in_dtype != float32' on NvidiaTensorrt."
         )
 
     def test(self, *args, **kwargs):

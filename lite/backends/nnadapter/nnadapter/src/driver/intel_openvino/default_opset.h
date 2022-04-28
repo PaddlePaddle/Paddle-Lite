@@ -27,6 +27,7 @@ using ElementType = ov::element::Type;
 using Shape = ov::Shape;
 
 using Tensor = OutputNode;
+using TensorVector = ov::OutputVector;
 using Operator = Node;
 }  // namespace intel_openvino
 }  // namespace nnadapter

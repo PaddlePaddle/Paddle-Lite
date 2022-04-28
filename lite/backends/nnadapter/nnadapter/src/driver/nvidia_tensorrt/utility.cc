@@ -79,7 +79,7 @@ uint32_t Tensor::Length() {
 }
 
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
-                    const char* msg) noexcept {
+                    const char* msg) TRT_NOEXCEPT {
   switch (severity) {
     case Severity::kVERBOSE:
       NNADAPTER_VLOG(3) << "[Tensorrt]" << msg;

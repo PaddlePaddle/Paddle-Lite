@@ -172,9 +172,11 @@ void XPUDynamicLstmCompute::Run() {
   paddle::lite::LoD in_lods = param.input->lod();
   std::vector<int> int_lod(in_lods[0].begin(), in_lods[0].end());
   std::vector<int> seq_len_tensor(in_lods[0].size() - 1);
+  std::vector<int64_t> seq_len_tensor_64(in_lods[0].size() - 1);
   int max_seq_len = 0;
   for (int i = 0; i < int_lod.size() - 1; i++) {
     seq_len_tensor[i] = int_lod[i + 1] - int_lod[i];
+    seq_len_tensor_64[i] = int_lod[i + 1] - int_lod[i];
     max_seq_len = std::max(max_seq_len, seq_len_tensor[i]);
   }
   int batch_size = seq_len_tensor.size();
@@ -255,38 +257,36 @@ void XPUDynamicLstmCompute::Run() {
   auto last_c =
       TargetWrapperXPU::MallocScratchPad(batch_size * hdim * sizeof(float));
   float* last_c_addr = reinterpret_cast<float*>(last_c->addr_);
-  auto i_f_g_o = TargetWrapperXPU::MallocScratchPad(max_seq_len * batch_size *
-                                                    hdim * 4 * sizeof(float));
-  float* i_f_g_o_addr = reinterpret_cast<float*>(i_f_g_o->addr_);
-  auto c = TargetWrapperXPU::MallocScratchPad(max_seq_len * batch_size * hdim *
-                                              sizeof(float));
-  float* c_addr = reinterpret_cast<float*>(c->addr_);
 
   const float* weight_0_maxptr = reinterpret_cast<float*>(weight_0_max_->addr_);
   const float* weight_1_maxptr = reinterpret_cast<float*>(weight_1_max_->addr_);
 
-  r = xdnn::lstm_train<float, float, int16_t>(ctx.GetRawContext(),
-                                              transpose_in_addr,
-                                              h0,
-                                              c0,
-                                              transpose_weight_0_addr,
-                                              transpose_weight_1_addr,
-                                              bias_0_addr,
-                                              bias_1_addr,
-                                              transpose_out_addr,
-                                              last_h_addr,
-                                              last_c_addr,
-                                              batch_size,
-                                              xdim,
-                                              hdim,
-                                              max_seq_len,
-                                              seq_len_tensor,
-                                              nullptr,
-                                              nullptr,
-                                              weight_0_maxptr,
-                                              weight_1_maxptr,
-                                              i_f_g_o_addr,
-                                              c_addr);
+  auto x_seq_len_guard =
+      TargetWrapperXPU::MallocScratchPad(batch_size * sizeof(int64_t));
+  int64_t* x_seq_len = reinterpret_cast<int64_t*>(x_seq_len_guard->addr_);
+  XPU_CALL(xpu_memcpy(x_seq_len,
+                      seq_len_tensor_64.data(),
+                      batch_size * sizeof(int64_t),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  r = xdnn::lstm_inference(ctx.GetRawContext(),
+                           max_seq_len,
+                           batch_size,
+                           xdim,
+                           hdim,
+                           false,
+                           transpose_in_addr,
+                           h0,
+                           c0,
+                           x_seq_len,
+                           transpose_weight_0_addr,
+                           weight_0_maxptr,
+                           transpose_weight_1_addr,
+                           weight_1_maxptr,
+                           bias_0_addr,
+                           bias_1_addr,
+                           transpose_out_addr,
+                           last_h_addr,
+                           last_c_addr);
   CHECK_EQ(r, 0);
 
   // transpose from transpose_out[seq_len, batch_size, hdim] to
