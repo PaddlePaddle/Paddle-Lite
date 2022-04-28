@@ -88,8 +88,9 @@ class TestConv2dTransposeOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -305,6 +306,17 @@ class TestConv2dTransposeOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support output_size or output_padding or filter_shape[2] != filter_shape[3] on nvidia_tensorrt, and group count must divide output channel count."
         )
+
+        def _teller3(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                if (filter_shape[1] % groups) != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Group count must divide output channel count in intel OpenVINO.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

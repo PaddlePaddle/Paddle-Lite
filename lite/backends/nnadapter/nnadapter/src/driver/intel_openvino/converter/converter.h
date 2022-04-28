@@ -48,17 +48,26 @@ class Converter {
   template <typename T>
   std::shared_ptr<Operator> AddUnsqueezeOperator(
       std::shared_ptr<Tensor> input_tensor, std::vector<T> axes) {
-    auto axes_tensor =
-        AddConstantTensor(std::vector<size_t>({axes.size()}), axes);
+    auto axes_tensor = AddConstantTensor<T>(axes);
     return std::make_shared<default_opset::Unsqueeze>(*input_tensor,
                                                       *axes_tensor);
   }
 
   template <typename T>
-  std::shared_ptr<Tensor> AddConstantTensor(std::vector<size_t> dimensions,
-                                            std::vector<T> values) {
+  std::shared_ptr<Tensor> AddConstantTensor(
+      std::vector<T> values, std::vector<size_t> dimensions = {}) {
+    if (dimensions.empty()) {
+      dimensions = std::vector<size_t>(1, values.size());
+    }
     auto constant_op = std::make_shared<default_opset::Constant>(
         GetElementType<T>(), Shape(dimensions), values);
+    return std::make_shared<Tensor>(constant_op->output(0));
+  }
+
+  template <typename T>
+  std::shared_ptr<Tensor> AddConstantTensor(T value) {
+    auto constant_op = std::make_shared<default_opset::Constant>(
+        GetElementType<T>(), Shape({}), value);
     return std::make_shared<Tensor>(constant_op->output(0));
   }
 

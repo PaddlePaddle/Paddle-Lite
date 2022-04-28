@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/squeeze.h"
+#include "operation/split.h"
 #include "driver/intel_openvino/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
+
 namespace nnadapter {
 namespace intel_openvino {
 
-int ConvertSqueeze(Converter* converter, core::Operation* operation) {
-  SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSplit(Converter* converter, core::Operation* operation) {
+  SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  std::shared_ptr<Operator> out;
-  if (!axes.empty()) {
-    auto axes_tensor = converter->AddConstantTensor(axes);
-    out = std::make_shared<default_opset::Squeeze>(*input_tensor, *axes_tensor);
-  } else {
-    out = std::make_shared<default_opset::Squeeze>(*input_tensor);
+  auto axis_tensor = converter->AddConstantTensor<int32_t>(axis);
+  auto split_count = split.size();
+  auto sections_tensor = converter->AddConstantTensor<int32_t>(split);
+  auto split_op = std::make_shared<default_opset::VariadicSplit>(
+      *input_tensor, *axis_tensor, *sections_tensor);
+  for (uint32_t i = 0; i < split_count; i++) {
+    MAP_OUTPUT(output_operands[i], split_op, i);
   }
-  MAP_OUTPUT(output_operand, out, 0);
   return NNADAPTER_NO_ERROR;
 }
 

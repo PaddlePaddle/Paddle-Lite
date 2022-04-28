@@ -11,40 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// Copyright (C) 2018-2022 Intel Corporation
-// SPDX-License-Identifier: Apache-2.0
-//
 
-#include "operation/stack.h"
+#include "operation/concat.h"
 #include "driver/intel_openvino/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace intel_openvino {
 
-int ConvertStack(Converter* converter, core::Operation* operation) {
-  STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertConcat(Converter* converter, core::Operation* operation) {
+  CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  ElementType data_type;
-  TensorVector op_datas_reshape;
-  auto axis_const = converter->AddConstantTensor<int64_t>(axis);
+  TensorVector input_tensors;
   for (int i = 0; i < input_count - 1; i++) {
     auto input_operand = input_operands[i];
     auto input_tensor = converter->GetMappedTensor(input_operand);
     if (!input_tensor) {
       input_tensor = converter->ConvertOperand(input_operand);
     }
-    if (i == 0) {
-      data_type = input_tensor->get_element_type();
-    }
-    NNADAPTER_CHECK(data_type == input_tensor->get_element_type());
-    op_datas_reshape.push_back(
-        std::make_shared<default_opset::Unsqueeze>(*input_tensor, *axis_const));
+    input_tensors.push_back(*input_tensor);
   }
-  auto concat_op =
-      std::make_shared<default_opset::Concat>(op_datas_reshape, axis);
+  auto concat_op = std::make_shared<default_opset::Concat>(input_tensors, axis);
+  NNADAPTER_CHECK(concat_op);
   MAP_OUTPUT(output_operand, concat_op, 0);
   return NNADAPTER_NO_ERROR;
 }

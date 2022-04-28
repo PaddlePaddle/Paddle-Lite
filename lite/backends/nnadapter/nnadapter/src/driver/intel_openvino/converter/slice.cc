@@ -32,11 +32,11 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto start_idx_tensor = converter->AddConstantTensor(
-      {starts_count}, std::vector<int32_t>(starts, starts + starts_count));
+      std::vector<int32_t>(starts, starts + starts_count));
   auto end_idx_tensor = converter->AddConstantTensor(
-      {ends_count}, std::vector<int32_t>(ends, ends + ends_count));
+      std::vector<int32_t>(ends, ends + ends_count));
   auto strides_idx_tensor = converter->AddConstantTensor(
-      {steps_count}, std::vector<int32_t>(steps, steps + steps_count));
+      std::vector<int32_t>(steps, steps + steps_count));
 
   // The following process is:
   // Given:
@@ -61,10 +61,9 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   // The input dim, such as [2].
   const auto rank_op = std::make_shared<default_opset::ShapeOf>(
       shape_op, GetElementType<int32_t>());
-  const auto const_0_tensor = converter->AddConstantTensor<int32_t>({}, {0});
-  const auto const_max_tensor =
-      converter->AddConstantTensor<int32_t>({}, {INT_MAX});
-  const auto const_1_tensor = converter->AddConstantTensor<int32_t>({}, {1});
+  const auto const_0_tensor = converter->AddConstantTensor<int32_t>(0);
+  const auto const_max_tensor = converter->AddConstantTensor<int32_t>(INT_MAX);
+  const auto const_1_tensor = converter->AddConstantTensor<int32_t>(1);
   // t1: [0, 0]
   const auto start_op =
       std::make_shared<default_opset::Broadcast>(*const_0_tensor, rank_op);
@@ -74,7 +73,7 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   const auto strides_op =
       std::make_shared<default_opset::Broadcast>(*const_1_tensor, rank_op);
   const auto axes_tensor = converter->AddConstantTensor(
-      {axes_count, 1}, std::vector<int32_t>(axes, axes + axes_count));
+      std::vector<int32_t>(axes, axes + axes_count), {axes_count, 1});
   // Update t1.
   const auto fixed_start_op = std::make_shared<default_opset::ScatterNDUpdate>(
       start_op, *axes_tensor, *start_idx_tensor);
