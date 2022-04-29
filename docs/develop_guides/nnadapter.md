@@ -1375,6 +1375,14 @@ typedef struct Device {
   - 输出：
     - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
+- NNADAPTER_LOG_SOFTMAX
+
+  沿着给定的轴逐元素计算 log softmax 激活值： `output` = log(exp(`input`) / reduce_sum(exp(`input`), axis=`axis`, keepdims=true)) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor 。
+    - 1 ： axis ，指定运算的轴，形状： [1] ，类型： NNADAPTER_INT32 ，取值： `axis` 的有效范围是 [-R, R） ， R 是输入操作数 `input` 的维度，当 `axis` 为负数时，效果与 `axis` + R 一致，默认是 1 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_LP_NORMALIZATION
 

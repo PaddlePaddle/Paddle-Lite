@@ -1116,21 +1116,21 @@ typedef enum {
   NNADAPTER_LOG,
 
   /**
-   * Computes the log of softmax values for input.
+   * Performs element-wise log of softmax activation.
    * The output is calculated using this formula:
-   *     output = log(exp(input) / reduce_sum(exp(input), axis=axis,
+   *     `output` = log(exp(`input`) / reduce_sum(exp(`input`), axis=`axis`,
    * keepdims=true))
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to 1. It represents the
-   * dimension along which softmax will be performed. It should be in range [-R,
-   * R), where R is the rank of input, negative value works the same way as
-   * axis+R.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which softmax will be performed, should be in range [-R,
+   * R), where R is the rank of `input`, negative value works the same way as
+   * `axis`+R.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
