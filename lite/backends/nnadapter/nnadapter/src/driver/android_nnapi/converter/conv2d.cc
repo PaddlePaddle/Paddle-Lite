@@ -90,7 +90,7 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   if (is_depthwise_mode) {
     int32_t multiplier = output_channel_size / group;
     NNADAPTER_CHECK_EQ(multiplier, 1)
-        << "Only supports multiplier=1, but recieved multiplier=" << multiplier
+        << "Only supports multiplier=1, but received multiplier=" << multiplier
         << " which C_out=" << output_channel_size << " and group=" << group;
     auto multiplier_index = converter->AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);

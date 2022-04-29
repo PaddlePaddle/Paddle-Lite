@@ -26,7 +26,7 @@ void SubgraphCompute::PrepareForRun() {
   auto block_index = param.block_idx;
   CHECK_GT(block_count, 0) << "No block found!";
   CHECK_LT(block_index, block_count) << "Invalid block index, expected [0,"
-                                     << (block_count - 1) << "] but recieved "
+                                     << (block_count - 1) << "] but received "
                                      << block_index;
   auto block_desc = param.program_desc->GetBlock<cpp::BlockDesc>(block_index);
   CHECK(block_desc);

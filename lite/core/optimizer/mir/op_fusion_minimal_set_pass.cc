@@ -177,7 +177,7 @@ class MulElementwiseAddFuser : public FuseBase {
       SKIP_DELETE_INTERMEDIATE_NODES
       LOG(WARNING) << "Op fusion failed! The dimension of the input Y of "
                       "elementwise_add should be ["
-                   << fc_num_units << "], but recieve ["
+                   << fc_num_units << "], but receive ["
                    << elementwise_add_y_dims[0] << "]!";
       return;
     }
@@ -437,7 +437,7 @@ class Conv2dBatchNormFuser : public FuseBase {
       LOG(WARNING) << "Op fusion failed! The dimension of the input Scale, "
                       "Bias, Mean and Variance of "
                    << batch_norm_type_ << " should be ["
-                   << conv2d_output_channel_size << "], but recieve ["
+                   << conv2d_output_channel_size << "], but receive ["
                    << batch_norm_scale_dims[0] << "], ["
                    << batch_norm_bias_dims[0] << "], ["
                    << batch_norm_mean_dims[0] << "] and ["
@@ -654,7 +654,7 @@ class Conv2dElementwiseAddFuser : public FuseBase {
       SKIP_DELETE_INTERMEDIATE_NODES
       LOG(WARNING) << "Op fusion failed! The dimension of the input Y of "
                       "elementwise_add should be ["
-                   << conv2d_output_channel_size << "], but recieve ["
+                   << conv2d_output_channel_size << "], but receive ["
                    << elementwise_add_y_dims[0] << "]!";
       return;
     }

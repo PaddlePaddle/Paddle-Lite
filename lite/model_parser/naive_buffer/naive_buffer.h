@@ -228,7 +228,7 @@ class StringBuilder : public FieldBuilder {
  *     }
  * };
  *
- * One can retrive a field with the specific field name.
+ * One can retrieve a field with the specific field name.
  * e.g.
  * GetField<Int32Builder>("age") will get the age field declared in `MyStruct`
  * GetMutableField<Int32Builder>("age") will get the mutable age field declared
