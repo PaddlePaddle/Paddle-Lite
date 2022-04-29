@@ -24,19 +24,54 @@ void GatherFunc(const operators::GatherParam& param) {
   auto src_dims = param.X->dims();
   auto index_size = param.Index->dims()[0];
   auto* p_src = param.X->data<DataType>();
-  const IndexType* p_index = param.Index->data<IndexType>();
-  auto* p_output = param.Out->mutable_data<DataType>();
-
+  DataType* p_output = param.Out->mutable_data<DataType>();
   int slice_size = 1;
   for (size_t i = 1; i < src_dims.size(); ++i) {
     slice_size *= src_dims[i];
   }
-  for (int i = 0; i < index_size; ++i) {
-    IndexType index_ = p_index[i];
-    memcpy(p_output + i * slice_size,
-           p_src + index_ * slice_size,
-           slice_size * sizeof(DataType));
+  if (param.Index->precision() == PrecisionType::kFloat) {
+    const float* p_index = param.Index->data<float>();
+    for (int i = 0; i < index_size; ++i) {
+      int index_ = p_index[i];
+      memcpy(p_output + i * slice_size,
+             p_src + index_ * slice_size,
+             slice_size * sizeof(DataType));
+    }
+  } else if (param.Index->precision() == PrecisionType::kInt8) {
+    const int8_t* p_index = param.Index->data<int8_t>();
+    for (int i = 0; i < index_size; ++i) {
+      int index_ = p_index[i];
+      memcpy(p_output + i * slice_size,
+             p_src + index_ * slice_size,
+             slice_size * sizeof(DataType));
+    }
+  } else if (param.Index->precision() == PrecisionType::kInt64) {
+    const int64_t* p_index = param.Index->data<int64_t>();
+    for (int i = 0; i < index_size; ++i) {
+      int index_ = p_index[i];
+      memcpy(p_output + i * slice_size,
+             p_src + index_ * slice_size,
+             slice_size * sizeof(DataType));
+    }
+  } else if (param.Index->precision() == PrecisionType::kInt32) {
+    const int32_t* p_index = param.Index->data<int32_t>();
+    for (int i = 0; i < index_size; ++i) {
+      int32_t index_ = p_index[i];
+      memcpy(p_output + i * slice_size,
+             p_src + index_ * slice_size,
+             slice_size * sizeof(DataType));
+    }
+  } else {
+    LOG(FATAL) << "Unsupported precision";
   }
+  // auto* p_output = param.Out->mutable_data<DataType>();
+  // int slice_size = 1;
+  // for (size_t i = 1; i < src_dims.size(); ++i) {
+  //   slice_size *= src_dims[i];
+  // }
+  // for (int i = 0; i < param.Index->numel(); i++) {
+  //   LOG(INFO)<< p_index[i];
+  // }
 }
 
 template <typename IndexType, typename AxisType, typename DataType>
