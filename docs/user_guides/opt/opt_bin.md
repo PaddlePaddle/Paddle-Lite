@@ -28,8 +28,8 @@ PaddlePaddle 模型有两种保存格式：
 
 ![opt_combined_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fcombined_model.png)
 
-   Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
-![opt_seperated_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fseperated_model.png)
+   Separated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
+![opt_separated_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fseperated_model.png)
 
 (2) 终端中执行`opt`优化模型
 **使用示例**：转化`mobilenet_v1`模型

@@ -366,7 +366,7 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.mutable_outputs()->clear();
   // (2) 修改OpDesc , 将OpType设置为 "fc" (FC OP 的OP_type)，
   op_desc.SetType("fc");
-  // (3) 设置OpDesc中的Input、Output、Attrbute。分别连接到BuildPattern（）函数中创建的VarNode
+  // (3) 设置OpDesc中的Input、Output、Attribute。分别连接到BuildPattern（）函数中创建的VarNode
   op_desc.SetInput("Input", {matched.at("x")->arg()->name});
   op_desc.SetInput("W", {matched.at("W")->arg()->name});
   op_desc.SetInput("Bias", {matched.at("b")->arg()->name});

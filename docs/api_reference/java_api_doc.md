@@ -283,7 +283,7 @@ public class Tensor;
 
 Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置维度、数据等。
 
-*注意：用户应使用 `PaddlePredictor` 的 `getInput` 和 `getOuput` 接口获取输入/输出的 `Tensor`。*
+*注意：用户应使用 `PaddlePredictor` 的 `getInput` 和 `getOutput` 接口获取输入/输出的 `Tensor`。*
 
 示例：
 

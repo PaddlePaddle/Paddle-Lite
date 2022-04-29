@@ -163,7 +163,7 @@ rm ./lite/api/paddle_use_ops.h
 # 假设当前位于 build.xxx 目录下   #
 #################################
 
-# prepare enviroment on phone
+# prepare environment on phone
 adb shell mkdir -p /data/local/tmp/arm_cpu/
 
 # build demo
