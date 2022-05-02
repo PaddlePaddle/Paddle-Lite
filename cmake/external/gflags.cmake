@@ -15,7 +15,7 @@
 if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 
-SET(GFLAGS_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/gflags)
+SET(GFLAGS_SOURCES_DIR ${PADDLE_SOURCE_DIR}/third-party/gflags)
 SET(GFLAGS_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gflags)
 SET(GFLAGS_INCLUDE_DIR "${GFLAGS_INSTALL_DIR}/include" CACHE PATH "gflags include directory." FORCE)
 IF(WIN32)

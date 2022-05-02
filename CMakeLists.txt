@@ -93,7 +93,7 @@ lite_option(WITH_CONVERT_TO_SSA           "whether convert input model which is 
 lite_option(WITH_NODE_RAW_FS           "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
 
 # Thirdparty
-set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
+set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
 
 if(NOT LITE_WITH_ARM)
@@ -127,7 +127,7 @@ endif()
 
 include_directories("${PADDLE_SOURCE_DIR}")
 # the generated header files.
-set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
+set(LITE_GENERATED_INCLUDE_DIR "${PADDLE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 
 if(LITE_WITH_PYTHON)
@@ -141,10 +141,10 @@ if(LITE_UPDATE_FBS_HEAD)
 else()
   include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
   add_custom_target(fbs_headers ${TARGET}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${PADDLE_SOURCE_DIR}/lite/backends/opencl/utils/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${PADDLE_SOURCE_DIR}/lite/backends/opencl/utils/"
     )
 endif()
 

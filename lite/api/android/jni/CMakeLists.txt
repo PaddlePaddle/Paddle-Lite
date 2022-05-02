@@ -33,17 +33,17 @@ add_custom_target(
     paddle_lite_jni_header ALL
     COMMAND ${Java_JAVAH_EXECUTABLE} -verbose
         -classpath ${_classDir}
-        -o "${CMAKE_BINARY_DIR}/lite/api/android/jni/native/paddle_lite_jni.h"
+        -o "${PADDLE_BINARY_DIR}/lite/api/android/jni/native/paddle_lite_jni.h"
         -jni
         com.baidu.paddle.lite.PaddlePredictor
     COMMAND ${Java_JAVAH_EXECUTABLE} -verbose
         -classpath ${_classDir}
-        -o "${CMAKE_BINARY_DIR}/lite/api/android/jni/native/tensor_jni.h"
+        -o "${PADDLE_BINARY_DIR}/lite/api/android/jni/native/tensor_jni.h"
         -jni
         com.baidu.paddle.lite.Tensor
     COMMAND ${Java_JAVAH_EXECUTABLE} -verbose
         -classpath ${_classDir}
-        -o "${CMAKE_BINARY_DIR}/lite/api/android/jni/native/paddle_init_jni.h"
+        -o "${PADDLE_BINARY_DIR}/lite/api/android/jni/native/paddle_init_jni.h"
         -jni
         com.baidu.paddle.lite.PaddleLiteInitializer
     DEPENDS PaddlePredictor

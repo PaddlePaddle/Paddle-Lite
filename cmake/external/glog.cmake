@@ -15,7 +15,7 @@
 if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 
-SET(GLOG_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/glog)
+SET(GLOG_SOURCES_DIR ${PADDLE_SOURCE_DIR}/third-party/glog)
 SET(GLOG_INSTALL_DIR ${THIRD_PARTY_PATH}/install/glog)
 SET(GLOG_INCLUDE_DIR "${GLOG_INSTALL_DIR}/include" CACHE PATH "glog include directory." FORCE)
 
