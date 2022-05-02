@@ -304,3 +304,8 @@ endif(LITE_WITH_M1)
 if (WITH_CONVERT_TO_SSA STREQUAL ON)
   add_definitions("-DWITH_CONVERT_TO_SSA")
 endif(WITH_CONVERT_TO_SSA)
+
+if (EMSCRIPTEN)
+  add_compile_options("-pthread")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+endif()

@@ -90,6 +90,7 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8,
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 # whether convert input model which is not a DAG to SSA graph
 lite_option(WITH_CONVERT_TO_SSA           "whether convert input model which is not a DAG to SSA graph"               ON)
+lite_option(WITH_NODE_RAW_FS           "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
 
 # Thirdparty
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING

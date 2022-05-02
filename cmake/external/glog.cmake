@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 
 SET(GLOG_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/glog)
@@ -76,3 +77,10 @@ SET_PROPERTY(TARGET glog PROPERTY IMPORTED_LOCATION ${GLOG_LIBRARIES})
 ADD_DEPENDENCIES(glog extern_glog)
 ADD_DEPENDENCIES(extern_glog extern_gflags)
 LINK_LIBRARIES(glog gflags)
+
+else()
+
+set(BUILD_TESTING OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third-party/glog)
+
+endif(NOT EMSCRIPTEN)

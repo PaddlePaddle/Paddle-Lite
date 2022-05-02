@@ -277,7 +277,7 @@ function(lite_cc_binary TARGET)
         target_link_libraries(${TARGET} ${intel_fpga_deps})
     endif()
 
-    if (NOT APPLE AND NOT WIN32)
+    if (NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD

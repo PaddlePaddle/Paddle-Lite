@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 # Always invoke `FIND_PACKAGE(Protobuf)` for importing function protobuf_generate_cpp
 IF(NOT WIN32)
@@ -309,3 +310,12 @@ IF(NOT PROTOBUF_FOUND)
     ENDIF()
 
 ENDIF(NOT PROTOBUF_FOUND)
+
+else()
+option(protobuf_BUILD_TESTS "" OFF)
+option(protobuf_WITH_ZLIB "" OFF)
+option(protobuf_BUILD_LIBPROTOC "" OFF)
+option(protobuf_BUILD_PROTOC_BINARIES "" OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third-party/protobuf-host/cmake)
+add_library(protobuf ALIAS libprotobuf)
+endif(NOT EMSCRIPTEN)

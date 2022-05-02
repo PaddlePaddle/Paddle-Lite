@@ -455,6 +455,10 @@ function(paddle_protobuf_generate_cpp SRCS HDRS)
   set(${SRCS})
   set(${HDRS})
 
+  if (NOT EMSCRIPTEN)
+    set(EXTRA_DEPENDENCY protoc)
+  endif()
+
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
@@ -472,7 +476,7 @@ function(paddle_protobuf_generate_cpp SRCS HDRS)
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
       -I${CMAKE_CURRENT_SOURCE_DIR}
       --cpp_out "${CMAKE_CURRENT_BINARY_DIR}" ${ABS_FIL}
-      DEPENDS ${ABS_FIL} protoc
+      DEPENDS ${ABS_FIL} ${EXTRA_DEPENDENCY}
       COMMENT "Running C++ protocol buffer compiler on ${FIL}"
       VERBATIM )
   endforeach()
