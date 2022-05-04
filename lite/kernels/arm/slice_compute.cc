@@ -117,7 +117,7 @@ void SliceCompute<T, PType>::Run() {
   auto out = param.Out;
   DDimLite in_dims;
   DDimLite out_dims;
-  if (in) in_dims = out->dims();
+  if (in) in_dims = in->dims();
   if (out) out_dims = out->dims();
 
   std::vector<int> axes = param.axes;
