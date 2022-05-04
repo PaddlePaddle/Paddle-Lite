@@ -114,9 +114,11 @@ void SliceCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::SliceParam>();
 
   auto in = param.X;
-  auto in_dims = in->dims();
   auto out = param.Out;
-  auto out_dims = out->dims();
+  DDimLite in_dims;
+  DDimLite out_dims;
+  if (in) in_dims = out->dims();
+  if (out) out_dims = out->dims();
 
   std::vector<int> axes = param.axes;
   std::vector<int32_t> starts_int = param.starts;
@@ -130,7 +132,7 @@ void SliceCompute<T, PType>::Run() {
   auto list_new_starts_tensor = param.StartsTensorList;
 
   bool need_infer = false;
-  if (param.StartsTensor || param.EndsTensor) {
+  if (param.StartsTensor || param.EndsTensor || param.XTensorList) {
     need_infer = true;
   }
   if (list_new_starts_tensor.size() > 0 || list_new_ends_tensor.size() > 0) {
@@ -160,6 +162,7 @@ void SliceCompute<T, PType>::Run() {
                       starts,
                       ends,
                       (param.Out == nullptr && param.OutTensorList != nullptr));
+      return;
     }
 
     for (size_t i = 0; i < axes.size(); ++i) {

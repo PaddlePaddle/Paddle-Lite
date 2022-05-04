@@ -30,6 +30,8 @@ bool SliceOp::CheckShape() const {
 }
 
 bool SliceOp::InferShapeImpl() const {
+  // if input_is_array , return !
+  if (!param_.X) return true;
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();
   auto out_dims = in_dims;
