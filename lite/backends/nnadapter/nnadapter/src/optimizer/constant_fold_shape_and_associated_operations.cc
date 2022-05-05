@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "optimizer/remove_tempory_shape_op.h"
+#include "optimizer/constant_fold_shape_and_associated_operations.h"
 #include <set>
 #include "utility/debug.h"
 #include "utility/hints.h"
@@ -22,24 +22,27 @@
 
 namespace nnadapter {
 
-void RemoveTemporyShapeOp(core::Model *model) {
-  NNADAPTER_LOG(INFO) << "Execute RemoveTemporyShapeOp pass";
+NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
+    core::Model *model) {
+  NNADAPTER_LOG(INFO) << "Run ConstantFoldShapeAndAssociatedOperations Pass";
   std::vector<core::Operation *> operations =
       SortOperationsInTopologicalOrder(model);
-  // Determine whether the model is a dynamic shape model
+  // Check whether to support dynamic shape in the model
   for (auto operation : operations) {
     auto input_operands = operation->input_operands;
-    auto output_operands = operation->output_operands;
     for (auto operand : input_operands) {
-      if (operand && IsTemporaryVariableOperand(operand) &&
+      if (operand && !IsModelInputOperand(operand) &&
+          IsTemporaryVariableOperand(operand) &&
           IsOperandWithDynamicShape(operand)) {
-        NNADAPTER_LOG(WARNING) << "Unsupported for dynamic shape model";
+        NNADAPTER_LOG(WARNING)
+            << "Skip if dynamic shape need to be supported in the model!";
         return;
       }
     }
   }
-  // Operand that will not be removed
+  // Operands that will not be removed
   std::set<core::Operand *> white_operands;
+  // Operands and operations to be deleted
   std::set<core::Operand *> remove_operands;
   std::set<core::Operation *> remove_operations;
   // Collect operands and operations that need to be deleted
@@ -85,8 +88,8 @@ void RemoveTemporyShapeOp(core::Model *model) {
   for (auto remove_operand : remove_operands) {
     if (!white_operands.count(remove_operand)) {
       RemoveOperand(model, remove_operand);
-      NNADAPTER_VLOG(5) << "remove_operand: "
-                        << OperandIdToString(remove_operand);
+      NNADAPTER_VLOG(5) << "Operand: " << OperandIdToString(remove_operand)
+                        << " is deleted!";
     } else {
       auto &temporary_shape = *(GetTemporaryShape(remove_operand));
       auto precision = remove_operand->type.precision;
@@ -108,8 +111,9 @@ void RemoveTemporyShapeOp(core::Model *model) {
   }
   for (auto remove_operation : remove_operations) {
     RemoveOperation(model, remove_operation);
-    NNADAPTER_VLOG(5) << "remove_operations "
-                      << OperationTypeToString(remove_operation->type);
+    NNADAPTER_VLOG(5) << "Operation: "
+                      << OperationTypeToString(remove_operation->type)
+                      << " is deleted!";
   }
 }
 

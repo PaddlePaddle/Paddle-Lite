@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void RemoveTemporyShapeOp(core::Model* model);
+void ConstantFoldShapeAndAssociatedOperations(core::Model* model);
 
 }  // namespace nnadapter
