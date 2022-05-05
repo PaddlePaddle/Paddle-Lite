@@ -42,15 +42,23 @@ Linux x86 环境下编译适用于 Android 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
+C++ 环境
+""""""""
 
-* gcc、g++（推荐版本为 8.2.0）
+* gcc、g++ == 8.2.0
+* CMake >= 3.10
+* Android NDK >= r17c（注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
 * git、make、wget、python、adb
-* Java Environment
-* CMake（请使用 3.10 或以上版本）
-* Android NDK（支持 ndk-r17c 及之后的所有 NDK 版本, 注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
+
+java 环境
+""""""""
+
+* OpenJDK == 1.8.0
+* Gradle == 4.1.2
+* Android SDK >= 21
 
 环境安装命令
 ^^^^^^^^^^^^
@@ -244,3 +252,5 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst
+
+.. include:: include/multi_device_support/nnadapter_support_android_nnapi.rst

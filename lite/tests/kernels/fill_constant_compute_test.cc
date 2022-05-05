@@ -79,6 +79,10 @@ class FillConstantComputeTester : public arena::TestCase {
     } else {
       out_shape = shape_;
     }
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    // Trt out should have batchsize
+    out_shape.insert(out_shape.begin(), 1);
+#endif
     out->Resize(out_shape);
 
     switch (dtype_) {
@@ -268,10 +272,13 @@ TEST(fill_constant, precision) {
   float abs_error = 1e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
-    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   TestFillConstantShape(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestFillConstantValue(place, abs_error);
   return;
 #else
   return;

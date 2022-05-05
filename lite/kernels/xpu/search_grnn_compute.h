@@ -34,7 +34,6 @@ class SearchGrnnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void Run() override;
 
  private:
-  XPUScratchPadGuard offset_xpu_guard_;
   XPUScratchPadGuard new_offset_xpu_guard_;
   XPUScratchPadGuard maxs_xpu_guard_;
 

@@ -95,7 +95,6 @@ add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
-add_kernel(__xpu__resnet_cbam_compute_xpu XPU extra SRCS __xpu__resnet_cbam_compute.cc)
 add_kernel(__xpu__multi_encoder_compute_xpu XPU extra SRCS __xpu__multi_encoder_compute.cc)
 add_kernel(__xpu__embedding_with_eltwise_add_compute_xpu XPU extra SRCS __xpu__embedding_with_eltwise_add_compute.cc)
 add_kernel(__xpu__fc_compute_xpu XPU extra SRCS __xpu__fc_compute.cc)
@@ -103,7 +102,6 @@ add_kernel(__xpu__search_attention_compute_xpu XPU extra SRCS __xpu__search_atte
 add_kernel(__xpu__search_attention_2_compute_xpu XPU extra SRCS __xpu__search_attention_2_compute.cc)
 add_kernel(__xpu__mmdnn_compute_xpu XPU extra SRCS __xpu__mmdnn_compute.cc)
 add_kernel(__xpu__conv2d_compute_xpu XPU extra SRCS __xpu__conv2d_compute.cc)
-add_kernel(__xpu__sfa_head_compute_xpu XPU extra SRCS __xpu__sfa_head_compute.cc)
 add_kernel(__xpu__softmax_topk_compute_xpu XPU extra SRCS __xpu__softmax_topk_compute.cc)
 add_kernel(__xpu__generate_sequence_compute_xpu XPU extra SRCS __xpu__generate_sequence_compute.cc)
 add_kernel(__xpu__logit_compute_xpu XPU extra SRCS __xpu__logit_compute.cc)

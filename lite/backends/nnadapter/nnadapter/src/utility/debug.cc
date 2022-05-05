@@ -354,6 +354,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_SOFTMAX:
+      case NNADAPTER_LOG_SOFTMAX:
         input_args = {"input", "axis"};
         output_args = {"output"};
         break;
@@ -699,6 +700,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(LESS);
     NNADAPTER_TYPE_TO_STRING(LESS_EQUAL);
     NNADAPTER_TYPE_TO_STRING(LOG);
+    NNADAPTER_TYPE_TO_STRING(LOG_SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);

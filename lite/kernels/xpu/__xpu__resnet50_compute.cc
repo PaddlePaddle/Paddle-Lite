@@ -52,9 +52,9 @@ void XPUResNet50Compute::Run() {
       c,
       h,
       w,
-      nullptr,
+      arg_max_x_,
       arg_max_filter_,
-      nullptr,
+      arg_max_y_,
       arg_bias_,
       {nullptr, nullptr, nullptr, nullptr},
       true);

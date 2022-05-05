@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,19 +13,20 @@
 // limitations under the License.
 
 #pragma once
-
 #include <string>
+#include <vector>
 #include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUSfaHeadOp : public OpLite {
+class LogSoftmaxOp : public OpLite {
  public:
-  XPUSfaHeadOp() {}
-
-  explicit XPUSfaHeadOp(const std::string &op_type) : OpLite(op_type) {}
+  LogSoftmaxOp() {}
+  explicit LogSoftmaxOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -34,11 +35,21 @@ class XPUSfaHeadOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "log_softmax"; }
 
-  std::string DebugString() const override { return "XPUFc"; }
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "axis" + std::to_string(param_.axis);
+    ch->macs = 2.f * input_dims.production() * 3;
+  }
+#endif
 
  private:
-  mutable XPUSfaHeadParam param_;
+  mutable LogSoftmaxParam param_;
 };
 
 }  // namespace operators

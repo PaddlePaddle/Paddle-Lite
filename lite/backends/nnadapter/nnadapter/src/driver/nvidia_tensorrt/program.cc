@@ -23,7 +23,6 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
-#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/partition_model_into_submodels.h"
 #include "optimizer/remove_tempory_shape_op.h"
 #include "utility/debug.h"
@@ -302,7 +301,7 @@ int TensorrtProgram::BuildFromModel() {
   // Create config_ and set options
   CompleteConfig();
 // Serialize to plan_
-#if TENSORRT_MAJOR_VERSION >= 8
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
   plan_.reset(builder_->buildSerializedNetwork(*network_, *config_));
   NNADAPTER_CHECK(plan_);
   runtime_.reset(nvinfer1::createInferRuntime(*TrtLogger::Global()));

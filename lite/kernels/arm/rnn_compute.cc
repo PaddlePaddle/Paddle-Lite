@@ -739,10 +739,10 @@ void RnnCompute::Run() {
     last_h_unbind[i].Resize(dims);
     init_h_unbind_t.push_back(&init_h_unbind[i]);
     last_h_unbind_t.push_back(&last_h_unbind[i]);
+    last_h_unbind[i].mutable_data<float>();
   }
   lite::host::math::split(
       pre_state[0]->data<float>(), init_h_unbind_t, 0, stride1);
-  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride1);
 
   if ("LSTM" == mode) {
     for (int i = 0; i < pre_state[1]->dims()[0]; i++) {
@@ -754,11 +754,10 @@ void RnnCompute::Run() {
       last_c_unbind[i].Resize(dims);
       init_c_unbind_t.push_back(&init_c_unbind[i]);
       last_c_unbind_t.push_back(&last_c_unbind[i]);
+      last_c_unbind[i].mutable_data<float>();
     }
     lite::host::math::split(
         pre_state[1]->data<float>(), init_c_unbind_t, 0, stride2);
-    lite::host::math::split(
-        state[1]->data<float>(), last_c_unbind_t, 0, stride2);
   }
 
   std::vector<Tensor> output_vec(2);
@@ -797,6 +796,12 @@ void RnnCompute::Run() {
       RUN_RNN_LAYER(i, output_holder, false, 0);
     }
   }
+
+  lite::arm::math::concat_func<float>(last_h_unbind_t, 0, state[0]);
+  if ("LSTM" == mode) {
+    lite::arm::math::concat_func<float>(last_c_unbind_t, 0, state[1]);
+  }
+
   // output_holder != output
   if (num_layers % 2 == 0) {
     output->CopyDataFrom(*output_holder);

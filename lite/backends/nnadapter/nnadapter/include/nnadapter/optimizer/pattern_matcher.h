@@ -122,8 +122,11 @@ class PatternMatcher {
                          NNAdapterOperationType type = NNADAPTER_UNKNOWN);
 
  protected:
-  virtual void InsertNewNode(core::Model* model,
-                             const std::map<std::string, Node*>& nodes) = 0;
+  // Handling the matched subgraphs, such as inserting a new operation and some
+  // operands, then delete the intermediate operand and operations if returns
+  // true, otherwise ignore it.
+  virtual bool HandleMatchedResults(
+      core::Model* model, const std::map<std::string, Node*>& nodes) = 0;
   // Convert the operands and operations of the core::Model to the nodes with
   // inlinks and outlinks
   void BuildNodes(core::Model* model, std::list<Node>* nodes);

@@ -60,14 +60,18 @@ namespace fusion {
 
 class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
  public:
+  explicit XPUMultiEncoderAdaptiveSeqlenFuser(
+      const std::string& matmul_type = "matmul")
+      : matmul_type_(matmul_type) {}
+
   void BuildPattern() override {
     auto* mask = VarNode("mask")
-                     ->assert_is_op_input("matmul", "X")
-                     ->assert_is_op_input("matmul", "Y");
-    auto* matmul = OpNode("matmul", "matmul")->AsIntermediate();
+                     ->assert_is_op_input(matmul_type_, "X")
+                     ->assert_is_op_input(matmul_type_, "Y");
+    auto* matmul = OpNode("matmul", matmul_type_)->AsIntermediate();
     auto* matmul_out = VarNode("matmul_out")
                            ->assert_is_op_input("scale", "X")
-                           ->assert_is_op_output("matmul", "Out")
+                           ->assert_is_op_output(matmul_type_, "Out")
                            ->AsIntermediate();
     auto* scale = OpNode("scale", "scale")->AsIntermediate();
     auto* scale_out = VarNode("scale_out")
@@ -140,6 +144,9 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
     DirectedLink(embedding_seq_lod_node, matched.at("xpu_encoder"));
     DirectedLink(embedding_pad_seq_len_node, matched.at("xpu_encoder"));
   }
+
+ private:
+  std::string matmul_type_;
 };
 
 }  // namespace fusion
@@ -147,8 +154,11 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
 class XPUMultiEncoderAdaptiveSeqlenFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    fusion::XPUMultiEncoderAdaptiveSeqlenFuser fuser;
-    fuser(graph.get());
+    std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
+    for (auto& matmul_type : matmul_types) {
+      fusion::XPUMultiEncoderAdaptiveSeqlenFuser fuser(matmul_type);
+      fuser(graph.get());
+    }
   }
 };
 

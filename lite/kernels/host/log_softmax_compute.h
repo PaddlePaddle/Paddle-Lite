@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,32 +13,22 @@
 // limitations under the License.
 
 #pragma once
-
-#include <string>
-#include "lite/core/op_lite.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace host {
 
-class XPUResNetCbamOp : public OpLite {
+class LogSoftmaxCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  XPUResNetCbamOp() {}
-  explicit XPUResNetCbamOp(const std::string &op_type) : OpLite(op_type) {}
+  void Run() override;
 
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "ResNetCbam"; }
-
- private:
-  mutable XPUResNetCbamParam param_;
+  virtual ~LogSoftmaxCompute() = default;
 };
 
-}  // namespace operators
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -135,10 +135,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   Optimizer optim(valid_places, kernel_pick_factor);
 
   std::vector<std::string> passes_local{
-      {"lite_quant_dequant_fuse_pass",         //
-       "weight_quantization_preprocess_pass",  //
-       "op_transformation_pass",               //
-       "remove_scale1_pass",                   //
+      {"lite_quant_dequant_fuse_pass",
+       "weight_quantization_preprocess_pass",
+       "op_transformation_pass",
        "assign_value_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "fill_constant_calc_offline_pass",
@@ -146,6 +145,25 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "scale_calc_offline_pass",
        "unsqueeze_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
+       // A minimal set of op fusion pass.
+       "op_fusion_minimal_set_pass",
+       // For the fully quantization model, the quantization parameters of the
+       // quantized ops are inferred by the propagation method according to the
+       // input scales and out_threashold.
+       "quantization_parameters_propagation_pass",
+       // Restrict the quantized ops(such as concat) that their inputs and
+       // outputs must have the same scale.
+       "restrict_quantized_op_with_same_input_output_scale_pass",
+       // Based on the custom mixed precision configuration information, remove
+       // the quantization parameters of some quantized ops to force them to run
+       // at fp32 precision.
+       "quantization_parameters_removal_pass",
+       // Subgraph partition based on operator support information defined in
+       // lite/kernels/nnadapter/converter/all.h
+       "nnadapter_subgraph_pass",
+       // Please notify @hong19860320 and @zhupengyang for code review if you
+       // want to insert a pass in the above passes.
+       "remove_scale1_pass",
        "adaptive_1x1_pool2d_convert_global_pass",  //
        "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",
        "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
@@ -187,12 +205,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
-       "__xpu__resnet_cbam_fuse_pass",
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
-       "__xpu__sfa_head_meanstd_fuse_pass",
-       "__xpu__sfa_head_moment_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
        "__xpu__multi_encoder_fuse_pass",
@@ -207,14 +222,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
-       // Only for fully quantized model, infer the output scale and fix the
-       // attribute 'enable_int8' for all of the quantized ops.
-       "quantization_parameters_propagation_pass",
-       // Apply the constraints for the quantized ops(such as concat) that the
-       // inputs and outputs must have the same scale.
-       "restrict_quantized_op_with_same_input_output_scale_pass",
-       "quantization_parameters_removal_pass",
-       "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "bm_subgraph_pass",
        "mlu_subgraph_pass",

@@ -14,32 +14,18 @@
 
 #pragma once
 
-#include <vector>
-#include "lite/backends/xpu/xpu_header_sitter.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <memory>
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace mir {
 
-class XPUResNetCbamCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class OpFusionMinimalSetPass : public ProgramPass {
  public:
-  using param_t = operators::XPUResNetCbamParam;
-
-  virtual void PrepareForRun();
-
-  virtual void Run();
-
- private:
-  std::vector<const int16_t *> arg_filter_;
-  std::vector<const float *> arg_max_filter_;
-  std::vector<const float *> arg_bias_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

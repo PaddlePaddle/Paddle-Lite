@@ -26,6 +26,9 @@
 #ifdef __ANDROID__
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
 #endif
+#ifdef __linux__
+#include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
+#endif
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
@@ -90,29 +93,26 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
              const int cnt,
              const bool repeat_flag) {
   lite::Timer timer;
-  bool has_validation_set = FLAGS_validation_set.empty();
-  if (!has_validation_set) {
-    timer.Start();
-    task->PreProcess(predictor, config, image_files, cnt);
-    perf_data->set_pre_process_time(timer.Stop());
-  }
-
+  timer.Start();
+  task->PreProcess(predictor, config, image_files, cnt);
+  perf_data->set_pre_process_time(timer.Stop());
   timer.Start();
   predictor->Run();
   perf_data->set_run_time(timer.Stop());
-
-  if (!has_validation_set) {
-    timer.Start();
-    task->PostProcess(
-        predictor, config, image_files, word_labels, cnt, repeat_flag);
-    perf_data->set_post_process_time(timer.Stop());
-  }
+  timer.Start();
+  task->PostProcess(
+      predictor, config, image_files, word_labels, cnt, repeat_flag);
+  perf_data->set_post_process_time(timer.Stop());
 }
 #endif
 
 void Run(const std::string& model_file,
          const std::vector<std::vector<int64_t>>& input_shapes) {
   lite::Timer timer;
+#ifdef __linux__
+  profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
+  float init_memory_usage = 0;
+#endif
   PerfData perf_data;
   perf_data.init(FLAGS_repeats);
 #ifdef __ANDROID__
@@ -124,7 +124,13 @@ void Run(const std::string& model_file,
 
   // Create predictor
   timer.Start();
+#ifdef __linux__
+  if (FLAGS_enable_memory_profile) resource_monter.Start();
+#endif
   auto predictor = CreatePredictor(model_file);
+#ifdef __linux__
+  init_memory_usage = resource_monter.GetPeakMemUsageInKB();
+#endif
   perf_data.set_init_time(timer.Stop());
 
   // Set inputs
@@ -171,6 +177,7 @@ void Run(const std::string& model_file,
 #endif
   }
 
+  bool has_validation_set = !(FLAGS_validation_set.empty());
   // Warmup
   for (int i = 0; i < FLAGS_warmup; ++i) {
 #ifdef __ANDROID__
@@ -188,21 +195,27 @@ void Run(const std::string& model_file,
     timer.SleepInMs(FLAGS_run_delay);
   }
 
-  // Run
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  if (has_validation_set) {
+    for (int i = 0; i < FLAGS_repeats; ++i) {
 #ifdef __ANDROID__
-    RunImpl(predictor,
-            &perf_data,
-            task.get(),
-            config,
-            image_files,
-            word_labels,
-            i,
-            true);
+      RunImpl(predictor,
+              &perf_data,
+              task.get(),
+              config,
+              image_files,
+              word_labels,
+              i,
+              true);
 #else
-    RunImpl(predictor, &perf_data);
+      RunImpl(predictor, &perf_data);
 #endif
-    timer.SleepInMs(FLAGS_run_delay);
+      timer.SleepInMs(FLAGS_run_delay);
+    }
+  } else {
+    for (int i = 0; i < FLAGS_repeats; ++i) {
+      RunImpl(predictor, &perf_data);
+      timer.SleepInMs(FLAGS_run_delay);
+    }
   }
 
   // Get output
@@ -305,11 +318,15 @@ void Run(const std::string& model_file,
   ss << "min   = " << std::setw(12) << perf_data.min_run_time() << std::endl;
   ss << "max   = " << std::setw(12) << perf_data.max_run_time() << std::endl;
   ss << "avg   = " << std::setw(12) << perf_data.avg_run_time() << std::endl;
+#ifdef __linux__
   if (FLAGS_enable_memory_profile) {
-    ss << "\nMemory Usage(unit: kB):\n";
-    ss << "init  = " << std::setw(12) << "Not supported yet" << std::endl;
-    ss << "avg   = " << std::setw(12) << "Not supported yet" << std::endl;
+    ss << "\nMemory Usage(unit: MB):\n";
+    ss << "init  = " << std::setw(12) << init_memory_usage / 1024 << std::endl;
+    ss << "peak  = " << std::setw(12)
+       << resource_monter.GetPeakMemUsageInKB() / 1024 << std::endl;
   }
+  if (FLAGS_enable_memory_profile) resource_monter.Stop();
+#endif
   std::cout << ss.str() << std::endl;
   StoreBenchmarkResult(ss.str());
 }

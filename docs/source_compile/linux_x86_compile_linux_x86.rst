@@ -35,9 +35,9 @@ Linux x86 环境下编译适用于 Linux x86 的库
 
 环境要求
 ^^^^^^^^
-* gcc、g++（推荐版本为 8.2.0）
+* gcc、g++ == 8.2.0
+* CMake >= 3.10
 * git、make、wget、python
-* CMake（请使用 3.10 或以上版本）
 
 环境安装命令
 ^^^^^^^^^^^^
@@ -187,3 +187,5 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
 .. include:: include/multi_device_support/nnadapter_support_introduction.rst
 
 .. include:: include/multi_device_support/nnadapter_support_huawei_ascend_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_nvidia_tensorrt.rst
