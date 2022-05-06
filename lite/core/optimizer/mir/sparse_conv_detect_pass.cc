@@ -677,7 +677,7 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                   ch_out,
                                                   ch_in);
       } else {
-        throw std::invalid_argument("use_fp32 and use_int8 must not both be false");
+        LOG(FATAL) << "use_fp32 and use_int8 must not both be false";
       }
       int nonzero_num = weight_num - zero_num;
       VLOG(4) << "zero_num: " << zero_num << "weight_num: " << weight_num;
@@ -776,7 +776,7 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                  ic_diffs_t);
         }
       } else {
-        throw std::invalid_argument("use_fp32 and use_int8 must not both be false");
+        LOG(FATAL) << "use_fp32 and use_int8 must not both be false";
       }
       VLOG(4) << "zero_num: " << zero_num << " weight_num: " << weight_num
               << " first_ic: " << first_ic;
