@@ -61,14 +61,16 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
     } else {
       bool is_tempory_shape_op = true;
       for (auto input_operand : input_operands) {
-        if (IsTemporaryVariableOperand(input_operand)) {
+        if (IsTemporaryVariableOperand(input_operand) ||
+            IsModelInputOperand(input_operand)) {
           is_tempory_shape_op = false;
           break;
         }
       }
       if (!is_tempory_shape_op) continue;
       for (auto output_operand : output_operands) {
-        if (IsTemporaryVariableOperand(output_operand)) {
+        if (IsTemporaryVariableOperand(output_operand) ||
+            IsModelOutputOperand(output_operand)) {
           is_tempory_shape_op = false;
           break;
         }

@@ -24,7 +24,6 @@
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
 #include "optimizer/partition_model_into_submodels.h"
-#include "optimizer/remove_tempory_shape_op.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -281,7 +280,6 @@ int TensorrtProgram::BuildFromModel() {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model_);
   UnpackOpFusion(model_);
   RemoveReshapeBeforeFullyConnected(model_);
-  RemoveTemporyShapeOp(model_);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model_);
   // 2. Build model_, serialize to plan_, create engnie_
   builder_.reset(nvinfer1::createInferBuilder(*TrtLogger::Global()));
