@@ -57,7 +57,7 @@
       --optimize_out_type=naive_buffer \
       --optimize_out=mobilenet_v1_quant_opt \
       --valid_targets=arm \
-      --sparse_model=true --sparse_theshold=0.5
+      --sparse_model=true --sparse_threshold=0.5
 ```
 
 注意，我们通过上述的 sparse_model 和 sparse_threshold 两个参数控制是否对模型进行稀疏优化：
