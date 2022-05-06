@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "driver/nvidia_tensorrt/converter/plugin/yolo_box_head.h"
 #include "driver/nvidia_tensorrt/kernel/cuda/yolo_box_util.h"
 
 namespace nnadapter {
@@ -106,34 +107,47 @@ __global__ void YoloTensorParseKernel(const float* input,
 
   // x
   float x = input[bbindex + grids_num * (z_id * (5 + class_num) + 0)];
-  x = (float)((x + (float)x_id) * (float)netw) / (float)grid_size;
+  x = (float)((x + (float)x_id) * (float)pic_w) / (float)grid_size;
 
   // y
   float y = input[bbindex + grids_num * (z_id * (5 + class_num) + 1)];
-  y = (float)((y + (float)y_id) * (float)neth) / (float)grid_size;
+  y = (float)((y + (float)y_id) * (float)pic_h) / (float)grid_size;
 
   // w
   float w = input[bbindex + grids_num * (z_id * (5 + class_num) + 2)];
-  w = w * biases[2 * z_id];
+  w = w * biases[2 * z_id] * pic_w / netw;
 
   // h
   float h = input[bbindex + grids_num * (z_id * (5 + class_num) + 3)];
-  h = h * biases[2 * z_id + 1];
+  h = h * biases[2 * z_id + 1] * pic_h / neth;
 
-  CorrectYoloBox(x, y, w, h, pic_w, pic_h, netw, neth);
+  // CorrectYoloBox(x, y, w, h, pic_w, pic_h, netw, neth);
 
   output[tensor_index] = objectness;
-  output[tensor_index + 1] = x;
-  output[tensor_index + 2] = y;
-  output[tensor_index + 3] = w;
-  output[tensor_index + 4] = h;
+  output[tensor_index + 1] = x - w / 2;
+  output[tensor_index + 2] = y - h / 2;
+  output[tensor_index + 3] = x + w / 2;
+  output[tensor_index + 4] = y + h / 2;
+
+  if (true) {
+    output[tensor_index + 1] =
+        output[tensor_index + 1] > 0 ? output[tensor_index + 1] : 0.f;
+    output[tensor_index + 2] =
+        output[tensor_index + 2] > 0 ? output[tensor_index + 2] : 0.f;
+    output[tensor_index + 3] = output[tensor_index + 3] < pic_w - 1
+                                   ? output[tensor_index + 3]
+                                   : pic_w - 1;
+    output[tensor_index + 4] = output[tensor_index + 4] < pic_h - 1
+                                   ? output[tensor_index + 4]
+                                   : pic_h - 1;
+  }
 
   // Probabilities of classes
   for (uint i = 0; i < class_num; ++i) {
     float prob =
         input[bbindex + grids_num * (z_id * (5 + class_num) + (5 + i))] *
         objectness;
-    output[tensor_index + 5 + i] = prob < prob_thresh ? 0. : prob;
+    output[tensor_index + 5 + i] = prob;
   }
 }
 

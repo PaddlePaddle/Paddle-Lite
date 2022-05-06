@@ -65,15 +65,27 @@ int32_t YoloBoxHeadPlugin::enqueue(int batch_size,
   float* output_data = static_cast<float*>(outputs[0]);
   const int volume = input_dims_[0].d[1] * h * w;
   for (unsigned int batch = 0; batch < n; ++batch) {
-    NNADAPTER_CHECK_EQ(YoloBoxHead(input_data + batch * volume,
-                                   output_data + batch * volume,
-                                   grid_size_x,
-                                   grid_size_y,
-                                   class_num_,
-                                   anchors_num,
-                                   scale_x_y_,
-                                   stream),
-                       cudaSuccess);
+    if (0) {
+      NNADAPTER_CHECK_EQ(YoloBoxHead(input_data + batch * volume,
+                                     output_data + batch * volume,
+                                     grid_size_x,
+                                     grid_size_y,
+                                     class_num_,
+                                     anchors_num,
+                                     scale_x_y_,
+                                     stream),
+                         cudaSuccess);
+
+    } else {
+      NNADAPTER_CHECK_EQ(YoloBoxHeadV3(input_data + batch * volume,
+                                       output_data + batch * volume,
+                                       grid_size_x,
+                                       grid_size_y,
+                                       class_num_,
+                                       anchors_num,
+                                       stream),
+                         cudaSuccess);
+    }
   }
   return 0;
 }

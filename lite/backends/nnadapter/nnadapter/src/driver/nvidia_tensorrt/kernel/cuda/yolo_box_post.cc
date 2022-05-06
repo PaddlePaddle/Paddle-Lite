@@ -113,6 +113,7 @@ int YoloBoxPost::Run(
       int w = boxes_input_dims[input_id][3];
       int ts_id = batch_id * boxes_input.size() + input_id;
       int bbox_count_max_alloc = ts_info[ts_id].bbox_count_max_alloc;
+
       YoloTensorParseCuda(
           boxes_input[input_id] + batch_id * c * h * w,
           image_shape_data + batch_id * 2,
@@ -139,7 +140,7 @@ int YoloBoxPost::Run(
             bbox_count_max_alloc * (5 + class_num) * sizeof(float));
       }
       // we need copy bbox_count_host boxes to cpu memory
-      cudaMemcpy(
+      cudaMemcpyAsync(
           ts_info[ts_id].bboxes_host_ptr,
           ts_info[ts_id].bboxes_dev_ptr,
           ts_info[ts_id].bbox_count_host * (5 + class_num) * sizeof(float),
@@ -148,9 +149,10 @@ int YoloBoxPost::Run(
     }
   }
 
-  boxes_scores_tensor->Resize({total_bbox, 6});
+  boxes_scores_tensor->Resize({total_bbox > 0 ? total_bbox : 1, 6});
   float* boxes_scores_data =
       reinterpret_cast<float*>(boxes_scores_tensor->Data(false));
+  memset(boxes_scores_data, 0, sizeof(float) * 6);
   boxes_num_tensor->Resize({batch});
   int* boxes_num_data = reinterpret_cast<int*>(boxes_num_tensor->Data(false));
   int boxes_scores_id = 0;
@@ -175,8 +177,10 @@ int YoloBoxPost::Run(
         bbox_det.objectness = bbox_host_ptr[bbox_index * (5 + class_num) + 0];
         bbox_det.bbox.x = bbox_host_ptr[bbox_index * (5 + class_num) + 1];
         bbox_det.bbox.y = bbox_host_ptr[bbox_index * (5 + class_num) + 2];
-        bbox_det.bbox.w = bbox_host_ptr[bbox_index * (5 + class_num) + 3];
-        bbox_det.bbox.h = bbox_host_ptr[bbox_index * (5 + class_num) + 4];
+        bbox_det.bbox.w =
+            bbox_host_ptr[bbox_index * (5 + class_num) + 3] - bbox_det.bbox.x;
+        bbox_det.bbox.h =
+            bbox_host_ptr[bbox_index * (5 + class_num) + 4] - bbox_det.bbox.y;
         bbox_det.classes = class_num;
         bbox_det.prob = (float*)malloc(class_num * sizeof(float));
         int max_prob_class_id = -1;
@@ -212,13 +216,12 @@ int YoloBoxPost::Run(
   }
 
   cudaFree(bbox_index_device_ptr);
-  delete[] ts_info;
   for (int i = 0; i < batch * boxes_input.size(); i++) {
     cudaFree(ts_info[i].bboxes_dev_ptr);
     cudaFree(ts_info[i].bbox_count_device_ptr);
     free(ts_info[i].bboxes_host_ptr);
   }
-
+  delete[] ts_info;
   return NNADAPTER_NO_ERROR;
 }
 

@@ -25,6 +25,11 @@ static int nms_comparator(const void *pa, const void *pb) {
   detection b = *(detection *)pb;
   float diff = 0;
 
+  if (a.max_prob_class_index > b.max_prob_class_index)
+    return 1;
+  else if (a.max_prob_class_index < b.max_prob_class_index)
+    return -1;
+
   if (b.sort_class >= 0) {
     diff = a.prob[b.sort_class] - b.prob[b.sort_class];
   } else {
@@ -98,6 +103,7 @@ void post_nms(std::vector<detection> &det_bboxes, float thresh, int classes) {
       if (dets[j].objectness == 0) {
         continue;
       }
+      if (dets[j].max_prob_class_index != dets[i].max_prob_class_index) break;
 
       box b = dets[j].bbox;
 
