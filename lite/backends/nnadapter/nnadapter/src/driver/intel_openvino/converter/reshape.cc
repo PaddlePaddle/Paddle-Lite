@@ -40,7 +40,6 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
       }
     }
     auto shape_tensor = converter->AddConstantTensor(
-        {shape_count},
         std::vector<int32_t>(shape_data, shape_data + shape_count));
     auto reshape_op = std::make_shared<default_opset::Reshape>(
         *input_tensor, *shape_tensor, true);
