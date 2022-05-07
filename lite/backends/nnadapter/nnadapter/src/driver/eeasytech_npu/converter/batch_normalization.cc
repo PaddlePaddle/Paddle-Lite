@@ -31,12 +31,6 @@ int ConvertBatchNormalization(Converter *converter,
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  auto new_scale_operand = converter->GetOperand(scale_operand);
-  auto mul_output_operand = converter->GetOperand(input_operand, false);
-  auto new_bias_operand = converter->GetOperand(bias_operand);
-  auto new_scale_tensor = converter->ConvertOperand(new_scale_operand);
-  auto mul_output_tensor = converter->ConvertOperand(mul_output_operand);
-  auto new_bias_tensor = converter->ConvertOperand(new_bias_operand);
   int size = scale_operand->type.dimensions.data[0];
   NNADAPTER_VLOG(5) << "scale_operand->length: " << scale_operand->length
                     << " data[0] " << size;
@@ -44,13 +38,30 @@ int ConvertBatchNormalization(Converter *converter,
   float *bias_data = reinterpret_cast<float *>(bias_operand->buffer);
   float *mean_data = reinterpret_cast<float *>(mean_operand->buffer);
   float *var_data = reinterpret_cast<float *>(variance_operand->buffer);
-  float *new_scale_data = reinterpret_cast<float *>(new_scale_operand->buffer);
-  float *new_bias_data = reinterpret_cast<float *>(new_bias_operand->buffer);
+  std::vector<float> new_scale_data;
+  std::vector<float> new_bias_data;
   for (int i = 0; i < size; i++) {
     float denominator = sqrt(pow(var_data[i], 2) + epsilon);
-    new_scale_data[i] = scale_data[i] / denominator;
-    new_bias_data[i] = bias_data[i] - mean_data[i] / denominator;
+    new_scale_data.push_back(scale_data[i] / denominator);
+    new_bias_data.push_back(bias_data[i] - mean_data[i] / denominator);
   }
+  auto mul_output_tensor = converter->AddVariableTensor(
+      converter->GetTensorName(input_operand) + "_mul_output",
+      input_operand->type.dimensions.data,
+      input_operand->type.dimensions.count,
+      ConvertToEznnPrecisionType(input_operand->type.precision),
+      reinterpret_cast<const float *>(
+          &(input_operand->type.symm_per_layer_params.scale)));
+  auto new_scale_tensor =
+      converter->AddConstantTensor(new_scale_data.data(),
+                                   scale_operand->type.dimensions.data,
+                                   scale_operand->type.dimensions.count,
+                                   eeasy::nn::PrecisionType::FLOAT32);
+  auto new_bias_tensor =
+      converter->AddConstantTensor(new_bias_data.data(),
+                                   bias_operand->type.dimensions.data,
+                                   bias_operand->type.dimensions.count,
+                                   eeasy::nn::PrecisionType::FLOAT32);
   std::vector<std::shared_ptr<eeasy::nn::Tensor>> mul_input_tensors = {
       input_tensor, new_scale_tensor};
   std::vector<std::shared_ptr<eeasy::nn::Tensor>> mul_output_tensors = {

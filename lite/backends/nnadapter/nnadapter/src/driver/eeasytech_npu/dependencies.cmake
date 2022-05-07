@@ -45,9 +45,8 @@ if(NOT EEASYTECH_NPU_SDK_DDK_FILE)
   message(FATAL_ERROR "Missing eznpu_ddk in ${NNADAPTER_EEASYTECH_NPU_SDK_ROOT}/${EEASYTECH_NPU_SDK_SUB_LIB_PATH}")
 endif()
 
-link_directories(${EEASYTECH_NPU_SDK_DDK_FILE} ${NNADAPTER_EEASYTECH_NPU_SDK_ROOT}/${EEASYTECH_NPU_SDK_SUB_LIB_PATH})
-#add_library(eznpu_ddk SHARED IMPORTED GLOBAL)
-#set_property(TARGET eznpu_ddk PROPERTY IMPORTED_LOCATION libeznpu_ddk.so)
+add_library(eznpu_ddk SHARED IMPORTED GLOBAL)
+set_property(TARGET eznpu_ddk PROPERTY IMPORTED_LOCATION ${EEASYTECH_NPU_SDK_DDK_FILE})
 
-set(${DEVICE_NAME}_deps eznpu_ddk)
+set(DEPS ${DEPS} eznpu_ddk)
 

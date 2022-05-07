@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cmake_minimum_required(VERSION 3.10)
 
 set(DEVICE_NAME eeasytech_npu)
 add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
@@ -18,6 +19,7 @@ add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEV
 
 include(dependencies.cmake)
 
+include_directories(.)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} engine.cc driver.cc)

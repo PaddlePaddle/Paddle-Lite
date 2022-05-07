@@ -190,30 +190,5 @@ std::shared_ptr<eeasy::nn::Operator> Converter::AddOperator(
   return graph_->AddOperator(type, input_tensors, output_tensors, attrs, name);
 }
 
-core::Operand* Converter::GetOperand(core::Operand* old_operand,
-                                     bool const_flag) {
-  core::Operand* new_operand = (core::Operand*)malloc(sizeof(core::Operand));
-  new_operand->type = old_operand->type;
-  new_operand->length = old_operand->length;
-  if (const_flag) {
-    new_operand->buffer = malloc(new_operand->length);
-    if (!new_operand->buffer) {
-      NNADAPTER_VLOG(0) << "GetOperand malloc error!";
-      return nullptr;
-    }
-  } else {
-    new_operand->buffer = nullptr;
-  }
-  operands_.push_back(new_operand);
-  return new_operand;
-}
-
-void Converter::ClearOperands() {
-  for (auto operand : operands_) {
-    if (operand->buffer) free(operand->buffer);
-    free(operand);
-  }
-}
-
 }  // namespace eeasytech_npu
 }  // namespace nnadapter

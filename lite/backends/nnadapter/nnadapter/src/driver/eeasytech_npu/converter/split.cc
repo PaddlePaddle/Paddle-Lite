@@ -31,8 +31,8 @@ int ConvertSplit(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   std::vector<std::shared_ptr<eeasy::nn::Tensor>> output_tensors;
-  for (auto out : output_operands) {
-    auto output_tensor = converter->ConvertOperand(out);
+  for (auto output_operand : output_operands) {
+    auto output_tensor = converter->ConvertOperand(output_operand);
     output_tensors.push_back(output_tensor);
   }
   eeasy::nn::SplitAttr attr;

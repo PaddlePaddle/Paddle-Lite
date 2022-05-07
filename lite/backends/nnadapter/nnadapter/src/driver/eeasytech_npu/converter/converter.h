@@ -30,7 +30,7 @@ class Converter {
       std::map<core::Operand*, std::vector<std::shared_ptr<eeasy::nn::Tensor>>>*
           tensors)
       : graph_(graph), tensors_(tensors) {}
-  ~Converter() { ClearOperands(); }
+  ~Converter() {}
 
   // Convert a NNAdapter model to eznn graph and tensors
   int Apply(core::Model* model);
@@ -98,9 +98,6 @@ class Converter {
       std::vector<std::shared_ptr<eeasy::nn::Tensor>> output_tensors,
       void* attrs,
       std::string name = "");
-
-  core::Operand* GetOperand(core::Operand* old_operand, bool const_flag = true);
-  void ClearOperands();
 
  private:
   eeasy::nn::Graph* graph_{nullptr};

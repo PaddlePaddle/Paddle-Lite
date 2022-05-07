@@ -16,13 +16,14 @@
 #include "driver/eeasytech_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace eeasytech_npu {
 
 int ConvertResizeNearest(Converter *converter, core::Operation *operation) {
   RESIZE_NEAREST_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
+  NNADAPTER_CHECK_EQ(IsOperandWithDynamicShape(input_operand), false);
   // Convert to eeasynpu tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (input_tensor == nullptr) {
@@ -41,9 +42,6 @@ int ConvertResizeNearest(Converter *converter, core::Operation *operation) {
     sizes[1] = shape_data[1];
   } else {
     float *scales_data = reinterpret_cast<float *>(scales_operand->buffer);
-    int scale_size = scales_operand->type.dimensions.data[0];
-    NNADAPTER_VLOG(5) << "scale_operand->length: " << scales_operand->length
-                      << " scale_size " << scale_size;
     NNADAPTER_VLOG(5) << "scales_data[0]: " << scales_data[0];
     NNADAPTER_VLOG(5) << "scales_data[1]: " << scales_data[1];
     scales[0] = scales_data[0];

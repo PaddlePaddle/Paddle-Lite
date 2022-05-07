@@ -22,9 +22,6 @@ namespace eeasytech_npu {
 
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
-  //    << "Unsupported fuse_code(" << fuse_code << ") is found.";
-
   // Convert to eeasynpu tensors and operators
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
@@ -51,7 +48,6 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-
   converter->AddOperator(op_type, input_tensors, output_tensors, &fuse_code);
   return NNADAPTER_NO_ERROR;
 }

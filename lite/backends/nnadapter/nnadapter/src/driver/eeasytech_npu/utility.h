@@ -23,7 +23,6 @@
 namespace nnadapter {
 namespace eeasytech_npu {
 
-#if 1
 // Convert NNAdapter types to eznpu types
 eeasy::nn::PrecisionType ConvertToEznnPrecisionType(
     NNAdapterOperandPrecisionCode input_precision);
@@ -49,6 +48,5 @@ std::shared_ptr<eeasy::nn::Tensor> CreateEznnTensor(
     const NNAdapterOperandType* type,
     void* buffer = nullptr,
     std::vector<int32_t> dimensions = {});
-#endif
 }  // namespace eeasytech_npu
 }  // namespace nnadapter
