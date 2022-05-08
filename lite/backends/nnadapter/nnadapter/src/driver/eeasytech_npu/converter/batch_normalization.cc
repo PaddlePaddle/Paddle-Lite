@@ -78,7 +78,6 @@ int ConvertBatchNormalization(Converter *converter,
                          add_input_tensors,
                          add_output_tensors,
                          nullptr);
-
   return NNADAPTER_NO_ERROR;
 }
 
