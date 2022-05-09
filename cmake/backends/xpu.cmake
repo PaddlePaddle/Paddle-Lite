@@ -39,15 +39,21 @@ if (NOT XPU_SDK_ENV)
   endif ()
 endif ()
 
-macro (prepare_xpu_sdk sdk)
-  set (xpu_${sdk}_url "${XPU_SDK_URL}/${sdk}-${XPU_SDK_ENV}.tar.gz")
-  message (STATUS "xpu_${sdk}_url: ${xpu_${sdk}_url}")
+if (NOT XPU_XDNN_URL)
+  set (XPU_XDNN_URL "${XPU_SDK_URL}/xdnn-${XPU_SDK_ENV}.tar.gz")
+endif ()
+message (STATUS "XPU_XDNN_URL: ${XPU_XDNN_URL}")
+if (NOT XPU_XRE_URL)
+  set (XPU_XRE_URL "${XPU_SDK_URL}/xre-${XPU_SDK_ENV}.tar.gz")
+endif ()
+message (STATUS "XPU_XRE_URL: ${XPU_XRE_URL}")
 
+macro (prepare_xpu_sdk sdk sdk_url)
   ExternalProject_Add (
     extern_xpu_${sdk}
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
-    DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${xpu_${sdk}_url} && tar xf ${sdk}-${XPU_SDK_ENV}.tar.gz
+    DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${sdk_url} -O ${sdk}.tar.gz && tar xf ${sdk}.tar.gz
     CONFIGURE_COMMAND       ""
     BUILD_COMMAND           ""
     UPDATE_COMMAND          ""
@@ -56,7 +62,6 @@ macro (prepare_xpu_sdk sdk)
 
   set (xpu_${sdk}_root        "${XPU_INSTALL_DIR}/xpu/${sdk}"  CACHE PATH "xpu ${sdk} include directory" FORCE)
   set (xpu_${sdk}_include_dir "${xpu_${sdk}_root}/include" CACHE PATH "xpu ${sdk} include directory" FORCE)
-
   include_directories (${xpu_${sdk}_include_dir})
 
   foreach (lib ${ARGN})
@@ -68,8 +73,8 @@ macro (prepare_xpu_sdk sdk)
 endmacro ()
 
 if (NOT XPU_SDK_ROOT)
-  prepare_xpu_sdk (xdnn xpuapi)
-  prepare_xpu_sdk (xre xpurt)
+  prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
+  prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
   set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
   set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
   return ()

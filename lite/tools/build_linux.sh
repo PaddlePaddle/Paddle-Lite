@@ -68,6 +68,8 @@ NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
 KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_XDNN_URL=""
+KUNLUNXIN_XPU_XRE_URL=""
 KUNLUNXIN_XPU_SDK_ENV=""
 KUNLUNXIN_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
@@ -200,6 +202,8 @@ function init_cmake_mutable_options {
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
                         -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+                        -DXPU_XDNN_URL=$KUNLUNXIN_XPU_XDNN_URL \
+                        -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
@@ -416,7 +420,13 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON                                                                                 |"
     echo -e "|     --with_kunlunxin_xpu: (OFF|ON); controls whether to compile lib for kunlunxin_xpu, default is OFF.                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_url: (kunlunxin_xpu sdk download url) optional, default is                                                                   |"
-    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'                                                                    |"
+    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'.                                                                   |"
+    echo -e "|             'xdnn' and 'xre' will be download from kunlunxin_xpu_sdk_url, so you don't                                                               |"
+    echo -e "|             need to specify 'kunlunxin_xpu_xdnn_url' or 'kunlunxin_xpu_xre_url' separately.                                                          |"
+    echo -e "|     --kunlunxin_xpu_xdnn_url: (kunlunxin_xpu xdnn download url) optional, default is empty.                                                          |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
+    echo -e "|     --kunlunxin_xpu_xre_url: (kunlunxin_xpu xre download url) optional, default is empty.                                                            |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
     echo -e "|     --kunlunxin_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                  |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
@@ -655,6 +665,14 @@ function main {
                 ;;
             --kunlunxin_xpu_sdk_url=*)
                 KUNLUNXIN_XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_xdnn_url=*)
+                KUNLUNXIN_XPU_XDNN_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_xre_url=*)
+                KUNLUNXIN_XPU_XRE_URL="${i#*=}"
                 shift
                 ;;
             --kunlunxin_xpu_sdk_env=*)

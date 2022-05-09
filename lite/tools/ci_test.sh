@@ -39,6 +39,8 @@ REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 # Xpu sdk option
 XPU_SDK_URL=""
+XPU_XDNN_URL=""
+XPU_XRE_URL=""
 XPU_SDK_ENV=""
 XPU_SDK_ROOT=""
 
@@ -611,6 +613,8 @@ function baidu_xpu_build_and_test() {
     local unit_test_filter_type=$3
     local sdk_url=$4
     local sdk_env=$5
+    local xdnn_url=$6
+    local xre_url=$7
 
     # Build all of unittests and model tests
     cur_dir=$(pwd)
@@ -633,6 +637,8 @@ function baidu_xpu_build_and_test() {
         -DLITE_WITH_XPU=ON \
         -DLITE_WITH_LTO=OFF \
         -DXPU_SDK_URL=$sdk_url \
+        -DXPU_XDNN_URL=$xdnn_url \
+        -DXPU_XRE_URL=$xre_url \
         -DXPU_SDK_ENV=$sdk_env \
         -DXPU_SDK_ROOT=$XPU_SDK_ROOT
 
@@ -711,6 +717,14 @@ function main() {
             XPU_SDK_ENV="${i#*=}"
             shift
             ;;
+        --xpu_xdnn_url=*)
+            XPU_XDNN_URL="${i#*=}"
+            shift
+            ;;
+        --xpu_xre_url=*)
+            XPU_XRE_URL="${i#*=}"
+            shift
+            ;;
         --xpu_sdk_root=*)
             XPU_SDK_ROOT="${i#*=}"
             shift
@@ -736,11 +750,11 @@ function main() {
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
-            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV $XPU_XDNN_URL $XPU_XRE_URL
             shift
             ;;
         baidu_xpu_enable_xtcl_build_and_test)
-            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV $XPU_XDNN_URL $XPU_XRE_URL
             shift
             ;;
         *)
