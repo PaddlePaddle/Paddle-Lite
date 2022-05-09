@@ -196,6 +196,8 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
     //! update hardswish parameter
     if (param.activation_param.active_type ==
         lite_api::ActivationType::kHardSwish) {
+      param.activation_param.hard_swish_scale =
+          param.activation_param.hard_swish_scale / param.output_scale;
       param.activation_param.hard_swish_offset =
           param.activation_param.hard_swish_offset / output_scale;
       param.activation_param.hard_swish_threshold =
