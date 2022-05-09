@@ -829,7 +829,7 @@ bool DeviceInfo::SetCPUInfoByName() {
     cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
     SetArchInfo(2, kA78, kA55);
     SetCacheInfo(0, 2, 64 * 1024, 64 * 1024);
-    SetCacheInfo(1, 2, 512 * 1024, 256 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
     SetCacheInfo(2, 1, 4 * 1024 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(2, 1, 1);
