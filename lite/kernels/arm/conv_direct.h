@@ -154,6 +154,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   }
   //! update hardswish parameter
   if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
+    act_param.hard_swish_scale = act_param.hard_swish_scale / out_scale;
     act_param.hard_swish_offset = act_param.hard_swish_offset / out_scale;
     act_param.hard_swish_threshold = act_param.hard_swish_threshold / out_scale;
   }
