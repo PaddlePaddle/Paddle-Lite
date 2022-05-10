@@ -317,6 +317,14 @@ int TensorrtProgram::Execute(
   for (int i = 0; i < output_size; i++) {
     SetMaxDims(output_types_.at(i), output_tensors->at(i).get());
   }
+
+  // Get output dims
+  for (int i = 0; i < output_size; i++) {
+    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
+    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
+    output_tensors->at(i)->Resize(shape);
+  }
+
   // Prepare input/output buffers
   std::vector<void*> device_ptrs(input_size + output_size, nullptr);
   for (int i = 0; i < input_size; i++) {
@@ -339,12 +347,7 @@ int TensorrtProgram::Execute(
   NNADAPTER_CHECK(execution_context_->allInputDimensionsSpecified());
   // Execute model
   execution_context_->execute(1, device_ptrs.data());
-  // Get output dims
-  for (int i = 0; i < output_size; i++) {
-    auto dims = execution_context_->getBindingDimensions(output_indices_.at(i));
-    std::vector<int> shape(dims.d, dims.d + dims.nbDims);
-    output_tensors->at(i)->Resize(shape);
-  }
+
   return NNADAPTER_NO_ERROR;
 }
 
