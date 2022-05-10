@@ -23,7 +23,8 @@ namespace eeasytech_npu {
 
 int ConvertResizeNearest(Converter *converter, core::Operation *operation) {
   RESIZE_NEAREST_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(IsOperandWithDynamicShape(input_operand), false);
+  NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
+
   // Convert to eeasynpu tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (input_tensor == nullptr) {

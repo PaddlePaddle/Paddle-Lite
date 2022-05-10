@@ -22,6 +22,7 @@ namespace eeasytech_npu {
 
 int ConvertElementwise(Converter* converter, core::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to eeasynpu tensors and operators
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {

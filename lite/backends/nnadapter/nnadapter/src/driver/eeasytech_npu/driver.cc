@@ -118,7 +118,7 @@ int ExecuteProgram(void* program,
 
 NNADAPTER_EXPORT nnadapter::driver::Device NNADAPTER_AS_SYM2(DEVICE_NAME) = {
     .name = NNADAPTER_AS_STR2(DEVICE_NAME),
-    .vendor = "Eeasytech",
+    .vendor = "EEASYTECH",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
     .open_device = nnadapter::eeasytech_npu::OpenDevice,
