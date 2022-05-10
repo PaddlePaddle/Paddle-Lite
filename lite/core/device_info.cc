@@ -842,6 +842,19 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(1, 2, 512 * 1024, 256 * 1024);
     return true;
     /* MediaTek */
+  } else if (dev_name_.find("MT6891") != std::string::npos) {  // Dimensity 1100
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kA78, kA55);
+    SetCacheInfo(0, 2, 64 * 1024, 64 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
   } else if (dev_name_.find("MT6797") !=
              std::string::npos) {  // X20/X23/X25/X27
     core_num_ = 10;
