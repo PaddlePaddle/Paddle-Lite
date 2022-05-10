@@ -70,12 +70,14 @@ int Program::BuildFromCache(core::Cache* cache) {
 
 int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_VLOG(5) << "NNAdapter model:" << std::endl << Visualize(model);
-  Converter converter(&parameter_nodes_, &tensor_map_);
+  Converter converter(&parameter_node_map_, &tensor_map_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
+  auto parameter_nodes =
+      std::vector<std::shared_ptr<default_opset::Parameter>>();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  NNADAPTER_CHECK_EQ(input_count, parameter_nodes_.size());
+  NNADAPTER_CHECK_EQ(input_count, parameter_node_map_.size());
   if (input_count > 0) {
     input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
@@ -83,6 +85,9 @@ int Program::BuildFromModel(core::Model* model) {
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
       input_types_[i] = type;
+      NNADAPTER_CHECK(parameter_node_map_.find(operand) !=
+                      parameter_node_map_.end());
+      parameter_nodes.push_back(parameter_node_map_[operand]);
     }
   }
   auto output_count = model->output_operands.size();
@@ -100,7 +105,7 @@ int Program::BuildFromModel(core::Model* model) {
   }
   // Convert NNAdapter model to OpenVINO model
   std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
-      result_nodes_, parameter_nodes_, "openvino_graph");
+      result_nodes_, parameter_nodes, "openvino_graph");
   compiled_model_ =
       std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
           ov_model, context_->GetFirtSelectedDeviceName()));
