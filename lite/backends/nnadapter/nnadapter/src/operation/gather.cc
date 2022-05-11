@@ -14,7 +14,9 @@
 
 #include "operation/gather.h"
 #include "core/types.h"
+#include "operation/math/gather.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -56,6 +58,38 @@ NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
                        ids_dims.dynamic_data[i],
                        out_dims.dynamic_data[i]);
   }
+
+  if (IsTemporaryShapeOperand(input_operand) &&
+      IsConstantOperand(indices_operand)) {
+    auto indices = reinterpret_cast<int32_t*>(indices_operand->buffer);
+    auto indices_count =
+        indices_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    auto& temporary_shape = *(GetTemporaryShape(input_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count = input_operand->type.dimensions.dynamic_count;
+    math::gather<int32_t>(
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        indices,
+        std::vector<int32_t>({static_cast<int32_t>(indices_count)}),
+        axis,
+        dimension_type.data);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      math::gather<int32_t>(
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          indices,
+          std::vector<int32_t>({static_cast<int32_t>(indices_count)}),
+          axis,
+          dimension_type.dynamic_data[i]);
+    }
+    SetTemporaryShape(output_operand, dimension_type);
+  }
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
