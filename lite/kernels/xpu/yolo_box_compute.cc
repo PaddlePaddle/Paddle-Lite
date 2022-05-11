@@ -37,7 +37,7 @@ void YoloBoxCompute::Run() {
   int class_num = param.class_num;
   float scale_x_y = param.scale_x_y;
   float bias = -0.5 * (scale_x_y - 1.);
-  CHECK(box_num == an_num * h * w) << "box_num != anchor_num * h * w";
+  CHECK_EQ(box_num, an_num * h * w);
 
   int r = xdnn::yolo_box<float>(ctx.GetRawContext(),
                                 param.X->data<float>(),
