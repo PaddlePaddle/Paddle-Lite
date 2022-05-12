@@ -42,6 +42,7 @@ class XPUMultiEncoderCompute
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> fc_input_max_;
+  std::vector<const float *> quant_max_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard input_max_guard_;
   XPUScratchPadGuard cast_in_guard_;
@@ -52,6 +53,9 @@ class XPUMultiEncoderCompute
   template <typename T>
   std::vector<const T *> *get_weight();
 
+  void prepare_quant_max(const std::vector<float> &max_value,
+                         int max_ptr_len,
+                         std::vector<const float *> &max_xpu_ptrs);
   template <typename T, typename TW, typename TGEMM>
   void run_encoder(const T *in, T *out);
 };

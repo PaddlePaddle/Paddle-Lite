@@ -144,6 +144,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
     param_.weight_max = op_desc.GetAttr<std::vector<float>>("FCWeightMax");
+    param_.quant_max = op_desc.GetAttr<std::vector<float>>("QuantMax");
   }
 
   if (op_desc.HasAttr("slice_axes")) {
