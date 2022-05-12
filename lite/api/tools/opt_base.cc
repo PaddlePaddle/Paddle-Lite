@@ -205,6 +205,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "eeasytech_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "android_nnapi") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -362,7 +367,7 @@ void OptBase::PrintHelpInfo() {
       "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|"
       "mediatek_apu|huawei_kirin_npu|amlogic_npu|verisilicon_timvx|"
-      "android_nnapi)`"
+      "eeasytech_npu|android_nnapi)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -518,6 +523,7 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "imagination_nna",
                                                   "amlogic_npu",
                                                   "verisilicon_timvx",
+                                                  "eeasytech_npu",
                                                   "android_nnapi"};
   const std::vector<std::string> readable_valid_targets = {"ARM",
                                                            "OpenCL",
@@ -535,6 +541,7 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                            "颖脉NNA",
                                                            "晶晨NPU",
                                                            "TIM-VX",
+                                                           "亿智NPU",
                                                            "Android NNAPI"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
@@ -808,6 +815,7 @@ void OptBase::InitSupportedOpInfo() {
                                      "imagination_nna",
                                      "amlogic_npu",
                                      "verisilicon_timvx",
+                                     "eeasytech_npu",
                                      "android_nnapi",
                                      "kUnk"};
   for (size_t idx = 0; idx < supported_ops_target.size(); idx++) {
