@@ -111,7 +111,6 @@
 |x86 |3.5 |[v2.11](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.11/inference_lite_lib.win.x86.MSVC.C++_static.py35.full_publish.zip) |
 |x86 |3.6 |[v2.11](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.11/inference_lite_lib.win.x86.MSVC.C++_static.py36.full_publish.zip) |
 |x86 |3.7 |[v2.11](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.11/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
-|x86 |3.9 |[v2.11](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.11/inference_lite_lib.win.x86.MSVC.C++_static.py39.full_publish.zip) |
 
 
 ## Opencl
