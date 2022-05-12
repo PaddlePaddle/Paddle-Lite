@@ -58,7 +58,8 @@ class TestArgMaxOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -125,6 +126,12 @@ class TestArgMaxOp(AutoScanTest):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
+        def _teller4(program_config, predictor_config):
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                if len(in_shape) == 1:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
@@ -137,6 +144,9 @@ class TestArgMaxOp(AutoScanTest):
             _teller3, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
