@@ -25,11 +25,34 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+#define DELETE_DIM_ONE(old_dims, now_dims)                        \
+  for (int i = 0; i < old_dims.size(); i++) {                     \
+    if (old_dims[i] == 1) {                                       \
+      while ((i + 1) < old_dims.size() && old_dims[i + 1] == 1) { \
+        i++;                                                      \
+      }                                                           \
+      while (i + 1 < old_dims.size()) {                           \
+        now_dims.push_back(old_dims[i + 1]);                      \
+        i++;                                                      \
+      }                                                           \
+      break;                                                      \
+    } else {                                                      \
+      now_dims.push_back(old_dims[i]);                            \
+    }                                                             \
+  }
+
 #define INIT_PARAM                                                           \
   auto& ctx = this->ctx_->template As<ARMContext>();                         \
   auto& param = Param<param_t>();                                            \
-  auto x_dims = param.X->dims();                                             \
-  auto y_dims = param.Y->dims();                                             \
+  auto old_x_dims = param.X->dims();                                         \
+  auto old_y_dims = param.Y->dims();                                         \
+  std::vector<int64_t> x_shape, y_shape;                                     \
+  int k = 0;                                                                 \
+  /* for example old_x_dims=[10, 1, 128], x_dims=[10,128]*/                  \
+  DELETE_DIM_ONE(old_x_dims, x_shape)                                        \
+  DELETE_DIM_ONE(old_y_dims, y_shape)                                        \
+  DDim x_dims(x_shape);                                                      \
+  DDim y_dims(y_shape);                                                      \
   bool x_transpose = param.transpose_X;                                      \
   bool y_transpose = param.transpose_Y;                                      \
   if (last_x_shape_ == x_dims && last_y_shape_ == y_dims) {                  \
@@ -144,10 +167,14 @@ namespace arm {
     lda_ = k_;                                                               \
     ldb_ = n_;                                                               \
     ldc_ = n_;                                                               \
+  } else {                                                                   \
+    LOG(FATAL) << "This x_dims: " << x_dims << " and y_dims: " << y_dims     \
+               << " doesn't support!";                                       \
   }
 
 template <>
 void MatMulV2Compute<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
+  auto& param1 = Param<param_t>();
   INIT_PARAM
   last_x_shape_ = x_dims;
   last_y_shape_ = y_dims;
@@ -743,6 +770,8 @@ void MatMulV2Compute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }
 #endif
 
+#undef INIT_PARAM
+#undef DELETE_DIM_ONE
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
