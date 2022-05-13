@@ -26,10 +26,11 @@ namespace intel_openvino {
 class Converter {
  public:
   explicit Converter(
-      std::vector<std::shared_ptr<default_opset::Parameter>>* paramter_nodes,
+      std::map<core::Operand*, std::shared_ptr<default_opset::Parameter>>*
+          paramter_node_map,
       std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>*
           tensor_map)
-      : parameter_nodes_(paramter_nodes), tensor_map_(tensor_map) {}
+      : parameter_node_map_(paramter_node_map), tensor_map_(tensor_map) {}
 
   ~Converter() {}
 
@@ -72,7 +73,8 @@ class Converter {
   }
 
  private:
-  std::vector<std::shared_ptr<default_opset::Parameter>>* parameter_nodes_;
+  std::map<core::Operand*, std::shared_ptr<default_opset::Parameter>>*
+      parameter_node_map_;
   std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>* tensor_map_;
 };
 
