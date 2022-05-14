@@ -55,7 +55,16 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
   param_.dtype = opdesc.GetAttr<int>("dtype");
   if (opdesc.HasAttr("shape")) {
-    param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
+    auto type = opdesc.GetAttrType("shape");
+    if (type == OpAttrType::INTS) {  // paddle1.0 shape type is ints
+      auto shape = opdesc.GetAttr<std::vector<int32_t>>("shape");
+      param_.shape.resize(shape.size());
+      for (int i = 0; i < shape.size(); i++) {
+        param_.shape[i] = shape[i];
+      }
+    } else {
+      param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
+    }
   }
   param_.value = opdesc.GetAttr<float>("value");
   param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");

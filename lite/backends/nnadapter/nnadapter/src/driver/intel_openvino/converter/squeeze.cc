@@ -29,7 +29,7 @@ int ConvertSqueeze(Converter* converter, core::Operation* operation) {
   }
   std::shared_ptr<Operator> out;
   if (!axes.empty()) {
-    auto axes_tensor = converter->AddConstantTensor({axes.size()}, axes);
+    auto axes_tensor = converter->AddConstantTensor(axes);
     out = std::make_shared<default_opset::Squeeze>(*input_tensor, *axes_tensor);
   } else {
     out = std::make_shared<default_opset::Squeeze>(*input_tensor);

@@ -19,30 +19,33 @@ REGISTER_CONVERTER(
     batch_norm,
     ConvertBatchNorm,
     "huawei_ascend_npu,verisilicon_"
-    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino,nvidia_tensorrt");
-REGISTER_CONVERTER(
-    cast,
-    ConvertCast,
-    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt");
+    "timvx,cambricon_mlu,huawei_kirin_npu,intel_openvino,nvidia_tensorrt,"
+    "eeasytech_npu");
+REGISTER_CONVERTER(cast,
+                   ConvertCast,
+                   "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_"
+                   "tensorrt,intel_openvino");
 REGISTER_CONVERTER(clip,
                    ConvertClip,
                    "huawei_ascend_npu,cambricon_mlu,verisilicon_timvx,huawei_"
-                   "kirin_npu,nvidia_tensorrt");
+                   "kirin_npu,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(
     conv2d,
     ConvertConv2D,
     "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
+    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
+    "eeasytech_npu");
 REGISTER_CONVERTER(
     depthwise_conv2d,
     ConvertConv2D,
     "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
-    "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt");
+    "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,eeasytech_"
+    "npu");
 REGISTER_CONVERTER(deformable_conv,
                    ConvertDeformableConv,
-                   "huawei_ascend_npu,cambricon_mlu");
+                   "huawei_ascend_npu,cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(dropout,
                    ConvertDropout,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
@@ -52,7 +55,8 @@ REGISTER_CONVERTER(
     ConvertPool,
     "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
+    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
+    "eeasytech_npu");
 REGISTER_CONVERTER(matmul,
                    ConvertMatmul,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,"
@@ -69,11 +73,11 @@ REGISTER_CONVERTER(
     "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_"
     "openvino,google_xnnpack");
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
-REGISTER_CONVERTER(
-    conv2d_transpose,
-    ConvertConv2dTranspose,
-    "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
-    "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi,nvidia_tensorrt");
+REGISTER_CONVERTER(conv2d_transpose,
+                   ConvertConv2dTranspose,
+                   "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
+                   "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi,nvidia_"
+                   "tensorrt,intel_openvino");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -86,12 +90,14 @@ REGISTER_CONVERTER(reshape2,
                    "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
                    "kunlunxin_xtcl,cambricon_mlu,android_nnapi,nvidia_tensorrt,"
                    "intel_openvino,google_xnnpack");
-REGISTER_CONVERTER(unsqueeze,
-                   ConvertUnsqueeze,
-                   "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
-REGISTER_CONVERTER(unsqueeze2,
-                   ConvertUnsqueeze,
-                   "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
+REGISTER_CONVERTER(
+    unsqueeze,
+    ConvertUnsqueeze,
+    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt,intel_openvino");
+REGISTER_CONVERTER(
+    unsqueeze2,
+    ConvertUnsqueeze,
+    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(mul, ConvertMul, "huawei_ascend_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(lookup_table_v2,
                    ConvertLookupTableV2,
@@ -101,19 +107,19 @@ REGISTER_CONVERTER(elementwise_add,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_"
-                   "openvino,google_xnnpack");
+                   "openvino,google_xnnpack,eeasytech_npu");
 REGISTER_CONVERTER(elementwise_sub,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi,intel_openvino,google_"
-                   "xnnpack,nvidia_tensorrt");
+                   "xnnpack,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(elementwise_mul,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx,kunlunxin_xtcl,android_nnapi,intel_openvino,google_"
-                   "xnnpack,nvidia_tensorrt");
+                   "xnnpack,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(elementwise_div,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -132,22 +138,22 @@ REGISTER_CONVERTER(elementwise_pow,
                    ConvertElementwise,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_"
                    "openvino,nvidia_tensorrt");
-REGISTER_CONVERTER(
-    fusion_elementwise_add_activation,
-    ConvertElementwise,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-    "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
-    "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,google_xnnpack");
+REGISTER_CONVERTER(fusion_elementwise_add_activation,
+                   ConvertElementwise,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
+                   "kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,google_"
+                   "xnnpack,eeasytech_npu");
 REGISTER_CONVERTER(fusion_elementwise_sub_activation,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
-                   "kunlunxin_xtcl,android_nnapi,google_xnnpack");
+                   "kunlunxin_xtcl,android_nnapi,google_xnnpack,eeasytech_npu");
 REGISTER_CONVERTER(fusion_elementwise_mul_activation,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
-                   "kunlunxin_xtcl,android_nnapi,google_xnnpack");
+                   "kunlunxin_xtcl,android_nnapi,google_xnnpack,eeasytech_npu");
 REGISTER_CONVERTER(fusion_elementwise_div_activation,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -172,27 +178,33 @@ REGISTER_CONVERTER(sigmoid,
                    ConvertUnaryActivations,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,cambricon_mlu,verisilicon_timvx,kunlunxin_"
-                   "xtcl,android_nnapi,nvidia_tensorrt");
+                   "xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
+                   "eeasytech_npu");
 REGISTER_CONVERTER(
     relu,
     ConvertUnaryActivations,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
     "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino");
-REGISTER_CONVERTER(relu6,
-                   ConvertUnaryActivations,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-                   "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt");
-REGISTER_CONVERTER(leaky_relu,
-                   ConvertLeakyRelu,
-                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
-                   "kunlunxin_xtcl,cambricon_mlu,nvidia_tensorrt");
+    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
+    "eeasytech_npu");
+REGISTER_CONVERTER(
+    relu6,
+    ConvertUnaryActivations,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
+    "eeasytech_npu");
+REGISTER_CONVERTER(
+    leaky_relu,
+    ConvertLeakyRelu,
+    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
+    "kunlunxin_xtcl,cambricon_mlu,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(tanh,
                    ConvertUnaryActivations,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,cambricon_mlu,verisilicon_timvx,kunlunxin_"
-                   "xtcl,android_nnapi,intel_openvino,nvidia_tensorrt");
+                   "xtcl,android_nnapi,intel_openvino,nvidia_tensorrt,"
+                   "eeasytech_npu");
 REGISTER_CONVERTER(abs,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
@@ -209,25 +221,27 @@ REGISTER_CONVERTER(
     log,
     ConvertUnaryActivations,
     "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,nvidia_tensorrt");
-REGISTER_CONVERTER(swish,
-                   ConvertUnaryActivations,
-                   "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt");
+REGISTER_CONVERTER(
+    swish,
+    ConvertUnaryActivations,
+    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu,huawei_kirin_npu");
+REGISTER_CONVERTER(gelu,
+                   ConvertGelu,
+                   "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,"
+                   "cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(
-    gelu,
-    ConvertGelu,
-    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,cambricon_mlu");
-REGISTER_CONVERTER(hard_sigmoid,
-                   ConvertHardSigmoid,
-                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx");
-REGISTER_CONVERTER(
-    hard_swish,
-    ConvertHardSwish,
-    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,nvidia_tensorrt");
-REGISTER_CONVERTER(
-    arg_max,
-    ConvertArgMinMax,
-    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt,cambricon_mlu");
+    hard_sigmoid,
+    ConvertHardSigmoid,
+    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,intel_openvino");
+REGISTER_CONVERTER(hard_swish,
+                   ConvertHardSwish,
+                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
+                   "nvidia_tensorrt,intel_openvino,eeasytech_npu");
+REGISTER_CONVERTER(arg_max,
+                   ConvertArgMinMax,
+                   "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt,"
+                   "cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(
     assign,
@@ -272,17 +286,18 @@ REGISTER_CONVERTER(scale,
                    ConvertScale,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
-                   "mlu,android_nnapi,nvidia_tensorrt,intel_openvino");
+                   "mlu,android_nnapi,nvidia_tensorrt,intel_openvino,"
+                   "eeasytech_npu");
 REGISTER_CONVERTER(transpose,
                    ConvertTranspose,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,android_"
-                   "nnapi,nvidia_tensorrt");
+                   "nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(transpose2,
                    ConvertTranspose,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,android_"
-                   "nnapi,nvidia_tensorrt");
+                   "nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(shape,
                    ConvertShape,
                    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
@@ -316,32 +331,35 @@ REGISTER_CONVERTER(fill_any_like,
 REGISTER_CONVERTER(fill_constant_batch_size_like,
                    ConvertFillConstantBatchSizeLike,
                    "huawei_ascend_npu,verisilicon_timvx");
-REGISTER_CONVERTER(concat,
-                   ConvertConcat,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
-                   "mlu,android_nnapi,nvidia_tensorrt,intel_openvino");
-REGISTER_CONVERTER(split,
-                   ConvertSplit,
-                   "huawei_kirin_npu,huawei_ascend_npu,kunlunxin_xtcl,"
-                   "verisilicon_timvx,cambricon_mlu,nvidia_tensorrt");
+REGISTER_CONVERTER(
+    concat,
+    ConvertConcat,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
+    "mlu,android_nnapi,nvidia_tensorrt,intel_openvino,eeasytech_npu");
+REGISTER_CONVERTER(
+    split,
+    ConvertSplit,
+    "huawei_kirin_npu,huawei_ascend_npu,kunlunxin_xtcl,"
+    "verisilicon_timvx,cambricon_mlu,nvidia_tensorrt,intel_openvino,"
+    "eeasytech_npu");
 REGISTER_CONVERTER(calib, ConvertCalib, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(nearest_interp,
                    ConvertInterpolate,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_"
-                   "kirin_npu,nvidia_tensorrt");
+                   "kirin_npu,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(nearest_interp_v2,
                    ConvertInterpolate,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_"
-                   "kirin_npu,nvidia_tensorrt");
+                   "kirin_npu,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(bilinear_interp,
                    ConvertInterpolate,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_"
-                   "kirin_npu,nvidia_tensorrt");
+                   "kirin_npu,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(bilinear_interp_v2,
                    ConvertInterpolate,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_"
-                   "kirin_npu,nvidia_tensorrt");
+                   "kirin_npu,nvidia_tensorrt,eeasytech_npu");
 REGISTER_CONVERTER(flatten,
                    ConvertFlatten,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -390,7 +408,7 @@ REGISTER_CONVERTER(sum, ConvertSum, "huawei_ascend_npu");
 REGISTER_CONVERTER(where, ConvertWhere, "huawei_ascend_npu");
 REGISTER_CONVERTER(softplus,
                    ConvertSoftplus,
-                   "huawei_ascend_npu,huawei_kirin_npu");
+                   "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
 REGISTER_CONVERTER(shuffle_channel,
                    ConvertShuffleChannel,
                    "huawei_ascend_npu,verisilicon_timvx,huawei_kirin_npu");

@@ -97,7 +97,7 @@ std::shared_ptr<Tensor> Converter::ConvertOperand(
     auto parameter_node = std::make_shared<default_opset::Parameter>(
         ConvertToOVElementType(operand->type.precision),
         ConvertToOVShape(dimensions));
-    parameter_nodes_->push_back(parameter_node);
+    parameter_node_map_->insert({operand, parameter_node});
     auto output_tensor = std::make_shared<Tensor>(parameter_node->output(0));
     UpdateTensorMap(operand, output_tensor);
     return output_tensor;

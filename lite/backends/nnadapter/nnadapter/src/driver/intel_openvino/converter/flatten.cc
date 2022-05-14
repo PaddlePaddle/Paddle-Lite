@@ -34,20 +34,23 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   if (end_axis < 0) end_axis += input_operand->type.dimensions.count;
   auto shape_of_x = std::make_shared<default_opset::ShapeOf>(*input_tensor);
   int dims = input_tensor->get_partial_shape().rank().get_length();
-  auto axis1_begin_tensor = converter->AddConstantTensor<int64_t>({1}, {0});
+  auto axis1_begin_tensor =
+      converter->AddConstantTensor<int64_t>(std::vector<int64_t>{0});
   auto axis1_end_tensor =
-      converter->AddConstantTensor<int64_t>({1}, {start_axis});
+      converter->AddConstantTensor<int64_t>(std::vector<int64_t>{start_axis});
   auto axis1 =
       std::make_shared<default_opset::StridedSlice>(shape_of_x,
                                                     *axis1_begin_tensor,
                                                     *axis1_end_tensor,
                                                     std::vector<int64_t>{0},
                                                     std::vector<int64_t>{0});
-  TensorVector axes{axis1, *converter->AddConstantTensor<int64_t>({1}, {-1})};
+  TensorVector axes{
+      axis1, *converter->AddConstantTensor<int64_t>(std::vector<int64_t>{-1})};
   if (end_axis < dims - 1) {
-    auto axis2_begin_tensor =
-        converter->AddConstantTensor<int64_t>({1}, {end_axis + 1});
-    auto axis2_end_tensor = converter->AddConstantTensor<int64_t>({1}, {dims});
+    auto axis2_begin_tensor = converter->AddConstantTensor<int64_t>(
+        std::vector<int64_t>{end_axis + 1});
+    auto axis2_end_tensor =
+        converter->AddConstantTensor<int64_t>(std::vector<int64_t>{dims});
     auto axis2 =
         std::make_shared<default_opset::StridedSlice>(shape_of_x,
                                                       *axis2_begin_tensor,
@@ -58,7 +61,7 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
   }
   auto new_shape_op = std::make_shared<default_opset::Concat>(axes, 0);
   auto reshape_op = std::make_shared<default_opset::Reshape>(
-      *input_tensor, new_shape_op, false);
+      *input_tensor, new_shape_op->output(0), false);
   MAP_OUTPUT(output_operand, reshape_op, 0);
   return NNADAPTER_NO_ERROR;
 }

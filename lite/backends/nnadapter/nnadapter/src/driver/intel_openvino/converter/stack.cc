@@ -29,7 +29,7 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
 
   ElementType data_type;
   TensorVector op_datas_reshape;
-  auto axis_const = converter->AddConstantTensor<int64_t>({}, {axis});
+  auto axis_const = converter->AddConstantTensor<int64_t>(axis);
   for (int i = 0; i < input_count - 1; i++) {
     auto input_operand = input_operands[i];
     auto input_tensor = converter->GetMappedTensor(input_operand);

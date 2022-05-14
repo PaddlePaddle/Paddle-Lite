@@ -88,9 +88,7 @@ lite_option(LITE_WITH_XCODE                    "when debug in xcode, its ON."   
 lite_option(LITE_WITH_ARM82_FP16               "when compile with arm v8.2 fp16, it's ON."                            OFF)
 lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8, it's ON."                            OFF)
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
-# whether convert input model which is not a DAG to SSA graph
-lite_option(WITH_CONVERT_TO_SSA           "whether convert input model which is not a DAG to SSA graph"               ON)
-lite_option(WITH_NODE_RAW_FS           "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
+lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
 
 # Thirdparty
 set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
