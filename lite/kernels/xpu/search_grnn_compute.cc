@@ -204,25 +204,26 @@ void SearchGrnnCompute::Run() {
   for (int i = 0; i < 3; ++i) {
     const int16_t* data_b = dense_e2h + i * cap_e * cap_h;  // e2h, e2hr, e2hz
     float* data_c = buffer_data + i * cap_l * cap_h;  // w_x_e, wr_x_e, wz_x_e
-    int r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
+    int r = xdnn::fc_fusion<float, int16_t, float, int16_t>
         ctx.GetRawContext(),
-        false,
-        true,  // trans_a, trans_b
+        new_emb,
+        data_b,
+        data_c,   // data_a, data_b, data_c
         cap_l,
         cap_h,
-        cap_e,  // m, n, k
-        1.0f,
-        new_emb,
-        cap_e,  // alpha, data_a, lda
-        data_b,
-        cap_e,
-        0.0f,  // data_b, ldb, beta
-        data_c,
-        cap_h,  // data_c, ldc
-        nullptr,
-        xdnn::Activation_t::LINEAR,  // bias, act
+        cap_e,    // m, n, k
+        false,
+        true,     // trans_a, trans_b
         maxs_xpu,
-        maxs_xpu + 4 * (i + 1));  // max_a, max_b
+        maxs_xpu + 4 * (i + 1),
+        nullptr,  // max_a, max_b, max_c
+        cap_e,
+        cap_e,
+        cap_h,    // lda, ldb, ldc
+        1.0f,
+        0.0f,     // alpha, beta
+        nullptr,
+        xdnn::Activation_t::LINEAR);  // bias, act
     CHECK_EQ(r, 0);
   }
 
