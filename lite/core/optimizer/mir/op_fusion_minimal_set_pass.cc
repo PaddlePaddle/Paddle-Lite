@@ -973,6 +973,7 @@ void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   ApplyIdentityScaleEliminator(graph.get());
   ApplyMulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
+  ApplyConv2dElementwiseAddFuser(graph.get());
   ApplyConv2dBatchNormFuser(graph.get());
   ApplyConv2dElementwiseAddFuser(graph.get());
   ApplyConv2dActivationFuser(graph.get());

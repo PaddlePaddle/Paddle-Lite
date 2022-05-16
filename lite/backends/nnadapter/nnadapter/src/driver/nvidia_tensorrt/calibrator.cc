@@ -54,9 +54,9 @@ Int8EntropyCalibrator::Int8EntropyCalibrator(int batch_size,
 
 bool Int8EntropyCalibrator::getBatch(void* bindings[],
                                      const char* names[],
-                                     int nbBindings) {
+                                     int nb_bindings) TRT_NOEXCEPT {
   // TODO(zhupengyang): support multi inputs
-  NNADAPTER_CHECK_EQ(nbBindings, 1);
+  NNADAPTER_CHECK_EQ(nb_bindings, 1);
   if (static_cast<size_t>(index_) >= input_file_names_.at(0).size()) {
     return false;
   }
@@ -89,7 +89,8 @@ bool Int8EntropyCalibrator::getBatch(void* bindings[],
   return true;
 }
 
-const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length) {
+const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length)
+    TRT_NOEXCEPT {
   if (table_path_.empty()) {
     NNADAPTER_LOG(WARNING) << "No calibration table file is set. New "
                               "calibration table will be generated.";
@@ -106,7 +107,7 @@ const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length) {
 }
 
 void Int8EntropyCalibrator::writeCalibrationCache(const void* cache,
-                                                  size_t length) {
+                                                  size_t length) TRT_NOEXCEPT {
   if (table_path_.empty()) {
     NNADAPTER_LOG(WARNING) << "No calibration table will be saved because "
                               "table_path is not found.";

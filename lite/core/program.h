@@ -87,6 +87,12 @@ struct Program {
     return var_type_map_;
   }
 
+  std::vector<std::string> getBlockOpsOrder(int block_idx) {
+    std::vector<std::string> ret;
+    for (auto& it : ops_[block_idx]) ret.push_back(it->op_info()->Type());
+    return ret;
+  }
+
  private:
   // Build from a program and scope.
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc);

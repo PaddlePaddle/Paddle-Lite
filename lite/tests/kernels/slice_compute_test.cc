@@ -322,6 +322,10 @@ TEST(Slice, precision) {
   test_slice(place);
   test_slice_axes(place);
   test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
 #endif
 #elif defined(LITE_WITH_OPENCL)
   Place place = TARGET(kOpenCL);

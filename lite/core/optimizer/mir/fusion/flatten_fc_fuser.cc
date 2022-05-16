@@ -97,6 +97,8 @@ cpp::OpDesc FlattenFcFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetOutput("Out", {matched.at("fc_out")->arg()->name});
   auto in_num_col_dim = op_desc.GetAttr<int>("in_num_col_dims");
   op_desc.SetAttr("in_num_col_dims", in_num_col_dim);
+  std::string op_type = "mul";
+  op_desc.SetAttr("op_type", op_type);
   return op_desc;
 }
 

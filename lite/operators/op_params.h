@@ -260,6 +260,13 @@ struct SoftmaxParam : ParamBase {
   bool eleminate_success{false};
 };
 
+// For LogSoftmax op
+struct LogSoftmaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  int axis{-1};
+};
+
 // For Reshape and Reshape2 Op
 struct ReshapeParam : ParamBase {
   const lite::Tensor* x{};
