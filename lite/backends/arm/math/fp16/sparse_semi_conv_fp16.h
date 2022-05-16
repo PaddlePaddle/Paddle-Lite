@@ -26,7 +26,7 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
+namespace fp16 {
 void sparse_semi_conv_fp16_pipelined(const float16_t* A,
                                      const float16_t* B,
                                      const int32_t* widx_dmap,
@@ -39,6 +39,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
                                      const operators::SparseConvParam& param,
                                      ARMContext* ctx);
 
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

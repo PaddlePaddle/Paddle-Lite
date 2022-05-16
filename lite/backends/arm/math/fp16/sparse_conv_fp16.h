@@ -25,6 +25,8 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+namespace fp16 {
+typedef __fp16 float16_t;
 
 #if defined(__GNUC__)
 #define SPARSE_FP16_LIKELY(condition) (__builtin_expect(!!(condition), 1))
@@ -46,6 +48,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                                 const operators::SparseConvParam& param,
                                 ARMContext* ctx);
 
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -21,6 +21,7 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+namespace fp16 {
 
 #define SPARSE_COMPUTE_LOOP                                                 \
   float16_t* cur_output =                                                   \
@@ -52,7 +53,7 @@ namespace math {
   "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
   "dup     v22.8h,  v20.h[0]\n"             \
   "dup     v23.8h,  v20.h[0]\n"             \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n"  \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
   "dup     v24.8h,  v20.h[0]\n"             \
   "dup     v25.8h,  v20.h[0]\n"             \
   "dup     v26.8h,  v20.h[0]\n"             \
@@ -66,9 +67,9 @@ namespace math {
   "cbz    %w[n],    3f\n"                   \
   "0:\n"                                    \
   "ldr   d0, [%[a_ptr]], #8\n"              \
-  "ldr   d1, [%[widx_dmap]],   #8\n"        \
+  "ldr   q1, [%[widx_dmap]],   #16\n"       \
   "ldp   q2, q3, [%[b_ptr]]\n"              \
-  "mov   w1, v1.h[0]\n"                     \
+  "mov   w1, v1.s[0]\n"                     \
   "ldp   q4, q5, [%[b_ptr], #32]\n"         \
   "sxtw  x1,  w1\n"                         \
   "subs    %w[n],   %w[n],   #1\n"          \
@@ -94,7 +95,7 @@ namespace math {
   "fmla    v29.8h,  v11.8h,  v0.h[0]\n"     \
   "ldp   q10, q11, [%[b_ptr], #128]\n"      \
   "fmla    v30.8h,  v12.8h,  v0.h[0]\n"     \
-  "mov   w1, v1.h[1]\n"                     \
+  "mov   w1, v1.s[1]\n"                     \
   "fmla    v31.8h,  v13.8h,  v0.h[0]\n"     \
   "ldp   q12, q13, [%[b_ptr], #160]\n"      \
   "sxtw  x1,  w1\n"                         \
@@ -103,7 +104,7 @@ namespace math {
   "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
   "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
   "ldp   q2, q3, [%[b_ptr]]\n"              \
-  "fmla    v22.8h,  v4.8h,  v0.s[1]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"      \
   "fmla    v23.8h,  v5.8h,  v0.h[1]\n"      \
   "ldp   q4, q5, [%[b_ptr], #32]\n"         \
   "fmla    v24.8h,  v6.8h,  v0.h[1]\n"      \
@@ -117,7 +118,7 @@ namespace math {
   "ldp   q10, q11, [%[b_ptr], #128]\n"      \
   "fmla    v30.8h,  v12.8h,  v0.h[1]\n"     \
   "fmla    v31.8h,  v13.8h,  v0.h[1]\n"     \
-  "mov   w1, v1.h[2]\n"                     \
+  "mov   w1, v1.s[2]\n"                     \
   "ldp   q12, q13, [%[b_ptr], #160]\n"      \
   "sxtw  x1,  w1\n"                         \
   "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
@@ -138,7 +139,7 @@ namespace math {
   "fmla    v29.8h,  v11.8h,  v0.h[2]\n"     \
   "ldp   q10, q11, [%[b_ptr], #128]\n"      \
   "fmla    v30.8h,  v12.8h,  v0.h[2]\n"     \
-  "mov   w1, v1.h[3]\n"                     \
+  "mov   w1, v1.s[3]\n"                     \
   "fmla    v31.8h,  v13.8h,  v0.h[2]\n"     \
   "ldp   q12, q13, [%[b_ptr], #160]\n"      \
   "sxtw  x1,  w1\n"                         \
@@ -162,9 +163,9 @@ namespace math {
   "3:\n"                                    \
   "cbz    %w[m],    1f\n"                   \
   "ldr   d0, [%[a_ptr]], #8\n"              \
-  "ldr   d1, [%[widx_dmap]],   #8\n"        \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
   "ldp   q2, q3, [%[b_ptr]]\n"              \
-  "mov   w1, v1.h[0]\n"                     \
+  "mov   w1, v1.s[0]\n"                     \
   "ldp   q4, q5, [%[b_ptr], #32]\n"         \
   "sxtw  x1,  w1\n"                         \
   "subs  %w[m],   %w[m],   #1\n"            \
@@ -237,431 +238,431 @@ namespace math {
   "fmla    v31.8h,  v13.8h,  v0.h[2]\n"     \
   "1:\n"
 
-#define SPARSE_F16_F16_W48_V8_KERNEL       \
-  "dup     v20.8h,  %w[vbias]\n"           \
-  "dup     v21.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "dup     v22.8h,  v20.h[0]\n"            \
-  "dup     v23.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "dup     v24.8h,  v20.h[0]\n"            \
-  "dup     v25.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "cbz    %w[k],    1f\n"                  \
-  "cbz    %w[n],    3f\n"                  \
-  "0:\n"                                   \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "subs    %w[n],   %w[n],   #1\n"         \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"     \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "fmla    v24.8h,  v6.8h,  v0.h[0]\n"     \
-  "mov   w1, v1.h[1]\n"                    \
-  "fmla    v25.8h,  v7.8h,  v0.h[0]\n"     \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "fmla    v22.8h,  v4.8h,  v0.s[1]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"     \
-  "fmla    v24.8h,  v6.8h,  v0.h[1]\n"     \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "fmla    v25.8h,  v7.8h,  v0.h[1]\n"     \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "mov   w1, v1.h[2]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"     \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "fmla    v24.8h,  v6.8h,  v0.h[2]\n"     \
-  "fmla    v25.8h,  v7.8h,  v0.h[2]\n"     \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "mov   w1, v1.h[3]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"     \
-  "fmla    v22.8h,  v4.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[3]\n"     \
-  "fmla    v24.8h,  v6.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "fmla    v25.8h,  v7.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "bne     0b\n"                           \
-  "3:\n"                                   \
-  "cbz    %w[m],    1f\n"                  \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"     \
-  "fmla    v24.8h,  v6.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "fmla    v25.8h,  v7.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[1]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v24.8h,  v6.8h,  v0.h[1]\n"     \
-  "fmla    v25.8h,  v7.8h,  v0.h[1]\n"     \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[2]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "ldp   q6, q7, [%[b_ptr], #64]\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v24.8h,  v6.8h,  v0.h[2]\n"     \
-  "fmla    v25.8h,  v7.8h,  v0.h[2]\n"     \
+#define SPARSE_F16_F16_W48_V8_KERNEL        \
+  "dup     v20.8h,  %w[vbias]\n"            \
+  "dup     v21.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "dup     v22.8h,  v20.h[0]\n"             \
+  "dup     v23.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "dup     v24.8h,  v20.h[0]\n"             \
+  "dup     v25.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "cbz    %w[k],    1f\n"                   \
+  "cbz    %w[n],    3f\n"                   \
+  "0:\n"                                    \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],   #16\n"       \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "subs    %w[n],   %w[n],   #1\n"          \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"      \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "fmla    v24.8h,  v6.8h,  v0.h[0]\n"      \
+  "mov   w1, v1.s[1]\n"                     \
+  "fmla    v25.8h,  v7.8h,  v0.h[0]\n"      \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"      \
+  "fmla    v24.8h,  v6.8h,  v0.h[1]\n"      \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "fmla    v25.8h,  v7.8h,  v0.h[1]\n"      \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "mov   w1, v1.s[2]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"      \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "fmla    v24.8h,  v6.8h,  v0.h[2]\n"      \
+  "fmla    v25.8h,  v7.8h,  v0.h[2]\n"      \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "mov   w1, v1.s[3]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[3]\n"      \
+  "fmla    v24.8h,  v6.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #64]\n"  \
+  "fmla    v25.8h,  v7.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "bne     0b\n"                            \
+  "3:\n"                                    \
+  "cbz    %w[m],    1f\n"                   \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],   #16\n"       \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"      \
+  "fmla    v24.8h,  v6.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "fmla    v25.8h,  v7.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[1]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v24.8h,  v6.8h,  v0.h[1]\n"      \
+  "fmla    v25.8h,  v7.8h,  v0.h[1]\n"      \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "ldp   q6, q7, [%[b_ptr], #64]\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v24.8h,  v6.8h,  v0.h[2]\n"      \
+  "fmla    v25.8h,  v7.8h,  v0.h[2]\n"      \
   "1:\n"
 
-#define SPARSE_F16_F16_W32_V8_KERNEL       \
-  "dup     v20.8h,  %w[vbias]\n"           \
-  "dup     v21.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "dup     v22.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "dup     v23.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "cbz    %w[k],    1f\n"                  \
-  "cbz    %w[n],    3f\n"                  \
-  "0:\n"                                   \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "subs    %w[n],   %w[n],   #1\n"         \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"     \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "mov   w1, v1.h[1]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v22.8h,  v4.8h,  v0.s[1]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"     \
-  "mov   w1, v1.h[2]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"     \
-  "mov   w1, v1.h[3]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "fmla    v22.8h,  v4.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "fmla    v23.8h,  v5.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "bne     0b\n"                           \
-  "3:\n"                                   \
-  "cbz    %w[m],    1f\n"                  \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[1]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[2]\n"                    \
-  "ldp   q4, q5, [%[b_ptr], #32]\n"        \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"     \
-  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
+#define SPARSE_F16_F16_W32_V8_KERNEL        \
+  "dup     v20.8h,  %w[vbias]\n"            \
+  "dup     v21.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "dup     v22.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "dup     v23.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "cbz    %w[k],    1f\n"                   \
+  "cbz    %w[n],    3f\n"                   \
+  "0:\n"                                    \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],   #16\n"       \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "subs    %w[n],   %w[n],   #1\n"          \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"      \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "mov   w1, v1.s[1]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"      \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"      \
+  "mov   w1, v1.s[3]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "fmla    v23.8h,  v5.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "bne     0b\n"                            \
+  "3:\n"                                    \
+  "cbz    %w[m],    1f\n"                   \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]], #16\n"         \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "fmla    v22.8h,  v4.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v23.8h,  v5.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #64]\n"  \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[1]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v22.8h,  v4.8h,  v0.h[1]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[1]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldp   q4, q5, [%[b_ptr], #32]\n"         \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v22.8h,  v4.8h,  v0.h[2]\n"      \
+  "fmla    v23.8h,  v5.8h,  v0.h[2]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
   "1:\n"
 
-#define SPARSE_F16_F16_W16_V8_KERNEL       \
-  "dup     v20.8h,  %w[vbias]\n"           \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "dup     v21.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "cbz    %w[k],    1f\n"                  \
-  "cbz    %w[n],    3f\n"                  \
-  "0:\n"                                   \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs    %w[n],   %w[n],   #1\n"         \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "mov   w1, v1.h[1]\n"                    \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "sxtw  x1,  w1\n"                        \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "mov   w1, v1.h[2]\n"                    \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "mov   w1, v1.h[3]\n"                    \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"     \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "bne     0b\n"                           \
-  "3:\n"                                   \
-  "cbz    %w[m],    1f\n"                  \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[1]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "beq     1f\n"                           \
-  "ldp   q2, q3, [%[b_ptr]]\n"             \
-  "mov   w1, v1.s[2]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
+#define SPARSE_F16_F16_W16_V8_KERNEL        \
+  "dup     v20.8h,  %w[vbias]\n"            \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "dup     v21.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "cbz    %w[k],    1f\n"                   \
+  "cbz    %w[n],    3f\n"                   \
+  "0:\n"                                    \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs    %w[n],   %w[n],   #1\n"          \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "mov   w1, v1.s[1]\n"                     \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "sxtw  x1,  w1\n"                         \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "mov   w1, v1.s[3]\n"                     \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[3]\n"      \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "bne     0b\n"                            \
+  "3:\n"                                    \
+  "cbz    %w[m],    1f\n"                   \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v21.8h,  v3.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[1]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "beq     1f\n"                            \
+  "ldp   q2, q3, [%[b_ptr]]\n"              \
+  "mov   w1, v1.s[2]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "fmla    v21.8h,  v3.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
   "1:\n"
 
-#define SPARSE_F16_F16_W8_V8_KERNEL        \
-  "dup     v20.8h,  %w[vbias]\n"           \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "dup     v21.8h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "cbz    %w[k],    1f\n"                  \
-  "cbz    %w[n],    3f\n"                  \
-  "0:\n"                                   \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs    %w[n],   %w[n],   #1\n"         \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "mov   w1, v1.h[1]\n"                    \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "mov   w1, v1.h[2]\n"                    \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "mov   w1, v1.h[3]\n"                    \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "bne     0b\n"                           \
-  "3:\n"                                   \
-  "cbz    %w[m],    1f\n"                  \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "beq     1f\n"                           \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.s[1]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "beq     1f\n"                           \
-  "ldr   q2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.s[2]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
+#define SPARSE_F16_F16_W8_V8_KERNEL         \
+  "dup     v20.8h,  %w[vbias]\n"            \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "dup     v21.8h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "cbz    %w[k],    1f\n"                   \
+  "cbz    %w[n],    3f\n"                   \
+  "0:\n"                                    \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs    %w[n],   %w[n],   #1\n"          \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "mov   w1, v1.s[1]\n"                     \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "mov   w1, v1.s[3]\n"                     \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[3]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "bne     0b\n"                            \
+  "3:\n"                                    \
+  "cbz    %w[m],    1f\n"                   \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #64]\n"  \
+  "beq     1f\n"                            \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[1]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.8h,  v2.8h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "beq     1f\n"                            \
+  "ldr   q2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[2]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.8h,  v2.8h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
   "1:\n"
 
-#define SPARSE_F16_F16_W4_V8_KERNEL        \
-  "dup     v20.4h,  %w[vbias]\n"           \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "dup     v21.4h,  v20.h[0]\n"            \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "cbz    %w[k],    1f\n"                  \
-  "cbz    %w[n],    3f\n"                  \
-  "0:\n"                                   \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs    %w[n],   %w[n],   #1\n"         \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.4h,  v2.4h,  v0.h[0]\n"     \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "mov   w1, v1.h[1]\n"                    \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "fmla    v20.4h,  v2.4h,  v0.h[1]\n"     \
-  "mov   w1, v1.h[2]\n"                    \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.4h,  v2.4h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "mov   w1, v1.h[3]\n"                    \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.4h,  v2.4h,  v0.h[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "bne     0b\n"                           \
-  "3:\n"                                   \
-  "cbz    %w[m],    1f\n"                  \
-  "ldr   d0, [%[a_ptr]], #8\n"             \
-  "ldr   d1, [%[widx_dmap]],   #8\n"       \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.h[0]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.4h,  v2.4h,  v0.h[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "prfm  pldl1keep, [%[a_ptr], #64]\n"     \
-  "prfm  pldl1keep, [%[widx_dmap], #64]\n" \
-  "beq     1f\n"                           \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.s[1]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "subs  %w[m],   %w[m],   #1\n"           \
-  "fmla    v20.4h,  v2.4h,  v0.h[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
-  "beq     1f\n"                           \
-  "ldr   d2, [%[b_ptr]]\n"                 \
-  "mov   w1, v1.s[2]\n"                    \
-  "sxtw  x1,  w1\n"                        \
-  "fmla    v20.4h,  v2.4h,  v0.h[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], x1\n"        \
-  "prfm  pldl1keep, [%[b_ptr], #192]\n"    \
+#define SPARSE_F16_F16_W4_V8_KERNEL         \
+  "dup     v20.4h,  %w[vbias]\n"            \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "dup     v21.4h,  v20.h[0]\n"             \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "cbz    %w[k],    1f\n"                   \
+  "cbz    %w[n],    3f\n"                   \
+  "0:\n"                                    \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs    %w[n],   %w[n],   #1\n"          \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.4h,  v2.4h,  v0.h[0]\n"      \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "mov   w1, v1.s[1]\n"                     \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "fmla    v20.4h,  v2.4h,  v0.h[1]\n"      \
+  "mov   w1, v1.s[2]\n"                     \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.4h,  v2.4h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "mov   w1, v1.s[3]\n"                     \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.4h,  v2.4h,  v0.h[3]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #128]\n" \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "bne     0b\n"                            \
+  "3:\n"                                    \
+  "cbz    %w[m],    1f\n"                   \
+  "ldr   d0, [%[a_ptr]], #8\n"              \
+  "ldr   q1, [%[widx_dmap]],  #16\n"        \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[0]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.4h,  v2.4h,  v0.h[0]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "prfm  pldl1keep, [%[a_ptr], #64]\n"      \
+  "prfm  pldl1keep, [%[widx_dmap], #64]\n"  \
+  "beq     1f\n"                            \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[1]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "subs  %w[m],   %w[m],   #1\n"            \
+  "fmla    v20.4h,  v2.4h,  v0.h[1]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
+  "beq     1f\n"                            \
+  "ldr   d2, [%[b_ptr]]\n"                  \
+  "mov   w1, v1.s[2]\n"                     \
+  "sxtw  x1,  w1\n"                         \
+  "fmla    v20.4h,  v2.4h,  v0.h[2]\n"      \
+  "add   %[b_ptr],  %[b_ptr], x1\n"         \
+  "prfm  pldl1keep, [%[b_ptr], #192]\n"     \
   "1:\n"
 
 #define SPARSE_F16_F16_W96_V8_RELU   \
@@ -1328,11 +1329,11 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   size_t output_stride = N * sizeof(float16_t);
   size_t output_decrement = output_stride * nc - 96 * sizeof(float16_t);
   while
-    SPARSE_LIKELY(mc >= 96 * sizeof(float16_t)) {
+    SPARSE_FP16_LIKELY(mc >= 96 * sizeof(float16_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
         SPARSE_COMPUTE_LOOP
         // clang-format off
-            asm volatile(SPARSE_F16_W96_V8_OUT  
+            asm volatile(SPARSE_F16_F16_W96_V8_OUT  
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
@@ -1358,7 +1359,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
     }
 
   if
-    SPARSE_UNLIKELY(mc != 0) {
+    SPARSE_FP16_UNLIKELY(mc != 0) {
       if (mc & (48 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
@@ -1382,8 +1383,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output +
-                                          48 * sizeof(float16_t));
+        output = reinterpret_cast<float16_t*>((uintptr_t)output +
+                                              48 * sizeof(float16_t));
         B += 48;
         mc -= 48 * sizeof(float16_t);
       }
@@ -1471,12 +1472,11 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;
           if
-            SPARSE_LIKELY(nnz != 0) {
+            SPARSE_FP16_LIKELY(nnz != 0) {
               do {
                 const intptr_t diff = *dmap++;
-                vout0 +=
-                    cur_b[0] * cur_w[0] cur_b =
-                        (const float16_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+                vout0 += cur_b[0] * cur_w[0];
+                cur_b = (const float16_t*)((uintptr_t)cur_b + (uintptr_t)diff);
                 cur_w += 1;
               } while (--nnz != 0);
             }
@@ -1488,9 +1488,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           } else if (flag_act == 3) {
             vout0 = vout0 > 0.f ? vout0 : (vout0 * alpha);
           } else if (flag_act == 4) {
-            auto tmp_0 =
+            auto tmp0 =
                 vout0 + static_cast<float16_t>(act_param.hard_swish_offset);
-            auto tmp_1 =
+            auto tmp1 =
                 vout0 / static_cast<float16_t>(act_param.hard_swish_scale);
             tmp0 = tmp0 > 0.f ? (tmp0 < static_cast<float16_t>(
                                             act_param.hard_swish_threshold)
@@ -1498,7 +1498,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                                      : static_cast<float16_t>(
                                            act_param.hard_swish_threshold))
                               : 0.f;
-            vout0 = tmp_0 * tmp_1;
+            vout0 = tmp0 * tmp1;
           } else {
             LOG(FATAL) << "This act: " << flag_act << " doesn't support";
           }
@@ -1910,7 +1910,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "b      9f                \n" /* relu end */
 
-#define SPARSE_F16_F16_W16_v7_RELU               \
+#define SPARSE_F16_F16_W4_v7_RELU                \
   /* do relu */                                  \
   "cmp    %[vflag_act],   #0\n" /* skip relu */  \
   "beq   9f                 \n" /* no act end */ \
@@ -2317,7 +2317,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   size_t output_stride = N * sizeof(float16_t);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float16_t);
   while
-    SPARSE_LIKELY(mc >= 48 * sizeof(float16_t)) {
+    SPARSE_FP16_LIKELY(mc >= 48 * sizeof(float16_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
         SPARSE_COMPUTE_LOOP
         float16_t* hs_param = vhs_param;
@@ -2363,7 +2363,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
     }
 
   if
-    SPARSE_UNLIKELY(mc != 0) {
+    SPARSE_FP16_UNLIKELY(mc != 0) {
       if (mc & (32 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
@@ -2544,7 +2544,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;
           if
-            SPARSE_LIKELY(nnz != 0) {
+            SPARSE_FP16_LIKELY(nnz != 0) {
               do {
                 const intptr_t diff = *dmap++;
                 vout0 +=
@@ -2586,6 +2586,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 }
 #endif
 
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

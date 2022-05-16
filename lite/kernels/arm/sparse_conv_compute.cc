@@ -271,7 +271,7 @@ template <>
 void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {}
 
 template <>
-void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16s)>::Run() {
+void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const float16_t* input = param.x->data<float16_t>();
