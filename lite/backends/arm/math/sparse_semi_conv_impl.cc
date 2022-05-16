@@ -1845,71 +1845,71 @@ namespace math {
   [valpha] "r"(alpha),                  \
   [hs_param] "r"(hs_param)
 
-#define COMPUTE_ACT_NEON_TWO_V8_F32                                      \
-  if (flag_act == 1) {                                                   \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    vacc01n0 = vmax_f32(vacc01n0, vzero);                                \
-    vacc01n1 = vmax_f32(vacc01n1, vzero);                                \
-  } else if (flag_act == 2) {                                            \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t aph = vdup_n_f32(alpha);                                 \
-    vacc01n0 = vmax_f32(vacc01n0, vzero);                                \
-    vacc01n1 = vmax_f32(vacc01n1, vzero);                                \
-    vacc01n0 = vmin_f32(vacc01n0, aph);                                  \
-    vacc01n1 = vmin_f32(vacc01n1, aph);                                  \
-  } else if (flag_act == 0) {                                            \
-  } else if (flag_act == 3) {                                            \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t aph = vdup_n_f32(alpha);                                 \
-    uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);                    \
-    uint32x2_t vflag4567 = vcge_f32(vacc01n1, vzero);                    \
-    float32x2_t v0123 = vmul_f32(vacc01n0, aph);                         \
-    float32x2_t v4567 = vmul_f32(vacc01n1, aph);                         \
-    vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);                     \
-    vacc01n1 = vbsl_f32(vflag4567, vacc01n1, v4567);                     \
-  } else {                                                               \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);        \
-    float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale); \
-    float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);       \
-    float32x2_t vset0123_1 = vadd_f32(vacc01n0, offset);                 \
-    float32x2_t vscale0123_1 = vmul_f32(vacc01n0, hs_scale);             \
-    float32x2_t vset0123_2 = vadd_f32(vacc01n1, offset);                 \
-    float32x2_t vscale0123_2 = vmul_f32(vacc01n1, hs_scale);             \
-    vset0123_1 = vmax_f32(vset0123_1, vzero);                            \
-    vset0123_1 = vmin_f32(vset0123_1, thre);                             \
-    vset0123_2 = vmax_f32(vset0123_2, vzero);                            \
-    vset0123_2 = vmin_f32(vset0123_2, thre);                             \
-    vacc01n0 = vmul_f32(vscale0123_1, vset0123_1);                       \
-    vacc01n1 = vmul_f32(vscale0123_2, vset0123_2);                       \
+#define COMPUTE_ACT_NEON_TWO_V8_F32                          \
+  if (flag_act == 1) {                                       \
+    float32x2_t vzero = vdup_n_f32(0);                       \
+    vacc01n0 = vmax_f32(vacc01n0, vzero);                    \
+    vacc01n1 = vmax_f32(vacc01n1, vzero);                    \
+  } else if (flag_act == 2) {                                \
+    float32x2_t vzero = vdup_n_f32(0);                       \
+    float32x2_t aph = vdup_n_f32(alpha);                     \
+    vacc01n0 = vmax_f32(vacc01n0, vzero);                    \
+    vacc01n1 = vmax_f32(vacc01n1, vzero);                    \
+    vacc01n0 = vmin_f32(vacc01n0, aph);                      \
+    vacc01n1 = vmin_f32(vacc01n1, aph);                      \
+  } else if (flag_act == 0) {                                \
+  } else if (flag_act == 3) {                                \
+    float32x2_t vzero = vdup_n_f32(0);                       \
+    float32x2_t aph = vdup_n_f32(alpha);                     \
+    uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);        \
+    uint32x2_t vflag4567 = vcge_f32(vacc01n1, vzero);        \
+    float32x2_t v0123 = vmul_f32(vacc01n0, aph);             \
+    float32x2_t v4567 = vmul_f32(vacc01n1, aph);             \
+    vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);         \
+    vacc01n1 = vbsl_f32(vflag4567, vacc01n1, v4567);         \
+  } else {                                                   \
+    float32x2_t vzero = vdup_n_f32(0);                       \
+    float32x2_t offset = vdup_n_f32(hs_param[0]);            \
+    float32x2_t hs_scale = vdup_n_f32(hs_param[4]);          \
+    float32x2_t thre = vdup_n_f32(hs_param[8]);              \
+    float32x2_t vset0123_1 = vadd_f32(vacc01n0, offset);     \
+    float32x2_t vscale0123_1 = vmul_f32(vacc01n0, hs_scale); \
+    float32x2_t vset0123_2 = vadd_f32(vacc01n1, offset);     \
+    float32x2_t vscale0123_2 = vmul_f32(vacc01n1, hs_scale); \
+    vset0123_1 = vmax_f32(vset0123_1, vzero);                \
+    vset0123_1 = vmin_f32(vset0123_1, thre);                 \
+    vset0123_2 = vmax_f32(vset0123_2, vzero);                \
+    vset0123_2 = vmin_f32(vset0123_2, thre);                 \
+    vacc01n0 = vmul_f32(vscale0123_1, vset0123_1);           \
+    vacc01n1 = vmul_f32(vscale0123_2, vset0123_2);           \
   }
 
-#define COMPUTE_ACT_NEON_ONE_V8_F32                                      \
-  if (flag_act == 1) {                                                   \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    vacc01n0 = vmax_f32(vacc01n0, vzero);                                \
-  } else if (flag_act == 2) {                                            \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t aph = vdup_n_f32(alpha);                                 \
-    vacc01n0 = vmax_f32(vacc01n0, vzero);                                \
-    vacc01n0 = vmin_f32(vacc01n0, aph);                                  \
-  } else if (flag_act == 0) {                                            \
-  } else if (flag_act == 3) {                                            \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t aph = vdup_n_f32(alpha);                                 \
-    uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);                    \
-    float32x2_t v0123 = vmul_f32(vacc01n0, aph);                         \
-    vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);                     \
-  } else {                                                               \
-    float32x2_t vzero = vdup_n_f32(0);                                   \
-    float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);        \
-    float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale); \
-    float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);       \
-    float32x2_t vset0123 = vadd_f32(vacc01n0, offset);                   \
-    float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale);               \
-    vset0123 = vmax_f32(vset0123, vzero);                                \
-    vset0123 = vmin_f32(vset0123, thre);                                 \
-    vacc01n0 = vmul_f32(vscale0123, vset0123);                           \
+#define COMPUTE_ACT_NEON_ONE_V8_F32                        \
+  if (flag_act == 1) {                                     \
+    float32x2_t vzero = vdup_n_f32(0);                     \
+    vacc01n0 = vmax_f32(vacc01n0, vzero);                  \
+  } else if (flag_act == 2) {                              \
+    float32x2_t vzero = vdup_n_f32(0);                     \
+    float32x2_t aph = vdup_n_f32(alpha);                   \
+    vacc01n0 = vmax_f32(vacc01n0, vzero);                  \
+    vacc01n0 = vmin_f32(vacc01n0, aph);                    \
+  } else if (flag_act == 0) {                              \
+  } else if (flag_act == 3) {                              \
+    float32x2_t vzero = vdup_n_f32(0);                     \
+    float32x2_t aph = vdup_n_f32(alpha);                   \
+    uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);      \
+    float32x2_t v0123 = vmul_f32(vacc01n0, aph);           \
+    vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);       \
+  } else {                                                 \
+    float32x2_t vzero = vdup_n_f32(0);                     \
+    float32x2_t offset = vdup_n_f32(hs_param[0]);          \
+    float32x2_t hs_scale = vdup_n_f32(hs_param[4]);        \
+    float32x2_t thre = vdup_n_f32(hs_param[8]);            \
+    float32x2_t vset0123 = vadd_f32(vacc01n0, offset);     \
+    float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale); \
+    vset0123 = vmax_f32(vset0123, vzero);                  \
+    vset0123 = vmin_f32(vset0123, thre);                   \
+    vacc01n0 = vmul_f32(vscale0123, vset0123);             \
   }
 
 /**
