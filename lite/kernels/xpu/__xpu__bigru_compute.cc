@@ -66,7 +66,7 @@ void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
 
 void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
   auto& ctx = this->ctx_->As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   auto& weight_s1_abs_max_ =
       forward ? fw_gru_weight_s1_abs_max_ : bw_gru_weight_s1_abs_max_;
   auto& weight_s2_abs_max_ =
@@ -126,7 +126,7 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
 
 void XPUBiGRUCompute::PrepareForRun() {
   auto& ctx = this->ctx_->As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   mul_output_max_guard_ =

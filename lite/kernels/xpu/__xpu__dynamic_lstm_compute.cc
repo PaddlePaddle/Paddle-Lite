@@ -27,7 +27,7 @@ namespace xpu {
 void XPUDynamicLstmCompute::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
 
   // transpose from weight_0[xdim, 4 * hdim] to transpose_weight_0[4 * hdim,
   // xdim]
