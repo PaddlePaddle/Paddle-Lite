@@ -3234,7 +3234,8 @@ static void sparse_conv_int8_f32_nxm_pipelined(
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
 
   LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-    float* cur_output0 = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+    float* cur_output0 =
+        reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
     const int8_t* cur_w0 = A;
     volatile uint32_t nnz0 = nidx_nnzmap[i];
     const int8_t* cur_b0 = B;
@@ -5113,7 +5114,8 @@ static void sparse_conv_int8_int8_nxm_pipelined(
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
 
   LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-    int8_t* cur_output0 = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+    int8_t* cur_output0 =
+        reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
     const int8_t* cur_w0 = A;
     volatile uint32_t nnz0 = nidx_nnzmap[i];
     const int8_t* cur_b0 = B;
