@@ -24,9 +24,12 @@ namespace kernels {
 namespace xpu {
 
 void SearchGrnnCompute::PrepareForRun() {
+  auto& ctx = this->ctx_->As<XPUContext>();
+  int maxptr_size = ctx.GetRawContext()->max_ptr_size();
   new_offset_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SEQ_LEN * sizeof(int));
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
+  maxs_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(4 * maxptr_size * sizeof(float));
 
   idx_sorted_by_width_data_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
@@ -176,25 +179,14 @@ void SearchGrnnCompute::Run() {
   auto* hidden = buffer_data + 19 * cap_l * cap_h;
 
   // do-findmax
-  float maxs_cpu[16] = {0.0f,
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[0],
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[1],
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[2],
-                        0.0f,
-                        0.0f,
-                        0.0f};
+  int maxptr_size = ctx.GetRawContext()->max_ptr_size();
+  std::vector<float> maxs_cpu(4 * maxptr_size, 0.0f);
+  for (int idx = 0; idx < 3; idx++) {
+    maxs_cpu[(idx + 1) * maxptr_size] = wi_max[idx];
+  }
   XPU_CALL(xpu_memcpy(maxs_xpu,
-                      maxs_cpu,
-                      16 * sizeof(float),
+                      maxs_cpu.data(),
+                      4 * maxptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   r = xdnn::findmax<float>(
       ctx.GetRawContext(), new_emb, maxs_xpu, cap_l * cap_e);
@@ -204,25 +196,26 @@ void SearchGrnnCompute::Run() {
   for (int i = 0; i < 3; ++i) {
     const int16_t* data_b = dense_e2h + i * cap_e * cap_h;  // e2h, e2hr, e2hz
     float* data_c = buffer_data + i * cap_l * cap_h;  // w_x_e, wr_x_e, wz_x_e
-    int r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
+    int r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
         ctx.GetRawContext(),
-        false,
-        true,  // trans_a, trans_b
+        new_emb,
+        data_b,
+        data_c,  // data_a, data_b, data_c
         cap_l,
         cap_h,
         cap_e,  // m, n, k
-        1.0f,
-        new_emb,
-        cap_e,  // alpha, data_a, lda
-        data_b,
-        cap_e,
-        0.0f,  // data_b, ldb, beta
-        data_c,
-        cap_h,  // data_c, ldc
-        nullptr,
-        xdnn::Activation_t::LINEAR,  // bias, act
+        false,
+        true,  // trans_a, trans_b
         maxs_xpu,
-        maxs_xpu + 4 * (i + 1));  // max_a, max_b
+        maxs_xpu + maxptr_size * (i + 1),
+        nullptr,  // max_a, max_b, max_c
+        cap_e,
+        cap_e,
+        cap_h,  // lda, ldb, ldc
+        1.0f,
+        0.0f,  // alpha, beta
+        nullptr,
+        xdnn::Activation_t::LINEAR);  // bias, act
     CHECK_EQ(r, 0);
   }
 

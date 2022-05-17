@@ -59,35 +59,37 @@ void SearchFcCompute::Run() {
   auto* top_data = top->mutable_data<float>(TARGET(kXPU));
 
   float* maxs_xpu = reinterpret_cast<float*>(maxs_xpu_guard_->addr_);
-  float maxs_cpu[8] = {0.0f, 0.0f, 0.0f, 0.0f, w_max, 0.0f, 0.0f, 0.0f};
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  std::vector<float> maxs_cpu(2 * max_ptr_size, 0.0f);
+  maxs_cpu[max_ptr_size] = w_max;
   XPU_CALL(xpu_memcpy(maxs_xpu,
                       &maxs_cpu[0],
-                      8 * sizeof(float),
+                      2 * max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::findmax<float>(
       ctx.GetRawContext(), bottom_data, maxs_xpu, batch * _in);
   CHECK_EQ(r, 0);
-  r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
-      ctx.GetRawContext(), /* ctx */
-      false,               /* trans_a */
-      true,                /* trans_b */
-      batch,               /* m */
-      _out,                /* n */
-      _in,                 /* k */
-      1.0f,                /* alpha */
-      bottom_data,         /* data_a */
-      _in,                 /* lda */
-      weights,             /* data_b */
-      _in,                 /* ldb */
-      0.0f,                /* beta */
-      top_data,            /* data_c */
-      _out,                /* ldc */
-      bias_data,           /* bias */
-      act,                 /* act */
-      maxs_xpu,            /* max_a */
-      maxs_xpu + 4,        /* max_b */
-      nullptr /* max_c */);
+  r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+      ctx.GetRawContext(),     /* ctx */
+      bottom_data,             /* data_a */
+      weights,                 /* data_b */
+      top_data,                /* data_c */
+      batch,                   /* m */
+      _out,                    /* n */
+      _in,                     /* k */
+      false,                   /* trans_a */
+      true,                    /* trans_b */
+      maxs_xpu,                /* max_a */
+      maxs_xpu + max_ptr_size, /* max_b */
+      nullptr,                 /* max_c */
+      _in,                     /* lda */
+      _in,                     /* ldb */
+      _out,                    /* ldc */
+      1.0f,                    /* alpha */
+      0.0f,                    /* beta */
+      bias_data,               /* bias */
+      act /* act */);
   CHECK_EQ(r, 0);
 }
 
