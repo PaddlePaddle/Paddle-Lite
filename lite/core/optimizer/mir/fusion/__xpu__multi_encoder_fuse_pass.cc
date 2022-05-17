@@ -508,49 +508,15 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK_EQ(q_mul_y_shape[0], qkv_mul_y_shape[1]);
     CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
     CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
-    // mul input_max, output_max * 6 + matmul x_max:y_max, output_max * 2
-    std::vector<float> quant_max;
-    set_quant_info(matched, &quant_max);
+    // mul input_max, output_max * 6 + matmul x_max,y_max,output_max * 2
+    std::vector<float> fc_input_max;
+    set_quant_info(matched, &fc_input_max);
     // mul & matmul input/output max
-    op_desc.SetAttr<std::vector<float>>("quant_max", quant_max);
+    op_desc.SetAttr<std::vector<float>>("fc_input_max", fc_input_max);
 
     if (q_mul_op_info->HasAttr("enable_int8") &&
         q_mul_op_info->GetAttr<bool>("enable_int8")) {
       op_desc.SetAttr<bool>("enable_int8", true);
-      op_desc.SetAttr<std::vector<float>>(
-          "X0_max",
-          {
-              127 *
-                  matched.at("q_mul")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-              127 *
-                  matched.at("k_mul")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-              127 *
-                  matched.at("v_mul")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-              127 *
-                  matched.at("qkv_mul")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-              127 *
-                  matched.at("qkv_mul_3")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-              127 *
-                  matched.at("qkv_mul_4")
-                      ->stmt()
-                      ->op_info()
-                      ->GetAttr<std::vector<float>>("X0_scale")[0],
-          });
       op_desc.SetAttr<std::vector<float>>(
           "Y0_max",
           {
@@ -712,22 +678,23 @@ class XPUSingleEncoderFuser : public FuseBase {
       quant_info->push_back(
           matched.at(quant_ew)->stmt()->op_info()->GetAttr<float>(
               "out_threshold"));
+      VLOG(3) << quant_mul << " input_max: " << (*quant_info)[i * 2]
+              << ", output_max(ew_add): " << (*quant_info)[i * 2 + 1];
     }
-    float max_qkv_input = std::max(quant_info[0], quant_info[2]);
-    max_qkv_input = std::max(max_qkv_input, quant_info[4]);
-    quant_info[0] = max_qkv_input;
-    quant_info[2] = max_qkv_input;
-    quant_info[4] = max_qkv_input;
-    float max_qkv_output = std::max(quant_info[1], quant_info[3]);
-    max_qkv_output = std::max(max_qkv_output, quant_info[5]);
-    quant_info[1] = max_qkv_output;
-    quant_info[3] = max_qkv_output;
-    quant_info[5] = max_qkv_output;
+    CHECK_EQ(quant_info->size(), 12);
+    float max_qkv_input = std::max((*quant_info)[0], (*quant_info)[2]);
+    max_qkv_input = std::max(max_qkv_input, (*quant_info)[4]);
+    (*quant_info)[0] = max_qkv_input;
+    (*quant_info)[2] = max_qkv_input;
+    (*quant_info)[4] = max_qkv_input;
+    float max_qkv_output = std::max((*quant_info)[1], (*quant_info)[3]);
+    max_qkv_output = std::max(max_qkv_output, (*quant_info)[5]);
+    (*quant_info)[1] = max_qkv_output;
+    (*quant_info)[3] = max_qkv_output;
+    (*quant_info)[5] = max_qkv_output;
     VLOG(3) << "max_qkv_input: " << max_qkv_input
             << ", max_qkv_output: " << max_qkv_output;
-    CHECK_EQ(quant_info->size(), 12);
 
-    // we don't save matmul Y max, a little odd
     if (matmul_quant) {
       auto* qkv_matmul_op_info = matched.at("qkv_matmul")->stmt()->op_info();
       CHECK(qkv_matmul_op_info->HasAttr("X0_scale") == true);
@@ -736,19 +703,21 @@ class XPUSingleEncoderFuser : public FuseBase {
                                         ->op_info()
                                         ->GetAttr<float>("out_threshold");
       VLOG(3) << "qkv_matmul X max: " << softmax_out_threshold
-              << ", qkv_matmul Out max: " << quant_info[6];
+              << ", qkv_matmul Out max: " << (*quant_info)[6];
       CHECK_LT(std::abs(softmax_out_threshold -
                         qkv_matmul_op_info->GetAttr<std::vector<float>>(
-                            "X0_scale")[0]),
+                            "X0_scale")[0] *
+                            127),
                1e-5);
-      // qk_matmul X max: max_qkv_output or max_qkv_output/sqrt(head_dim) ?
+      CHECK(qk_matmul_op_info->HasAttr("X0_scale") == true);
       quant_info->push_back(max_qkv_output);
-      // quant_info->push_back(max_qkv_output); // should add qk_matmul Y max?
+      quant_info->push_back(max_qkv_output);
       quant_info->push_back(softmax_out_threshold);
       // qkv_matmul X max
       quant_info->push_back(softmax_out_threshold);
-      quant_info->push_back(quant_info[6]);
-      CHECK_EQ(quant_info->size(), 16);
+      quant_info->push_back(max_qkv_output);
+      quant_info->push_back((*quant_info)[6]);
+      CHECK_EQ(quant_info->size(), 18);
     }
   }
 };
@@ -820,21 +789,18 @@ class XPUMultiEncoderFuser {
       std::map<std::string, std::vector<std::string>> arg_map;
       std::vector<float> fc_weight_max;
       std::vector<float> fc_input_max;
-      std::vector<float> quant_max;
       for (size_t i = 0; i < all_encoders.size(); ++i) {
         Node* cur_encoder = all_encoders[i];
         auto* op_info = cur_encoder->stmt()->op_info();
         if (enable_int8) {
-          CHECK(op_info->HasAttr("enable_int8") && op_info->HasAttr("Y0_max") &&
-                op_info->HasAttr("X0_max") && op_info->HasAttr("quant_max"));
+          CHECK(op_info->HasAttr("enable_int8")) << "no enable_int8 attr";
+          CHECK(op_info->HasAttr("Y0_max")) << "no Y0_max attr";
+          CHECK(op_info->HasAttr("fc_input_max")) << "no fc_input_max attr";
           for (auto y0 : op_info->GetAttr<std::vector<float>>("Y0_max")) {
             fc_weight_max.push_back(y0);
           }
-          for (auto x0 : op_info->GetAttr<std::vector<float>>("X0_max")) {
+          for (auto x0 : op_info->GetAttr<std::vector<float>>("fc_input_max")) {
             fc_input_max.push_back(x0);
-          }
-          for (auto x0 : op_info->GetAttr<std::vector<float>>("quant_max")) {
-            quant_max.push_back(x0);
           }
         }
         for (auto arg_name : arg_names) {
@@ -884,10 +850,11 @@ class XPUMultiEncoderFuser {
       op_desc.SetAttr<bool>("enable_int8", enable_int8);
       if (enable_int8) {
         CHECK_EQ(fc_precision_, "int8");
-        CHECK_EQ(fc_input_max.size(), all_encoders.size() * 6);
         CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6);
-        CHECK((quant_max.size() == all_encoders.size() * 12) ||
-              (quant_max.size() == all_encoders.size() * 16));
+        CHECK((fc_input_max.size() == all_encoders.size() * 12) ||
+              (fc_input_max.size() == all_encoders.size() * 18))
+            << fc_input_max.size()
+            << ", all_encoders.size:" << all_encoders.size();
         for (int i = 0; i < fc_weight_max.size(); i += 6) {
           CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 1]), 1e-5)
               << " quanted ernie's q/k weight scale should be euqal: "
@@ -897,7 +864,6 @@ class XPUMultiEncoderFuser {
               << fc_weight_max[i] << ", " << fc_weight_max[i + 2];
         }
         op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
-        op_desc.SetAttr<std::vector<float>>("QuantMax", quant_max);
         // "FCWeightMax" is also stored as "Input" now
         op_desc.SetAttr<std::vector<float>>("FCWeightMax", fc_weight_max);
         // only support adaptive_seqlen in int8 quant model

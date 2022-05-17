@@ -1727,8 +1727,6 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
   std::vector<float> weight_max{};
-  // mul & matmul input/output max
-  std::vector<float> quant_max{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
