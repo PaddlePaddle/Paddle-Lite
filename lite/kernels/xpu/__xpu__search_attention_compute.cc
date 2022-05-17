@@ -118,14 +118,14 @@ void XPUMmdnnSearchAttentionCompute::Run() {
 
   const auto* bottom_data = X->data<float>();
   int r = 0;
-  r = xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
-                                      const_cast<float*>(bottom_data),
-                                      group_padding_output,
-                                      offset_xpu,
-                                      max_seq,
-                                      batch,
-                                      dim1,
-                                      0);  // is_depad = 0
+  r = xdnn::sequence_pad<float, int>(ctx.GetRawContext(),
+                                     const_cast<float*>(bottom_data),
+                                     offset_xpu,
+                                     group_padding_output,
+                                     batch,
+                                     max_seq,
+                                     dim1,
+                                     0);
   CHECK_EQ(r, 0);
   // do-findmax
   r = xdnn::findmax<float>(ctx.GetRawContext(),
@@ -200,14 +200,13 @@ void XPUMmdnnSearchAttentionCompute::Run() {
                                    batchgemm1_output,
                                    dim1);
   CHECK_EQ(r, 0);
-  r = xdnn::search_sequence_pad_depad(ctx.GetRawContext(),
-                                      top_data,
-                                      batchgemm1_output,
-                                      offset_xpu,
-                                      max_seq,
-                                      batch,
-                                      dim1,
-                                      1);  // is_depad = 1
+  r = xdnn::sequence_unpad<float, int>(
+      ctx.GetRawContext(),
+      top_data,
+      batchgemm1_output,
+      {offset_cpu.get(), static_cast<int>(offset.size()), offset_xpu},
+      max_seq,
+      dim1);
   CHECK_EQ(r, 0);
 }
 
