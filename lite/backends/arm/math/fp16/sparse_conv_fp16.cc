@@ -1541,233 +1541,233 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 
 #else  // armv7
 
-#define SPARSE_F16_F16_W48_v7_KERNEL      \
-  "vdup.16    q4,    %[vbias]\n"          \
-  "pld  [%[a_ptr], #64]    \n"            \
-  "pld  [%[widx_dmap], #64]    \n"        \
-  "vdup.16    q10,   d8[0]\n"             \
-  "vdup.16    q11,   d8[0]\n"             \
-  "vdup.16    q12,   d8[0]\n"             \
-  "pld  [%[b_ptr], #192]    \n"           \
-  "vdup.16    q13,   d8[0]\n"             \
-  "vdup.16    q14,   d8[0]\n"             \
-  "vdup.16    q15,   d8[0]\n"             \
-  "cmp    %[n],    #0\n"                 \
-  "beq 3f\n"\
-  "0:\n"                                  \
-  "vld1.16  d0, [%[a_ptr]]\n"             \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "add %[a_ptr], %[a_ptr], #8\n"          \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "pld  [%[widx_dmap], #128]    \n"       \
-  "vmla.f16    q10,   q1,  d0[0]\n"       \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q11,   q2,  d0[0]\n"       \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q12,   q3,  d0[0]\n"       \
-  "vmla.f16    q13,   q4,  d0[0]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "vmla.f16    q14,   q5,  d0[0]\n"       \
-  "vmla.f16    q15,   q6,  d0[0]\n"       \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "subs    %[n],   #1\n"          \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q10,   q1,  d0[1]\n"       \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q11,   q2,  d0[1]\n"       \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q12,   q3,  d0[1]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "vmla.f16    q13,   q4,  d0[1]\n"       \
-  "vmla.f16    q14,   q5,  d0[1]\n"       \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q15,   q6,  d0[1]\n"       \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q10,   q1,  d0[2]\n"       \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "vmla.f16    q11,   q2,  d0[2]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vmla.f16    q12,   q3,  d0[2]\n"       \
-  "vmla.f16    q13,   q4,  d0[2]\n"       \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q14,   q5,  d0[2]\n"       \
-  "vmla.f16    q15,   q6,  d0[2]\n"       \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "vmla.f16    q10,   q1,  d0[3]\n"       \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "vmla.f16    q11,   q2,  d0[3]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "vmla.f16    q12,   q3,  d0[3]\n"       \
-  "vmla.f16    q13,   q4,  d0[3]\n"       \
-  "vmla.f16    q14,   q5,  d0[3]\n"       \
-  "vmla.f16    q15,   q6,  d0[3]\n"       \
-  "bne     0b\n"                          \
-  "3: \n"\
-  "cmp    %[m],    #0\n"                 \
-  "beq 1f\n"\
-  "vld1.16  d0, [%[a_ptr]]\n"             \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "add %[a_ptr], %[a_ptr], #8\n"          \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "subs  %[m],   #1\n"          \
-  "pld  [%[widx_dmap], #128]    \n"       \
-  "vmla.f16    q10,   q1,  d0[0]\n"       \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "vmla.f16    q11,   q2,  d0[0]\n"       \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q12,   q3,  d0[0]\n"       \
-  "vmla.f16    q13,   q4,  d0[0]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "vmla.f16    q14,   q5,  d0[0]\n"       \
-  "vmla.f16    q15,   q6,  d0[0]\n"       \
-  "beq     1f\n"                          \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q10,   q1,  d0[1]\n"       \
-  "vmla.f16    q11,   q2,  d0[1]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "subs  %[m],   #1\n"          \
-  "vmla.f16    q12,   q3,  d0[1]\n"       \
-  "vmla.f16    q13,   q4,  d0[1]\n"       \
-  "vmla.f16    q14,   q5,  d0[1]\n"       \
-  "vmla.f16    q15,   q6,  d0[1]\n"       \
-  "beq     1f\n"                          \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d6-d9}, [r2]\n"   \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d10-d13}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vmla.f16    q10,   q1,  d0[2]\n"       \
-  "vmla.f16    q11,   q2,  d0[2]\n"       \
-  "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "vmla.f16    q12,   q3,  d0[2]\n"       \
-  "vmla.f16    q13,   q4,  d0[2]\n"       \
-  "vmla.f16    q14,   q5,  d0[2]\n"       \
-  "vmla.f16    q15,   q6,  d0[2]\n"       \
+#define SPARSE_F16_F16_W48_v7_KERNEL \
+  "vdup.16    q4,    %[vbias]\n"     \
+  "pld  [%[a_ptr], #64]    \n"       \
+  "pld  [%[widx_dmap], #64]    \n"   \
+  "vdup.16    q10,   d8[0]\n"        \
+  "vdup.16    q11,   d8[0]\n"        \
+  "vdup.16    q12,   d8[0]\n"        \
+  "pld  [%[b_ptr], #192]    \n"      \
+  "vdup.16    q13,   d8[0]\n"        \
+  "vdup.16    q14,   d8[0]\n"        \
+  "vdup.16    q15,   d8[0]\n"        \
+  "cmp    %[n],    #0\n"             \
+  "beq 3f\n"                         \
+  "0:\n"                             \
+  "vld1.16  d0, [%[a_ptr]]\n"        \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "add %[a_ptr], %[a_ptr], #8\n"     \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "pld  [%[widx_dmap], #128]    \n"  \
+  "vmla.f16    q10,   q1,  d0[0]\n"  \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q11,   q2,  d0[0]\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q12,   q3,  d0[0]\n"  \
+  "vmla.f16    q13,   q4,  d0[0]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q14,   q5,  d0[0]\n"  \
+  "vmla.f16    q15,   q6,  d0[0]\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "subs    %[n],   #1\n"             \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q10,   q1,  d0[1]\n"  \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q11,   q2,  d0[1]\n"  \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q12,   q3,  d0[1]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q13,   q4,  d0[1]\n"  \
+  "vmla.f16    q14,   q5,  d0[1]\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q15,   q6,  d0[1]\n"  \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[2]\n"  \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "vmla.f16    q11,   q2,  d0[2]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vmla.f16    q12,   q3,  d0[2]\n"  \
+  "vmla.f16    q13,   q4,  d0[2]\n"  \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q14,   q5,  d0[2]\n"  \
+  "vmla.f16    q15,   q6,  d0[2]\n"  \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "vmla.f16    q10,   q1,  d0[3]\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "vmla.f16    q11,   q2,  d0[3]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[3]\n"  \
+  "vmla.f16    q13,   q4,  d0[3]\n"  \
+  "vmla.f16    q14,   q5,  d0[3]\n"  \
+  "vmla.f16    q15,   q6,  d0[3]\n"  \
+  "bne     0b\n"                     \
+  "3: \n"                            \
+  "cmp    %[m],    #0\n"             \
+  "beq 1f\n"                         \
+  "vld1.16  d0, [%[a_ptr]]\n"        \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "add %[a_ptr], %[a_ptr], #8\n"     \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "subs  %[m],   #1\n"               \
+  "pld  [%[widx_dmap], #128]    \n"  \
+  "vmla.f16    q10,   q1,  d0[0]\n"  \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "vmla.f16    q11,   q2,  d0[0]\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q12,   q3,  d0[0]\n"  \
+  "vmla.f16    q13,   q4,  d0[0]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q14,   q5,  d0[0]\n"  \
+  "vmla.f16    q15,   q6,  d0[0]\n"  \
+  "beq     1f\n"                     \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[1]\n"  \
+  "vmla.f16    q11,   q2,  d0[1]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "subs  %[m],   #1\n"               \
+  "vmla.f16    q12,   q3,  d0[1]\n"  \
+  "vmla.f16    q13,   q4,  d0[1]\n"  \
+  "vmla.f16    q14,   q5,  d0[1]\n"  \
+  "vmla.f16    q15,   q6,  d0[1]\n"  \
+  "beq     1f\n"                     \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d10-d13}, [r2]\n"       \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[2]\n"  \
+  "vmla.f16    q11,   q2,  d0[2]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[2]\n"  \
+  "vmla.f16    q13,   q4,  d0[2]\n"  \
+  "vmla.f16    q14,   q5,  d0[2]\n"  \
+  "vmla.f16    q15,   q6,  d0[2]\n"  \
   "1:\n"
 
-#define SPARSE_F16_F16_W32_v7_KERNEL    \
-  "vdup.16    q4,    %[vbias]\n"        \
-  "pld  [%[a_ptr], #64]    \n"          \
-  "pld  [%[widx_dmap], #64]    \n"      \
-  "vdup.16    q10,   d8[0]\n"           \
-  "vdup.16    q11,   d8[0]\n"           \
-  "pld  [%[b_ptr], #192]    \n"         \
-  "vdup.16    q12,   d8[0]\n"           \
-  "vdup.16    q13,   d8[0]\n"           \
-  "cmp    %[n],    #0\n"                 \
-  "beq 3f\n"\
-  "0:\n"                                \
-  "vld1.16  d0, [%[a_ptr]]\n"           \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "add %[a_ptr], %[a_ptr], #8\n"        \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "pld  [%[widx_dmap], #128]    \n"     \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vmla.f16    q10,   q1,  d0[0]\n"     \
-  "vmla.f16    q11,   q2,  d0[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[0]\n"     \
-  "vmla.f16    q13,   q4,  d0[0]\n"     \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "subs    %[n],   #1\n"        \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vmla.f16    q10,   q1,  d0[1]\n"     \
-  "vmla.f16    q11,   q2,  d0[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[1]\n"     \
-  "vmla.f16    q13,   q4,  d0[1]\n"     \
-  "mov   r2,   %[b_ptr]\n"                \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "vmla.f16    q10,   q1,  d0[2]\n"     \
-  "vmla.f16    q11,   q2,  d0[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[2]\n"     \
-  "vmla.f16    q13,   q4,  d0[2]\n"     \
-  "mov   r2,   %[b_ptr]\n"              \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "vmla.f16    q10,   q1,  d0[3]\n"     \
-  "vmla.f16    q11,   q2,  d0[3]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[3]\n"     \
-  "vmla.f16    q13,   q4,  d0[3]\n"     \
-  "bne     0b\n"                        \
-  "3: \n"\
-  "cmp    %[m],    #0\n"                 \
-  "beq 1f\n"\
-  "vld1.16  d0, [%[a_ptr]]\n"           \
-  "mov   r2,   %[b_ptr]\n"              \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "add %[a_ptr], %[a_ptr], #8\n"        \
-  "pld  [%[widx_dmap], #128]    \n"     \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "subs  %[m],   #1\n"        \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vmla.f16    q10,   q1,  d0[0]\n"     \
-  "vmla.f16    q11,   q2,  d0[0]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[0]\n"     \
-  "vmla.f16    q13,   q4,  d0[0]\n"     \
-  "beq     1f\n"                        \
-  "mov   r2,   %[b_ptr]\n"              \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "subs  %[m],   #1\n"        \
-  "vmla.f16    q10,   q1,  d0[1]\n"     \
-  "vmla.f16    q11,   q2,  d0[1]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[1]\n"     \
-  "vmla.f16    q13,   q4,  d0[1]\n"     \
-  "beq     1f\n"                        \
-  "mov   r2,   %[b_ptr]\n"              \
-  "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "add r2, r2, #32\n"          \
-  "vld1.16  {d6-d9}, [r2]\n" \
-  "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vmla.f16    q10,   q1,  d0[2]\n"     \
-  "vmla.f16    q11,   q2,  d0[2]\n"     \
-  "add   %[b_ptr],  %[b_ptr], r0\n"     \
-  "vmla.f16    q12,   q3,  d0[2]\n"     \
-  "vmla.f16    q13,   q4,  d0[2]\n"     \
+#define SPARSE_F16_F16_W32_v7_KERNEL \
+  "vdup.16    q4,    %[vbias]\n"     \
+  "pld  [%[a_ptr], #64]    \n"       \
+  "pld  [%[widx_dmap], #64]    \n"   \
+  "vdup.16    q10,   d8[0]\n"        \
+  "vdup.16    q11,   d8[0]\n"        \
+  "pld  [%[b_ptr], #192]    \n"      \
+  "vdup.16    q12,   d8[0]\n"        \
+  "vdup.16    q13,   d8[0]\n"        \
+  "cmp    %[n],    #0\n"             \
+  "beq 3f\n"                         \
+  "0:\n"                             \
+  "vld1.16  d0, [%[a_ptr]]\n"        \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "add %[a_ptr], %[a_ptr], #8\n"     \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "pld  [%[widx_dmap], #128]    \n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[0]\n"  \
+  "vmla.f16    q11,   q2,  d0[0]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[0]\n"  \
+  "vmla.f16    q13,   q4,  d0[0]\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "subs    %[n],   #1\n"             \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[1]\n"  \
+  "vmla.f16    q11,   q2,  d0[1]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[1]\n"  \
+  "vmla.f16    q13,   q4,  d0[1]\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "vmla.f16    q10,   q1,  d0[2]\n"  \
+  "vmla.f16    q11,   q2,  d0[2]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[2]\n"  \
+  "vmla.f16    q13,   q4,  d0[2]\n"  \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "vmla.f16    q10,   q1,  d0[3]\n"  \
+  "vmla.f16    q11,   q2,  d0[3]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[3]\n"  \
+  "vmla.f16    q13,   q4,  d0[3]\n"  \
+  "bne     0b\n"                     \
+  "3: \n"                            \
+  "cmp    %[m],    #0\n"             \
+  "beq 1f\n"                         \
+  "vld1.16  d0, [%[a_ptr]]\n"        \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "add %[a_ptr], %[a_ptr], #8\n"     \
+  "pld  [%[widx_dmap], #128]    \n"  \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "subs  %[m],   #1\n"               \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[0]\n"  \
+  "vmla.f16    q11,   q2,  d0[0]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[0]\n"  \
+  "vmla.f16    q13,   q4,  d0[0]\n"  \
+  "beq     1f\n"                     \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "subs  %[m],   #1\n"               \
+  "vmla.f16    q10,   q1,  d0[1]\n"  \
+  "vmla.f16    q11,   q2,  d0[1]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[1]\n"  \
+  "vmla.f16    q13,   q4,  d0[1]\n"  \
+  "beq     1f\n"                     \
+  "mov   r2,   %[b_ptr]\n"           \
+  "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
+  "add r2, r2, #32\n"                \
+  "vld1.16  {d6-d9}, [r2]\n"         \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "vmla.f16    q10,   q1,  d0[2]\n"  \
+  "vmla.f16    q11,   q2,  d0[2]\n"  \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
+  "vmla.f16    q12,   q3,  d0[2]\n"  \
+  "vmla.f16    q13,   q4,  d0[2]\n"  \
   "1:\n"
 
 #define SPARSE_F16_F16_W16_v7_KERNEL \
@@ -1777,8 +1777,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q10,   d8[0]\n"        \
   "vdup.16    q11,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cmp    %[n],    #0\n"                 \
-  "beq 3f\n"\
+  "cmp    %[n],    #0\n"             \
+  "beq 3f\n"                         \
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
@@ -1788,7 +1788,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "vmla.f16    q11,   q2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs    %[n],   #1\n"     \
+  "subs    %[n],   #1\n"             \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
@@ -1805,21 +1805,21 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q11,   q2,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "3: \n"\
-  "cmp    %[m],    #0\n"                 \
-  "beq 1f\n"\
+  "3: \n"                            \
+  "cmp    %[m],    #0\n"             \
+  "beq 1f\n"                         \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "vmla.f16    q11,   q2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
   "vmla.f16    q11,   q2,  d0[1]\n"  \
@@ -1838,8 +1838,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"   \
   "vdup.16    q10,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cmp    %[n],    #0\n"                 \
-  "beq 3f\n"\
+  "cmp    %[n],    #0\n"             \
+  "beq 3f\n"                         \
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
@@ -1848,7 +1848,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs   %[n],   #1\n"     \
+  "subs   %[n],   #1\n"              \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
@@ -1862,20 +1862,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q10,   q1,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "3: \n"\
-  "cmp    %[m],    #0\n"                 \
-  "beq 1f\n"\
+  "3: \n"                            \
+  "cmp    %[m],    #0\n"             \
+  "beq 1f\n"                         \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
@@ -1892,8 +1892,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"   \
   "vdup.16    q10,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cmp    %[n],    #0\n"                 \
-  "beq 3f\n"\
+  "cmp    %[n],    #0\n"             \
+  "beq 3f\n"                         \
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
@@ -1902,7 +1902,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs    %[n],   #1\n"     \
+  "subs    %[n],   #1\n"             \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[1]\n"  \
@@ -1916,20 +1916,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    d20,   d2,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "3: \n"\
-  "cmp    %[m],    #0\n"                 \
-  "beq 1f\n"\
+  "3: \n"                            \
+  "cmp    %[m],    #0\n"             \
+  "beq 1f\n"                         \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
-  "subs  %[m],   #1\n"     \
+  "subs  %[m],   #1\n"               \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[1]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
@@ -2159,114 +2159,114 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vbif       d20,    d3,    d2    \n"                         \
   "b      9f                    \n"
 
-#define SPARSE_F16_F16_W48_v7_HARD_SWISH                              \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W48_v7_HARD_SWISH                             \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q10, q0               \n"                           \
-  "vadd.f16   q5, q11, q0               \n"                           \
-  "vadd.f16   q6, q12, q0               \n"                           \
-  "vadd.f16   q7, q13, q0               \n"                           \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmul.f16   q11, q11, q1              \n"                           \
-  "vmul.f16   q12, q12, q1              \n"                           \
-  "vmul.f16   q13, q13, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q10, q10, q4              \n"                           \
-  "vmul.f16   q11, q11, q5              \n"                           \
-  "vmul.f16   q12, q12, q6              \n"                           \
-  "vmul.f16   q13, q13, q7              \n"                           \
-  "vadd.f16   q4, q14, q0               \n"                           \
-  "vadd.f16   q5, q15, q0               \n"                           \
-  "vmul.f16   q14, q14, q1              \n"                           \
-  "vmul.f16   q15, q15, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmul.f16   q14, q14, q4              \n"                           \
-  "vmul.f16   q15, q15, q5              \n"                           \
+  "vadd.f16   q4, q10, q0               \n"                          \
+  "vadd.f16   q5, q11, q0               \n"                          \
+  "vadd.f16   q6, q12, q0               \n"                          \
+  "vadd.f16   q7, q13, q0               \n"                          \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmul.f16   q11, q11, q1              \n"                          \
+  "vmul.f16   q12, q12, q1              \n"                          \
+  "vmul.f16   q13, q13, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q10, q10, q4              \n"                          \
+  "vmul.f16   q11, q11, q5              \n"                          \
+  "vmul.f16   q12, q12, q6              \n"                          \
+  "vmul.f16   q13, q13, q7              \n"                          \
+  "vadd.f16   q4, q14, q0               \n"                          \
+  "vadd.f16   q5, q15, q0               \n"                          \
+  "vmul.f16   q14, q14, q1              \n"                          \
+  "vmul.f16   q15, q15, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmul.f16   q14, q14, q4              \n"                          \
+  "vmul.f16   q15, q15, q5              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W32_v7_HARD_SWISH                              \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W32_v7_HARD_SWISH                             \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q10, q0               \n"                           \
-  "vadd.f16   q5, q11, q0               \n"                           \
-  "vadd.f16   q6, q12, q0               \n"                           \
-  "vadd.f16   q7, q13, q0               \n"                           \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmul.f16   q11, q11, q1              \n"                           \
-  "vmul.f16   q12, q12, q1              \n"                           \
-  "vmul.f16   q13, q13, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q10, q10, q4              \n"                           \
-  "vmul.f16   q11, q11, q5              \n"                           \
-  "vmul.f16   q12, q12, q6              \n"                           \
-  "vmul.f16   q13, q13, q7              \n"                           \
+  "vadd.f16   q4, q10, q0               \n"                          \
+  "vadd.f16   q5, q11, q0               \n"                          \
+  "vadd.f16   q6, q12, q0               \n"                          \
+  "vadd.f16   q7, q13, q0               \n"                          \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmul.f16   q11, q11, q1              \n"                          \
+  "vmul.f16   q12, q12, q1              \n"                          \
+  "vmul.f16   q13, q13, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q10, q10, q4              \n"                          \
+  "vmul.f16   q11, q11, q5              \n"                          \
+  "vmul.f16   q12, q12, q6              \n"                          \
+  "vmul.f16   q13, q13, q7              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W16_v7_HARD_SWISH                              \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W16_v7_HARD_SWISH                             \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q10, q0               \n"                           \
-  "vadd.f16   q5, q11, q0               \n"                           \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmul.f16   q11, q11, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmul.f16   q10, q10, q4              \n"                           \
-  "vmul.f16   q11, q11, q5              \n"                           \
+  "vadd.f16   q4, q10, q0               \n"                          \
+  "vadd.f16   q5, q11, q0               \n"                          \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmul.f16   q11, q11, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmul.f16   q10, q10, q4              \n"                          \
+  "vmul.f16   q11, q11, q5              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W8_v7_HARD_SWISH                               \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W8_v7_HARD_SWISH                              \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q10, q0               \n"                           \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmul.f16   q10, q10, q4              \n"                           \
+  "vadd.f16   q4, q10, q0               \n"                          \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmul.f16   q10, q10, q4              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W4_v7_HARD_SWISH                               \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W4_v7_HARD_SWISH                              \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   d6,   #0                  @ for hardswish \n"           \
+  "vmov.u16   d6,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   d8, d20,  d0               \n"                          \
-  "vmul.f16   d20, d20, d2              \n"                           \
-  "vmax.f16   d8, d8,   d6              \n"                           \
-  "vmin.f16   d8, d8,   d4                \n"                         \
-  "vmul.f16   d20, d20, d8              \n"                           \
+  "vadd.f16   d8, d20,  d0               \n"                         \
+  "vmul.f16   d20, d20, d2              \n"                          \
+  "vmax.f16   d8, d8,   d6              \n"                          \
+  "vmin.f16   d8, d8,   d4                \n"                        \
+  "vmul.f16   d20, d20, d8              \n"                          \
   "9:\n"
 
 /**
@@ -2646,11 +2646,11 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
             auto tmp_1 =
                 vout0 / static_cast<float16_t>(act_param.hard_swish_scale);
             tmp_0 = tmp_0 > 0.f ? (tmp_0 < static_cast<float16_t>(
-                                            act_param.hard_swish_threshold)
-                                     ? tmp_0
-                                     : static_cast<float16_t>(
-                                           act_param.hard_swish_threshold))
-                              : 0.f;
+                                               act_param.hard_swish_threshold)
+                                       ? tmp_0
+                                       : static_cast<float16_t>(
+                                             act_param.hard_swish_threshold))
+                                : 0.f;
             vout0 = tmp_0 * tmp_1;
           } else {
             LOG(FATAL) << "This act: " << flag_act << " doesn't support";

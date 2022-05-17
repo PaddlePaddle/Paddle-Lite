@@ -43,7 +43,7 @@ namespace fp16 {
         hs_param[i] = static_cast<float16_t>(act_param.hard_swish_offset); \
         hs_param[i + 8] =                                                  \
             static_cast<float16_t>(1.0 / act_param.hard_swish_scale);      \
-        hs_param[i + 16] =                                                  \
+        hs_param[i + 16] =                                                 \
             static_cast<float16_t>(act_param.hard_swish_threshold);        \
       }                                                                    \
     }                                                                      \
@@ -1630,16 +1630,16 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q13,   d0[1]\n"              \
   "vdup.16    q14,   d0[1]\n"              \
   "vdup.16    q15,   d0[1]\n"              \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                      \
+  "beq 1f\n"                               \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
-  "mov   r2,   %[b_ptr]\n"              \
+  "mov   r2,   %[b_ptr]\n"                 \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
-  "add r2, r2, #32\n"          \
+  "add r2, r2, #32\n"                      \
   "add %[a_ptr], %[a_ptr], #4\n"           \
-  "vld1.16  {d6-d9}, [r2]\n"    \
+  "vld1.16  {d6-d9}, [r2]\n"               \
   "vmla.f16    q8,   q1,  d0[0]\n"         \
   "vmla.f16    q12,  q1,  d0[1]\n"         \
   "vmla.f16    q9,   q2,  d0[0]\n"         \
@@ -1663,15 +1663,15 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[b_ptr], #192]    \n"            \
   "vdup.16    q10,   d0[0]\n"              \
   "vdup.16    q11,   d0[0]\n"              \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                      \
+  "beq 1f\n"                               \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
-  "mov   r2,   %[b_ptr]\n"              \
+  "mov   r2,   %[b_ptr]\n"                 \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
-  "add r2, r2, #32\n"          \
+  "add r2, r2, #32\n"                      \
   "add %[a_ptr], %[a_ptr], #2\n"           \
-  "vld1.16  {d6-d9}, [r2]\n"    \
+  "vld1.16  {d6-d9}, [r2]\n"               \
   "pld  [%[widx_dmap], #128]    \n"        \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
   "subs    %[k],   %[k],   #1\n"           \
@@ -1692,8 +1692,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q12,   d0[1]\n"              \
   "pld  [%[b_ptr], #192]    \n"            \
   "vdup.16    q13,   d0[1]\n"              \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                      \
+  "beq 1f\n"                               \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
@@ -1716,8 +1716,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q8,   d0[0]\n"               \
   "vdup.16    q9,   d0[0]\n"               \
   "pld  [%[b_ptr], #192]    \n"            \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                      \
+  "beq 1f\n"                               \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
@@ -1738,8 +1738,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q8,    d0[0]\n"             \
   "vdup.16    q12,   d0[1]\n"             \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                     \
+  "beq 1f\n"                              \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
@@ -1759,8 +1759,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,   d0[0]\n"              \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                     \
+  "beq 1f\n"                              \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"        \
@@ -1780,8 +1780,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q8,    d0[0]\n"             \
   "vdup.16    q12,   d0[1]\n"             \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                     \
+  "beq 1f\n"                              \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
@@ -1801,8 +1801,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,   d0[0]\n"              \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cmp    %[k], #0\n" \
-  "beq 1f\n" \
+  "cmp    %[k], #0\n"                     \
+  "beq 1f\n"                              \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "vld1.16  {d2}, [%[b_ptr]]\n"           \
@@ -2200,187 +2200,187 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vbif       d16,   d6,    d4    \n"                           \
   "b      9f                    \n"
 
-#define SPARSE_F16_F16_W32_SEMI2_v7_HARD_SWISH                        \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W32_SEMI2_v7_HARD_SWISH                       \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4,  q8, q0               \n"                           \
-  "vadd.f16   q5,  q9, q0               \n"                           \
-  "vadd.f16   q6,  q12, q0               \n"                          \
-  "vadd.f16   q7,  q13, q0               \n"                          \
-  "vmul.f16   q8,  q8, q1              \n"                            \
-  "vmul.f16   q9,  q9, q1              \n"                            \
-  "vmul.f16   q12, q12, q1              \n"                           \
-  "vmul.f16   q13, q13, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
-  "vmul.f16   q9, q9, q5              \n"                             \
-  "vmul.f16   q12, q12, q6              \n"                           \
-  "vmul.f16   q13, q13, q7              \n"                           \
-  "vadd.f16   q4,  q10, q0               \n"                          \
-  "vadd.f16   q5,  q11, q0               \n"                          \
-  "vadd.f16   q6,  q14, q0               \n"                          \
-  "vadd.f16   q7,  q15, q0               \n"                          \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmul.f16   q11, q11, q1              \n"                           \
-  "vmul.f16   q14, q14, q1              \n"                           \
-  "vmul.f16   q15, q15, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q10, q10, q4              \n"                           \
-  "vmul.f16   q11, q11, q5              \n"                           \
-  "vmul.f16   q14, q14, q6              \n"                           \
-  "vmul.f16   q15, q15, q7              \n"                           \
+  "vadd.f16   q4,  q8, q0               \n"                          \
+  "vadd.f16   q5,  q9, q0               \n"                          \
+  "vadd.f16   q6,  q12, q0               \n"                         \
+  "vadd.f16   q7,  q13, q0               \n"                         \
+  "vmul.f16   q8,  q8, q1              \n"                           \
+  "vmul.f16   q9,  q9, q1              \n"                           \
+  "vmul.f16   q12, q12, q1              \n"                          \
+  "vmul.f16   q13, q13, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
+  "vmul.f16   q9, q9, q5              \n"                            \
+  "vmul.f16   q12, q12, q6              \n"                          \
+  "vmul.f16   q13, q13, q7              \n"                          \
+  "vadd.f16   q4,  q10, q0               \n"                         \
+  "vadd.f16   q5,  q11, q0               \n"                         \
+  "vadd.f16   q6,  q14, q0               \n"                         \
+  "vadd.f16   q7,  q15, q0               \n"                         \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmul.f16   q11, q11, q1              \n"                          \
+  "vmul.f16   q14, q14, q1              \n"                          \
+  "vmul.f16   q15, q15, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q10, q10, q4              \n"                          \
+  "vmul.f16   q11, q11, q5              \n"                          \
+  "vmul.f16   q14, q14, q6              \n"                          \
+  "vmul.f16   q15, q15, q7              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W32_SEMI1_v7_HARD_SWISH                        \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W32_SEMI1_v7_HARD_SWISH                       \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q8, q0               \n"                            \
-  "vadd.f16   q5, q9, q0               \n"                            \
-  "vadd.f16   q6, q10, q0               \n"                           \
-  "vadd.f16   q7, q11, q0               \n"                           \
-  "vmul.f16   q8, q8, q1              \n"                             \
-  "vmul.f16   q9, q9, q1              \n"                             \
-  "vmul.f16   q10, q10, q1              \n"                           \
-  "vmul.f16   q11, q11, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
-  "vmul.f16   q9, q9, q5              \n"                             \
-  "vmul.f16   q10, q10, q6              \n"                           \
-  "vmul.f16   q11, q11, q7              \n"                           \
+  "vadd.f16   q4, q8, q0               \n"                           \
+  "vadd.f16   q5, q9, q0               \n"                           \
+  "vadd.f16   q6, q10, q0               \n"                          \
+  "vadd.f16   q7, q11, q0               \n"                          \
+  "vmul.f16   q8, q8, q1              \n"                            \
+  "vmul.f16   q9, q9, q1              \n"                            \
+  "vmul.f16   q10, q10, q1              \n"                          \
+  "vmul.f16   q11, q11, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
+  "vmul.f16   q9, q9, q5              \n"                            \
+  "vmul.f16   q10, q10, q6              \n"                          \
+  "vmul.f16   q11, q11, q7              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W16_SEMI2_v7_HARD_SWISH                        \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W16_SEMI2_v7_HARD_SWISH                       \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4,  q8, q0               \n"                           \
-  "vadd.f16   q5,  q9, q0               \n"                           \
-  "vadd.f16   q6,  q12, q0               \n"                          \
-  "vadd.f16   q7,  q13, q0               \n"                          \
-  "vmul.f16   q8,  q8, q1              \n"                            \
-  "vmul.f16   q9,  q9, q1              \n"                            \
-  "vmul.f16   q12, q12, q1              \n"                           \
-  "vmul.f16   q13, q13, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmax.f16   q7, q7, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmin.f16   q7, q7, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
-  "vmul.f16   q9, q9, q5              \n"                             \
-  "vmul.f16   q12, q12, q6              \n"                           \
-  "vmul.f16   q13, q13, q7              \n"                           \
+  "vadd.f16   q4,  q8, q0               \n"                          \
+  "vadd.f16   q5,  q9, q0               \n"                          \
+  "vadd.f16   q6,  q12, q0               \n"                         \
+  "vadd.f16   q7,  q13, q0               \n"                         \
+  "vmul.f16   q8,  q8, q1              \n"                           \
+  "vmul.f16   q9,  q9, q1              \n"                           \
+  "vmul.f16   q12, q12, q1              \n"                          \
+  "vmul.f16   q13, q13, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmax.f16   q7, q7, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmin.f16   q7, q7, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
+  "vmul.f16   q9, q9, q5              \n"                            \
+  "vmul.f16   q12, q12, q6              \n"                          \
+  "vmul.f16   q13, q13, q7              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W16_SEMI1_v7_HARD_SWISH                        \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W16_SEMI1_v7_HARD_SWISH                       \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q8, q0               \n"                            \
-  "vadd.f16   q5, q9, q0               \n"                            \
-  "vmul.f16   q8, q8, q1              \n"                             \
-  "vmul.f16   q9, q9, q1              \n"                             \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q5, q5, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q5, q5, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
-  "vmul.f16   q9, q9, q5              \n"                             \
+  "vadd.f16   q4, q8, q0               \n"                           \
+  "vadd.f16   q5, q9, q0               \n"                           \
+  "vmul.f16   q8, q8, q1              \n"                            \
+  "vmul.f16   q9, q9, q1              \n"                            \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q5, q5, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q5, q5, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
+  "vmul.f16   q9, q9, q5              \n"                            \
   "9:\n"
 
-#define SPARSE_F16_F16_W8_SEMI2_v7_HARD_SWISH                         \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W8_SEMI2_v7_HARD_SWISH                        \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4,  q8, q0               \n"                           \
-  "vadd.f16   q6,  q12, q0               \n"                          \
-  "vmul.f16   q8,  q8, q1              \n"                            \
-  "vmul.f16   q12, q12, q1              \n"                           \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmax.f16   q6, q6, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmin.f16   q6, q6, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
-  "vmul.f16   q12, q12, q6              \n"                           \
+  "vadd.f16   q4,  q8, q0               \n"                          \
+  "vadd.f16   q6,  q12, q0               \n"                         \
+  "vmul.f16   q8,  q8, q1              \n"                           \
+  "vmul.f16   q12, q12, q1              \n"                          \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmax.f16   q6, q6, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmin.f16   q6, q6, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
+  "vmul.f16   q12, q12, q6              \n"                          \
   "9:\n"
 
-#define SPARSE_F16_F16_W8_SEMI1_v7_HARD_SWISH                         \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W8_SEMI1_v7_HARD_SWISH                        \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   q4, q8, q0               \n"                            \
-  "vmul.f16   q8, q8, q1              \n"                             \
-  "vmax.f16   q4, q4, q3                \n"                           \
-  "vmin.f16   q4, q4, q2                \n"                           \
-  "vmul.f16   q8, q8, q4              \n"                             \
+  "vadd.f16   q4, q8, q0               \n"                           \
+  "vmul.f16   q8, q8, q1              \n"                            \
+  "vmax.f16   q4, q4, q3                \n"                          \
+  "vmin.f16   q4, q4, q2                \n"                          \
+  "vmul.f16   q8, q8, q4              \n"                            \
   "9:\n"
 
-#define SPARSE_F16_F16_W4_SEMI2_v7_HARD_SWISH                         \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W4_SEMI2_v7_HARD_SWISH                        \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vadd.f16   d8,  d16, d0               \n"                          \
-  "vadd.f16   d12,  d24, d0               \n"                         \
-  "vmul.f16   d16,  d16, d2              \n"                          \
-  "vmul.f16   d24,  d24, d2              \n"                          \
-  "vmax.f16   d8,  d8,  d6                \n"                         \
-  "vmax.f16   d12, d12, d6                \n"                         \
-  "vmin.f16   d8,  d8,  d4                \n"                         \
-  "vmin.f16   d12, d12, d4                \n"                         \
-  "vmul.f16   d16, d16, d8              \n"                           \
-  "vmul.f16   d24, d24, d12              \n"                          \
+  "vadd.f16   d8,  d16, d0               \n"                         \
+  "vadd.f16   d12,  d24, d0               \n"                        \
+  "vmul.f16   d16,  d16, d2              \n"                         \
+  "vmul.f16   d24,  d24, d2              \n"                         \
+  "vmax.f16   d8,  d8,  d6                \n"                        \
+  "vmax.f16   d12, d12, d6                \n"                        \
+  "vmin.f16   d8,  d8,  d4                \n"                        \
+  "vmin.f16   d12, d12, d4                \n"                        \
+  "vmul.f16   d16, d16, d8              \n"                          \
+  "vmul.f16   d24, d24, d12              \n"                         \
   "9:\n"
 
-#define SPARSE_F16_F16_W4_SEMI1_v7_HARD_SWISH                         \
-  /* do relu */                                                       \
-  "12: \n"                                                            \
+#define SPARSE_F16_F16_W4_SEMI1_v7_HARD_SWISH                        \
+  /* do relu */                                                      \
+  "12: \n"                                                           \
   "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"          \
   "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
-  "vmul.f16   d16,  d16, d2              \n"                          \
-  "vmax.f16   d8,  d8,  d6                \n"                         \
-  "vmin.f16   d8,  d8,  d4                \n"                         \
-  "vmul.f16   d16, d16, d8              \n"                           \
+  "vmul.f16   d16,  d16, d2              \n"                         \
+  "vmax.f16   d8,  d8,  d6                \n"                        \
+  "vmin.f16   d8,  d8,  d4                \n"                        \
+  "vmul.f16   d16, d16, d8              \n"                          \
   "9:\n"
 
 /**
@@ -2474,7 +2474,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
     "q12", "q13", "q14", "q15", "r0", "r2", \
     "cc", "memory"
 
-#define SET_ASSM_INPUT_PARAM2_V7_F16         \
+#define SET_ASSM_INPUT_PARAM2_V7_F16          \
   : [a_ptr] "+r"(cur_w),                  \
     [b_ptr] "+r"(cur_b),                  \
     [c_ptr] "+r"(out_ptr),                \

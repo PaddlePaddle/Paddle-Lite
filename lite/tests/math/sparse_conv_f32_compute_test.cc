@@ -23,8 +23,8 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
-#include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/math/conv_ut.h"
+#include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
@@ -90,7 +90,7 @@ bool test_spmm_fp32(bool tra,
   tc_basic.set_precision(PRECISION(kFloat));
   tc_backup.set_precision(PRECISION(kFloat));
   tbias.set_precision(PRECISION(kFloat));
-  
+
   fill_tensor_rand(ta, -1.f, 1.f);
   fill_tensor_rand(tb, -1.f, 1.f);
   fill_tensor_rand(tbias, -1.f, 1.f);
@@ -431,9 +431,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
                                     << "test m = " << m << ", n=" << n
                                     << ", k=" << k << ", bias: "
                                     << (has_bias ? "true" : "false")
-                                    << ", act: "
-                                    << flag_act
-                                    << ", semi: "
+                                    << ", act: " << flag_act << ", semi: "
                                     << (has_semi ? "true" : "false")
                                     << ", trans A: " << (tra ? "true" : "false")
                                     << ", trans B: " << (trb ? "true" : "false")
@@ -443,9 +441,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
                                     << "test m = " << m << ", n=" << n
                                     << ", k=" << k << ", bias: "
                                     << (has_bias ? "true" : "false")
-                                    << ", act: "
-                                    << flag_act
-                                    << ", semi: "
+                                    << ", act: " << flag_act << ", semi: "
                                     << (has_semi ? "true" : "false")
                                     << ", trans A: " << (tra ? "true" : "false")
                                     << ", trans B: " << (trb ? "true" : "false")

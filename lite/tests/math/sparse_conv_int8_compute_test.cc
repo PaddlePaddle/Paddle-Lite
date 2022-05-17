@@ -23,8 +23,8 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
-#include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/math/conv_ut.h"
+#include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
@@ -517,14 +517,14 @@ TEST(TestLiteSpmmInt8, spmm_prepacked_int8) {
                                                    th,
                                                    sp);
                         if (flag) {
-                          VLOG(4)
-                              << "test m = " << m << ", n=" << n << ", k=" << k
-                              << ", bias: " << (has_bias ? "true" : "false")
-                              << ", semi: " << (has_semi ? "true" : "false")
-                              << ", relu: " << relu_type
-                              << ", trans A: " << (tra ? "true" : "false")
-                              << ", trans B: " << (trb ? "true" : "false")
-                              << " passed\n";
+                          VLOG(4) << "test m = " << m << ", n=" << n
+                                  << ", k=" << k
+                                  << ", bias: " << (has_bias ? "true" : "false")
+                                  << ", semi: " << (has_semi ? "true" : "false")
+                                  << ", relu: " << relu_type
+                                  << ", trans A: " << (tra ? "true" : "false")
+                                  << ", trans B: " << (trb ? "true" : "false")
+                                  << " passed\n";
                         } else {
                           LOG(FATAL)
                               << "test m = " << m << ", n=" << n << ", k=" << k

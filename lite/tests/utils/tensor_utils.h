@@ -63,7 +63,9 @@ void fill_tensor_const(Tensor& tensor, float value) {  // NOLINT
       break;
 #ifdef ENABLE_ARM_FP16
     case PRECISION(kFP16):
-      fill_tensor_host_const_impl(tensor.mutable_data<float16_t>(), static_cast<float16_t>(value), size);
+      fill_tensor_host_const_impl(tensor.mutable_data<float16_t>(),
+                                  static_cast<float16_t>(value),
+                                  size);
       break;
 #endif
     case PRECISION(kFloat):
@@ -307,7 +309,7 @@ void tensor_cmp_host(const Tensor& src1_basic,
                        max_ratio,
                        max_diff);
 #endif
-     return;
+      return;
     case PRECISION(kInt32):
       data_diff_kernel(
           src1_basic.data<int>(), src2.data<int>(), size, max_ratio, max_diff);
@@ -375,8 +377,8 @@ void tensor_diff(const Tensor& t1, const Tensor& t2, Tensor& tdiff) {  // NOLINT
                          t1.precision());
       return;
 #ifdef ENABLE_ARM_FP16
-  case PRECISION(kFP16):
-    tensor_diff_kernel(t1.data<float16_t>(),
+    case PRECISION(kFP16):
+      tensor_diff_kernel(t1.data<float16_t>(),
                          t2.data<float16_t>(),
                          tdiff.mutable_data<float16_t>(),
                          size1,
