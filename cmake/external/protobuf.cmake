@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 # Always invoke `FIND_PACKAGE(Protobuf)` for importing function protobuf_generate_cpp
 IF(NOT WIN32)
@@ -181,7 +182,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(PROTOBUF_TAG "9f75c5aa851cd877fb0d93ccc31b8567a6706546")
     SET(OPTIONAL_CACHE_ARGS "")
     SET(OPTIONAL_ARGS "")
-    SET(SOURCE_DIR "${CMAKE_SOURCE_DIR}/third-party/protobuf-host")
+    SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
 
     IF(BUILD_FOR_HOST)
         # set for server compile.
@@ -201,7 +202,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         # https://github.com/tensor-tang/protobuf.git
         SET(PROTOBUF_REPO "")
         SET(PROTOBUF_TAG "mobile")
-        SET(SOURCE_DIR "${CMAKE_SOURCE_DIR}/third-party/protobuf-mobile")
+        SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-mobile")
         SET(OPTIONAL_ARGS "-Dprotobuf_WITH_ZLIB=OFF"
                 ${CROSS_COMPILE_CMAKE_ARGS}
                 "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -309,3 +310,12 @@ IF(NOT PROTOBUF_FOUND)
     ENDIF()
 
 ENDIF(NOT PROTOBUF_FOUND)
+
+else()
+option(protobuf_BUILD_TESTS "" OFF)
+option(protobuf_WITH_ZLIB "" OFF)
+option(protobuf_BUILD_LIBPROTOC "" OFF)
+option(protobuf_BUILD_PROTOC_BINARIES "" OFF)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third-party/protobuf-host/cmake)
+add_library(protobuf ALIAS libprotobuf)
+endif(NOT EMSCRIPTEN)

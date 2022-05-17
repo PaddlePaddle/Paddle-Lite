@@ -18,7 +18,7 @@ endif()
 
 include(ExternalProject)
 
-set(PYBIND_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/pybind)
+set(PYBIND_SOURCE_DIR ${PADDLE_SOURCE_DIR}/third-party/pybind)
 
 include_directories(${PYBIND_SOURCE_DIR}/include)
 
