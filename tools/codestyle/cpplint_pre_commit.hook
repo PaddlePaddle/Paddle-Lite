@@ -4,8 +4,8 @@ TOTAL_ERRORS=0
 if [[ ! $TRAVIS_BRANCH ]]; then
   # install cpplint on local machine.
   if [[ ! $(which cpplint) ]]; then
-    pip3 install pytest-runner  
-    pip3 install cpplint==1.5.4
+    pip install pytest-runner  
+    pip install cpplint==1.5.4
   fi
   # diff files on local machine. 
   files=$(git diff --cached --name-status | awk '$1 != "D" {print $2}')
