@@ -188,7 +188,6 @@ bool test_spmm_fp16(bool tra,
                act_param.hard_swish_offset,
                act_param.hard_swish_threshold);
   }
-  FLAGS_check_result = false;
   Timer t0;
   int count_nonzeroes = 0;
   int count_channels = 0;

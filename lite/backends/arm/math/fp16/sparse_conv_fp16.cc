@@ -1552,15 +1552,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q13,   d8[0]\n"             \
   "vdup.16    q14,   d8[0]\n"             \
   "vdup.16    q15,   d8[0]\n"             \
-  "cbz    %w[n],    3f\n"                 \
+  "cmp    %[n],    #0\n"                 \
+  "beq 3f\n"\
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #8\n"          \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
   "pld  [%[widx_dmap], #128]    \n"       \
   "vmla.f16    q10,   q1,  d0[0]\n"       \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "vld1.16  {d10-d13}, [r2]\n" \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q11,   q2,  d0[0]\n"       \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q12,   q3,  d0[0]\n"       \
@@ -1568,34 +1573,43 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "add   %[b_ptr],  %[b_ptr], r0\n"       \
   "vmla.f16    q14,   q5,  d0[0]\n"       \
   "vmla.f16    q15,   q6,  d0[0]\n"       \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "subs    %[k],   %[k],   #1\n"          \
+  "subs    %[n],   #1\n"          \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q10,   q1,  d0[1]\n"       \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q11,   q2,  d0[1]\n"       \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q12,   q3,  d0[1]\n"       \
   "add   %[b_ptr],  %[b_ptr], r0\n"       \
   "vmla.f16    q13,   q4,  d0[1]\n"       \
   "vmla.f16    q14,   q5,  d0[1]\n"       \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q15,   q6,  d0[1]\n"       \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q10,   q1,  d0[2]\n"       \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "vmla.f16    q11,   q2,  d0[2]\n"       \
   "add   %[b_ptr],  %[b_ptr], r0\n"       \
+  "mov   r2,   %[b_ptr]\n"                \
   "vmla.f16    q12,   q3,  d0[2]\n"       \
   "vmla.f16    q13,   q4,  d0[2]\n"       \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q14,   q5,  d0[2]\n"       \
   "vmla.f16    q15,   q6,  d0[2]\n"       \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
   "vmla.f16    q10,   q1,  d0[3]\n"       \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "vmla.f16    q11,   q2,  d0[3]\n"       \
   "add   %[b_ptr],  %[b_ptr], r0\n"       \
   "vmla.f16    q12,   q3,  d0[3]\n"       \
@@ -1603,15 +1617,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q14,   q5,  d0[3]\n"       \
   "vmla.f16    q15,   q6,  d0[3]\n"       \
   "bne     0b\n"                          \
-  "cbz    %w[m],    1f\n"                 \
+  "3: \n"\
+  "cmp    %[m],    #0\n"                 \
+  "beq 1f\n"\
   "vld1.16  d0, [%[a_ptr]]\n"             \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #8\n"          \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
-  "subs  %w[m],   %w[m],   #1\n"          \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
+  "subs  %[m],   #1\n"          \
   "pld  [%[widx_dmap], #128]    \n"       \
   "vmla.f16    q10,   q1,  d0[0]\n"       \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "vmla.f16    q11,   q2,  d0[0]\n"       \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q12,   q3,  d0[0]\n"       \
@@ -1620,22 +1639,28 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q14,   q5,  d0[0]\n"       \
   "vmla.f16    q15,   q6,  d0[0]\n"       \
   "beq     1f\n"                          \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q10,   q1,  d0[1]\n"       \
   "vmla.f16    q11,   q2,  d0[1]\n"       \
   "add   %[b_ptr],  %[b_ptr], r0\n"       \
-  "subs  %w[m],   %w[m],   #1\n"          \
+  "subs  %[m],   #1\n"          \
   "vmla.f16    q12,   q3,  d0[1]\n"       \
   "vmla.f16    q13,   q4,  d0[1]\n"       \
   "vmla.f16    q14,   q5,  d0[1]\n"       \
   "vmla.f16    q15,   q6,  d0[1]\n"       \
   "beq     1f\n"                          \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"        \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"   \
-  "vld1.16  {d10-d13}, [%[b_ptr], #64]\n" \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d6-d9}, [r2]\n"   \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d10-d13}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
   "vmla.f16    q10,   q1,  d0[2]\n"       \
   "vmla.f16    q11,   q2,  d0[2]\n"       \
@@ -1655,12 +1680,15 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[b_ptr], #192]    \n"         \
   "vdup.16    q12,   d8[0]\n"           \
   "vdup.16    q13,   d8[0]\n"           \
-  "cbz    %w[n],    3f\n"               \
+  "cmp    %[n],    #0\n"                 \
+  "beq 3f\n"\
   "0:\n"                                \
   "vld1.16  d0, [%[a_ptr]]\n"           \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #8\n"        \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "pld  [%[widx_dmap], #128]    \n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
   "vmla.f16    q10,   q1,  d0[0]\n"     \
@@ -1668,38 +1696,49 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "add   %[b_ptr],  %[b_ptr], r0\n"     \
   "vmla.f16    q12,   q3,  d0[0]\n"     \
   "vmla.f16    q13,   q4,  d0[0]\n"     \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "subs    %[k],   %[k],   #1\n"        \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
+  "add r2, r2, #32\n"          \
+  "subs    %[n],   #1\n"        \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
   "vmla.f16    q10,   q1,  d0[1]\n"     \
   "vmla.f16    q11,   q2,  d0[1]\n"     \
   "add   %[b_ptr],  %[b_ptr], r0\n"     \
   "vmla.f16    q12,   q3,  d0[1]\n"     \
   "vmla.f16    q13,   q4,  d0[1]\n"     \
+  "mov   r2,   %[b_ptr]\n"                \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
+  "add r2, r2, #32\n"          \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "vmla.f16    q10,   q1,  d0[2]\n"     \
   "vmla.f16    q11,   q2,  d0[2]\n"     \
   "add   %[b_ptr],  %[b_ptr], r0\n"     \
   "vmla.f16    q12,   q3,  d0[2]\n"     \
   "vmla.f16    q13,   q4,  d0[2]\n"     \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
+  "add r2, r2, #32\n"          \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "vmla.f16    q10,   q1,  d0[3]\n"     \
   "vmla.f16    q11,   q2,  d0[3]\n"     \
   "add   %[b_ptr],  %[b_ptr], r0\n"     \
   "vmla.f16    q12,   q3,  d0[3]\n"     \
   "vmla.f16    q13,   q4,  d0[3]\n"     \
   "bne     0b\n"                        \
-  "cbz    %w[m],    1f\n"               \
+  "3: \n"\
+  "cmp    %[m],    #0\n"                 \
+  "beq 1f\n"\
   "vld1.16  d0, [%[a_ptr]]\n"           \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #8\n"        \
   "pld  [%[widx_dmap], #128]    \n"     \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
-  "subs  %w[m],   %w[m],   #1\n"        \
+  "vld1.16  {d6-d9}, [r2]\n" \
+  "subs  %[m],   #1\n"        \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
   "vmla.f16    q10,   q1,  d0[0]\n"     \
   "vmla.f16    q11,   q2,  d0[0]\n"     \
@@ -1707,18 +1746,22 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q12,   q3,  d0[0]\n"     \
   "vmla.f16    q13,   q4,  d0[0]\n"     \
   "beq     1f\n"                        \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
-  "subs  %w[m],   %w[m],   #1\n"        \
+  "subs  %[m],   #1\n"        \
   "vmla.f16    q10,   q1,  d0[1]\n"     \
   "vmla.f16    q11,   q2,  d0[1]\n"     \
   "add   %[b_ptr],  %[b_ptr], r0\n"     \
   "vmla.f16    q12,   q3,  d0[1]\n"     \
   "vmla.f16    q13,   q4,  d0[1]\n"     \
   "beq     1f\n"                        \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"      \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n" \
+  "add r2, r2, #32\n"          \
+  "vld1.16  {d6-d9}, [r2]\n" \
   "ldr   r0, [%[widx_dmap]],   #4\n"    \
   "vmla.f16    q10,   q1,  d0[2]\n"     \
   "vmla.f16    q11,   q2,  d0[2]\n"     \
@@ -1734,7 +1777,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q10,   d8[0]\n"        \
   "vdup.16    q11,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cbz    %w[n],    3f\n"            \
+  "cmp    %[n],    #0\n"                 \
+  "beq 3f\n"\
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
@@ -1744,7 +1788,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "vmla.f16    q11,   q2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs    %[k],   %[k],   #1\n"     \
+  "subs    %[n],   #1\n"     \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
@@ -1761,19 +1805,21 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q11,   q2,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "cbz    %w[m],    1f\n"            \
+  "3: \n"\
+  "cmp    %[m],    #0\n"                 \
+  "beq 1f\n"\
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "vmla.f16    q11,   q2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"   \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
   "vmla.f16    q11,   q2,  d0[1]\n"  \
@@ -1792,7 +1838,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"   \
   "vdup.16    q10,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cbz    %w[n],    3f\n"            \
+  "cmp    %[n],    #0\n"                 \
+  "beq 3f\n"\
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
@@ -1801,7 +1848,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs    %[k],   %[k],   #1\n"     \
+  "subs   %[n],   #1\n"     \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
@@ -1815,18 +1862,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    q10,   q1,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "cbz    %w[m],    1f\n"            \
+  "3: \n"\
+  "cmp    %[m],    #0\n"                 \
+  "beq 1f\n"\
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"   \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    q10,   q1,  d0[1]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
@@ -1843,7 +1892,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"   \
   "vdup.16    q10,   d8[0]\n"        \
   "pld  [%[b_ptr], #192]    \n"      \
-  "cbz    %w[n],    3f\n"            \
+  "cmp    %[n],    #0\n"                 \
+  "beq 3f\n"\
   "0:\n"                             \
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
@@ -1852,7 +1902,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
-  "subs    %[k],   %[k],   #1\n"     \
+  "subs    %[n],   #1\n"     \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[1]\n"  \
@@ -1866,18 +1916,20 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "vmla.f16    d20,   d2,  d0[3]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "bne     0b\n"                     \
-  "cbz    %w[m],    1f\n"            \
+  "3: \n"\
+  "cmp    %[m],    #0\n"                 \
+  "beq 1f\n"\
   "vld1.16  d0, [%[a_ptr]]\n"        \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
   "add %[a_ptr], %[a_ptr], #8\n"     \
   "pld  [%[widx_dmap], #128]    \n"  \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[0]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "beq     1f\n"                     \
   "vld1.16  {d2}, [%[b_ptr]]\n"      \
-  "subs  %w[m],   %w[m],   #1\n"     \
+  "subs  %[m],   #1\n"     \
   "ldr   r0, [%[widx_dmap]],   #4\n" \
   "vmla.f16    d20,   d2,  d0[1]\n"  \
   "add   %[b_ptr],  %[b_ptr], r0\n"  \
@@ -1894,7 +1946,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "vmax.f16   q11,  q11,  q0\n" /* relu */       \
   "vmax.f16   q12,  q12,  q0\n" /* relu */       \
@@ -1909,7 +1961,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "vmax.f16   q11,  q11,  q0\n" /* relu */       \
   "vmax.f16   q12,  q12,  q0\n" /* relu */       \
@@ -1922,7 +1974,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "vmax.f16   q11,  q11,  q0\n" /* relu */       \
   "b      9f                \n" /* relu end */
@@ -1933,7 +1985,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "b      9f                \n" /* relu end */
 
@@ -1943,7 +1995,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   d0, #0\n"         /* for relu */   \
+  "vmov.i16   d0, #0\n"         /* for relu */   \
   "vmax.f16   d20,  d20,  d0\n" /* relu */       \
   "b      9f                \n" /* relu end */
 
@@ -1952,7 +2004,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q10,  q10,  q0\n"      /* relu6 */       \
   "vmax.f16   q11,  q11,  q0\n"      /* relu6 */       \
@@ -1973,7 +2025,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q10,  q10,  q0\n"      /* relu6 */       \
   "vmax.f16   q11,  q11,  q0\n"      /* relu6 */       \
@@ -1990,7 +2042,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q10,  q10,  q0\n"      /* relu6 */       \
   "vmax.f16   q11,  q11,  q0\n"      /* relu6 */       \
@@ -2003,7 +2055,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q10,  q10,  q0\n"      /* relu6 */       \
   "vmin.f16   q10,  q10,  q1\n"      /* relu6 */       \
@@ -2014,7 +2066,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   d0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   d0,   #0\n"            /* for relu6 */   \
   "vdup.16    d1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   d10,  d10,  d0\n"      /* relu6 */       \
   "vmin.f16   d10,  d10,  d1\n"      /* relu6 */       \
@@ -2025,8 +2077,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q10,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q10,    q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q11,    q0    \n" /* vcgeq_f32 */         \
@@ -2052,8 +2104,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q10,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q10,    q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q11,    q0    \n" /* vcgeq_f32 */         \
@@ -2073,8 +2125,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q10,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q10,    q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q11,    q0    \n" /* vcgeq_f32 */         \
@@ -2088,8 +2140,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q10,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q10,    q1    \n" /* vmulq_f32 */         \
   "vbif       q10,    q3,    q2    \n"                         \
@@ -2100,8 +2152,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   d0, #0\n"                /* for relu */          \
-  "vdup.32    d1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   d0, #0\n"                /* for relu */          \
+  "vdup.16    d1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   d2,    d20,    d0    \n" /* vcgeq_f32 */         \
   "vmul.f16   d3,    d20,    d1    \n" /* vmulq_f32 */         \
   "vbif       d20,    d3,    d2    \n"                         \
@@ -2110,9 +2162,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W48_v7_HARD_SWISH                              \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q10, q0               \n"                           \
   "vadd.f16   q5, q11, q0               \n"                           \
   "vadd.f16   q6, q12, q0               \n"                           \
@@ -2148,9 +2200,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W32_v7_HARD_SWISH                              \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q10, q0               \n"                           \
   "vadd.f16   q5, q11, q0               \n"                           \
   "vadd.f16   q6, q12, q0               \n"                           \
@@ -2176,9 +2228,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W16_v7_HARD_SWISH                              \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q10, q0               \n"                           \
   "vadd.f16   q5, q11, q0               \n"                           \
   "vmul.f16   q10, q10, q1              \n"                           \
@@ -2194,9 +2246,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W8_v7_HARD_SWISH                               \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q10, q0               \n"                           \
   "vmul.f16   q10, q10, q1              \n"                           \
   "vmax.f16   q4, q4, q3                \n"                           \
@@ -2207,9 +2259,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W4_v7_HARD_SWISH                               \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   d6,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   d6,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   d8, d20,  d0               \n"                          \
   "vmul.f16   d20, d20, d2              \n"                           \
   "vmax.f16   d8, d8,   d6              \n"                           \
@@ -2348,7 +2400,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
     SPARSE_FP16_LIKELY(mc >= 48 * sizeof(float16_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
         SPARSE_COMPUTE_LOOP
-        float16_t* hs_param = hs_param;
+        float16_t* vhs_param = hs_param;
         // clang-format off
             asm volatile(SPARSE_F16_F16_W48_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2357,7 +2409,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap),
-                [hs_param] "+r"(hs_param)
+                [hs_param] "+r"(vhs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -2395,7 +2447,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       if (mc >= (32 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = hs_param;
+          float16_t* vhs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W32_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2404,7 +2456,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap),
-                [hs_param] "+r"(hs_param)
+                [hs_param] "+r"(vhs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -2439,7 +2491,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       if (mc >= (16 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = hs_param;
+          float16_t* vhs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W16_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2448,7 +2500,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap),
-                [hs_param] "+r"(hs_param)
+                [hs_param] "+r"(vhs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -2483,7 +2535,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       if (mc >= (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = hs_param;
+          float16_t* vhs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W8_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2492,7 +2544,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap),
-                [hs_param] "+r"(hs_param)
+                [hs_param] "+r"(vhs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -2527,7 +2579,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       if (mc >= (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = hs_param;
+          float16_t* vhs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W4_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2536,7 +2588,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap),
-                [hs_param] "+r"(hs_param)
+                [hs_param] "+r"(vhs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -2575,9 +2627,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
             SPARSE_FP16_LIKELY(nnz != 0) {
               do {
                 const intptr_t diff = *dmap++;
-                vout0 +=
-                    cur_b[0] * cur_w[0] cur_b =
-                        (const float16_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+                vout0 += cur_b[0] * cur_w[0];
+                cur_b = (const float16_t*)((uintptr_t)cur_b + (uintptr_t)diff);
                 cur_w += 1;
               } while (--nnz != 0);
             }
@@ -2594,9 +2645,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                 vout0 + static_cast<float16_t>(act_param.hard_swish_offset);
             auto tmp_1 =
                 vout0 / static_cast<float16_t>(act_param.hard_swish_scale);
-            tmp0 = tmp0 > 0.f ? (tmp0 < static_cast<float16_t>(
+            tmp_0 = tmp_0 > 0.f ? (tmp_0 < static_cast<float16_t>(
                                             act_param.hard_swish_threshold)
-                                     ? tmp0
+                                     ? tmp_0
                                      : static_cast<float16_t>(
                                            act_param.hard_swish_threshold))
                               : 0.f;

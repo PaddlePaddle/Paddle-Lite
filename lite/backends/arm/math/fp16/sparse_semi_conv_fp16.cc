@@ -437,19 +437,19 @@ namespace fp16 {
   "beq   9f                     \n"      \
   "cmp    %w[vflag_act],    #1\n"        \
   "bne   10f                     \n"     \
-  "movi   v30.8h, #0\n"                  \
-  "fmax   v20.8h, v20.8h, v30.8h\n"      \
-  "fmax   v21.8h, v21.8h, v30.8h\n"      \
-  "fmax   v22.8h, v22.8h, v30.8h\n"      \
-  "fmax   v23.8h, v23.8h, v30.8h\n"      \
-  "fmax   v24.8h, v24.8h, v30.8h\n"      \
-  "fmax   v25.8h, v25.8h, v30.8h\n"      \
-  "fmax   v26.8h, v26.8h, v30.8h\n"      \
-  "fmax   v27.8h, v27.8h, v30.8h\n"      \
-  "fmax   v28.8h, v28.8h, v30.8h\n"      \
-  "fmax   v29.8h, v29.8h, v30.8h\n"      \
-  "fmax   v30.8h, v30.8h, v30.8h\n"      \
-  "fmax   v31.8h, v31.8h, v30.8h\n"      \
+  "movi   v10.8h, #0\n"                  \
+  "fmax   v20.8h, v20.8h, v10.8h\n"      \
+  "fmax   v21.8h, v21.8h, v10.8h\n"      \
+  "fmax   v22.8h, v22.8h, v10.8h\n"      \
+  "fmax   v23.8h, v23.8h, v10.8h\n"      \
+  "fmax   v24.8h, v24.8h, v10.8h\n"      \
+  "fmax   v25.8h, v25.8h, v10.8h\n"      \
+  "fmax   v26.8h, v26.8h, v10.8h\n"      \
+  "fmax   v27.8h, v27.8h, v10.8h\n"      \
+  "fmax   v28.8h, v28.8h, v10.8h\n"      \
+  "fmax   v29.8h, v29.8h, v10.8h\n"      \
+  "fmax   v30.8h, v30.8h, v10.8h\n"      \
+  "fmax   v31.8h, v31.8h, v10.8h\n"      \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W48_SEMI1_V8_RELU \
@@ -458,13 +458,13 @@ namespace fp16 {
   "beq   9f                     \n"      \
   "cmp    %w[vflag_act],    #1\n"        \
   "bne   10f                     \n"     \
-  "movi   v30.8h, #0\n"                  \
-  "fmax   v20.8h, v20.8h, v30.8h\n"      \
-  "fmax   v21.8h, v21.8h, v30.8h\n"      \
-  "fmax   v22.8h, v22.8h, v30.8h\n"      \
-  "fmax   v23.8h, v23.8h, v30.8h\n"      \
-  "fmax   v24.8h, v24.8h, v30.8h\n"      \
-  "fmax   v25.8h, v25.8h, v30.8h\n"      \
+  "movi   v10.8h, #0\n"                  \
+  "fmax   v20.8h, v20.8h, v10.8h\n"      \
+  "fmax   v21.8h, v21.8h, v10.8h\n"      \
+  "fmax   v22.8h, v22.8h, v10.8h\n"      \
+  "fmax   v23.8h, v23.8h, v10.8h\n"      \
+  "fmax   v24.8h, v24.8h, v10.8h\n"      \
+  "fmax   v25.8h, v25.8h, v10.8h\n"      \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W32_SEMI2_V8_RELU \
@@ -473,15 +473,15 @@ namespace fp16 {
   "beq   9f                     \n"      \
   "cmp    %w[vflag_act],    #1\n"        \
   "bne   10f                     \n"     \
-  "movi   v30.8h, #0\n"                  \
-  "fmax   v20.8h, v20.8h, v30.8h\n"      \
-  "fmax   v21.8h, v21.8h, v30.8h\n"      \
-  "fmax   v22.8h, v22.8h, v30.8h\n"      \
-  "fmax   v23.8h, v23.8h, v30.8h\n"      \
-  "fmax   v26.8h, v26.8h, v30.8h\n"      \
-  "fmax   v27.8h, v27.8h, v30.8h\n"      \
-  "fmax   v28.8h, v28.8h, v30.8h\n"      \
-  "fmax   v29.8h, v29.8h, v30.8h\n"      \
+  "movi   v10.8h, #0\n"                  \
+  "fmax   v20.8h, v20.8h, v10.8h\n"      \
+  "fmax   v21.8h, v21.8h, v10.8h\n"      \
+  "fmax   v22.8h, v22.8h, v10.8h\n"      \
+  "fmax   v23.8h, v23.8h, v10.8h\n"      \
+  "fmax   v26.8h, v26.8h, v10.8h\n"      \
+  "fmax   v27.8h, v27.8h, v10.8h\n"      \
+  "fmax   v28.8h, v28.8h, v10.8h\n"      \
+  "fmax   v29.8h, v29.8h, v10.8h\n"      \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W32_SEMI1_V8_RELU \
@@ -503,11 +503,11 @@ namespace fp16 {
   "beq   9f                     \n"      \
   "cmp    %w[vflag_act],    #1\n"        \
   "bne   10f                     \n"     \
-  "movi   v30.8h, #0\n"                  \
-  "fmax   v20.8h, v20.8h, v30.8h\n"      \
-  "fmax   v21.8h, v21.8h, v30.8h\n"      \
-  "fmax   v26.8h, v26.8h, v30.8h\n"      \
-  "fmax   v27.8h, v27.8h, v30.8h\n"      \
+  "movi   v10.8h, #0\n"                  \
+  "fmax   v20.8h, v20.8h, v10.8h\n"      \
+  "fmax   v21.8h, v21.8h, v10.8h\n"      \
+  "fmax   v26.8h, v26.8h, v10.8h\n"      \
+  "fmax   v27.8h, v27.8h, v10.8h\n"      \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W16_SEMI1_V8_RELU \
@@ -527,9 +527,9 @@ namespace fp16 {
   "beq   9f                     \n"     \
   "cmp    %w[vflag_act],    #1\n"       \
   "bne   10f                     \n"    \
-  "movi   v30.8h, #0\n"                 \
-  "fmax   v20.8h, v20.8h, v30.8h\n"     \
-  "fmax   v26.8h, v26.8h, v30.8h\n"     \
+  "movi   v10.8h, #0\n"                 \
+  "fmax   v20.8h, v20.8h, v10.8h\n"     \
+  "fmax   v26.8h, v26.8h, v10.8h\n"     \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W8_SEMI1_V8_RELU \
@@ -548,9 +548,9 @@ namespace fp16 {
   "beq   9f                     \n"     \
   "cmp    %w[vflag_act],    #1\n"       \
   "bne   10f                     \n"    \
-  "movi   v30.4h, #0\n"                 \
-  "fmax   v20.4h, v20.4h, v30.4h\n"     \
-  "fmax   v26.4h, v26.4h, v30.4h\n"     \
+  "movi   v10.4h, #0\n"                 \
+  "fmax   v20.4h, v20.4h, v10.4h\n"     \
+  "fmax   v26.4h, v26.4h, v10.4h\n"     \
   "b      9f                    \n"
 
 #define SPARSE_F16_F16_W4_SEMI1_V8_RELU \
@@ -1618,7 +1618,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #else  // armv7
 
 #define SPARSE_F16_F16_W32_SEMI2_v7_KERNEL \
-  "vld1.32    {d0},   [%[bias_ptr]]\n"     \
+  "vld1.16    {d0},   [%[bias_ptr]]\n"     \
   "pld  [%[a_ptr], #64]    \n"             \
   "pld  [%[widx_dmap], #64]    \n"         \
   "vdup.16    q8,    d0[0]\n"              \
@@ -1630,13 +1630,16 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q13,   d0[1]\n"              \
   "vdup.16    q14,   d0[1]\n"              \
   "vdup.16    q15,   d0[1]\n"              \
-  "cbz    %w[k],    1f\n"                  \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #4\n"           \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"    \
+  "vld1.16  {d6-d9}, [r2]\n"    \
   "vmla.f16    q8,   q1,  d0[0]\n"         \
   "vmla.f16    q12,  q1,  d0[1]\n"         \
   "vmla.f16    q9,   q2,  d0[0]\n"         \
@@ -1660,12 +1663,15 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[b_ptr], #192]    \n"            \
   "vdup.16    q10,   d0[0]\n"              \
   "vdup.16    q11,   d0[0]\n"              \
-  "cbz    %w[k],    1f\n"                  \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
+  "mov   r2,   %[b_ptr]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
+  "add r2, r2, #32\n"          \
   "add %[a_ptr], %[a_ptr], #2\n"           \
-  "vld1.16  {d6-d9}, [%[b_ptr], #32]\n"    \
+  "vld1.16  {d6-d9}, [r2]\n"    \
   "pld  [%[widx_dmap], #128]    \n"        \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
   "subs    %[k],   %[k],   #1\n"           \
@@ -1678,7 +1684,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "1:\n"
 
 #define SPARSE_F16_F16_W16_SEMI2_v7_KERNEL \
-  "vld1.32    {d0},   [%[bias_ptr]]\n"     \
+  "vld1.16    {d0},   [%[bias_ptr]]\n"     \
   "pld  [%[a_ptr], #64]    \n"             \
   "pld  [%[widx_dmap], #64]    \n"         \
   "vdup.16    q8,    d0[0]\n"              \
@@ -1686,7 +1692,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q12,   d0[1]\n"              \
   "pld  [%[b_ptr], #192]    \n"            \
   "vdup.16    q13,   d0[1]\n"              \
-  "cbz    %w[k],    1f\n"                  \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "ldr   r0, [%[widx_dmap]],   #4\n"       \
@@ -1709,7 +1716,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "vdup.16    q8,   d0[0]\n"               \
   "vdup.16    q9,   d0[0]\n"               \
   "pld  [%[b_ptr], #192]    \n"            \
-  "cbz    %w[k],    1f\n"                  \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                   \
   "vld1.16  d0, [%[a_ptr]]\n"              \
   "vld1.16  {d2-d5}, [%[b_ptr]]\n"         \
@@ -1724,13 +1732,14 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "1:\n"
 
 #define SPARSE_F16_F16_W8_SEMI2_v7_KERNEL \
-  "vld1.32    {d0},   [%[bias_ptr]]\n"    \
+  "vld1.16    {d0},   [%[bias_ptr]]\n"    \
   "pld  [%[a_ptr], #64]    \n"            \
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,    d0[0]\n"             \
   "vdup.16    q12,   d0[1]\n"             \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cbz    %w[k],    1f\n"                 \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
@@ -1750,7 +1759,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,   d0[0]\n"              \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cbz    %w[k],    1f\n"                 \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "vld1.16  {d2-d3}, [%[b_ptr]]\n"        \
@@ -1764,13 +1774,14 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "1:\n"
 
 #define SPARSE_F16_F16_W4_SEMI2_v7_KERNEL \
-  "vld1.32    {d0},   [%[bias_ptr]]\n"    \
+  "vld1.16    {d0},   [%[bias_ptr]]\n"    \
   "pld  [%[a_ptr], #64]    \n"            \
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,    d0[0]\n"             \
   "vdup.16    q12,   d0[1]\n"             \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cbz    %w[k],    1f\n"                 \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "ldr   r0, [%[widx_dmap]],   #4\n"      \
@@ -1790,7 +1801,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "pld  [%[widx_dmap], #64]    \n"        \
   "vdup.16    q8,   d0[0]\n"              \
   "pld  [%[b_ptr], #192]    \n"           \
-  "cbz    %w[k],    1f\n"                 \
+  "cmp    %[k], #0\n" \
+  "beq 1f\n" \
   "0:\n"                                  \
   "vld1.16  d0, [%[a_ptr]]\n"             \
   "vld1.16  {d2}, [%[b_ptr]]\n"           \
@@ -1809,7 +1821,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q8,   q8,   q0\n" /* relu */       \
   "vmax.f16   q9,   q9,   q0\n" /* relu */       \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
@@ -1826,7 +1838,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q10,  q10,  q0\n" /* relu */       \
   "vmax.f16   q11,  q11,  q0\n" /* relu */       \
   "vmax.f16   q12,  q12,  q0\n" /* relu */       \
@@ -1839,7 +1851,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q8,   q8,   q0\n" /* relu */       \
   "vmax.f16   q9,   q9,   q0\n" /* relu */       \
   "vmax.f16   q12,  q12,  q0\n" /* relu */       \
@@ -1852,7 +1864,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q8,  q8,  q0\n"   /* relu */       \
   "vmax.f16   q9,  q9,  q0\n"   /* relu */       \
   "b      9f                \n" /* relu end */
@@ -1863,7 +1875,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q8,   q8,   q0\n" /* relu */       \
   "vmax.f16   q12,  q12,  q0\n" /* relu */       \
   "b      9f                \n" /* relu end */
@@ -1874,7 +1886,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   q8,  q8,  q0\n"   /* relu */       \
   "b      9f                \n" /* relu end */
 
@@ -1884,7 +1896,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   q0, #0\n"         /* for relu */   \
+  "vmov.i16   q0, #0\n"         /* for relu */   \
   "vmax.f16   d16,  d16,  d0\n" /* relu */       \
   "vmax.f16   d24,  d24,  d0\n" /* relu */       \
   "b      9f                \n" /* relu end */
@@ -1895,7 +1907,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "beq   9f                 \n" /* no act end */ \
   "cmp    %[vflag_act],   #1\n" /* skip relu */  \
   "bne   10f                \n" /* other act */  \
-  "vmov.i32   d0, #0\n"         /* for relu */   \
+  "vmov.i16   d0, #0\n"         /* for relu */   \
   "vmax.f16   d16,  d16,  d0\n" /* relu */       \
   "b      9f                \n" /* relu end */
 
@@ -1904,7 +1916,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q9,   q9,   q0\n"      /* relu6 */       \
@@ -1929,7 +1941,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q9,   q9,   q0\n"      /* relu6 */       \
@@ -1946,7 +1958,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q9,   q9,   q0\n"      /* relu6 */       \
@@ -1971,7 +1983,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q9,   q9,   q0\n"      /* relu6 */       \
@@ -1988,7 +2000,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q9,   q9,   q0\n"      /* relu6 */       \
@@ -2001,7 +2013,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmax.f16   q12,  q12,  q0\n"      /* relu6 */       \
@@ -2014,7 +2026,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   q8,   q8,   q0\n"      /* relu6 */       \
   "vmin.f16   q8,   q8,   q1\n"      /* relu6 */       \
@@ -2025,7 +2037,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   d16,  d16,  d0\n"      /* relu6 */       \
   "vmax.f16   d24,  d24,  d0\n"      /* relu6 */       \
@@ -2038,7 +2050,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "10: \n"                                             \
   "cmp   %[vflag_act],  #2       \n" /* check relu6 */ \
   "bne   11f                     \n" /* no act end */  \
-  "vmov.i32   q0,   #0\n"            /* for relu6 */   \
+  "vmov.i16   q0,   #0\n"            /* for relu6 */   \
   "vdup.16    q1,   %[valpha]\n"     /* relu6 alpha */ \
   "vmax.f16   d16,  d16,  d0\n"      /* relu6 */       \
   "vmin.f16   d16,  d16,   d2\n"     /* relu6 */       \
@@ -2049,8 +2061,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,     q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,     q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q9,     q0    \n" /* vcgeq_f32 */         \
@@ -2082,8 +2094,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,    q0    \n"  /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,    q1    \n"  /* vmulq_f32 */         \
   "vcge.f16   q4,    q9,    q0    \n"  /* vcgeq_f32 */         \
@@ -2103,8 +2115,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,     q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,     q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q9,     q0    \n" /* vcgeq_f32 */         \
@@ -2124,8 +2136,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                    \
   "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
   "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"               /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,    q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q4,    q9,    q0    \n" /* vcgeq_f32 */         \
@@ -2139,8 +2151,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                     \
   "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
-  "vmov.i32   q0, #0\n"                /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,     q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,     q1    \n" /* vmulq_f32 */         \
   "vcge.f16   q6,    q12,    q0    \n" /* vcgeq_f32 */         \
@@ -2154,8 +2166,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                    \
   "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
   "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"               /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f16   q2,    q8,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f16   q3,    q8,    q1    \n" /* vmulq_f32 */         \
   "vbif       q8,    q3,    q2    \n"                         \
@@ -2166,8 +2178,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                      \
   "cmp   %[vflag_act],  #3       \n"    /* check leakey relu */ \
   "bne   12f                     \n"    /* no act end */        \
-  "vmov.i32   q0, #0\n"                 /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"         /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                 /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"         /* leakey relu alpha */ \
   "vcge.f16   d4,    d16,     d0    \n" /* vcgeq_f32 */         \
   "vmul.f16   d6,    d16,     d2    \n" /* vmulq_f32 */         \
   "vcge.f16   d12,   d24,    d0    \n"  /* vcgeq_f32 */         \
@@ -2181,8 +2193,8 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
   "11: \n"                                                      \
   "cmp   %[vflag_act],  #3       \n"    /* check leakey relu */ \
   "bne   12f                     \n"    /* no act end */        \
-  "vmov.i32   q0, #0\n"                 /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"         /* leakey relu alpha */ \
+  "vmov.i16   q0, #0\n"                 /* for relu */          \
+  "vdup.16    q1,  %[valpha]\n"         /* leakey relu alpha */ \
   "vcge.f16   d4,    d16,     d0    \n" /* vcgeq_f32 */         \
   "vmul.f16   d6,    d16,     d2    \n" /* vmulq_f32 */         \
   "vbif       d16,   d6,    d4    \n"                           \
@@ -2191,9 +2203,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W32_SEMI2_v7_HARD_SWISH                        \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4,  q8, q0               \n"                           \
   "vadd.f16   q5,  q9, q0               \n"                           \
   "vadd.f16   q6,  q12, q0               \n"                          \
@@ -2239,9 +2251,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W32_SEMI1_v7_HARD_SWISH                        \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q8, q0               \n"                            \
   "vadd.f16   q5, q9, q0               \n"                            \
   "vadd.f16   q6, q10, q0               \n"                           \
@@ -2267,9 +2279,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W16_SEMI2_v7_HARD_SWISH                        \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4,  q8, q0               \n"                           \
   "vadd.f16   q5,  q9, q0               \n"                           \
   "vadd.f16   q6,  q12, q0               \n"                          \
@@ -2295,9 +2307,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W16_SEMI1_v7_HARD_SWISH                        \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q8, q0               \n"                            \
   "vadd.f16   q5, q9, q0               \n"                            \
   "vmul.f16   q8, q8, q1              \n"                             \
@@ -2313,9 +2325,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W8_SEMI2_v7_HARD_SWISH                         \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4,  q8, q0               \n"                           \
   "vadd.f16   q6,  q12, q0               \n"                          \
   "vmul.f16   q8,  q8, q1              \n"                            \
@@ -2331,9 +2343,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W8_SEMI1_v7_HARD_SWISH                         \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   q4, q8, q0               \n"                            \
   "vmul.f16   q8, q8, q1              \n"                             \
   "vmax.f16   q4, q4, q3                \n"                           \
@@ -2344,9 +2356,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W4_SEMI2_v7_HARD_SWISH                         \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vadd.f16   d8,  d16, d0               \n"                          \
   "vadd.f16   d12,  d24, d0               \n"                         \
   "vmul.f16   d16,  d16, d2              \n"                          \
@@ -2362,9 +2374,9 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 #define SPARSE_F16_F16_W4_SEMI1_v7_HARD_SWISH                         \
   /* do relu */                                                       \
   "12: \n"                                                            \
-  "vld1.f16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
-  "vmov.u32   q3,   #0                  @ for hardswish \n"           \
-  "vld1.f16   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vld1.16   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vmov.u16   q3,   #0                  @ for hardswish \n"           \
+  "vld1.16   {d4-d5}, [%[hs_param]]    \n"                           \
   "vmul.f16   d16,  d16, d2              \n"                          \
   "vmax.f16   d8,  d8,  d6                \n"                         \
   "vmin.f16   d8,  d8,  d4                \n"                         \
@@ -2377,7 +2389,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
  * matrix size is MxK, the activation matrix is Kx32, and the required data is
  * MxKxKx32.
  */
-#define SPARSE_F16_F16_W32_SEMI2_v7_OUT                                        \
+#define SPARSE_F16_F16_W32_SEMI2_V7_OUT                                        \
   SPARSE_F16_F16_W32_SEMI2_v7_KERNEL SPARSE_F16_F16_W32_SEMI2_v7_RELU          \
       SPARSE_F16_F16_W32_SEMI2_v7_RELU6 SPARSE_F16_F16_W32_SEMI2_v7_LEAKY_RELU \
           SPARSE_F16_F16_W32_SEMI2_v7_HARD_SWISH                               \
@@ -2385,7 +2397,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
       "vst1.16   {d24-d27},  [%[c_ptr2]]!\n"                                   \
       "vst1.16   {d20-d23},  [%[c_ptr1]]!\n"                                   \
       "vst1.16   {d28-d31},  [%[c_ptr2]]!\n"
-#define SPARSE_F16_F16_W32_SEMI1_v7_OUT                                        \
+#define SPARSE_F16_F16_W32_SEMI1_V7_OUT                                        \
   SPARSE_F16_F16_W32_SEMI1_v7_KERNEL SPARSE_F16_F16_W32_SEMI1_v7_RELU          \
       SPARSE_F16_F16_W32_SEMI1_v7_RELU6 SPARSE_F16_F16_W32_SEMI1_v7_LEAKY_RELU \
           SPARSE_F16_F16_W32_SEMI1_v7_HARD_SWISH                               \
@@ -2398,13 +2410,13 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
  * matrix size is MxK, the activation matrix is Kx16, and the required data is
  * MxKxKx16.
  */
-#define SPARSE_F16_F16_W16_SEMI2_v7_OUT                                        \
+#define SPARSE_F16_F16_W16_SEMI2_V7_OUT                                        \
   SPARSE_F16_F16_W16_SEMI2_v7_KERNEL SPARSE_F16_F16_W16_SEMI2_v7_RELU          \
       SPARSE_F16_F16_W16_SEMI2_v7_RELU6 SPARSE_F16_F16_W16_SEMI2_v7_LEAKY_RELU \
           SPARSE_F16_F16_W16_SEMI2_v7_HARD_SWISH                               \
       "vst1.16   {d16-d19},  [%[c_ptr1]]!\n"                                   \
       "vst1.16   {d24-d27},  [%[c_ptr2]]!\n"
-#define SPARSE_F16_F16_W16_SEMI1_v7_OUT                                        \
+#define SPARSE_F16_F16_W16_SEMI1_V7_OUT                                        \
   SPARSE_F16_F16_W16_SEMI1_v7_KERNEL SPARSE_F16_F16_W16_SEMI1_v7_RELU          \
       SPARSE_F16_F16_W16_SEMI1_v7_RELU6 SPARSE_F16_F16_W16_SEMI1_v7_LEAKY_RELU \
           SPARSE_F16_F16_W16_SEMI1_v7_HARD_SWISH                               \
@@ -2416,13 +2428,13 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
  * matrix size is MxK, the activation matrix is Kx8, and the required data is
  * MxKxKx8.
  */
-#define SPARSE_F16_F16_W8_SEMI2_v7_OUT                                       \
+#define SPARSE_F16_F16_W8_SEMI2_V7_OUT                                       \
   SPARSE_F16_F16_W8_SEMI2_v7_KERNEL SPARSE_F16_F16_W8_SEMI2_v7_RELU          \
       SPARSE_F16_F16_W8_SEMI2_v7_RELU6 SPARSE_F16_F16_W8_SEMI2_v7_LEAKY_RELU \
           SPARSE_F16_F16_W8_SEMI2_v7_HARD_SWISH                              \
       "vst1.16   {d16-d17},  [%[c_ptr1]]!\n"                                 \
       "vst1.16   {d24-d25},  [%[c_ptr2]]!\n"
-#define SPARSE_F16_F16_W8_SEMI1_v7_OUT                                       \
+#define SPARSE_F16_F16_W8_SEMI1_V7_OUT                                       \
   SPARSE_F16_F16_W8_SEMI1_v7_KERNEL SPARSE_F16_F16_W8_SEMI1_v7_RELU          \
       SPARSE_F16_F16_W8_SEMI1_v7_RELU6 SPARSE_F16_F16_W8_SEMI1_v7_LEAKY_RELU \
           SPARSE_F16_F16_W8_SEMI1_v7_HARD_SWISH                              \
@@ -2434,19 +2446,19 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
  * matrix size is MxK, the activation matrix is Kx4, and the required data is
  * MxKxKx4.
  */
-#define SPARSE_F16_F16_W4_SEMI2_v7_OUT                                       \
+#define SPARSE_F16_F16_W4_SEMI2_V7_OUT                                       \
   SPARSE_F16_F16_W4_SEMI2_v7_KERNEL SPARSE_F16_F16_W4_SEMI2_v7_RELU          \
       SPARSE_F16_F16_W4_SEMI2_v7_RELU6 SPARSE_F16_F16_W4_SEMI2_v7_LEAKY_RELU \
           SPARSE_F16_F16_W4_SEMI2_v7_HARD_SWISH                              \
       "vst1.16   {d16},  [%[c_ptr1]]!\n"                                     \
       "vst1.16   {d24},  [%[c_ptr2]]!\n"
-#define SPARSE_F16_F16_W4_SEMI1_v7_OUT                                       \
+#define SPARSE_F16_F16_W4_SEMI1_V7_OUT                                       \
   SPARSE_F16_F16_W4_SEMI1_v7_KERNEL SPARSE_F16_F16_W4_SEMI1_v7_RELU          \
       SPARSE_F16_F16_W4_SEMI1_v7_RELU6 SPARSE_F16_F16_W4_SEMI1_v7_LEAKY_RELU \
           SPARSE_F16_F16_W4_SEMI1_v7_HARD_SWISH                              \
       "vst1.16   {d16-d17},  [%[c_ptr]]!\n"
 
-#define SET_ASSM_INPUT_PARAM1_V7_F32        \
+#define SET_ASSM_INPUT_PARAM1_V7_F16        \
   : [a_ptr] "+r"(cur_w),                  \
     [b_ptr] "+r"(cur_b),                  \
     [c_ptr1] "+r"(out_ptr1),              \
@@ -2454,27 +2466,27 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
     [k] "+r"(nnz),                        \
     [widx_dmap] "+r"(dmap),               \
     [bias_ptr] "+r"(pbias),               \
-    [hs_param] "+r"(hs_param)             \
+    [hs_param] "+r"(vhs_param)             \
   : [vflag_act] "r"(flag_act),            \
     [valpha] "r"(alpha) \
   : "q0", "q1", "q2", "q3", "q4", "q5", \
     "q6", "q7", "q8", "q9", "q10", "q11", \
-    "q12", "q13", "q14", "q15", "r0", "r1", \
+    "q12", "q13", "q14", "q15", "r0", "r2", \
     "cc", "memory"
 
-#define SET_ASSM_INPUT_PARAM2_V7_F32          \
+#define SET_ASSM_INPUT_PARAM2_V7_F16         \
   : [a_ptr] "+r"(cur_w),                  \
     [b_ptr] "+r"(cur_b),                  \
     [c_ptr] "+r"(out_ptr),                \
     [k] "+r"(nnz),                        \
     [widx_dmap] "+r"(dmap),               \
-    [hs_param] "+r"(hs_param)             \
+    [hs_param] "+r"(vhs_param)             \
   : [vbias] "r"(vbias),                   \
     [vflag_act] "r"(flag_act),            \
     [valpha] "r"(alpha) \
   : "q0", "q1", "q2", "q3", "q4", "q5", \
       "q6", "q7", "q8", "q9", "q10", "q11", \
-      "q12", "q13", "q14", "q15", "r0", "r1", \
+      "q12", "q13", "q14", "q15", "r0", "r2", \
       "cc", "memory"
 
 /**
@@ -2517,18 +2529,20 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
     SPARSE_FP16_LIKELY(mc >= 32 * sizeof(float16_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
         GET_SEMI_PARAM_TABLE(float16_t, float16_t)
+        auto vhs_param = hs_param;
         // clang-format off
-            asm volatile(SPARSE_F16_F16_W32_SEMI2_V8_OUT  
-              SET_ASSM_INPUT_PARAM1_V8_F16);
+            asm volatile(SPARSE_F16_F16_W32_SEMI2_V7_OUT  
+              SET_ASSM_INPUT_PARAM1_V7_F16);
         // clang-format on
       }
       LITE_PARALLEL_COMMON_END();
       if
         SPARSE_FP16_UNLIKELY(lave_num != 0) {
           GET_UNSTRUCT_PARAM_TABLE(float16_t, float16_t)
+          auto vhs_param = hs_param;
           // clang-format off
-          asm volatile(SPARSE_F16_F16_W32_SEMI1_V8_OUT  
-            SET_ASSM_INPUT_PARAM2_V8_F16);
+          asm volatile(SPARSE_F16_F16_W32_SEMI1_V7_OUT  
+            SET_ASSM_INPUT_PARAM2_V7_F16);
           // clang-format on
         }
       output = reinterpret_cast<float16_t*>((uintptr_t)output +
@@ -2542,18 +2556,20 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
       if (mc & (16 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
+          auto vhs_param = hs_param;
           // clang-format off
-              asm volatile(SPARSE_F16_F16_W16_SEMI2_V8_OUT  
-                SET_ASSM_INPUT_PARAM1_V8_F16);
+              asm volatile(SPARSE_F16_F16_W16_SEMI2_V7_OUT  
+                SET_ASSM_INPUT_PARAM1_V7_F16);
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
         if
           SPARSE_FP16_UNLIKELY(lave_num != 0) {
             GET_UNSTRUCT_PARAM_TABLE(float16_t, float16_t)
+            auto vhs_param = hs_param;
             // clang-format off
-            asm volatile(SPARSE_F16_F16_W16_SEMI1_V8_OUT  
-              SET_ASSM_INPUT_PARAM2_V8_F16);
+            asm volatile(SPARSE_F16_F16_W16_SEMI1_V7_OUT  
+              SET_ASSM_INPUT_PARAM2_V7_F16);
             // clang-format on
           }
         output = reinterpret_cast<float16_t*>((uintptr_t)output +
@@ -2564,18 +2580,20 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
       if (mc & (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
+          auto vhs_param = hs_param;
           // clang-format off
-              asm volatile(SPARSE_F16_F16_W8_SEMI2_V8_OUT  
-                SET_ASSM_INPUT_PARAM1_V8_F16);
+              asm volatile(SPARSE_F16_F16_W8_SEMI2_V7_OUT  
+                SET_ASSM_INPUT_PARAM1_V7_F16);
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
         if
           SPARSE_FP16_UNLIKELY(lave_num != 0) {
             GET_UNSTRUCT_PARAM_TABLE(float16_t, float16_t)
+            auto vhs_param = hs_param;
             // clang-format off
-            asm volatile(SPARSE_F16_F16_W8_SEMI1_V8_OUT  
-              SET_ASSM_INPUT_PARAM2_V8_F16);
+            asm volatile(SPARSE_F16_F16_W8_SEMI1_V7_OUT  
+              SET_ASSM_INPUT_PARAM2_V7_F16);
             // clang-format on
           }
         output = reinterpret_cast<float16_t*>((uintptr_t)output +
@@ -2586,18 +2604,20 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
       if (mc & (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
+          auto vhs_param = hs_param;
           // clang-format off
-              asm volatile(SPARSE_F16_F16_W4_SEMI2_V8_OUT  
-                SET_ASSM_INPUT_PARAM1_V8_F16);
+              asm volatile(SPARSE_F16_F16_W4_SEMI2_V7_OUT  
+                SET_ASSM_INPUT_PARAM1_V7_F16);
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
         if
           SPARSE_FP16_UNLIKELY(lave_num != 0) {
             GET_UNSTRUCT_PARAM_TABLE(float16_t, float16_t)
+            auto vhs_param = hs_param;
             // clang-format off
-            asm volatile(SPARSE_F16_F16_W4_SEMI1_V8_OUT  
-              SET_ASSM_INPUT_PARAM2_V8_F16);
+            asm volatile(SPARSE_F16_F16_W4_SEMI1_V7_OUT  
+              SET_ASSM_INPUT_PARAM2_V7_F16);
             // clang-format on
           }
         output = reinterpret_cast<float16_t*>((uintptr_t)output +
