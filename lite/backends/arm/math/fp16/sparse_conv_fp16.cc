@@ -1301,7 +1301,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float16_t alpha = 0.f;
-  float16_t hs_param[12] = {0.f};
+  float16_t hs_param[24] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3, hard_swish: 4
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -1314,11 +1314,11 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 0x04;
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 8; i++) {
         hs_param[i] = static_cast<float16_t>(act_param.hard_swish_offset);
-        hs_param[i + 4] =
-            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
         hs_param[i + 8] =
+            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
+        hs_param[i + 16] =
             static_cast<float16_t>(act_param.hard_swish_threshold);
       }
     }
@@ -1357,10 +1357,9 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       B += 96;
       mc -= 96 * sizeof(float16_t);
     }
-
   if
     SPARSE_FP16_UNLIKELY(mc != 0) {
-      if (mc & (48 * sizeof(float16_t))) {
+      if (mc >= (48 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           // clang-format off
@@ -1388,7 +1387,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 48;
         mc -= 48 * sizeof(float16_t);
       }
-      if (mc & (32 * sizeof(float16_t))) {
+      if (mc >= (32 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           // clang-format off
@@ -1415,7 +1414,33 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 32;
         mc -= 32 * sizeof(float16_t);
       }
-      if (mc & (8 * sizeof(float16_t))) {
+      if (mc >= (16 * sizeof(float16_t))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          SPARSE_COMPUTE_LOOP
+          // clang-format off
+            asm volatile(SPARSE_F16_F16_W16_V8_OUT  
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
+                [k] "+r"(nnz),
+                [n] "+r"(pair_num),
+                [m] "+r"(lave_num),
+                [widx_dmap] "+r"(dmap)
+              : [vbias] "r"(vbias),
+                [vflag_act] "r"(flag_act),
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v11", "v12", "v20", 
+              "v21", "w1", "x1", "cc", "memory");
+          // clang-format on
+        }
+        LITE_PARALLEL_COMMON_END();
+        output = reinterpret_cast<float16_t*>((uintptr_t)output +
+                                              16 * sizeof(float16_t));
+        B += 16;
+        mc -= 16 * sizeof(float16_t);
+      }
+      if (mc >= (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           // clang-format off
@@ -1441,7 +1466,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 8;
         mc -= 8 * sizeof(float16_t);
       }
-      if (mc & (4 * sizeof(float16_t))) {
+      if (mc >= (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           // clang-format off
@@ -1467,7 +1492,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc & (1 * sizeof(float16_t))) {
+      if (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;
@@ -1482,6 +1507,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
             }
           if (flag_act == 1) {
             vout0 = vout0 > 0.f ? vout0 : 0.f;
+          } else if (flag_act == 0) {
           } else if (flag_act == 2) {
             vout0 = vout0 > 0.f ? vout0 : 0.f;
             vout0 = vout0 > alpha ? alpha : vout0;
@@ -1502,6 +1528,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           } else {
             LOG(FATAL) << "This act: " << flag_act << " doesn't support";
           }
+          cur_output[0] = vout0;
         }
         LITE_PARALLEL_COMMON_END();
         output = reinterpret_cast<float16_t*>((uintptr_t)output +
@@ -2289,7 +2316,8 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
                                 ARMContext* ctx) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
-  float16_t hs_param[12] = {0.f};
+  volatile float16_t alpha = 0.f;
+  float16_t hs_param[24] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3, hard_swish: 4
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -2302,11 +2330,11 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
       alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 0x04;
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 8; i++) {
         hs_param[i] = static_cast<float16_t>(act_param.hard_swish_offset);
-        hs_param[i + 4] =
-            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
         hs_param[i + 8] =
+            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
+        hs_param[i + 16] =
             static_cast<float16_t>(act_param.hard_swish_threshold);
       }
     }
@@ -2320,7 +2348,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
     SPARSE_FP16_LIKELY(mc >= 48 * sizeof(float16_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
         SPARSE_COMPUTE_LOOP
-        float16_t* hs_param = vhs_param;
+        float16_t* hs_param = hs_param;
         // clang-format off
             asm volatile(SPARSE_F16_F16_W48_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2364,10 +2392,10 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
 
   if
     SPARSE_FP16_UNLIKELY(mc != 0) {
-      if (mc & (32 * sizeof(float16_t))) {
+      if (mc >= (32 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = vhs_param;
+          float16_t* hs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W32_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2408,10 +2436,10 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 32;
         mc -= 32 * sizeof(float16_t);
       }
-      if (mc & (16 * sizeof(float16_t))) {
+      if (mc >= (16 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = vhs_param;
+          float16_t* hs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W16_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2452,10 +2480,10 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 16;
         mc -= 16 * sizeof(float16_t);
       }
-      if (mc & (8 * sizeof(float16_t))) {
+      if (mc >= (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = vhs_param;
+          float16_t* hs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W8_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2496,10 +2524,10 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 8;
         mc -= 8 * sizeof(float16_t);
       }
-      if (mc & (4 * sizeof(float16_t))) {
+      if (mc >= (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
-          float16_t* hs_param = vhs_param;
+          float16_t* hs_param = hs_param;
           // clang-format off
             asm volatile(SPARSE_F16_F16_W4_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -2539,7 +2567,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc & (1 * sizeof(float16_t))) {
+      if (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;
@@ -2555,6 +2583,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
             }
           if (flag_act == 1) {
             vout0 = vout0 > 0.f ? vout0 : 0.f;
+          } else if (flag_act == 0) {
           } else if (flag_act == 2) {
             vout0 = vout0 > 0.f ? vout0 : 0.f;
             vout0 = vout0 > alpha ? alpha : vout0;
@@ -2575,6 +2604,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
           } else {
             LOG(FATAL) << "This act: " << flag_act << " doesn't support";
           }
+          cur_output[0] = vout0;
         }
         LITE_PARALLEL_COMMON_END();
         output = reinterpret_cast<float16_t*>((uintptr_t)output +

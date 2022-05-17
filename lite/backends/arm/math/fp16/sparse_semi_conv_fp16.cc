@@ -27,7 +27,7 @@ namespace fp16 {
   auto act_type = act_param.active_type;                                   \
   volatile float16_t alpha = 0.f;                                          \
   int flag_act = 0x00; /* relu: 1, relu6: 2, leakey: 3  */                 \
-  float16_t hs_param[12] = {0.f};                                          \
+  float16_t hs_param[24] = {0.f};                                          \
   if (act_param.has_active) {                                              \
     if (act_type == lite_api::ActivationType::kRelu) {                     \
       flag_act = 0x01;                                                     \
@@ -39,11 +39,11 @@ namespace fp16 {
       alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);          \
     } else if (act_type == lite_api::ActivationType::kHardSwish) {         \
       flag_act = 0x04;                                                     \
-      for (int i = 0; i < 4; i++) {                                        \
+      for (int i = 0; i < 8; i++) {                                        \
         hs_param[i] = static_cast<float16_t>(act_param.hard_swish_offset); \
-        hs_param[i + 4] =                                                  \
-            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);      \
         hs_param[i + 8] =                                                  \
+            static_cast<float16_t>(1.0 / act_param.hard_swish_scale);      \
+        hs_param[i + 16] =                                                  \
             static_cast<float16_t>(act_param.hard_swish_threshold);        \
       }                                                                    \
     }                                                                      \
@@ -96,6 +96,7 @@ namespace fp16 {
   if (flag_act == 1) {                                             \
     vacc01n0 = vacc01n0 > 0.f ? vacc01n0 : 0.f;                    \
     vacc01n1 = vacc01n1 > 0.f ? vacc01n1 : 0.f;                    \
+  } else if (flag_act == 0) {                                      \
   } else if (flag_act == 2) {                                      \
     vacc01n0 = vacc01n0 > 0.f ? vacc01n0 : 0.f;                    \
     vacc01n1 = vacc01n1 > 0.f ? vacc01n1 : 0.f;                    \
@@ -126,6 +127,7 @@ namespace fp16 {
 #define COMPUTE_ACT_NEON_ONE_V8_F32                                \
   if (flag_act == 1) {                                             \
     vacc01n0 = vacc01n0 > 0.f ? vacc01n0 : 0.f;                    \
+  } else if (flag_act == 0) {                                      \
   } else if (flag_act == 2) {                                      \
     vacc01n0 = vacc01n0 > 0.f ? vacc01n0 : 0.f;                    \
     vacc01n0 = vacc01n0 < alpha ? vacc01n0 : alpha;                \
