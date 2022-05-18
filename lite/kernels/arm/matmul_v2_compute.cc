@@ -49,8 +49,16 @@ namespace arm {
   std::vector<int64_t> x_shape, y_shape;                                     \
   int k = 0;                                                                 \
   /* for example old_x_dims=[10, 1, 128], x_dims=[10,128]*/                  \
-  DELETE_DIM_ONE(old_x_dims, x_shape)                                        \
-  DELETE_DIM_ONE(old_y_dims, y_shape)                                        \
+  if (old_x_dims.size() == 1) {                                              \
+     x_shape.push_back(old_x_dims[0]);                                       \
+  } else {                                                                   \
+    DELETE_DIM_ONE(old_x_dims, x_shape)                                      \
+  }                                                                          \
+  if (old_y_dims.size() == 1) {                                              \
+     y_shape.push_back(old_y_dims[0]);                                       \
+  } else {                                                                   \
+    DELETE_DIM_ONE(old_y_dims, y_shape)                                      \
+  }                                                                          \
   DDim x_dims(x_shape);                                                      \
   DDim y_dims(y_shape);                                                      \
   bool x_transpose = param.transpose_X;                                      \
