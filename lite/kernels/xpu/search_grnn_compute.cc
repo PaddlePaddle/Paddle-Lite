@@ -64,6 +64,10 @@ void SearchGrnnCompute::Run() {
   const auto* dense_e2h = wi->data<int16_t>();
   const auto* dense_h2h = wh->data<int16_t>();
 
+  CHECK_LE(offset.size(), 64);
+  for (size_t i = 0; i < offset.size(); ++i) {
+    offset_cpu[i] = offset[i];
+  }
   int xpu_maxptr_size = ctx.GetRawContext()->max_ptr_size();
   std::vector<float> maxs_cpu(6 * xpu_maxptr_size, 0.0f);
   for (int idx = 0; idx < 3; idx++) {
