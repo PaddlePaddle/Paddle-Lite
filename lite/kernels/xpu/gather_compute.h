@@ -46,3 +46,5 @@ typedef paddle::lite::kernels::xpu::GatherCompute<float, int64_t>
     GatherXPUFloatInt64;
 typedef paddle::lite::kernels::xpu::GatherCompute<int64_t, int32_t>
     GatherXPUInt64Int32;
+typedef paddle::lite::kernels::xpu::GatherCompute<int64_t, int64_t>
+    GatherXPUInt64Int64;
