@@ -146,7 +146,7 @@ add_custom_target(lite_compile_deps COMMAND echo 1)
 
 # Add names for lite libraries for latter compile. We use this name list to avoid compiling
 # the whole fluid project to accelerate the compile speed.
-set(offline_lib_registry_file "${CMAKE_BINARY_DIR}/lite_libs.txt")
+set(offline_lib_registry_file "${PADDLE_BINARY_DIR}/lite_libs.txt")
 file(WRITE ${offline_lib_registry_file} "") # clean
 
 # cc_library with branch support.
@@ -249,14 +249,14 @@ function(lite_cc_binary TARGET)
     add_dependencies(${TARGET} bundle_full_api)
 
     if(NOT WIN32)
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
       # openmp dynamic lib is required for mkl
       if(WITH_STATIC_MKL)
         target_link_libraries(${TARGET} -L${MKLML_LIB_DIR} -liomp5)
       endif()
     else()
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
 
     # link to dynamic runtime lib
@@ -277,7 +277,7 @@ function(lite_cc_binary TARGET)
         target_link_libraries(${TARGET} ${intel_fpga_deps})
     endif()
 
-    if (NOT APPLE AND NOT WIN32)
+    if (NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -356,9 +356,9 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   list(REMOVE_DUPLICATES static_libs)
 
   set(bundled_tgt_full_name
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-  message(STATUS "bundled_tgt_full_name:  ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  message(STATUS "bundled_tgt_full_name:  ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
   if(WIN32)
     set(dummy_tgt_name dummy_${bundled_tgt_name})
@@ -379,20 +379,20 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   add_dependencies(${fake_target} ${tgt_name})
 
   if(NOT IOS AND NOT APPLE)
-    file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+    file(WRITE ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 
     foreach(tgt IN LISTS static_libs)
-      file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+      file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
         "ADDLIB $<TARGET_FILE:${tgt}>\n")
     endforeach()
 
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
 
     file(GENERATE
-      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+      OUTPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
+      INPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
 
     set(ar_tool ${CMAKE_AR})
     if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
@@ -402,7 +402,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     add_custom_command(
       TARGET ${fake_target} PRE_BUILD
       COMMAND rm -f ${bundled_tgt_full_name}
-      COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      COMMAND ${ar_tool} -M < ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
       COMMENT "Bundling ${bundled_tgt_name}"
       DEPENDS ${tgt_name}
       VERBATIM)

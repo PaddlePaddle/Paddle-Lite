@@ -301,3 +301,7 @@ if (LITE_WITH_M1)
 add_definitions("-DLITE_WITH_M1")
 endif(LITE_WITH_M1)
 
+if (EMSCRIPTEN)
+  add_compile_options("-pthread")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+endif()

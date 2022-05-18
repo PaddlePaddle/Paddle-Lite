@@ -31,7 +31,7 @@ class ActivationOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool InferType() const { return true; }
+  bool InferType() override { return true; }
 
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
