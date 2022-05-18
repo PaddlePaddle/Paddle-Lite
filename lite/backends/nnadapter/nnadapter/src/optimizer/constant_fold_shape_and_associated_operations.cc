@@ -31,9 +31,11 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
   for (auto operation : operations) {
     auto input_operands = operation->input_operands;
     for (auto operand : input_operands) {
-      if ((operand && IsModelInputOperand(operand)) ||
-          (IsTemporaryVariableOperand(operand) &&
-           IsOperandWithDynamicShape(operand))) {
+      if (operand && IsModelInputOperand(operand)) {
+        continue;
+      }
+      if (operand && IsTemporaryVariableOperand(operand) &&
+          IsOperandWithDynamicShape(operand)) {
         NNADAPTER_LOG(WARNING)
             << "Skip if dynamic shape need to be supported in the model!";
         return;
@@ -85,6 +87,12 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
         remove_operations.insert(operation);
       }
     }
+  }
+  // The operations cannot be deleted completely
+  if (operations.size() == remove_operations.size()) {
+    NNADAPTER_LOG(WARNING)
+        << "Skip! The operations cannot be deleted completely.";
+    return;
   }
   // Clean
   for (auto remove_operand : remove_operands) {
