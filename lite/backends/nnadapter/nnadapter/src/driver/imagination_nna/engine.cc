@@ -194,7 +194,7 @@ int Program::Execute(uint32_t input_count,
                      type.asymm_per_layer_params.zero_point,
                      reinterpret_cast<uint8_t*>(device_ptr));
     } else {
-      memcpy(host_ptr, device_ptr, length);
+      memcpy(device_ptr, host_ptr, length);
     }
     imgdnn_mgr_->UnlockMemory(input_memory.first);
   }
@@ -243,7 +243,7 @@ int Program::Execute(uint32_t input_count,
                      type->asymm_per_layer_params.zero_point,
                      reinterpret_cast<int8_t*>(host_ptr));
     } else {
-      memcpy(device_ptr, host_ptr, length);
+      memcpy(host_ptr, device_ptr, length);
     }
     imgdnn_mgr_->UnlockMemory(output_buffers[i].second.second);
   }
