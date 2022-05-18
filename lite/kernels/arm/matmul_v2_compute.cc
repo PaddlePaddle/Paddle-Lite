@@ -146,7 +146,6 @@ namespace arm {
     lda_ = k_;                                                               \
     ldb_ = n_;                                                               \
     ldc_ = n_;                                                               \
-    CHECK_EQ(k_, y_dims[0]) << "k_ must be equal y_dims[0]";                 \
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {                     \
     m_ = 1;                                                                  \
     n_ = 1;                                                                  \
