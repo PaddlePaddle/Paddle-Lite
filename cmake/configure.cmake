@@ -301,3 +301,6 @@ if (LITE_WITH_M1)
 add_definitions("-DLITE_WITH_M1")
 endif(LITE_WITH_M1)
 
+if (LITE_WITH_ARM8_SVE2)
+  add_definitions("-DLITE_WITH_ARM8_SVE2")
+endif()

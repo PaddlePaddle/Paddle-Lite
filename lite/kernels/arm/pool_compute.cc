@@ -34,6 +34,7 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<operators::PoolParam>();
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
+  auto& ctx = this->ctx_->As<ARMContext>();
 
   const float* din = param.x->data<float>();
   float* dout = param.output->mutable_data<float>();
@@ -75,6 +76,12 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+      if(ctx->has_sve2()) {
+        lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
+        return;
+      }
+#endif
       lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }

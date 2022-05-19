@@ -23,6 +23,20 @@ namespace lite {
 namespace arm {
 namespace math {
 
+#ifdef LITE_WITH_ARM8_SVE2
+#pragma message("==========================lalalalalalal=====================\n\n")
+#include <arm_sve.h>
+void saxpy(const float x[], float y[], float a, int n) {
+  for (int i = 0; i < n; i += svcntw()) {
+    svbool_t pg = svwhilelt_b32(i, n);
+    svfloat32_t vx = svld1(pg, &x[i]);
+    svfloat32_t vy = svld1(pg, &y[i]);
+    vy = svmla_x(pg, vy, vx, a);
+    svst1(pg, &y[i], vy);
+  }
+}
+#endif
+
 template <>
 void act_relu<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
