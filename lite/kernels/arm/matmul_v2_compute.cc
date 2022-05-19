@@ -25,20 +25,24 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-#define DELETE_DIM_ONE(old_dims, now_dims)                        \
-  for (int i = 0; i < old_dims.size(); i++) {                     \
-    if (old_dims[i] == 1) {                                       \
-      while ((i + 1) < old_dims.size() && old_dims[i + 1] == 1) { \
-        i++;                                                      \
-      }                                                           \
-      while (i + 1 < old_dims.size()) {                           \
-        now_dims.push_back(old_dims[i + 1]);                      \
-        i++;                                                      \
-      }                                                           \
-      break;                                                      \
-    } else {                                                      \
-      now_dims.push_back(old_dims[i]);                            \
-    }                                                             \
+#define DELETE_DIM_ONE(old_dims, now_dims)                          \
+  if (old_dims.size() == 1) {                                       \
+    now_dims.push_back(old_dims[0]);                                \
+  } else {                                                          \
+    for (int i = 0; i < old_dims.size(); i++) {                     \
+      if (old_dims[i] == 1) {                                       \
+        while ((i + 1) < old_dims.size() && old_dims[i + 1] == 1) { \
+          i++;                                                      \
+        }                                                           \
+        while (i + 1 < old_dims.size()) {                           \
+          now_dims.push_back(old_dims[i + 1]);                      \
+          i++;                                                      \
+        }                                                           \
+        break;                                                      \
+      } else {                                                      \
+        now_dims.push_back(old_dims[i]);                            \
+      }                                                             \
+    }                                                               \
   }
 
 #define INIT_PARAM                                                           \
@@ -50,18 +54,8 @@ namespace arm {
   int k = 0;                                                                 \
   DDim x_dims, y_dims;                                                       \
   /* for example old_x_dims=[10, 1, 128], x_dims=[10,128]*/                  \
-  if (old_x_dims.size() == 1) {                                              \
-    x_dims = old_x_dims;                                                     \
-  } else {                                                                   \
-    DELETE_DIM_ONE(old_x_dims, x_shape)                                      \
-    x_dims = DDim(x_shape);                                                  \
-  }                                                                          \
-  if (old_y_dims.size() == 1) {                                              \
-    y_dims = old_y_dims;                                                     \
-  } else {                                                                   \
-    DELETE_DIM_ONE(old_y_dims, y_shape)                                      \
-    y_dims = DDim(y_shape);                                                  \
-  }                                                                          \
+  DELETE_DIM_ONE(old_x_dims, x_shape)                                        \
+  DELETE_DIM_ONE(old_y_dims, y_shape)                                        \
   bool x_transpose = param.transpose_X;                                      \
   bool y_transpose = param.transpose_Y;                                      \
   if (last_x_shape_ == x_dims && last_y_shape_ == y_dims) {                  \
