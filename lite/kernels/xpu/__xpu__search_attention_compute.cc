@@ -178,15 +178,15 @@ void XPUMmdnnSearchAttentionCompute::Run() {
                                                      nullptr,
                                                      nullptr);
   CHECK_EQ(r, 0);
-  r = xdnn::search_pad_mask(ctx.GetRawContext(),
-                            batchgemm0_output,
-                            attention_output,
-                            pad_begin_xpu,
-                            batch,
-                            max_seq,
-                            max_seq,
-                            batch,
-                            mask);
+  r = xdnn::attention_padding_mask(ctx.GetRawContext(),
+                                   batchgemm0_output,
+                                   pad_begin_xpu,
+                                   attention_output,
+                                   batch,
+                                   max_seq,
+                                   max_seq,
+                                   batch,
+                                   mask);
   CHECK_EQ(r, 0);
   r = xdnn::softmax<float>(ctx.GetRawContext(),
                            attention_output,
