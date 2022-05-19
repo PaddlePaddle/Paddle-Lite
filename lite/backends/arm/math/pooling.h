@@ -228,14 +228,14 @@ void pooling3x3s2p0_avg(const float* din,
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 void pooling_global_avg_sve2(const float* din,
-                        float* dout,
-                        int num,
-                        int chout,
-                        int hout,
-                        int wout,
-                        int chin,
-                        int hin,
-                        int win);
+                             float* dout,
+                             int num,
+                             int chout,
+                             int hout,
+                             int wout,
+                             int chin,
+                             int hin,
+                             int win);
 #endif
 
 }  // namespace math

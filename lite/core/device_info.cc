@@ -83,26 +83,25 @@ namespace lite {
 #if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
 #include <asm/hwcap.h> /* Get HWCAP bits from asm/hwcap.h */
 #include <sys/auxv.h>
-#define AARCH64_HWCAP_SVE          (1UL << 22)
-#define AARCH64_HWCAP2_SVE2        (1UL << 1)
-#define AARCH64_HWCAP2_SVEAES      (1UL << 2)
-#define AARCH64_HWCAP2_SVEPMULL    (1UL << 3)
-#define AARCH64_HWCAP2_SVEBITPERM  (1UL << 4)
-#define AARCH64_HWCAP2_SVESHA3     (1UL << 5)
-#define AARCH64_HWCAP2_SVESM4      (1UL << 6)
-#define AARCH64_HWCAP2_SVEI8MM     (1UL << 9)
-#define AARCH64_HWCAP2_SVEF32MM    (1UL << 10)
-#define AARCH64_HWCAP2_SVEF64MM    (1UL << 11)
-#define AARCH64_HWCAP2_SVEBF16     (1UL << 12)
-#define AARCH64_HWCAP2_I8MM        (1UL << 13)
-#define AARCH64_HWCAP2_BF16        (1UL << 14)
-#define AT_HWCAP  16
+#define AARCH64_HWCAP_SVE (1UL << 22)
+#define AARCH64_HWCAP2_SVE2 (1UL << 1)
+#define AARCH64_HWCAP2_SVEAES (1UL << 2)
+#define AARCH64_HWCAP2_SVEPMULL (1UL << 3)
+#define AARCH64_HWCAP2_SVEBITPERM (1UL << 4)
+#define AARCH64_HWCAP2_SVESHA3 (1UL << 5)
+#define AARCH64_HWCAP2_SVESM4 (1UL << 6)
+#define AARCH64_HWCAP2_SVEI8MM (1UL << 9)
+#define AARCH64_HWCAP2_SVEF32MM (1UL << 10)
+#define AARCH64_HWCAP2_SVEF64MM (1UL << 11)
+#define AARCH64_HWCAP2_SVEBF16 (1UL << 12)
+#define AARCH64_HWCAP2_I8MM (1UL << 13)
+#define AARCH64_HWCAP2_BF16 (1UL << 14)
+#define AT_HWCAP 16
 #define AT_HWCAP2 26
 
 bool check_sve2_valid() {
   auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
-  if(mask & AARCH64_HWCAP2_SVE2)
-    return true;
+  if (mask & AARCH64_HWCAP2_SVE2) return true;
   return false;
 }
 #endif
@@ -1576,8 +1575,8 @@ FMAType device_fma_level() {
 
 #if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
 #undef AARCH64_HWCAP_SVE
-#undef AARCH64_HWCAP2_SVE2    
-#undef AARCH64_HWCAP2_SVEAES 
+#undef AARCH64_HWCAP2_SVE2
+#undef AARCH64_HWCAP2_SVEAES
 #undef AARCH64_HWCAP2_SVEPMULL
 #undef AARCH64_HWCAP2_SVEBITPERM
 #undef AARCH64_HWCAP2_SVESHA3
@@ -1592,5 +1591,5 @@ FMAType device_fma_level() {
 #undef AT_HWCAP2
 #endif
 
-}  // lite
+}  // namespace lite
 }  // namespace paddle

@@ -986,14 +986,14 @@ void pooling_global_avg(const float* din,
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 void pooling_global_avg_sve2(const float* din,
-                        float* dout,
-                        int num,
-                        int chout,
-                        int hout,
-                        int wout,
-                        int chin,
-                        int hin,
-                        int win) {
+                             float* dout,
+                             int num,
+                             int chout,
+                             int hout,
+                             int wout,
+                             int chin,
+                             int hin,
+                             int win) {
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
   auto data_in = static_cast<const float*>(din);
@@ -1004,9 +1004,9 @@ void pooling_global_avg_sve2(const float* din,
     LITE_PARALLEL_BEGIN(c, tid, chout) {
       const float* data_in_channel =
           data_in_batch + c * size_channel_in;  // in address
-      const float* data_out_channel = data_out_batch;
+      float* data_out_channel = data_out_batch + c;
       vec_tmp.clear();
-      for(int i = 0; i < size_channel_in; i += svcntw()) {
+      for (int i = 0; i < size_channel_in; i += svcntw()) {
         svbool_t pg = svwhilelt_b32(i, size_channel_in);
         svfloat32_t vec_x = svld1(pg, &data_in_channel[i]);
         float psum = svaddv(pg, vec_x);
@@ -1014,8 +1014,8 @@ void pooling_global_avg_sve2(const float* din,
       }
       float sum = 0.f;
       int size = vec_tmp.size();
-      float *tmp_data = vec_tmp.data();
-      for(int i = 0; i < size; i += svcntw()) {
+      float* tmp_data = vec_tmp.data();
+      for (int i = 0; i < size; i += svcntw()) {
         svbool_t pg = svwhilelt_b32(i, size);
         svfloat32_t vec_x = svld1(pg, &tmp_data[i]);
         float psum = svaddv(pg, vec_x);

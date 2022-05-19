@@ -77,7 +77,7 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       return;
     } else if (pooling_type == "avg") {
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-      if(ctx->has_sve2()) {
+      if (ctx.has_sve2()) {
         lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
         return;
       }
