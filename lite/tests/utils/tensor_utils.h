@@ -34,7 +34,8 @@
 
 namespace paddle {
 namespace lite {
-
+ 
+typedef __fp16 float16_t;
 template <typename Dtype>
 void fill_tensor_host_const_impl(Dtype* dio, Dtype value, int64_t size) {
   for (int64_t i = 0; i < size; ++i) {
