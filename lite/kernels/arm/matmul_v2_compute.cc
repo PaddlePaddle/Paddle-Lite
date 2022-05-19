@@ -52,10 +52,11 @@ namespace arm {
   auto old_y_dims = param.Y->dims();                                         \
   std::vector<int64_t> x_shape, y_shape;                                     \
   int k = 0;                                                                 \
-  DDim x_dims, y_dims;                                                       \
   /* for example old_x_dims=[10, 1, 128], x_dims=[10,128]*/                  \
   DELETE_DIM_ONE(old_x_dims, x_shape)                                        \
   DELETE_DIM_ONE(old_y_dims, y_shape)                                        \
+  DDim x_dims(x_shape);                                                      \
+  DDim y_dims(y_shape);                                                      \
   bool x_transpose = param.transpose_X;                                      \
   bool y_transpose = param.transpose_Y;                                      \
   if (last_x_shape_ == x_dims && last_y_shape_ == y_dims) {                  \
