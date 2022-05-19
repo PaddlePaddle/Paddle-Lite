@@ -358,7 +358,6 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "matmul_v2",
                                     "gru",
                                     "sequence_conv",
-                                    "sparse_conv",
                                     "elementwise_add",
                                     "elementwise_sub",
                                     "elementwise_div",
@@ -389,25 +388,6 @@ void LightPredictor::WeightFP32ToFP16() {
             const float* in_data = tmp_tensor.data<float>();
             lite::arm::math::fp16::fp32_to_fp16(
                 in_data, fp_data, input_tensor->numel());
-          }
-          if (op_type == "sparse_conv") {
-            // update diff size
-            std::string ic_diff_name = input_name + "_ic_diffs";
-            if (op_desc->HasAttr(ic_diff_name)) {
-              Tensor tmp_tensor;
-              auto input_tensor =
-                  scope_->FindVar(ic_diff_name)->GetMutable<lite::Tensor>();
-
-              tmp_tensor.CopyDataFrom(*input_tensor);
-              input_tensor->clear();
-              input_tensor->set_precision(PRECISION(kInt32));
-
-              int32_t* fp_data = input_tensor->mutable_data<int32_t>();
-              const int32_t* in_data = tmp_tensor.data<int32_t>();
-              for (int i = 0; i < input_tensor->numel(); i++) {
-                fp_data[i] = in_data[i] / 2;
-              }
-            }
           }
         }
       }

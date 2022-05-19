@@ -268,7 +268,41 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 
 #ifdef ENABLE_ARM_FP16
 template <>
-void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {}
+void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  // update weights
+  auto& param = this->Param<param_t>();
+  auto filter_tensor = param.nonzero_weights;
+  if (filter_tensor->precision() == PRECISION(kFloat)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
+  // update bias
+  if (param.bias) {
+    auto bias_tensor = param.bias;
+    if (bias_tensor->precision() == PRECISION(kFloat)) {
+      Tensor tmp_tensor;
+      tmp_tensor.CopyDataFrom(*bias_tensor);
+      bias_tensor->clear();
+      bias_tensor->set_precision(PRECISION(kFP16));
+      float16_t* fp_data = bias_tensor->mutable_data<float16_t>();
+      const float* in_data = tmp_tensor.data<float>();
+      lite::arm::math::fp16::fp32_to_fp16(
+          in_data, fp_data, bias_tensor->numel());
+    }
+  }
+  // update diffs
+  auto diff_tensor = param.diffs;
+  auto diff_data = diff_tensor->mutable_data<int32_t>();
+  for (int i = 0; i < diff_tensor->numel(); i++) {
+    diff_data[i] = diff_data[i] / 2;
+  }
+}
 
 template <>
 void SparseConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
