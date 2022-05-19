@@ -48,7 +48,7 @@ namespace arm {
   auto old_y_dims = param.Y->dims();                                         \
   std::vector<int64_t> x_shape, y_shape;                                     \
   int k = 0;                                                                 \
-  DDim x_dims, y_dims;
+  DDim x_dims, y_dims;                                                       \
   /* for example old_x_dims=[10, 1, 128], x_dims=[10,128]*/                  \
   if (old_x_dims.size() == 1) {                                              \
     x_dims = old_x_dims;                                                     \
