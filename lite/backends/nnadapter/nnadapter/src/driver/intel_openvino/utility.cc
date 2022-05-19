@@ -20,6 +20,14 @@
 namespace nnadapter {
 namespace intel_openvino {
 
+void InitializeDeviceConfig(
+    const std::string& device,
+    std::shared_ptr<ov::Core> core,
+    std::shared_ptr<std::map<std::string, ov::AnyMap>> config) {
+  NNADAPTER_VLOG(5) << "Initialize Openvino device config.";
+  core->set_property(device, config->at(device));
+}
+
 PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code) {
   switch (auto_pad_code) {
     case NNADAPTER_AUTO_PAD_VALID:

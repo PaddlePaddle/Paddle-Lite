@@ -36,11 +36,17 @@ class Context {
   std::string GetFirtSelectedDeviceName() const {
     return selected_device_names_[0];
   }
+  std::shared_ptr<std::map<std::string, ov::AnyMap>> GetDeviceConfig() {
+    return std::make_shared<std::map<std::string, ov::AnyMap>>(
+        device_config_map_);
+  }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
   std::vector<std::string> selected_device_names_{"CPU"};
+  // Device config map.
+  std::map<std::string, ov::AnyMap> device_config_map_;
 };
 
 class Program {
