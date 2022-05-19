@@ -36,8 +36,9 @@ class TestFillConstantOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -57,7 +58,8 @@ class TestFillConstantOp(AutoScanTest):
 
         with_value_tensor = draw(st.sampled_from([True, False]))
         with_shape_tensor = draw(st.sampled_from([True, False]))
-        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+        if "nvidia_tensorrt" in self.get_nnadapter_device_name(
+        ) or "intel_openvino" in self.get_nnadapter_device_name():
             with_shape_tensor = False
         # nvidia_tensorrt now just supports shape is from attr
 
