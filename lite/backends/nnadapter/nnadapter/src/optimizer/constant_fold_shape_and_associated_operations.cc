@@ -32,7 +32,7 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
     auto input_operands = operation->input_operands;
     for (auto operand : input_operands) {
       if (operand && IsModelInputOperand(operand)) {
-        continue;
+        break;
       }
       if (operand && IsTemporaryVariableOperand(operand) &&
           IsOperandWithDynamicShape(operand)) {
@@ -60,6 +60,9 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
                operation->type == NNADAPTER_RESIZE_NEAREST) {
       white_operands.insert(input_operands[1]);
       white_operands.insert(input_operands[2]);
+    } else if (operation->type == NNADAPTER_EXPAND ||
+               operation->type == NNADAPTER_RESHAPE) {
+      white_operands.insert(input_operands[1]);
     } else {
       bool is_tempory_shape_op = true;
       for (auto input_operand : input_operands) {
@@ -117,6 +120,8 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
       remove_operand->buffer = malloc(remove_operand->length);
       memcpy(
           remove_operand->buffer, temporary_shape.data, remove_operand->length);
+      NNADAPTER_VLOG(5) << "Operand: " << OperandIdToString(remove_operand)
+                        << " is in constant folding!";
     }
   }
   for (auto remove_operation : remove_operations) {
