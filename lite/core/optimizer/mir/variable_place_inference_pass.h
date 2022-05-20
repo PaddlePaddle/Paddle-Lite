@@ -391,11 +391,6 @@ class VariablePlaceInferencePass : public DebugPass {
     }
     return skip;
   }
-
- private:
-  // The default target for arguments, e.g. load weights to CPU memory for
-  // CUDA computation by default.
-  TargetType argument_default_target_{TARGET(kHost)};
 };
 
 }  // namespace mir

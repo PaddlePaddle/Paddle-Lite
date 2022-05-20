@@ -1,0 +1,365 @@
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+index df3b20126..83e6d91a6 100644
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -14,6 +14,8 @@ project(protobuf C CXX)
+ # Options
+ option(protobuf_BUILD_TESTS "Build tests" ON)
+ option(protobuf_BUILD_EXAMPLES "Build examples" OFF)
++option(protobuf_BUILD_PROTOC_BINARIES "Build libprotoc and protoc compiler" ON)
++option(protobuf_BUILD_LIBPROTOC "Build libprotoc" ON)
+ if (BUILD_SHARED_LIBS)
+   set(protobuf_BUILD_SHARED_LIBS_DEFAULT ON)
+ else (BUILD_SHARED_LIBS)
+@@ -165,8 +167,12 @@ endif (protobuf_UNICODE)
+ 
+ include(libprotobuf-lite.cmake)
+ include(libprotobuf.cmake)
+-include(libprotoc.cmake)
+-include(protoc.cmake)
++if (protobuf_BUILD_LIBPROTOC)
++  include(libprotoc.cmake)
++endif()
++if (protobuf_BUILD_PROTOC_BINARIES)
++  include(protoc.cmake)
++endif()
+ 
+ if (protobuf_BUILD_TESTS)
+   include(tests.cmake)
+diff --git a/cmake/extract_includes.bat.in b/cmake/extract_includes.bat.in
+index 4b572bb6f..76cc34590 100644
+--- a/cmake/extract_includes.bat.in
++++ b/cmake/extract_includes.bat.in
+@@ -79,7 +79,6 @@ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops.h incl
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_arm64_gcc.h include\google\protobuf\stubs\atomicops_internals_arm64_gcc.h
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_arm_gcc.h include\google\protobuf\stubs\atomicops_internals_arm_gcc.h
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_arm_qnx.h include\google\protobuf\stubs\atomicops_internals_arm_qnx.h
+-copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_atomicword_compat.h include\google\protobuf\stubs\atomicops_internals_atomicword_compat.h
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_generic_c11_atomic.h include\google\protobuf\stubs\atomicops_internals_generic_c11_atomic.h
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_generic_gcc.h include\google\protobuf\stubs\atomicops_internals_generic_gcc.h
+ copy ${PROTOBUF_SOURCE_WIN32_PATH}\..\src\google\protobuf\stubs\atomicops_internals_macosx.h include\google\protobuf\stubs\atomicops_internals_macosx.h
+diff --git a/cmake/install.cmake b/cmake/install.cmake
+index 73e31984c..2a7db317a 100644
+--- a/cmake/install.cmake
++++ b/cmake/install.cmake
+@@ -1,9 +1,11 @@
+ include(GNUInstallDirs)
+ 
+-foreach(_library
+-  libprotobuf-lite
+-  libprotobuf
+-  libprotoc)
++set(_protobuf_libraries libprotobuf-lite libprotobuf)
++if (protobuf_BUILD_LIBPROTOC)
++    list(APPEND _protobuf_libraries libprotoc)
++endif (protobuf_BUILD_LIBPROTOC)
++
++foreach(_library ${_protobuf_libraries})
+   set_property(TARGET ${_library}
+     PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+     $<BUILD_INTERFACE:${protobuf_source_dir}/src>
+@@ -14,8 +16,18 @@ foreach(_library
+     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ${_library})
+ endforeach()
+ 
+-install(TARGETS protoc EXPORT protobuf-targets
+-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT protoc)
++if (protobuf_BUILD_PROTOC_BINARIES)
++  install(TARGETS protoc EXPORT protobuf-targets
++    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT protoc
++    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT protoc)
++  if (UNIX AND NOT APPLE)
++    set_property(TARGET protoc
++      PROPERTY INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
++  elseif (APPLE)
++    set_property(TARGET protoc
++      PROPERTY INSTALL_RPATH "@loader_path/../lib")
++  endif()
++endif (protobuf_BUILD_PROTOC_BINARIES)
+ 
+ file(STRINGS extract_includes.bat.in _extract_strings
+   REGEX "^copy")
+@@ -100,10 +112,18 @@ configure_file(protobuf-options.cmake
+   ${CMAKE_INSTALL_CMAKEDIR}/protobuf-options.cmake @ONLY)
+ 
+ # Allows the build directory to be used as a find directory.
+-export(TARGETS libprotobuf-lite libprotobuf libprotoc protoc
+-  NAMESPACE protobuf::
+-  FILE ${CMAKE_INSTALL_CMAKEDIR}/protobuf-targets.cmake
+-)
++
++if (protobuf_BUILD_PROTOC_BINARIES)
++  export(TARGETS libprotobuf-lite libprotobuf libprotoc protoc
++    NAMESPACE protobuf::
++    FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/protobuf/protobuf-targets.cmake
++  )
++else (protobuf_BUILD_PROTOC_BINARIES)
++  export(TARGETS libprotobuf-lite libprotobuf
++    NAMESPACE protobuf::
++    FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/protobuf/protobuf-targets.cmake
++  )
++endif (protobuf_BUILD_PROTOC_BINARIES)
+ 
+ install(EXPORT protobuf-targets
+   DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 8d9e07ab7..b90b31f48 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -69,7 +69,6 @@ nobase_include_HEADERS =                                         \
+   google/protobuf/stubs/atomicops_internals_arm64_gcc.h          \
+   google/protobuf/stubs/atomicops_internals_arm_gcc.h            \
+   google/protobuf/stubs/atomicops_internals_arm_qnx.h            \
+-  google/protobuf/stubs/atomicops_internals_atomicword_compat.h  \
+   google/protobuf/stubs/atomicops_internals_generic_c11_atomic.h \
+   google/protobuf/stubs/atomicops_internals_generic_gcc.h        \
+   google/protobuf/stubs/atomicops_internals_macosx.h             \
+diff --git a/src/google/protobuf/stubs/atomicops.h b/src/google/protobuf/stubs/atomicops.h
+index 10a71ed48..cb4553b1e 100644
+--- a/src/google/protobuf/stubs/atomicops.h
++++ b/src/google/protobuf/stubs/atomicops.h
+@@ -63,28 +63,22 @@ namespace google {
+ namespace protobuf {
+ namespace internal {
+ 
+-#if defined(GOOGLE_PROTOBUF_ARCH_POWER)
+-#if defined(_LP64) || defined(__LP64__)
+-typedef int32 Atomic32;
+-typedef intptr_t Atomic64;
++#ifdef GOOGLE_PROTOBUF_ARCH_32_BIT
++  typedef intptr_t Atomic32;
++  typedef int64 Atomic64;
+ #else
+-typedef intptr_t Atomic32;
+-typedef int64 Atomic64;
+-#endif
+-#else
+-typedef int32 Atomic32;
+-#ifdef GOOGLE_PROTOBUF_ARCH_64_BIT
+-// We need to be able to go between Atomic64 and AtomicWord implicitly.  This
+-// means Atomic64 and AtomicWord should be the same type on 64-bit.
+-#if defined(__ILP32__) || defined(GOOGLE_PROTOBUF_OS_NACL)
+-// NaCl's intptr_t is not actually 64-bits on 64-bit!
+-// http://code.google.com/p/nativeclient/issues/detail?id=1162
+-// sparcv9's pointer type is 32bits
+-typedef int64 Atomic64;
+-#else
+-typedef intptr_t Atomic64;
+-#endif
+-#endif
++  // We need to be able to go between Atomic64 and AtomicWord implicitly.  This
++  // means Atomic64 and AtomicWord should be the same type on 64-bit.
++  #if defined(__ILP32__) || defined(GOOGLE_PROTOBUF_OS_NACL)
++  // NaCl's intptr_t is not actually 64-bits on 64-bit!
++  // http://code.google.com/p/nativeclient/issues/detail?id=1162
++  // sparcv9's pointer type is 32bits
++  typedef intptr_t Atomic32;
++  typedef int64 Atomic64;
++  #else
++  typedef int32 Atomic32;
++  typedef intptr_t Atomic64;
++  #endif
+ #endif
+ 
+ // Use AtomicWord for a machine-sized pointer.  It will use the Atomic32 or
+@@ -123,8 +117,8 @@ Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr,
+ // ensure that no later memory access can be reordered ahead of the operation.
+ // "Release" operations ensure that no previous memory access can be reordered
+ // after the operation.  "Barrier" operations have both "Acquire" and "Release"
+-// semantics.   A MemoryBarrier() has "Barrier" semantics, but does no memory
+-// access.
++// semantics.   A MemoryBarrierInternal() has "Barrier" semantics, but does no
++// memory access.
+ Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,
+                                 Atomic32 old_value,
+                                 Atomic32 new_value);
+@@ -132,10 +126,10 @@ Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr,
+                                 Atomic32 old_value,
+                                 Atomic32 new_value);
+ 
+-#if defined(__MINGW32__) && defined(MemoryBarrier)
+-#undef MemoryBarrier
+-#endif
+-void MemoryBarrier();
++// This function was renamed from MemoryBarrier to MemoryBarrierInternal
++// because MemoryBarrier is a define in Windows ARM builds and we do not
++// undefine it because we call it from this function.
++void MemoryBarrierInternal();
+ void NoBarrier_Store(volatile Atomic32* ptr, Atomic32 value);
+ void Acquire_Store(volatile Atomic32* ptr, Atomic32 value);
+ void Release_Store(volatile Atomic32* ptr, Atomic32 value);
+@@ -180,7 +174,7 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
+ #include <google/protobuf/stubs/atomicops_internals_tsan.h>
+ // MSVC.
+ #elif defined(_MSC_VER)
+-#if defined(GOOGLE_PROTOBUF_ARCH_IA32) || defined(GOOGLE_PROTOBUF_ARCH_X64)
++#if defined(GOOGLE_PROTOBUF_ARCH_IA32) || defined(GOOGLE_PROTOBUF_ARCH_X64) || defined(GOOGLE_PROTOBUF_ARCH_ARM)
+ #include <google/protobuf/stubs/atomicops_internals_x86_msvc.h>
+ #else
+ #error GOOGLE_PROTOBUF_ATOMICOPS_ERROR
+@@ -194,14 +188,6 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
+ #elif defined(GOOGLE_PROTOBUF_OS_AIX)
+ #include <google/protobuf/stubs/atomicops_internals_power.h>
+ 
+-// Apple.
+-#elif defined(GOOGLE_PROTOBUF_OS_APPLE)
+-#if __has_feature(cxx_atomic) || _GNUC_VER >= 407
+-#include <google/protobuf/stubs/atomicops_internals_generic_c11_atomic.h>
+-#else  // __has_feature(cxx_atomic) || _GNUC_VER >= 407
+-#include <google/protobuf/stubs/atomicops_internals_macosx.h>
+-#endif  // __has_feature(cxx_atomic) || _GNUC_VER >= 407
+-
+ // GCC.
+ #elif defined(__GNUC__)
+ #if defined(GOOGLE_PROTOBUF_ARCH_IA32) || defined(GOOGLE_PROTOBUF_ARCH_X64)
+@@ -221,6 +207,9 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
+ #elif defined(GOOGLE_PROTOBUF_ARCH_POWER)
+ #include <google/protobuf/stubs/atomicops_internals_power.h>
+ #elif defined(__native_client__)
++// The static_asserts in the C++11 atomics implementation cause it to fail
++// with certain compilers, e.g. nvcc on macOS. Don't use elsewhere unless
++// the TODO in that file is addressed.
+ #include <google/protobuf/stubs/atomicops_internals_generic_c11_atomic.h>
+ #elif defined(GOOGLE_PROTOBUF_ARCH_PPC)
+ #include <google/protobuf/stubs/atomicops_internals_ppc_gcc.h>
+@@ -241,12 +230,6 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
+ #error GOOGLE_PROTOBUF_ATOMICOPS_ERROR
+ #endif
+ 
+-// On some platforms we need additional declarations to make AtomicWord
+-// compatible with our other Atomic* types.
+-#if defined(GOOGLE_PROTOBUF_OS_APPLE)
+-#include <google/protobuf/stubs/atomicops_internals_atomicword_compat.h>
+-#endif
+-
+ #undef GOOGLE_PROTOBUF_ATOMICOPS_ERROR
+ 
+ #endif  // GOOGLE_PROTOBUF_NO_THREAD_SAFETY
+diff --git a/src/google/protobuf/stubs/atomicops_internals_atomicword_compat.h b/src/google/protobuf/stubs/atomicops_internals_atomicword_compat.h
+deleted file mode 100644
+index eb198ff5c..000000000
+--- a/src/google/protobuf/stubs/atomicops_internals_atomicword_compat.h
++++ /dev/null
+@@ -1,122 +0,0 @@
+-// Protocol Buffers - Google's data interchange format
+-// Copyright 2012 Google Inc.  All rights reserved.
+-// https://developers.google.com/protocol-buffers/
+-//
+-// Redistribution and use in source and binary forms, with or without
+-// modification, are permitted provided that the following conditions are
+-// met:
+-//
+-//     * Redistributions of source code must retain the above copyright
+-// notice, this list of conditions and the following disclaimer.
+-//     * Redistributions in binary form must reproduce the above
+-// copyright notice, this list of conditions and the following disclaimer
+-// in the documentation and/or other materials provided with the
+-// distribution.
+-//     * Neither the name of Google Inc. nor the names of its
+-// contributors may be used to endorse or promote products derived from
+-// this software without specific prior written permission.
+-//
+-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-
+-// This file is an internal atomic implementation, use atomicops.h instead.
+-
+-#ifndef GOOGLE_PROTOBUF_ATOMICOPS_INTERNALS_ATOMICWORD_COMPAT_H_
+-#define GOOGLE_PROTOBUF_ATOMICOPS_INTERNALS_ATOMICWORD_COMPAT_H_
+-
+-// AtomicWord is a synonym for intptr_t, and Atomic32 is a synonym for int32,
+-// which in turn means int. On some LP32 platforms, intptr_t is an int, but
+-// on others, it's a long. When AtomicWord and Atomic32 are based on different
+-// fundamental types, their pointers are incompatible.
+-//
+-// This file defines function overloads to allow both AtomicWord and Atomic32
+-// data to be used with this interface.
+-//
+-// On LP64 platforms, AtomicWord and Atomic64 are both always long,
+-// so this problem doesn't occur.
+-
+-#if !defined(GOOGLE_PROTOBUF_ARCH_64_BIT)
+-
+-namespace google {
+-namespace protobuf {
+-namespace internal {
+-
+-inline AtomicWord NoBarrier_CompareAndSwap(volatile AtomicWord* ptr,
+-                                           AtomicWord old_value,
+-                                           AtomicWord new_value) {
+-  return NoBarrier_CompareAndSwap(
+-      reinterpret_cast<volatile Atomic32*>(ptr), old_value, new_value);
+-}
+-
+-inline AtomicWord NoBarrier_AtomicExchange(volatile AtomicWord* ptr,
+-                                           AtomicWord new_value) {
+-  return NoBarrier_AtomicExchange(
+-      reinterpret_cast<volatile Atomic32*>(ptr), new_value);
+-}
+-
+-inline AtomicWord NoBarrier_AtomicIncrement(volatile AtomicWord* ptr,
+-                                            AtomicWord increment) {
+-  return NoBarrier_AtomicIncrement(
+-      reinterpret_cast<volatile Atomic32*>(ptr), increment);
+-}
+-
+-inline AtomicWord Barrier_AtomicIncrement(volatile AtomicWord* ptr,
+-                                          AtomicWord increment) {
+-  return Barrier_AtomicIncrement(
+-      reinterpret_cast<volatile Atomic32*>(ptr), increment);
+-}
+-
+-inline AtomicWord Acquire_CompareAndSwap(volatile AtomicWord* ptr,
+-                                         AtomicWord old_value,
+-                                         AtomicWord new_value) {
+-  return Acquire_CompareAndSwap(
+-      reinterpret_cast<volatile Atomic32*>(ptr), old_value, new_value);
+-}
+-
+-inline AtomicWord Release_CompareAndSwap(volatile AtomicWord* ptr,
+-                                         AtomicWord old_value,
+-                                         AtomicWord new_value) {
+-  return Release_CompareAndSwap(
+-      reinterpret_cast<volatile Atomic32*>(ptr), old_value, new_value);
+-}
+-
+-inline void NoBarrier_Store(volatile AtomicWord *ptr, AtomicWord value) {
+-  NoBarrier_Store(reinterpret_cast<volatile Atomic32*>(ptr), value);
+-}
+-
+-inline void Acquire_Store(volatile AtomicWord* ptr, AtomicWord value) {
+-  return Acquire_Store(reinterpret_cast<volatile Atomic32*>(ptr), value);
+-}
+-
+-inline void Release_Store(volatile AtomicWord* ptr, AtomicWord value) {
+-  return Release_Store(reinterpret_cast<volatile Atomic32*>(ptr), value);
+-}
+-
+-inline AtomicWord NoBarrier_Load(volatile const AtomicWord *ptr) {
+-  return NoBarrier_Load(reinterpret_cast<volatile const Atomic32*>(ptr));
+-}
+-
+-inline AtomicWord Acquire_Load(volatile const AtomicWord* ptr) {
+-  return Acquire_Load(reinterpret_cast<volatile const Atomic32*>(ptr));
+-}
+-
+-inline AtomicWord Release_Load(volatile const AtomicWord* ptr) {
+-  return Release_Load(reinterpret_cast<volatile const Atomic32*>(ptr));
+-}
+-
+-}   // namespace internal
+-}   // namespace protobuf
+-}   // namespace google
+-
+-#endif  // !defined(GOOGLE_PROTOBUF_ARCH_64_BIT)
+-
+-#endif  // GOOGLE_PROTOBUF_ATOMICOPS_INTERNALS_ATOMICWORD_COMPAT_H_

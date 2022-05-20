@@ -253,7 +253,7 @@ REGISTER_CONVERTER(equal,
                    "openvino,nvidia_tensorrt");
 REGISTER_CONVERTER(expand_v2,
                    ConvertExpandV2,
-                   "huawei_ascend_npu,cambricon_mlu");
+                   "huawei_ascend_npu,cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(not_equal,
                    ConvertComparisons,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu");
@@ -322,15 +322,16 @@ REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack,
                    ConvertStack,
                    "huawei_ascend_npu,nvidia_tensorrt,intel_openvino");
-REGISTER_CONVERTER(fill_constant,
-                   ConvertFillConstant,
-                   "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt");
+REGISTER_CONVERTER(
+    fill_constant,
+    ConvertFillConstant,
+    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(fill_any_like,
                    ConvertFillAnyLike,
-                   "huawei_ascend_npu,cambricon_mlu");
+                   "huawei_ascend_npu,cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(fill_constant_batch_size_like,
                    ConvertFillConstantBatchSizeLike,
-                   "huawei_ascend_npu,verisilicon_timvx");
+                   "huawei_ascend_npu,verisilicon_timvx,intel_openvino");
 REGISTER_CONVERTER(
     concat,
     ConvertConcat,
