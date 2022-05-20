@@ -1492,7 +1492,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc >= (1 * sizeof(float16_t))) {
+      while (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;
@@ -2619,7 +2619,7 @@ void sparse_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc >= (1 * sizeof(float16_t))) {
+      while (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
           SPARSE_COMPUTE_LOOP
           float16_t vout0 = vbias;

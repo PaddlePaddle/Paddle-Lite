@@ -1481,7 +1481,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 
   if
     SPARSE_FP16_UNLIKELY(mc != 0) {
-      if (mc & (32 * sizeof(float16_t))) {
+      if (mc >= (32 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           // clang-format off
@@ -1503,7 +1503,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 32;
         mc -= 32 * sizeof(float16_t);
       }
-      if (mc & (16 * sizeof(float16_t))) {
+      if (mc >= (16 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           // clang-format off
@@ -1525,7 +1525,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 16;
         mc -= 16 * sizeof(float16_t);
       }
-      if (mc & (8 * sizeof(float16_t))) {
+      if (mc >= (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           // clang-format off
@@ -1547,7 +1547,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 8;
         mc -= 8 * sizeof(float16_t);
       }
-      if (mc & (4 * sizeof(float16_t))) {
+      if (mc >= (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           // clang-format off
@@ -1569,7 +1569,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc & (1 * sizeof(float16_t))) {
+      while (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           float16_t vacc01n0 = pbias[0];
@@ -2553,7 +2553,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
 
   if
     SPARSE_FP16_UNLIKELY(mc != 0) {
-      if (mc & (16 * sizeof(float16_t))) {
+      if (mc >= (16 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           auto vhs_param = hs_param;
@@ -2577,7 +2577,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 16;
         mc -= 16 * sizeof(float16_t);
       }
-      if (mc & (8 * sizeof(float16_t))) {
+      if (mc >= (8 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           auto vhs_param = hs_param;
@@ -2601,7 +2601,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 8;
         mc -= 8 * sizeof(float16_t);
       }
-      if (mc & (4 * sizeof(float16_t))) {
+      if (mc >= (4 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           auto vhs_param = hs_param;
@@ -2625,7 +2625,7 @@ void sparse_semi_conv_fp16_pipelined(const float16_t* A,
         B += 4;
         mc -= 4 * sizeof(float16_t);
       }
-      if (mc & (1 * sizeof(float16_t))) {
+      while (mc >= (1 * sizeof(float16_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, pair_num, 0, 1) {
           GET_SEMI_PARAM_TABLE(float16_t, float16_t)
           float16_t vacc01n0 = pbias[0];
