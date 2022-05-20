@@ -440,7 +440,7 @@ export GLOG_v=4
 注：这里给出的链接会跳转到线上最新 develop 分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于 `lite/demo/cxx/` 目录的代码，查看如何使用。
 
 ## 7. 性能分析和精度分析
-关于性能和精度分析，请详细查阅[性能测试](../performace/benchmark_tools)中的【逐层耗时和精度分析】章节。
+关于性能和精度分析，请详细查阅[性能测试](../performance/benchmark_tools)中的【逐层耗时和精度分析】章节。
 
 在编译预测库时，使能性能分析和精度分析功能的命令如下：
 Android 平台下：
@@ -554,4 +554,4 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 5. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 6. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 7. Paddle Lite OpenCL 后端代码尚未完全支持动态 shape，因此在运行动态 shape 的模型时可能会报错。
-8. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](./performance/gpu)中的【优化建议】章节。
+8. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](../performance/gpu.md)中的【优化建议】章节。
