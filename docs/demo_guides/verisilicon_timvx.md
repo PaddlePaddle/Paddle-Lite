@@ -73,6 +73,27 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
 ### 准备设备环境
 
+- NPU 驱动
+  - 晶晨 SoC 使用芯原 NPU，部署时首先要确保 NPU 驱动文件（galcore.ko）和相关依赖库（libXXX.so）。
+  - 可通过命令行输入 `dmesg | grep Galcore` 查询 NPU 驱动版本。请注意，建议版本为 6.4.4.3。如果当前版本就是 6.4.4.3 ，可以跳过本环节。
+  - 有两种方式可以修改当前的 NPU 驱动版本及其依赖库：
+    - （1）刷机。可以根据具体的开发板，向开发板卖家或者开发板官网查询刷机方法。
+      - 在此提供 khadas 开发板 VIM3|VIM3L 的官方教程链接：[VIM3/3L Android 文档](https://docs.khadas.com/android/zh-cn/vim3/) , [VIM3/3L Linux 文档](https://docs.khadas.com/linux/zh-cn/vim3)，其中有详细描述刷机方法。
+      - 其余开发板可想卖家或者开发板官网问询刷机方法。
+    - （2）手动替换驱动文件和依赖库，在[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中，我们提供了 linux 系统下 A311D、S905D3，以及 Android 系统下 S905D3 的 NPU 驱动和相关依赖库（详细目录树结构可以参考后文『运行图像分类示例程序』）。
+      - linux 系统在路径 PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx 下。
+      - Android 系统在路径 PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx 下。
+      - 第一步，修改 switch_vivante_sdk.sh 文件中的 HARDWARE_MODEL 将其改为用户要使用的具体 SoC 型号，如 HARDWARE_MODEL=s905d3。
+      - 第二步，执行 ./switch_vivante_sdk.sh。
+      - 第三步，vivante_sdk_6_4_4_3/lib/{SoC型号}/{系统版本号}/ 目录下，提供了 NPU 驱动，galcore.ko。比如，用户使用 Android S905D3，操作系统版本 4.9.113，则在PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/vivante_sdk_6_4_4_3/lib/s905d3/4.9.113 下找到 NPU 驱动文件 galcore.ko。注意，不同设备的操作系统版本号不同，如果与我们提供的操作系统版本号不一致，则无法直接使用，此时请参考上文提到的方法『（1）刷机』。
+        - 在此提供给 khadas 开发板 VIM3|VIM3L Galcore 版本 6.4.4.3 的刷机镜像（包含 NPU 驱动文件和芯原相关依赖库，分别提供 khadas 官方服务器下载地址，和飞桨服务器的下载地址，均可下载使用）：
+          - VIM3 Android：VIM3_Pie_V210908:[官方链接](https://dl.khadas.com/Firmware/VIM3/Android/VIM3_Pie_V210908.7z)；[飞桨服务器链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Pie_V210908.7z)
+          - VIM3 Linux：VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625:[官方链接V](http://dl.khadas.com/firmware/VIM3/Ubuntu/EMMC/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[飞桨服务器链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
+          - VIM3L Android：VIM3L_Pie_V210906:[官方链接](https://dl.khadas.com/Firmware/VIM3L/Android/VIM3L_Pie_V210906.7z)；[飞桨服务器链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Pie_V210906.7z)
+          - VIM3L Linux：VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625:[官方链接](https://dl.khadas.com/Firmware/VIM3L/Ubuntu/EMMC/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[飞桨服务器链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
+      - 第四步，将 galcore.ko 传到设备上，登录设备，命令行输入 `sudo rmmod galcore` 来卸载原始驱动，输入 `sudo insmod galcore.ko` 来加载传上设备的驱动
+      - 第五部，输入 `dmesg | grep Galcore` 查询 NPU 驱动版本，确定为 6.4.4.3
+
 - A311D
 
   - 需要驱动版本为 6.4.4.3（下载驱动请联系开发板厂商）。
@@ -151,22 +172,46 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
             - arm64 # Linux 64 位系统
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - verisilicon_timvx # 芯原 TIM-VX DDK、NNAdapter 运行时库、device HAL 库
-                  - libnnadapter.so # NNAdapter 运行时库
-                  - libGAL.so # 芯原 DDK
-                  - libVSC.so # 芯原 DDK
-                  - libOpenVX.so # 芯原 DDK
-                  - libarchmodelSw.so # 芯原 DDK
-                  - libNNArchPerf.so # 芯原 DDK
-                  - libOvx12VXCBinary.so # 芯原 DDK
-                  - libNNVXCBinary.so # 芯原 DDK
-                  - libOpenVXU.so # 芯原 DDK
-                  - libNNGPUBinary.so # 芯原 DDK
-                  - libovxlib.so # 芯原 DDK
-                  - libOpenCL.so # OpenCL
-                  - libverisilicon_timvx.so # # NNAdapter device HAL 库
-                  - libtim-vx.so # 芯原 TIM-VX
-                  - libgomp.so.1 # gnuomp 库
+                - verisilicon_timvx # 芯原 DDK、NNAdapter 运行时库、device HAL 库
+                  - libArchModelSw.so -> ./vivante_sdk_6_4_4_3/lib/libArchModelSw.so
+                  - libCLC.so -> ./vivante_sdk_6_4_4_3/lib/libCLC.so
+                  - libGAL.so -> ./vivante_sdk_6_4_4_3/lib/libGAL.so
+                  - libNNArchPerf.so -> ./vivante_sdk_6_4_4_3/lib/libNNArchPerf.so
+                  - libNNGPUBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libNNGPUBinary.so
+                  - libNNVXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libNNVXCBinary.so
+                  - libOpenCL.so -> ./vivante_sdk_6_4_4_3/lib/libOpenCL.so
+                  - libOpenVX.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVX.so
+                  - libOpenVXU.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVXU.so
+                  - libOvx12VXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libOvx12VXCBinary.so
+                  - libVSC.so -> ./vivante_sdk_6_4_4_3/lib/libVSC.so
+                  - libverisilicon_timvx.so # NNAdapter device HAL 库
+                  - libnnadapter.so  # NNAdapter 运行时库
+                  - libtim-vx.so # 芯原 TIM-VX 库
+                  - switch_vivante_sdk.sh # 创建软链接
+                  - vivante_sdk_6_4_4_3
+                    - include
+                    - lib
+                    - a311d # 针对 a311d 平台
+                      - 4.9.241
+                        - galcore.ko # NPU 驱动文件
+                      - libNNGPUBinary.so # 芯原 DDK
+                      - libNNVXCBinary.so # 芯原 DDK
+                      - libOvx12VXCBinary.so # 芯原 DDK
+                    - libArchModelSw.so # 芯原 DDK
+                    - libCLC.so # 芯原 DDK
+                    - libGAL.so # 芯原 DDK
+                    - libNNArchPerf.so # 芯原 DDK
+                    - libOpenCL.so # 芯原 DDK
+                    - libOpenVX.so # 芯原 DDK
+                    - libOpenVXU.so # 芯原 DDK
+                    - libVSC.so # 芯原 DDK
+                    - libovxlib.so
+                    - s905d3 # 针对 s905d3 平台
+                        - 4.9.241
+                          - galcore.ko
+                        - libNNGPUBinary.so
+                        - libNNVXCBinary.so
+                        - libOvx12VXCBinary.so
                 - libpaddle_full_api_shared.so # 预编译 PaddleLite full api 库
                 - libpaddle_light_api_shared.so # 预编译 PaddleLite light api 库
             ...
@@ -174,23 +219,47 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
            - armeabi-v7a # Android 32 位系统
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - verisilicon_timvx # 芯原 TIM-VX DDK、NNAdapter 运行时库、device HAL 库
+                - verisilicon_timvx # 芯原 DDK、NNAdapter 运行时库、device HAL 库
+                  - libCLC.so -> ./vivante_sdk_6_4_4_3/lib/libCLC.so
+                  - libGAL.so -> ./vivante_sdk_6_4_4_3/lib/libGAL.so
+                  - libNNArchPerf.so -> ./vivante_sdk_6_4_4_3/lib/libNNArchPerf.so
+                  - libNNGPUBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libNNGPUBinary.so
+                  - libNNVXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libNNVXCBinary.so
+                  - libOpenCL.so -> ./vivante_sdk_6_4_4_3/lib/libOpenCL.so
+                  - libOpenVX.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVX.so
+                  - libOpenVXU.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVXU.so
+                  - libOvx12VXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libOvx12VXCBinary.so
+                  - libVSC.so -> ./vivante_sdk_6_4_4_3/lib/libVSC.so
+                  - libverisilicon_timvx.so # NNAdapter device HAL 库
+                  - libarchmodelSw.so -> ./vivante_sdk_6_4_4_3/lib/libarchmodelSw.so
                   - libnnadapter.so # NNAdapter 运行时库
-                  - libGAL.so # 芯原 DDK
-                  - libVSC.so # 芯原 DDK
-                  - libOpenVX.so # 芯原 DDK
-                  - libarchmodelSw.so # 芯原 DDK
-                  - libNNArchPerf.so # 芯原 DDK
-                  - libOvx12VXCBinary.so # 芯原 DDK
-                  - libNNVXCBinary.so # 芯原 DDK
-                  - libOpenVXU.so # 芯原 DDK
-                  - libNNGPUBinary.so # 芯原 DDK
-                  - libovxlib.so # 芯原 DDK
-                  - libOpenCL.so # OpenCL
-                  - libverisilicon_timvx.so # # NNAdapter device HAL 库
-                  - libtim-vx.so # 芯原 TIM-VX
-                  - libgomp.so.1 # gnuomp 库
-                  - libc++_shared.so
+                  - libtim-vx.so # 芯原 TIM-VX 库
+                  - switch_vivante_sdk.sh # 创建软链接
+                  - vivante_sdk_6_4_4_3
+                    - include
+                    - lib
+                      - a311d # 针对 a311d 平台
+                        - 4.9.113
+                          - VERSION
+                          - galcore.ko # NPU驱动
+                        - libNNGPUBinary.so
+                        - libNNVXCBinary.so
+                        - libOvx12VXCBinary.so
+                      - libCLC.so # 芯原 DDK
+                      - libGAL.so # 芯原 DDK
+                      - libNNArchPerf.so # 芯原 DDK
+                      - libOpenCL.so 
+                      - libOpenVX.so # 芯原 DDK
+                      - libOpenVXU.so # 芯原 DDK
+                      - libVSC.so # 芯原 DDK
+                      - libarchmodelSw.so # 芯原 DDK
+                      - s905d3 # 针对 s905d3 平台
+                        - 4.9.113
+                            - VERSION
+                            - galcore.ko # NPU驱动
+                        - libNNGPUBinary.so # 芯原 DDK
+                        - libNNVXCBinary.so # 芯原 DDK
+                        - libOvx12VXCBinary.so # 芯原 DDK
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
         - OpenCV # OpenCV 预编译库
