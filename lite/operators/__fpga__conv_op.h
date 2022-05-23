@@ -37,7 +37,7 @@ class FpgaConvOpLite : public ConvOpLite {
 
   explicit FpgaConvOpLite(const std::string& type) : ConvOpLite(type) {}
 
-  bool InferShapeImpl() const;
+  bool InferShapeImpl() const override;
 // TODO profile mode will be check later
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {

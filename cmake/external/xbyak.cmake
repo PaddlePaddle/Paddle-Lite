@@ -16,7 +16,7 @@ set(WITH_XBYAK ON)
 
 include(ExternalProject)
 
-SET(XBYAK_SOURCECODE_DIR ${CMAKE_SOURCE_DIR}/third-party/xbyak)
+SET(XBYAK_SOURCECODE_DIR ${PADDLE_SOURCE_DIR}/third-party/xbyak)
 set(XBYAK_PROJECT       extern_xbyak)
 set(XBYAK_PREFIX_DIR    ${THIRD_PARTY_PATH}/xbyak)
 set(XBYAK_INSTALL_ROOT  ${THIRD_PARTY_PATH}/install/xbyak)

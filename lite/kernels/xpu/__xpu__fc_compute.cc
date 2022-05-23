@@ -34,7 +34,7 @@ void XPUFcCompute::PrepareForRun() {
     quant_int8 = true;
   }
   // max
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   param.output_max->Resize({max_ptr_size});
   input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));

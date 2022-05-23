@@ -63,7 +63,8 @@ PriorBoxPluginDynamic::PriorBoxPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &variances_);
 }
 
-nvinfer1::IPluginV2DynamicExt* PriorBoxPluginDynamic::clone() const noexcept {
+nvinfer1::IPluginV2DynamicExt* PriorBoxPluginDynamic::clone() const
+    TRT_NOEXCEPT {
   return new PriorBoxPluginDynamic(aspect_ratios_,
                                    input_dimension_,
                                    image_dimension_,
@@ -165,7 +166,7 @@ nvinfer1::DimsExprs PriorBoxPluginDynamic::getOutputDimensions(
     int32_t output_index,
     const nvinfer1::DimsExprs* inputs,
     int32_t nb_inputs,
-    nvinfer1::IExprBuilder& expr_builder) noexcept {
+    nvinfer1::IExprBuilder& expr_builder) TRT_NOEXCEPT {
   NNADAPTER_CHECK(inputs);
   NNADAPTER_CHECK_GE(nb_inputs, 2);
   nvinfer1::DimsExprs outdims;
@@ -186,10 +187,10 @@ nvinfer1::DimsExprs PriorBoxPluginDynamic::getOutputDimensions(
 int32_t PriorBoxPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
+    void const* const* inputs,
     void* const* outputs,
     void* workspace,
-    cudaStream_t stream) noexcept {
+    cudaStream_t stream) TRT_NOEXCEPT {
   auto height = input_dimension_[2];
   auto width = input_dimension_[3];
   auto in_height = image_dimension_[2];
@@ -270,7 +271,7 @@ int32_t PriorBoxPluginDynamic::enqueue(
   return 0;
 }
 
-size_t PriorBoxPluginDynamic::getSerializationSize() const noexcept {
+size_t PriorBoxPluginDynamic::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(aspect_ratios_) + SerializedSize(input_dimension_) +
          SerializedSize(image_dimension_) + SerializedSize(step_w_) +
          SerializedSize(step_h_) + SerializedSize(min_sizes_) +
@@ -280,16 +281,16 @@ size_t PriorBoxPluginDynamic::getSerializationSize() const noexcept {
          SerializedSize(variances_);
 }
 
-int32_t PriorBoxPluginDynamic::getNbOutputs() const noexcept { return 2; }
+int32_t PriorBoxPluginDynamic::getNbOutputs() const TRT_NOEXCEPT { return 2; }
 
 nvinfer1::DataType PriorBoxPluginDynamic::getOutputDataType(
     int32_t index,
     const nvinfer1::DataType* input_types,
-    int32_t nb_inputs) const noexcept {
+    int32_t nb_inputs) const TRT_NOEXCEPT {
   return input_types[0];
 }
 
-void PriorBoxPluginDynamic::serialize(void* buffer) const noexcept {
+void PriorBoxPluginDynamic::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, aspect_ratios_);
   Serialize(&buffer, input_dimension_);
   Serialize(&buffer, image_dimension_);

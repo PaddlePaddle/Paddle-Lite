@@ -467,6 +467,8 @@ TEST(Activation_relu, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -514,6 +516,8 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -638,6 +642,8 @@ TEST(Activation_sigmoid, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -689,6 +695,8 @@ TEST(Activation_tanh, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -736,6 +744,9 @@ TEST(Activation_swish, precision) {
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
@@ -790,6 +801,8 @@ TEST(Activation_relu6, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -839,6 +852,8 @@ TEST(Activation_log, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -884,6 +899,8 @@ TEST(Activation_exp, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
   for (auto& dims : test_dims) {
     if (dims.size() == 1) {
       dims.push_back(1);
@@ -1039,6 +1056,8 @@ TEST(Activation_gelu, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -1101,6 +1120,8 @@ TEST(Activation_softplus, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -1137,6 +1158,8 @@ TEST(Activation_hard_swish, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #else
   return;
@@ -1304,6 +1327,8 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -1385,6 +1410,8 @@ TEST(Activation_hard_sigmoid_fp16, precision) {
   place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #else
   return;
 #endif

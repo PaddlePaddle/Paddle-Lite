@@ -54,7 +54,7 @@ template <typename T, PrecisionType PType>
 void XPUConv2dCompute<T, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   param.output_max->Resize({max_ptr_size});
   auto filter_ptr = param.filter->template data<float>();
   auto filter_dims = param.filter->dims();

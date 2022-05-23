@@ -14,6 +14,7 @@
 
 #pragma once
 #include <math.h>
+#include <vector>
 #include "driver/nvidia_tensorrt/converter/plugin/plugin.h"
 
 namespace nnadapter {
@@ -35,26 +36,27 @@ class PriorBoxPluginDynamic : public PluginDynamic {
                         bool min_max_aspect_ratios_order,
                         const std::vector<float>& variances);
   PriorBoxPluginDynamic(const void* serial_data, size_t serial_length);
-  nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
+  nvinfer1::IPluginV2DynamicExt* clone() const TRT_NOEXCEPT;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                   const nvinfer1::PluginTensorDesc* output_desc,
-                  const void* const* inputs,
+                  void const* const* inputs,
                   void* const* outputs,
                   void* workspace,
-                  cudaStream_t stream) noexcept;
-  const char* getPluginType() const noexcept;
-  size_t getSerializationSize() const noexcept;
-  void serialize(void* buffer) const noexcept;
-  int32_t getNbOutputs() const noexcept;
+                  cudaStream_t stream) TRT_NOEXCEPT;
+  const char* getPluginType() const TRT_NOEXCEPT;
+  size_t getSerializationSize() const TRT_NOEXCEPT;
+  void serialize(void* buffer) const TRT_NOEXCEPT;
+  int32_t getNbOutputs() const TRT_NOEXCEPT;
   nvinfer1::DimsExprs getOutputDimensions(
       int32_t output_index,
       const nvinfer1::DimsExprs* inputs,
       int32_t nb_inputs,
-      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
+      nvinfer1::IExprBuilder& expr_builder)  // NOLINT
+      TRT_NOEXCEPT;
   nvinfer1::DataType getOutputDataType(int32_t index,
                                        const nvinfer1::DataType* input_types,
-                                       int32_t nb_inputs) const noexcept;
-  void ExpandAspectRatios(std::vector<float>& aspect_ratios_,
+                                       int32_t nb_inputs) const TRT_NOEXCEPT;
+  void ExpandAspectRatios(std::vector<float>& aspect_ratios_,  // NOLINT
                           bool flip,
                           std::vector<float>* output_aspect_ratior) {
     constexpr float epsilon = 1e-6;
@@ -76,7 +78,7 @@ class PriorBoxPluginDynamic : public PluginDynamic {
         }
       }
     }
-  };
+  }
 
  private:
   std::vector<float> aspect_ratios_;
@@ -95,10 +97,10 @@ class PriorBoxPluginDynamic : public PluginDynamic {
 
 class PriorBoxPluginDynamicCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 }  // namespace nvidia_tensorrt

@@ -35,10 +35,15 @@ __global__ void SwishKernel(int num, const T* input, T* output, T beta) {
 }
 
 int SwishPlugin::enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+                         void const* const* inputs,
+                         void* const* outputs,
+#else
                          const void* const* inputs,
                          void** outputs,
+#endif
                          void* workspace,
-                         cudaStream_t stream) noexcept {
+                         cudaStream_t stream) TRT_NOEXCEPT {
   auto input_dims = input_dims_[0];
   int num = batch_size;
   for (int i = 0; i < input_dims.nbDims; i++) {

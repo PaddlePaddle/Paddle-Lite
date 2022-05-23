@@ -138,7 +138,6 @@ class FPGAKernelPlaceCorrectPass : public ProgramPass {
           std::string in_name =
               get_argname(in->AsArg().name, inst.op_info()->inputs());
           if (in_name == "Y") {
-            in = in;
             p = in->AsArg().type->precision();
             std::unique_ptr<KernelBase> best_match;
             for (auto& k : inst.kernels()) {

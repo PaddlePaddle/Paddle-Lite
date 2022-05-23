@@ -36,11 +36,17 @@ class Context {
   std::string GetFirtSelectedDeviceName() const {
     return selected_device_names_[0];
   }
+  std::shared_ptr<std::map<std::string, ov::AnyMap>> GetDeviceConfig() {
+    return std::make_shared<std::map<std::string, ov::AnyMap>>(
+        device_config_map_);
+  }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
-  std::vector<std::string> selected_device_names_{};
+  std::vector<std::string> selected_device_names_{"CPU"};
+  // Device config map.
+  std::map<std::string, ov::AnyMap> device_config_map_;
 };
 
 class Program {
@@ -70,7 +76,8 @@ class Program {
   std::vector<NNAdapterOperandType> output_types_;
   std::shared_ptr<ov::Core> runtime_core_{nullptr};
   std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>> tensor_map_;
-  std::vector<std::shared_ptr<default_opset::Parameter>> parameter_nodes_;
+  std::map<core::Operand*, std::shared_ptr<default_opset::Parameter>>
+      parameter_node_map_;
   std::vector<std::shared_ptr<Operator>> result_nodes_;
   std::shared_ptr<ov::CompiledModel> compiled_model_{nullptr};
 };

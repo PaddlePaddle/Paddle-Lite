@@ -46,8 +46,9 @@ class TestCastOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

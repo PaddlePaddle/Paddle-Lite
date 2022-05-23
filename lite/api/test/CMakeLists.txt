@@ -19,7 +19,7 @@ if(WITH_TESTING)
                ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
             if(LITE_WITH_METAL)
                 lite_cc_test(test_mobilenetv1_lite_metal SRCS test_mobilenetv1_lite_metal.cc
-                        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${CMAKE_BINARY_DIR}/lite/backends/metal/lite.metallib)
+                        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${PADDLE_BINARY_DIR}/lite/backends/metal/lite.metallib)
             endif()
             add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
             lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
