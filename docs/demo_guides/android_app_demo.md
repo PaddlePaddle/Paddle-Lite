@@ -11,7 +11,7 @@ Paddle-Lite 提供了多个应用场景的 Android Demo：
 
     * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [Android 示例](./object_detection/android/app/cxx/yolo_detection_demo/)
      
-    * 基于 [yolov5](https://console.bce.baidu.com/bos/?_=1653031668468#/bos/bucket?name=paddlelite-demo&location=bj&tab=object&path=models%2Fyolov5n%2F) 模型 [Android 示例](./object_detection/android/app/cxx/yolov5n_detection_demo/)
+    * 基于 [yolov5](https://paddlelite-demo.bj.bcebos.com/models/yolov5n/yolov5n.zip) 模型 [Android 示例](./object_detection/android/app/cxx/yolov5n_detection_demo/)
 
     * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [Android 示例](./object_detection/android/app/cxx/picodet_detection_demo/)
     
