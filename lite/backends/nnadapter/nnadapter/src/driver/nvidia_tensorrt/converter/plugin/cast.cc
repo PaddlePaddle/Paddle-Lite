@@ -30,19 +30,24 @@ CastPlugin::CastPlugin(const void* serial_data, size_t serial_length) {
   outtype_ = (nvinfer1::DataType)(outtype);
 }
 
-CastPlugin::~CastPlugin() {}
+CastPlugin::~CastPlugin() TRT_NOEXCEPT {}
 
-bool CastPlugin::supportsFormat(nvinfer1::DataType type,
-                                nvinfer1::PluginFormat format) const noexcept {
+bool CastPlugin::supportsFormat(
+    nvinfer1::DataType type, nvinfer1::PluginFormat format) const TRT_NOEXCEPT {
   return type == nvinfer1::DataType::kFLOAT ||
          type == nvinfer1::DataType::kINT32;
 }
 
 int CastPlugin::enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+                        void const* const* inputs,
+                        void* const* outputs,
+#else
                         const void* const* inputs,
                         void** outputs,
+#endif
                         void* workspace,
-                        cudaStream_t stream) noexcept {
+                        cudaStream_t stream) TRT_NOEXCEPT {
   auto input_dims = input_dims_[0];
   int num = batch_size;
   for (int i = 0; i < input_dims.nbDims; i++) {
@@ -66,17 +71,17 @@ int CastPlugin::enqueue(int batch_size,
   return 0;
 }
 
-size_t CastPlugin::getSerializationSize() const noexcept {
+size_t CastPlugin::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(static_cast<int>(outtype_)) +
          SerializedSize(static_cast<int>(intype_));
 }
 
-void CastPlugin::serialize(void* buffer) const noexcept {
+void CastPlugin::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, static_cast<int>(outtype_));
   Serialize(&buffer, static_cast<int>(intype_));
 }
 
-nvinfer1::IPluginV2* CastPlugin::clone() const noexcept {
+nvinfer1::IPluginV2* CastPlugin::clone() const TRT_NOEXCEPT {
   return new CastPlugin(intype_, outtype_);
 }
 
@@ -93,17 +98,17 @@ CastPluginDynamic::CastPluginDynamic(const void* serial_data,
   outtype_ = (nvinfer1::DataType)(outtype);
 }
 
-nvinfer1::IPluginV2DynamicExt* CastPluginDynamic::clone() const noexcept {
+nvinfer1::IPluginV2DynamicExt* CastPluginDynamic::clone() const TRT_NOEXCEPT {
   return new CastPluginDynamic(intype_, outtype_);
 }
 
 int32_t CastPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
+    void const* const* inputs,
     void* const* outputs,
     void* workspace,
-    cudaStream_t stream) noexcept {
+    cudaStream_t stream) TRT_NOEXCEPT {
   auto input_dims = input_desc[0].dims;
   int num = 1;
   for (int i = 0; i < input_dims.nbDims; i++) {
@@ -127,12 +132,12 @@ int32_t CastPluginDynamic::enqueue(
   return 0;
 }
 
-size_t CastPluginDynamic::getSerializationSize() const noexcept {
+size_t CastPluginDynamic::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(static_cast<int>(outtype_)) +
          SerializedSize(static_cast<int>(intype_));
 }
 
-void CastPluginDynamic::serialize(void* buffer) const noexcept {
+void CastPluginDynamic::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, static_cast<int>(outtype_));
   Serialize(&buffer, static_cast<int>(intype_));
 }
@@ -141,7 +146,7 @@ bool CastPluginDynamic::supportsFormatCombination(
     int32_t pos,
     const nvinfer1::PluginTensorDesc* in_out,
     int32_t nb_inputs,
-    int32_t nb_outputs) noexcept {
+    int32_t nb_outputs) TRT_NOEXCEPT {
   NNADAPTER_CHECK_LT(pos, nb_inputs + nb_outputs);
   NNADAPTER_CHECK(in_out);
   return true;

@@ -209,6 +209,9 @@ TEST(Argmax, precision) {
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   TestArgmax(place, aliases, {2});
   return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestArgmax(place, aliases, {2});
+  return;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   TestArgmax(place, aliases, {2});
   return;

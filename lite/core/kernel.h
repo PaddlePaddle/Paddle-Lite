@@ -234,7 +234,7 @@ template <TargetType Target,
 class KernelLite : public KernelBase {
  public:
   // Run the kernel.
-  virtual void Run() { CHECK(false) << "Not Implemented"; }
+  virtual void Run() override { CHECK(false) << "Not Implemented"; }
 
   TargetType target() const override { return Target; }
   PrecisionType precision() const override { return Precision; }

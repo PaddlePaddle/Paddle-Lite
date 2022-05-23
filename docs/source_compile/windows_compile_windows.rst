@@ -34,15 +34,15 @@ Windows 环境下编译适用于 Windows 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^^^^^
 
 
 * Windows 10 专业版
-* CMake（请使用 3.15 或以上版本）
-* Python 版本 2.7/3.5.1+
-* pip 或 pip3 版本 9.0.1+
-* Microsoft Visual Studio（2015 及以上版本）
+* CMake >= 3.15
+* Python == 2.7/3.5.1+
+* pip/pip3 >= 9.0.1
+* Microsoft Visual Studio >= 2015版本
 
 环境配置步骤
 ^^^^^^^^^^^^^^^^

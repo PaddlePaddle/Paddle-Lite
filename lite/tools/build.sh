@@ -47,6 +47,7 @@ RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+WITH_NODE_RAW_FS=OFF
 # min android api level
 MIN_ANDROID_API_LEVEL_ARMV7=16
 MIN_ANDROID_API_LEVEL_ARMV8=21
@@ -140,6 +141,33 @@ function build_opt {
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
+}
+
+function build_opt_wasm {
+    cd $workspace
+    prepare_thirdparty
+    cd third-party/protobuf-host
+    git apply $workspace/cmake/protobuf-host-patch || true
+    cd $workspace
+    mkdir -p build-protoc
+    cd build-protoc
+    cmake -Dprotobuf_BUILD_TESTS=OFF ../third-party/protobuf-host/cmake
+    make protoc -j$NUM_PROC
+    cd ..
+    mkdir -p build.opt.wasm
+    cd build.opt.wasm
+    emcmake cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF \
+      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_OPENMP=OFF \
+      -DPROTOBUF_PROTOC_EXECUTABLE=`pwd`/../build-protoc/protoc \
+      -DWITH_NODE_RAW_FS=$1
+    emmake make opt -j$NUM_PROC
+    cd ../third-party/protobuf-host
+    git reset --hard HEAD
 }
 
 function make_tiny_publish_so {
@@ -824,6 +852,10 @@ function main {
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
+            --with_node_raw_fs=*)
+                WITH_NODE_RAW_FS="${i#*=}"
+                shift
+                ;;
             tiny_publish)
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift
@@ -846,6 +878,10 @@ function main {
                 ;;
             build_optimize_tool)
                 build_opt
+                shift
+                ;;
+            build_optimize_tool_wasm)
+                build_opt_wasm $WITH_NODE_RAW_FS
                 shift
                 ;;
             opencl)

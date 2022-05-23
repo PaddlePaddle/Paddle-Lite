@@ -1222,6 +1222,8 @@ inline void write_gemv_out(const int* in,
       float32x4_t valpha = vdupq_n_f32(alpha);
       float32x4_t voffset = vdupq_n_f32(offset);
       float32x4_t vthreshold = vdupq_n_f32(threshold);
+      float32x4_t vmax = vdupq_n_f32(-127.f);
+
 #ifdef __aarch64__
       asm volatile(
           "cmp %w[cnt], #1\n"
@@ -1252,6 +1254,11 @@ inline void write_gemv_out(const int* in,
           "fmul  v0.4s, v4.4s,  v5.4s\n"
           "fmin  v6.4s, v6.4s,  %[vthreshold].4s\n"
           "fmul  v3.4s, v6.4s,  v7.4s\n"
+          // out >= -127
+          "fcmge v4.4s, v0.4s, %[vmax].4s\n"
+          "fcmge v5.4s, v3.4s, %[vmax].4s\n"
+          "bif v0.16b, %[vmax].16b, v4.16b\n"
+          "bif v3.16b, %[vmax].16b, v5.16b\n"
           // fp32 - int32
           "fcvtas  v4.4s, v0.4s\n"
           "fcvtas  v5.4s, v3.4s\n"
@@ -1279,6 +1286,9 @@ inline void write_gemv_out(const int* in,
           "fmax  v4.4s, v4.4s,  %[vzero].4s\n"
           "fmin  v4.4s, v4.4s,  %[vthreshold].4s\n"
           "fmul  v0.4s, v4.4s,  v5.4s\n"
+          // out >= -127
+          "fcmge v4.4s, v0.4s, %[vmax].4s\n"
+          "bif v0.16b, %[vmax].16b, v4.16b\n"
           // fp32 - int32
           "fcvtas  v4.4s, v0.4s\n"
           // int32 - int16
@@ -1298,7 +1308,8 @@ inline void write_gemv_out(const int* in,
             [vzero] "w"(vzero),
             [valpha] "w"(valpha),
             [voffset] "w"(voffset),
-            [vthreshold] "w"(vthreshold)
+            [vthreshold] "w"(vthreshold),
+            [vmax] "w"(vmax)
           : "cc",
             "memory",
             "v0",
@@ -1349,6 +1360,11 @@ inline void write_gemv_out(const int* in,
           "vbif q13, %q[vfive], q10\n"
           "vadd.f32 q5, q5, q12\n"
           "vadd.f32 q8, q8, q13\n"
+          // data >= -127
+          "vcge.f32 q7, q5, %q[vmax]\n"
+          "vcge.f32 q9, q8, %q[vmax]\n"
+          "vbif q5, %q[vmax], q7\n"
+          "vbif q8, %q[vmax], q9\n"
           // fp32 -> int32
           "vcvt.s32.f32  q7, q5\n"
           "vcvt.s32.f32  q9, q8\n"
@@ -1380,6 +1396,9 @@ inline void write_gemv_out(const int* in,
           "vcge.f32 q7, q5, %q[vzero]\n"
           "vbif q12, %q[vfive], q7\n"
           "vadd.f32 q5, q5, q12\n"
+          // data >= -127
+          "vcge.f32 q7, q5, %q[vmax]\n"
+          "vbif q5, %q[vmax], q7\n"
           // fp32 -> int32
           "vcvt.s32.f32  q7, q5\n"
           // int32 -> int16
@@ -1400,7 +1419,8 @@ inline void write_gemv_out(const int* in,
             [valpha] "w"(valpha),
             [voffset] "w"(voffset),
             [vthreshold] "w"(vthreshold),
-            [vfive] "w"(vfive)
+            [vfive] "w"(vfive),
+            [vmax] "w"(vmax)
           : "cc",
             "memory",
             "q4",
@@ -1624,6 +1644,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   memset(zerobuf, 0, sizeof(float) * (M + 16));
   const float* bias_ptr = is_bias ? bias : zerobuf;
   float six = alpha;
+
 #ifdef __aarch64__
   int cnt = N >> 3;
   int tail = N & 7;

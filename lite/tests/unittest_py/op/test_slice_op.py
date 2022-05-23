@@ -51,8 +51,9 @@ class TestSliceOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
         '''
         #All of metal inputs error.
         metal_places = [
@@ -93,6 +94,11 @@ class TestSliceOp(AutoScanTest):
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
         assume(len(axes) <= len(in_shape))
+        for i in range(len(starts)):
+            start = starts[i] if starts[i] >= 0 else starts[i] + in_shape[axes[
+                i]]
+            assume(start < in_shape[axes[i]])
+
         if input_num == 0:
             assume(len(axes) == 2)
 
@@ -197,6 +203,16 @@ class TestSliceOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'input_num > 1' or 'in_shape_size ==1' "
             "or 'axes has 0' on nvidia_tensorrt.")
+
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "intel_openvino":
+                input_num = len(program_config.ops[0].inputs)
+                if input_num != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Intel OpenVINO does not support 'input_num > 1'.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

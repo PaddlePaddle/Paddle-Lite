@@ -73,7 +73,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  const int XPU_QUANT_SCALE_NUM = get_max_ptr_size(ctx.GetRawContext());
+  const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
   // prepare weight_max
   weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
       param.fc_weight_max->numel() * XPU_QUANT_SCALE_NUM * sizeof(float));
