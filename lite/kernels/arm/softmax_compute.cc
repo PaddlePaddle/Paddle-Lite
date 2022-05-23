@@ -17,6 +17,9 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
+#ifdef LITE_WITH_ARM8_SVE2
+#include "lite/backends/arm/math/sve/funcs_sve.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -37,6 +40,20 @@ void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int outer_num = x_dims.Slice(0, axis).production();
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
+  auto& ctx = this->ctx_->As<ARMContext>();
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx.has_sve2()) {
+    if (inner_num == 1) {
+      lite::arm::math::sve::softmax_inner1_sve(din, dout, outer_num, axis_size);
+    } else if (axis_size == 4) {
+      lite::arm::math::sve::softmax_axis4_sve(din, dout, outer_num, axis_size);
+    } else {
+      lite::arm::math::sve::softmax_baisc_sve(din, dout, outer_num, axis_size);
+    }
+  }
+  return;
+#endif
+
   if (inner_num == 1) {
     if (axis_size > 4) {
       lite::arm::math::softmax_inner1_large_axis(
@@ -83,6 +100,19 @@ void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int outer_num = x_dims.Slice(0, axis).production();
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx.has_sve2()) {
+    if (inner_num == 1) {
+      lite::arm::math::sve::softmax_inner1_sve(din, dout, outer_num, axis_size);
+    } else if (axis_size == 4) {
+      lite::arm::math::sve::softmax_axis4_sve(din, dout, outer_num, axis_size);
+    } else {
+      lite::arm::math::sve::softmax_baisc_sve(din, dout, outer_num, axis_size);
+    }
+  }
+  return;
+#endif
+
   if (inner_num == 1) {
     if (axis_size >= 8) {
       lite::arm::math::fp16::softmax_inner1_large_axis_fp16(

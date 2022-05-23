@@ -33,6 +33,8 @@ WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -225,6 +227,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DLITE_THREAD_POOL=$BUILD_THREAD_POOL \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -338,6 +341,7 @@ function make_full_publish_so {
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -406,6 +410,7 @@ function make_all_tests {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -660,6 +665,8 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -785,6 +792,10 @@ function main {
                 BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
+            --with_arm8_sve2=*)
+                 WITH_ARM8_SVE2="${i#*=}"
+                 shift
+                 ;;
             --build_arm82_int8_sdot=*)
                 BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
