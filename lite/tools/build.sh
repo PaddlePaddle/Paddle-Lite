@@ -199,6 +199,14 @@ function make_tiny_publish_so {
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv8_sve2"
+  fi
 
   cmake .. \
       ${PYTHON_FLAGS} \
@@ -309,6 +317,14 @@ function make_full_publish_so {
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv8_sve2"
+  fi
 
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
@@ -384,6 +400,15 @@ function make_all_tests {
 
   if [ $4 == "benchmark" ]; then
     set_benchmark_options
+    build_dir=build_dir + ".benchmark"
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=build_dir + ".armv8_sve2"
   fi
 
   prepare_workspace $root_dir $build_directory
