@@ -298,7 +298,7 @@ if (LITE_WITH_ARM82_FP16)
 endif(LITE_WITH_ARM82_FP16)
 
 if (LITE_WITH_ARM8_SVE2)
-  add_definitions("-DLITE_WITH_ARM82_FP16")
+  add_definitions("-DLITE_WITH_ARM8_SVE2c")
 endif(LITE_WITH_ARM8_SVE2)
 
 if (LITE_WITH_M1)

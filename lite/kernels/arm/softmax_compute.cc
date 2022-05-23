@@ -41,14 +41,16 @@ void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
   auto& ctx = this->ctx_->As<ARMContext>();
-#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+#ifdef LITE_WITH_ARM8_SVE2
   if (ctx.has_sve2()) {
     if (inner_num == 1) {
       lite::arm::math::sve::softmax_inner1_sve(din, dout, outer_num, axis_size);
     } else if (axis_size == 4) {
-      lite::arm::math::sve::softmax_axis4_sve(din, dout, outer_num, axis_size);
+      lite::arm::math::sve::softmax_axis4_sve(
+          din, dout, axis_size, inner_num, outer_num);
     } else {
-      lite::arm::math::sve::softmax_baisc_sve(din, dout, outer_num, axis_size);
+      lite::arm::math::sve::softmax_basic_sve(
+          din, dout, axis_size, inner_num, outer_num);
     }
   }
   return;
@@ -100,14 +102,17 @@ void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int outer_num = x_dims.Slice(0, axis).production();
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
-#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  auto& ctx = this->ctx_->As<ARMContext>();
+#ifdef LITE_WITH_ARM8_SVE2
   if (ctx.has_sve2()) {
     if (inner_num == 1) {
       lite::arm::math::sve::softmax_inner1_sve(din, dout, outer_num, axis_size);
     } else if (axis_size == 4) {
-      lite::arm::math::sve::softmax_axis4_sve(din, dout, outer_num, axis_size);
+      lite::arm::math::sve::softmax_axis4_sve(
+          din, dout, axis_size, inner_num, outer_num);
     } else {
-      lite::arm::math::sve::softmax_baisc_sve(din, dout, outer_num, axis_size);
+      lite::arm::math::sve::softmax_basic_sve(
+          din, dout, axis_size, inner_num, outer_num);
     }
   }
   return;
