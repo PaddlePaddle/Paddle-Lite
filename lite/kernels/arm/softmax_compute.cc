@@ -52,8 +52,8 @@ void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::sve::softmax_basic_sve(
           din, dout, axis_size, inner_num, outer_num);
     }
+    return;
   }
-  return;
 #endif
 
   if (inner_num == 1) {
