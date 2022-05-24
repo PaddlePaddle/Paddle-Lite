@@ -100,9 +100,8 @@ TEST(Softmax, precision) {
   LOG(INFO) << "test softmax op";
   float abs_error = 4e-5;
   Place place;
-  =
 #if defined(LITE_WITH_NNADAPTER)
-      place = TARGET(kNNAdapter);
+  place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
@@ -115,18 +114,18 @@ TEST(Softmax, precision) {
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
-      place = TARGET(kNPU);
+  place = TARGET(kNPU);
   abs_error = 4e-3;  // Using fp16 in NPU
                      // #elif defined(LITE_WITH_OPENCL)
                      //   place = Place(TARGET(kOpenCL), PRECISION(kFP16),
                      //   DATALAYOUT(kImageDefault));
                      //   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_XPU)
-      place = TARGET(kXPU);
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
-      place = TARGET(kARM);
+  place = TARGET(kARM);
 #else
-      return;
+  return;
 #endif
 
   for (auto x_dims :
