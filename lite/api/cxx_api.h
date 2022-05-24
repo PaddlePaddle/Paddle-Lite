@@ -68,7 +68,6 @@ class LITE_API Predictor {
             const std::vector<std::string>& var_names = {})
       : program_desc_(program_desc), scope_(root) {
     // step1. Create a Program to construct the exec_scope and ops
-    LOG(INFO) << "BBBBBBBBBBB";
     Program program(program_desc_, scope_, valid_places, var_names);
     exec_scope_ = program.exec_scope();
     valid_places_ = valid_places;
