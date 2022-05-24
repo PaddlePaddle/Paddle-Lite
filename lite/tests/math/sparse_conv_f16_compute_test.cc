@@ -25,6 +25,9 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/math/conv_ut.h"
 #include "lite/tests/utils/tensor_utils.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
@@ -43,13 +46,12 @@ DEFINE_int32(offset_c, 0, "C offset");
 
 DEFINE_double(alpha, 1.0, "alpha");
 DEFINE_double(beta, 0.0, "beta");
-
 DEFINE_bool(flag_semi, false, "do semi");
 
 DEFINE_double(flag_sparsity, 0.8, "with sparsity");
 
 #ifdef LITE_WITH_ARM
-bool test_spmm_fp32(bool tra,
+bool test_spmm_fp16(bool tra,
                     bool trb,
                     int m,
                     int n,
@@ -79,29 +81,29 @@ bool test_spmm_fp32(bool tra,
 
   ta.Resize({size_a});
   tb.Resize({size_b});
-  tc.Resize({m * ldc});
-  tc_basic.Resize({m * ldc});
-  tc_backup.Resize({m * ldc});
+  tc.Resize({m, ldc});
+  tc_basic.Resize({m, ldc});
+  tc_backup.Resize({m, ldc});
   tbias.Resize({m});
 
-  ta.set_precision(PRECISION(kFloat));
-  tb.set_precision(PRECISION(kFloat));
-  tc.set_precision(PRECISION(kFloat));
-  tc_basic.set_precision(PRECISION(kFloat));
-  tc_backup.set_precision(PRECISION(kFloat));
-  tbias.set_precision(PRECISION(kFloat));
+  ta.set_precision(PRECISION(kFP16));
+  tb.set_precision(PRECISION(kFP16));
+  tc.set_precision(PRECISION(kFP16));
+  tc_basic.set_precision(PRECISION(kFP16));
+  tc_backup.set_precision(PRECISION(kFP16));
+  tbias.set_precision(PRECISION(kFP16));
 
   fill_tensor_rand(ta, -1.f, 1.f);
   fill_tensor_rand(tb, -1.f, 1.f);
   fill_tensor_rand(tbias, -1.f, 1.f);
   fill_tensor_rand(tc, -1.f, 1.f);
 
-  auto da = ta.mutable_data<float>();
-  auto db = tb.mutable_data<float>();
-  auto dc = tc.mutable_data<float>();
-  auto dc_basic = tc_basic.mutable_data<float>();
-  auto dc_backup = tc_backup.mutable_data<float>();
-  auto dbias = tbias.mutable_data<float>();
+  auto da = ta.mutable_data<float16_t>();
+  auto db = tb.mutable_data<float16_t>();
+  auto dc = tc.mutable_data<float16_t>();
+  auto dc_basic = tc_basic.mutable_data<float16_t>();
+  auto dc_backup = tc_backup.mutable_data<float16_t>();
+  auto dbias = tbias.mutable_data<float16_t>();
 
   if (has_semi) {
     int para_h = m;
@@ -131,9 +133,6 @@ bool test_spmm_fp32(bool tra,
       }
     }
   }
-
-  memcpy(dc_basic, dc, sizeof(float) * m * ldc);
-  memcpy(dc_backup, dc, sizeof(float) * m * ldc);
   ActivationParam act_param;
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;
@@ -154,6 +153,9 @@ bool test_spmm_fp32(bool tra,
   act_param.active_type = act;
   act_param.has_active = (flag_act > 0);
 
+  memcpy(dc_basic, dc, sizeof(float16_t) * m * ldc);
+  memcpy(dc_backup, dc, sizeof(float16_t) * m * ldc);
+
   VLOG(4) << "spmm M: " << m << ", N: " << n << ", K: " << k
           << ", strides, lda: " << lda << ", ldb: " << ldb << ", ldc: " << ldc
           << ", alpha: " << alpha << ", beta: " << beta
@@ -161,19 +163,20 @@ bool test_spmm_fp32(bool tra,
           << ", transB: " << (trb ? "true" : "false")
           << ", flag_act: " << flag_act
           << ", semi: " << (has_semi ? "true" : "false")
-          << ", bias: " << (has_bias ? "true" : "false");
+          << ", bias: " << (has_bias ? "true" : "false")
+          << ",sparsity: " << sparsity << ", threads: " << ths;
   if (FLAGS_check_result) {
     basic_gemm(tra,
                trb,
                m,
                n,
                k,
-               alpha,
+               static_cast<float16_t>(alpha),
                da,
                lda,
                db,
                ldb,
-               beta,
+               static_cast<float16_t>(beta),
                dc_basic,
                ldc,
                dbias,
@@ -196,16 +199,16 @@ bool test_spmm_fp32(bool tra,
   int ch_in = k;
   int im_size = n;
   int weight_num = m * k;
-  zero_num = ComputeSemiSparseZeros<float>(&ta,
-                                           &count_nonzeroes,
-                                           &count_channels,
-                                           &count_blocks,
-                                           &f_semi,
-                                           ch_out,
-                                           ch_in);
+  zero_num = ComputeSemiSparseZeros<float16_t>(&ta,
+                                               &count_nonzeroes,
+                                               &count_channels,
+                                               &count_blocks,
+                                               &f_semi,
+                                               ch_out,
+                                               ch_in);
   if (f_semi == 0) {
     zero_num =
-        ComputeSparseZeros<float>(&ta, &num_build_nonzeroes, ch_out, ch_in);
+        ComputeSparseZeros<float16_t>(&ta, &num_build_nonzeroes, ch_out, ch_in);
   }
   int nonzero_num = weight_num - zero_num;
   if (nonzero_num <= 0) {
@@ -225,26 +228,26 @@ bool test_spmm_fp32(bool tra,
   }
   int first_ic = 0;
   if (f_semi == 1) {
-    first_ic = ComputeSemiSparseWeight<float>(&ta,
+    first_ic = ComputeSemiSparseWeight<float16_t>(&ta,
+                                                  ch_out,
+                                                  ch_in,
+                                                  im_size,
+                                                  count_nonzeroes,
+                                                  count_channels,
+                                                  count_blocks,
+                                                  &nonzeros_output_t,
+                                                  &oc_nonzeros_t,
+                                                  &ic_diffs_t);
+  } else {
+    first_ic = ComputeSparseWeight<float16_t>(&ta,
                                               ch_out,
                                               ch_in,
                                               im_size,
-                                              count_nonzeroes,
-                                              count_channels,
-                                              count_blocks,
+                                              nonzero_num,
+                                              num_build_nonzeroes,
                                               &nonzeros_output_t,
                                               &oc_nonzeros_t,
                                               &ic_diffs_t);
-  } else {
-    first_ic = ComputeSparseWeight<float>(&ta,
-                                          ch_out,
-                                          ch_in,
-                                          im_size,
-                                          nonzero_num,
-                                          num_build_nonzeroes,
-                                          &nonzeros_output_t,
-                                          &oc_nonzeros_t,
-                                          &ic_diffs_t);
   }
 
   double ops = 2.0 * m * n * k;
@@ -253,74 +256,76 @@ bool test_spmm_fp32(bool tra,
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
 
-  const float* input = tb.data<float>();
-  const float* nonzero_weights = nonzeros_output_t.data<float>();
+  const float16_t* input = tb.data<float16_t>();
+  const float16_t* nonzero_weights = nonzeros_output_t.data<float16_t>();
   const int32_t* diffs = ic_diffs_t.data<int32_t>();
   const uint32_t* oc_nonzeros = oc_nonzeros_t.data<uint32_t>();
-  const float* bias = has_bias ? tbias.data<float>() : nullptr;
-  float* dout = tc.mutable_data<float>();
-  const float* din = input + first_ic * im_size;
+  const float16_t* bias = has_bias ? tbias.data<float16_t>() : nullptr;
+  float16_t* dout = tc.mutable_data<float16_t>();
+  const float16_t* din = input + first_ic * im_size;
   int ic = k;
   int oc = m;
   paddle::lite::operators::SparseConvParam param;
   param.activation_param = act_param;
   for (int j = 0; j < FLAGS_warmup; ++j) {
     if (f_semi == 1) {
-      paddle::lite::arm::math::sparse_semi_conv_fp32_pipelined(nonzero_weights,
-                                                               din,
-                                                               diffs,
-                                                               oc_nonzeros,
-                                                               bias,
-                                                               dout,
-                                                               oc,
-                                                               ic,
-                                                               im_size,
-                                                               param,
-                                                               &ctx);
+      paddle::lite::arm::math::fp16::sparse_semi_conv_fp16_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias,
+          dout,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
     } else {
-      paddle::lite::arm::math::sparse_conv_fp32_pipelined(nonzero_weights,
-                                                          din,
-                                                          diffs,
-                                                          oc_nonzeros,
-                                                          bias,
-                                                          dout,
-                                                          oc,
-                                                          ic,
-                                                          im_size,
-                                                          param,
-                                                          &ctx);
+      paddle::lite::arm::math::fp16::sparse_conv_fp16_pipelined(nonzero_weights,
+                                                                din,
+                                                                diffs,
+                                                                oc_nonzeros,
+                                                                bias,
+                                                                dout,
+                                                                oc,
+                                                                ic,
+                                                                im_size,
+                                                                param,
+                                                                &ctx);
     }
   }
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     if (i == FLAGS_repeats - 1) {
-      memcpy(dc, dc_backup, sizeof(float) * m * ldc);
+      memcpy(dc, dc_backup, sizeof(float16_t) * m * ldc);
     }
     t0.Start();
     if (f_semi == 1) {
-      paddle::lite::arm::math::sparse_semi_conv_fp32_pipelined(nonzero_weights,
-                                                               din,
-                                                               diffs,
-                                                               oc_nonzeros,
-                                                               bias,
-                                                               dout,
-                                                               oc,
-                                                               ic,
-                                                               im_size,
-                                                               param,
-                                                               &ctx);
+      paddle::lite::arm::math::fp16::sparse_semi_conv_fp16_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias,
+          dout,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
     } else {
-      paddle::lite::arm::math::sparse_conv_fp32_pipelined(nonzero_weights,
-                                                          din,
-                                                          diffs,
-                                                          oc_nonzeros,
-                                                          bias,
-                                                          dout,
-                                                          oc,
-                                                          ic,
-                                                          im_size,
-                                                          param,
-                                                          &ctx);
+      paddle::lite::arm::math::fp16::sparse_conv_fp16_pipelined(nonzero_weights,
+                                                                din,
+                                                                diffs,
+                                                                oc_nonzeros,
+                                                                bias,
+                                                                dout,
+                                                                oc,
+                                                                ic,
+                                                                im_size,
+                                                                param,
+                                                                &ctx);
     }
     t0.Stop();
   }
@@ -340,8 +345,25 @@ bool test_spmm_fp32(bool tra,
     LOG(INFO) << "compare result, max diff: " << max_diff
               << ", max ratio: " << max_ratio;
     if (std::abs(max_ratio) > 1e-4f && std::abs(max_diff) > 5e-5f) {
+      int64_t size = tc_basic.numel();
+      int count = 0;
+      bool check = false;
+      auto dc_basic_ptr = tc_basic.data<float16_t>();
+      auto dc_ptr = tc.data<float16_t>();
+      for (int i = 0; i < size; i++) {
+        if (fabs(dc_basic_ptr[i] - dc_ptr[i]) > 1e-1f &&
+            fabs(dc_basic_ptr[i] - dc_ptr[i]) /
+                    (fmax(fabs(dc_basic_ptr[i]), fabs(dc_ptr[i]))) >
+                0.5) {
+          check = true;
+          LOG(INFO) << "i: " << i << ", dc_basic_ptr: " << dc_basic_ptr[i]
+                    << ", dc_ptr: " << dc_ptr[i];
+          break;
+        }
+      }
+      if (!check) return true;
       Tensor tdiff;
-      tdiff.set_precision(PRECISION(kFloat));
+      tdiff.set_precision(PRECISION(kFP16));
       tdiff.Resize(tc.dims());
       tensor_diff(tc_basic, tc, tdiff);
       LOG(INFO) << "a: ";
@@ -362,7 +384,7 @@ bool test_spmm_fp32(bool tra,
   return true;
 }
 #else
-bool test_spmm_fp32(bool tra,
+bool test_spmm_fp16(bool tra,
                     bool trb,
                     int m,
                     int n,
@@ -382,7 +404,7 @@ bool test_spmm_fp32(bool tra,
 }
 #endif
 
-TEST(TestSpmmF32, test_func_spmm_f32) {
+TEST(TestSpmmF16, test_func_spmm_f16) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
@@ -390,7 +412,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
     LOG(INFO) << "run basic spmm test";
     for (auto& m : {1, 16, 64, 128}) {
       for (auto& n : {1, 32, 128, 256}) {
-        for (auto& k : {1, 109, 512}) {
+        for (auto& k : {1, 3, 8, 59, 234}) {
           for (auto& tra : {false}) {
             for (auto& trb : {false}) {
               for (auto& alpha : {1.f}) {
@@ -399,7 +421,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
                     for (auto& has_bias : {false, true}) {
                       for (auto& flag_act : {0, 1, 2, 4, 10}) {
                         for (auto& has_semi : {false, true}) {
-                          for (auto& th : {1, 2, 4}) {
+                          for (auto& th : {4}) {
                             for (auto& sp : {0.5, 0.7, 0.8}) {
                               int lda = k + offset;
                               if (tra) {
@@ -410,7 +432,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
                                 ldb = k + offset;
                               }
                               int ldc = n + offset;
-                              auto flag = test_spmm_fp32(tra,
+                              auto flag = test_spmm_fp16(tra,
                                                          trb,
                                                          m,
                                                          n,
@@ -463,7 +485,7 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
   }
 }
 
-TEST(TestSpmmF32Custom, test_func_spmm_f32_custom) {
+TEST(TestSpmmF16Custom, test_func_spmm_f16_custom) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -476,7 +498,8 @@ TEST(TestSpmmF32Custom, test_func_spmm_f32_custom) {
     ldb = FLAGS_K + FLAGS_offset_b;
   }
   int ldc = FLAGS_N + FLAGS_offset_c;
-  auto flag = test_spmm_fp32(FLAGS_traA,
+  LOG(INFO) << "run basic spmm test";
+  auto flag = test_spmm_fp16(FLAGS_traA,
                              FLAGS_traB,
                              FLAGS_M,
                              FLAGS_N,
@@ -496,10 +519,10 @@ TEST(TestSpmmF32Custom, test_func_spmm_f32_custom) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
                << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
-               << ", act: " << FLAGS_flag_act << " failed!!";
+               << ", flag_act: " << FLAGS_flag_act << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", act: " << FLAGS_flag_act
+            << ", bias: " << FLAGS_flag_bias << ", flag_act: " << FLAGS_flag_act
             << " passed!!";
 }

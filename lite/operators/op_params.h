@@ -337,15 +337,15 @@ struct ActivationGradParam : ParamBase {
 struct SparseConvParam : ParamBase {
   const lite::Tensor* x{};
   // An array of float values storing non-zero kernel elements
-  const lite::Tensor* nonzero_weights{};
+  lite::Tensor* nonzero_weights{};
   /* An array of int32_t values storing scaled
    * [by sizeof(input element)] difference  between input channels
    * corresponding to successive non-zero element
    */
-  const lite::Tensor* diffs{};
+  lite::Tensor* diffs{};
   // the number of non-zero kernel elements per each output channel
-  const lite::Tensor* oc_nonzeros{};
-  const lite::Tensor* bias{nullptr};
+  lite::Tensor* oc_nonzeros{};
+  lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
   int first_ic{0};
   int flag_semi{0};
