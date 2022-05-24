@@ -31,9 +31,11 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
   for (auto operation : operations) {
     auto input_operands = operation->input_operands;
     for (auto operand : input_operands) {
-      if ((operand && IsModelInputOperand(operand)) ||
-          (IsTemporaryVariableOperand(operand) &&
-           IsOperandWithDynamicShape(operand))) {
+      if (operand && IsModelInputOperand(operand)) {
+        break;
+      }
+      if (operand && IsTemporaryVariableOperand(operand) &&
+          IsOperandWithDynamicShape(operand)) {
         NNADAPTER_LOG(WARNING)
             << "Skip if dynamic shape need to be supported in the model!";
         return;
@@ -58,6 +60,9 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
                operation->type == NNADAPTER_RESIZE_NEAREST) {
       white_operands.insert(input_operands[1]);
       white_operands.insert(input_operands[2]);
+    } else if (operation->type == NNADAPTER_EXPAND ||
+               operation->type == NNADAPTER_RESHAPE) {
+      white_operands.insert(input_operands[1]);
     } else {
       bool is_tempory_shape_op = true;
       for (auto input_operand : input_operands) {
@@ -86,6 +91,12 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
       }
     }
   }
+  // The operations cannot be deleted completely
+  if (operations.size() == remove_operations.size()) {
+    NNADAPTER_LOG(WARNING)
+        << "Skip! The operations cannot be deleted completely.";
+    return;
+  }
   // Clean
   for (auto remove_operand : remove_operands) {
     if (!white_operands.count(remove_operand)) {
@@ -109,6 +120,8 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
       remove_operand->buffer = malloc(remove_operand->length);
       memcpy(
           remove_operand->buffer, temporary_shape.data, remove_operand->length);
+      NNADAPTER_VLOG(5) << "Operand: " << OperandIdToString(remove_operand)
+                        << " is in constant folding!";
     }
   }
   for (auto remove_operation : remove_operations) {
