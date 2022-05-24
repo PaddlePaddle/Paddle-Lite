@@ -90,9 +90,10 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   // Move the persistable var to the root scope
   if (tensor->persistable()) {
     auto root_scope = scope->MutableParent();
-    auto root_var = root_scope->LocalVar(var_name);
-    auto root_tensor = root_var->GetMutable<Tensor>();
-    root_tensor->CopyDataFrom(*tensor);
+    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+    if (root_tensor != tensor) {
+      root_tensor->CopyDataFrom(*tensor);
+    }
     scope->DeleteLocalVar(var_name);
   }
 
