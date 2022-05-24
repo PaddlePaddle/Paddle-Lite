@@ -83,6 +83,12 @@ Variable *Scope::FindLocalVar(const std::string &name) const {
   return nullptr;
 }
 
+void Scope::DeleteLocalVar(const std::string &name) {
+  rwlock_->RDLock();
+  if (FindLocalVar(name)) vars_.erase(name);
+  rwlock_->UNLock();
+}
+
 // AttributeVarNames will get persistive attribute names stored in parent scope
 std::vector<std::string> Scope::AttributeVarNames() const {
   std::vector<std::string> resulted_keys;

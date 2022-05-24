@@ -87,6 +87,15 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
+  if (tensor->persistable()) {
+    auto root_scope = scope->MutableParent();
+    auto exec_var = scope->LocalVar(var_name);
+    auto root_var = root_scope->LocalVar(var_name);
+    auto root_tensor = root_var->GetMutable<Tensor>();
+    root_tensor->CopyDataFrom(*tensor);
+    scope->DeleteLocalVar(var_name);
+  }
+
   if (var_name != "feed" && var_name != "fetch") {
     var->SetShape(tensor->dims().data());
     auto precision = tensor->precision();
@@ -178,12 +187,10 @@ void AddOpDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
   }
 }
 
-void AddVariableDescFromOpInfo(
-    std::shared_ptr<cpp::ProgramDesc> program_desc,
-    size_t block_idx,
-    Instruction* inst,
-    std::set<std::string>* already_added_vars,
-    const std::map<std::string, cpp::VarDesc>& origin_var_maps) {
+void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
+                               size_t block_idx,
+                               Instruction* inst,
+                               std::set<std::string>* already_added_vars) {
   auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
 
   auto* op = const_cast<OpLite*>(inst->op());
@@ -208,25 +215,20 @@ void AddVariableDescFromOpInfo(
     v->SetName(var_name);
 
     auto* var = scope->FindVar(var_name);
-    auto it = origin_var_maps.find(var_name);
-
-    if (it != origin_var_maps.end() && (it->second.Persistable())) {
-      UpdatePersistableVarDesc(v, it->second, var_name, scope);
+    auto* decl_type = GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
+    LOG(INFO) << "decl type " << *decl_type << " for var " << var_name
+              << " in op " << op_type;
+    if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
+      UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
+    } else if (decl_type->IsTensorList() ||
+               var->IsType<std::vector<lite::Tensor>>()) {
+      UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
+    } else if (decl_type->IsStepScope() &&
+               var->IsType<std::vector<lite::Scope*>>()) {
+      UpdateVarDescFromStepScopeInfo(v, var_name, op_type, scope);
     } else {
-      auto* decl_type =
-          GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
-      if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
-        UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
-      } else if (decl_type->IsTensorList() ||
-                 var->IsType<std::vector<lite::Tensor>>()) {
-        UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
-      } else if (decl_type->IsStepScope() &&
-                 var->IsType<std::vector<lite::Scope*>>()) {
-        UpdateVarDescFromStepScopeInfo(v, var_name, op_type, scope);
-      } else {
-        LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
-                   << var_name << " in op " << op_type;
-      }
+      LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                 << var_name << " in op " << op_type;
     }
     already_added_vars->insert(var_name);
   }
@@ -241,11 +243,10 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
   program_desc->SetVersion(get_version());
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     std::set<std::string> already_added_vars;
-    const std::map<std::string, cpp::VarDesc> origin_var_maps =
-        ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
+    ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
     for (auto& inst : instructions_[block_idx]) {
       AddVariableDescFromOpInfo(
-          program_desc, block_idx, &inst, &already_added_vars, origin_var_maps);
+          program_desc, block_idx, &inst, &already_added_vars);
       // Replace all of origin ops with the instructions
       AddOpDescFromOpInfo(program_desc, block_idx, &inst);
     }
@@ -579,8 +580,7 @@ void Program::PrepareWorkspace(
 #if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       }
 #endif
-
-      // Create tensors or wights from variable description.
+      // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
@@ -603,6 +603,7 @@ void Program::PrepareWorkspace(
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
           tensor->set_precision(var_data_type);
+          tensor->set_persistable(var_desc->Persistable());
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
