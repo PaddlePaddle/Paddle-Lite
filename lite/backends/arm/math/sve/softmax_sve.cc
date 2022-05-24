@@ -71,6 +71,7 @@ void softmax_axis4_sve(const Dtype* din,
                        const int outer_num) {
   int compute_size = inner_num * outer_num;
   auto vone = svdup_n(static_cast<Dtype>(1));
+  const auto all_true_pg = svptrue<Dtype>();
   int i = 0;
   LITE_PARALLEL_COMMON_BEGIN(i, tid, compute_size, 0, svcnt<Dtype>()) {
     int idx_inner = i % inner_num;
@@ -122,6 +123,7 @@ void softmax_inner1_sve(const Dtype* din,
                         const int axis_size) {
   int out_cnt = (outer_size >> 2) << 2;
   auto vone = svdup_n(static_cast<Dtype>(1));
+  const auto all_true_pg = svptrue<Dtype>();
   int i = 0;
   LITE_PARALLEL_COMMON_BEGIN(i, tid, outer_size - 3, 0, 4) {
     auto index = i * axis_size;
@@ -155,10 +157,10 @@ void softmax_inner1_sve(const Dtype* din,
       din_max_ptr2 += svcnt<Dtype>();
       din_max_ptr3 += svcnt<Dtype>();
     }
-    Dtype vmax_0 = svmaxv(pg0, vec_max0);
-    Dtype vmax_1 = svmaxv(pg0, vec_max1);
-    Dtype vmax_2 = svmaxv(pg0, vec_max2);
-    Dtype vmax_3 = svmaxv(pg0, vec_max3);
+    Dtype vmax_0 = svmaxv(all_true_pg, vec_max0);
+    Dtype vmax_1 = svmaxv(all_true_pg, vec_max1);
+    Dtype vmax_2 = svmaxv(all_true_pg, vec_max2);
+    Dtype vmax_3 = svmaxv(all_true_pg, vec_max3);
     // sub, exp and sum
     x = 0;
     din_max_ptr0 = din_ptr0;
@@ -204,14 +206,14 @@ void softmax_inner1_sve(const Dtype* din,
       dout_ptr2 += svcnt<Dtype>();
       dout_ptr3 += svcnt<Dtype>();
     }
-    auto vsum_0 = svaddv(pg0, vsum0);
-    auto vsum_1 = svaddv(pg0, vsum1);
-    auto vsum_2 = svaddv(pg0, vsum2);
-    auto vsum_3 = svaddv(pg0, vsum3);
-    auto vinf0 = svdiv_z(pg0, vone, svdup_n(vsum_0));
-    auto vinf1 = svdiv_z(pg0, vone, svdup_n(vsum_1));
-    auto vinf2 = svdiv_z(pg0, vone, svdup_n(vsum_2));
-    auto vinf3 = svdiv_z(pg0, vone, svdup_n(vsum_3));
+    auto vsum_0 = svaddv(all_true_pg, vsum0);
+    auto vsum_1 = svaddv(all_true_pg, vsum1);
+    auto vsum_2 = svaddv(all_true_pg, vsum2);
+    auto vsum_3 = svaddv(all_true_pg, vsum3);
+    auto vinf0 = svdiv_z(all_true_pg, vone, svdup_n(vsum_0));
+    auto vinf1 = svdiv_z(all_true_pg, vone, svdup_n(vsum_1));
+    auto vinf2 = svdiv_z(all_true_pg, vone, svdup_n(vsum_2));
+    auto vinf3 = svdiv_z(all_true_pg, vone, svdup_n(vsum_3));
     dout_ptr0 = dout + index;
     dout_ptr1 = dout_ptr0 + axis_size;
     dout_ptr2 = dout_ptr1 + axis_size;
@@ -244,10 +246,10 @@ void softmax_inner1_sve(const Dtype* din,
       pg0 = svwhilelt<Dtype>(j, axis_size);
       auto vdata0 = svld1(pg0, din_max_ptr0);
       // get max
-      auto vmax0 = svmax_m(pg0, vec_max0, vdata0);
+      vec_max0 = svmax_m(pg0, vec_max0, vdata0);
       din_max_ptr0 += svcnt<Dtype>();
     }
-    Dtype vmax_0 = svmaxv(pg0, vec_max0);
+    Dtype vmax_0 = svmaxv(all_true_pg, vec_max0);
     // sub, exp and sum
     x = 0;
     din_max_ptr0 = din_ptr0;
@@ -264,8 +266,8 @@ void softmax_inner1_sve(const Dtype* din,
       svst1(pg0, dout_ptr0, vsub_exp0);
       dout_ptr0 += svcnt<Dtype>();
     }
-    auto vsum_0 = svaddv(pg0, vsum0);
-    auto vinf0 = svdiv_z(pg0, vone, svdup_n(vsum_0));
+    auto vsum_0 = svaddv(all_true_pg, vsum0);
+    auto vinf0 = svdiv_z(all_true_pg, vone, svdup_n(vsum_0));
     dout_ptr0 = dout + index;
     for (int j = 0; j < axis_size; j += svcnt<Dtype>()) {
       auto pg0 = svwhilelt<Dtype>(j, axis_size);
