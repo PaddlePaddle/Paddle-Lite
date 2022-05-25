@@ -23,7 +23,44 @@ class FeedOpVariableTypeRecordPass : public StmtPass {
  public:
   FeedOpVariableTypeRecordPass() {}
 
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override { exit(-1); }
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    for (auto& node : graph->StmtTopologicalOrder()) {
+      if (!node->IsStmt()) continue;
+      auto op_info = node->AsStmt().mutable_op_info();
+      auto op_type = op_info->Type();
+      if (op_type != "feed") continue;
+      // Initialize the type of the output variable of feed op
+      CHECK_EQ(node->outlinks.size(), 1);
+      auto out_var_node = node->outlinks.front();
+      CHECK(out_var_node->IsArg());
+      auto out_var_name = out_var_node->AsArg().name;
+      auto out_var_place = out_var_node->AsArg().type->place();
+      // Identify the type of the variable from the registration information of
+      // the consumer op
+      for (auto out_op_node : out_var_node->outlinks) {
+        CHECK(out_op_node->IsStmt());
+        auto out_op_info = out_op_node->AsStmt().mutable_op_info();
+        auto& out_op_kernel = out_op_node->AsStmt().picked_kernel();
+        std::string in_arg_name;
+        CHECK(out_op_info->GetInputArgname(out_var_name, &in_arg_name));
+        auto in_var_place =
+            out_op_kernel.GetInputDeclType(in_arg_name)->place();
+        if (in_var_place.target != TARGET(kUnk) &&
+            in_var_place.target != TARGET(kAny)) {
+          out_var_place.target = in_var_place.target;
+        }
+        if (in_var_place.precision != PRECISION(kUnk) &&
+            in_var_place.precision != PRECISION(kAny)) {
+          out_var_place.precision = in_var_place.precision;
+        }
+        if (in_var_place.layout != DATALAYOUT(kUnk) &&
+            in_var_place.layout != DATALAYOUT(kAny)) {
+          out_var_place.layout = in_var_place.layout;
+        }
+      }
+      op_info->SetAttr<std::string>(kFeedTypeAttr, out_var_place.Serialize());
+    }
+  }
 };
 
 }  // namespace mir

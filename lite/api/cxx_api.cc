@@ -235,7 +235,9 @@ void Predictor::PrepareFeedFetch() {
     if (feeds[i]->HasAttr(kFeedTypeAttr)) {
       Place place;
       place.Deserialize(feeds[i]->GetAttr<std::string>(kFeedTypeAttr));
-      GetInput(i)->set_target(place.target);
+      if (place.target == TARGET(kNNAdapter)) {
+        GetInput(i)->set_target(place.target);
+      }
     }
   }
   for (size_t i = 0; i < fetchs.size(); i++) {

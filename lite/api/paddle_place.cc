@@ -251,7 +251,7 @@ void Place::Deserialize(const std::string& buffer) {
   layout = static_cast<DataLayoutType>(tokens[2].to_digit<int>());
 }
 
-std::string Place::Serialize() {
+std::string Place::Serialize() const {
   STL::stringstream ss;
   ss << static_cast<int>(target) << "/";
   ss << static_cast<int>(precision) << "/";
