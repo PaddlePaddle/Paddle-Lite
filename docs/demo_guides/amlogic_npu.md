@@ -78,24 +78,23 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 ### 准备设备环境
 
-- NPU 驱动
-  - 晶晨 SoC 使用芯原 NPU，部署时首先要确保 NPU 驱动文件（galcore.ko）和相关依赖库（libXXX.so）。
+- 确定开发板 NPU 驱动版本
+  - 由于晶晨 SoC 使用芯原 NPU IP，因此，部署前要保证芯原 Linux Kernel NPU 驱动—— galcore.so 版本及所适用的芯片型号与依赖库保持一致。
   - 可通过命令行输入 `dmesg | grep Galcore` 查询 NPU 驱动版本。请注意，建议版本为 6.4.4.3。如果当前版本就是 6.4.4.3 ，可以跳过本环节。
   - 有两种方式可以修改当前的 NPU 驱动版本及其依赖库：
-    - （1）刷机。可以根据具体的开发板，向开发板卖家或者开发板官网查询刷机方法。
-    - （2）手动替换驱动文件和依赖库，在[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中，我们提供了 linux 系统下 A311D、S905D3、C308X，以及 Android 系统下 S905D3 的 NPU 驱动和相关依赖库（详细目录树结构可以参考后文『运行图像分类示例程序』）。
-      - linux 系统在路径 PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu 下。
-      - Android 系统在路径 PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu 下。
-      - 第一步，修改 switch_vivante_sdk.sh 文件中的 HARDWARE_MODEL 将其改为用户要使用的具体 SoC 型号，如 HARDWARE_MODEL=s905d3。
-      - 第二步，执行 ./switch_vivante_sdk.sh。
-      - 第三步，vivante_sdk_6_4_4_3/lib/{SoC型号}/{系统版本号}/ 目录下，提供了 NPU 驱动，galcore.ko。比如，用户使用 Android S905D3，操作系统版本 4.9.113，则在PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu/vivante_sdk_6_4_4_3/lib/s905d3/4.9.113 下找到 NPU 驱动文件 galcore.ko。注意，不同设备的操作系统版本号不同，如果与我们提供的操作系统版本号不一致，则无法直接使用，此时请参考上文提到的方法『（1）刷机』。
-      - 第四步，将 galcore.ko 传到设备上，登录设备，命令行输入 `sudo rmmod galcore` 来卸载原始驱动，输入 `sudo insmod galcore.ko` 来加载传上设备的驱动
-      - 第五部，输入 `dmesg | grep Galcore` 查询 NPU 驱动版本，确定为 6.4.4.3
+    - 方法一 ：刷机，根据具体的开发板型号，向开发板卖家或官网客服索要 6.4.4.3 版本 NPU 驱动对应的固件和刷机方法。
+    - 方法二：手动替换驱动文件和依赖库，在[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中的指定目录下找到不同版本、不同芯片型号的 Linux Kernel 驱动和预编译库：（详细目录树结构可以参考后文『运行图像分类示例程序』）：
+      - 如果您的开发板是 Linux 系统，驱动和预编译库存放在 PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu 目录。
+      - 如果您的开发板是 Android 系统，驱动和预编译库存放在 PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu 目录。
+      - 第一步，执行 ./switch_amlnpu_ddk.sh 6_4_4_3 {SoC型号}，以s905d3芯片为例：./switch_amlnpu_ddk.sh 6_4_4_3 s905d3。请注意当前我们提供的是 linux 系统下 A311D、S905D3、C308X，以及 Android 系统下 S905D3 的 NPU 驱动和相关依赖库。
+      - 第二步，amlnpu_ddk_6_4_4_3/lib/{SoC型号}/{系统版本号}/ 目录下，提供了不同芯片型号、不同 Linux Kernel 版本的 NPU 驱动—— galcore.ko 。比如，用户使用 Android S905D3， Linux Kernel 版本 4.9.113（可通过 uname -a 命令查看 Linux Kernel 版本），则在PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu/amlnpu_ddk_6_4_4_3/lib/s905d3/4.9.113 下找到 NPU 驱动文件 galcore.ko。注意，不同设备的操作系统版本号不同，如果与我们提供的操作系统版本号不一致，则无法直接使用，此时请参考上文提到的方法『方法一 ：刷机』。
+      - 第三步，将 galcore.ko 传到设备上，登录设备，命令行输入 `sudo rmmod galcore` 来卸载原始驱动，输入 `sudo insmod galcore.ko` 来加载传上设备的驱动
+      - 第四部，输入 `dmesg | grep Galcore` 查询 NPU 驱动版本，确定为 6.4.4.3
 
 
 - C308X
 
-  - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『NPU 驱动』）。
+  - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『确定开发板 NPU 驱动版本』）。
   - 注意是 64 位系统。
   - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
@@ -108,7 +107,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 - A311D
 
-  - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『NPU 驱动』）。
+  - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『确定开发板 NPU 驱动版本』）。
 
   - 注意是 64 位系统。
 
@@ -123,7 +122,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 - S905D3(Android 版本)
 
-   - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『NPU 驱动』）：
+   - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『确定开发板 NPU 驱动版本』）：
    - `adb root + adb remount` 以获得修改系统库的权限。
    
     ```shell
@@ -145,7 +144,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下（注意其中软链接可通过 switch_vivante_sdk.sh 设置）：
+- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下（注意其中软链接为 switch_amlnpu_ddk.sh 根据芯片型号和 NPU 驱动版本创建依赖库的软链接）：
 
   ```shell
     - PaddleLite-generic-demo
@@ -182,23 +181,23 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
                 - amlogic_npu # Amlogic NPU DDK、NNAdapter 运行时库、device HAL 库
-                  - libArchModelSw.so -> ./vivante_sdk_6_4_4_3/lib/libArchModelSw.so
-                  - libCLC.so -> ./vivante_sdk_6_4_4_3/lib/libCLC.so
-                  - libGAL.so -> ./vivante_sdk_6_4_4_3/lib/libGAL.so
-                  - libNNArchPerf.so -> ./vivante_sdk_6_4_4_3/lib/libNNArchPerf.so
-                  - libNNGPUBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libNNGPUBinary.so
-                  - libNNVXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libNNVXCBinary.so
-                  - libOpenCL.so -> ./vivante_sdk_6_4_4_3/lib/libOpenCL.so
-                  - libOpenVX.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVX.so
-                  - libOpenVXU.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVXU.so
-                  - libOvx12VXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/a311d/libOvx12VXCBinary.so
-                  - libVSC.so -> ./vivante_sdk_6_4_4_3/lib/libVSC.so
-                  - libamlnpu_ddk.so -> ./vivante_sdk_6_4_4_3/lib/libamlnpu_ddk.so
+                  - libArchModelSw.so -> ./amlnpu_ddk_6_4_4_3/lib/libArchModelSw.so
+                  - libCLC.so -> ./amlnpu_ddk_6_4_4_3/lib/libCLC.so
+                  - libGAL.so -> ./amlnpu_ddk_6_4_4_3/lib/libGAL.so
+                  - libNNArchPerf.so -> ./amlnpu_ddk_6_4_4_3/lib/libNNArchPerf.so
+                  - libNNGPUBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/a311d/libNNGPUBinary.so
+                  - libNNVXCBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/a311d/libNNVXCBinary.so
+                  - libOpenCL.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenCL.so
+                  - libOpenVX.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenVX.so
+                  - libOpenVXU.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenVXU.so
+                  - libOvx12VXCBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/a311d/libOvx12VXCBinary.so
+                  - libVSC.so -> ./amlnpu_ddk_6_4_4_3/lib/libVSC.so
+                  - libamlnpu_ddk.so -> ./amlnpu_ddk_6_4_4_3/lib/libamlnpu_ddk.so
                   - libamlogic_npu.so # NNAdapter device HAL 库
                   - libnnadapter.so  # NNAdapter 运行时库
-                  - libnnsdk_lite.so -> ./vivante_sdk_6_4_4_3/lib/libnnsdk_lite.so
-                  - switch_vivante_sdk.sh # 创建软链接
-                  - vivante_sdk_6_4_4_3
+                  - libnnsdk_lite.so -> ./amlnpu_ddk_6_4_4_3/lib/libnnsdk_lite.so
+                  - switch_amlnpu_ddk.sh # 根据芯片型号和 NPU 驱动版本创建依赖库的软链接
+                  - amlnpu_ddk_6_4_4_3
                     - include
                     - lib
                     - a311d # 针对 a311d 平台
@@ -238,25 +237,25 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
                 - amlogic_npu # Amlogic NPU DDK、NNAdapter 运行时库、device HAL 库
-                  - libCLC.so -> ./vivante_sdk_6_4_4_3/lib/libCLC.so
-                  - libGAL.so -> ./vivante_sdk_6_4_4_3/lib/libGAL.so
-                  - libNNArchPerf.so -> ./vivante_sdk_6_4_4_3/lib/libNNArchPerf.so
-                  - libNNGPUBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libNNGPUBinary.so
-                  - libNNVXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libNNVXCBinary.so
-                  - libOpenCL.so -> ./vivante_sdk_6_4_4_3/lib/libOpenCL.so
-                  - libOpenVX.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVX.so
-                  - libOpenVXU.so -> ./vivante_sdk_6_4_4_3/lib/libOpenVXU.so
-                  - libOvx12VXCBinary.so -> ./vivante_sdk_6_4_4_3/lib/s905d3/libOvx12VXCBinary.so
-                  - libVSC.so -> ./vivante_sdk_6_4_4_3/lib/libVSC.so
-                  - libamlnpu_ddk.so -> ./vivante_sdk_6_4_4_3/lib/libamlnpu_ddk.so
+                  - libCLC.so -> ./amlnpu_ddk_6_4_4_3/lib/libCLC.so
+                  - libGAL.so -> ./amlnpu_ddk_6_4_4_3/lib/libGAL.so
+                  - libNNArchPerf.so -> ./amlnpu_ddk_6_4_4_3/lib/libNNArchPerf.so
+                  - libNNGPUBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/s905d3/libNNGPUBinary.so
+                  - libNNVXCBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/s905d3/libNNVXCBinary.so
+                  - libOpenCL.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenCL.so
+                  - libOpenVX.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenVX.so
+                  - libOpenVXU.so -> ./amlnpu_ddk_6_4_4_3/lib/libOpenVXU.so
+                  - libOvx12VXCBinary.so -> ./amlnpu_ddk_6_4_4_3/lib/s905d3/libOvx12VXCBinary.so
+                  - libVSC.so -> ./amlnpu_ddk_6_4_4_3/lib/libVSC.so
+                  - libamlnpu_ddk.so -> ./amlnpu_ddk_6_4_4_3/lib/libamlnpu_ddk.so
                   - libamlogic_npu.so # NNAdapter device HAL 库
-                  - libarchmodelSw.so -> ./vivante_sdk_6_4_4_3/lib/libarchmodelSw.so
+                  - libarchmodelSw.so -> ./amlnpu_ddk_6_4_4_3/lib/libarchmodelSw.so
                   - libnnadapter.so # NNAdapter 运行时库
-                  - libnnrt.so -> ./vivante_sdk_6_4_4_3/lib/libnnrt.so
-                  - libnnsdk_lite.so -> ./vivante_sdk_6_4_4_3/lib/libnnsdk_lite.so
-                  - libovxlib.so -> ./vivante_sdk_6_4_4_3/lib/libovxlib.so
-                  - switch_vivante_sdk.sh # 创建软链接
-                  - vivante_sdk_6_4_4_3
+                  - libnnrt.so -> ./amlnpu_ddk_6_4_4_3/lib/libnnrt.so
+                  - libnnsdk_lite.so -> ./amlnpu_ddk_6_4_4_3/lib/libnnsdk_lite.so
+                  - libovxlib.so -> ./amlnpu_ddk_6_4_4_3/lib/libovxlib.so
+                  - switch_amlnpu_ddk.sh # 根据芯片型号和 NPU 驱动版本创建依赖库的软链接
+                  - amlnpu_ddk_6_4_4_3
                     - include
                     - lib
                       - libCLC.so # 芯原 DDK
