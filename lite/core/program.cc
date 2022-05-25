@@ -87,14 +87,16 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
-  // Move the persistable var to the root scope
+  // Move the persistable var from exec scope to the root scope
   if (tensor->persistable()) {
     auto root_scope = scope->MutableParent();
-    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
-    if (root_tensor != tensor) {
-      root_tensor->CopyDataFrom(*tensor);
+    if (root_scope != scope) {
+      auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+      if (root_tensor != nullptr && root_tensor != tensor) {
+        root_tensor->CopyDataFrom(*tensor);
+      }
+      scope->DeleteLocalVar(var_name);
     }
-    scope->DeleteLocalVar(var_name);
   }
 
   if (var_name != "feed" && var_name != "fetch") {
@@ -188,10 +190,12 @@ void AddOpDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
   }
 }
 
-void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
-                               size_t block_idx,
-                               Instruction* inst,
-                               std::set<std::string>* already_added_vars) {
+void AddVariableDescFromOpInfo(
+    std::shared_ptr<cpp::ProgramDesc> program_desc,
+    size_t block_idx,
+    Instruction* inst,
+    std::set<std::string>* already_added_vars,
+    const std::map<std::string, cpp::VarDesc>& origin_var_maps) {
   auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
 
   auto* op = const_cast<OpLite*>(inst->op());
@@ -216,20 +220,25 @@ void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
     v->SetName(var_name);
 
     auto* var = scope->FindVar(var_name);
-    auto* decl_type = GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
-    LOG(INFO) << "decl type " << *decl_type << " for var " << var_name
-              << " in op " << op_type;
-    if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
-      UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
-    } else if (decl_type->IsTensorList() ||
-               var->IsType<std::vector<lite::Tensor>>()) {
-      UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
-    } else if (decl_type->IsStepScope() &&
-               var->IsType<std::vector<lite::Scope*>>()) {
-      UpdateVarDescFromStepScopeInfo(v, var_name, op_type, scope);
+    auto it = origin_var_maps.find(var_name);
+
+    if (it != origin_var_maps.end() && (it->second.Persistable())) {
+      UpdatePersistableVarDesc(v, it->second, var_name, scope);
     } else {
-      LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
-                 << var_name << " in op " << op_type;
+      auto* decl_type =
+          GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
+      if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
+        UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
+      } else if (decl_type->IsTensorList() ||
+                 var->IsType<std::vector<lite::Tensor>>()) {
+        UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
+      } else if (decl_type->IsStepScope() &&
+                 var->IsType<std::vector<lite::Scope*>>()) {
+        UpdateVarDescFromStepScopeInfo(v, var_name, op_type, scope);
+      } else {
+        LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                   << var_name << " in op " << op_type;
+      }
     }
     already_added_vars->insert(var_name);
   }
@@ -244,10 +253,11 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
   program_desc->SetVersion(get_version());
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     std::set<std::string> already_added_vars;
-    ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
+    const std::map<std::string, cpp::VarDesc> origin_var_maps =
+        ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
     for (auto& inst : instructions_[block_idx]) {
       AddVariableDescFromOpInfo(
-          program_desc, block_idx, &inst, &already_added_vars);
+          program_desc, block_idx, &inst, &already_added_vars, origin_var_maps);
       // Replace all of origin ops with the instructions
       AddOpDescFromOpInfo(program_desc, block_idx, &inst);
     }
