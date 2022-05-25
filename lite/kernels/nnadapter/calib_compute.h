@@ -14,29 +14,27 @@
 
 #pragma once
 
-#include <memory>
 #include "lite/core/kernel.h"
-#include "lite/kernels/nnadapter/engine.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kNCHW)> {
+class CalibComputeFp32ToInt8
+    : public KernelLite<TARGET(kNNAdapter), PRECISION(kFloat)> {
  public:
-  using param_t = operators::SubgraphParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::CalibParam;
 
   void Run() override;
+};
 
-  virtual ~SubgraphCompute() = default;
+class CalibComputeInt8ToFp32
+    : public KernelLite<TARGET(kNNAdapter), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::CalibParam;
 
- private:
-  std::unique_ptr<Engine> engine_;
+  void Run() override;
 };
 
 }  // namespace nnadapter

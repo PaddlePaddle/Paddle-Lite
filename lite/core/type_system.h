@@ -176,25 +176,27 @@ class Type : public DataType {
 // -------------------------------- compatible check ---------------------------
 static bool TargetCompatibleTo(const Type& a, const Type& b) {
   auto is_host = [](TargetType x) -> bool {
-    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) ||
-           x == TARGET(kAny);
+    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
-  if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
-    return is_host(a.target()) ? is_host(b.target()) : a.target() == b.target();
-  }
-  return true;
+  return a.IsVoid() ||
+         (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensor()) ||
+           (a.IsTensor() && b.IsTensorList()) ||
+           (a.IsTensorList() && b.IsTensorList())) &&
+          (a.target() == b.target() || b.target() == TARGET(kAny) ||
+           a.target() == TARGET(kAny) ||
+           (is_host(a.target()) && is_host(b.target()))));
 }
 
 static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
-  return a.IsVoid() ||                 //
-         (a.layout() == b.layout() ||  //
-          ((b.layout() == DATALAYOUT(kAny)) &&
-           (a.layout() != DATALAYOUT(kImageDefault) &&
-            a.layout() != DATALAYOUT(kImageFolder))));
+  return a.IsVoid() || (a.layout() == b.layout() ||
+                        ((b.layout() == DATALAYOUT(kAny)) &&
+                         (a.layout() != DATALAYOUT(kImageDefault) &&
+                          a.layout() != DATALAYOUT(kImageFolder))));
 }
 static bool DataLayoutCompatible(const Type& a, const Type& b) {
-  return a.IsVoid() || b.IsVoid() ||   //
-         (a.layout() == b.layout() ||  //
+  return a.IsVoid() || b.IsVoid() ||
+         (a.layout() == b.layout() ||
           ((b.layout() == DATALAYOUT(kAny)) &&
            (a.layout() != DATALAYOUT(kImageDefault) &&
             a.layout() != DATALAYOUT(kImageFolder))) ||
@@ -204,29 +206,26 @@ static bool DataLayoutCompatible(const Type& a, const Type& b) {
 }
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
-  return a.IsVoid() ||  //
+  return a.IsVoid() ||
          (((a.IsTensor() && b.IsTensor()) ||
            (a.IsTensorList() && b.IsTensor()) ||
            (a.IsTensor() && b.IsTensorList()) ||
            (a.IsTensorList() && b.IsTensorList())) &&
-          (a.precision() == b.precision() ||  //
-           b.precision() == PRECISION(kAny) ||
+          (a.precision() == b.precision() || b.precision() == PRECISION(kAny) ||
            a.precision() == PRECISION(kAny)));
 }
 static bool PrecisionCompatible(const Type& a, const Type& b) {
-  return a.IsVoid() || b.IsVoid() ||  //
+  return a.IsVoid() || b.IsVoid() ||
          (((a.IsTensor() && b.IsTensor()) ||
            (a.IsTensorList() && b.IsTensorList())) &&
-          (a.precision() == b.precision() ||  //
-           b.precision() == PRECISION(kAny) ||
+          (a.precision() == b.precision() || b.precision() == PRECISION(kAny) ||
            a.precision() == PRECISION(kAny)));
 }
 
 static bool DeviceCompatibleTo(const Type& a, const Type& b) {
-  return a.IsVoid() ||  //
-         (((a.IsTensor() && b.IsTensor()) ||
-           (a.IsTensorList() && b.IsTensorList())) &&  //
-          (a.device() == b.device()));
+  return a.IsVoid() || (((a.IsTensor() && b.IsTensor()) ||
+                         (a.IsTensorList() && b.IsTensorList())) &&
+                        (a.device() == b.device()));
 }
 
 // Can type 'a' be passed to 'b' directly.

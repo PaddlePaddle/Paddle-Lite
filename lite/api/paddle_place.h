@@ -271,6 +271,10 @@ struct LITE_API Place {
 
   friend bool operator<(const Place& a, const Place& b);
 
+  // Deserialize/serialize place from/to string, such as 18/4/1
+  void Deserialize(const std::string& buffer);
+  std::string Serialize();
+
   std::string DebugString() const;
 };
 

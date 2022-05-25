@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include "lite/core/kernel.h"
-#include "lite/kernels/nnadapter/engine.h"
+#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace nnadapter {
+namespace mir {
 
-class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kNCHW)> {
+class FeedOpVariableTypeRecordPass : public StmtPass {
  public:
-  using param_t = operators::SubgraphParam;
+  FeedOpVariableTypeRecordPass() {}
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  virtual ~SubgraphCompute() = default;
-
- private:
-  std::unique_ptr<Engine> engine_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override { exit(-1); }
 };
 
-}  // namespace nnadapter
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(feed_op_variable_type_record_pass,
+                  paddle::lite::mir::FeedOpVariableTypeRecordPass)
+    .BindTargets({TARGET(kNNAdapter)});

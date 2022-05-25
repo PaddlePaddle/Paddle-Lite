@@ -183,6 +183,11 @@ void LightPredictor::PrepareFeedFetch() {
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
+    if (feeds[i]->HasAttr(kFeedTypeAttr)) {
+      Place place;
+      place.Deserialize(feeds[i]->GetAttr<std::string>(kFeedTypeAttr));
+      GetInput(i)->set_target(place.target);
+    }
   }
   for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =

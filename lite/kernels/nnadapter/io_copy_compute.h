@@ -14,30 +14,37 @@
 
 #pragma once
 
-#include <memory>
 #include "lite/core/kernel.h"
-#include "lite/kernels/nnadapter/engine.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kNCHW)> {
+/*
+ * This kernel copies a tensor from host to device.
+ */
+class IoCopyHostToDeviceCompute
+    : public KernelLite<TARGET(kNNAdapter), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::SubgraphParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::IoCopyParam;
 
   void Run() override;
-
-  virtual ~SubgraphCompute() = default;
-
- private:
-  std::unique_ptr<Engine> engine_;
 };
+
+/*
+ * This kernel copies a tensor from device to host.
+ */
+class IoCopyDeviceToHostCompute
+    : public KernelLite<TARGET(kNNAdapter), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::IoCopyParam;
+
+  void Run() override;
+};
+
+void IoCopyHostToDevice(const Tensor* x, Tensor* y);
+void IoCopyDeviceToHost(const Tensor* x, Tensor* y);
 
 }  // namespace nnadapter
 }  // namespace kernels

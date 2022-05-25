@@ -305,27 +305,40 @@ void PrecisionCastPass::AddCastInst(const Type& from,
       op_desc.SetAttr("scale", scale);
     }
 
+    // Find and update the calib op kernel with the best one
     cast_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
     auto kernels = cast_op->CreateKernels(valid_places);
     std::vector<std::unique_ptr<KernelBase>> selected_kernels;
-    bool is_found = false;
+    bool found = false;
+    // Find the kernel with matching input and output types
     for (auto& kernel : kernels) {
-      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-      if (TypeCompatible(*in_arg_ty, from) &&
-          out_arg_ty->precision() == to.precision()) {
-        is_found = true;
+      auto in_arg_ty = kernel->GetInputDeclType("Input");
+      auto out_arg_ty = kernel->GetOutputDeclType("Out");
+      if (TypeCompatible(*in_arg_ty, from) && TypeCompatible(*out_arg_ty, to)) {
+        found = true;
         selected_kernels.emplace_back(std::move(kernel));
-        // we pick the kernel
-        cast_inst->AsStmt(cast_type, std::move(selected_kernels), cast_op);
-        (*cast_nodes)[in->AsArg().name] = cast_op_output_arg;
         break;
       }
     }
-
-    CHECK(is_found) << "Can't find a 'calib' kernel to trans: " << from << ":"
-                    << in->AsArg().name << " -> " << to << ":"
-                    << inst_node->AsStmt().op_info()->Type();
+    if (!found) {
+      // Partially matches the input and output types
+      for (auto& kernel : kernels) {
+        auto in_arg_ty = kernel->GetInputDeclType("Input");
+        auto out_arg_ty = kernel->GetOutputDeclType("Out");
+        // Only check output precision
+        if (TypeCompatible(*in_arg_ty, from) &&
+            out_arg_ty->precision() == to.precision()) {
+          found = true;
+          selected_kernels.emplace_back(std::move(kernel));
+          break;
+        }
+      }
+    }
+    CHECK(found) << "Can't find a 'calib' kernel to trans: " << from << ":"
+                 << in->AsArg().name << " -> " << to << ":"
+                 << inst_node->AsStmt().op_info()->Type();
+    cast_inst->AsStmt(cast_type, std::move(selected_kernels), cast_op);
+    (*cast_nodes)[in->AsArg().name] = cast_op_output_arg;
 
     // Remove the old link
     RemoveDirectedLink(in, inst_node);

@@ -273,9 +273,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_inplace_fuse_pass",
 #if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
        "memory_optimize_pass",
-       "xpu_memory_optimize_pass"
+       "xpu_memory_optimize_pass",
 #endif
-      }};
+       "feed_op_variable_type_record_pass"}};
 
   // skip the discarded pass
   const std::vector<std::string> discarded_passes =

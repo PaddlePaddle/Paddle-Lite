@@ -243,5 +243,21 @@ std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
   return std::set<DataLayoutType>({layout});
 }
 
+void Place::Deserialize(const std::string& buffer) {
+  auto tokens = lite::SplitView(buffer, '/');
+  CHECK_EQ(tokens.size(), 3u);
+  target = static_cast<TargetType>(tokens[0].to_digit<int>());
+  precision = static_cast<PrecisionType>(tokens[1].to_digit<int>());
+  layout = static_cast<DataLayoutType>(tokens[2].to_digit<int>());
+}
+
+std::string Place::Serialize() {
+  STL::stringstream ss;
+  ss << static_cast<int>(target) << "/";
+  ss << static_cast<int>(precision) << "/";
+  ss << static_cast<int>(layout);
+  return ss.str();
+}
+
 }  // namespace lite_api
 }  // namespace paddle

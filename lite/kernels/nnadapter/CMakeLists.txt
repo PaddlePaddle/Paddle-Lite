@@ -8,4 +8,8 @@ else()
   return()
 endif()
 
+add_kernel(feed_compute_nnadapter NNADAPTER basic SRCS feed_compute.cc)
+add_kernel(fetch_compute_nnadapter NNADAPTER basic SRCS fetch_compute.cc)
+add_kernel(io_copy_compute_nnadapter NNADAPTER basic SRCS io_copy_compute.cc)
+add_kernel(calib_compute_nnadapter NNADAPTER basic SRCS calib_compute.cc)
 add_kernel(subgraph_compute_nnadapter NNADAPTER basic SRCS utility.cc ${CONVERTERS} engine.cc subgraph_compute.cc)

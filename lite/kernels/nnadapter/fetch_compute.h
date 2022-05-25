@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,20 @@
 
 #pragma once
 
-#include <memory>
 #include "lite/core/kernel.h"
-#include "lite/kernels/nnadapter/engine.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kNCHW)> {
+class FetchCompute : public KernelLite<TARGET(kNNAdapter),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kNCHW)> {
  public:
-  using param_t = operators::SubgraphParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::FetchParam;
 
   void Run() override;
-
-  virtual ~SubgraphCompute() = default;
-
- private:
-  std::unique_ptr<Engine> engine_;
 };
 
 }  // namespace nnadapter

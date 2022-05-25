@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/nnadapter/subgraph_compute.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
@@ -57,11 +58,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      paddle::lite::kernels::nnadapter::SubgraphCompute,
                      def)
     .BindInput("Inputs",
-               {LiteType::GetTensorTy(TARGET(kAny),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kNCHW))})
+               {LiteType::GetTensorTy(TARGET(kNNAdapter), PRECISION(kAny))})
     .BindOutput("Outputs",
-                {LiteType::GetTensorTy(TARGET(kAny),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kNCHW))})
+                {LiteType::GetTensorTy(TARGET(kNNAdapter), PRECISION(kAny))})
     .Finalize();

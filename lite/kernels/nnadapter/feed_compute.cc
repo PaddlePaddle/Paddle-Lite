@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
-#include "lite/core/kernel.h"
-#include "lite/kernels/nnadapter/engine.h"
+#include "lite/kernels/nnadapter/feed_compute.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::SubgraphParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  virtual ~SubgraphCompute() = default;
-
- private:
-  std::unique_ptr<Engine> engine_;
-};
+void FeedCompute::Run() {
+  LOG(FATAL) << "Feed op is only used for graph optimization and should not be "
+                "called!";
+}
 
 }  // namespace nnadapter
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(feed,
+                     kNNAdapter,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::nnadapter::FeedCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kAny), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kAny), PRECISION(kAny))})
+    .Finalize();

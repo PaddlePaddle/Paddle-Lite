@@ -116,3 +116,4 @@ USE_MIR_PASS(unsqueeze_calc_offline_pass);
 USE_MIR_PASS(scale_calc_offline_pass);
 USE_MIR_PASS(keepdims_convert_pass);
 USE_MIR_PASS(op_fusion_minimal_set_pass);
+USE_MIR_PASS(feed_op_variable_type_record_pass);
