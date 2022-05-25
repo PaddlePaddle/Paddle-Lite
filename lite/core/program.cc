@@ -92,7 +92,7 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
     auto root_scope = scope->MutableParent();
     if (root_scope != scope) {
       auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
-      if (root_tensor != nullptr && root_tensor != tensor) {
+      if (root_tensor != tensor) {
         root_tensor->CopyDataFrom(*tensor);
       }
       scope->DeleteLocalVar(var_name);
