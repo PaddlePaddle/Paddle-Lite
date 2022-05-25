@@ -47,10 +47,6 @@ inline void ShiftAlongDim(T* data,
     slice_width *= input_dim[i];
   }
 
-  VLOG(5) << "shift_along_dim_debug: input_dim: " << input_dim
-          << "; dim: " << dim << "; shift: " << shift
-          << "; outer_loops: " << outer_loops
-          << "; slice_width: " << slice_width;
   if (shift == 0) {
     return;
   }
