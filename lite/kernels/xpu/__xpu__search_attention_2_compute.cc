@@ -25,7 +25,7 @@ namespace xpu {
 
 void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
   auto& ctx = this->ctx_->As<XPUContext>();
-  int maxptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  int maxptr_size = ctx.GetRawContext()->max_ptr_size();
   input_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
   weight_max_xpu_guard_ =
@@ -107,7 +107,7 @@ void XPUMmdnnSearchAttention2Compute::Run() {
 
   int r = 0;
   r = xdnn::findmax<float>(
-      ctx.GetRawContext(), input_data, seqlen_sum * dim_, input_max_data);
+      ctx.GetRawContext(), input_data, input_max_data, seqlen_sum * dim_);
   CHECK_EQ(r, 0);
   r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
       ctx.GetRawContext(), /* context */

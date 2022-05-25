@@ -34,17 +34,17 @@ void LrnCompute::Run() {
   float beta = param.beta;
   float k = param.k;
   if (param.norm_region == "AcrossChannels") {
-    int r = xdnn::lrn_fwd(ctx.GetRawContext(),
-                          param.X->data<float>(),
-                          param.Out->mutable_data<float>(TARGET(kXPU)),
-                          batch,
-                          channel,
-                          h,
-                          w,
-                          n,
-                          k,
-                          alpha,
-                          beta);
+    int r = xdnn::lrn(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      batch,
+                      channel,
+                      h,
+                      w,
+                      n,
+                      k,
+                      alpha,
+                      beta);
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "Unsupport Norm Region Type: " << param.norm_region;

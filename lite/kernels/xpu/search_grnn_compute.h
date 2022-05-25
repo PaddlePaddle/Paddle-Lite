@@ -29,18 +29,12 @@ class SearchGrnnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   void PrepareForRun() override;
 
-  void prepare_layout(const operators::SearchGrnnParam& param,
-                      const paddle::lite::Tensor* bottom);
   void Run() override;
 
  private:
-  XPUScratchPadGuard offset_xpu_guard_;
-  XPUScratchPadGuard new_offset_xpu_guard_;
   XPUScratchPadGuard maxs_xpu_guard_;
 
-  std::unique_ptr<int[]> idx_sorted_by_width_data_cpu;
   std::unique_ptr<int[]> offset_cpu;
-  std::unique_ptr<int[]> new_offset_cpu;
 };
 
 }  // namespace xpu

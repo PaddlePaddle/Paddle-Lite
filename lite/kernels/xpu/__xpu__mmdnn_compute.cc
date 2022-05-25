@@ -200,7 +200,7 @@ class MMDNNFcOp {
              const float* in_max_by_caller = nullptr) {
     int r = 0;
     if (in_max_by_caller == nullptr) {
-      r = xdnn::findmax<float>(ctx, in, m * k_, in_max_);
+      r = xdnn::findmax<float>(ctx, in, in_max_, m * k_);
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
@@ -564,7 +564,7 @@ class MMDNNMatchConvTopk {
 
     int r = 0;
     r = xdnn::findmax<float>(
-        ctx, left->data<float>(), left_seqlen_sum * dim_in_, in_max_);
+        ctx, left->data<float>(), in_max_, left_seqlen_sum * dim_in_);
     CHECK_EQ(r, 0);
     r = xdnn::match_matrix_tensor<float, int16_t, int>(
         ctx,
@@ -757,7 +757,7 @@ class MMDNNBidEmbGrnnAtt {
     CHECK_EQ(r, 0);
     bi_rv_.Infer(ctx, sentense, emb_rv, grnn_rv);
     r = xdnn::sequence_reverse<float, int>(
-        ctx, grnn_rv, sentense.lod_32, grnn_rv_rv, batch, cap_h_);
+        ctx, grnn_rv, grnn_rv_rv, sentense.lod_32_vector, cap_h_);
     CHECK_EQ(r, 0);
     r = xdnn::sequence_last_pool(
         ctx, grnn_rv, pool_rv, sentense.lod_32_vector, batch, cap_h_, 0);
@@ -965,9 +965,8 @@ class MMDNNMergeAll {
     CHECK_EQ(r, 0);
     r = xdnn::sequence_reverse<float, int>(ctx,
                                            topk_concat_out_fw,
-                                           sentense.lod_32,
                                            topk_concat_out_rv,
-                                           batch,
+                                           sentense.lod_32_vector,
                                            cap_e_);
     CHECK_EQ(r, 0);
     coverage_fw_.Infer(ctx, sentense, topk_concat_out_fw, grnn_fw);

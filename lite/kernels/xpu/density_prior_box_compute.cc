@@ -75,13 +75,11 @@ void DensityPriorBoxCompute::Run() {
 
   float* xpu_variances_in =
       reinterpret_cast<float*>(variance_xpu_guard_->addr_);
-  r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                         xpu_variances_in,
-                         param.variances->mutable_data<float>(TARGET(kXPU)),
-                         feature_h * feature_w * num_priors,
-                         4,
-                         1,
-                         xdnn::ElementwiseOp::ASSIGN);
+  r = xdnn::broadcast<float>(ctx.GetRawContext(),
+                             xpu_variances_in,
+                             param.variances->mutable_data<float>(TARGET(kXPU)),
+                             {1, 4, 1},
+                             {feature_h * feature_w * num_priors, 4, 1});
 
   CHECK_EQ(r, 0);
 }
