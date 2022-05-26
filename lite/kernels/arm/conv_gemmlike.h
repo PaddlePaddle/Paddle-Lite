@@ -25,6 +25,9 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
+#ifdef LITE_WITH_ARM8_SVE2
+#include "lite/backends/arm/math/sve/funcs_sve.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
