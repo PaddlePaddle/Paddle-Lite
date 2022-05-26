@@ -33,6 +33,8 @@ WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -181,6 +183,14 @@ function make_tiny_publish_so {
   if [ ! -d third-party ]; then
     git checkout third-party
   fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv8_sve2"
+  fi
 
   if [ -d $build_dir ]
   then
@@ -225,6 +235,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DLITE_THREAD_POOL=$BUILD_THREAD_POOL \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -290,6 +301,14 @@ function make_full_publish_so {
 
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
 
   if [ -d $build_directory ]
   then
@@ -338,6 +357,7 @@ function make_full_publish_so {
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -366,9 +386,22 @@ function make_all_tests {
   prepare_thirdparty
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  if [ $4 == "benchmark" ]; then
+    set_benchmark_options
+    build_directory=$build_directory".benchmark"
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
   mkdir -p $build_directory
 
@@ -376,10 +409,6 @@ function make_all_tests {
   if [ ${os} == "android" ]; then
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
-  fi
-
-  if [ $4 == "benchmark" ]; then
-    set_benchmark_options
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -406,6 +435,7 @@ function make_all_tests {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -660,6 +690,8 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -785,6 +817,10 @@ function main {
                 BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
+            --build_arm8_sve2=*)
+                 WITH_ARM8_SVE2="${i#*=}"
+                 shift
+                 ;;
             --build_arm82_int8_sdot=*)
                 BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
