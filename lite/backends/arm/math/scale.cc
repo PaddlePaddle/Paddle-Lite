@@ -863,6 +863,40 @@ inline void scale_compute_fp16(const flaot16_t* din,
         [remain_cnt] "+r"(remain_cnt)
       : [vscale] "w"(vscale), [vbias] "w"(vbias)
       : "cc", "memory", "v4", "v5", "v8", "v9");
+#else
+  asm volatile(
+      "cmp  %[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "vld1.16  {d8-d9}, [%[din]]!              \n"
+      "vmov     q8, %q[vbias] \n"
+      "vld1.16  {d10-d11}, [%[din]]!              \n"
+      "vmov     q9, %q[vbias] \n"
+
+      "vmla.f16 q8, q4, %q[vscale]          \n"
+      "vmla.f16 q9, q5, %q[vscale]         \n"
+
+      "subs %[cnt], %[cnt],  #1               \n"
+      "vst1.16 {d16-d19}, [%[dout]]!             \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp  %[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.16  {d8}, [%[din]]!               \n"
+      "vmov     d16, %e[vbias] \n"
+      "vmla.f16 d16, d8, %e[vscale]          \n"
+      "subs %[remain_cnt], %[remain_cnt],  #1 \n"
+      "vst1.16 {d16}, [%[dout]]!              \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias)
+      : "cc", "memory", "q4", "q5", "q8", "q9");
+
 #endif
   for (int j = 0; j < remain_rem; j++) {
     *dout = *din * vscale[0] + vbias[0];
@@ -1013,6 +1047,42 @@ void scale_relu<float16_t>(const float16_t* din,
       : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
+  asm volatile(
+      "cmp  %[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "vld1.16  {d8-d9}, [%[din]]!              \n"
+      "vmov     q8, %q[vbias] \n"
+      "vld1.16  {d10-d11}, [%[din]]!              \n"
+      "vmov     q9, %q[vbias] \n"
+
+      "vmla.f16 q8, q4, %q[vscale]          \n"
+      "vmla.f16 q9, q5, %q[vscale]         \n"
+      "vmax.f16 q8, q8, %q[vzero]         \n"
+      "vmax.f16 q9, q9, %q[vzero]          \n"
+
+      "subs %[cnt], %[cnt],  #1               \n"
+      "vst1.16 {d16-d19}, [%[dout]]!             \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp  %[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.16  {d8}, [%[din]]!               \n"
+      "vmov     d16, %e[vbias] \n"
+      "vmla.f16 d16, d8, %e[vscale]          \n"
+      "vmax.f16 d16, d16, %e[vzero]         \n"
+      "subs %[remain_cnt], %[remain_cnt],  #1 \n"
+      "vst1.16 {d16}, [%[dout]]!              \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
+      : "cc", "memory", "q4", "q5", "q8", "q9");
+
 #endif
   for (int i = 0; i < remain_rem; i++) {
     *dout = *din * scale + bias;
@@ -1082,6 +1152,48 @@ void scale_relu6<float16_t>(const float16_t* din,
         [valpha] "w"(valpha)
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
+  asm volatile(
+      "cmp  %[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "vld1.16  {d8-d9}, [%[din]]!              \n"
+      "vmov     q8, %q[vbias] \n"
+      "vld1.16  {d10-d11}, [%[din]]!              \n"
+      "vmov     q9, %q[vbias] \n"
+
+      "vmla.f16 q8, q4, %q[vscale]          \n"
+      "vmla.f16 q9, q5, %q[vscale]         \n"
+      "vmax.f16 q8, q8, %q[vzero]         \n"
+      "vmax.f16 q9, q9, %q[vzero]          \n"
+      "vmin.f16 q8, q8, %q[valpha]         \n"
+      "vmin.f16 q9, q9, %q[valpha]          \n"
+
+      "subs %[cnt], %[cnt],  #1               \n"
+      "vst1.16 {d16-d19}, [%[dout]]!             \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp  %[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.16  {d8}, [%[din]]!               \n"
+      "vmov     d16, %e[vbias] \n"
+      "vmla.f16 d16, d8, %e[vscale]          \n"
+      "vmax.f16 d16, d16, %e[vzero]         \n"
+      "vmin.f16 d16, d16, %e[valpha]         \n"
+      "subs %[remain_cnt], %[remain_cnt],  #1 \n"
+      "vst1.16 {d16}, [%[dout]]!              \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale),
+        [vbias] "w"(vbias),
+        [vzero] "w"(vzero),
+        [valpha] "w"(valpha)
+      : "cc", "memory", "q4", "q5", "q8", "q9");
+
 #endif
   for (int i = 0; i < remain_rem; i++) {
     *dout = *din * scale + bias;
@@ -1153,6 +1265,51 @@ void scale_leaky_relu<float16_t>(const float16_t* din,
         [valpha] "w"(valpha)
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
+  asm volatile(
+      "cmp  %[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "vld1.16  {d8-d9}, [%[din]]!              \n"
+      "vmov     q8, %q[vbias] \n"
+      "vld1.16  {d10-d11}, [%[din]]!              \n"
+      "vmov     q9, %q[vbias] \n"
+
+      "vmla.f16 q8, q4, %q[vscale]          \n"
+      "vmla.f16 q9, q5, %q[vscale]         \n"
+      "vcge.f16  q10,  q8, %q[vzero] \n"
+      "vmul.f16  q11,  q8, %q[valpha]\n"
+      "vcge.f16  q12,  q9, %q[vzero] \n"
+      "vmul.f16  q13,  q9, %q[valpha]\n"
+
+      "subs %[cnt], %[cnt],  #1       \n"
+      "vbif      q8,  q11,  q10        \n"
+      "vbif      q9,  q13, q12       \n"
+      "vst1.16 {d16-d19}, [%[dout]]!             \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp  %[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.16  {d8}, [%[din]]!               \n"
+      "vmov     d16, %e[vbias] \n"
+      "vmla.f16 d16, d8, %e[vscale]          \n"
+      "vcge.f16  d20,  d16, %e[vzero] \n"
+      "vmul.f16  d22,  d16, %e[valpha]\n"
+      "subs %[remain_cnt], %[remain_cnt],  #1 \n"
+      "vbif      d16,  d22,  d20        \n"
+      "vst1.16 {d16}, [%[dout]]!              \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale),
+        [vbias] "w"(vbias),
+        [vzero] "w"(vzero),
+        [valpha] "w"(valpha)
+      : "cc", "memory", "q4", "q5", "q8", "q9", "q10", "q11");
+
 #endif
   for (int i = 0; i < remain_rem; i++) {
     *dout = *din * scale + bias;
