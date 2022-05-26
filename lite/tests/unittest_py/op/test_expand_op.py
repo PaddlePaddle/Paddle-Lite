@@ -31,8 +31,6 @@ class TestExpandOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_places = [
-            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.INT64, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(thread=[1, 4], places=host_places)
@@ -54,10 +52,6 @@ class TestExpandOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["input_data"].dtype
-        #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -132,9 +126,6 @@ class TestExpandOp(AutoScanTest):
                     min_value=1, max_value=8),
                 min_size=len(in_shape),
                 max_size=len(in_shape)))
-        if self.get_target() == "OpenCL":
-            with_tensor = False
-            attr_shape[1] = 1
 
         inputs = gnerate_inputs(with_tensor)
         expand_op = OpConfig(
@@ -142,6 +133,7 @@ class TestExpandOp(AutoScanTest):
             inputs=inputs[0],
             outputs={"Out": ["output_data"]},
             attrs={"expand_times": attr_shape})
+        expand_op.outputs_dtype = {"output_data": input_type}
 
         program_config = ProgramConfig(
             ops=[expand_op],
@@ -154,7 +146,17 @@ class TestExpandOp(AutoScanTest):
         return self.get_predictor_configs(), ["expand"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_dtype = program_config.inputs["input_data"].dtype
+            if target_type == TargetType.OpenCL:
+                if "float32" != in_dtype:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on OpenCL. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

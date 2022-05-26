@@ -33,7 +33,12 @@ int ConvertShuffleChannel(Converter* converter, OpInfo* op, Scope* scope) {
   auto group_operand = converter->AddConstantOperand(group);
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Channel shuffle operation
   converter->AddOperation(NNADAPTER_CHANNEL_SHUFFLE,
                           {input_operand, group_operand},

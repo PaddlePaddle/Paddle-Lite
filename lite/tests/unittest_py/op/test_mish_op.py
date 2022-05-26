@@ -72,7 +72,11 @@ class TestMishOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["mish"], (1e-5, 1e-5)
+        if self.get_target().upper() == "ARM":
+            return self.get_predictor_configs(), ["mish"], (5e-4,
+                                                            5e-4)  # arm_linux
+        else:
+            return self.get_predictor_configs(), ["mish"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

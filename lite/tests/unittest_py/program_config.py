@@ -15,6 +15,7 @@
 from typing import Optional, List, Callable, Dict, Any, Set
 import numpy as np
 import paddle
+import paddleslim
 import paddle.fluid as fluid
 import paddle.fluid.core as core
 from paddle import compat as cpt
@@ -25,6 +26,8 @@ from paddle.fluid.contrib.slim.quantization import QuantizationTransformPass
 from paddle.fluid.contrib.slim.quantization import QuantizationFreezePass
 from paddle.fluid.framework import IrGraph, IrNode, Operator
 from paddle.fluid.executor import global_scope
+
+import os
 
 
 class TensorConfig:
@@ -222,182 +225,51 @@ def create_fake_model(program_config):
     return model, params
 
 
-def create_quant_model(model,
-                       params,
-                       activation_quantize_type='moving_average_abs_max',
-                       weight_quantize_type='channel_wise_abs_max',
-                       save=False):
-    place = paddle.CUDAPlace(0)
-    scope = global_scope()
+def create_quant_model(model, params, prefix, program_config):
+    # 1. store original model
+    with open(prefix + "/model", "wb") as f:
+        f.write(model)
+    with open(prefix + "/params", "wb") as f:
+        f.write(params)
+
+    # 2. define calibration data
+    paddle.enable_static()
+    place = paddle.CPUPlace()
     exe = paddle.static.Executor(place)
-    [inference_program, feed_target_names,
-     fetch_targets] = paddle.static.load_inference_model(
-         path_prefix=None,
-         executor=exe,
-         model_filename=model,
-         params_filename=params)
-    graph = IrGraph(core.Graph(inference_program.desc), for_test=True)
 
-    out_scale_op_list = [
-        "conv2d",
-        "depthwise_conv2d",
-        "mul",
-        "matmul",
-        "relu",
-        "leaky_relu",
-        "relu6",
-        "sigmoid",
-        "tanh",
-        "prelu",
-        "swish",
-        "softmax",
-        "batch_norm",
-        "layer_norm",
-        "elementwise_add",
-        "pool2d",
-        "reshape2",
-        "transpose2",
-        "concat",
-        "elementwise_mul",
-        "scale",
-        "slice",
-        "hard_swish",
-        "hard_sigmoid",
-        "conv2d_transpose",
-        "gru",
-        "bilinear_interp",
-        "nearest_interp",
-        "trilinear_interp",
-        "flatten",
-        "flatten2",
-        "transpose",
-        "pad2d",
-        "reshape",
-        "layer_norm",
-    ]
-    op_real_in_out_name = {
-        "conv2d": [["Input", "Filter"], ["Output"]],
-        "depthwise_conv2d": [["Input", "Filter"], ["Output"]],
-        "conv2d_transpose": [["Input", "Filter"], ["Output"]],
-        "mul": [["X", "Y"], ["Out"]],
-        "matmul": [["X", "Y"], ["Out"]],
-        "pool2d": [["X"], ["Out"]],
-        "elementwise_add": [["X", "Y"], ["Out"]],
-        "concat": [["X"], ["Out"]],
-        "softmax": [["X"], ["Out"]],
-        "argmax": [["X"], ["Out"]],
-        "transpose": [["X"], ["Out"]],
-        "equal": [["X", "Y"], ["Out"]],
-        "gather": [["X"], ["Out"]],
-        "greater_equal": [["X", "Y"], ["Out"]],
-        "greater_than": [["X", "Y"], ["Out"]],
-        "less_equal": [["X", "Y"], ["Out"]],
-        "less_than": [["X", "Y"], ["Out"]],
-        "mean": [["X"], ["Out"]],
-        "not_equal": [["X", "Y"], ["Out"]],
-        "reshape": [["X"], ["Out"]],
-        "reshape2": [["X"], ["Out"]],
-        "transpose2": [["X"], ["Out"]],
-        "bilinear_interp": [["X"], ["Out"]],
-        "nearest_interp": [["X"], ["Out"]],
-        "trilinear_interp": [["X"], ["Out"]],
-        "slice": [["Input"], ["Out"]],
-        "squeeze": [["X"], ["Out"]],
-        "elementwise_sub": [["X", "Y"], ["Out"]],
-        "relu": [["X"], ["Out"]],
-        "relu6": [["X"], ["Out"]],
-        "leaky_relu": [["X"], ["Out"]],
-        "prelu": [["X"], ["Out"]],
-        "tanh": [["X"], ["Out"]],
-        "swish": [["X"], ["Out"]],
-        "dropout": [["X"], ["Out"]],
-        "batch_norm": [["X"], ["Y"]],
-        "layer_norm": [["X"], ["Y"]],
-        "sigmoid": [["X"], ["Out"]],
-        "elementwise_mul": [["X", "Y"], ["Out"]],
-        "scale": [["X"], ["Out"]],
-        "hard_swish": [["X"], ["Out"]],
-        "hard_sigmoid": [["X"], ["Out"]],
-        "gru": [["Input", "Weight"], ["Hidden"]],
-        "lstm": [["Input", "Weight"], ["Hidden"]],
-        "pad2d": [["X"], ["Out"]],
-        "flatten": [["X"], ["Out"]],
-        "flatten2": [["X"], ["Out"]],
-    }
+    batch_size = 1
 
-    def _get_op_output_var_names(op):
-        """ """
-        assert isinstance(op, (IrNode, Operator)), \
-            "The input op should be IrNode or Operator."
-        var_names = []
-        op_name = op.name() if isinstance(op, IrNode) \
-            else op.type
-        if op_name not in op_real_in_out_name:
-            return []
+    def _reader_list():
+        for _ in range(10):
+            res = []
+            for key in program_config.inputs.keys():
+                input_shape = program_config.inputs[key].shape
+                batch_size = input_shape[0]
+                res.append(np.random.random(input_shape).astype(np.float32))
+            yield res
 
-        name_list = op_real_in_out_name[op_name][1]
-        for name in name_list:
-            var_name = op.output(name)
-            if isinstance(var_name, list):
-                var_names.extend(var_name)
-            else:
-                var_names.append(var_name)
-        return var_names
+    # 3. quant_post_static
+    quantize_model_path = prefix + "/static_quantized_conv_2d"
+    paddleslim.quant.quant_post_static(
+        executor=exe,
+        weight_bits=8,
+        batch_size=batch_size,
+        model_dir=prefix,
+        quantize_model_path=quantize_model_path,
+        sample_generator=_reader_list,
+        weight_quantize_type='abs_max',
+        quantizable_op_type=[
+            "conv2d", "depthwise_conv2d", "conv2d_transpose", "mul", "matmul"
+        ],
+        model_filename="model",
+        params_filename="params", )
 
-    transform_pass = QuantizationTransformPass(
-        scope=scope,
-        place=place,
-        activation_quantize_type=activation_quantize_type,
-        weight_quantize_type=weight_quantize_type)
-    transform_pass.apply(graph)
-
-    op_nodes = graph.all_op_nodes()
-    for op_node in op_nodes:
-        if op_node.name() in out_scale_op_list:
-            var_names = _get_op_output_var_names(op_node)
-            for var_name in var_names:
-                in_node = graph._find_node_by_name(op_node.outputs, var_name)
-                if in_node.dtype() not in \
-                    [core.VarDesc.VarType.FP64, core.VarDesc.VarType.FP32]:
-                    continue
-
-                op_node.op()._set_attr("out_threshold", 3.0)
-
-    # Freeze graph for inference, but the weight of fc/conv is still float type.
-    freeze_pass = QuantizationFreezePass(
-        scope=scope, place=place, weight_quantize_type=weight_quantize_type)
-    freeze_pass.apply(graph)
-
-    main_program = graph.to_program()
-
-    # modify fake_quantize_moving_average_abs_max(InScale) and fake_channel_wise_dequantize_max_abs(Scales)
-    op_nodes = graph.all_op_nodes()
-    for op_node in op_nodes:
-        if op_node.name() == 'fake_quantize_moving_average_abs_max':
-            var_name = op_node.input("InScale")[0]
-            tensor = scope.var(var_name).get_tensor()
-            tensor.set(np.array([1], dtype=np.float32), place)
-        elif op_node.name() == 'fake_channel_wise_dequantize_max_abs':
-            var_name = op_node.input("Scales")[0]
-            tensor = scope.var(var_name).get_tensor()
-            tensor.set(np.ones(tensor.shape(), dtype=np.float32), place)
-
-    if save:
-        fluid.io.save_inference_model(
-            'test_inference_model',
-            feed_target_names,
-            fetch_targets,
-            exe,
-            main_program=main_program)
-
-    feed_vars = [
-        main_program.global_block().var(name) for name in feed_target_names
-    ]
-    serialized_program = paddle.static.serialize_program(
-        feed_vars, fetch_targets, program=main_program)
-    serialized_params = paddle.static.serialize_persistables(
-        feed_vars, fetch_targets, executor=exe, program=main_program)
-    return serialized_program, serialized_params
+    # 4. return quant model
+    with open(quantize_model_path + "/__model__", "rb") as f:
+        model = f.read()
+    with open(quantize_model_path + "/__params__", "rb") as f:
+        params = f.read()
+    return model, params
 
 
 from typing import Optional
@@ -506,3 +378,23 @@ class CxxConfig:
             return DataLayoutType.NCHW
         else:
             return eval("DataLayoutType." + first_place[2])
+
+    def set_nnadapter_device_names(self, nnadapter_device_names):
+        self.config['nnadapter_device_names'] = nnadapter_device_names
+
+    def set_nnadapter_context_properties(self, nnadapter_context_properties):
+        self.config[
+            'nnadapter_context_properties'] = nnadapter_context_properties
+
+    def set_nnadapter_model_cache_dir(self, nnadapter_model_cache_dir):
+        self.config['nnadapter_model_cache_dir'] = nnadapter_model_cache_dir
+
+    def set_nnadapter_subgraph_partition_config_path(
+            self, nnadapter_subgraph_partition_config_path):
+        self.config[
+            'nnadapter_subgraph_partition_config_path'] = nnadapter_subgraph_partition_config_path
+
+    def set_nnadapter_mixed_precision_quantization_config_path(
+            self, nnadapter_mixed_precision_quantization_config_path):
+        self.config[
+            'nnadapter_mixed_precision_quantization_config_path'] = nnadapter_mixed_precision_quantization_config_path

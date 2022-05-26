@@ -31,10 +31,14 @@ import numpy as np
 class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # precision has diff on arm
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
@@ -66,13 +70,6 @@ class TestBoxCoderOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs[
-                    "code_type"] == "encode_center_size" or program_config.ops[
-                        0].attrs["axis"] != 0 or program_config.ops[0].attrs[
-                            "box_normalized"] == False or "PriorBoxVar" not in program_config.ops[
-                                0].inputs:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -141,21 +138,23 @@ class TestBoxCoderOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["box_coder"], (1e-5, 1e-5)
+        # code_type = "encode_center_size", abs_error = 1e-4. out = out /variance
+        # code_type = "decode_center_size", abs_error=1e-5.
+        return self.get_predictor_configs(), ["box_coder"], (1e-4, 2e-4)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
+            # fp32 and fp16 will have 30% diff when data is small(1e-4), so it is not suitable to be denominator
+            # in type "encode_center_size", we skip it.
             if predictor_config.target() == TargetType.ARM:
-                if program_config.ops[0].attrs[
-                        "code_type"] == "encode_center_size":
-                    return True
-            return False
+                if predictor_config.precision() == PrecisionType.FP16:
+                    if program_config.ops[0].attrs[
+                            "code_type"] == "encode_center_size":
+                        return True
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
-        )
-        pass
+            "Lite has little diff in a specific case on arm fp16")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

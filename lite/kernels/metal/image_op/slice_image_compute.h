@@ -49,14 +49,23 @@ class SliceImageCompute
    private:
     void run_without_mps();
     void setup_without_mps();
+    void reset_data();
+    void run_tex_to_buf();
+    void run_buf_to_tex();
 
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
-    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+
+    id<MTLBuffer> intermediate_input_;
+    id<MTLBuffer> intermediate_output_;
+
+    id<MTLComputePipelineState> pipline_;
+    id<MTLComputePipelineState> pipline_tex_to_buf;
+    id<MTLComputePipelineState> pipline_buf_to_tex;
 };
 
 }  // namespace metal

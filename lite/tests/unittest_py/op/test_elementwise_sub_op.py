@@ -62,6 +62,14 @@ class TestElementwiseSubOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -79,18 +87,11 @@ class TestElementwiseSubOp(AutoScanTest):
             ) == PrecisionType.FP32 and input_data_type != np.float32:
                 return False
             if predictor_config.precision(
-            ) == PrecisionType.FP16 and input_data_type != np.float16:
+            ) == PrecisionType.FP16 and input_data_type != np.float32:
                 return False
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
-        if target_type == TargetType.Metal:
-            if input_data_type != np.float32 \
-                or in_x_shape != in_y_shape \
-                or len(in_x_shape) == 3 \
-                or in_x_shape[0] != 1:
-                return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -118,6 +119,8 @@ class TestElementwiseSubOp(AutoScanTest):
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
+            input_data_type = draw(st.sampled_from([np.float32]))
+        else:
             input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
@@ -150,16 +153,38 @@ class TestElementwiseSubOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_sub"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
+        def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
-            if target_type in [TargetType.ARM]:
-                return True
-            return False
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            input_data_type = program_config.inputs["input_data_x"].dtype
+            if target_type == TargetType.Metal:
+                if input_data_type != np.float32 \
+                    or in_x_shape != in_y_shape \
+                    or len(in_x_shape) == 3 \
+                    or in_x_shape[0] != 1:
+                    return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The elementwise_sub op's result is different from paddle in some case, we should fix it as soon as possible!"
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on Metal. We need to fix it as soon as possible."
         )
+
+        def _teller2(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                x_shape = program_config.inputs["input_data_x"].shape
+                y_shape = program_config.inputs["input_data_y"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(x_shape) == 1 \
+                    or len(x_shape) != len(y_shape) \
+                    or x_shape[0] != y_shape[0] \
+                    or axis == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'x_shape_size == 1' or 'x_shape_size != y_shape_size' "
+            "or 'x_shape[0] != y_shape[0]' or 'axis == 0' on NvidiaTensorrt.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

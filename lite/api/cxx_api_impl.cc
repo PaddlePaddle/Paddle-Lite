@@ -91,6 +91,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         raw_predictor_->scope(), config.nnadapter_device_names());
     Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
         raw_predictor_->scope(), config.nnadapter_context_properties());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextCallback(
+        raw_predictor_->scope(), config.nnadapter_context_callback());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
         raw_predictor_->scope(), config.nnadapter_model_cache_dir());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
@@ -109,6 +111,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
             raw_predictor_->scope(),
             config.nnadapter_mixed_precision_quantization_config_buffer());
+    Context<TargetType::kNNAdapter>::SetNNAdapterDynamicShapeInfo(
+        raw_predictor_->scope(), config.nnadapter_dynamic_shape_info());
 #endif
 
     auto use_layout_preprocess_pass =
@@ -155,15 +159,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   // exe_scope to store the execution-level configuration
   Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
-#endif
-
-#ifdef LITE_WITH_RKNPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
-      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
 #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \

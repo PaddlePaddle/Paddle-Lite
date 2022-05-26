@@ -20,10 +20,11 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ScatterCompute::Run() {
+template <typename Dtype>
+void ScatterCompute<Dtype>::Run() {
   auto& param = this->template Param<operators::ScatterParam>();
   const float* updates_data = param.updates->template data<float>();
-  const int64_t* indexs_data = param.indexs->template data<int64_t>();
+  const Dtype* indexs_data = param.indexs->template data<Dtype>();
   float* output_data = param.output->template mutable_data<float>();
   bool overwrite = param.overwrite;
   int index_size = param.indexs->dims()[0];
@@ -32,13 +33,13 @@ void ScatterCompute::Run() {
   for (int i = 1; i < in_dims.size(); i++) {
     num *= in_dims[i];
   }
-  lite::arm::math::scatter(indexs_data,
-                           updates_data,
-                           output_data,
-                           index_size,
-                           in_dims[0],
-                           num,
-                           overwrite);
+  lite::arm::math::scatter<Dtype>(indexs_data,
+                                  updates_data,
+                                  output_data,
+                                  index_size,
+                                  in_dims[0],
+                                  num,
+                                  overwrite);
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }
@@ -48,15 +49,23 @@ void ScatterCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(scatter,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ScatterCompute,
-                     def)
+using ScatterCompute_int64 =
+    paddle::lite::kernels::arm::ScatterCompute<int64_t>;
+REGISTER_LITE_KERNEL(
+    scatter, kARM, kFloat, kNCHW, ScatterCompute_int64, ids_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Updates",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+using ScatterCompute_int32 =
+    paddle::lite::kernels::arm::ScatterCompute<int32_t>;
+REGISTER_LITE_KERNEL(
+    scatter, kARM, kFloat, kNCHW, ScatterCompute_int32, ids_int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Updates",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})

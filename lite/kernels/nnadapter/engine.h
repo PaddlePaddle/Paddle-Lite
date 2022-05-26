@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -44,19 +45,17 @@ class Program {
                      const std::string& model_cache_dir);
   // Build the model online, cache the compiled device program to file if
   // model_cache_dir is provided
-  bool BuildAndCacheToFile(
-      int block_idx,
-      const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
-      Scope* exec_scope,
-      const std::vector<Variable>& input_vars,
-      std::vector<Variable>* output_vars,
-      const std::string& model_cache_token,
-      const std::string& model_cache_dir);
+  bool BuildAndCacheToFile(const cpp::BlockDesc* block_desc,
+                           Scope* exec_scope,
+                           const std::vector<Variable>& input_vars,
+                           std::vector<Variable>* output_vars,
+                           const std::string& model_cache_token,
+                           const std::string& model_cache_dir);
   // Create an execution, set the model input and output variables and the
   // functions to access them
   bool SetInputsAndOutputs(std::vector<Variable>* input_vars,
                            std::vector<Variable>* output_vars);
-  bool Execute();
+  int Execute();
   bool IsValid() { return context_ && compilation_; }
   bool IsReady() { return IsValid() && execution_; }
 
@@ -70,8 +69,7 @@ class Program {
 class Engine {
  public:
   Engine(KernelContext* ctx,
-         int block_idx,
-         const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+         const cpp::BlockDesc* block_desc,
          Scope* exec_scope,
          const std::vector<std::string>& input_names,
          const std::vector<std::string>& output_names,
@@ -82,15 +80,13 @@ class Engine {
 
  private:
   KernelContext* ctx_{nullptr};
-  int block_idx_{-1};
-  const std::shared_ptr<const cpp::ProgramDesc> program_desc_{nullptr};
+  const cpp::BlockDesc* block_desc_{nullptr};
   Scope* exec_scope_{nullptr};
   std::vector<Variable> input_vars_;
   std::vector<Variable> output_vars_;
   std::vector<NNAdapterDevice*> devices_;
   ::NNAdapterContext* context_{nullptr};
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<Program>>
-      programs_;
+  std::vector<std::shared_ptr<Program>> programs_;
   std::string model_cache_dir_{""};
 };
 

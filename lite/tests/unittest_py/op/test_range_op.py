@@ -36,11 +36,6 @@ class TestRangeOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

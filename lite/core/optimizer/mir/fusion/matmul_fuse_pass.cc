@@ -32,4 +32,5 @@ void MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_matmul_fuse_pass, paddle::lite::mir::MatmulFusePass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kOpenCL)});

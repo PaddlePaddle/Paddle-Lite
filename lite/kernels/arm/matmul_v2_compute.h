@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -22,18 +23,30 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType, PrecisionType OutType>
+class MatMulV2Compute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::MatMulParam;
 
-  void PrepareForRun() override;
+  void PrepareForRun() { auto& ctx = this->ctx_->template As<ARMContext>(); }
+
+  void ReInitWhenNeeded() override;
 
   void Run() override;
 
   virtual ~MatMulV2Compute() = default;
 
  private:
-  int m_, n_, k_;
+  int m_{1};
+  int n_{1};
+  int k_{1};
+  int lda_{1};
+  int ldb_{1};
+  int ldc_{1};
+  std::vector<float> scale_;
+  std::vector<float> scale_one;
+  DDim last_x_shape_;
+  DDim last_y_shape_;
 };
 
 }  // namespace arm

@@ -224,14 +224,14 @@ TEST(Transpose, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-2;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

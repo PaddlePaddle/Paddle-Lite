@@ -36,11 +36,20 @@ class TestPreluOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -72,7 +81,8 @@ class TestPreluOp(AutoScanTest):
                 "Alpha": ['alpha_data'],
             },
             outputs={"Out": ["output_data"], },
-            attrs={"mode": mode_data, })
+            attrs={"mode": mode_data,
+                   "data_format": "NCHW"})
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},

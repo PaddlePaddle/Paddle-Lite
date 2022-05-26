@@ -36,11 +36,14 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP16],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #some case OpenCL not support 
-        '''
+        #some case OpenCL not support
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -55,12 +58,36 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        #Metal not support conv2d_transpose: cannot find the name
+        '''       
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray)
+        ]
+        self.enable_testing_on_place(places=metal_places)
         '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         result = True
+        if program_config.ops[1].type == "sigmoid" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[1].type == "tanh" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[1].type == "swish" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[1].type == "exp" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
+        if program_config.ops[1].type == "abs" and predictor_config.target(
+        ) != TargetType.OpenCL:
+            result = False
         if program_config.ops[0].type == "conv2d_transpose":  #TODO
             result = result and program_config.ops[
                 1].type != "hard_swish" and program_config.ops[
@@ -74,6 +101,12 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         if predictor_config.target(
         ) == TargetType.ARM and self.depthwise == True:
             result = result and program_config.ops[1].type != 'hard_swish'
+        if predictor_config.target() == TargetType.ARM:
+            result = result and predictor_config.precision(
+            ) != PrecisionType.FP16 and predictor_config.precision(
+            ) != PrecisionType.INT8
+        if predictor_config.target() == TargetType.Metal:
+            result = result and program_config.ops[1].type != 'prelu'
 
         return result
 
@@ -97,7 +130,10 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=2), min_size=2, max_size=2))
-        dilations = draw(st.sampled_from([[1, 1], [2, 2]]))
+        dilations = draw(st.sampled_from([
+            [1, 1], [2, 2]
+        ]))  #opencl input 1,2,9,9 filter 1,2,5,5 dilations 2 has diff
+
         groups = draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
@@ -115,6 +151,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         threshold = draw(st.floats(min_value=0, max_value=1))
         alpha = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))
+        beta_data = draw(st.floats(min_value=0.0, max_value=1.0))
         offset = draw(st.floats(min_value=0, max_value=1))
         slope = draw(st.floats(min_value=0.7, max_value=0.9))
 
@@ -163,6 +200,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
 
         Alpha_shape = []
         mode_data = draw(st.sampled_from(["all", "channel", "element"]))
+        conv_out_shape[0] = 1
         if mode_data == "all":
             Alpha_shape = [1]
         elif mode_data == "channel":
@@ -172,14 +210,23 @@ class TestConvActiveFuse(FusePassAutoScanTest):
 
         act_type = draw(
             st.sampled_from([
-                'relu', 'relu6', 'leaky_relu', 'hard_swish', 'prelu',
-                'hard_sigmoid'
+                'relu',
+                'relu6',
+                'leaky_relu',
+                'hard_swish',
+                'prelu',
+                'hard_sigmoid',
+                'sigmoid',
+                'tanh',
+                'swish',
+                # 'exp',
+                'abs',
             ]))
 
         def generate_act_attrs(act_type_str):
             attrs = {}
             if act_type_str == 'relu6':
-                attrs = {"threshold": threshold}
+                attrs = {"threshold": 6.0}
             if act_type_str == 'leaky_relu':
                 attrs = {"alpha": alpha}
             if act_type_str == 'hard_swish':
@@ -188,6 +235,8 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                     "scale": scale,
                     "offset": offset
                 }
+            if act_type_str == 'swish':
+                attrs = {"beta": beta_data}
             if act_type_str == "prelu":
                 attrs = {"mode": mode_data, "data_format": "NCHW"}
             if act_type_str == "hard_sigmoid":
@@ -269,7 +318,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=100,
+            max_examples=400,
             passes=["lite_conv_active_fuse_pass"])
 
 

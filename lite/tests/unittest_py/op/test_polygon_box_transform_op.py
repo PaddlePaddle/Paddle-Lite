@@ -35,12 +35,7 @@ class TestPolygonBoxTransformOp(AutoScanTest):
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+            thread=[1, 2, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -51,7 +46,7 @@ class TestPolygonBoxTransformOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=10), min_size=2, max_size=4))
+                    min_value=1, max_value=64), min_size=2, max_size=4))
         input_type = draw(st.sampled_from(["type_float"]))
         assume(len(in_shape) == 4)
         assume(in_shape[1] % 2 == 0)
@@ -78,9 +73,6 @@ class TestPolygonBoxTransformOp(AutoScanTest):
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["polygon_box_transform"], (1e-5,
                                                                          1e-5)
-
-    def add_ignore_pass_case(self):
-        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

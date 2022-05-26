@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import terminal_size
 import sys
 sys.path.append('../')
 
@@ -40,6 +41,20 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        opencl_valid_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -60,9 +75,6 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
-        if input_data_type == np.float32:
-            err_msg = "Paddle's elementwise_floordiv op doesn't support float32 datatype!"
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -124,7 +136,16 @@ class TestElementwiseFloorDivOp(AutoScanTest):
                                                                         1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            input_data_type = program_config.inputs["input_data_x"].dtype
+            if input_data_type == np.float32:
+                err_msg = "Paddle's elementwise_floordiv op doesn't support float32 datatype!"
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Paddle does not support this op in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

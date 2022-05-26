@@ -23,6 +23,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
 
 class TestArgMaxOp(AutoScanTest):
@@ -56,21 +57,13 @@ class TestArgMaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        target_type = predictor_config.target()
-        axis = program_config.ops[0].attrs["axis"]
-        keep_dims = program_config.ops[0].attrs["keepdims"]
-        if target_type == TargetType.OpenCL:
-            if len(in_shape) != 4 or keep_dims == False:
-                return False
-        if predictor_config.target() == TargetType.Metal:
-            if len(in_shape) != 4 or in_shape[
-                    0] != 1 or axis != 1 or keep_dims == False:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -95,6 +88,11 @@ class TestArgMaxOp(AutoScanTest):
                 "dtype": dtype,
                 "flatten": False
             })
+        if dtype == 2:
+            arg_max_op.outputs_dtype = {"output_data": np.int32}
+        else:
+            arg_max_op.outputs_dtype = {"output_data": np.int64}
+
         program_config = ProgramConfig(
             ops=[arg_max_op],
             weights={},
@@ -106,18 +104,53 @@ class TestArgMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
+        def _teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                set_dtype = program_config.ops[0].attrs["dtype"]
+                in_shape = program_config.inputs["input_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if set_dtype != 2 or len(in_shape) == 1 or axis == 0:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            set_dtype = program_config.ops[0].attrs["dtype"]
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["axis"]
+            keep_dims = program_config.ops[0].attrs["keepdims"]
+            if predictor_config.target() == TargetType.Metal:
+                if len(in_shape) != 4 or in_shape[
+                        0] != 1 or axis != 1 or keep_dims == False or set_dtype == 2:
+                    return True
+
+        def _teller3(program_config, predictor_config):
             if predictor_config.target() == TargetType.Metal:
                 return True
 
+        def _teller4(program_config, predictor_config):
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                if len(in_shape) == 1:
+                    return True
+
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
         )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite is not supported on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 200

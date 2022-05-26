@@ -38,6 +38,11 @@ class TestConcatOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -65,25 +70,15 @@ class TestConcatOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt",
+            "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        input_shape = program_config.inputs["input_data0"].shape
-        if target_type == TargetType.OpenCL:
-            if "AxisTensor" in program_config.ops[0].inputs:
-                return False
-            if len(input_shape) == 3 and program_config.ops[0].attrs[
-                    "axis"] == 0:
-                for v in program_config.inputs.values():
-                    if v.shape[0] % 4 != 0:
-                        return False
-        if target_type == TargetType.Metal:
-            if "AxisTensor" in program_config.ops[0].inputs:
-                return False
-            if len(input_shape) != 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -175,14 +170,47 @@ class TestConcatOp(AutoScanTest):
         return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_shape = program_config.inputs["input_data0"].shape
+            if target_type == TargetType.Metal:
+                if len(input_shape) != 4:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite is not supported on metal. We need to fix it as soon as possible."
+        )
+
+        def _teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in0_shape = program_config.inputs["input_data0"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if "axis_tensor_data" in program_config.inputs.keys() \
+                    or len(in0_shape) == 1 \
+                    or axis == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'AxisTensor input' or 'in_shape_size == 1' or 'axis == 0'."
+        )
+
+        def _teller3(program_config, predictor_config):
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                if "axis_tensor_data" in program_config.inputs.keys():
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Intel OpenVINO does not support 'AxisTensor input'.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 50
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
+            max_examples = 500
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 400

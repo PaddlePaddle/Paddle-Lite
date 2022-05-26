@@ -55,6 +55,24 @@ class TestBatchNormOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -65,8 +83,7 @@ class TestBatchNormOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
-        is_test_val = draw(st.sampled_from([True, False]))
+                    min_value=1, max_value=32), min_size=4, max_size=4))
         epsilon = draw(st.floats(min_value=0.00001, max_value=0.001))
         momentum = draw(st.floats(min_value=0.1, max_value=0.9))
 
@@ -84,6 +101,17 @@ class TestBatchNormOp(AutoScanTest):
 
         def generate_variance(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
+
+        outputs = [
+            "output_data", "mean_data", "variance_data", "saved_mean",
+            "saved_variance"
+        ]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
+
+        if self.get_target().upper() == "NNADAPTER":
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                outputs = ["output_data"]
 
         batch_norm_ops = OpConfig(
             type="batch_norm",
@@ -109,31 +137,34 @@ class TestBatchNormOp(AutoScanTest):
                 "epsilon": epsilon,
                 "momentum": momentum
             })
+
         program_config = ProgramConfig(
             ops=[batch_norm_ops],
-            weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            weights={
                 "scale_data": TensorConfig(data_gen=partial(generate_scale)),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias)),
                 "mean_data": TensorConfig(data_gen=partial(generate_mean)),
                 "variance_data":
                 TensorConfig(data_gen=partial(generate_variance)),
             },
-            outputs=[
-                "output_data", "mean_data", "variance_data", "saved_mean",
-                "saved_variance"
-            ])
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            },
+            outputs=outputs)
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["batch_norm"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 3e-2, 3e-2
+        return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=250)
 
 
 if __name__ == "__main__":

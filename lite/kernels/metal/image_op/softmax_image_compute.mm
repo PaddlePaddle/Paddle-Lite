@@ -29,6 +29,7 @@ void SoftmaxImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
+    auto input_dims = param.x->dims();
     auto output_dims = param.output->dims();
 
 #ifdef LITE_WITH_METAL_FULL
@@ -37,13 +38,17 @@ void SoftmaxImageCompute::PrepareForRun() {
     output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
+    auto axis = param.axis;
+    if (axis < 0) {
+        axis += input_dims.size();
+    }
     // whether to use mps
     bool should_use_mps = false;
     if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->dim_[3]);
             int output_c = static_cast<int>(output_buffer_->dim_[3]);
-            if (input_c >= 3 && output_c >= 3) {
+            if (input_c >= 3 && output_c >= 3 && input_dims.size() == 4 && axis == 1) {
                 should_use_mps = true;
             }
         }
@@ -86,6 +91,11 @@ void SoftmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
 
+    if (input_dims.size() != 4 && input_dims.size() != 2) {
+        LOG(FATAL) << "only support input with rank(dim)=4 and 2";
+        return;
+    }
+
     auto axis = param.axis;
     if (axis < 0) {
         axis += input_dims.size();
@@ -94,27 +104,17 @@ void SoftmaxImageCompute::setup_without_mps() {
     std::string function_name = "softmax";
     if (input_dims.size() == 4) {
         if (axis == 1) {
-            function_name = "softmax_c_d3_common";
+            function_name = "softmax";
         } else if (axis == 2) {
             function_name = "softmax_h_d3_common";
         } else if (axis == 3) {
             function_name = "softmax_w_d3_common";
         }
-    } else if (input_dims.size() == 3) {
-        if (axis == 0) {
-            function_name = "softmax_c_d3_common";
-        } else if (axis == 1) {
-            function_name = "softmax_h_d3_common";
-        } else if (axis == 2) {
-            function_name = "softmax_w_d3_common";
-        }
-    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
-        if (axis == 0) {
-            function_name = "softmax_h_2d_common";
-        } else if (axis == 1) {
-            function_name = "softmax_w_2d_common";
-        }
     }
+    if (input_dims.size() == 2) {
+        function_name = "softmax_dim2_common";
+    }
+
     function_name_ = function_name;
 
     // pipline
@@ -155,8 +155,8 @@ void SoftmaxImageCompute::setup_with_mps() {
             (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
         ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
         // MPS in and out
-        auto input_c = static_cast<int>(input_buffer_->dim_[3]);
-        auto output_c = static_cast<int>(output_buffer_->dim_[3]);
+        int input_c = static_cast<int>(input_buffer_->dim_[3]);
+        int output_c = static_cast<int>(output_buffer_->dim_[3]);
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];

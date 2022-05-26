@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
+#include "lite/backends/x86/math/conv_direct_fp32.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
@@ -71,9 +71,9 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
     int ih = x_dims[2];
     int oh = o_dims[2];
     int ow = o_dims[3];
-
-    code_ = new lite::x86::math::conv_direct_3x3s2();
-    code_->generate_code(ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw);
+    code_ = new lite::x86::math::conv_direct();
+    code_->generate_code(
+        ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw, wh, ww, param.strides[1]);
     code_->ready();
   }
 
@@ -95,7 +95,7 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
   bool flag_trans_bias_{false};
   std::vector<float> w_scale_;
   int oc_expand_;
-  lite::x86::math::conv_direct_3x3s2* code_;
+  lite::x86::math::conv_direct* code_;
 };
 
 }  // namespace x86

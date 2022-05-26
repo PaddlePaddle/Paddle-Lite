@@ -83,6 +83,8 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.variance =
       scope->FindVar(op_desc.Input("Variance").front())->GetMutable<Tensor>();
   param_.y = scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
+  input_tensor_ptrs_cache_.push_back(param_.x);
+  output_tensor_ptrs_cache_.push_back(param_.y);
 
   auto is_test_type = op_desc.GetAttrType("is_test");
   switch (is_test_type) {

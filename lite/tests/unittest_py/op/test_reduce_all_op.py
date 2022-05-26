@@ -31,12 +31,11 @@ from functools import partial
 class TestReduceAllOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # not support
-        # self.enable_testing_on_place(
-        #     TargetType.Host,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -47,36 +46,51 @@ class TestReduceAllOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
+                    min_value=1, max_value=64), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
         if isinstance(axis, int):
             axis = [axis]
-        dim_data = draw(st.sampled_from([[0], [1], [-1], []]))
         reduce_all_data = True if axis == None or axis == [] else False
-        in_dtype = draw(st.sampled_from([0]))
 
         def generate_input(*args, **kwargs):
-            if in_dtype == 0:
-                return np.random.random(in_shape).astype(np.bool)
+            return np.random.randint(
+                low=0, high=1, size=in_shape).astype(np.int32)
+
+        cast_x = OpConfig(
+            type="cast",
+            inputs={"X": ["input_data_x"], },
+            outputs={"Out": ["cast_data_x"], },
+            attrs={"in_dtype": int(2),
+                   "out_dtype": int(0)})
+        cast_x.outputs_dtype = {"cast_data_x": np.bool_}
 
         build_ops = OpConfig(
             type="reduce_all",
-            inputs={"X": ["input_data"], },
+            inputs={"X": ["cast_data_x"], },
             outputs={"Out": ["output_data"], },
             attrs={
                 "dim": axis,
                 "keep_dim": keep_dim,
                 "reduce_all": reduce_all_data,
             })
+
+        cast_out = OpConfig(
+            type="cast",
+            inputs={"X": ["output_data"], },
+            outputs={"Out": ["cast_data_out"], },
+            attrs={"in_dtype": int(0),
+                   "out_dtype": int(2)})
+        cast_out.outputs_dtype = {"cast_data_out": np.int32}
+
         program_config = ProgramConfig(
-            ops=[build_ops],
+            ops=[cast_x, build_ops, cast_out],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "input_data_x": TensorConfig(data_gen=partial(generate_input)),
             },
-            outputs=["output_data"])
+            outputs=["cast_data_out"])
         return program_config
 
     def sample_predictor_configs(self):
@@ -86,7 +100,7 @@ class TestReduceAllOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

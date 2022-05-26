@@ -42,11 +42,20 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     boxcoder_param_ = param_.get_mutable<param_t>();
     if (boxcoder_param_->code_type == "decode_center_size" &&
-        boxcoder_param_->box_normalized == true) {
-      kernel_func_name_ = "decode_center_size";
+        boxcoder_param_->axis == 0) {
+      kernel_func_name_ = "decode_center_size_axis0";
+    } else if (boxcoder_param_->code_type == "decode_center_size" &&
+               boxcoder_param_->axis == 1) {
+      kernel_func_name_ = "decode_center_size_axis1";
+    } else if (boxcoder_param_->code_type == "encode_center_size") {
+      kernel_func_name_ = "encode_center_size";
     } else {
       LOG(FATAL) << "This code_type " << boxcoder_param_->code_type
                  << " doesn't support";
+    }
+
+    if (boxcoder_param_->prior_box_var != nullptr) {
+      build_options_ += " -DPRIOR_BOX_VAR";
     }
 
     if (boxcoder_param_->prior_box->persistable() &&
@@ -72,25 +81,30 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
                        image_shape[1],
                        priorbox_image_data);
 
-      const auto* priorboxvar_cpu =
-          boxcoder_param_->prior_box_var->data<float>();
-      const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
-      image_shape = converter.InitImageDimInfoWith(priorboxvar_dims);
-      priorboxvar_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
-      auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
-      converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
-                            priorboxvar_image_data,
-                            priorboxvar_dims);
-      MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
-                       image_shape[0],
-                       image_shape[1],
-                       priorboxvar_image_data);
+      if (boxcoder_param_->prior_box_var != nullptr) {
+        const auto* priorboxvar_cpu =
+            boxcoder_param_->prior_box_var->data<float>();
+        const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
+        image_shape = converter.InitImageDimInfoWith(priorboxvar_dims);
+        priorboxvar_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
+        auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
+        converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
+                              priorboxvar_image_data,
+                              priorboxvar_dims);
+        MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
+                         image_shape[0],
+                         image_shape[1],
+                         priorboxvar_image_data);
 
-      priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
-      priorboxvar_image_ = DATA_GPU(priorboxvar_gpu_image_);
+        priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
+        priorboxvar_image_ = DATA_GPU(priorboxvar_gpu_image_);
+      }
+
     } else {
       priorbox_image_ = GET_DATA_GPU(boxcoder_param_->prior_box);
-      priorboxvar_image_ = GET_DATA_GPU(boxcoder_param_->prior_box_var);
+      if (boxcoder_param_->prior_box_var != nullptr) {
+        priorboxvar_image_ = GET_DATA_GPU(boxcoder_param_->prior_box_var);
+      }
     }
 
     CHECK(context.cl_context() != nullptr);
@@ -113,69 +127,83 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 
     const auto* input_targetbox = boxcoder_param_->target_box;
     const auto& code_type = boxcoder_param_->code_type;
-    if (code_type == "decode_center_size") {
-      auto* target_box_image = GET_DATA_GPU(input_targetbox);
 
-      int new_dims[4] = {1, 1, 1, 1};
-      for (int i = 0; i < out_dims.size(); i++) {
-        new_dims[4 - out_dims.size() + i] = out_dims[i];
-      }
-      auto& context = ctx_->As<OpenCLContext>();
-      CHECK(context.cl_context() != nullptr);
-      STL::stringstream kernel_key;
-      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-      auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    auto* target_box_image = GET_DATA_GPU(input_targetbox);
 
-      auto default_work_size = DefaultGlobalWorkSize(
-          out_dims,
-          DDim(std::vector<DDim::value_type>{
-              static_cast<int64_t>(image_shape["width"]),
-              static_cast<int64_t>(image_shape["height"])}));
+    int new_dims[4] = {1, 1, 1, 1};
+    for (int i = 0; i < out_dims.size(); i++) {
+      new_dims[4 - out_dims.size() + i] = out_dims[i];
+    }
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-      int out_C = new_dims[1];
-      int out_H = new_dims[2];
+    auto default_work_size = DefaultGlobalWorkSize(
+        out_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(image_shape["width"]),
+            static_cast<int64_t>(image_shape["height"])}));
+
+    int out_C = new_dims[1];
+    int out_H = new_dims[2];
+    int normalized = static_cast<int>(boxcoder_param_->box_normalized);
 #ifdef LITE_WITH_LOG
-      VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
-      VLOG(4) << "input[PriorBox] shape: "
-              << boxcoder_param_->prior_box->dims();
-      VLOG(4) << "input[PriorBoxVar] shape: "
-              << boxcoder_param_->prior_box_var->dims();
-      VLOG(4) << "input[TargetBox] shape: "
-              << boxcoder_param_->target_box->dims();
-      VLOG(4) << "output[OutputBox] shape: " << out_dims;
-      VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-              << image_shape["height"];
-      VLOG(4) << "out_C = " << out_C;
-      VLOG(4) << "out_H = " << out_H;
-      VLOG(4) << "default_work_size = " << default_work_size[0] << ", "
-              << default_work_size[1] << ", " << default_work_size[2];
+    VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
+    VLOG(4) << "input[PriorBox] shape: " << boxcoder_param_->prior_box->dims();
+    VLOG(4) << "input[TargetBox] shape: "
+            << boxcoder_param_->target_box->dims();
+    VLOG(4) << "output[OutputBox] shape: " << out_dims;
+    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
+            << image_shape["height"];
+    VLOG(4) << "out_C = " << out_C;
+    VLOG(4) << "out_H = " << out_H;
+    VLOG(4) << "default_work_size = " << default_work_size[0] << ", "
+            << default_work_size[1] << ", " << default_work_size[2];
 #endif
-      int arg_idx = 0;
-      cl_int status = kernel.setArg(arg_idx++, *priorbox_image_);
-      CL_CHECK_FATAL(status);
+    std::vector<float> variance = boxcoder_param_->variance;
+    float variance_4[4] = {1, 1, 1, 1};
+    if ((!(variance.empty()))) {
+      const float* variance_data = variance.data();
+      variance_4[0] = static_cast<float>(variance_data[0]);
+      variance_4[1] = static_cast<float>(variance_data[1]);
+      variance_4[2] = static_cast<float>(variance_data[2]);
+      variance_4[3] = static_cast<float>(variance_data[3]);
+    }
+
+    int arg_idx = 0;
+    cl_int status = kernel.setArg(arg_idx++, *priorbox_image_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, *target_box_image);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, *out_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, out_C);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, out_H);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, normalized);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, variance_4);
+    CL_CHECK_FATAL(status);
+    if (boxcoder_param_->prior_box_var != nullptr) {
       status = kernel.setArg(arg_idx++, *priorboxvar_image_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *target_box_image);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *out_buf);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_C);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_H);
-      CL_CHECK_FATAL(status);
-      auto global_work_size =
-          cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                      static_cast<cl::size_type>(default_work_size[2])};
-
-      status = EnqueueNDRangeKernel(context,
-                                    kernel,
-                                    cl::NullRange,
-                                    global_work_size,
-                                    cl::NullRange,
-                                    nullptr,
-                                    event_);
-      CL_CHECK_FATAL(status);
     }
+
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
+                    static_cast<cl::size_type>(default_work_size[2])};
+
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
+    CL_CHECK_FATAL(status);
   }
   std::string doc() { return "Boxcoder using cl::Image, kFP16"; }
 

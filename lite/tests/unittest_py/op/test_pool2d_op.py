@@ -24,10 +24,18 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+import numpy as np
+from functools import partial
 
-class TestReluOp(AutoScanTest):
+
+class TestPool2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
@@ -61,17 +69,14 @@ class TestReluOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.Metal:
-            if program_config.ops[0].attrs["adaptive"] == True \
-                or program_config.ops[0].attrs["ceil_mode"] == True:
-                return False
-            if in_shape[0] != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -85,15 +90,15 @@ class TestReluOp(AutoScanTest):
         ksize = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=128),
-                min_size=2,
-                max_size=2))
+                    min_value=1, max_value=7), min_size=2, max_size=2))
         strides = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=2), min_size=2, max_size=2))
+                    min_value=1, max_value=16), min_size=2, max_size=2))
         paddings = draw(
-            st.sampled_from([[0, 0], [0, 0, 0, 0], [1, 1], [1, 1, 1, 1]]))
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=16), min_size=2, max_size=2))
         padding_algorithm = draw(
             st.sampled_from(["EXPLICIT", "VALID", "SAME"]))
         pooling_type = draw(st.sampled_from(["max", "avg"]))
@@ -104,12 +109,18 @@ class TestReluOp(AutoScanTest):
         use_cudnn = False
         use_mkldnn = False
         use_quantizer = False
-        is_test = False
+        is_test = True
         data_format = "NCHW"
-        assume(ksize[0] <= (in_shape[2] - strides[0] - 1))
-        assume(ksize[1] <= (in_shape[3] - strides[1] - 1))
-        if paddings[0] == 1:
-            assume((ksize[0] != 1 and ksize[1] != 1))
+
+        assume(ksize[0] <= in_shape[2])
+        assume(ksize[1] <= in_shape[3])
+        if adaptive == False:
+            assume(ksize[0] > paddings[0] and ksize[1] > paddings[1])
+        if adaptive == False and ceil_mode == True:
+            assume(strides[0] > 1 and strides[1] > 1)
+
+        def generate_input(*args, **kwargs):
+            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
 
         build_ops = OpConfig(
             type="pool2d",
@@ -134,7 +145,9 @@ class TestReluOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input))
+            },
             outputs=["output_data"])
         return program_config
 
@@ -150,18 +163,13 @@ class TestReluOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM:
-                if program_config.ops[0].attrs["ceil_mode"] == True \
-                    or program_config.ops[0].attrs["adaptive"] == True :
-                    return True
-                if program_config.ops[0].attrs["padding_algorithm"] == "SAME":
-                    if program_config.ops[0].attrs["pooling_type"] == "avg":
-                        return True
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
             if predictor_config.target() == TargetType.Metal:
                 if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
                     or program_config.ops[0].attrs["pooling_type"] == "avg" :
+                    return True
+                strides = program_config.ops[0].attrs["strides"]
+                if program_config.ops[0].attrs["ceil_mode"] == True \
+                    and strides[0] != strides[1]:
                     return True
 
         self.add_ignore_check_case(
@@ -169,12 +177,47 @@ class TestReluOp(AutoScanTest):
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
 
+        def teller2(program_config, predictor_config):
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if predictor_config.target() == TargetType.Metal:
+                return True
+                if program_config.ops[0].attrs["adaptive"] == True \
+                    or program_config.ops[0].attrs["ceil_mode"] == True:
+                    return True
+                if in_shape[0] != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+
+        def teller3(program_config, predictor_config):
+            if predictor_config.target() == TargetType.ARM:
+                return True
+
+        self.add_ignore_check_case(
+            teller3, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Paddle does not support this op in a specific case. We have fedback to the Paddle developer."
+        )
+
+        def teller4(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if program_config.ops[0].attrs["adaptive"] == True \
+                    or program_config.ops[0].attrs["ceil_mode"] == True:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'adaptive == True' or 'ceil_mode == True' on nvidia_tensorrt."
+        )
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
-            max_examples = 300
+            max_examples = 200
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 500

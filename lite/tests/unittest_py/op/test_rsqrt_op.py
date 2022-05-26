@@ -62,18 +62,14 @@ class TestRsqrtOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        target = predictor_config.target()
-        if target == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
+
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=6))
+                    min_value=1, max_value=8), min_size=1, max_size=4))
 
         def generate_input(*args, **kwargs):
             # Make sure input data is greater than 0

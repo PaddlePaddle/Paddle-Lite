@@ -704,7 +704,7 @@ void fill_bias_act_calib<float>(float* dout,
           }
           for (int i = 0; i < remain; i++) {
             float tmp = (*src * scale[j] + bias_data);
-            tmp = tmp >= 0.f ? tmp : tmp * act_param->Leaky_relu_alpha;
+            *dst = tmp >= 0.f ? tmp : tmp * act_param->Leaky_relu_alpha;
             src++;
             dst++;
           }

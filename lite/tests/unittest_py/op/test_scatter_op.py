@@ -38,20 +38,6 @@ class TestScatterOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        if target_type == TargetType.ARM:
-            index_dtype = program_config.inputs["index"].dtype
-            index_shape = program_config.inputs["index"].shape
-            if index_dtype != "int64":
-                print(
-                    'Index only support int64 on ARM impl, but got data type is {}, skip!'.
-                    format(index_dtype))
-                return False
-            if len(index_shape) == 2:
-                print(
-                    'Index only support 1-dim on ARM impl, but got dims is {}, skip!'.
-                    format(index_shape))
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -64,13 +50,12 @@ class TestScatterOp(AutoScanTest):
             len(update_shape) == len(in_shape) and
             update_shape[1:] == in_shape[1:])
 
-        # index'dims shape is 1 or 2 and index.dims[1] is 1
         index_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=len(update_shape)),
                 min_size=1,
-                max_size=2))
+                max_size=1))
         index_shape[0] = in_shape[0]
         assume(
             len(index_shape) == 1 or

@@ -116,7 +116,18 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     auto prelu_mode = act_op_desc.GetAttr<std::string>("mode");
     op_desc.SetAttr("prelu_mode", prelu_mode);
     op_desc.SetInput("Prelu_alpha", {matched.at("alpha")->arg()->name});
+  } else if (act_type_ == "sigmoid") {
+    op_desc.SetAttr("fuse_sigmoid", true);
+  } else if (act_type_ == "tanh") {
+    op_desc.SetAttr("fuse_tanh", true);
+  } else if (act_type_ == "swish") {
+    float scale = act_op_desc.GetAttr<float>("beta");
+    op_desc.SetAttr("swish_scale", scale);
+    op_desc.SetAttr("fuse_swish", true);
+  } else if (act_type_ == "abs") {
+    op_desc.SetAttr("fuse_abs", true);
   }
+
   return op_desc;
 }
 

@@ -43,6 +43,7 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+#if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   nnadapter_device_names.emplace_back("huawei_kirin_npu");
   out_accuracy_threshold = 0.79f;
@@ -56,8 +57,17 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   nnadapter_device_names.emplace_back("kunlunxin_xtcl");
   out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  nnadapter_device_names.emplace_back("android_nnapi");
+  out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  nnadapter_device_names.emplace_back("google_xnnpack");
+  out_accuracy_threshold = 0.99f;
 #else
-  LOG(INFO) << "Unsupported NNAdapter device!";
+  nnadapter_device_names.emplace_back("builtin_device");
+  out_accuracy_threshold = 0.79f;
+#endif
+#else
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

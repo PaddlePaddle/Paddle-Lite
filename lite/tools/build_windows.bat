@@ -24,7 +24,7 @@ set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-set THIRDPARTY_TAR=third-party-801f670.tar.gz
+set THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -173,7 +173,6 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
             -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
-            -DLITE_WITH_XTCL=OFF ^
             -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
@@ -221,7 +220,6 @@ goto:eof
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
             -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
-            -DLITE_WITH_XTCL=OFF ^
             -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
             -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
             -DTHIRD_PARTY_BUILD_TYPE=Release ^

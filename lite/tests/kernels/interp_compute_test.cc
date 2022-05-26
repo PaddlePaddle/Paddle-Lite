@@ -334,6 +334,18 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (int out_h : {6, 8, 12}) {
         for (int out_w : {6, 9, 12}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+          std::unique_ptr<arena::TestCase> tester(
+              new NearestInterpComputeTester(place,
+                                             "def",
+                                             DDim(x_dims),
+                                             interp_method,
+                                             -1.f,
+                                             out_h,
+                                             out_w,
+                                             false,
+                                             0));
+#else
           std::unique_ptr<arena::TestCase> tester(
               new NearestInterpComputeTester(place,
                                              "def",
@@ -342,6 +354,7 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
                                              -1.f,
                                              out_h,
                                              out_w));
+#endif
           arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
@@ -354,8 +367,21 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (float scale : {0.3f, 1.f, 1.7f}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+        std::unique_ptr<arena::TestCase> tester(
+            new NearestInterpComputeTester(place,
+                                           "def",
+                                           DDim(x_dims),
+                                           interp_method,
+                                           scale,
+                                           -1,
+                                           -1,
+                                           false,
+                                           0));
+#else
         std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
             place, "def", DDim(x_dims), interp_method, scale));
+#endif
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
@@ -523,6 +549,21 @@ TEST(Interp, precision) {
   TestInterpOutsize(place, abs_error);
   TestInterpAlignCorners(place, abs_error);
   // TestInterpAlignMode(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  // TestInterpSizetensor(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
   return;
 #else
   return;

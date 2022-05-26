@@ -13,3 +13,6 @@
 [submodule "third-party/glog"]
 	path = third-party/glog
 	url = https://github.com/google/glog.git
+[submodule "third-party/pybind"]
+	path = third-party/pybind
+	url = https://github.com/pybind/pybind11.git

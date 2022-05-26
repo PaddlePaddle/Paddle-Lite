@@ -136,6 +136,22 @@ bool MatMulV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   if (op_desc.HasAttr("alpha")) {
     param_.alpha = op_desc.GetAttr<float>("alpha");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  input_tensor_ptrs_cache_.push_back(param_.Y);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
+  const OpInfo *op_info = static_cast<const OpInfo *>(&op_desc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+    param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+    auto input_scale_name = "X0_scale";
+    auto weight_scale_name = "Y0_scale";
+    auto out_scale_name = "Out0_scale";
+    if (op_info->HasInputScale(input_scale_name, true))
+      param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+    if (op_info->HasInputScale(weight_scale_name, true))
+      param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+    if (op_info->HasOutputScale(out_scale_name, true))
+      param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
+  }
   return true;
 }
 

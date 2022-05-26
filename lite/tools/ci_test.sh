@@ -8,7 +8,7 @@ LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -39,6 +39,8 @@ REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 # Xpu sdk option
 XPU_SDK_URL=""
+XPU_XDNN_URL=""
+XPU_XRE_URL=""
 XPU_SDK_ENV=""
 XPU_SDK_ROOT=""
 
@@ -606,46 +608,13 @@ function rockchip_npu_prepare_device() {
     $remote_device_run $remote_device_name push "$sdk_lib_dir/librknpu_ddk.so" "$remote_device_work_dir"
 }
 
-function rockchip_npu_build_target() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local sdk_root_dir=$4
-
-    # Build all of tests
-    rm -rf $BUILD_DIRECTORY
-    mkdir -p $BUILD_DIRECTORY
-    cd $BUILD_DIRECTORY
-    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_RKNPU=ON \
-        -DRKNPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function rockchip_npu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
-}
-
 function baidu_xpu_build_and_test() {
-    local with_xtcl=$1
-    if [[ -z "$with_xtcl" ]]; then
-        with_xtcl=OFF
-    fi
     local unit_test_check_list=$2
     local unit_test_filter_type=$3
     local sdk_url=$4
     local sdk_env=$5
+    local xdnn_url=$6
+    local xre_url=$7
 
     # Build all of unittests and model tests
     cur_dir=$(pwd)
@@ -668,9 +637,10 @@ function baidu_xpu_build_and_test() {
         -DLITE_WITH_XPU=ON \
         -DLITE_WITH_LTO=OFF \
         -DXPU_SDK_URL=$sdk_url \
+        -DXPU_XDNN_URL=$xdnn_url \
+        -DXPU_XRE_URL=$xre_url \
         -DXPU_SDK_ENV=$sdk_env \
-        -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-        -DLITE_WITH_XTCL=$with_xtcl
+        -DXPU_SDK_ROOT=$XPU_SDK_ROOT
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -747,6 +717,14 @@ function main() {
             XPU_SDK_ENV="${i#*=}"
             shift
             ;;
+        --xpu_xdnn_url=*)
+            XPU_XDNN_URL="${i#*=}"
+            shift
+            ;;
+        --xpu_xre_url=*)
+            XPU_XRE_URL="${i#*=}"
+            shift
+            ;;
         --xpu_sdk_root=*)
             XPU_SDK_ROOT="${i#*=}"
             shift
@@ -772,11 +750,11 @@ function main() {
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
-            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV $XPU_XDNN_URL $XPU_XRE_URL
             shift
             ;;
         baidu_xpu_enable_xtcl_build_and_test)
-            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV $XPU_XDNN_URL $XPU_XRE_URL
             shift
             ;;
         *)

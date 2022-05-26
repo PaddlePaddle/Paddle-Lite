@@ -214,14 +214,14 @@ class DeformableConvComputeTester : public arena::TestCase {
         input_dims_[0], 2 * ksize_[0] * ksize_[1], h_out, w_out});
     std::vector<float> doffset(offset_dims.production());
     fill_data_rand(doffset.data(), -1.f, 1.f, offset_dims.production());
-    SetCommonTensor(offset_, offset_dims, doffset.data());
+    SetCommonTensor(offset_, offset_dims, doffset.data(), {}, true);
 
     // mask
     DDim mask_dims(std::vector<int64_t>{
         input_dims_[0], ksize_[0] * ksize_[1], h_out, w_out});
     std::vector<float> dmask(mask_dims.production());
     fill_data_rand(dmask.data(), -1.f, 1.f, mask_dims.production());
-    SetCommonTensor(mask_, mask_dims, dmask.data());
+    SetCommonTensor(mask_, mask_dims, dmask.data(), {}, true);
 
     // bias
     if (with_bias_) {
@@ -252,6 +252,11 @@ void TestConvDilations(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 2, 5, 6}, {5, 6, 9, 10}}) {
     for (auto out_channels : {1, 3}) {
       for (auto dilations : std::vector<std::vector<int>>{{2, 2}, {1, 2}}) {
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+        if (dilations[0] != dilations[1]) {
+          continue;
+        }
+#endif
         std::unique_ptr<arena::TestCase> tester(
             new DeformableConvComputeTester(place,
                                             "def",
@@ -352,6 +357,10 @@ TEST(Deformable_conv, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 3e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 3e-2;
 #else
   return;
 #endif
@@ -369,7 +378,8 @@ TEST(Deformable_conv, precision) {
   TestConvDilations(place, abs_error);
   TestConvStrides(place, abs_error);
   TestConvPaddings(place, abs_error);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || defined(LITE_WITH_ARM)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || defined(LITE_WITH_ARM) || \
+    defined(NNADAPTER_WITH_INTEL_OPENVINO)
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
 #endif

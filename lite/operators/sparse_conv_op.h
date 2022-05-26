@@ -38,6 +38,30 @@ class SparseConvOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+    auto filter_dims = param_.oc_nonzeros->dims();
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->filter_shape = ch->DimToStr(filter_dims) + "x" +
+                       std::to_string(input_dims[1]) + "x1x1";
+    ch->remark = std::to_string(1) + "x" + std::to_string(1) + "p" +
+                 std::to_string((*param_.paddings)[0]) + "s" +
+                 std::to_string(param_.strides[0]) + "g" +
+                 std::to_string(param_.groups) + "d" +
+                 std::to_string((*param_.dilations)[0]) +
+                 (param_.bias ? "Bias" : "") +
+                 ActivationTypeToStr(param_.activation_param.active_type);
+    // MACs = 2.f * kw(1) * kh(1) * batchsize * out_c * out_h * out_w * in_c /
+    // group
+    // GMACs = 1e-9f * MACs
+    // GMACPS = 1e-6f * MACs / predict_ms
+    ch->macs = 2.f * output_dims.production() * input_dims[1] / param_.groups;
+  }
+#endif
+
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
     auto X = op_desc.Input("Input").front();
     auto NonZeroWeights = op_desc.Input("NonZeroWeights").front();
@@ -119,6 +143,9 @@ class SparseConvOp : public OpLite {
     }
     if (op_desc.HasAttr("first_ic")) {
       param_.first_ic = op_desc.GetAttr<int>("first_ic");
+    }
+    if (op_desc.HasAttr("flag_semi")) {
+      param_.flag_semi = op_desc.GetAttr<int>("flag_semi");
     }
 
     // For Int8

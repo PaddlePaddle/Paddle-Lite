@@ -72,11 +72,16 @@ class TestTileOp(AutoScanTest):
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
-        # if add repeat_times_tensor, diff arrives.
-        def generate_repeat_times_tensor_data():
-            if (choose_repeat == "repeat_times_tensor" and False):
-                inputs["repeat_times_tensor"] = ["repeat_times_tensor_data"]
-                return np.array(repeat_times_data).astype(np.int32)
+        repeat_times_len = len(repeat_times_data)
+
+        # repeat_times_tensor having repeat_times_len inputs!
+        def generate_repeat_times_tensor_data(i):
+            inputs["repeat_times_tensor"] = [
+                "repeat_times_tensor_data" + str(i)
+                for i in range(repeat_times_len)
+            ]
+            if (choose_repeat == "repeat_times_tensor"):
+                return np.array([repeat_times_data[i]]).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
@@ -85,16 +90,19 @@ class TestTileOp(AutoScanTest):
             inputs=inputs,
             outputs={"Out": ["Out_data"]},
             attrs={"repeat_times": repeat_times_data})
+
+        program_input = {
+            "X_data": TensorConfig(data_gen=partial(generate_X_data)),
+            "RepeatTimes_data":
+            TensorConfig(data_gen=partial(generate_RepeatTimes_data))
+        }
+        for i in range(repeat_times_len):
+            program_input["repeat_times_tensor_data" + str(i)] = TensorConfig(
+                data_gen=partial(generate_repeat_times_tensor_data, i))
         program_config = ProgramConfig(
             ops=[tile_op],
             weights={},
-            inputs={
-                "X_data": TensorConfig(data_gen=partial(generate_X_data)),
-                "RepeatTimes_data":
-                TensorConfig(data_gen=partial(generate_RepeatTimes_data)),
-                "repeat_times_tensor_data": TensorConfig(
-                    data_gen=partial(generate_repeat_times_tensor_data)),
-            },
+            inputs=program_input,
             outputs=["Out_data"])
 
         return program_config

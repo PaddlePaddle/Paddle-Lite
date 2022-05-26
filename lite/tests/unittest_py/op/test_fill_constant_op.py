@@ -35,6 +35,10 @@ class TestFillConstantOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -54,6 +58,10 @@ class TestFillConstantOp(AutoScanTest):
 
         with_value_tensor = draw(st.sampled_from([True, False]))
         with_shape_tensor = draw(st.sampled_from([True, False]))
+        if "nvidia_tensorrt" in self.get_nnadapter_device_name(
+        ) or "intel_openvino" in self.get_nnadapter_device_name():
+            with_shape_tensor = False
+        # nvidia_tensorrt now just supports shape is from attr
 
         def generate_shape_tensor(*args, **kwargs):
             return np.array(tensor_shape).astype(np.int32)
@@ -134,7 +142,17 @@ class TestFillConstantOp(AutoScanTest):
         return self.get_predictor_configs(), ["fill_constant"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                dtype = program_config.ops[0].attrs["dtype"]
+                in_num = len(program_config.inputs)
+                if dtype != 5 or in_num != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'shape is form tensor' or 'value is from tensor' "
+            "or 'dtype is not float32' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

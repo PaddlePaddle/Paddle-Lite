@@ -26,10 +26,27 @@ import numpy as np
 class TestMulOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
+
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -39,7 +56,7 @@ class TestMulOp(AutoScanTest):
     def sample_program_configs(self, draw):
         shape0 = draw(st.integers(min_value=1, max_value=32))
         shape1 = draw(st.integers(min_value=1, max_value=32))
-        shape2 = draw(st.integers(min_value=1, max_value=32))
+        shape2 = draw(st.integers(min_value=1, max_value=16))
         shape3 = draw(st.integers(min_value=1, max_value=16))
         shape4 = draw(st.integers(min_value=1, max_value=16))
         shape5 = draw(st.integers(min_value=1, max_value=16))
@@ -90,8 +107,11 @@ class TestMulOp(AutoScanTest):
 
         program_config = ProgramConfig(
             ops=[mul_op],
-            weights={"input_data_y": TensorConfig(shape=Y_shape)},
-            inputs={"input_data_x": TensorConfig(shape=X_shape)},
+            weights={},
+            inputs={
+                "input_data_x": TensorConfig(shape=X_shape),
+                "input_data_y": TensorConfig(shape=Y_shape)
+            },
             outputs=["output_data"])
 
         return program_config
@@ -103,7 +123,8 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        # int8 case run long time in max_examples=250
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

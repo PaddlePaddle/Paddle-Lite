@@ -66,8 +66,7 @@ __kernel void depth_conv2d_3x3(
   int2 pos_in_input_block =
       (int2)(out_c * input_width, batch_index * input_height);
 
-  int2 pos_in_filter_block =
-      (int2)(out_c * filter_width, batch_index * filter_height);
+  int2 pos_in_filter_block = (int2)(out_c * filter_width, 0);
 
   int filter_x = pos_in_filter_block.x;
   int filter_y = pos_in_filter_block.y;
@@ -218,7 +217,11 @@ __kernel void depth_conv2d_3x3(
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 //}
 #elif defined(PRELU_ELE)  //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      prelu_alpha,
+      SAMPLER,
+      (int2)(out_c * global_size_dim1 + out_w, out_nh % output_height));
 //}
 #else                     //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
@@ -397,10 +400,10 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
 //}
 #elif defined(PRELU_ELE)  //{
   alpha[0] = READ_IMG_TYPE(
-      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x, ou_nh_id));
+      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x, ou_nh_id % ou_h));
   if (ou_col_id + 1 < ou_w) {
     alpha[1] = READ_IMG_TYPE(
-        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x + 1, ou_nh_id));
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x + 1, ou_nh_id % ou_h));
   }
 //}
 #else                     //{

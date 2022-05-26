@@ -50,6 +50,10 @@ class TestSliceOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
         '''
         #All of metal inputs error.
         metal_places = [
@@ -66,12 +70,10 @@ class TestSliceOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        # check config
         x_dtype = program_config.inputs["input_data"].dtype
-        if predictor_config.target() == TargetType.ARM \
-        or predictor_config.target() == TargetType.OpenCL \
-        or predictor_config.target() == TargetType.Metal :
-            if x_dtype == np.int32 or x_dtype == np.int64:
-                return False
+        if x_dtype == np.int32 or x_dtype == np.int64:
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -92,6 +94,11 @@ class TestSliceOp(AutoScanTest):
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
         assume(len(axes) <= len(in_shape))
+        for i in range(len(starts)):
+            start = starts[i] if starts[i] >= 0 else starts[i] + in_shape[axes[
+                i]]
+            assume(start < in_shape[axes[i]])
+
         if input_num == 0:
             assume(len(axes) == 2)
 
@@ -185,14 +192,27 @@ class TestSliceOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                if program_config.ops[0].attrs["input_num"] == 0:
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                input_num = len(program_config.ops[0].inputs)
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if input_num != 1 or len(in_shape) == 1 or 0 in axes:
                     return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'input_num > 1' or 'in_shape_size ==1' "
+            "or 'axes has 0' on nvidia_tensorrt.")
+
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "intel_openvino":
+                input_num = len(program_config.ops[0].inputs)
+                if input_num != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Intel OpenVINO does not support 'input_num > 1'.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

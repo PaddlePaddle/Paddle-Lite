@@ -34,12 +34,25 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+
         arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -63,30 +76,15 @@ class TestConv2dOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt",
+            "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        input_shape = program_config.inputs["input_data"].shape
-        filter_data = program_config.weights["filter_data"].shape
-        groups = program_config.ops[0].attrs["groups"]
-        if target_type == TargetType.OpenCL:
-            # opencl doesn't support
-            if groups != 1:
-                return False
-            else:
-                return True
-        elif target_type == TargetType.ARM and (
-                predictor_config.precision() == PrecisionType.FP16 or
-                predictor_config.precision() == PrecisionType.INT8):
-            # fp16 has diff and int8 doesn't support
-            return False
-        if target_type == TargetType.Metal:
-            if groups != 1:
-                return False
-            if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[0] < 3:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -95,9 +93,8 @@ class TestConv2dOp(AutoScanTest):
         cout = draw(st.integers(min_value=1, max_value=128))
         height = draw(st.integers(min_value=1, max_value=128))
         width = draw(st.integers(min_value=1, max_value=128))
-        cout = draw(st.integers(min_value=1, max_value=128))
-        kw = np.random.randint(1, 5)
-        kh = np.random.randint(1, 5)
+        kw = draw(st.integers(min_value=1, max_value=5))
+        kh = draw(st.integers(min_value=1, max_value=5))
         groups = draw(st.integers(min_value=1, max_value=128))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
@@ -171,7 +168,51 @@ class TestConv2dOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            precision_type = predictor_config.precision()
+            input_shape = program_config.inputs["input_data"].shape
+            filter_data = program_config.weights["filter_data"].shape
+            stride_data = program_config.ops[0].attrs["strides"]
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.ARM and precision_type == PrecisionType.INT8:
+                if input_shape[1] > 80 and filter_data[2] == 3 and filter_data[
+                        3] == 3 and groups == 1 and stride_data[
+                            0] == 1 and stride_data[1] == 1:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_shape = program_config.inputs["input_data"].shape
+            filter_data = program_config.weights["filter_data"].shape
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.Metal:
+                if groups != 1:
+                    return True
+                if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[
+                        0] < 3:
+                    return True
+
+        def _teller3(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                if (groups > 1 and filter_shape[0] != groups) \
+                    or filter_shape[2] != filter_shape[3]:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Input data is 0-1, int8 winograd will overflow when input channel is more than 80."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on TensorRT. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

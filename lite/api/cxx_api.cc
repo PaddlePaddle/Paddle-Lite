@@ -42,6 +42,8 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
       "fake_quantize_dequantize_abs_max",
       "fake_quantize_dequantize_moving_average_abs_max",
       "fake_channel_wise_quantize_dequantize_abs_max",
+      "quantize_linear",
+      "dequantize_linear",
   };
   const std::vector<std::string> dynamic_quant_op = {"lstm", "gru"};
   bool is_quantized_model = false;
@@ -74,7 +76,6 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
@@ -345,7 +346,6 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-
   Build(program_desc_, valid_places, passes, config);
 }
 
@@ -395,6 +395,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   // Verify if the ops version of current runtime program is
   // the same with that in models.
   CheckPaddleOpVersions(program_desc);
+
+  // Update the runtime program to program_desc only once
+  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
 }
 
 void Predictor::GenRuntimeProgram() {

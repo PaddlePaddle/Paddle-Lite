@@ -29,7 +29,8 @@ class TestSqueeze2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host, [PrecisionType.Any],
+            TargetType.Host,
+            PrecisionType.Any,
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_places = [
@@ -46,13 +47,20 @@ class TestSqueeze2Op(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt",
+            "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        #check config
         x_dtype = program_config.inputs["input_data"].dtype
-        if x_dtype == np.int32 or x_dtype == np.int64:
-            return False
+        if predictor_config.target() == TargetType.OpenCL:
+            if x_dtype == np.int32 or x_dtype == np.int64:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -60,7 +68,7 @@ class TestSqueeze2Op(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=32), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+        input_type = draw(st.sampled_from(["int64", "int32", "float32"]))
         input_axis = draw(
             st.sampled_from([[0, 1, 2, 3], [-1, 2, 3], [], [-1], [1], [2],
                              [3], [-1, 0, 1]]))
@@ -69,6 +77,11 @@ class TestSqueeze2Op(AutoScanTest):
             for num in input_axis:
                 num = num if num >= 0 else num + len(in_shape)
                 assume(num < len(in_shape))
+        # "nvidia_tensorrt" must satisfies theses 
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            for i in range(len(input_axis)):
+                in_shape[input_axis[i]] = 1
+            input_type = "float32"
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
@@ -79,20 +92,16 @@ class TestSqueeze2Op(AutoScanTest):
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.int64)
 
         def generate_xshape(*args, **kwargs):
-            if input_type == "float32":
-                return np.random.normal(1.0, 1.0, in_shape).astype(np.float32)
-            elif input_type == "int32":
-                return np.random.normal(1.0, 1.0, in_shape).astype(np.int32)
-            elif input_type == "int64":
-                return np.random.normal(1.0, 1.0, in_shape).astype(np.int64)
+            return np.random.normal(1.0, 1.0, in_shape).astype(np.float32)
 
         ops_config = OpConfig(
             type="squeeze2",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"],
                      "XShape": ["squeeze2_xshape"]},
-            attrs={"axes": input_axis,
-                   "input_type": input_type})
+            attrs={"axes": input_axis})
+
+        ops_config.outputs_dtype = {"output_data": input_type}
 
         program_config = ProgramConfig(
             ops=[ops_config],
@@ -111,10 +120,40 @@ class TestSqueeze2Op(AutoScanTest):
         return self.get_predictor_configs(), ["squeeze2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(in_shape) == 1 \
+                    or 0 in axes \
+                    or -len(in_shape) in axes \
+                    or (in_shape[0] == 1 and len(axes)==0):
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axes has 0' on nvidia_tensorrt."
+        )
+
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() is not None:
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                for i in axes:
+                    if in_shape[i] != 1:
+                        return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'the axis that will be squeezed is not one' on nnadapter."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        target_str = self.get_target()
+        max_examples = 200
+        if target_str == "NNAdapter":
+            max_examples = 2000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

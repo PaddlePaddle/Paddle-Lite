@@ -108,18 +108,21 @@ bool MatMulOpLite::InferShapeImpl() const {
     for (size_t i = 0; i < dim_out_vec.size(); ++i) {
       dim_out_vec[i] = x_dims[i];
     }
-  } else if (x_dims.size() == 1 && y_dims.size() == 1) {  // todo
+  } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
     if (x_dims[0] == y_dims[0] && x_transpose == false &&
         y_transpose == false) {
       dim_out_vec.resize(1);
       dim_out_vec[0] = 1;
-    }
-    // x: [M], y: [N], x_transpose: true, y_transpose: true, out: [M, N]
-    if (x_transpose == true && y_transpose == true) {
+    } else if (x_transpose == true && y_transpose == true) {
       dim_out_vec.resize(2);
       dim_out_vec[0] = x_dims[0];
       dim_out_vec[1] = y_dims[0];
+    } else {
+      LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
+                 << y_dims << ")"
+                 << ", and x_transpose: " << x_transpose
+                 << ", y_transpose: " << y_transpose;
     }
   } else {
     LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
@@ -147,6 +150,9 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
   param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
   param_.alpha = op_desc.GetAttr<float>("alpha");
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  input_tensor_ptrs_cache_.push_back(param_.Y);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
 
   const OpInfo *op_info = static_cast<const OpInfo *>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {

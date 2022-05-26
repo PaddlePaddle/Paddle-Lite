@@ -83,8 +83,7 @@ inline void ConvConvFuser::createPattern() {
 
 void ConvConvFuser::BuildPattern() {
   for (auto& node : graph_->StmtTopologicalOrder()) {
-    if (node->IsStmt() &&
-        node->AsStmt().picked_kernel().op_type() == conv_type0_) {
+    if (node->IsStmt() && node->AsStmt().op_type() == conv_type0_) {
       auto* scope = node->stmt()->op()->scope();
       auto conv_op_desc0 = node->stmt()->mutable_op_info();
       // find outlinks of conv2d: in_arg_node
@@ -97,10 +96,9 @@ void ConvConvFuser::BuildPattern() {
           auto conv0_in = node->inlinks;
           auto conv0_wei_name = conv0_in.front();
           VLOG(5) << "next_node->IsStmt(): " << next_node->IsStmt();
-          VLOG(5) << ", next op_type:"
-                  << next_node->AsStmt().picked_kernel().op_type();
+          VLOG(5) << ", next op_type:" << next_node->AsStmt().op_type();
           if (next_node->IsStmt() &&
-              next_node->AsStmt().picked_kernel().op_type() == conv_type1_) {
+              next_node->AsStmt().op_type() == conv_type1_) {
             // find conv->conv pattern
             auto conv1_in = next_node->inlinks;
             auto conv1_wei_name = conv1_in.front();

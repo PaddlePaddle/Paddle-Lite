@@ -47,7 +47,7 @@ void TopkCompute::Run() {
                             K);
   CHECK_EQ(r, 0);
 
-  r = xdnn::cast<int, int64_t>(
+  r = xdnn::cast_v2<int, int64_t>(
       ctx.GetRawContext(), indices_int32_device, indices_int64_device, m * K);
 
   CHECK_EQ(r, 0);

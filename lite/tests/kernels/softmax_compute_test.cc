@@ -106,6 +106,10 @@ TEST(Softmax, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -118,6 +122,8 @@ TEST(Softmax, precision) {
                      //   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif

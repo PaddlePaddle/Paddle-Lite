@@ -38,16 +38,23 @@ using L3CacheSetMethod = lite_api::L3CacheSetMethod;
 
 typedef enum {
   kAPPLE = 0,
+  kX1 = 1,
+  kX2 = 2,
   kA35 = 35,
   kA53 = 53,
   kA55 = 55,
   kA57 = 57,
+  kA510 = 60,
   kA72 = 72,
   kA73 = 73,
   kA75 = 75,
   kA76 = 76,
   kA77 = 77,
   kA78 = 78,
+  kGold = 79,
+  kGold_Prime = 80,
+  kSilver = 81,
+  kA710 = 82,
   kARMArch_UNKOWN = -1
 } ARMArch;
 
@@ -65,6 +72,7 @@ class DeviceInfo {
 
   int Setup();
   bool set_a53_valid();
+  bool has_sve2();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
@@ -147,6 +155,7 @@ class DeviceInfo {
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
   bool has_a53_valid_;
+  bool has_sve2_;
 
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,

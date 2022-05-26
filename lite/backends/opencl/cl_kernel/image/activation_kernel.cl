@@ -14,10 +14,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void relu(__read_only image2d_t input,
-                   __write_only image2d_t output,
-                   __private const float threshold,
-                   __private const float scale) {
+__kernel void relu(__read_only image2d_t input, __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
@@ -27,9 +24,7 @@ __kernel void relu(__read_only image2d_t input,
 }
 
 __kernel void abs_act(__read_only image2d_t input,
-                      __write_only image2d_t output,
-                      __private const float threshold,
-                      __private const float scale) {
+                      __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
@@ -37,23 +32,27 @@ __kernel void abs_act(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
+__kernel void log_act(__read_only image2d_t input,
+                      __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  in = log(in);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
 __kernel void relu6(__read_only image2d_t input,
-                    __write_only image2d_t output,
-                    __private const float threshold,
-                    __private const float scale) {
+                    __write_only image2d_t output) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  in = max((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
-  in = min((CL_DTYPE4)(threshold, threshold, threshold, threshold), in);
+  in = max((CL_DTYPE4)(0.0f), in);
+  in = min((CL_DTYPE4)(6.0f), in);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
 __kernel void sigmoid(__read_only image2d_t input,
-                      __write_only image2d_t output,
-                      __private const float threshold,
-                      __private const float scale) {
+                      __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
@@ -85,7 +84,6 @@ __kernel void hard_sigmoid(__read_only image2d_t input,
 
 __kernel void leaky_relu(__read_only image2d_t input,
                          __write_only image2d_t output,
-                         __private const float threshold,
                          __private const float scale) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
@@ -109,8 +107,6 @@ __kernel void leaky_relu(__read_only image2d_t input,
 
 __kernel void prelu_channel(__read_only image2d_t input,
                             __write_only image2d_t output,
-                            __private const float threshold,
-                            __private const float scale,
                             int width,
                             __read_only image2d_t alpha) {
   const int x = get_global_id(0);
@@ -125,8 +121,6 @@ __kernel void prelu_channel(__read_only image2d_t input,
 
 __kernel void prelu_element(__read_only image2d_t input,
                             __write_only image2d_t output,
-                            __private const float threshold,
-                            __private const float scale,
                             int height,
                             __read_only image2d_t alpha) {
   const int x = get_global_id(0);
@@ -141,9 +135,7 @@ __kernel void prelu_element(__read_only image2d_t input,
 }
 
 __kernel void tanh_act(__read_only image2d_t input,
-                       __write_only image2d_t output,
-                       __private const float threshold,
-                       __private const float scale) {
+                       __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
@@ -153,9 +145,7 @@ __kernel void tanh_act(__read_only image2d_t input,
 }
 
 __kernel void exp_act(__read_only image2d_t input,
-                      __write_only image2d_t output,
-                      __private const float threshold,
-                      __private const float scale) {
+                      __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
@@ -166,7 +156,6 @@ __kernel void exp_act(__read_only image2d_t input,
 
 __kernel void swish(__read_only image2d_t input,
                     __write_only image2d_t output,
-                    __private const float threshold,
                     __private const float scale) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
@@ -232,6 +221,20 @@ __kernel void square_func(__read_only image2d_t input,
   in.y = pown(in.y, 2);
   in.z = pown(in.z, 2);
   in.w = pown(in.w, 2);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void gelu(__read_only image2d_t input, __write_only image2d_t output) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+
+  const float4 in_f32 = convert_float4(in);
+  in.x = (CL_DTYPE)(0.5f * in_f32.x * (1.0f + erf(in_f32.x / 1.41421f)));
+  in.y = (CL_DTYPE)(0.5f * in_f32.y * (1.0f + erf(in_f32.y / 1.41421f)));
+  in.z = (CL_DTYPE)(0.5f * in_f32.z * (1.0f + erf(in_f32.z / 1.41421f)));
+  in.w = (CL_DTYPE)(0.5f * in_f32.w * (1.0f + erf(in_f32.w / 1.41421f)));
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }

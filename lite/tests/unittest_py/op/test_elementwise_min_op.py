@@ -54,6 +54,8 @@ class TestElementwiseMinOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -134,16 +136,7 @@ class TestElementwiseMinOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_min"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            if target_type in [TargetType.ARM]:
-                return True
-            return False
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The elementwise_min op's result is different from paddle in some case, we should fix it as soon as possible!"
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

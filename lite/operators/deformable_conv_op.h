@@ -83,24 +83,13 @@ class DeformableConvOpLite : public OpLite {
     param_.conv_param.filter =
         scope->FindVar(Filter)->GetMutable<lite::Tensor>();
     param_.conv_param.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
     param_.conv_param.groups = op_desc.GetAttr<int>("groups");
     param_.conv_param.dilations = std::make_shared<std::vector<int>>(dilations);
-
-    // 2-pad to 4-pad
-    if (paddings.size() == 2L) {
-      for (size_t i = 0; i < param_.conv_param.strides.size(); ++i) {
-        int copy_pad = *(paddings.begin() + 2 * i);
-        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
-      }
-    } else {
-      if (paddings.size() != 4L) {
-        LOG(FATAL)
-            << "Paddings size should be the same or twice as the input size.";
-      }
-    }
+    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.conv_param.paddings = std::make_shared<std::vector<int>>(paddings);
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    output_tensor_ptrs_cache_.push_back(param_.output);
 
     // optional params
     std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();

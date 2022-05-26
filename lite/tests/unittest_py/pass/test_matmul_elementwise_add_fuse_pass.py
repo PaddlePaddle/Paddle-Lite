@@ -49,7 +49,7 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        # self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
             TargetType.X86,
@@ -76,7 +76,7 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
         matmul_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=32), min_size=2, max_size=4))
+                    min_value=1, max_value=30), min_size=2, max_size=4))
         transpose_Y_data = draw(st.sampled_from([False, True]))
         matmul_y_shape = []
         matmul_y1 = draw(st.integers(min_value=5, max_value=10))

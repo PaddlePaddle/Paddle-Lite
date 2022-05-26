@@ -14,6 +14,8 @@
 
 #include "lite/core/optimizer/mir/restrict_quantized_op_with_same_input_output_scale_pass.h"
 #include <cmath>
+#include <limits>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -99,6 +101,14 @@ void UpdateInputOutputScales(
       if (in_out_scales.count(out_var_name)) {
         op_info->SetOutputScale(out_var_name, {in_out_scales.at(out_var_name)});
       }
+      for (auto* out_op_node : out_var_node->outlinks) {
+        if (!out_op_node->IsStmt()) continue;
+        auto out_op_info = out_op_node->AsStmt().mutable_op_info();
+        if (in_out_scales.count(out_var_name)) {
+          out_op_info->SetInputScale(
+              out_var_name, {in_out_scales.at(out_var_name)}, false);
+        }
+      }
     }
   }
 }
@@ -164,4 +174,4 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
 REGISTER_MIR_PASS(
     restrict_quantized_op_with_same_input_output_scale_pass,
     paddle::lite::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
-    .BindTargets({TARGET(kRKNPU), TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kNNAdapter)});

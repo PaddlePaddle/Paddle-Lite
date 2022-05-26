@@ -33,6 +33,11 @@ class TestReduceMeanOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -47,13 +52,12 @@ class TestReduceMeanOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs["keep_dim"] == False:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -62,12 +66,10 @@ class TestReduceMeanOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
         keep_dim = draw(st.booleans())
-        axis = draw(st.integers(min_value=-1, max_value=3))
-        assume(axis < len(in_shape))
+        axis_list = draw(
+            st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
-        if isinstance(axis, int):
-            axis = [axis]
-        reduce_all_data = True if axis == None or axis == [] else False
+        reduce_all_data = True if axis_list == None or axis_list == [] else False
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -77,7 +79,7 @@ class TestReduceMeanOp(AutoScanTest):
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
-                "dim": axis,
+                "dim": axis_list,
                 "keep_dim": keep_dim,
                 "reduce_all": reduce_all_data,
             })
@@ -94,7 +96,18 @@ class TestReduceMeanOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_mean"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["dim"]
+            if target_type == TargetType.OpenCL:
+                if len(axis) == 1 and len(in_shape) == 4:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

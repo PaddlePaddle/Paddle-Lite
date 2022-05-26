@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import argparse
 import numpy as np
@@ -34,27 +34,26 @@ class TestGruOp(AutoScanTest):
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1])
+            thread=[1, 4])
 
-        # not support
+        #not support
         # self.enable_testing_on_place(
-        #     TargetType.ARM, 
-        #     PrecisionType.INT8, 
-        #     DataLayoutType.NCHW, 
+        #     TargetType.ARM,
+        #     PrecisionType.INT8,
+        #     DataLayoutType.NCHW,
         #     thread=[1, 4])
 
-        # all cases have precision diff
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP16,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -62,18 +61,17 @@ class TestGruOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        lod_arr = [0, 2, 6, 9]
+        shape0 = draw(st.integers(min_value=1, max_value=3))
+        shape1 = draw(st.integers(min_value=1, max_value=3))
+        shape2 = draw(st.integers(min_value=1, max_value=3))
+        lod_arr = [0, shape0, shape0 + shape1, shape0 + shape1 + shape2]
+
         is_rev = draw(st.sampled_from([False, True]))
         bool_orimode = draw(st.sampled_from([True, False]))
         shape_0 = draw(st.integers(min_value=1, max_value=60))
         in_shape = [shape_0, shape_0 * 3]
-        batch_num = draw(
-            st.integers(
-                min_value=lod_arr[3], max_value=lod_arr[3] + 10))
-        h0_1 = draw(st.sampled_from([3]))
-
-        # ToDo has diff
-        assume(batch_num <= lod_arr[3])
+        batch_num = lod_arr[3]
+        h0_1 = len(lod_arr) - 1
 
         def generate_input(*args, **kwargs):
             return np.random.random(
@@ -112,14 +110,13 @@ class TestGruOp(AutoScanTest):
 
         program_config = ProgramConfig(
             ops=[build_ops],
-            weights={
-                "weight_data": TensorConfig(data_gen=partial(generate_weight)),
-            },
+            weights={},
             inputs={
                 "input_data": TensorConfig(
                     data_gen=partial(generate_input), lod=[lod_arr]),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias)),
                 "h0": TensorConfig(data_gen=partial(generate_h0)),
+                "weight_data": TensorConfig(data_gen=partial(generate_weight)),
             },
             outputs=["hidden"])
         return program_config
@@ -128,10 +125,17 @@ class TestGruOp(AutoScanTest):
         return self.get_predictor_configs(), ["gru"], (6e-4, 6e-4)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.ARM:
+                if predictor_config.precision() == PrecisionType.INT8:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op for precision int8 on ARM for now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

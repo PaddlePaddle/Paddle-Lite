@@ -170,6 +170,8 @@ TEST(Gather, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -177,11 +179,6 @@ TEST(Gather, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
   // TODO(zhupengyang): enable later
-  return;
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use fp16 in xpu
-  // TODO(shentanyue): enable later
   return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
@@ -195,8 +192,7 @@ TEST(Gather, precision) {
            {5, 7, 10, 12}, {8, 12, 16}, {12, 17}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
-#if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
-     defined(LITE_WITH_NPU) || defined(LITE_WITH_NNADAPTER))
+#if (defined(LITE_WITH_NPU) || defined(LITE_WITH_NNADAPTER))
         axis_dims = {{0}};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");

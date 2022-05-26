@@ -15,7 +15,6 @@
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include <memory>
 #include <utility>
-#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/utility.h"
 
 namespace paddle {
@@ -29,26 +28,15 @@ namespace nnadapter {
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
-int Converter::Apply(
-    int block_idx,
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
-    Scope* exec_scope,
-    const std::vector<Variable>& input_vars,
-    std::vector<Variable>* output_vars,
-    std::vector<NNAdapterOperand*>* input_operands,
-    std::vector<NNAdapterOperand*>* output_operands) {
-  CHECK(program_desc.get());
-  CHECK(exec_scope);
-  auto block_size = program_desc->BlocksSize();
-  CHECK(block_size) << "No block found!";
-  CHECK(block_idx >= 0 && block_idx < block_size)
-      << "Invalid block index, expected [0," << (block_size - 1)
-      << "] but recieved " << block_idx;
-  auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-  auto op_size = block_desc->OpsSize();
-  CHECK(op_size) << "No op found!";
+int Converter::Apply(const cpp::BlockDesc* block_desc,
+                     Scope* exec_scope,
+                     const std::vector<Variable>& input_vars,
+                     std::vector<Variable>* output_vars) {
+  CHECK(block_desc);
+  auto op_count = block_desc->OpsSize();
+  CHECK_GT(op_count, 0) << "No op found!";
   auto input_count = input_vars.size();
-  input_operands->resize(input_count);
+  std::vector<NNAdapterOperand*> input_operands(input_count);
   // Prepare the input operands from the input tensors of the current subgraph
   for (size_t i = 0; i < input_count; i++) {
     const auto& name = input_vars[i].name;
@@ -65,10 +53,6 @@ int Converter::Apply(
     const auto& dynamic_dimensions = input_vars[i].dynamic_dimensions;
     auto dynamic_dimension_count = dynamic_dimensions.size();
     if (dynamic_dimension_count > 0) {
-      CHECK_GE(dynamic_dimension_count, 2)
-          << "The gear count of dynamic dimensions should be greater or equal "
-             "to 2, but recieved "
-          << dynamic_dimension_count;
       // Verify the dynamic dimensions
       std::vector<size_t> dynamic_axes;
       for (size_t k = 0; k < dimension_count; k++) {
@@ -99,38 +83,45 @@ int Converter::Apply(
         name, dimensions, dynamic_dimensions, precision_type, quant_scales);
     VLOG(3) << "Found an operand @0x" << string_format("%x", operand) << " for "
             << i << "th input '" << name << "'.";
-    (*input_operands)[i] = operand;
+    input_operands[i] = operand;
   }
-  for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
-    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+  operation_count_ = 0;
+  std::vector<size_t> operation_idx_to_op_idx_map;
+  operation_idx_to_op_idx_map.reserve(op_count);
+  for (size_t i = 0; i < op_count; i++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(i);
     CHECK(op_desc);
     std::string op_type = op_desc->Type();
     auto op_info = std::make_shared<OpInfo>(*op_desc);
     VLOG(5) << "Converting " << op_type << " ...";
-#define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
-  if (op_type == #__op_type__) {                            \
-    __func_name__(this, op_info.get(), exec_scope);         \
-    continue;                                               \
+#define REGISTER_CONVERTER(__op_type__, __func_name__, ...)    \
+  if (op_type == #__op_type__) {                               \
+    __func_name__(this, op_info.get(), exec_scope);            \
+    operation_idx_to_op_idx_map.insert(                        \
+        operation_idx_to_op_idx_map.end(),                     \
+        operation_count_ - operation_idx_to_op_idx_map.size(), \
+        i);                                                    \
+    continue;                                                  \
   }
 #include "lite/kernels/nnadapter/converter/all.h"  // NOLINT
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
-    LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
+    LOG(FATAL) << "Op converter '" << op_type << "' not found!";
   }
   // Query the output operands, and update if exists the useless output
   // variables such as 'XShape' in reshape2 and transpose2
   std::vector<Variable> valid_output_vars;
   auto output_count = output_vars->size();
-  output_operands->clear();
+  std::vector<NNAdapterOperand*> output_operands;
   for (size_t i = 0; i < output_count; i++) {
     const auto& name = output_vars->at(i).name;
     auto operand = GetMappedOperand(name);
     if (!operand) {
-      LOG(WARNING) << "No operand found for " << i << "th output '" << name
-                   << "'!";
+      LOG(WARNING) << "Warning: No operand found for " << i << "th output '"
+                   << name << "'!";
       continue;
     }
-    output_operands->push_back(operand);
+    output_operands.push_back(operand);
     VLOG(3) << "Found an operand @0x" << string_format("%x", operand) << " for "
             << i << "th output '" << name << "'.";
     valid_output_vars.emplace_back(output_vars->at(i));
@@ -138,6 +129,55 @@ int Converter::Apply(
   CHECK_GT(valid_output_vars.size(), 0);
   if (valid_output_vars.size() != output_count) {
     *output_vars = valid_output_vars;
+  }
+  int result =
+      NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
+                                                     input_operands.size(),
+                                                     input_operands.data(),
+                                                     output_operands.size(),
+                                                     output_operands.data());
+  if (result != NNADAPTER_NO_ERROR) {
+    NNAdapterModel_destroy_invoke(model_);
+    LOG(FATAL) << "Failed to identify the inputs and outputs of the model("
+               << result << ")!";
+    return UNSUPPORTED_FEATURE;
+  }
+  result = NNAdapterModel_finish_invoke(model_);
+  if (result != NNADAPTER_NO_ERROR) {
+    NNAdapterModel_destroy_invoke(model_);
+    LOG(FATAL) << "Failed to finish the model(" << result << ")!";
+    return UNSUPPORTED_FEATURE;
+  }
+  std::unique_ptr<bool[]> supported_operations(new bool[operation_count_]);
+  std::fill(supported_operations.get(),
+            supported_operations.get() + operation_count_,
+            false);
+  result = NNAdapterModel_getSupportedOperations_invoke(
+      model_, context_, supported_operations.get());
+  if (result == NNADAPTER_NO_ERROR) {
+    std::unique_ptr<bool[]> supported_operators(new bool[op_count]);
+    std::fill(
+        supported_operators.get(), supported_operators.get() + op_count, true);
+    for (size_t i = 0; i < operation_count_; i++) {
+      auto op_idx = operation_idx_to_op_idx_map[i];
+      CHECK_LT(op_idx, op_count);
+      supported_operators[op_idx] &= supported_operations[i];
+      if (!supported_operators[op_idx]) {
+        LOG(FATAL) << "Op " << block_desc->GetOp<cpp::OpDesc>(op_idx)->Type()
+                   << " is not supported!";
+      }
+    }
+  } else if (result == NNADAPTER_FEATURE_NOT_SUPPORTED) {
+    LOG(WARNING)
+        << "Warning: Failed to get the supported operations for the selected "
+           "devices, one or more of the selected devices are not "
+           "supported!";
+  } else {
+    NNAdapterModel_destroy_invoke(model_);
+    LOG(FATAL)
+        << "Failed to get the supported operations for the selected devices("
+        << result << ")!";
+    return UNSUPPORTED_FEATURE;
   }
   return NO_ERROR;
 }
@@ -318,6 +358,7 @@ NNAdapterOperation* Converter::AddOperation(
                                      output_operands->data(),
                                      &operation);
   CHECK(operation);
+  operation_count_++;
   return operation;
 }
 
@@ -353,10 +394,13 @@ NNAdapterOperand* Converter::AddShapeOperation(
 NNAdapterOperand* Converter::AddUnsqueezeOperation(
     NNAdapterOperand* input_operand,
     const std::vector<int32_t>& axes,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   auto axes_operand = AddConstantOperand(axes);
   // Copy scales from input in PrepareUnsqueeze
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(
       NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
   return output_operand;
@@ -365,13 +409,16 @@ NNAdapterOperand* Converter::AddUnsqueezeOperation(
 NNAdapterOperand* Converter::AddSqueezeOperation(
     NNAdapterOperand* input_operand,
     const std::vector<int32_t>& axes,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   NNAdapterOperand* axes_operand = nullptr;
   if (!axes.empty()) {
     axes_operand = AddConstantOperand(axes);
   }
   // Copy scales from input in PrepareSqueeze
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(
       NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
   return output_operand;
@@ -383,12 +430,15 @@ NNAdapterOperand* Converter::AddSliceOperation(
     const std::vector<int32_t>& starts,
     const std::vector<int32_t>& ends,
     const std::vector<int32_t>& steps,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   auto axes_operand = AddConstantOperand(axes);
   auto starts_operand = AddConstantOperand(starts);
   auto ends_operand = AddConstantOperand(ends);
   auto steps_operand = AddConstantOperand(steps);
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(NNADAPTER_SLICE,
                {input_operand,
                 axes_operand,
@@ -399,21 +449,95 @@ NNAdapterOperand* Converter::AddSliceOperation(
   return output_operand;
 }
 
+NNAdapterOperand* Converter::AddReshapeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& shape,
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
+  auto shape_operand = AddConstantOperand(shape);
+  // Copy scales from input in PrepareReshape
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
+  AddOperation(
+      NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
+  return output_operand;
+}
+
 NNAdapterOperand* Converter::AddFlattenOperation(
     NNAdapterOperand* input_operand,
     const int32_t start_axis,
     const int32_t end_axis,
-    const std::string& out_name) {
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
   if (start_axis == end_axis) {
     return input_operand;
   }
   auto start_axis_operand =
       AddConstantOperand(static_cast<int32_t>(start_axis));
   auto end_axis_operand = AddConstantOperand(static_cast<int32_t>(end_axis));
-  auto output_operand = AddOutputOperand(out_name);
+  auto output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
   AddOperation(NNADAPTER_FLATTEN,
                {input_operand, start_axis_operand, end_axis_operand},
                {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::UnpackFusedActivations(
+    NNAdapterOperand* input_operand,
+    const std::string& act_type,
+    OpInfo* op,
+    Scope* scope,
+    const std::string& output_name,
+    const std::vector<float>& output_quant_scales,
+    uint32_t output_quant_channel_dim) {
+  CHECK(input_operand);
+  auto output_operand = input_operand;
+  if (act_type.empty()) return output_operand;
+  output_operand = AddOutputOperand(
+      output_name, output_quant_scales, output_quant_channel_dim);
+  if (act_type == "leaky_relu") {
+    auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+    auto alpha_operand = AddConstantOperand(alpha);
+    AddOperation(
+        NNADAPTER_LEAKY_RELU, {input_operand, alpha_operand}, {output_operand});
+  } else if (act_type == "hard_swish") {
+    auto threshold = op->GetAttr<float>("hard_swish_threshold");
+    auto scale = op->GetAttr<float>("hard_swish_scale");
+    auto offset = op->GetAttr<float>("hard_swish_offset");
+    float mul_factor = threshold / scale;
+    // Alpha operand
+    auto alpha_operand = AddConstantOperand(1.0f / threshold);
+    // Beta operand
+    auto beta_operand = AddConstantOperand(offset / threshold);
+    AddOperation(NNADAPTER_HARD_SWISH,
+                 {input_operand, alpha_operand, beta_operand},
+                 {output_operand});
+    // Add MUL operation if mul_factor != 1.0
+    if (fabs(mul_factor - 1.0f) >= 1e-5f) {
+      auto mul_factor_operand = AddConstantOperand(mul_factor);
+      auto fuse_code_operand =
+          AddConstantOperand(static_cast<int32_t>(NNADAPTER_FUSED_NONE));
+      auto mul_output_operand = AddOutputOperand(
+          output_name, output_quant_scales, output_quant_channel_dim);
+      AddOperation(NNADAPTER_MUL,
+                   {output_operand, mul_factor_operand, fuse_code_operand},
+                   {mul_output_operand});
+      output_operand = mul_output_operand;
+    }
+  } else if (act_type == "sigmoid") {
+    AddOperation(NNADAPTER_SIGMOID, {input_operand}, {output_operand});
+  } else if (act_type == "tanh") {
+    AddOperation(NNADAPTER_TANH, {input_operand}, {output_operand});
+  } else if (act_type == "log") {
+    AddOperation(NNADAPTER_LOG, {input_operand}, {output_operand});
+  } else if (act_type == "abs") {
+    AddOperation(NNADAPTER_ABS, {input_operand}, {output_operand});
+  } else {
+    LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
+  }
   return output_operand;
 }
 

@@ -41,6 +41,7 @@ void GridSamplerCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   const size_t coor_size = n * h * w;
   const size_t workspace_size = coor_size * 12 * sizeof(float);
+  memset(out, 0, param.out->numel() * sizeof(float));
 
   ctx.ExtendWorkspace(workspace_size);
   int32_t* coor_p = ctx.workspace_data<int>();
@@ -190,14 +191,14 @@ void GridSamplerCompute::Run() {
       if (align_corners) {
         // x
         float double_range_x = x_max * 2;
-        float grid_x_abs = abs(grid_x);
+        float grid_x_abs = std::abs(grid_x);
         float extra_x =
             grid_x_abs -
             static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
         grid_x = fmin(extra_x, double_range_x - extra_x);
         // y
         float double_range_y = y_max * 2;
-        float grid_y_abs = abs(grid_y);
+        float grid_y_abs = std::abs(grid_y);
         float extra_y =
             grid_y_abs -
             static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
@@ -205,7 +206,7 @@ void GridSamplerCompute::Run() {
       } else {
         // x
         float double_range_x = (x_max + 1) * 2;
-        float grid_x_abs = abs(grid_x + 0.5);
+        float grid_x_abs = std::abs(grid_x + 0.5);
         float extra_x =
             grid_x_abs -
             static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
@@ -213,7 +214,7 @@ void GridSamplerCompute::Run() {
         grid_x = fmin(fmax(grid_x, 0), x_max);
         // y
         float double_range_y = (y_max + 1) * 2;
-        float grid_y_abs = abs(grid_y + 0.5);
+        float grid_y_abs = std::abs(grid_y + 0.5);
         float extra_y =
             grid_y_abs -
             static_cast<int>(grid_y_abs / double_range_y) * double_range_y;

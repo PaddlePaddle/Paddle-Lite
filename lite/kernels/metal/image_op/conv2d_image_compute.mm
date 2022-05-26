@@ -110,17 +110,20 @@ void Conv2dImageCompute::init_for_run() {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
             int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-            // intput & output C channel must >=3
+            // input channel must >=3
             // attention: should be >=4, texture data layout is RGBA
-            if (input_c >= 3 && output_c >= 3) {
-                should_use_mps = true;
+            if (is_depthwise_) {
+                if (input_c >= 3 && output_c >= 3) {
+                    should_use_mps = true;
+                }
+            } else {
+                if (input_c >= 3) {
+                    should_use_mps = true;
+                }
             }
         }
     }
     if (IsWinoGrad(function_name_) || IsQuadruple(function_name_)) {
-        should_use_mps = false;
-    }
-    if (!is_depthwise_ && param.groups > 1) {
         should_use_mps = false;
     }
     if (param.bias) {
@@ -472,7 +475,7 @@ void Conv2dImageCompute::setup_with_mps() {
         auto filter_h = static_cast<int>(param.filter->dims()[2]);
         auto filter_w = static_cast<int>(param.filter->dims()[3]);
         auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+        auto output_c = fmax(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
         MPSCNNConvolutionDescriptor* description = nil;
         if (is_depthwise_) {
             description = [MPSCNNDepthWiseConvolutionDescriptor
@@ -491,6 +494,7 @@ void Conv2dImageCompute::setup_with_mps() {
         description.strideInPixelsY = param.strides[1];
         description.dilationRateX = (*param.dilations)[0];
         description.dilationRateY = (*param.dilations)[1];
+        if (!is_depthwise_) description.groups = param.groups;
         // active function
         switch (param.activation_param.active_type) {
             case lite_api::ActivationType::kRelu: {

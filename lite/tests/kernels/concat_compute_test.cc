@@ -153,10 +153,16 @@ TEST(Concat, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
   use_axis_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  use_axis_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  use_axis_tensor = std::vector<bool>{false};
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   use_axis_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_NPU)

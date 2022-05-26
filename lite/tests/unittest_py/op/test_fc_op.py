@@ -30,9 +30,21 @@ import numpy as np
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageFolder),
@@ -43,15 +55,14 @@ class TestFcOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=[
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs["in_num_col_dims"] != 1 or len(
-                    in_shape) != 2:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -70,6 +81,13 @@ class TestFcOp(AutoScanTest):
             else:
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
+        padding_weights = draw(st.booleans())
+        # OpenCL and ARM dose not support this attribute
+        if (self.get_target() in ['OpenCL', 'ARM']):
+            padding_weights = False
+        if (padding_weights):
+            weights_shape = [weights_0 + 4, weights_1 + 4]
+
         bias_shape = [weights_1]
         with_bias = draw(st.sampled_from([True, False]))
 
@@ -90,6 +108,7 @@ class TestFcOp(AutoScanTest):
 
         op_inputs = {}
         program_inputs = {}
+        program_weights = {}
 
         if (with_bias):
             op_inputs = {
@@ -99,6 +118,8 @@ class TestFcOp(AutoScanTest):
             }
             program_inputs = {
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
+            }
+            program_weights = {
                 "weights_data":
                 TensorConfig(data_gen=partial(generate_weights)),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias))
@@ -107,6 +128,8 @@ class TestFcOp(AutoScanTest):
             op_inputs = {"Input": ["input_data"], "W": ["weights_data"]}
             program_inputs = {
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
+            }
+            program_weights = {
                 "weights_data":
                 TensorConfig(data_gen=partial(generate_weights))
             }
@@ -119,7 +142,7 @@ class TestFcOp(AutoScanTest):
                 "in_num_col_dims": in_num_col_dims,
                 "activation_type": act_type,
                 "use_mkldnn": False,
-                "padding_weights": False,
+                "padding_weights": padding_weights,
                 "use_quantizer": False,
                 "Scale_in": float(1),
                 "Scale_weights": [float(1)],
@@ -127,7 +150,7 @@ class TestFcOp(AutoScanTest):
             })
         program_config = ProgramConfig(
             ops=[fc_op],
-            weights={},
+            weights=program_weights,
             inputs=program_inputs,
             outputs=["output_data"])
         return program_config
@@ -136,7 +159,21 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                w_shape = program_config.weights["weights_data"].shape
+                if len(in_shape) != 4 \
+                    or w_shape[0] != in_shape[2] * in_shape[3]:
+                    return True
+                if "bias_data" in program_config.weights:
+                    b_shape = program_config.weights["bias_data"].shape
+                    if b_shape[0] != w_shape[1]:
+                        return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size < 3' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

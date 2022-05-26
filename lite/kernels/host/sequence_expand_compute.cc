@@ -20,14 +20,15 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename T>
 void SequenceExpandFunc(const Tensor& x,
                         const std::vector<uint64_t>& x_lod,
                         const std::vector<uint64_t>& ref_lod,
                         Tensor* out) {
   uint64_t out_offset = 0;
   int64_t x_item_length = x.numel() / x.dims()[0];
-  auto out_data = out->mutable_data<float>();
-  auto x_data = x.data<float>();
+  auto out_data = out->mutable_data<T>();
+  auto x_data = x.data<T>();
   for (size_t i = 1; i < ref_lod.size(); ++i) {
     uint64_t repeat_num = ref_lod[i] - ref_lod[i - 1];
     uint64_t x_start = x_lod[i - 1];
@@ -51,8 +52,9 @@ void SequenceExpandFunc(const Tensor& x,
   }
 }
 
-void SequenceExpandCompute::Run() {
-  auto& param = Param<operators::SequenceExpandParam>();
+template <typename T, PrecisionType PType>
+void SequenceExpandCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::SequenceExpandParam>();
   auto* x = param.X;
   auto* y = param.Y;
   auto* out = param.Out;
@@ -62,7 +64,7 @@ void SequenceExpandCompute::Run() {
 
   if (ref_level == -1) ref_level = y_lod.size() - 1;
 
-  out->mutable_data<float>();
+  out->template mutable_data<T>();
   if (y_lod[ref_level].size() <= 1) {
     out->CopyDataFrom(*x);
     return;
@@ -95,7 +97,7 @@ void SequenceExpandCompute::Run() {
     std::iota(ref_x_lod.begin(), ref_x_lod.end(), 0);
   }
 
-  SequenceExpandFunc(*x, ref_x_lod, y_lod[ref_level], out);
+  SequenceExpandFunc<T>(*x, ref_x_lod, y_lod[ref_level], out);
 }
 
 }  // namespace host
@@ -103,13 +105,34 @@ void SequenceExpandCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(sequence_expand,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::SequenceExpandCompute,
-                     def)
+using sequence_expand_float32 =
+    paddle::lite::kernels::host::SequenceExpandCompute<float,
+                                                       PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand, kHost, kFloat, kNCHW, sequence_expand_float32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+using sequence_expand_int32 =
+    paddle::lite::kernels::host::SequenceExpandCompute<int32_t,
+                                                       PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand, kHost, kFloat, kNCHW, sequence_expand_int32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+using sequence_expand_int64 =
+    paddle::lite::kernels::host::SequenceExpandCompute<int64_t,
+                                                       PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    sequence_expand, kHost, kFloat, kNCHW, sequence_expand_int64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();

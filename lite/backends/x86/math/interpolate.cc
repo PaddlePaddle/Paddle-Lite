@@ -34,14 +34,13 @@ void bilinear_interp(const float* input_data,
                      const int w_out,
                      const bool align_corners,
                      const bool align_mode) {
-  int* buf = static_cast<int*>(lite::host::malloc(
-      sizeof(int) * (w_out + h_out + w_out * 2 + h_out * 2)));
-
+  int* buf = static_cast<int*>(
+      lite::host::malloc(sizeof(int) * (w_out * 4 + h_out * 4)));
   int* xofs = buf;
-  int* yofs = buf + w_out;
+  int* yofs = buf + w_out * 2;
 
-  float* alpha = reinterpret_cast<float*>(buf + w_out + h_out);
-  float* beta = reinterpret_cast<float*>(buf + w_out + h_out + w_out * 2);
+  float* alpha = reinterpret_cast<float*>(buf + w_out * 2 + h_out * 2);
+  float* beta = reinterpret_cast<float*>(buf + h_out * 2 + w_out * 4);
 
   float fx = 0.0f;
   float fy = 0.0f;
@@ -53,7 +52,8 @@ void bilinear_interp(const float* input_data,
       fx = dx * ratio_w;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -62,7 +62,8 @@ void bilinear_interp(const float* input_data,
       fy = dy * ratio_h;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - fy;
       beta[dy * 2 + 1] = fy;
     }
@@ -73,7 +74,8 @@ void bilinear_interp(const float* input_data,
       fx = fx < 0 ? 0.f : fx;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -83,7 +85,8 @@ void bilinear_interp(const float* input_data,
       fy = fy < 0 ? 0.f : fy;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - fy;
       beta[dy * 2 + 1] = fy;
     }
@@ -120,10 +123,11 @@ void bilinear_interp(const float* input_data,
     float* rows1 = rowsbuf1;
     // h_bound loop
     for (int dy = 0; dy < h_bound; dy++) {
-      int sy = yofs[dy];
+      int sy0 = yofs[dy * 2];
+      int sy1 = yofs[dy * 2 + 1];
 
-      const float* s0 = src + sy * w_in;
-      const float* s1 = src + (sy + 1) * w_in;
+      const float* s0 = src + sy0 * w_in;
+      const float* s1 = src + sy1 * w_in;
 
       const float* alphap = alpha;
       float* rows0p = rows0;
@@ -133,30 +137,34 @@ void bilinear_interp(const float* input_data,
 // w_bound loop
 #ifdef __AVX__
       for (; dx + 3 < w_bound; dx += 4) {
-        int x0 = xofs[dx];
-        int x1 = xofs[dx + 1];
-        int x2 = xofs[dx + 2];
-        int x3 = xofs[dx + 3];
+        int x0 = xofs[dx * 2];
+        int x1 = xofs[(dx + 1) * 2];
+        int x2 = xofs[(dx + 2) * 2];
+        int x3 = xofs[(dx + 3) * 2];
+        int x01 = xofs[dx * 2 + 1];
+        int x11 = xofs[(dx + 1) * 2 + 1];
+        int x21 = xofs[(dx + 2) * 2 + 1];
+        int x31 = xofs[(dx + 3) * 2 + 1];
 
         const float* s0p0 = s0 + x0;
         const float* s0p1 = s0 + x1;
         const float* s0p2 = s0 + x2;
         const float* s0p3 = s0 + x3;
 
-        const float* s0p0_1 = s0p0 + 1;
-        const float* s0p1_1 = s0p1 + 1;
-        const float* s0p2_1 = s0p2 + 1;
-        const float* s0p3_1 = s0p3 + 1;
+        const float* s0p0_1 = s0 + x01;
+        const float* s0p1_1 = s0 + x11;
+        const float* s0p2_1 = s0 + x21;
+        const float* s0p3_1 = s0 + x31;
 
         const float* s1p0 = s1 + x0;
         const float* s1p1 = s1 + x1;
         const float* s1p2 = s1 + x2;
         const float* s1p3 = s1 + x3;
 
-        const float* s1p0_1 = s1p0 + 1;
-        const float* s1p1_1 = s1p1 + 1;
-        const float* s1p2_1 = s1p2 + 1;
-        const float* s1p3_1 = s1p3 + 1;
+        const float* s1p0_1 = s1 + x01;
+        const float* s1p1_1 = s1 + x11;
+        const float* s1p2_1 = s1 + x21;
+        const float* s1p3_1 = s1 + x31;
 
         __m256 _a = _mm256_loadu_ps(alphap);
 
@@ -184,20 +192,22 @@ void bilinear_interp(const float* input_data,
 
       // w_bound remain loop
       for (; dx < w_bound; ++dx) {
-        int sx = xofs[dx];
+        int sx = xofs[dx * 2];
+        int sx1 = xofs[dx * 2 + 1];
         const float* s0p = s0 + sx;
         const float* s1p = s1 + sx;
+        const float* s0p1 = s0 + sx1;
+        const float* s1p1 = s1 + sx1;
 
         float a0 = alphap[0];
         float a1 = alphap[1];
-        rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
-        rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
-
+        rows0p[dx] = s0p[0] * a0 + s0p1[0] * a1;
+        rows1p[dx] = s1p[0] * a0 + s1p1[0] * a1;
         alphap += 2;
       }
 
-      float param0 = *(src + sy * w_in + w_in - 1);
-      float param1 = *(src + (sy + 1) * w_in + w_in - 1);
+      float param0 = *(src + sy0 * w_in + w_in - 1);
+      float param1 = *(src + sy1 * w_in + w_in - 1);
       const float buffer0[2] = {param0, param0};
       const float buffer1[2] = {param1, param1};
 #ifdef __AVX__
@@ -300,30 +310,34 @@ void bilinear_interp(const float* input_data,
 
       // w_bound loop
       for (; dx + 3 < w_bound; dx += 4) {
-        int x0 = xofs[dx];
-        int x1 = xofs[dx + 1];
-        int x2 = xofs[dx + 2];
-        int x3 = xofs[dx + 3];
+        int x0 = xofs[dx * 2];
+        int x1 = xofs[(dx + 1) * 2];
+        int x2 = xofs[(dx + 2) * 2];
+        int x3 = xofs[(dx + 3) * 2];
+        int x01 = xofs[dx * 2 + 1];
+        int x11 = xofs[(dx + 1) * 2 + 1];
+        int x21 = xofs[(dx + 2) * 2 + 1];
+        int x31 = xofs[(dx + 3) * 2 + 1];
 
         const float* s0p0 = s0 + x0;
         const float* s0p1 = s0 + x1;
         const float* s0p2 = s0 + x2;
         const float* s0p3 = s0 + x3;
 
-        const float* s0p0_1 = s0p0 + 1;
-        const float* s0p1_1 = s0p1 + 1;
-        const float* s0p2_1 = s0p2 + 1;
-        const float* s0p3_1 = s0p3 + 1;
+        const float* s0p0_1 = s0 + x01;
+        const float* s0p1_1 = s0 + x11;
+        const float* s0p2_1 = s0 + x21;
+        const float* s0p3_1 = s0 + x31;
 
         const float* s1p0 = s1 + x0;
         const float* s1p1 = s1 + x1;
         const float* s1p2 = s1 + x2;
         const float* s1p3 = s1 + x3;
 
-        const float* s1p0_1 = s1p0 + 1;
-        const float* s1p1_1 = s1p1 + 1;
-        const float* s1p2_1 = s1p2 + 1;
-        const float* s1p3_1 = s1p3 + 1;
+        const float* s1p0_1 = s1 + x01;
+        const float* s1p1_1 = s1 + x11;
+        const float* s1p2_1 = s1 + x21;
+        const float* s1p3_1 = s1 + x31;
 
         __m256 _a = _mm256_loadu_ps(alphap);
 
@@ -350,11 +364,13 @@ void bilinear_interp(const float* input_data,
 
       // w_bound remain loop
       for (; dx < w_bound; ++dx) {
-        int sx = xofs[dx];
+        int sx = xofs[dx * 2];
+        int sx1 = xofs[dx * 2 + 1];
         const float* s0p = s0 + sx;
+        const float* s0p1 = s0 + sx1;
         float a0 = alphap[0];
         float a1 = alphap[1];
-        rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+        rows0p[dx] = s0p[0] * a0 + s0p1[0] * a1;
         rows1p[dx] = rows0p[dx];
 
         alphap += 2;
@@ -587,6 +603,109 @@ void interpolate(lite::Tensor* input,
   if (out_w > 1) {
     ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
                               : static_cast<float>(in_w) / out_w;
+  }
+
+  const float* input_data = input->data<float>();
+  float* output_data = output->mutable_data<float>();
+  if ("Bilinear" == interpolate_type) {
+    bilinear_interp(input_data,
+                    output_data,
+                    ratio_h,
+                    ratio_w,
+                    in_h,
+                    in_w,
+                    n,
+                    c,
+                    out_h,
+                    out_w,
+                    align_corners,
+                    align_mode);
+  } else if ("Nearest" == interpolate_type) {
+    nearest_interp(input_data,
+                   output_data,
+                   ratio_h,
+                   ratio_w,
+                   n,
+                   c,
+                   in_h,
+                   in_w,
+                   out_h,
+                   out_w,
+                   align_corners);
+  } else {
+    LOG(FATAL) << "Not supported interpolate_type: " << interpolate_type;
+  }
+}
+
+void interpolate_v2(lite::Tensor* input,
+                    lite::Tensor* out_size,
+                    std::vector<const lite::Tensor*> list_new_size_tensor,
+                    lite::Tensor* scale_tensor,
+                    lite::Tensor* output,
+                    float scale,
+                    std::vector<float> scale_v,
+                    int out_h,
+                    int out_w,
+                    const int align_mode,
+                    const bool align_corners,
+                    const std::string interpolate_type) {
+  // format NCHW
+  int n = input->dims()[0];
+  int c = input->dims()[1];
+  int in_h = input->dims()[2];
+  int in_w = input->dims()[3];
+  float scale_h = -1;
+  float scale_w = -1;
+  if (list_new_size_tensor.size() > 0) {
+    // have size tensor
+    auto new_size = get_new_shape(list_new_size_tensor);
+    out_h = new_size[0];
+    out_w = new_size[1];
+  } else {
+    if (scale_tensor != nullptr) {
+      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+      if (scale_data.size() > 1) {
+        scale_h = scale_data[0];
+        scale_w = scale_data[1];
+      } else {
+        scale_h = scale_data[0];
+        scale_w = scale_data[0];
+      }
+    } else {
+      if (scale_v.size() > 1 && scale_v[0] > 0 && scale_v[1] > 0) {
+        scale_h = scale_v[0];
+        scale_w = scale_v[1];
+      }
+    }
+
+    if (scale_h > 0. && scale_w > 0.) {
+      out_h = static_cast<int>(in_h * scale_h);
+      out_w = static_cast<int>(in_w * scale_w);
+    }
+
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_h = out_size_data[0];
+      out_w = out_size_data[1];
+    }
+  }
+  output->Resize({n, c, out_h, out_w});
+
+  float ratio_h = 0.f;
+  float ratio_w = 0.f;
+  if (out_h > 1) {
+    float new_scale_h = 0.f;
+    new_scale_h = (scale_h > 0) ? static_cast<float>(1. / scale_h)
+                                : static_cast<float>(in_h) / out_h;
+    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_h - 1)
+                              : static_cast<float>(new_scale_h);
+  }
+  if (out_w > 1) {
+    float new_scale_w = 0.f;
+    new_scale_w = (scale_w > 0) ? static_cast<float>(1. / scale_w)
+                                : static_cast<float>(in_w) / out_w;
+    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
+                              : static_cast<float>(new_scale_w);
   }
 
   const float* input_data = input->data<float>();

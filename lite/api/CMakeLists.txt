@@ -1,26 +1,35 @@
 #----------------------------------------------- NOT CHANGE ---------------------------------------
+find_package(PythonInterp REQUIRED)
 # A trick to generate the paddle_use_kernels.h
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR}/lite/api/)
+    COMMAND ${CMAKE_COMMAND} -E copy ${PADDLE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${PADDLE_BINARY_DIR}/lite/api/)
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
-    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h
     "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
     ${LITE_WITH_ARM82_FP16}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
 # A trick to generate the paddle_use_ops.h
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
     ${ops_src_list}
-    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h
     "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 
 set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc)
@@ -43,9 +52,6 @@ if(LITE_WITH_FPGA)
 endif()
 if(LITE_WITH_BM)
     set(external_libs_DEPS ${external_libs_DEPS} ${bm_deps})
-endif()
-if(LITE_WITH_RKNPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${rknpu_deps})
 endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
@@ -165,16 +171,12 @@ else()
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
         endif()
-        if (LITE_WITH_RKNPU)
-            # Need to add RKNPU runtime libs dependency
-            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-        endif()
 
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
           set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
+          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PADDLE_BINARY_DIR}/lite/api/android/jni/native)
           if (LITE_WITH_NPU)
               # Need to add HIAI runtime libs (libhiai.so) dependency
               target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
@@ -226,4 +228,11 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc
         DEPS gflags)
+    if (EMSCRIPTEN)
+        target_link_libraries(opt protobuf)
+        set_target_properties(opt PROPERTIES LINK_FLAGS "-s INITIAL_MEMORY=1000MB -s ALLOW_MEMORY_GROWTH=1 -sASSERTIONS")
+        if (WITH_NODE_RAW_FS)
+            set_target_properties(opt PROPERTIES LINK_FLAGS "-s NODERAWFS=1")
+        endif()
+    endif()
 endif()

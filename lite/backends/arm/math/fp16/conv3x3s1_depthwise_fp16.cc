@@ -1045,9 +1045,9 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p01_fp16(int w_in,
   uint32_t cnt_remain = ((w_out % 8 == 0) ? 8 : w_out % 8);
   uint32_t size_right_remain =
       static_cast<uint32_t>(w_in - (w_out + 2 - pad - 10));
-  uint8x16_t vmask_rp1 =
+  uint16x8_t vmask_rp1 =
       vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx));
-  uint8x16_t vmask_rp2 =
+  uint16x8_t vmask_rp2 =
       vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx + 8));
   vst1q_u16(vmask, vmask_rp1);
   vst1q_u16(vmask + 8, vmask_rp2);
@@ -1285,7 +1285,6 @@ void conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(float16_t* dout,
                                                        int h_out,
                                                        int w_out,
                                                        ARMContext* ctx) {
-  std::cout << "conv_depthwise_3x3s1p1_bias_relu" << std::endl;
   float16_t* zero_ptr = ctx->workspace_data<float16_t>();
   memset(zero_ptr, 0, w_in * sizeof(float16_t));
   float16_t* write_ptr =
@@ -1951,7 +1950,6 @@ void conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(float16_t* dout,
                                                        int h_out,
                                                        int w_out,
                                                        ARMContext* ctx) {
-  std::cout << "aaa" << std::endl;
   float16_t* zero_ptr = ctx->workspace_data<float16_t>();
   memset(zero_ptr, 0, w_in * sizeof(float16_t));
   float16_t* write_ptr =

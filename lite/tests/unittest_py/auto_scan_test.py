@@ -14,11 +14,64 @@
 
 from auto_scan_base import IgnoreReasonsBase
 import argparse
+import platform
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
+parser.add_argument(
+    "--enforce_rpc", default='off', type=str, help="whther rpc is enforced")
+
+parser.add_argument(
+    "--server_ip",
+    default="localhost",
+    type=str,
+    help="when rpc is used , the ip address of the server")
+
+parser.add_argument(
+    "--url",
+    type=str,
+    help="Address of model download in model test", )
+parser.add_argument(
+    "--file_name",
+    type=str,
+    help="File name of the compressed model package downloaded in the model test",
+)
+parser.add_argument(
+    "--model_name",
+    type=str,
+    help="Model name(That is, the prefix of the compressed package) in model test",
+)
+parser.add_argument(
+    "--input_shapes", help="The tested model's input_shapes", action="append")
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 args = parser.parse_args()
 
-if args.target == "ARM" or args.target == "OpenCL" or args.target == "Metal":
+if (args.target == "ARM" and platform.system() == 'Darwin') or (
+        args.target == "OpenCL") or (
+            args.target == "Metal") or args.enforce_rpc == "on":
     from auto_scan_test_rpc import AutoScanTest
     from auto_scan_test_rpc import FusePassAutoScanTest
 else:

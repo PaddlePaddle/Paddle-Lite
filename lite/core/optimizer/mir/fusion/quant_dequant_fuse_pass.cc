@@ -35,8 +35,12 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // fuse quantized node and dequant node
-  std::vector<std::string> quantized_op_types = {
-      "conv2d", "depthwise_conv2d", "conv2d_transpose", "mul", "matmul"};
+  std::vector<std::string> quantized_op_types = {"conv2d",
+                                                 "depthwise_conv2d",
+                                                 "conv2d_transpose",
+                                                 "mul",
+                                                 "matmul",
+                                                 "matmul_v2"};
   for (auto& op_type : quantized_op_types) {
     fusion::DequantOpFuser fuser(op_type);
     fuser(graph.get());
@@ -63,6 +67,26 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto pair : op_argnames) {
     fusion::DynamicQuantOpFuser dq_fuser(pair.first, pair.second);
     dq_fuser(graph.get());
+  }
+
+  // process new quant op pass: quantize_linear and dequantize_linear
+  std::vector<std::string> new_quantized_op_types = {
+      "conv2d",
+      "depthwise_conv2d",
+      "conv2d_transpose",
+      "depthwise_conv2d_transpose",
+      "mul",
+      "matmul",
+      "matmul_v2"};
+  // pass1: input+quantize_linear+dequantize_linear --> input
+  for (auto& op_type : new_quantized_op_types) {
+    fusion::QuantDequantLinearOpFuser fuser(op_type);
+    fuser(graph.get());
+  }
+  // pass2: weight+dequantize_linear --> weight
+  for (auto& op_type : {"dequantize_linear"}) {
+    fusion::DequantLinearOpFuser fuser(op_type);
+    fuser(graph.get());
   }
 }
 

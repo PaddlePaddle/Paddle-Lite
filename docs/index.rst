@@ -48,7 +48,7 @@ Welcome to Paddle-Lite's documentation!
   source_compile/library_tailoring
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: 程序开发
   :name: program-development
 
@@ -57,15 +57,10 @@ Welcome to Paddle-Lite's documentation!
   user_guides/python_demo
   user_guides/development_overview
   user_guides/model_optimize_tool
-  user_guides/opt/opt_bin
-  user_guides/opt/opt_python
-  user_guides/opt/x2paddle&opt
   user_guides/quant_aware
-  user_guides/quant/quant_post_dynamic
-  user_guides/quant/quant_post_static
-  user_guides/quant/quant_post_dynamic_demo
   user_guides/model_visualization
   user_guides/profiler
+  user_guides/sparse
 
 .. toctree::
   :maxdepth: 1
@@ -78,16 +73,20 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/arm_cpu
   demo_guides/x86
   demo_guides/opencl
+  demo_guides/metal
   demo_guides/fpga
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
-  demo_guides/baidu_xpu
+  demo_guides/kunlunxin_xpu
   demo_guides/rockchip_npu
   demo_guides/amlogic_npu
+  demo_guides/verisilicon_timvx
+  demo_guides/android_nnapi
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
   demo_guides/bitmain
   demo_guides/intel_fpga
+  demo_guides/intel_openvino
 
 .. toctree::
   :maxdepth: 1
@@ -106,6 +105,7 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/for-developer
   develop_guides/architecture-intro
   develop_guides/add_operation
+  develop_guides/add_unit_test
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware

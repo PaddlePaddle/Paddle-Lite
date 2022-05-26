@@ -461,6 +461,8 @@ TEST(Matmul2x2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -469,9 +471,6 @@ TEST(Matmul2x2, precision) {
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #else
   return;
 #endif
@@ -492,9 +491,6 @@ TEST(Matmul2x2_x_transpose, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -511,15 +507,15 @@ TEST(Matmul2x2_y_transpose, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -542,9 +538,6 @@ TEST(Matmul2x2_transpose, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;  // use int16 in xpu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -586,6 +579,7 @@ TEST(Matmulnx2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
 #else
   return;
 #endif
@@ -620,6 +614,11 @@ TEST(Matmulnxn, precision) {
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   test_matmulnxn(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  test_matmulnxn(place, abs_error);
+  test_matmulnxn_ytranspose(place, abs_error);
   return;
 #else
   return;

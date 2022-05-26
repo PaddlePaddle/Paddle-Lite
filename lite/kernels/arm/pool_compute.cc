@@ -21,6 +21,10 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+#include "lite/backends/arm/math/sve2/pooling_sve2.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -34,6 +38,7 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<operators::PoolParam>();
   auto& in_dims = param.x->dims();
   auto& out_dims = param.output->dims();
+  auto& ctx = this->ctx_->As<ARMContext>();
 
   const float* din = param.x->data<float>();
   float* dout = param.output->mutable_data<float>();
@@ -75,6 +80,12 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+      if (ctx.has_sve2()) {
+        lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
+        return;
+      }
+#endif
       lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }
@@ -272,10 +283,9 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                             ceil_mode,
                                             use_quantizer,
                                             pooling_type);
-#undef POOL_IN_PARAM
 }
-
 #endif
+#undef POOL_IN_PARAM
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

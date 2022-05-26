@@ -29,7 +29,7 @@ import numpy as np
 from functools import partial
 
 
-class TestAssignOp(AutoScanTest):
+class TestGreaterOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_op_config = [
@@ -37,14 +37,12 @@ class TestAssignOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.Any)
         ]
         self.enable_testing_on_place(places=host_op_config)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["data_x"].dtype
-
-        if "int32" == in_dtype:
-            return False
         return True
 
     def sample_program_configs(self, draw):

@@ -42,50 +42,66 @@ class TestOneHotOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        # if max_value > 32 will crash, todo fix
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=32), min_size=2, max_size=2))
-        depth_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=32, max_value=256),
-                min_size=1,
-                max_size=1))
+        # 128 cost much time, so change to 64
+        in_shape0 = draw(st.integers(min_value=1, max_value=64))
+        in_shape1 = draw(st.integers(min_value=1, max_value=64))
+        in_shape2 = draw(st.integers(min_value=1, max_value=64))
 
-        # if def depth_tensor  will have rpc Connection refused error
-        #def generate_depth_tensor(*args, **kwargs):
-        #    len = np.ones(1)
-        #    len[0] = 8
-        #    return len.astype(np.int32)
+        def generate_depth_tensor(*args, **kwargs):
+            return np.random.randint(128, 256, size=1).astype(np.int32)
+
+        in_shape = draw(
+            st.sampled_from([(in_shape0, in_shape1, in_shape2, 1), (
+                in_shape0, in_shape1, 1), (in_shape0, 1)]))
+
         def generate_input1(*args, **kwargs):
-            return np.random.randint([in_shape]).astype(np.int64)
+            return np.random.randint(0, 128, size=in_shape).astype(np.int64)
 
         dtype = draw(st.sampled_from([2]))
-        depth = draw(st.integers(min_value=32, max_value=256))
+        depth = draw(st.integers(min_value=128, max_value=256))
         allow_out_of_range = draw(st.booleans())
-        one_hot_op = OpConfig(
-            type="one_hot",
-            #inputs = {"X" : ["input_data"], "depth_tensor":["depth_tensor"]},
-            inputs={"X": ["input_data"]},
-            outputs={"Out": ["output_data"]},
-            attrs={
-                "depth": depth,
-                "dtype": dtype,
-                "allow_out_of_range": allow_out_of_range
-            })
-        program_config = ProgramConfig(
-            ops=[one_hot_op],
-            weights={},
-            inputs={
-                "input_data": TensorConfig(
-                    shape=in_shape, data_gen=generate_input1)
-                #TensorConfig(shape=in_shape, data_gen=generate_input1),
-                #"depth_tensor":
-                #TensorConfig(shape=depth_shape, data_gen=generate_depth_tensor)
-            },
-            outputs=["output_data"])
+        test_case = draw(st.booleans())
+        if test_case:
+            one_hot_op = OpConfig(
+                type="one_hot",
+                inputs={
+                    "X": ["input_data"],
+                    "depth_tensor": ["depth_tensor"]
+                },
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "depth": depth,
+                    "dtype": dtype,
+                    "allow_out_of_range": allow_out_of_range
+                })
+            program_config = ProgramConfig(
+                ops=[one_hot_op],
+                weights={},
+                inputs={
+                    "input_data": TensorConfig(
+                        shape=list(in_shape), data_gen=generate_input1),
+                    "depth_tensor": TensorConfig(
+                        shape=[1], data_gen=generate_depth_tensor)
+                },
+                outputs=["output_data"])
+        else:
+            one_hot_op = OpConfig(
+                type="one_hot",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={
+                    "depth": depth,
+                    "dtype": dtype,
+                    "allow_out_of_range": allow_out_of_range
+                })
+            program_config = ProgramConfig(
+                ops=[one_hot_op],
+                weights={},
+                inputs={
+                    "input_data": TensorConfig(
+                        shape=list(in_shape), data_gen=generate_input1)
+                },
+                outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):

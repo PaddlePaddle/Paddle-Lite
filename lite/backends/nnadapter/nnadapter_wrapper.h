@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include "lite/backends/nnadapter/nnadapter/nnadapter.h"
+#include "lite/backends/nnadapter/nnadapter/include/nnadapter/nnadapter.h"
 
 namespace paddle {
 namespace lite {
@@ -40,6 +40,8 @@ class NNAdapterWrapper final {
   typedef int (*NNAdapterContext_create_fn)(NNAdapterDevice** devices,
                                             uint32_t num_devices,
                                             const char* properties,
+                                            int (*callback)(int event_id,
+                                                            void* user_data),
                                             NNAdapterContext** context);
   typedef void (*NNAdapterContext_destroy_fn)(NNAdapterContext* context);
   typedef int (*NNAdapterModel_create_fn)(NNAdapterModel** model);
@@ -68,6 +70,10 @@ class NNAdapterWrapper final {
       NNAdapterOperand** input_operands,
       uint32_t output_count,
       NNAdapterOperand** output_operands);
+  typedef int (*NNAdapterModel_getSupportedOperations_fn)(
+      const NNAdapterModel* model,
+      NNAdapterContext* context,
+      bool* supported_operations);
   typedef int (*NNAdapterCompilation_create_fn)(
       NNAdapterModel* model,
       const char* cache_token,
@@ -93,12 +99,16 @@ class NNAdapterWrapper final {
       NNAdapterExecution* execution,
       int32_t index,
       void* memory,
-      void* (*access)(void* memory, NNAdapterOperandType* type));
+      void* (*access)(void* memory,
+                      NNAdapterOperandType* type,
+                      void* device_buffer));
   typedef int (*NNAdapterExecution_setOutput_fn)(
       NNAdapterExecution* execution,
       int32_t index,
       void* memory,
-      void* (*access)(void* memory, NNAdapterOperandType* type));
+      void* (*access)(void* memory,
+                      NNAdapterOperandType* type,
+                      void* device_buffer));
   typedef int (*NNAdapterExecution_compute_fn)(NNAdapterExecution* execution);
 
 #define NNADAPTER_DECLARE_FUNCTION(name) name##_fn name;
@@ -121,6 +131,7 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_getOperandType)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_getSupportedOperations)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_finish)
@@ -183,9 +194,11 @@ inline int NNAdapterDevice_getVersion_invoke(const NNAdapterDevice* device,
 inline int NNAdapterContext_create_invoke(NNAdapterDevice** devices,
                                           uint32_t num_devices,
                                           const char* properties,
+                                          int (*callback)(int event_id,
+                                                          void* user_data),
                                           NNAdapterContext** context) {
   return NNAdapterWrapper::Global().NNAdapterContext_create(
-      devices, num_devices, properties, context);
+      devices, num_devices, properties, callback, context);
 }
 
 inline void NNAdapterContext_destroy_invoke(NNAdapterContext* context) {
@@ -252,6 +265,14 @@ inline int NNAdapterModel_identifyInputsAndOutputs_invoke(
       model, input_count, input_operands, output_count, output_operands);
 }
 
+inline int NNAdapterModel_getSupportedOperations_invoke(
+    const NNAdapterModel* model,
+    NNAdapterContext* context,
+    bool* supported_operations) {
+  return NNAdapterWrapper::Global().NNAdapterModel_getSupportedOperations(
+      model, context, supported_operations);
+}
+
 inline int NNAdapterCompilation_create_invoke(
     NNAdapterModel* model,
     const char* cache_token,
@@ -303,7 +324,9 @@ inline int NNAdapterExecution_setInput_invoke(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setInput(
       execution, index, memory, access);
 }
@@ -312,7 +335,9 @@ inline int NNAdapterExecution_setOutput_invoke(
     NNAdapterExecution* execution,
     int32_t index,
     void* memory,
-    void* (*access)(void* memory, NNAdapterOperandType* type)) {
+    void* (*access)(void* memory,
+                    NNAdapterOperandType* type,
+                    void* device_buffer)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setOutput(
       execution, index, memory, access);
 }

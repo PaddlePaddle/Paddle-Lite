@@ -23,6 +23,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
 
 class TestReciprocalOp(AutoScanTest):
@@ -33,11 +34,11 @@ class TestReciprocalOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -48,14 +49,18 @@ class TestReciprocalOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
+                    min_value=1, max_value=64), max_size=2))
+
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        rec_op = OpConfig(
             type="reciprocal",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={})
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[rec_op],
             weights={},
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
@@ -68,7 +73,7 @@ class TestReciprocalOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":

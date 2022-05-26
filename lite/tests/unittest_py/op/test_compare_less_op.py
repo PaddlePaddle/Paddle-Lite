@@ -37,6 +37,8 @@ class TestCompareLessOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.Any)
         ]
         self.enable_testing_on_place(places=host_op_config)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -52,11 +54,6 @@ class TestCompareLessOp(AutoScanTest):
         op_type_str = draw(st.sampled_from(["less_equal", "less_than"]))
         process_type = draw(
             st.sampled_from(["type_int64", "type_float", "type_int32"]))
-
-        ############### ToDo ####################
-        if op_type_str == "less_equal":
-            assume(process_type != "type_int32")
-        #########################################
 
         if axis == -1:
             in_shape_y = in_shape

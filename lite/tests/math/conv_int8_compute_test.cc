@@ -125,7 +125,7 @@ void release_param(ConvParam* param) {
 
 #ifdef LITE_WITH_ARM
 #include "lite/backends/arm/math/funcs.h"
-void test_conv_int8(const DDim& dim_in,
+void test_conv_int8(const std::vector<DDim>& input_dims,
                     const DDim& weight_dim,
                     int group,
                     const std::vector<int>& strides,
@@ -237,14 +237,18 @@ void test_conv_int8(const DDim& dim_in,
       conv_int8_fp32.SetContext(std::move(ctx2));
 
       /// set param and context
-      param_int8_out.x->Resize(dim_in);
-      DDim out_tmp_dims = compute_out_dim(dim_in, param_int8_out);
-      if (out_tmp_dims[2] < 1 || out_tmp_dims[3] < 1) {
-        return;
+
+      for (auto& dim_in : input_dims) {
+        param_int8_out.x->Resize(dim_in);
+        DDim out_tmp_dims = compute_out_dim(dim_in, param_int8_out);
+        if (out_tmp_dims[2] < 1 || out_tmp_dims[3] < 1) {
+          return;
+        }
+        param_fp32_out.x->Resize(dim_in);
+        param_int8_out.output->Resize(out_tmp_dims);
+        param_fp32_out.output->Resize(out_tmp_dims);
+        break;
       }
-      param_fp32_out.x->Resize(dim_in);
-      param_int8_out.output->Resize(out_tmp_dims);
-      param_fp32_out.output->Resize(out_tmp_dims);
 
       conv_int8_int8.SetParam(param_int8_out);
       conv_int8_fp32.SetParam(param_fp32_out);
@@ -252,219 +256,220 @@ void test_conv_int8(const DDim& dim_in,
       conv_int8_int8.PrepareForRun();
       conv_int8_fp32.PrepareForRun();
 
-      CHECK_EQ(weight_dim[1] * group, dim_in[1])
-          << "input channel must equal to weights channel";
-      DDim dim_out = compute_out_dim(dim_in, param_int8_out);
-      if (dim_out[2] < 1 || dim_out[3] < 1) {
-        continue;
-      }
-      delete param_fp32_out.output;
-      param_fp32_out.output = new Tensor;
-      param_fp32_out.output->set_precision(PRECISION(kFloat));
-      delete param_int8_out.output;
-      param_int8_out.output = new Tensor;
-      param_int8_out.output->set_precision(PRECISION(kInt8));
+      for (auto& dim_in : input_dims) {
+        CHECK_EQ(weight_dim[1] * group, dim_in[1])
+            << "input channel must equal to weights channel";
+        DDim dim_out = compute_out_dim(dim_in, param_int8_out);
+        if (dim_out[2] < 1 || dim_out[3] < 1) {
+          continue;
+        }
+        param_fp32_out.output->set_precision(PRECISION(kFloat));
+        param_int8_out.output->set_precision(PRECISION(kInt8));
 
-      param_int8_out.x->Resize(dim_in);
-      param_int8_out.output->Resize(dim_out);
-      param_fp32_out.x->Resize(dim_in);
-      param_fp32_out.output->Resize(dim_out);
+        param_int8_out.x->Resize(dim_in);
+        param_int8_out.output->Resize(dim_out);
+        param_fp32_out.x->Resize(dim_in);
+        param_fp32_out.output->Resize(dim_out);
 
-      Tensor tin_fp32;
-      tin_fp32.Resize(dim_in);
-      tin_fp32.set_precision(PRECISION(kFloat));
-      Tensor tout_basic_fp32;
-      Tensor tout_basic_int8;
+        Tensor tin_fp32;
+        tin_fp32.Resize(dim_in);
+        tin_fp32.set_precision(PRECISION(kFloat));
+        Tensor tout_basic_fp32;
+        Tensor tout_basic_int8;
 
-      paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
-      param_fp32_out.x->CopyDataFrom(*param_int8_out.x);
+        paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
+        param_fp32_out.x->CopyDataFrom(*param_int8_out.x);
 
-      auto din_fp32 = tin_fp32.mutable_data<float>();
-      paddle::lite::arm::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
-                                            din_fp32,
-                                            scale_in.data(),
-                                            1,
-                                            1,
-                                            dim_in.production());
-
-      if (FLAGS_check_result) {
-        tout_basic_fp32.set_precision(PRECISION(kFloat));
-        tout_basic_fp32.Resize(dim_out);
-        tout_basic_int8.set_precision(PRECISION(kInt8));
-        tout_basic_int8.Resize(dim_out);
-        fill_tensor_const(tout_basic_fp32, 0.f);
-        auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
-        auto dout_basic_int8 = tout_basic_int8.mutable_data<int8_t>();
-        conv_basic<float, float>(din_fp32,
-                                 dout_basic_fp32,
-                                 dim_in[0],
-                                 dim_out[1],
-                                 dim_out[2],
-                                 dim_out[3],
-                                 dim_in[1],
-                                 dim_in[2],
-                                 dim_in[3],
-                                 wptr_fp32,
-                                 bptr_fp32,
-                                 group,
-                                 weight_dim[3],
-                                 weight_dim[2],
-                                 strides[1],
-                                 strides[0],
-                                 dilas[1],
-                                 dilas[0],
-                                 pads[2],
-                                 pads[0],
-                                 flag_bias,
-                                 flag_act,
-                                 six,
-                                 alpha);
-        paddle::lite::arm::math::fp32_to_int8(dout_basic_fp32,
-                                              dout_basic_int8,
-                                              scale_out.data(),
+        auto din_fp32 = tin_fp32.mutable_data<float>();
+        paddle::lite::arm::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
+                                              din_fp32,
+                                              scale_in.data(),
                                               1,
                                               1,
-                                              dim_out.production());
-      }
-      double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
-                    weight_dim[3] / group;
-      /// warm up
-      for (int i = 0; i < FLAGS_warmup; ++i) {
-        conv_int8_fp32.Launch();
-      }
-      /// compute fp32 output
-      Timer t0;
-      for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.Start();
-        conv_int8_fp32.Launch();
-        t0.Stop();
-      }
-      LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
-                << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
-                << ", min time: " << t0.LapTimes().Min() << " ms"
-                << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+                                              dim_in.production());
 
-      // compute int8 output
-      t0.Reset();
-      for (int i = 0; i < FLAGS_repeats; ++i) {
-        t0.Start();
-        conv_int8_int8.Launch();
-        t0.Stop();
-      }
-      LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
-                << ",running time, avg: " << t0.LapTimes().Avg()
-                << ", min time: " << t0.LapTimes().Min()
-                << ", total GOPS: " << 1e-9 * gops
-                << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-                << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+        if (FLAGS_check_result) {
+          tout_basic_fp32.set_precision(PRECISION(kFloat));
+          tout_basic_fp32.Resize(dim_out);
+          tout_basic_int8.set_precision(PRECISION(kInt8));
+          tout_basic_int8.Resize(dim_out);
+          fill_tensor_const(tout_basic_fp32, 0.f);
+          auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
+          auto dout_basic_int8 = tout_basic_int8.mutable_data<int8_t>();
+          conv_basic<float, float>(din_fp32,
+                                   dout_basic_fp32,
+                                   dim_in[0],
+                                   dim_out[1],
+                                   dim_out[2],
+                                   dim_out[3],
+                                   dim_in[1],
+                                   dim_in[2],
+                                   dim_in[3],
+                                   wptr_fp32,
+                                   bptr_fp32,
+                                   group,
+                                   weight_dim[3],
+                                   weight_dim[2],
+                                   strides[1],
+                                   strides[0],
+                                   dilas[1],
+                                   dilas[0],
+                                   pads[2],
+                                   pads[0],
+                                   flag_bias,
+                                   flag_act,
+                                   six,
+                                   alpha);
+          paddle::lite::arm::math::fp32_to_int8(dout_basic_fp32,
+                                                dout_basic_int8,
+                                                scale_out.data(),
+                                                1,
+                                                1,
+                                                dim_out.production());
+        }
+        double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
+                      weight_dim[3] / group;
+        /// warm up
+        for (int i = 0; i < FLAGS_warmup; ++i) {
+          conv_int8_fp32.Launch();
+        }
+        /// compute fp32 output
+        Timer t0;
+        for (int i = 0; i < FLAGS_repeats; ++i) {
+          t0.Start();
+          conv_int8_fp32.Launch();
+          t0.Stop();
+        }
+        LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
+                  << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
+                  << ", min time: " << t0.LapTimes().Min() << " ms"
+                  << ", total GOPS: " << 1e-9 * gops
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
 
-      /// compare result fp32 output
-      if (FLAGS_check_result) {
-        double max_ratio = 0;
-        double max_diff = 0;
-        tensor_cmp_host(
-            tout_basic_fp32, *param_fp32_out.output, max_ratio, max_diff);
-        LOG(INFO) << "FP32 compare result, max diff: " << max_diff
-                  << ", max ratio: " << max_ratio;
-        if (std::abs(max_ratio) > 1e-5f) {
-          if (max_diff > 5e-5f) {
-            LOG(WARNING) << "basic result";
-            print_tensor(tout_basic_fp32);
-            LOG(WARNING) << "lite result";
-            print_tensor(*param_fp32_out.output);
+        // compute int8 output
+        t0.Reset();
+        for (int i = 0; i < FLAGS_repeats; ++i) {
+          t0.Start();
+          conv_int8_int8.Launch();
+          t0.Stop();
+        }
+        LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
+                  << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
+                  << ", total GOPS: " << 1e-9 * gops
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+
+        /// compare result fp32 output
+        if (FLAGS_check_result) {
+          double max_ratio = 0;
+          double max_diff = 0;
+          tensor_cmp_host(
+              tout_basic_fp32, *param_fp32_out.output, max_ratio, max_diff);
+          LOG(INFO) << "FP32 compare result, max diff: " << max_diff
+                    << ", max ratio: " << max_ratio;
+          if (std::abs(max_ratio) > 1e-5f) {
+            if (max_diff > 5e-5f) {
+              LOG(WARNING) << "basic result";
+              print_tensor(tout_basic_fp32);
+              LOG(WARNING) << "lite result";
+              print_tensor(*param_fp32_out.output);
+              Tensor tdiff;
+              tdiff.Resize(tout_basic_fp32.dims());
+              tdiff.set_precision(PRECISION(kFloat));
+              tensor_diff(tout_basic_fp32, *param_fp32_out.output, tdiff);
+              print_tensor(tdiff);
+              release_param(&param_int8_out);
+              release_param(&param_fp32_out);
+              LOG(FATAL) << "test int8 conv, fp32 out: input: " << dim_in
+                         << ", output: " << dim_out
+                         << ", weight dim: " << weight_dim
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
+                         << ", stride: " << strides[0] << ", " << strides[1]
+                         << ", dila_: " << dilas[0] << ", " << dilas[1]
+                         << ", group: " << group
+                         << ", bias: " << (flag_bias ? "true" : "false")
+                         << ", act: " << flag_act << ", threads: " << th
+                         << ", power_mode: " << cls << " failed!!\n";
+            }
+          }
+        }
+        // compare result int8 output
+        if (FLAGS_check_result) {
+          double max_ratio = 0;
+          double max_diff = 0;
+          // ! int8
+          tensor_cmp_host(
+              tout_basic_int8, *param_int8_out.output, max_ratio, max_diff);
+          LOG(INFO) << "int8 compare result, max diff: " << max_diff
+                    << ", max ratio: " << max_ratio;
+          if (fabs(max_diff) > 0) {
             Tensor tdiff;
-            tdiff.Resize(tout_basic_fp32.dims());
-            tdiff.set_precision(PRECISION(kFloat));
-            tensor_diff(tout_basic_fp32, *param_fp32_out.output, tdiff);
-            print_tensor(tdiff);
-            release_param(&param_int8_out);
-            release_param(&param_fp32_out);
-            LOG(FATAL) << "test int8 conv, fp32 out: input: " << dim_in
-                       << ", output: " << dim_out
-                       << ", weight dim: " << weight_dim << ", pad: " << pads[0]
-                       << ", " << pads[1] << ", " << pads[2] << ", " << pads[3]
-                       << ", stride: " << strides[0] << ", " << strides[1]
-                       << ", dila_: " << dilas[0] << ", " << dilas[1]
-                       << ", group: " << group
-                       << ", bias: " << (flag_bias ? "true" : "false")
-                       << ", act: " << flag_act << ", threads: " << th
-                       << ", power_mode: " << cls << " failed!!\n";
-          }
-        }
-      }
-      // compare result int8 output
-      if (FLAGS_check_result) {
-        double max_ratio = 0;
-        double max_diff = 0;
-        // ! int8
-        tensor_cmp_host(
-            tout_basic_int8, *param_int8_out.output, max_ratio, max_diff);
-        LOG(INFO) << "int8 compare result, max diff: " << max_diff
-                  << ", max ratio: " << max_ratio;
-        if (fabs(max_diff) > 0) {
-          Tensor tdiff;
-          tdiff.Resize(tout_basic_int8.dims());
-          tdiff.set_precision(PRECISION(kInt8));
-          tensor_diff(tout_basic_int8, *param_int8_out.output, tdiff);
-          auto ptr = tdiff.data<int8_t>();
-          auto ptr_basic_fp32 = tout_basic_fp32.data<float>();
-          float count = 0;
-          bool check = true;
-          for (int i = 0; i < tdiff.numel(); ++i) {
-            if (abs(ptr[i]) > 1) {
-              check = false;
-              LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
-                         << ", after scale: "
-                         << ptr_basic_fp32[i] / scale_out[0];
-              break;
+            tdiff.Resize(tout_basic_int8.dims());
+            tdiff.set_precision(PRECISION(kInt8));
+            tensor_diff(tout_basic_int8, *param_int8_out.output, tdiff);
+            auto ptr = tdiff.data<int8_t>();
+            auto ptr_basic_fp32 = tout_basic_fp32.data<float>();
+            float count = 0;
+            bool check = true;
+            for (int i = 0; i < tdiff.numel(); ++i) {
+              if (abs(ptr[i]) > 1) {
+                check = false;
+                LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
+                           << ", after scale: "
+                           << ptr_basic_fp32[i] / scale_out[0];
+                break;
+              }
+              if (ptr[i] != 0) {
+                LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
+                           << ", after scale: "
+                           << ptr_basic_fp32[i] / scale_out[0];
+                count += 1;
+              }
             }
-            if (ptr[i] != 0) {
-              LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
-                         << ", after scale: "
-                         << ptr_basic_fp32[i] / scale_out[0];
-              count += 1;
+            check =
+                check &&
+                count < std::max(10, static_cast<int>(0.01 * tdiff.numel()));
+            if (!check) {
+              LOG(WARNING) << "int8 basic result";
+              print_tensor(tout_basic_int8);
+              LOG(WARNING) << "int8 lite result";
+              print_tensor(*param_int8_out.output);
+              LOG(WARNING) << "int8 diff tensor";
+              print_tensor(tdiff);
+              release_param(&param_int8_out);
+              release_param(&param_fp32_out);
+              LOG(FATAL) << "test int8 conv, int8 out: input: " << dim_in
+                         << ", output: " << dim_out
+                         << ", weight dim: " << weight_dim
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
+                         << ", stride: " << strides[0] << ", " << strides[1]
+                         << ", dila_: " << dilas[0] << ", " << dilas[1]
+                         << ", bias: " << (flag_bias ? "true" : "false")
+                         << ", act: " << flag_act << ", threads: " << th
+                         << ", power_mode: " << cls << " failed!!\n";
             }
           }
-          check = check &&
-                  count < std::max(10, static_cast<int>(0.01 * tdiff.numel()));
-          if (!check) {
-            LOG(WARNING) << "int8 basic result";
-            print_tensor(tout_basic_int8);
-            LOG(WARNING) << "int8 lite result";
-            print_tensor(*param_int8_out.output);
-            LOG(WARNING) << "int8 diff tensor";
-            print_tensor(tdiff);
-            release_param(&param_int8_out);
-            release_param(&param_fp32_out);
-            LOG(FATAL) << "test int8 conv, int8 out: input: " << dim_in
-                       << ", output: " << dim_out
-                       << ", weight dim: " << weight_dim << ", pad: " << pads[0]
-                       << ", " << pads[1] << ", " << pads[2] << ", " << pads[3]
-                       << ", stride: " << strides[0] << ", " << strides[1]
-                       << ", dila_: " << dilas[0] << ", " << dilas[1]
-                       << ", bias: " << (flag_bias ? "true" : "false")
-                       << ", act: " << flag_act << ", threads: " << th
-                       << ", power_mode: " << cls << " failed!!\n";
-          }
         }
+        LOG(INFO) << "test int8 conv: input: " << dim_in
+                  << ", output: " << dim_out << ", weight dim: " << weight_dim
+                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
+                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
+                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", bias: " << (flag_bias ? "true" : "false")
+                  << ", act: " << flag_act << ", threads: " << th
+                  << ", power_mode: " << cls << " successed!!\n";
       }
-      LOG(INFO) << "test int8 conv: input: " << dim_in
-                << ", output: " << dim_out << ", weight dim: " << weight_dim
-                << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
-                << ", " << pads[3] << ", stride: " << strides[0] << ", "
-                << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
-                << ", bias: " << (flag_bias ? "true" : "false")
-                << ", act: " << flag_act << ", threads: " << th
-                << ", power_mode: " << cls << " successed!!\n";
     }
   }
   release_param(&param_int8_out);
   release_param(&param_fp32_out);
 }
 #else
-void test_conv_int8(const DDim& dims_in,
+void test_conv_int8(const std::vector<DDim>& input_dims,
                     const DDim& weight_dim,
                     int group,
                     const std::vector<int>& strides,
@@ -486,24 +491,25 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
         for (auto& flag_bias : {false, true}) {
           for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 3, 5, 8, 16, 32}) {
+              std::vector<DDim> dims;
               DDim weights_dim({c, 1, 3, 3});
               for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 3, 15, 33}) {
-                  DDim dims({batch, c, h, h});
-                  test_conv_int8(dims,
-                                 weights_dim,
-                                 c,
-                                 {stride, stride},
-                                 {pad, pad, pad, pad},
-                                 {1, 1},
-                                 flag_bias,
-                                 flag_act,
-                                 {4},
-                                 {FLAGS_power_mode},
-                                 FLAGS_clipped_coef,
-                                 FLAGS_leakey_relu_alpha);
+                for (auto& h : {33, 1, 15, 3}) {
+                  dims.push_back(DDim({batch, c, h, h}));
                 }
               }
+              test_conv_int8(dims,
+                             weights_dim,
+                             c,
+                             {stride, stride},
+                             {pad, pad, pad, pad},
+                             {1, 1},
+                             flag_bias,
+                             flag_act,
+                             {4},
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -522,23 +528,24 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
           for (auto& flag_act : {0, 1, 2, 4}) {
             for (auto& c : {1, 5, 15, 33}) {
               DDim weights_dim({c, 1, 5, 5});
+              std::vector<DDim> dims;
               for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 3, 15, 33, 112, 224}) {
-                  DDim dims({batch, c, h, h});
-                  test_conv_int8(dims,
-                                 weights_dim,
-                                 c,
-                                 {stride, stride},
-                                 {pad, pad, pad, pad},
-                                 {1, 1},
-                                 flag_bias,
-                                 flag_act,
-                                 {4},
-                                 {FLAGS_power_mode},
-                                 FLAGS_clipped_coef,
-                                 FLAGS_leakey_relu_alpha);
+                for (auto& h : {224, 1, 112, 3, 33, 15}) {
+                  dims.push_back(DDim({batch, c, h, h}));
                 }
               }
+              test_conv_int8(dims,
+                             weights_dim,
+                             c,
+                             {stride, stride},
+                             {pad, pad, pad, pad},
+                             {1, 1},
+                             flag_bias,
+                             flag_act,
+                             {4},
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -559,24 +566,26 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
               if (cin % g != 0 || cout % g != 0) {
                 continue;
               }
+
               DDim weights_dim({cout, cin / g, 1, 1});
+              std::vector<DDim> dims;
               for (auto& batch : {1, 2}) {
-                for (auto& h : {1, 9, 16, 33}) {
-                  DDim dims({batch, cin, h, h});
-                  test_conv_int8(dims,
-                                 weights_dim,
-                                 g,
-                                 {1, 1},
-                                 {0, 0, 0, 0},
-                                 {1, 1},
-                                 flag_bias,
-                                 flag_act,
-                                 {4},
-                                 {FLAGS_power_mode},
-                                 FLAGS_clipped_coef,
-                                 FLAGS_leakey_relu_alpha);
+                for (auto& h : {33, 1, 16, 9}) {
+                  dims.push_back(DDim({batch, cin, h, h}));
                 }
               }
+              test_conv_int8(dims,
+                             weights_dim,
+                             g,
+                             {1, 1},
+                             {0, 0, 0, 0},
+                             {1, 1},
+                             flag_bias,
+                             flag_act,
+                             {4},
+                             {FLAGS_power_mode},
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
             }
           }
         }
@@ -598,26 +607,28 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
                 for (auto& flag_bias : {false, true}) {
                   for (auto& flag_act : {0, 1}) {
                     DDim weights_dim({cout, cin, 3, 3});
+                    std::vector<DDim> dims;
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {1, 7, 17, 33}) {
-                        DDim dims({batch, cin, h, h});
+                      for (auto& h : {33, 1, 17, 7}) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
-                        test_conv_int8(
-                            dims,
-                            weights_dim,
-                            1,
-                            {1, 1},
-                            {pad_top, pad_bottom, pad_left, pad_right},
-                            {1, 1},
-                            flag_bias,
-                            flag_act,
-                            {4},
-                            {FLAGS_power_mode},
-                            FLAGS_clipped_coef,
-                            FLAGS_leakey_relu_alpha);
+                        dims.push_back(DDim({batch, cin, h, h}));
                       }
+                    }
+                    if (dims.size() != 0) {
+                      test_conv_int8(dims,
+                                     weights_dim,
+                                     1,
+                                     {1, 1},
+                                     {pad_top, pad_bottom, pad_left, pad_right},
+                                     {1, 1},
+                                     flag_bias,
+                                     flag_act,
+                                     {4},
+                                     {FLAGS_power_mode},
+                                     FLAGS_clipped_coef,
+                                     FLAGS_leakey_relu_alpha);
                     }
                   }
                 }
@@ -643,24 +654,24 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
                 for (auto& flag_bias : {false, true}) {
                   for (auto& flag_act : {0, 1, 2, 4}) {
                     DDim weights_dim({cout, cin, 3, 3});
+                    std::vector<DDim> dims;
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {1, 7, 19, 33}) {
-                        DDim dims({batch, cin, h, h});
-                        test_conv_int8(
-                            dims,
-                            weights_dim,
-                            1,
-                            {2, 2},
-                            {pad_top, pad_bottom, pad_left, pad_right},
-                            {1, 1},
-                            flag_bias,
-                            flag_act,
-                            {4},
-                            {FLAGS_power_mode},
-                            FLAGS_clipped_coef,
-                            FLAGS_leakey_relu_alpha);
+                      for (auto& h : {33, 1, 19, 7, 33}) {
+                        dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
+                    test_conv_int8(dims,
+                                   weights_dim,
+                                   1,
+                                   {2, 2},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_act,
+                                   {4},
+                                   {FLAGS_power_mode},
+                                   FLAGS_clipped_coef,
+                                   FLAGS_leakey_relu_alpha);
                   }
                 }
               }
@@ -693,26 +704,25 @@ TEST(TestConvRandInt8, test_conv_rand) {
                                 break;
                               }
                               DDim weights_dim({cout, cin / g, kh, kw});
+                              std::vector<DDim> dims;
                               for (auto& batch : {1, 2}) {
-                                for (auto& h : {1, 3, 5, 19}) {
-                                  DDim dims({batch, cin, h, h});
-                                  test_conv_int8(dims,
-                                                 weights_dim,
-                                                 g,
-                                                 {stride, stride},
-                                                 {pad_top,
-                                                  pad_bottom,
-                                                  pad_left,
-                                                  pad_right},
-                                                 {dila, dila},
-                                                 flag_bias,
-                                                 flag_act,
-                                                 {4},
-                                                 {FLAGS_power_mode},
-                                                 FLAGS_clipped_coef,
-                                                 FLAGS_leakey_relu_alpha);
+                                for (auto& h : {1, 64, 3, 18, 5, 19}) {
+                                  dims.push_back(DDim({batch, cin, h, h}));
                                 }
                               }
+                              test_conv_int8(
+                                  dims,
+                                  weights_dim,
+                                  g,
+                                  {stride, stride},
+                                  {pad_top, pad_bottom, pad_left, pad_right},
+                                  {dila, dila},
+                                  flag_bias,
+                                  flag_act,
+                                  {4},
+                                  {FLAGS_power_mode},
+                                  FLAGS_clipped_coef,
+                                  FLAGS_leakey_relu_alpha);
                             }
                           }
                         }
@@ -736,21 +746,23 @@ TEST(TestConvCustomInt8, test_conv_custom_size) {
       << "input channel must be divided by group";
   CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)
       << "num_output must be divided by group";
-  test_conv_int8(
-      {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
-      DDim({FLAGS_out_channel,
-            FLAGS_in_channel / FLAGS_group,
-            FLAGS_kernel_h,
-            FLAGS_kernel_w}),
-      FLAGS_group,
-      {FLAGS_stride_h, FLAGS_stride_w},
-      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
-      {FLAGS_dila_h, FLAGS_dila_w},
-      FLAGS_flag_bias,
-      FLAGS_flag_act,
-      {FLAGS_threads},
-      {FLAGS_power_mode},
-      FLAGS_clipped_coef,
-      FLAGS_leakey_relu_alpha);
+  std::vector<DDim> dims;
+  dims.push_back(
+      DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width}));
+  test_conv_int8(dims,
+                 DDim({FLAGS_out_channel,
+                       FLAGS_in_channel / FLAGS_group,
+                       FLAGS_kernel_h,
+                       FLAGS_kernel_w}),
+                 FLAGS_group,
+                 {FLAGS_stride_h, FLAGS_stride_w},
+                 {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
+                 {FLAGS_dila_h, FLAGS_dila_w},
+                 FLAGS_flag_bias,
+                 FLAGS_flag_act,
+                 {FLAGS_threads},
+                 {FLAGS_power_mode},
+                 FLAGS_clipped_coef,
+                 FLAGS_leakey_relu_alpha);
 }
 #endif  // custom

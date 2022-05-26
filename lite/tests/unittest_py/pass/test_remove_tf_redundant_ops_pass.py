@@ -33,9 +33,12 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         #OpenCL outdiff
-        '''        
+        # '''        
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -50,7 +53,7 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
+        # '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -62,12 +65,16 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             st.sampled_from(
                 ["RemoveReshape2Pattern", "RemoveSqueeze2Reshape2Pattern"]))
         if pick_test == "RemoveReshape2Pattern":
+            max_dim_size = 5
+            # OpenCL dose not support > 4 dims
+            if (self.get_target() == 'OpenCL'):
+                max_dim_size = 4
             in_shape = draw(
                 st.lists(
                     st.integers(
                         min_value=2, max_value=30),
                     min_size=2,
-                    max_size=5))
+                    max_size=max_dim_size))
             input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
             assume(input_axis < len(in_shape))
             print()

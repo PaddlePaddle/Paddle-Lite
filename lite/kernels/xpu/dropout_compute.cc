@@ -30,14 +30,14 @@ void DropoutCompute::Run() {
   } else {
     scale = 1.0f - param.dropout_prob;
   }
-  int r =
-      xdnn::scale(ctx.GetRawContext(), /* context */
-                  param.x->numel(),
-                  scale,
-                  0.0f,
-                  0,
-                  param.x->data<float>(),                           /* src */
-                  param.output->mutable_data<float>(TARGET(kXPU))); /* dst */
+  int r = xdnn::scale<float>(
+      ctx.GetRawContext(),                             /* context */
+      param.x->data<float>(),                          /* src */
+      param.output->mutable_data<float>(TARGET(kXPU)), /* dst */
+      param.x->numel(),
+      false,
+      scale,
+      0.0f);
   CHECK_EQ(r, 0);
 }
 
@@ -53,6 +53,7 @@ REGISTER_LITE_KERNEL(dropout,
                      paddle::lite::kernels::xpu::DropoutCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

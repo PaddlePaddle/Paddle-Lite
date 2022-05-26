@@ -28,25 +28,17 @@ import numpy as np
 class TestStackOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        '''
-        # The selection of TargetType errors.
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        '''
         self.enable_testing_on_place(
             TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_dtype = program_config.inputs["stack_input1"].dtype
-        if predictor_config.target() == TargetType.X86:
-            if x_dtype != np.float32:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -54,10 +46,13 @@ class TestStackOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
         input_axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
-        axis = input_axis if input_axis >= 0 else input_axis + len(in_shape)
-        assume(axis < len(in_shape))
+        assume(input_axis >= -(len(in_shape) + 1))
+        assume(input_axis < (len(in_shape) + 1))
+        target_str = self.get_target()
+        if target_str == "NNAdapter":
+            assume(input_type != "int64")
 
         def generate_input1(*args, **kwargs):
             if input_type == "float32":
@@ -107,7 +102,17 @@ class TestStackOp(AutoScanTest):
         return self.get_predictor_configs(), ["stack"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["stack_input1"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(in_shape) == 1 or axis == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

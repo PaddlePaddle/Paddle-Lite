@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/fusion/fc_fuser.h"
+#include <cmath>
 #include <memory>
 #include <vector>
 
@@ -23,14 +24,13 @@ namespace fusion {
 
 void FcFuser::BuildPattern() {
   auto inputs_teller0 = [](const Node* node) -> bool {
-    return true;
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     auto input_w_name = op_desc.Input("Y").front();
     auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
     auto w_shape = scope->FindVar(input_w_name)->Get<lite::Tensor>().dims();
     size_t w_rank = w_shape.size();
-
-    return w_rank == 2;
+    bool res = w_rank == 2;
+    return res;
   };
 
   auto inputs_teller1 = [](const Node* node) -> bool {
@@ -39,18 +39,45 @@ void FcFuser::BuildPattern() {
     auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
     auto b_shape = scope->FindVar(input_b_name)->Get<lite::Tensor>().dims();
     size_t b_rank = b_shape.size();
-    return b_rank == 2 || b_rank == 1;
+    auto res = (b_rank == 2 || b_rank == 1);
+    return res;
   };
-
+  auto input_attr_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("transpose_X");
+    bool trans_y = op_desc.GetAttr<bool>("transpose_Y");
+    // assert alpha = 1.0f
+    auto alpha = op_desc.GetAttr<float>("alpha");
+    bool has_alpha = (fabsf(alpha - 1.f) > 1e-8f);
+    auto res = (trans_x == false && trans_y == false && !has_alpha);
+    return res;
+  };
+  auto input_attr_teller_v2 = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    bool trans_x = op_desc.GetAttr<bool>("trans_x");
+    bool trans_y = op_desc.GetAttr<bool>("trans_y");
+    bool has_alpha = false;
+    if (op_desc.HasAttr("alpha")) {
+      auto alpha = op_desc.GetAttr<float>("alpha");
+      has_alpha = (fabsf(alpha - 1.f) > 1e-8f);
+    }
+    bool res = (trans_x == false && trans_y == false && !has_alpha);
+    return res;
+  };
   // create nodes.
-  auto* x = VarNode("x")->assert_is_op_input("mul", "X");
-  auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
+  auto* x = VarNode("x")->assert_is_op_input(op_type_, "X");
+  auto* W = VarNode("W")->assert_is_op_input(op_type_, "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
-  auto* mul = OpNode("mul", "mul")->assert_node_satisfied(inputs_teller0);
+  auto* mul = OpNode("mul", op_type_)->assert_node_satisfied(inputs_teller0);
   auto* mul_out = VarNode("mul_out");
   auto* add =
       OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
+  if (op_type_ == "matmul") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller);
+  } else if (op_type_ == "matmul_v2") {
+    mul = OpNode("mul", op_type_)->assert_node_satisfied(input_attr_teller_v2);
+  }
 
   // create topology.
   std::vector<PMNode*> mul_inputs{W, x};
@@ -62,7 +89,7 @@ void FcFuser::BuildPattern() {
   mul->AsIntermediate();
   add->AsIntermediate();
 
-  if (with_relu_) {
+  if (act_type_ == "relu") {
     auto* add_out = VarNode("add_out");
     auto* relu = OpNode("relu", "relu");
     std::vector<PMNode*> relu_inputs{add_out};
@@ -70,6 +97,14 @@ void FcFuser::BuildPattern() {
     relu_inputs >> *relu >> *Out;
     add_out->AsIntermediate();
     relu->AsIntermediate();
+  } else if (act_type_ == "relu6") {
+    auto* add_out = VarNode("add_out");
+    auto* relu6 = OpNode("relu6", "relu6");
+    std::vector<PMNode*> relu6_inputs{add_out};
+    add_inputs >> *add >> *add_out;
+    relu6_inputs >> *relu6 >> *Out;
+    add_out->AsIntermediate();
+    relu6->AsIntermediate();
   } else {
     add_inputs >> *add >> *Out;
   }
@@ -129,11 +164,22 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetInput("W", {matched.at("W")->arg()->name});
   op_desc.SetInput("Bias", {matched.at("b")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-  op_desc.SetAttr(
-      "in_num_col_dims",
-      matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
-  if (with_relu_) {
+  if (op_type_ == "mul") {
+    op_desc.SetAttr(
+        "in_num_col_dims",
+        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+  } else {
+    op_desc.SetAttr("in_num_col_dims", 1);
+  }
+  op_desc.SetAttr("op_type", op_type_);
+
+  if (act_type_ == "relu") {
     op_desc.SetAttr("activation_type", std::string{"relu"});
+  } else if (act_type_ == "relu6") {
+    op_desc.SetAttr("activation_type", std::string{"relu6"});
+    auto relu6_desc = *matched.at("relu6")->stmt()->op_info();
+    auto alpha = relu6_desc.GetAttr<float>("threshold");
+    op_desc.SetAttr("alpha", alpha);
   }
 
   // Set the input scale into fc

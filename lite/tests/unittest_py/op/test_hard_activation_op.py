@@ -41,10 +41,29 @@ class TestHardActivationOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
         self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
+        self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -54,6 +73,9 @@ class TestHardActivationOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -110,7 +132,14 @@ class TestHardActivationOp(AutoScanTest):
                                                                           rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if program_config.ops[0].type == "hard_sigmoid":
+                    return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "NNAdapter tensorrt will support hard_sigmoid later.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
