@@ -81,12 +81,39 @@ int Program::Build(core::Model* model, core::Cache* cache) {
                       << runtime_core_->get_versions(device_name);
   InitializeDeviceConfig(
       device_name, runtime_core_, context_->GetDeviceConfig());
-  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
+  if (cache->buffer.empty()) {
+    BuildFromModel(model);
+  } else {
+    BuildFromCache(cache);
+  }
+  // Cache model.
+  if (cache->buffer.empty()) {
+    std::stringstream model_stream;
+    compiled_model_->export_model(model_stream);
+    NNADAPTER_VLOG(3) << "NNAdapter model cache size(bytes):"
+                      << model_stream.str().size();
+    cache->buffer.resize(model_stream.str().size());
+    memcpy(reinterpret_cast<char*>(cache->buffer.data()),
+           model_stream.str().data(),
+           model_stream.str().size());
+  }
+  return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  NNADAPTER_LOG(FATAL) << "Build from cache is unimpleted.";
-  return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  NNADAPTER_CHECK(!cache->buffer.empty());
+  input_types_ = cache->input_types;
+  output_types_ = cache->output_types;
+  std::stringstream model_stream;
+  model_stream.write(reinterpret_cast<char*>(cache->buffer.data()),
+                     cache->buffer.size());
+  NNADAPTER_VLOG(3) << "NNAdapter model cache size(bytes):"
+                    << model_stream.str().size();
+  compiled_model_ =
+      std::make_shared<ov::CompiledModel>(runtime_core_->import_model(
+          model_stream, context_->GetFirtSelectedDeviceName()));
+  NNADAPTER_VLOG(3) << "Build from cache success.";
+  return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromModel(core::Model* model) {
