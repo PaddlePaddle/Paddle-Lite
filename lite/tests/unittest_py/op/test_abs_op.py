@@ -47,6 +47,11 @@ class TestAbsOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        xpu_places = [
+            Place(TargetType.XPU, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=xpu_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
