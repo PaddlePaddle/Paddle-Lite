@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/operators/fill_constant_op.h"
+
 #include "lite/core/op_registry.h"
-#include "lite/operators/reshape_op.h"
 
 namespace paddle {
 namespace lite {
@@ -44,6 +44,7 @@ bool FillConstantOp::InferShapeImpl() const {
     LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
                   "shape_tensor_list, or shape.";
   }
+
   param_.out->Resize(out_shape);
   return true;
 }

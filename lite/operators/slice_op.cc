@@ -22,15 +22,12 @@ namespace lite {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
-  LOG(INFO) << "start CheckShape:";
-  LOG(INFO) << "start CheckShape:" << param_.X;
-  LOG(INFO) << "start CheckShape:" << param_.XTensorList;
-  LOG(INFO) << "start CheckShape:" << param_.Out;
-  LOG(INFO) << "start CheckShape:" << param_.OutTensorList;
   CHECK(!(param_.X == nullptr && param_.XTensorList == nullptr));
   CHECK(!(param_.Out == nullptr && param_.OutTensorList == nullptr));
-  // CHECK_LT(param_.X->dims().size(), 7u)
-  //     << "The rank of input X should be less than 7";
+  if (param_.X) {
+    CHECK_LT(param_.X->dims().size(), 7u)
+        << "The rank of input X should be less than 7";
+  }
   return true;
 }
 
@@ -41,8 +38,8 @@ bool SliceOp::InferShapeImpl() const {
   } else if (param_.X) {
     auto in_dims = param_.X->dims();
     auto out_dims = in_dims;
-    // CHECK_EQ(param_.starts.size(), param_.ends.size())
-    //    << "for slice op starts and ends must be equal";
+    CHECK_EQ(param_.starts.size(), param_.ends.size())
+        << "for slice op starts and ends must be equal";
     int dim_value, start, end;
     auto axes = param_.axes;
     auto starts = param_.starts;
@@ -92,8 +89,8 @@ bool SliceOp::InferShapeImpl() const {
     if (axes[0] != 0) {
       param_.Out->set_lod(param_.X->lod());
     }
-    LOG(INFO) << "x_dims: " << in_dims.repr();
-    LOG(INFO) << "out_dims: " << out_dims.repr();
+  } else {
+    LOG(FATAL) << "x or x_array must be set.";
   }
   return true;
 }
