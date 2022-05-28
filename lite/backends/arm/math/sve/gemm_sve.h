@@ -27,11 +27,8 @@ namespace sve {
 
 const int KBLOCK_SVE = 2;
 const int MBLOCK_SVE = 8;
-#ifdef ENABLE_ARM_FP16
-const int NBLOCK_SVE = 16;
-#else
-const int NBLOCK_SVE = 12;
-#endif
+const int NBLOCK_SVE_FP16 = 16;
+const int NBLOCK_SVE_FP32 = 12;
 
 inline int get_hblock_sve(ARMContext* ctx, int m) {
   if (m <= 4) {
@@ -61,20 +58,20 @@ void prepackA_sve_float(TensorLite* tout,
                         bool is_trans,
                         ARMContext* ctx);
 
-void sgemm_prepack_sve_float(bool is_transB,
-                             int M,
-                             int N,
-                             int K,
-                             const float* A_packed,
-                             const float* B,
-                             int ldb,
-                             float beta,
-                             float* C,
-                             int ldc,
-                             const float* bias,
-                             bool has_bias,
-                             const operators::ActivationParam act_param,
-                             ARMContext* ctx);
+void sgemm_prepacked_8x12_sve(bool is_transB,
+                              int M,
+                              int N,
+                              int K,
+                              const float* A_packed,
+                              const float* B,
+                              int ldb,
+                              float beta,
+                              float* C,
+                              int ldc,
+                              const float* bias,
+                              bool has_bias,
+                              const operators::ActivationParam act_param,
+                              ARMContext* ctx);
 template <typename Dtype>
 void sgemm_prepack_sve(bool is_transB,
                        int M,
