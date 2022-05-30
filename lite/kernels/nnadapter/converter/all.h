@@ -49,7 +49,7 @@ REGISTER_CONVERTER(deformable_conv,
 REGISTER_CONVERTER(dropout,
                    ConvertDropout,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
-                   "nvidia_tensorrt,cambricon_mlu");
+                   "nvidia_tensorrt,cambricon_mlu,intel_openvino");
 REGISTER_CONVERTER(
     pool2d,
     ConvertPool,
@@ -64,7 +64,7 @@ REGISTER_CONVERTER(matmul,
 REGISTER_CONVERTER(matmul_v2,
                    ConvertMatmulV2,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,intel_"
-                   "openvino,android_nnapi,nvidia_tensorrt");
+                   "openvino,android_nnapi,nvidia_tensorrt,intel_openvino");
 REGISTER_CONVERTER(
     softmax,
     ConvertSoftmax,
