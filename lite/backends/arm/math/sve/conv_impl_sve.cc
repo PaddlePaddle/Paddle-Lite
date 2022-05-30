@@ -62,7 +62,7 @@ void conv1x1s1_gemm_sve(const Dtype* i_data,
 
   auto act_param = param.activation_param;
 
-  int hblock = get_hblock_sve(ctx, m);
+  int hblock = get_hblock_sve(ctx, m, sizeof(Dtype));
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
   if (n > 1 && m > 1) {
@@ -159,7 +159,7 @@ void conv_im2col_gemm_sve(const float* i_data,
   int channel_size_in = win * ih;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  int hblock = get_hblock_sve(ctx, m);
+  int hblock = get_hblock_sve(ctx, m, 4);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
 
@@ -245,7 +245,7 @@ void conv_im2col_gemm_sve(const float16_t* i_data,
   int channel_size_in = win * ih;
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
-  int hblock = get_hblock_sve(ctx, m);
+  int hblock = get_hblock_sve(ctx, m, 2);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
 

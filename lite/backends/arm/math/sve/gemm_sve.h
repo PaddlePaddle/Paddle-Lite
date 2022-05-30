@@ -30,33 +30,20 @@ const int MBLOCK_SVE = 8;
 const int NBLOCK_SVE_FP16 = 16;
 const int NBLOCK_SVE_FP32 = 12;
 
-inline int get_hblock_sve(ARMContext* ctx, int m) {
+inline int get_hblock_sve(ARMContext* ctx, int m, int dytpe) {
   if (m <= 4) {
     return 4;
   } else {
-    return MBLOCK_SVE;
+    if (dtype == 2) {
+      return NBLOCK_SVE_FP16;
+    } else if (dtype == 4) {
+      return NBLOCK_SVE_FP32;
+    } else {
+      LOG(FATAL) << "This dtype: " << dtype << " doesn't support";
+      return -1;
+    }
   }
 }
-
-void prepackA_sve_fp32(void* out,
-                       const void* in,
-                       float alpha,
-                       int ldin,
-                       int m0,
-                       int mmax,
-                       int k0,
-                       int kmax,
-                       bool is_trans,
-                       ARMContext* ctx);
-
-void prepackA_sve_float(TensorLite* tout,
-                        const TensorLite& tin,
-                        float alpha,
-                        int m,
-                        int k,
-                        int group,
-                        bool is_trans,
-                        ARMContext* ctx);
 
 void sgemm_prepacked_8x12_sve(bool is_transB,
                               int M,
