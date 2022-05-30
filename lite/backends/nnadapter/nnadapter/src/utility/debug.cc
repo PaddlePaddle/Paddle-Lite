@@ -332,6 +332,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_MAX:
       case NNADAPTER_REDUCE_SUM:
         input_args = {"input", "axes", "keep_dim"};
         output_args = {"output"};
