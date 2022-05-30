@@ -76,7 +76,6 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
@@ -396,6 +395,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   // Verify if the ops version of current runtime program is
   // the same with that in models.
   CheckPaddleOpVersions(program_desc);
+
+  // Update the runtime program to program_desc only once
+  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
 }
 
 void Predictor::GenRuntimeProgram() {

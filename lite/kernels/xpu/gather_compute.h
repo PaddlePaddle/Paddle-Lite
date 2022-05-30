@@ -60,3 +60,5 @@ typedef paddle::lite::kernels::xpu::GatherCompute<int64_t,
                                                   int32_t,
                                                   PRECISION(kInt64)>
     GatherXPUInt64Int32;
+typedef paddle::lite::kernels::xpu::GatherCompute<int64_t, int64_t>
+    GatherXPUInt64Int64;

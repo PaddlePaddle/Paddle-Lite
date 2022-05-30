@@ -299,7 +299,7 @@ print(output_data)
 
 ## 四、使用 Paddle Lite 预测库和 C++ 接口预测部署
 
-存储好的模型可以使用 Paddle-Lite C++ 接口执行预测部署，具体可以参考文档 [ c++ 完整示例](../cpp_demo)
+存储好的模型可以使用 Paddle-Lite C++ 接口执行预测部署，具体可以参考文档 [ c++ 完整示例](../user_guides/cpp_demo.md)
 
 ## 附录
 PaddlePaddle 提供了丰富的计算单元，使得用户可以采用模块化的方法解决各种学习问题，一些常见的模型可在此仓库获 [ PaddlePaddle/models ](https://github.com/PaddlePaddle/models)

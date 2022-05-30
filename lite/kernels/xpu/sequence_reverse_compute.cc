@@ -23,8 +23,6 @@ namespace xpu {
 
 template <typename T>
 void SequenceReverseCompute<T>::PrepareForRun() {
-  lod_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
@@ -41,7 +39,7 @@ void SequenceReverseCompute<T>::Run() {
   size_t ele_cnt_in_4_byte = limit / x->dims()[0];
   auto* x_data = x->template data<T>();
   auto* y_data = y->template mutable_data<T>(TARGET(kXPU));
-  int batch_size = lod.size() - 1;
+  int lod_len = lod.size();
 
   if (std::is_same<T, uint8_t>::value) {
     ele_cnt_in_4_byte /= 4;
@@ -58,18 +56,12 @@ void SequenceReverseCompute<T>::Run() {
   for (size_t i = 0; i < lod.size(); ++i) {
     lod_cpu[i] = lod[i];
   }
-  int* lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  XPU_CALL(xpu_memcpy(lod_xpu,
-                      lod_cpu.get(),
-                      lod.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r =
       xdnn::sequence_reverse<float, int>(ctx.GetRawContext(),
                                          reinterpret_cast<const float*>(x_data),
-                                         lod_xpu,
                                          reinterpret_cast<float*>(y_data),
-                                         batch_size,
+                                         {lod_cpu.get(), lod_len, nullptr},
                                          ele_cnt_in_4_byte);
 
   CHECK_EQ(r, 0);

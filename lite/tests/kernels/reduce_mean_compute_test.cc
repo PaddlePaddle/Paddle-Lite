@@ -388,6 +388,8 @@ TEST(ReduceMean, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_err = 1e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_err = 1e-1;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_err = 1e-3;

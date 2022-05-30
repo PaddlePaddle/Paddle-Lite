@@ -36,7 +36,8 @@ class TestExpandV2Op(AutoScanTest):
             DataLayoutType.Any,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -51,6 +52,10 @@ class TestExpandV2Op(AutoScanTest):
 
         #todo daming5432 input vector tensor
         with_expand_shape = draw(st.booleans())
+
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            with_Shape = False
+            with_expand_shape = False
 
         def generate_shape(*args, **kwargs):
             return np.array(Shape).astype(np.int32)

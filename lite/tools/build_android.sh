@@ -29,6 +29,8 @@ WITH_LOG=ON
 WITH_EXCEPTION=OFF
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -102,7 +104,6 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
-  WITH_NNADAPTER=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -268,6 +269,7 @@ function make_tiny_publish_so {
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
@@ -361,6 +363,7 @@ function make_full_publish_so {
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
@@ -397,13 +400,15 @@ function print_usage {
     echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
-    echo -e "|     --with_convert_to_ssa: (OFF|ON); controls whether to modify input model graph which is not DAG to SSA graph, default is OFF           |"
+    echo -e "|     --with_convert_to_ssa: (OFF|ON); controls whether to modify input model graph which is not DAG to SSA graph, default is OFF      |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to support time profile, default is OFF                                               |"
     echo -e "|     --with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF                                |"
     echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
     echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo -e "|     --android_api_level: (16~27); control android api level, default is 16 on armv7 and 21 on armv8. You could set a specific        |"
     echo -e "|             android_api_level as you need.                                                                                           |"
     echo -e "|                       | Paddle-Lite Requird / ARM ABI      | armv7 | armv8 |                                                         |"
@@ -649,6 +654,10 @@ function main {
                 ;;
             --with_convert_to_ssa=*)
                 WITH_CONVERT_TO_SSA="${i#*=}"
+                shift
+                ;;
+            --with_arm8_sve2=*)
+                WITH_ARM8_SVE2="${i#*=}"
                 shift
                 ;;
             help)

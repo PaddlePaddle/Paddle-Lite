@@ -41,6 +41,21 @@ if(ANDROID)
         endif()
     endif()
 
+    if(LITE_WITH_ARM8_SVE2)
+        if ((ARM_TARGET_ARCH_ABI STREQUAL "armv8"))
+          if (${ANDROID_NDK_MAJOR})
+            if(${ANDROID_NDK_MAJOR} GREATER_EQUAL "23")
+                set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -march=armv8.2-a+sve2")
+                set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -march=armv8.2-a+sve2")
+            else()
+                message(FATAL_ERROR "NDK VERSION: ${ANDROID_NDK_MAJOR}, however it must be greater equal 23 when sve2 is ON")
+            endif()
+          endif()
+        else()
+        message(FATAL_ERROR "The arm_abi is ${ARM_TARGET_ARCH_ABI}, the arm_abi must be armv8 when sve2 is ON")
+        endif()
+    endif()
+
     if(LITE_WITH_ARM82_INT8_SDOT)
         if(${ANDROID_NDK_MAJOR})
             if(${ANDROID_NDK_MAJOR} GREATER "17")
@@ -207,6 +222,10 @@ if(ANDROID)
 endif()
   
 if(IOS)
+    if(LITE_WITH_ARM82_FP16)
+      set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+fp16")
+    endif()
     set(CROSS_COMPILE_CMAKE_ARGS ${CROSS_COMPILE_CMAKE_ARGS}
         "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
         "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"

@@ -1548,6 +1548,27 @@ typedef enum {
   NNADAPTER_REDUCE_MEAN,
 
   /**
+   * Computes the max of the input tensor’s element along the provided `axes`.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, represents the dimension
+   * along which reduce operation will be performed, if `axes` is empty,
+   * `output` is calculated over all elements of `input`, should be in range
+   * [-R, R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension, defaults to true.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_REDUCE_MAX,
+
+  /**
    * Computes the sum of the input tensor’s element along the provided `axes`.
    *
    * Inputs:

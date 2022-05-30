@@ -16,7 +16,6 @@
 #include "operation/hard_sigmoid_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace intel_openvino {
