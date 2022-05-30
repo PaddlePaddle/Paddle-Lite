@@ -680,8 +680,6 @@ void gemv_fp16(const float16_t *A,
   float16x8_t voffset = vdupq_n_f16(offset);
   float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
-  LOG(INFO) << "paddle-lite gemv FP16 M: " << M << ", N: " << N;
-  LOG(INFO) << "out_cnt: " << out_cnt;
 
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
@@ -698,7 +696,6 @@ void gemv_fp16(const float16_t *A,
     const float16_t *ptr_w6 = ptr_w5 + N;
     const float16_t *ptr_w7 = ptr_w6 + N;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
-    LOG(INFO) << "j: " << j;
     if (j == out_cnt - 1 && remain) {
       ptr_acquire_norm<float16_t>(ptr_zero,
                                   ptr_w0,
