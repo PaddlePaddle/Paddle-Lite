@@ -22,12 +22,12 @@ namespace lite {
 namespace operators {
 
 bool ReverseOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X || param_.X_array);
-  CHECK_OR_FALSE(param_.Out || param_.Out_array);
+  CHECK(param_.X || param_.X_array);
+  CHECK(param_.Out || param_.Out_array);
   if (param_.X) {
     for (auto axis : param_.Axis) {
-      CHECK_OR_FALSE(axis < static_cast<int>((param_.X)->dims().size()));
-      CHECK_OR_FALSE(axis >= static_cast<int>(-(param_.X)->dims().size()));
+      CHECK_LT(axis, static_cast<int>((param_.X)->dims().size()));
+      CHECK_GE(axis, static_cast<int>(-(param_.X)->dims().size()));
     }
   }
   return true;
@@ -38,6 +38,9 @@ bool ReverseOpLite::InferShapeImpl() const {
     param_.Out->Resize(param_.X->dims());
   } else if (param_.X_array) {
     param_.Out_array->resize(param_.X_array->size());
+    for (size_t i = 0; i < param_.X_array->size(); i++) {
+      param_.Out_array->at(i).Resize(param_.X_array->at(i).dims());
+    }
   } else {
     LOG(FATAL) << "x or x_array must be set.";
   }
