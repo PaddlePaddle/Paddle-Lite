@@ -39,8 +39,6 @@ void SearchGrnnCompute::Run() {
   auto* wi = param.wi;
   auto* wh = param.wh;
   auto* top = param.out;
-  auto* tmp_buffer = param.tmp_buffer;
-  auto* layout_input = param.layout_input;
   int cap_h = param.num_hidden;
   int cap_e = param.num_input;
   int cap_l = bottom->dims()[0];

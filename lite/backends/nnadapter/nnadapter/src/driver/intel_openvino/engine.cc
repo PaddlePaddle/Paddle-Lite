@@ -49,7 +49,7 @@ Context::Context(void* device, const char* properties) : device_(device) {
   for (auto& selected_device_name : selected_device_names_) {
     NNADAPTER_LOG(INFO) << selected_device_name;
   }
-  // INTEL_OPENVINO_CPU_INFERENCE_NUM_THREADS
+  // INTEL_OPENVINO_INFERENCE_NUM_THREADS.
   int inference_threads_num = -1;
   if (key_values.count(INTEL_OPENVINO_INFERENCE_NUM_THREADS)) {
     inference_threads_num =
