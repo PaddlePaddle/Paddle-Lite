@@ -93,6 +93,11 @@ class SSAGraph : GraphBase {
 
   std::string dump();
 
+#ifdef LITE_WITH_XPU
+  void CopyScope(const Scope *scope) { scope_ = scope; }
+  const Scope *GetScope() const { return scope_; }
+#endif
+
  private:
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.
@@ -128,6 +133,9 @@ class SSAGraph : GraphBase {
   std::vector<Place> valid_places_;
   int block_idx_ = kRootBlockIdx;
   int num_node_created_ = 0;
+#ifdef LITE_WITH_XPU
+  const Scope *scope_;
+#endif
 };
 
 // Remove the link between a -> b.
