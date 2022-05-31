@@ -63,13 +63,13 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
 - Khadas VIM3 开发板（SoC 为 Amlogic A311D）
 
-   <img src="https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/khadas_vim3.jpg" alt="A311D" style="zoom: 20%;" />
+   <img src="https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/khadas_vim3.jpg" alt="A311D" style="zoom: 30%;" />
 
   
 
 - Khadas VIM3L 开发板（SoC 为 Amlogic S905D3)
 
-   <img src="https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/khadas_vim3l_android.jpg" alt="A311D" style="zoom: 20%;" />
+   <img src="https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/khadas_vim3l.jpg" alt="S905D3" style="zoom: 60%;" />
 
 ### 准备设备环境
 
@@ -80,13 +80,13 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     - 方法一 ：刷机，根据具体的开发板型号，向开发板卖家或官网客服索要 6.4.4.3 版本 NPU 驱动对应的固件和刷机方法。
       - 在此额外提供 khadas 开发板 VIM3|VIM3L 的 6.4.4.3 固件以及官方教程链接：
         - 刷机镜像（包含 NPU 驱动文件和芯原相关依赖库，分别提供 khadas 官方服务器下载地址，和飞桨服务器的下载地址，均可下载使用）：
-          - VIM3 Android：VIM3_Pie_V210908:[官方链接](https://dl.khadas.com/Firmware/VIM3/Android/VIM3_Pie_V210908.7z)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Pie_V210908.7z)
-          - VIM3 Linux：VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625:[官方链接](http://dl.khadas.com/firmware/VIM3/Ubuntu/EMMC/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
-          - VIM3L Android：VIM3L_Pie_V210906:[官方链接](https://dl.khadas.com/Firmware/VIM3L/Android/VIM3L_Pie_V210906.7z)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Pie_V210906.7z)
-          - VIM3L Linux：VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625:[官方链接](https://dl.khadas.com/Firmware/VIM3L/Ubuntu/EMMC/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
+          - VIM3 Android：VIM3_Pie_V210908：[官方链接](https://dl.khadas.com/Firmware/VIM3/Android/VIM3_Pie_V210908.7z)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Pie_V210908.7z)
+          - VIM3 Linux：VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625：[官方链接](http://dl.khadas.com/firmware/VIM3/Ubuntu/EMMC/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3/VIM3_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
+          - VIM3L Android：VIM3L_Pie_V210906：[官方链接](https://dl.khadas.com/Firmware/VIM3L/Android/VIM3L_Pie_V210906.7z)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Pie_V210906.7z)
+          - VIM3L Linux：VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625：[官方链接](https://dl.khadas.com/Firmware/VIM3L/Ubuntu/EMMC/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)；[百度云备用链接](https://paddlelite-demo.bj.bcebos.com/devices/verisilicon/firmware/khadas/vim3l/VIM3L_Ubuntu-gnome-focal_Linux-4.9_arm64_EMMC_V1.0.7-210625.img.xz)
         - 官方刷机教程：[VIM3/3L Android 文档](https://docs.khadas.com/android/zh-cn/vim3/) , [VIM3/3L Linux 文档](https://docs.khadas.com/linux/zh-cn/vim3)，其中有详细描述刷机方法。
       - 其余开发板用户可向开发板卖家或官网客服索要 6.4.4.3 版本 NPU 驱动对应的固件和刷机方法。
-    - 方法二：手动替换驱动文件和依赖库，在[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中的指定目录下找到不同版本、不同芯片型号的 Linux Kernel 驱动和预编译库：（详细目录树结构可以参考后文『运行图像分类示例程序』）：。
+    - 方法二：手动替换驱动文件和依赖库，在[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中的指定目录下找到不同版本、不同芯片型号的 Linux Kernel 驱动和预编译库：（详细目录树结构可以参考后文『运行图像分类示例程序』）：
       - 如果您的开发板是 Linux 系统，驱动和预编译库存放在 PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx 目录。
       - 如果您的开发板是 Android 系统，驱动和预编译库存放在 PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx 目录。
       - 第一步，执行 ./switch_viv_sdk.sh 6_4_4_3 {SoC型号}，以s905d3芯片为例：./switch_viv_sdk.sh 6_4_4_3 s905d3。请注意当前我们提供的是 linux 系统下 A311D、S905D3，以及 Android 系统下 A311D、S905D3 的 NPU 驱动和相关依赖库。
@@ -104,24 +104,24 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
     - 可通过 `dmesg | grep Galcore` 查询系统版本：
 
-    ```shell
-    $ dmesg | grep Galcore
-    [   24.140820] Galcore version 6.4.4.3.310723AAA
-    ```
+      ```shell
+      $ dmesg | grep Galcore
+      [   24.140820] Galcore version 6.4.4.3.310723AAA
+      ```
 
 - S905D3(Android 版本)
 
    - 需要驱动版本为 6.4.4.3（修改驱动方法请参考前一个小节『确定开发板 NPU 驱动版本』）。
    - 注意是 32 位系统。
    - `adb root + adb remount` 以获得修改系统库的权限。
+
+      ```shell
+      $ dmesg | grep Galcore
+      [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
+      ```
    
-    ```shell
-    $ dmesg | grep Galcore
-    [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
-    ```
-   
-   - 示例程序和 Paddle Lite 库的编译需要采用交叉编译方式，通过 `adb`或`ssh` 进行设备的交互和示例程序的运行。
-   
+- 示例程序和 Paddle Lite 库的编译建议采用交叉编译方式，通过 `adb`或`ssh` 进行设备的交互和示例程序的运行。
+
 
 ### 准备交叉编译环境
 
