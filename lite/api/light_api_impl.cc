@@ -80,6 +80,9 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
   Context<TargetType::kNNAdapter>::SetNNAdapterDynamicShapeInfo(
       raw_predictor_->scope(), config.nnadapter_dynamic_shape_info());
+  // Reset model cache buffer to reduce momory consumption.
+  config.reset_nnadapter_model_cache_buffers();
+
 #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \

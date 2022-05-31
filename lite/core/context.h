@@ -193,7 +193,7 @@ class Context<TargetType::kNNAdapter> {
     if (!var) return false;
     auto data = var->GetMutable<std::vector<char>>();
     *model_cache_buffer = *data;
-    // Reset to reduce memory consumption
+    // Reset to reduce memory consumption.
     std::vector<char>().swap(*data);
     return true;
   }

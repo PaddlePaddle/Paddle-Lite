@@ -174,7 +174,8 @@ class LITE_API ConfigBase {
   std::map<std::string, std::vector<std::vector<int64_t>>>
       nnadapter_dynamic_shape_info_;
   // The buffers for loading the compiled NNAdapter models from memory.
-  std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
+  mutable std::map<std::string, std::vector<char>>
+      nnadapter_model_cache_buffers_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -323,6 +324,14 @@ class LITE_API ConfigBase {
   nnadapter_model_cache_buffers() const {
     return nnadapter_model_cache_buffers_;
   }
+  // Reset NNAdapter model cache buffer.
+  void reset_nnadapter_model_cache_buffers() const {
+    for (auto& model_cache_buffer : nnadapter_model_cache_buffers_) {
+      std::vector<char>().swap(model_cache_buffer.second);
+    }
+    nnadapter_model_cache_buffers_.clear();
+  }
+
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }

@@ -138,6 +138,8 @@ bool Program::LoadFromCache(const std::string& model_cache_token,
                                                   model_cache_dir.c_str(),
                                                   context_,
                                                   &compilation_);
+  // Release cache buffer to reduce memory consumption.
+  std::vector<char>().swap(*model_cache_buffer);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Warning: Failed to create a compilation from the model "
                     "cache buffer ("
