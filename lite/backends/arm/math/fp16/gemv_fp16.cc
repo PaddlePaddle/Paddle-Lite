@@ -722,7 +722,6 @@ void gemv_fp16(const float16_t *A,
 
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
-  LOG(INFO) << "gemv_fp16 M: " << M << ", N: " << N;
 #ifdef __aarch64__
   int out_cnt = M >> 3;
   int remain = M & 7;
@@ -730,7 +729,6 @@ void gemv_fp16(const float16_t *A,
   float16x8_t voffset = vdupq_n_f16(offset);
   float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
-  LOG(INFO) << "out_cnt: " << out_cnt;
 
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
@@ -747,7 +745,6 @@ void gemv_fp16(const float16_t *A,
     const float16_t *ptr_w6 = ptr_w5 + N;
     const float16_t *ptr_w7 = ptr_w6 + N;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
-    LOG(INFO) << "j: " << j;
     if (j == out_cnt - 1 && remain) {
       switch (8 - remain) {
         case 7:
@@ -798,7 +795,6 @@ void gemv_fp16(const float16_t *A,
     // 8x16
     int cnt_col = cnt;
     asm volatile(GEMV_INIT GEMV_COMPUTE STORE : GEMV_ASM_PARAMS);
-    LOG(INFO) << "asm end";
     if (remain > 0) {
       for (int i = 0; i < remain; i++) {
         out_ptr[i] = out_p[i];
@@ -806,7 +802,6 @@ void gemv_fp16(const float16_t *A,
     }
   }
   LITE_PARALLEL_END();
-  LOG(INFO) << "gemv fp16 end";
 #else
   int out_cnt = M >> 2;
   int remain = M & 3;
