@@ -39,6 +39,13 @@ class ReverseOpLite : public OpLite {
 
   std::string DebugString() const override { return "reverse"; }
 
+  bool InferType() override {
+    if (param_.X) {
+      param_.Out->set_precision(param_.X->precision());
+    }
+    return true;
+  }
+
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     auto input_dims = param_.X->dims();
