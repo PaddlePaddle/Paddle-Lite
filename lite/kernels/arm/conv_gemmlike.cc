@@ -103,12 +103,11 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<float>();
-  bool has_sve2 = ctx.has_sve2();
-  if (flag_trans_weights_ && !has_sve2) {
+  if (flag_trans_weights_) {
     weights = weights_.data<float>();
   }
   const float* bias = param.bias ? param.bias->data<float>() : nullptr;
-  if (flag_trans_bias_ && !has_sve2) {
+  if (flag_trans_bias_) {
     bias = bias_.data<float>();
   }
   auto din = param.x->data<float>();
@@ -125,29 +124,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-#ifdef LITE_WITH_ARM8_SVE2
-  if (flag_1x1gemm_) {
-    if (has_sve2) {
-      lite::arm::math::sve::conv1x1s1_gemm_sve(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    } else {
-      lite::arm::math::conv1x1s1_gemm(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    }
-    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp32")
-    return;
-  } else {
-    if (has_sve2) {
-      lite::arm::math::sve::conv_im2col_gemm_sve(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    } else {
-      lite::arm::math::conv_im2col_gemm(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    }
-    KERNEL_FUNC_NAME("conv_im2col_gemm_fp32")
-    return;
-  }
-#endif
+ 
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
@@ -252,6 +229,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
+ 
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm_int8(din,
                                          dout,
@@ -299,12 +277,11 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<float16_t>();
-  bool has_sve2 = ctx.has_sve2();
-  if (flag_trans_weights_ && !has_sve2) {
+  if (flag_trans_weights_) {
     weights = weights_.data<float16_t>();
   }
   const float16_t* bias = param.bias ? param.bias->data<float16_t>() : nullptr;
-  if (flag_trans_bias_ && !has_sve2) {
+  if (flag_trans_bias_) {
     bias = bias_.data<float16_t>();
   }
   auto din = param.x->data<float16_t>();
@@ -321,29 +298,7 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-#ifdef LITE_WITH_ARM8_SVE2
-  if (flag_1x1gemm_) {
-    if (has_sve2) {
-      lite::arm::math::sve::conv1x1s1_gemm_sve(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    } else {
-      lite::arm::math::fp16::conv1x1s1_gemm_fp16(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    }
-    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp16")
-    return;
-  } else {
-    if (has_sve2) {
-      lite::arm::math::sve::conv_im2col_gemm_sve(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    } else {
-      lite::arm::math::fp16::conv_im2col_gemm_fp16(
-          din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    }
-    KERNEL_FUNC_NAME("conv_im2col_gemm_fp16")
-    return;
-  }
-#endif
+
   if (flag_1x1gemm_) {
     lite::arm::math::fp16::conv1x1s1_gemm_fp16(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
