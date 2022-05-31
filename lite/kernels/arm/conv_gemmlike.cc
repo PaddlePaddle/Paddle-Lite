@@ -124,7 +124,6 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
- 
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
@@ -229,7 +228,6 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
- 
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm_int8(din,
                                          dout,
@@ -298,7 +296,6 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-
   if (flag_1x1gemm_) {
     lite::arm::math::fp16::conv1x1s1_gemm_fp16(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
