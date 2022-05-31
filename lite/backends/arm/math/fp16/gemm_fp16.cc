@@ -230,13 +230,13 @@ void prepackA_8x16(float16_t *out,
     const float16_t *inptr7 = inptr6 + ldin;
     if ((y + 7) >= mmax) {
       ptr_acquire_a8<float16_t>(zerobuff,
-                                inptr1,
-                                inptr2,
-                                inptr3,
-                                inptr4,
-                                inptr5,
-                                inptr6,
-                                inptr7,
+                                &inptr1,
+                                &inptr2,
+                                &inptr3,
+                                &inptr4,
+                                &inptr5,
+                                &inptr6,
+                                &inptr7,
                                 (y + 7),
                                 mmax);
     }
@@ -581,13 +581,13 @@ void prepackA_8x16(float16_t *out,
     const float16_t *inptr7 = inptr6 + ldin;
     if ((y + 7) >= mmax) {
       ptr_acquire_a8<float16_t>(zerobuff,
-                                inptr1,
-                                inptr2,
-                                inptr3,
-                                inptr4,
-                                inptr5,
-                                inptr6,
-                                inptr7,
+                                &inptr1,
+                                &inptr2,
+                                &inptr3,
+                                &inptr4,
+                                &inptr5,
+                                &inptr6,
+                                &inptr7,
                                 (y + 7),
                                 mmax);
     }

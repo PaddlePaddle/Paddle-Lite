@@ -520,51 +520,27 @@ void gemv_fp16_trans(const float16_t *A,
     const float16_t *ptr_w6 = ptr_w5 + M;
     const float16_t *ptr_w7 = ptr_w6 + M;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
-    switch (8 - rem_n) {
-      case 7:
-        ptr_w1 = ptr_zero;
-      case 6:
-        ptr_w2 = ptr_zero;
-      case 5:
-        ptr_w3 = ptr_zero;
-      case 4:
-        ptr_w4 = ptr_zero;
-      case 3:
-        ptr_w5 = ptr_zero;
-      case 2:
-        ptr_w6 = ptr_zero;
-      case 1:
-        ptr_w7 = ptr_zero;
-        break;
-      default:
-        break;
-    }
+    ptr_acquire_norm<float16_t>(ptr_zero,
+                                &ptr_w0,
+                                &ptr_w1,
+                                &ptr_w2,
+                                &ptr_w3,
+                                &ptr_w4,
+                                &ptr_w5,
+                                &ptr_w6,
+                                &ptr_w7,
+                                rem_n);
     if (j == out_cnt - 1 && remain) {
-      switch (8 - remain) {
-        case 7:
-          ptr_w0 = data_in;
-          break;
-        case 6:
-          ptr_w1 = data_in;
-          break;
-        case 5:
-          ptr_w2 = data_in;
-          break;
-        case 4:
-          ptr_w3 = data_in;
-          break;
-        case 3:
-          ptr_w4 = data_in;
-          break;
-        case 2:
-          ptr_w5 = data_in;
-          break;
-        case 1:
-          ptr_w6 = data_in;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_remain<float16_t>(data_in,
+                                    &ptr_w0,
+                                    &ptr_w1,
+                                    &ptr_w2,
+                                    &ptr_w3,
+                                    &ptr_w4,
+                                    &ptr_w5,
+                                    &ptr_w6,
+                                    &ptr_w7,
+                                    remain);
       out_p = out_temp;
     }
     // 8x8
@@ -607,51 +583,27 @@ void gemv_fp16_trans(const float16_t *A,
     for (int i = 0; i < 8; i++) {
       alpha_ptr[32 + i] = bias_ptr[out_idx + i];
     }
-    switch (8 - rem_n) {
-      case 7:
-        ptr_w1 = ptr_zero;
-      case 6:
-        ptr_w2 = ptr_zero;
-      case 5:
-        ptr_w3 = ptr_zero;
-      case 4:
-        ptr_w4 = ptr_zero;
-      case 3:
-        ptr_w5 = ptr_zero;
-      case 2:
-        ptr_w6 = ptr_zero;
-      case 1:
-        ptr_w7 = ptr_zero;
-        break;
-      default:
-        break;
-    }
+    ptr_acquire_norm<float16_t>(ptr_zero,
+                                &ptr_w0,
+                                &ptr_w1,
+                                &ptr_w2,
+                                &ptr_w3,
+                                &ptr_w4,
+                                &ptr_w5,
+                                &ptr_w6,
+                                &ptr_w7,
+                                rem_n);
     if (j == out_cnt - 1 && remain) {
-      switch (8 - remain) {
-        case 7:
-          ptr_w0 = data_in;
-          break;
-        case 6:
-          ptr_w1 = data_in;
-          break;
-        case 5:
-          ptr_w2 = data_in;
-          break;
-        case 4:
-          ptr_w3 = data_in;
-          break;
-        case 3:
-          ptr_w4 = data_in;
-          break;
-        case 2:
-          ptr_w5 = data_in;
-          break;
-        case 1:
-          ptr_w6 = data_in;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_remain<float16_t>(data_in,
+                                    &ptr_w0,
+                                    &ptr_w1,
+                                    &ptr_w2,
+                                    &ptr_w3,
+                                    &ptr_w4,
+                                    &ptr_w5,
+                                    &ptr_w6,
+                                    &ptr_w7,
+                                    remain);
       out_p = out_temp;
     }
     // 8x8
@@ -746,51 +698,27 @@ void gemv_fp16(const float16_t *A,
     const float16_t *ptr_w7 = ptr_w6 + N;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
     if (j == out_cnt - 1 && remain) {
-      switch (8 - remain) {
-        case 7:
-          ptr_w1 = ptr_zero;
-        case 6:
-          ptr_w2 = ptr_zero;
-        case 5:
-          ptr_w3 = ptr_zero;
-        case 4:
-          ptr_w4 = ptr_zero;
-        case 3:
-          ptr_w5 = ptr_zero;
-        case 2:
-          ptr_w6 = ptr_zero;
-        case 1:
-          ptr_w7 = ptr_zero;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_norm<float16_t>(ptr_zero,
+                                  &ptr_w0,
+                                  &ptr_w1,
+                                  &ptr_w2,
+                                  &ptr_w3,
+                                  &ptr_w4,
+                                  &ptr_w5,
+                                  &ptr_w6,
+                                  &ptr_w7,
+                                  remain);
       out_p = out_temp;
-      switch (8 - remain) {
-        case 7:
-          ptr_w0 = ptr_w;
-          break;
-        case 6:
-          ptr_w1 = ptr_w;
-          break;
-        case 5:
-          ptr_w2 = ptr_w;
-          break;
-        case 4:
-          ptr_w3 = ptr_w;
-          break;
-        case 3:
-          ptr_w4 = ptr_w;
-          break;
-        case 2:
-          ptr_w5 = ptr_w;
-          break;
-        case 1:
-          ptr_w6 = ptr_w;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_remain<float16_t>(ptr_w,
+                                    &ptr_w0,
+                                    &ptr_w1,
+                                    &ptr_w2,
+                                    &ptr_w3,
+                                    &ptr_w4,
+                                    &ptr_w5,
+                                    &ptr_w6,
+                                    &ptr_w7,
+                                    remain);
     }
     // 8x16
     int cnt_col = cnt;
@@ -825,31 +753,11 @@ void gemv_fp16(const float16_t *A,
     const float16_t *ptr_w3 = ptr_w2 + N;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
     if (j == out_cnt - 1 && remain) {
-      switch (4 - remain) {
-        case 3:
-          ptr_w1 = ptr_zero;
-        case 2:
-          ptr_w2 = ptr_zero;
-        case 1:
-          ptr_w3 = ptr_zero;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_norm_four<float16_t>(
+          ptr_zero, &ptr_w0, &ptr_w1, &ptr_w2, &ptr_w3, remain);
       out_p = out_temp;
-      switch (4 - remain) {
-        case 3:
-          ptr_w0 = ptr_w;
-          break;
-        case 2:
-          ptr_w1 = ptr_w;
-          break;
-        case 1:
-          ptr_w2 = ptr_w;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_remain_four<float16_t>(
+          ptr_w, &ptr_w0, &ptr_w1, &ptr_w2, &ptr_w3, remain);
     }
     // 4x16
     int cnt_col = cnt;
