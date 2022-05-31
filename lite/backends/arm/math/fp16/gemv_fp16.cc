@@ -639,8 +639,6 @@ void gemv_fp16(const float16_t *A,
   }
   int Nup = (N + 15) / 16 * 16;
   int Mup = (M + 7) / 8 * 8;
-  auto size = (Mup + Nup * 3);
-  ctx->ExtendWorkspace(size * sizeof(float16_t));
   auto ptr_zero = ctx->workspace_data<float16_t>();
   memset(ptr_zero, 0, Nup * sizeof(float16_t));
   auto bias_ptr = ptr_zero + Nup;
