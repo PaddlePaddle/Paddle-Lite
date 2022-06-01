@@ -317,7 +317,7 @@ void gemv_fp16_trans(const float16_t *A,
   LITE_PARALLEL_BEGIN(j, tid, cnt_n) {
     int y_index = j * 8;
     const float16_t *ptr_in = ptr_w + y_index;
-     const float16_t* inptr_row[8];
+    const float16_t *inptr_row[8];
     inptr_row[0] = x + y_index * M;
     for (int i = 1; i < 8; i++) {
       inptr_row[i] = inptr_row[i - 1] + M;
@@ -325,80 +325,114 @@ void gemv_fp16_trans(const float16_t *A,
     float16_t *out_ptr = y;
     if (j == cnt_n - 1 && rem_n) {
       ptr_acquire_norm<float16_t>(ptr_zero,
-                                &inptr_row[0],
-                                &inptr_row[1],
-                                &inptr_row[2],
-                                &inptr_row[3],
-                                &inptr_row[4],
-                                &inptr_row[5],
-                                &inptr_row[6],
-                                &inptr_row[7],
-                                rem_n);
+                                  &inptr_row[0],
+                                  &inptr_row[1],
+                                  &inptr_row[2],
+                                  &inptr_row[3],
+                                  &inptr_row[4],
+                                  &inptr_row[5],
+                                  &inptr_row[6],
+                                  &inptr_row[7],
+                                  rem_n);
     }
     for (int i = 0; i < out_cnt; i++) {
-      // 1x8 + 8x8 = 1x8
+// 1x8 + 8x8 = 1x8
 #ifdef __aarch64__
       asm volatile(
-        "ld1 {v0.8h}, [%[ptr_in]]\n"
-        "ld1 {v9.8h}, [%[out_ptr]]    \n"
-        "ld1 {v1.8h}, [%[ptr_w0]], #16\n"
-        "ld1 {v2.8h}, [%[ptr_w1]], #16\n"
-        "ld1 {v3.8h}, [%[ptr_w2]], #16\n"
-        "ld1 {v4.8h}, [%[ptr_w3]], #16\n"
-        "ld1 {v5.8h}, [%[ptr_w4]], #16\n"
-        "fmla v9.8h,  v1.8h, v0.h[0]   \n"
-        "ld1 {v6.8h}, [%[ptr_w5]], #16\n"
-        "fmul v10.8h, v2.8h, v0.h[1]   \n"
-        "ld1 {v7.8h}, [%[ptr_w6]], #16\n"
-        "fmul v11.8h, v3.8h, v0.h[2]   \n"
-        "ld1 {v8.8h}, [%[ptr_w7]], #16\n"
-        "fmul v12.8h, v4.8h, v0.h[3]   \n"
-        "fmla v9.8h,  v5.8h, v0.h[4]   \n"
-        "fmla v10.8h, v6.8h, v0.h[5]   \n"
-        "fmla v11.8h, v7.8h, v0.h[6]   \n"
-        "fmla v12.8h, v8.8h, v0.h[7]   \n"
-        "fadd v0.8h,  v9.8h,  v10.8h   \n"
-        "fadd v1.8h,  v11.8h, v12.8h   \n"
-        "fadd v2.8h,  v0.8h,  v1.8h    \n"
-        "st1  {v2.8h}, [%[out_ptr]]    \n"
-        : [ptr_w0] "+r"(inptr_row[0]), [ptr_w1] "+r"(inptr_row[1]),
-          [ptr_w2] "+r"(inptr_row[2]), [ptr_w3] "+r"(inptr_row[3]), [ptr_w4] "+r"(inptr_row[4]),
-          [ptr_w5] "+r"(inptr_row[5]), [ptr_w6] "+r"(inptr_row[6]), [ptr_w7] "+r"(inptr_row[7])
-        : [ptr_in] "r"(ptr_in), [out_ptr] "r"(out_ptr)
-        : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-          "v8", "v9", "v10", "v11", "v12"
-      );
+          "ld1 {v0.8h}, [%[ptr_in]]\n"
+          "ld1 {v9.8h}, [%[out_ptr]]    \n"
+          "ld1 {v1.8h}, [%[ptr_w0]], #16\n"
+          "ld1 {v2.8h}, [%[ptr_w1]], #16\n"
+          "ld1 {v3.8h}, [%[ptr_w2]], #16\n"
+          "ld1 {v4.8h}, [%[ptr_w3]], #16\n"
+          "ld1 {v5.8h}, [%[ptr_w4]], #16\n"
+          "fmla v9.8h,  v1.8h, v0.h[0]   \n"
+          "ld1 {v6.8h}, [%[ptr_w5]], #16\n"
+          "fmul v10.8h, v2.8h, v0.h[1]   \n"
+          "ld1 {v7.8h}, [%[ptr_w6]], #16\n"
+          "fmul v11.8h, v3.8h, v0.h[2]   \n"
+          "ld1 {v8.8h}, [%[ptr_w7]], #16\n"
+          "fmul v12.8h, v4.8h, v0.h[3]   \n"
+          "fmla v9.8h,  v5.8h, v0.h[4]   \n"
+          "fmla v10.8h, v6.8h, v0.h[5]   \n"
+          "fmla v11.8h, v7.8h, v0.h[6]   \n"
+          "fmla v12.8h, v8.8h, v0.h[7]   \n"
+          "fadd v0.8h,  v9.8h,  v10.8h   \n"
+          "fadd v1.8h,  v11.8h, v12.8h   \n"
+          "fadd v2.8h,  v0.8h,  v1.8h    \n"
+          "st1  {v2.8h}, [%[out_ptr]]    \n"
+          : [ptr_w0] "+r"(inptr_row[0]),
+            [ptr_w1] "+r"(inptr_row[1]),
+            [ptr_w2] "+r"(inptr_row[2]),
+            [ptr_w3] "+r"(inptr_row[3]),
+            [ptr_w4] "+r"(inptr_row[4]),
+            [ptr_w5] "+r"(inptr_row[5]),
+            [ptr_w6] "+r"(inptr_row[6]),
+            [ptr_w7] "+r"(inptr_row[7])
+          : [ptr_in] "r"(ptr_in), [out_ptr] "r"(out_ptr)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12");
 #else
-       asm volatile(
-        "vld1.16 {d0-d1},   [%[ptr_in]]\n"
-        "vld1.16 {d18-d19}, [%[out_ptr]]\n"
-        "vld1.16 {d2-d3},   [%[ptr_w0]]! \n"
-        "vld1.16 {d4-d5},   [%[ptr_w1]]!\n"
-        "vld1.16 {d6-d7},   [%[ptr_w2]]!\n"
-        "vld1.16 {d8-d9},   [%[ptr_w3]]!\n"
-        "vld1.16 {d10-d11}, [%[ptr_w4]]!\n"
-        "vmla.f16 q9,  q1,  d0[0]      \n"
-        "vld1.16 {d12-d13}, [%[ptr_w5]]!\n"
-        "vmul.f16 q10, q2,  d0[1]      \n"
-        "vld1.16 {d14-d15}, [%[ptr_w6]]!\n"
-        "vmul.f16 q11, q3,  d0[2]      \n"
-        "vld1.16 {d2-d3},   [%[ptr_w7]]! \n"
-        "vmul.f16 q12, q4,  d0[3]      \n"
-        "vmla.f16 q9,  q5,  d1[0]      \n"
-        "vmla.f16 q10, q6,  d1[1]      \n"
-        "vmla.f16 q11, q7,  d1[2]      \n"
-        "vmla.f16 q12, q1,  d1[3]      \n"
-        "vadd.f16 q0,  q9,  q10        \n"
-        "vadd.f16 q1,  q11, q12        \n"
-        "vadd.f16 q2,  q0,  q1         \n"
-        "vst1.16  {d4-d5}, [%[out_ptr]]    \n"
-        : [ptr_w0] "+r"(inptr_row[0]), [ptr_w1] "+r"(inptr_row[1]),
-          [ptr_w2] "+r"(inptr_row[2]), [ptr_w3] "+r"(inptr_row[3]), [ptr_w4] "+r"(inptr_row[4]),
-          [ptr_w5] "+r"(inptr_row[5]), [ptr_w6] "+r"(inptr_row[6]), [ptr_w7] "+r"(inptr_row[7])
-        : [ptr_in] "r"(ptr_in), [out_ptr] "r"(out_ptr)
-        : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-          "q8", "q9", "q10", "q11", "q12"
-      );
+      asm volatile(
+          "vld1.16 {d0-d1},   [%[ptr_in]]\n"
+          "vld1.16 {d18-d19}, [%[out_ptr]]\n"
+          "vld1.16 {d2-d3},   [%[ptr_w0]]! \n"
+          "vld1.16 {d4-d5},   [%[ptr_w1]]!\n"
+          "vld1.16 {d6-d7},   [%[ptr_w2]]!\n"
+          "vld1.16 {d8-d9},   [%[ptr_w3]]!\n"
+          "vld1.16 {d10-d11}, [%[ptr_w4]]!\n"
+          "vmla.f16 q9,  q1,  d0[0]      \n"
+          "vld1.16 {d12-d13}, [%[ptr_w5]]!\n"
+          "vmul.f16 q10, q2,  d0[1]      \n"
+          "vld1.16 {d14-d15}, [%[ptr_w6]]!\n"
+          "vmul.f16 q11, q3,  d0[2]      \n"
+          "vld1.16 {d2-d3},   [%[ptr_w7]]! \n"
+          "vmul.f16 q12, q4,  d0[3]      \n"
+          "vmla.f16 q9,  q5,  d1[0]      \n"
+          "vmla.f16 q10, q6,  d1[1]      \n"
+          "vmla.f16 q11, q7,  d1[2]      \n"
+          "vmla.f16 q12, q1,  d1[3]      \n"
+          "vadd.f16 q0,  q9,  q10        \n"
+          "vadd.f16 q1,  q11, q12        \n"
+          "vadd.f16 q2,  q0,  q1         \n"
+          "vst1.16  {d4-d5}, [%[out_ptr]]    \n"
+          : [ptr_w0] "+r"(inptr_row[0]),
+            [ptr_w1] "+r"(inptr_row[1]),
+            [ptr_w2] "+r"(inptr_row[2]),
+            [ptr_w3] "+r"(inptr_row[3]),
+            [ptr_w4] "+r"(inptr_row[4]),
+            [ptr_w5] "+r"(inptr_row[5]),
+            [ptr_w6] "+r"(inptr_row[6]),
+            [ptr_w7] "+r"(inptr_row[7])
+          : [ptr_in] "r"(ptr_in), [out_ptr] "r"(out_ptr)
+          : "cc",
+            "memory",
+            "q0",
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12");
 #endif
       if (j == cnt_n - 1) {
         for (int k = 0; k < 8; k++) {
@@ -406,9 +440,13 @@ void gemv_fp16_trans(const float16_t *A,
           if (flag_act == 1) {
             out_ptr[k] = out_ptr[k] > 0.f ? out_ptr[k] : 0.f;
           } else if (flag_act == 2) {
-            out_ptr[k] = out_ptr[k] > 0.f ? (out_ptr[k] < local_alpha ? out_ptr[k] : local_alpha) : 0.f;
+            out_ptr[k] =
+                out_ptr[k] > 0.f
+                    ? (out_ptr[k] < local_alpha ? out_ptr[k] : local_alpha)
+                    : 0.f;
           } else if (flag_act == 3) {
-            out_ptr[k] = out_ptr[k] > 0.f ?  out_ptr[k] : out_ptr[k] * local_alpha;
+            out_ptr[k] =
+                out_ptr[k] > 0.f ? out_ptr[k] : out_ptr[k] * local_alpha;
           } else if (flag_act == 4) {
             auto tmp0 = out_ptr[k] + offset;
             auto tmp1 = out_ptr[k] * local_alpha;
@@ -429,17 +467,20 @@ void gemv_fp16_trans(const float16_t *A,
         sum += bias_ptr[out_cnt * 8 + i];
         *out_ptr += sum;
         if (flag_act == 1) {
-            out_ptr[0] = out_ptr[0] > 0.f ? out_ptr[0] : 0.f;
-          } else if (flag_act == 2) {
-            out_ptr[0] = out_ptr[0] > 0.f ? (out_ptr[0] < local_alpha ? out_ptr[0] : local_alpha) : 0.f;
-          } else if (flag_act == 3) {
-            out_ptr[0] = out_ptr[0] > 0.f ?  out_ptr[0] : out_ptr[0] * local_alpha;
-          } else if (flag_act == 4) {
-            auto tmp0 = out_ptr[0] + offset;
-            auto tmp1 = out_ptr[0] * local_alpha;
-            tmp0 = tmp0 > 0.f ? (tmp0 < threshold ? tmp0 : threshold) : 0.f;
-            out_ptr[0] = tmp0 * tmp1;
-          }
+          out_ptr[0] = out_ptr[0] > 0.f ? out_ptr[0] : 0.f;
+        } else if (flag_act == 2) {
+          out_ptr[0] =
+              out_ptr[0] > 0.f
+                  ? (out_ptr[0] < local_alpha ? out_ptr[0] : local_alpha)
+                  : 0.f;
+        } else if (flag_act == 3) {
+          out_ptr[0] = out_ptr[0] > 0.f ? out_ptr[0] : out_ptr[0] * local_alpha;
+        } else if (flag_act == 4) {
+          auto tmp0 = out_ptr[0] + offset;
+          auto tmp1 = out_ptr[0] * local_alpha;
+          tmp0 = tmp0 > 0.f ? (tmp0 < threshold ? tmp0 : threshold) : 0.f;
+          out_ptr[0] = tmp0 * tmp1;
+        }
       } else {
         *out_ptr += sum;
       }
