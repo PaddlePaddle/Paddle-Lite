@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export NDK_ROOT=/opt/android-ndk-r23b && export PATH=$NDK_ROOT:$PATH
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
