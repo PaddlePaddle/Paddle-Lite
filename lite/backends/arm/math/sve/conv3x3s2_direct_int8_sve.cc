@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/conv_block_utils.h"
-#include "lite/backends/arm/math/conv_impl.h"
-#include "lite/core/context.h"
-#include "lite/core/parallel_defines.h"
-#include "lite/operators/op_params.h"
-#ifdef ARM_WITH_OMP
-#include <omp.h>
-#endif
+#include "lite/backends/arm/math/sve/conv3x3s2_direct_int8_sve.h"
 
 namespace paddle {
 namespace lite {
@@ -476,7 +469,8 @@ void conv_3x3s2_direct_int8(const int8_t* din,
 #endif
 
 
-template void conv_3x3s2_direct_int8_sve(const int8_t* din,
+template<>
+ void conv_3x3s2_direct_int8_sve(const int8_t* din,
                                      float* dout,
                                      int num,
                                      int chout,
@@ -493,7 +487,8 @@ template void conv_3x3s2_direct_int8_sve(const int8_t* din,
   VLOG(1) << "conv_3x3s2_direct_int8_sve_float";
 }
 
-template void conv_3x3s2_direct_int8_sve(const int8_t* din,
+template<> 
+void conv_3x3s2_direct_int8_sve(const int8_t* din,
                                      int8_t* dout,
                                      int num,
                                      int chout,
