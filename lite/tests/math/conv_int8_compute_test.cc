@@ -770,18 +770,18 @@ TEST(TestConvCustomInt8, test_conv_custom_size) {
 #if 1  /// conv3x3s2
 TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
-    for (auto& cin : {1, 3, 31}) {
-      for (auto& cout : {1, 5, 33}) {
-        for (auto& pad_top : {1, 2}) {
-          for (auto& pad_bottom : {1, 2}) {
-            for (auto& pad_left : {1, 2}) {
-              for (auto& pad_right : {1, 2}) {
-                for (auto& flag_bias : {false, true}) {
-                  for (auto& flag_act : {0, 1, 2, 4}) {
+    for (auto& cin : {1}) {
+      for (auto& cout : {1}) {
+        for (auto& pad_top : {1}) {
+          for (auto& pad_bottom : {1}) {
+            for (auto& pad_left : {1}) {
+              for (auto& pad_right : {1}) {
+                for (auto& flag_bias : {false}) {
+                  for (auto& flag_act : {0}) {
                     DDim weights_dim({cout, cin, 3, 3});
                     std::vector<DDim> dims;
-                    for (auto& batch : {1, 2}) {
-                      for (auto& h : {33, 1, 19, 7, 33}) {
+                    for (auto& batch : {1}) {
+                      for (auto& h : {6}) {
                         dims.push_back(DDim({batch, cin, h, h}));
                       }
                     }
