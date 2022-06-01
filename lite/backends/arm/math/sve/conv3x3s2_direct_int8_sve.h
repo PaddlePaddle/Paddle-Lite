@@ -13,6 +13,14 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/conv_impl.h"
+#include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
+#include "lite/operators/op_params.h"
+#ifdef ARM_WITH_OMP
+#include <omp.h>
+#endif
 
 namespace paddle {
 namespace lite {
@@ -20,6 +28,21 @@ namespace arm {
 namespace math {
 namespace sve {
 
+template <typename Dtype>
+void conv_3x3s2_direct_int8_sve(const int8_t* din,
+                            Dtype* dout,
+                            int num,
+                            int chout,
+                            int hout,
+                            int wout,
+                            int chin,
+                            int hin,
+                            int win,
+                            const int8_t* weights,
+                            const float* bias,
+                            const operators::ConvParam& param,
+                            Context<TARGET(kARM)>* ctx,
+                            const float* scale);
 
 }  // namespace sve
 }  // namespace math

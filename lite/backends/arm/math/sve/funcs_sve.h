@@ -280,7 +280,9 @@ inline svbool_t svwhilelt(IndexType a, IndexType b) {
   }
 
 SVEXP_IMPL(svfloat32_t, f32)
+#ifdef ENABLE_ARM_FP16
 SVEXP_IMPL(svfloat16_t, f16)
+#endif
 
 #undef SVEXP_IMPL
 }  // namespace sve
