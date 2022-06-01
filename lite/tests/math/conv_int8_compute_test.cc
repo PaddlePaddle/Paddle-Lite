@@ -483,7 +483,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
                     float alpha = 1.f) {}
 #endif  // LITE_WITH_ARM
 
-#if 1  /// 3x3dw
+#if 0  /// 3x3dw
 TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
@@ -519,7 +519,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
 }
 #endif  /// 3x3dw
 
-#if 1  /// 5x5dw
+#if 0  /// 5x5dw
 TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
@@ -555,7 +555,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
 }
 #endif  /// 5x5dw
 
-#if 1  /// conv1x1s1
+#if 0  /// conv1x1s1
 TEST(TestConv1x1s1Int8, test_conv1x1s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 33}) {
@@ -595,7 +595,7 @@ TEST(TestConv1x1s1Int8, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 1  /// conv3x3s1
+#if 0  /// conv3x3s1
 TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 33}) {
@@ -642,7 +642,7 @@ TEST(TestConv3x3s1Int8, test_conv_3x3s1) {
 }
 #endif  /// conv3x3s1
 
-#if 1  /// conv3x3s2
+#if 0  /// conv3x3s2
 TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 31}) {
@@ -684,7 +684,7 @@ TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
 }
 #endif  /// conv3x3s2
 
-#if 1  /// random param conv
+#if 0  /// random param conv
 TEST(TestConvRandInt8, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 17}) {
@@ -740,7 +740,7 @@ TEST(TestConvRandInt8, test_conv_rand) {
 }
 #endif  /// random param conv
 
-#if 1  /// custom
+#if 0  /// custom
 TEST(TestConvCustomInt8, test_conv_custom_size) {
   CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)
       << "input channel must be divided by group";
@@ -766,3 +766,45 @@ TEST(TestConvCustomInt8, test_conv_custom_size) {
                  FLAGS_leakey_relu_alpha);
 }
 #endif  // custom
+
+#if 1  /// conv3x3s2
+TEST(TestConv3x3s2Int8, test_conv_3x3s2) {
+  if (FLAGS_basic_test) {
+    for (auto& cin : {1, 3, 31}) {
+      for (auto& cout : {1, 5, 33}) {
+        for (auto& pad_top : {1, 2}) {
+          for (auto& pad_bottom : {1, 2}) {
+            for (auto& pad_left : {1, 2}) {
+              for (auto& pad_right : {1, 2}) {
+                for (auto& flag_bias : {false, true}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
+                    DDim weights_dim({cout, cin, 3, 3});
+                    std::vector<DDim> dims;
+                    for (auto& batch : {1, 2}) {
+                      for (auto& h : {33, 1, 19, 7, 33}) {
+                        dims.push_back(DDim({batch, cin, h, h}));
+                      }
+                    }
+                    test_conv_int8(dims,
+                                   weights_dim,
+                                   1,
+                                   {2, 2},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_act,
+                                   {4},
+                                   {FLAGS_power_mode},
+                                   FLAGS_clipped_coef,
+                                   FLAGS_leakey_relu_alpha);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif  /// conv3x3s2
