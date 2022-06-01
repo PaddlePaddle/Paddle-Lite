@@ -302,6 +302,7 @@ bool test_sgemm(bool tra,
       print_tensor(tdiff);
       return false;
     }
+ #ifdef LITE_WITH_ARM8_SVE2
     tensor_cmp_host(tc_basic, tc_sve, max_ratio, max_diff);
     LOG(INFO) << "sve compare result, max diff: " << max_diff
               << ", max ratio: " << max_ratio;
@@ -325,6 +326,7 @@ bool test_sgemm(bool tra,
       return false;
     }
   }
+#endif
 #endif
   return true;
 }
