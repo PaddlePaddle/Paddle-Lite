@@ -45,8 +45,7 @@ int ConvertPad(Converter* converter, core::Operation* operation) {
       input_operand->type.dimensions.count == 5 &&
       IsConstantOperand(pads_operand) &&
       !IsOperandWithDynamicShape(input_operand)) {
-    uint32_t pads_size =
-        pads_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+    auto pads_size = pads_operand->length / sizeof(int32_t);
     auto pads_buffer = reinterpret_cast<int32_t*>(pads_operand->buffer);
     if (pads_size == 10 && pads_buffer[6] == 0 && pads_buffer[7] == 0 &&
         pads_buffer[8] == 0 && pads_buffer[9] == 0) {

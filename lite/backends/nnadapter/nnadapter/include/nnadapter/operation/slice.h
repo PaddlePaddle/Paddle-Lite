@@ -29,16 +29,14 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
   /* Axes */                                                                \
   auto axes_operand = input_operands[1];                                    \
-  auto axes_count =                                                         \
-      axes_operand->length / static_cast<uint32_t>(sizeof(int32_t));        \
+  auto axes_count = axes_operand->length / sizeof(int32_t);                 \
   auto axes = reinterpret_cast<int32_t*>(axes_operand->buffer);             \
   for (uint32_t i = 0; i < axes_count; i++) {                               \
     NNADAPTER_VLOG(5) << "axes[" << i << "] = " << axes[i];                 \
   }                                                                         \
   /* Starts */                                                              \
   auto starts_operand = input_operands[2];                                  \
-  auto starts_count =                                                       \
-      starts_operand->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  auto starts_count = starts_operand->length / sizeof(int32_t);             \
   NNADAPTER_CHECK_EQ(starts_count, axes_count);                             \
   auto starts = reinterpret_cast<int32_t*>(starts_operand->buffer);         \
   for (uint32_t i = 0; i < starts_count; i++) {                             \
@@ -46,8 +44,7 @@ namespace operation {
   }                                                                         \
   /* Ends */                                                                \
   auto ends_operand = input_operands[3];                                    \
-  auto ends_count =                                                         \
-      ends_operand->length / static_cast<uint32_t>(sizeof(int32_t));        \
+  auto ends_count = ends_operand->length / sizeof(int32_t);                 \
   NNADAPTER_CHECK_EQ(ends_count, axes_count);                               \
   auto ends = reinterpret_cast<int32_t*>(ends_operand->buffer);             \
   for (uint32_t i = 0; i < ends_count; i++) {                               \
@@ -55,8 +52,7 @@ namespace operation {
   }                                                                         \
   /* Steps */                                                               \
   auto steps_operand = input_operands[4];                                   \
-  auto steps_count =                                                        \
-      steps_operand->length / static_cast<uint32_t>(sizeof(int32_t));       \
+  auto steps_count = steps_operand->length / sizeof(int32_t);               \
   NNADAPTER_CHECK_EQ(steps_count, axes_count);                              \
   auto steps = reinterpret_cast<int32_t*>(steps_operand->buffer);           \
   for (uint32_t i = 0; i < steps_count; i++) {                              \

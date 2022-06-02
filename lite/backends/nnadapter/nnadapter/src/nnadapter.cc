@@ -157,6 +157,37 @@ NNADAPTER_EXPORT void NNAdapterContext_destroy(NNAdapterContext* context) {
   }
 }
 
+NNADAPTER_EXPORT int NNAdapterMemory_create(NNAdapterContext* context,
+                                            void* host_ptr_or_device_ptr,
+                                            size_t length,
+                                            int flags,
+                                            NNAdapterMemory** memory) {
+  if (!context || length <= 0 || !memory) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
+  auto m =
+      new nnadapter::runtime::Memory(x, host_ptr_or_device_ptr, length, flags);
+  if (m == nullptr) {
+    *memory = nullptr;
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *memory = reinterpret_cast<NNAdapterMemory*>(m);
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT void NNAdapterMemory_destroy(NNAdapterMemory* memory) {
+  if (memory) {
+    auto m = reinterpret_cast<nnadapter::runtime::Memory*>(memory);
+    delete m;
+  }
+}
+
+NNADAPTER_EXPORT int NNAdapterMemory_copy(NNAdapterMemory* src,
+                                          NNAdapterMemory* dst) {
+  return NNADAPTER_NO_ERROR;
+}
+
 NNADAPTER_EXPORT int NNAdapterModel_create(NNAdapterModel** model) {
   if (!model) {
     return NNADAPTER_INVALID_PARAMETER;

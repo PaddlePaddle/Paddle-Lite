@@ -14,8 +14,9 @@
 
 add_library(nnadapter_runtime_device STATIC device.cc)
 add_library(nnadapter_runtime_context STATIC context.cc)
+add_library(nnadapter_runtime_memory STATIC memory.cc)
 add_library(nnadapter_runtime_model STATIC model.cc)
 add_library(nnadapter_runtime_compilation STATIC compilation.cc)
 add_library(nnadapter_runtime_execution STATIC execution.cc)
 
-set(NNADAPTER_RUNTIME nnadapter_runtime_device nnadapter_runtime_context nnadapter_runtime_model nnadapter_runtime_compilation nnadapter_runtime_execution CACHE INTERNAL "")
+set(NNADAPTER_RUNTIME nnadapter_runtime_device nnadapter_runtime_context nnadapter_runtime_memory nnadapter_runtime_model nnadapter_runtime_compilation nnadapter_runtime_execution CACHE INTERNAL "")

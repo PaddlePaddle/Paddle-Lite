@@ -44,6 +44,14 @@ class NNAdapterWrapper final {
                                                             void* user_data),
                                             NNAdapterContext** context);
   typedef void (*NNAdapterContext_destroy_fn)(NNAdapterContext* context);
+  typedef int (*NNAdapterMemory_create_fn)(NNAdapterContext* context,
+                                           void* host_ptr_or_device_ptr,
+                                           size_t length,
+                                           int flags,
+                                           NNAdapterMemory** memory);
+  typedef void (*NNAdapterMemory_destroy_fn)(NNAdapterMemory* memory);
+  typedef int (*NNAdapterMemory_copy_fn)(NNAdapterMemory* src,
+                                         NNAdapterMemory* dst);
   typedef int (*NNAdapterModel_create_fn)(NNAdapterModel** model);
   typedef void (*NNAdapterModel_destroy_fn)(NNAdapterModel* model);
   typedef int (*NNAdapterModel_finish_fn)(NNAdapterModel* model);

@@ -46,6 +46,13 @@ typedef struct Device {
                          core::Argument* input_arguments,
                          uint32_t output_count,
                          core::Argument* output_arguments);
+  void (*create_memory)(void* context,
+                        void* host_ptr_or_device_ptr,
+                        size_t length,
+                        int flags,
+                        void** memory);
+  void (*destroy_memory)(void* memory);
+  void (*copy_memory)(void* src, void* dst);
 } Device;
 
 }  // namespace driver

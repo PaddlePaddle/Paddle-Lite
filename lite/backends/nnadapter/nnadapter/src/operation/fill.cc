@@ -35,21 +35,21 @@ NNADAPTER_EXPORT int PrepareFill(core::Operation* operation) {
   auto& shape_type = shape_operand->type;
   auto& output_type = output_operand->type;
   if (IsConstantOperand(shape_operand)) {
-    uint32_t length = shape_operand->length;
+    auto length = shape_operand->length;
     auto shape_precision = shape_type.precision;
     switch (shape_precision) {
       case NNADAPTER_INT32: {
-        int32_t* shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-        uint32_t size = length / sizeof(int32_t);
+        auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+        auto size = length / sizeof(int32_t);
         output_type.dimensions.count = size;
         memcpy(output_type.dimensions.data, shape_data, size * sizeof(int32_t));
         break;
       }
       case NNADAPTER_INT64: {
-        int64_t* shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
-        uint32_t size = length / sizeof(int64_t);
+        auto shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
+        auto size = length / sizeof(int64_t);
         output_type.dimensions.count = size;
-        for (uint32_t i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
           output_type.dimensions.data[i] = static_cast<int32_t>(shape_data[i]);
         }
         break;

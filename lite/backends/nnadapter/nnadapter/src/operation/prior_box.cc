@@ -62,9 +62,9 @@ NNADAPTER_EXPORT int PreparePriorBox(core::Operation* operation) {
                                 int32_t* output_dimensions0,
                                 int32_t* output_dimensions1) {
     std::vector<float> aspect_ratios_vec;
-    float* aspect_ratios_data =
+    auto aspect_ratios_data =
         reinterpret_cast<float*>(aspect_ratios_operand->buffer);
-    uint32_t aspect_ratios_size = aspect_ratios_operand->length / sizeof(float);
+    auto aspect_ratios_size = aspect_ratios_operand->length / sizeof(float);
     std::vector<float> aspect_ratios_(aspect_ratios_data,
                                       aspect_ratios_data + aspect_ratios_size);
     ExpandAspectRatios(aspect_ratios_,

@@ -28,10 +28,16 @@ typedef struct Hint {
   void (*deleter)(void** handler);
 } Hint;
 
+typedef struct Memory {
+  void* buffer;
+  size_t length;
+  int flags;
+} Memory;
+
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
-  uint32_t length;
+  size_t length;
   Hint hints[NNADAPTER_MAX_SIZE_OF_HINTS];
 } Operand;
 

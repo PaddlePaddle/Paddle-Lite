@@ -39,7 +39,7 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         if (is_constant_reference) {
           transform_buffer = static_cast<uint8_t*>(malloc(operand->length));
         }
-        for (uint32_t i = 0; i < operand->length; i++) {
+        for (size_t i = 0; i < operand->length; i++) {
           transform_buffer[i] = static_cast<uint8_t>(std::min(
               std::max(static_cast<int16_t>(
                            reinterpret_cast<int8_t*>(operand->buffer)[i]) +

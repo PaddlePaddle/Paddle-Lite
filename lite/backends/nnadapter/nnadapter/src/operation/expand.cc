@@ -82,7 +82,7 @@ NNADAPTER_EXPORT int PrepareExpand(core::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
 
-  uint32_t shape_count;
+  size_t shape_count;
   int32_t* shape_data;
   if (IsTemporaryShapeOperand(shape_operand)) {
     auto& temporary_shape = *(GetTemporaryShape(shape_operand));
@@ -97,7 +97,7 @@ NNADAPTER_EXPORT int PrepareExpand(core::Operation* operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
 
-  for (uint32_t i = 0; i < shape_count; i++) {
+  for (size_t i = 0; i < shape_count; i++) {
     NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
   }
 

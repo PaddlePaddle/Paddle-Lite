@@ -31,7 +31,7 @@ NNADAPTER_EXPORT int PreparePad(core::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(IsConstantOperand(pads_operand))
       << "Only support constant pads now.";
-  uint32_t pads_count = pads_operand->length / sizeof(int32_t);
+  auto pads_count = pads_operand->length / sizeof(int32_t);
   NNADAPTER_CHECK_EQ(pads_count, 2 * input_operand->type.dimensions.count);
   auto pads_data = reinterpret_cast<int32_t*>(pads_operand->buffer);
 

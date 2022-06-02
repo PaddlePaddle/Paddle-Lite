@@ -38,7 +38,7 @@ NNADAPTER_EXPORT int PrepareTile(core::Operation* operation) {
   auto& repeats_type = repeats_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
 
-  uint32_t repeats_count;
+  size_t repeats_count;
   int32_t* repeats_data;
   if (IsTemporaryShapeOperand(repeats_operand)) {
     auto& temporary_shape = *(GetTemporaryShape(repeats_operand));

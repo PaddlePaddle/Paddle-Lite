@@ -31,13 +31,13 @@ int ConvertBatchNormalization(Converter *converter,
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  int size = scale_operand->type.dimensions.data[0];
+  auto size = scale_operand->type.dimensions.data[0];
   NNADAPTER_VLOG(5) << "scale_operand->length: " << scale_operand->length
                     << " data[0] " << size;
-  float *scale_data = reinterpret_cast<float *>(scale_operand->buffer);
-  float *bias_data = reinterpret_cast<float *>(bias_operand->buffer);
-  float *mean_data = reinterpret_cast<float *>(mean_operand->buffer);
-  float *var_data = reinterpret_cast<float *>(variance_operand->buffer);
+  auto scale_data = reinterpret_cast<float *>(scale_operand->buffer);
+  auto bias_data = reinterpret_cast<float *>(bias_operand->buffer);
+  auto mean_data = reinterpret_cast<float *>(mean_operand->buffer);
+  auto var_data = reinterpret_cast<float *>(variance_operand->buffer);
   std::vector<float> new_scale_data;
   std::vector<float> new_bias_data;
   for (int i = 0; i < size; i++) {

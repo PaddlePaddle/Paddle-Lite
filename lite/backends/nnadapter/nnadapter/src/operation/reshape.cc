@@ -38,7 +38,7 @@ NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
 
-  uint32_t shape_count;
+  size_t shape_count;
   int32_t* shape_data = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
     auto& temporary_shape = *(GetTemporaryShape(shape_operand));
@@ -52,7 +52,7 @@ NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
                          << OperandLifetimeCodeToString(shape_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
-  for (uint32_t i = 0; i < shape_count; i++) {
+  for (size_t i = 0; i < shape_count; i++) {
     NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
   }
   output_type.dimensions.count = shape_count;
@@ -60,7 +60,7 @@ NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
                                 uint32_t input_dimensions_count,
                                 int32_t* output_dimensions_data) {
-    for (uint32_t i = 0; i < shape_count; i++) {
+    for (size_t i = 0; i < shape_count; i++) {
       output_dimensions_data[i] =
           shape_data[i] == 0 ? input_dimensions_data[i] : shape_data[i];
     }
@@ -75,7 +75,7 @@ NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
     }
     if (size != -1) {
       int32_t unk_idx = -1;
-      for (uint32_t i = 0; i < shape_count; i++) {
+      for (size_t i = 0; i < shape_count; i++) {
         if (output_dimensions_data[i] == -1) {
           NNADAPTER_CHECK_EQ(unk_idx, -1) << "Should only has one unk idx.";
           unk_idx = i;

@@ -2180,7 +2180,7 @@ typedef enum {
 } NNAdapterPadModeCode;
 
 /**
- * Interpolate Mode
+ * Interpolate mode.
  *
  * Available since version 1.
  */
@@ -2190,6 +2190,16 @@ typedef enum {
   NNADAPTER_INTERPOLATE_MODE_BILINEAR = 1,
   NNADAPTER_INTERPOLATE_MODE_NEAREST = 2,
 } NNAdapterInterpolateModeCode;
+
+/**
+ * Memory flag.
+ *
+ * Available since version 1.
+ */
+typedef enum {
+  NNADAPTER_MEMORY_HOST = 0,
+  NNADAPTER_MEMORY_DEVICE = 1,
+} NNAdapterMemoryFlagCode;
 
 typedef int32_t NNAdapterDeviceType;
 
@@ -2292,6 +2302,12 @@ typedef struct NNAdapterDevice NNAdapterDevice;
  */
 typedef struct NNAdapterContext NNAdapterContext;
 /**
+ * An opaque type for Memory.
+ *
+ * Available since version 1.
+ */
+typedef struct NNAdapterMemory NNAdapterMemory;
+/**
  * An opaque type for Operand.
  *
  * Available since version 1.
@@ -2343,7 +2359,7 @@ int NNAdapter_getDeviceCount(uint32_t* numDevices);
  *
  * Available since version 1.
  */
-int NNAdapterDevice_Acquire(const char* name, NNAdapterDevice** device);
+int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
 /**
  * Release the target device.
  *
@@ -2393,6 +2409,28 @@ int NNAdapterContext_create(NNAdapterDevice** devices,
  * Available since version 1.
  */
 void NNAdapterContext_destroy(NNAdapterContext* context);
+/**
+ * Create a device memory base on the device context.
+ *
+ * Available since version 1.
+ */
+int NNAdapterMemory_create(NNAdapterContext* context,
+                           void* host_ptr_or_device_ptr,
+                           size_t length,
+                           int flags,
+                           NNAdapterMemory** memory);
+/**
+ * Destroy the device memory.
+ *
+ * Available since version 1.
+ */
+void NNAdapterMemory_destroy(NNAdapterMemory* memory);
+/**
+ * Copy data from src memory to dst memory/
+ *
+ * Available since version 1.
+ */
+int NNAdapterMemory_copy(NNAdapterMemory* src, NNAdapterMemory* dst);
 /**
  * Create a hardware-independent neural networks model.
  *

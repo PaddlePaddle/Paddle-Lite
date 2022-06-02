@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <vector>
+
 namespace nnadapter {
 namespace operation {
 
@@ -74,19 +76,19 @@ namespace operation {
   NNADAPTER_CHECK_EQ(image_type.dimensions.count, 4);                          \
   float* aspect_ratios_data =                                                  \
       reinterpret_cast<float*>(aspect_ratios_operand->buffer);                 \
-  uint32_t aspect_ratios_size = aspect_ratios_operand->length / sizeof(float); \
+  auto aspect_ratios_size = aspect_ratios_operand->length / sizeof(float);     \
   std::vector<float> aspect_ratios(aspect_ratios_data,                         \
                                    aspect_ratios_data + aspect_ratios_size);   \
   float* min_sizes_data = reinterpret_cast<float*>(min_sizes_operand->buffer); \
-  uint32_t min_sizes_size = min_sizes_operand->length / sizeof(float);         \
+  auto min_sizes_size = min_sizes_operand->length / sizeof(float);             \
   std::vector<float> min_sizes(min_sizes_data,                                 \
                                min_sizes_data + min_sizes_size);               \
   float* max_sizes_data = reinterpret_cast<float*>(max_sizes_operand->buffer); \
-  uint32_t max_sizes_size = max_sizes_operand->length / sizeof(float);         \
+  auto max_sizes_size = max_sizes_operand->length / sizeof(float);             \
   std::vector<float> max_sizes(max_sizes_data,                                 \
                                max_sizes_data + max_sizes_size);               \
   float* variances_data = reinterpret_cast<float*>(variances_operand->buffer); \
-  uint32_t variances_size = variances_operand->length / sizeof(float);         \
+  auto variances_size = variances_operand->length / sizeof(float);             \
   std::vector<float> variances(variances_data, variances_data + variances_size);
 
 }  // namespace operation

@@ -30,11 +30,11 @@ int ConvertPad(Converter* converter, core::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto pads_cnt = pads_operand->length / sizeof(int32_t);
+  auto pads_count = pads_operand->length / sizeof(int32_t);
   std::vector<int32_t> pads_shape = {4, 2};
   auto pads_data = reinterpret_cast<int32_t*>(pads_operand->buffer);
   auto pads_operator = converter->AddInt32ConstantOperator(
-      std::vector<int32_t>(pads_data, pads_data + pads_cnt), pads_shape);
+      std::vector<int32_t>(pads_data, pads_data + pads_count), pads_shape);
   auto value_operator = converter->GetMappedOperator(value_operand);
   if (!value_operator) {
     value_operator = converter->ConvertOperand(value_operand);

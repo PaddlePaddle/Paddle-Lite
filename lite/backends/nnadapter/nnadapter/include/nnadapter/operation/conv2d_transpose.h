@@ -61,8 +61,7 @@ namespace operation {
       *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
   NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
-  uint32_t pads_size =                                                         \
-      input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  auto pads_size = input_operands[4]->length / sizeof(int32_t);                \
   NNADAPTER_CHECK_EQ(pads_size, 4U);                                           \
   auto pads_buffer = reinterpret_cast<int32_t*>(input_operands[4]->buffer);    \
   auto pad_height_top = pads_buffer[0];                                        \
@@ -73,8 +72,7 @@ namespace operation {
                     << pad_height_bottom << ", " << pad_width_left << ", "     \
                     << pad_width_right << "]";                                 \
   /* Strides */                                                                \
-  uint32_t strides_size =                                                      \
-      input_operands[5]->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  auto strides_size = input_operands[5]->length / sizeof(int32_t);             \
   NNADAPTER_CHECK_EQ(strides_size, 2U);                                        \
   auto strides_buffer = reinterpret_cast<int32_t*>(input_operands[5]->buffer); \
   auto stride_height = strides_buffer[0];                                      \
@@ -85,8 +83,7 @@ namespace operation {
   auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);         \
   NNADAPTER_VLOG(5) << "group = " << group;                                    \
   /* Dilations */                                                              \
-  uint32_t dilations_size =                                                    \
-      input_operands[7]->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  auto dilations_size = input_operands[7]->length / sizeof(int32_t);           \
   NNADAPTER_CHECK_EQ(dilations_size, 2U);                                      \
   auto dilations_buffer =                                                      \
       reinterpret_cast<int32_t*>(input_operands[7]->buffer);                   \
@@ -95,8 +92,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "dilations = [" << dilation_height << ", "              \
                     << dilation_width << "]";                                  \
   /* Output_padding */                                                         \
-  uint32_t output_padding_size =                                               \
-      input_operands[8]->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  auto output_padding_size = input_operands[8]->length / sizeof(int32_t);      \
   NNADAPTER_CHECK_EQ(output_padding_size, 2U);                                 \
   auto output_padding_buffer =                                                 \
       reinterpret_cast<int32_t*>(input_operands[8]->buffer);                   \
@@ -108,8 +104,7 @@ namespace operation {
   int output_shape_height = -1;                                                \
   int output_shape_width = -1;                                                 \
   if (input_operands[9] != nullptr) {                                          \
-    uint32_t output_shape_size =                                               \
-        input_operands[9]->length / static_cast<uint32_t>(sizeof(int32_t));    \
+    auto output_shape_size = input_operands[9]->length / sizeof(int32_t);      \
     NNADAPTER_CHECK_EQ(output_shape_size, 2U);                                 \
     auto output_shape_buffer =                                                 \
         reinterpret_cast<int32_t*>(input_operands[9]->buffer);                 \

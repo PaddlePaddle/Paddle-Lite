@@ -35,7 +35,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "axis: " << axis;                                 \
   /* Scale */                                                            \
   auto scale_operand = input_operands[2];                                \
-  uint32_t scale_count = scale_operand->length / sizeof(float);          \
+  auto scale_count = scale_operand->length / sizeof(float);              \
   NNADAPTER_CHECK_GT(scale_count, 0U);                                   \
   float* scale_data = reinterpret_cast<float*>(scale_operand->buffer);   \
   bool is_per_layer_quant = scale_count == 1;                            \
@@ -44,7 +44,7 @@ namespace operation {
                     << ", is_per_layer_quant: " << is_per_layer_quant;   \
   /* Zero_point */                                                       \
   auto zero_point_operand = input_operands[3];                           \
-  uint32_t zero_point_count = scale_operand->length / sizeof(int32_t);   \
+  auto zero_point_count = scale_operand->length / sizeof(int32_t);       \
   int32_t* zero_point_data =                                             \
       reinterpret_cast<int32_t*>(zero_point_operand->buffer);            \
   bool is_symm_quant = zero_point_count == 1 && zero_point_data[0] == 0; \
