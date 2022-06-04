@@ -911,3 +911,5 @@ class AutoScanBaseTest(unittest.TestCase):
                         self.nnadapter_config_set(self, config_)
                     configs_.append(config_)
         return configs_
+
+
