@@ -1027,6 +1027,7 @@ void loadb_trans(float16_t *out,
   int remain = x_len & 7;
   int y = n0;
   int y_remain = (nmax - n0) & 3;
+  int input_size = ldin * 8;
 
   //! data B is not transposed, transpose B to k * 16
   for (; y < nmax - 15; y += 16) {
@@ -1080,38 +1081,42 @@ void loadb_trans(float16_t *out,
         // c0d0c2d2c4d4c6d6
         "trn1 v10.8h, v2.8h, v3.8h            \n"
         "trn2 v11.8h, v2.8h, v3.8h            \n"
-        "prfm   pldl1keep, [%[inptr12]]       \n"
-        "prfm   pldl1keep, [%[inptr13]]       \n"
         // e0f0e2f2...
         "trn1 v12.8h, v4.8h, v5.8h            \n"
         "trn2 v13.8h, v4.8h, v5.8h            \n"
-        "prfm   pldl1keep, [%[inptr14]]       \n"
-        "prfm   pldl1keep, [%[inptr15]]       \n"
         TRANS_C8
-        "ld1 {v0.8h}, [%[inptr8]], #16        \n"
+        "ld1 {v0.8h}, [%[inptr8]]             \n"
+        "add %[inptr8], %[inptr8], %[input_size]\n"
         "str q8, [%[outptr]]                  \n"
-        "ld1 {v1.8h}, [%[inptr9]], #16        \n"
+        "ld1 {v1.8h}, [%[inptr9]]             \n"
+        "add %[inptr9], %[inptr9], %[input_size]\n"
         "str q12, [%[outptr], #32]            \n"
-        "ld1 {v2.8h}, [%[inptr10]], #16       \n"
+        "ld1 {v2.8h}, [%[inptr10]]            \n"
+        "add %[inptr10], %[inptr10], %[input_size]\n"
         "str q10, [%[outptr], #64]            \n"
-        "ld1 {v3.8h}, [%[inptr11]], #16       \n"
+        "ld1 {v3.8h}, [%[inptr11]]            \n"
+        "add %[inptr11], %[inptr11], %[input_size]\n"
         "str q14, [%[outptr], #96]            \n"
-        "ld1 {v4.8h}, [%[inptr12]], #16       \n"
+        "ld1 {v4.8h}, [%[inptr8]], #16        \n"
         "str q9, [%[outptr], #128]            \n"
-        "ld1 {v5.8h}, [%[inptr13]], #16       \n"
+        "ld1 {v5.8h}, [%[inptr9]], #16        \n"
         "str q13, [%[outptr], #160]           \n"
-        "ld1 {v6.8h}, [%[inptr14]], #16       \n"
+        "ld1 {v6.8h}, [%[inptr10]], #16       \n"
         "str q11, [%[outptr], #192]           \n"
-        "ld1 {v7.8h}, [%[inptr15]], #16       \n"
+        "ld1 {v7.8h}, [%[inptr11]], #16       \n"
         "str q15, [%[outptr], #224]           \n"
         // a0b0a2b2a4b4a6b6
         "trn1 v8.8h, v0.8h, v1.8h             \n"
         "trn2 v9.8h, v0.8h, v1.8h             \n"
+        "sub  %[inptr8], %[inptr8], %[input_size]\n"
+        "sub  %[inptr9], %[inptr9], %[input_size]\n"
         "prfm   pldl1keep, [%[inptr0]]        \n"
         "prfm   pldl1keep, [%[inptr1]]        \n"
         // c0d0c2d2c4d4c6d6
         "trn1 v10.8h, v2.8h, v3.8h            \n"
         "trn2 v11.8h, v2.8h, v3.8h            \n"
+        "sub  %[inptr10], %[inptr10], %[input_size]\n"
+        "sub  %[inptr11], %[inptr11], %[input_size]\n"
         "prfm   pldl1keep, [%[inptr2]]        \n"
         "prfm   pldl1keep, [%[inptr3]]        \n"
         // e0f0e2f2...
@@ -1146,13 +1151,9 @@ void loadb_trans(float16_t *out,
           [inptr9] "+r"(inptr9),
           [inptr10] "+r"(inptr10),
           [inptr11] "+r"(inptr11),
-          [inptr12] "+r"(inptr12),
-          [inptr13] "+r"(inptr13),
-          [inptr14] "+r"(inptr14),
-          [inptr15] "+r"(inptr15),
           [outptr] "+r"(outptr),
           [cnt] "+r"(cnt_col)
-        :
+        : [input_size] "r"(input_size)
         : "cc",
           "memory",
           "v0",
@@ -1172,6 +1173,10 @@ void loadb_trans(float16_t *out,
           "v14",
           "v15");
     // clang-format on
+    inptr12 = inptr8 + ldin * 4;
+    inptr13 = inptr9 + ldin * 4;
+    inptr14 = inptr10 + ldin * 4;
+    inptr15 = inptr11 + ldin * 4;
     for (int x = 0; x < remain; x++) {
       *outptr++ = *inptr0++;
       *outptr++ = *inptr1++;
