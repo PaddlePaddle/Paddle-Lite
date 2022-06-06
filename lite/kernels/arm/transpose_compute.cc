@@ -154,7 +154,11 @@ void transpose_mat(const lite_api::float16_t* din,
   int nh = height >> 2;
 #endif
   int size_in = width * height;
+#ifdef __aarch64__
   int size_w = width << 3;
+#else
+  int size_w = width << 2;
+#endif
   int size_h = height << 3;
   int remain_w = (width & 7);
   int remain_ww = remain_w >> 2;
