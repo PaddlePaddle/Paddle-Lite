@@ -1267,7 +1267,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [vmask] "r" (val_mask)
+              [vmask] "r" (val_mask),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -2190,7 +2190,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
               [wr20]"w"(wr20),
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
-              [bias_val] "r"(v_bias),
+              [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
