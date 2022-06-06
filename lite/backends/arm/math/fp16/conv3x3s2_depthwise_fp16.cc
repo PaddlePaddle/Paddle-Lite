@@ -94,7 +94,7 @@ namespace fp16 {
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_RELU6                       \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -105,7 +105,7 @@ namespace fp16 {
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_LEAKY_RELU                  \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
@@ -175,7 +175,7 @@ namespace fp16 {
   "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_RELU6                        \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -186,7 +186,7 @@ namespace fp16 {
   "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_LEAKY_RELU                   \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
@@ -281,7 +281,7 @@ namespace fp16 {
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_RELU6                      \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -291,7 +291,7 @@ namespace fp16 {
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_LEAKY_RELU                 \
-  "ld1    q21, [%[bias_val], #0x10]                 \n" \
+  "ldr    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
