@@ -296,7 +296,6 @@ void gemv_fp16_trans(const float16_t *A,
       data_in, x + (N - 1) * M, M * sizeof(float16_t));
   memset(data_in + M, 0, (Mup - M) * sizeof(float16_t));
   memset(y, 0, M * sizeof(float16_t));
-  int cnt = Nup >> 3;
   float16_t local_alpha = 0.f;
   float16_t offset = 0.f;
   float16_t threshold = 6.f;

@@ -234,7 +234,7 @@ void softmax_inner1_sve(const Dtype* din,
       dout_ptr3 += svcnt<Dtype>();
     }
   }
-  LITE_PARALLEL_END()
+  LITE_PARALLEL_COMMON_END()
   LITE_PARALLEL_COMMON_BEGIN(i, tid, outer_size, out_cnt, 1) {
     auto index = i * axis_size;
     const Dtype* din_ptr0 = din + index;
@@ -276,7 +276,7 @@ void softmax_inner1_sve(const Dtype* din,
       dout_ptr0 += svcnt<Dtype>();
     }
   }
-  LITE_PARALLEL_END()
+  LITE_PARALLEL_COMMON_END()
 }
 
 template void softmax_basic_sve<float>(const float* din,
