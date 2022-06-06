@@ -52,7 +52,7 @@ typedef __fp16 float16_t;
       const dtype *inptr12, const dtype *inptr13, const dtype *inptr14, \
       const dtype *inptr15, int numa, int numb
 
-#define X_BLOCK_COMPUTE(llc_size, MBLOCK, NBLOCK, KBLOCK, beta)       \
+#define X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK, NBLOCK, KBLOCK, beta)  \
   /* MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2*/          \
   int x_block =                                                       \
       (llc_size - (MBLOCK * K)) / (sizeof(float16_t) * (K + MBLOCK)); \

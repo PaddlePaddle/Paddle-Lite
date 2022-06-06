@@ -769,6 +769,9 @@ struct Index_selectParam : ParamBase {
 struct ReverseParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
+  // for tensor_array
+  std::vector<lite::Tensor>* X_array{nullptr};
+  std::vector<lite::Tensor>* Out_array{nullptr};
   std::vector<int> Axis;
 };
 

@@ -90,7 +90,7 @@ function run_python_demo() {
     --label_path ./labels.txt \
     --image_path ./tabby_cat.jpg \
     --backend XPU 2>&1 | tee $log_file
-  check_classification_result $target $log_file
+  check_classification_result XPU $log_file
 }
 
 function build_and_test {
