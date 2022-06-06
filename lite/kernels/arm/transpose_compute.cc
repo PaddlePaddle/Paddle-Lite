@@ -245,7 +245,6 @@ void transpose_mat(const lite_api::float16_t* din,
               [dout5] "r"(dout5),
               [dout6] "r"(dout6),
               [dout7] "r"(dout7)
-            :
             : "cc",
               "memory",
               "v0",

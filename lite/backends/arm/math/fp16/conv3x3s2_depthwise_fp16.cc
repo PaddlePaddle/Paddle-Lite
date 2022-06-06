@@ -1025,7 +1025,7 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
           INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2
           RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2
-            : [cnt] "r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
+            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
@@ -1392,7 +1392,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [vmask] "r" (val_mask)
+              [vmask] "r" (val_mask),
               [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
@@ -1516,7 +1516,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [vmask] "r" (val_mask)
+              [vmask] "r" (val_mask),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1874,7 +1874,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [vmask] "r" (val_mask)
+              [vmask] "r" (val_mask),
               [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
