@@ -63,14 +63,15 @@ Qnn_Tensor_t Converter::ConvertOperand(core::Operand* operand,
   }
   tensor.dataFormat = QNN_TENSOR_DATA_FORMAT_FLAT_BUFFER;
   tensor.dataType = ConvertToQnnDatatype(operand->type.precision);
-  if (tensor.dataType == QNN_DATATYPE_UFIXED_POINT_8) {
-    tensor.quantizeParams.encodingDefinition = QNN_DEFINITION_IMPL_GENERATED;
+  if (tensor.dataType == QNN_DATATYPE_UFIXED_POINT_8 ||
+      tensor.dataType == QNN_DATATYPE_SFIXED_POINT_32) {
+    tensor.quantizeParams.encodingDefinition = QNN_DEFINITION_DEFINED;
     tensor.quantizeParams.quantizationEncoding =
         QNN_QUANTIZATION_ENCODING_SCALE_OFFSET;
     tensor.quantizeParams.scaleOffsetEncoding.scale =
         operand->type.asymm_per_layer_params.scale;
     tensor.quantizeParams.scaleOffsetEncoding.offset =
-        operand->type.asymm_per_layer_params.zero_point;
+        -operand->type.asymm_per_layer_params.zero_point;
   }
   auto& dims = operand->type.dimensions;
   tensor.rank = dims.count;
@@ -78,8 +79,9 @@ Qnn_Tensor_t Converter::ConvertOperand(core::Operand* operand,
   for (uint32_t i = 0; i < dims.count; i++) {
     dims_data.push_back(dims.data[i]);
   }
-  tensor.maxDimensions = dims_data.data();
-  tensor.currentDimensions = dims_data.data();
+  dims_.push_back(dims_data);
+  tensor.maxDimensions = dims_.back().data();
+  tensor.currentDimensions = dims_.back().data();
   if (IsConstantOperand(operand)) {
     tensor.clientBuf.dataSize = operand->length;
     tensor.clientBuf.data = operand->buffer;
@@ -177,7 +179,7 @@ void Converter::AddNode(const char* op_type,
                         std::vector<Qnn_Param_t> params) {
   Qnn_OpConfig_t op_def = QNN_OPCONFIG_INIT;
   std::string name(op_type);
-  name += "_" + std::to_string(reinterpret_cast<uint64_t>(op_type));
+  name += "_" + std::to_string(op_indexes_++);
   op_def.name = name.c_str();
   op_def.packageName = QNN_OP_PACKAGE_NAME_QTI_AISW;
   op_def.typeName = op_type;

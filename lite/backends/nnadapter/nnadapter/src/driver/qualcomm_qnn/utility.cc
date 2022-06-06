@@ -42,9 +42,9 @@ void LogStdoutCallback(const char *fmt,
       levelStr = "UNKNOWN";
       break;
   }
-  fprintf(stdout, "[%-7s] ", levelStr);
-  vfprintf(stdout, fmt, argp);
-  fprintf(stdout, "\n");
+  // fprintf(stdout, "[%-7s] ", levelStr);
+  // vfprintf(stdout, fmt, argp);
+  // fprintf(stdout, "\n");
 }
 
 QNN_INTERFACE_VER_TYPE GetQnnInterface(void *lib_backend_handle) {

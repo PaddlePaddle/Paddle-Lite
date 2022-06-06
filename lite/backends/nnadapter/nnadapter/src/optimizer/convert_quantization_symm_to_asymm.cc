@@ -47,6 +47,16 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
                        0),
               255));
         }
+
+        {
+          for (int i = 0; i < 10; i++) {
+            NNADAPTER_LOG(INFO)
+                << "--- data " << i << ": "
+                << static_cast<uint32_t>(
+                       reinterpret_cast<uint8_t*>(transform_buffer)[i]);
+          }
+        }
+
         if (is_constant_reference) {
           operand->buffer = transform_buffer;
           operand->type.lifetime = NNADAPTER_CONSTANT_COPY;

@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "operation/elementwise.h"
 #include "driver/qualcomm_qnn/converter/converter.h"
-#include "operation/unary_activations.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace qualcomm_qnn {
 
-int ConvertActivations(Converter* converter, core::Operation* operation) {
-  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertElementwise(Converter* converter, core::Operation* operation) {
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
   // Convert to qnn tensors and node
-  auto input_tensor = converter->GetMappedTensor(input_operand);
+  auto input0_tensor = converter->GetMappedTensor(input0_operand);
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
   auto output_tensor = converter->GetMappedTensor(output_operand);
   std::map<NNAdapterOperationType, const char*> op_type_map{
-      {NNADAPTER_RELU, QNN_OP_RELU6},
+      {NNADAPTER_ADD, QNN_OP_ELEMENT_WISE_ADD},
   };
-  converter->AddNode(
-      op_type_map.at(operation->type), {input_tensor}, {output_tensor});
+  converter->AddNode(op_type_map.at(operation->type),
+                     {input0_tensor, input1_tensor},
+                     {output_tensor});
   return NNADAPTER_NO_ERROR;
 }
 

@@ -70,14 +70,10 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
         QNN_OP_POOL_MAX_2D_PARAM_STRIDE,
         std::vector<uint32_t>{static_cast<uint32_t>(stride_height),
                               static_cast<uint32_t>(stride_width)});
-    auto rounding_mode_param =
-        converter->GetParam(QNN_OP_POOL_MAX_2D_PARAM_ROUNDING_MODE,
-                            static_cast<uint32_t>(ceil_mode));
-    converter->AddNode(
-        QNN_OP_POOL_MAX_2D,
-        {input_tensor},
-        {output_tensor},
-        {pad_param, filter_param, stride_param, rounding_mode_param});
+    converter->AddNode(QNN_OP_POOL_MAX_2D,
+                       {input_tensor},
+                       {output_tensor},
+                       {pad_param, filter_param, stride_param});
   } else {
     NNADAPTER_LOG(FATAL) << "Not support op: "
                          << OperationTypeToString(operation->type);

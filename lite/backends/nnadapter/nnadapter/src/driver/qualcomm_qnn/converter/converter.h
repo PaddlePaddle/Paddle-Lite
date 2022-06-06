@@ -60,6 +60,8 @@ class Converter {
   Qnn_GraphHandle_t* qnn_graph_{nullptr};
   std::map<core::Operand*, std::vector<Qnn_Tensor_t>>* tensors_{nullptr};
   uint32_t tensor_indexes_{0};
+  uint32_t op_indexes_{0};
+  std::vector<std::vector<uint32_t>> dims_;
 };
 
 }  // namespace qualcomm_qnn
