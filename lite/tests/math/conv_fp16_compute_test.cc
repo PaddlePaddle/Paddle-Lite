@@ -470,7 +470,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
 TEST(TestConvRand, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
-      for (auto& cout : {1, 5, 16}) {
+      for (auto& cout : {3, 5, 16}) {
         for (auto& g : {1, 2}) {
           for (auto& kw : {1, 2, 3}) {
             for (auto& kh : {1, 2, 3}) {
