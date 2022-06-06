@@ -20,8 +20,8 @@ namespace lite {
 namespace operators {
 
 bool RollOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X);
+  CHECK(param_.Out);
   return true;
 }
 
