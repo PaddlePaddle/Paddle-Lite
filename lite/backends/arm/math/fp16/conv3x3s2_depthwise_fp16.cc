@@ -82,7 +82,7 @@ namespace fp16 {
 #define LEFT_RESULT_FP16_S2                             \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "cmp    %w[cnt], #1                               \n" \
+  "cmp    %w[cnt], #8                               \n" \
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_RELU                        \
@@ -90,7 +90,7 @@ namespace fp16 {
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "cmp    %w[cnt], #1                               \n" \
+  "cmp    %w[cnt], #8                               \n" \
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_RELU6                       \
@@ -101,7 +101,7 @@ namespace fp16 {
   "fmin   v17.8h,  v17.8h, v21.8h                   \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "cmp    %w[cnt], #1                               \n" \
+  "cmp    %w[cnt], #8                               \n" \
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_LEAKY_RELU                  \
@@ -114,7 +114,7 @@ namespace fp16 {
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "cmp    %w[cnt], #1                               \n" \
+  "cmp    %w[cnt], #8                               \n" \
   "blt    1f                                        \n"
 
 #define MID_COMPUTE_FP16_S2                             \
@@ -158,19 +158,21 @@ namespace fp16 {
   "ld2    {v8.8h, v9.8h}, [%[din_ptr4]], #32        \n" \
   "fadd   v17.8h, v17.8h, v13.8h                    \n" \
   "fadd   v17.8h, v17.8h, v14.8h                    \n" \
-  "subs   %w[cnt], %w[cnt], #1                      \n"
+  "subs   %w[cnt], %w[cnt], #8                      \n"
 
 #define MID_RESULT_FP16_S2                              \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "bne    2b                                        \n"
+  "cmp    %w[cnt], #8                               \n" \
+  "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_RELU                         \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "bne    2b                                        \n"
+  "cmp    %w[cnt], #8                               \n" \
+  "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_RELU6                        \
   "ld1    {v21.8h}, [%[six_ptr]]                    \n" \
@@ -180,7 +182,8 @@ namespace fp16 {
   "fmin   v17.8h,  v17.8h, v21.8h                   \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "bne    2b                                        \n"
+  "cmp    %w[cnt], #8                               \n" \
+  "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_LEAKY_RELU                   \
   "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
@@ -192,17 +195,19 @@ namespace fp16 {
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
-  "bne    2b                                        \n"
+  "cmp    %w[cnt], #8                               \n" \
+  "bge    2b                                        \n"
 
 #define RIGHT_COMPUTE_FP16_S2                                 \
   "1:                                                     \n" \
-  "cmp    %w[remain], #1                                  \n" \
+  "cmp    %w[cnt], #1                                  \n"    \
   "blt    4f                                              \n" \
   "3:                                                     \n" \
   "ld1    {v16.8h}, [%[bias_val]]                         \n" \
   "ld1    {v17.8h}, [%[bias_val]]                         \n" \
-  "ld1    {v18.8h, v19.8h}, [%[vmask]], #32               \n" \
-  "ld1    {v20.8h}, [%[vmask]]                            \n" \
+  "ldr    q18, [%[vmask]]                                 \n" \
+  "ldr    q19, [%[vmask], #0x10]                          \n" \
+  "ldr    q20, [%[vmask], #0x20]                          \n" \
   "sub    %[din_ptr0], %[din_ptr0], %[right_pad_num]      \n" \
   "sub    %[din_ptr1], %[din_ptr1], %[right_pad_num]      \n" \
   "sub    %[din_ptr2], %[din_ptr2], %[right_pad_num]      \n" \
@@ -300,8 +305,9 @@ namespace fp16 {
 #define RIGHT_COMPUTE_FP16_S2P1_SMALL                   \
   "ld1    {v16.8h}, [%[bias_val]]                   \n" \
   "ld1    {v17.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v18.8h, v19.8h}, [%[vmask]], #32         \n" \
-  "ld1    {v20.8h}, [%[rmask]]                      \n" \
+  "ldr    q18, [%[vmask]]                           \n" \
+  "ldr    q19, [%[vmask], #0x10]                    \n" \
+  "ldr    q20, [%[vmask], #0x20]                    \n" \
   "bif    v0.16b, %[vzero].16b, v18.16b             \n" \
   "bif    v1.16b, %[vzero].16b, v19.16b             \n" \
   "bif    v2.16b, %[vzero].16b, v18.16b             \n" \
@@ -342,9 +348,9 @@ namespace fp16 {
   "fadd   v17.8h, v17.8h, v14.8h                    \n"
 
 #define RIGHT_COMPUTE_FP16_S2P0_SMALL                   \
-  "ld1    {v18.8h}, [%[vmask]], #16                 \n" \
-  "ld1    {v19.8h}, [%[vmask]], #16                 \n" \
-  "ld1    {v20.8h}, [%[rmask]], #16                 \n" \
+  "ldr    q18, [%[vmask]]                           \n" \
+  "ldr    q19, [%[vmask], #0x10]                    \n" \
+  "ldr    q20, [%[vmask], #0x20]                    \n" \
   "bif    v0.16b, %[vzero].16b, v18.16b             \n" \
   "bif    v1.16b, %[vzero].16b, v19.16b             \n" \
   "bif    v2.16b, %[vzero].16b, v18.16b             \n" \
@@ -1014,16 +1020,17 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2
           RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
+            : [cnt] "r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [vmask] "+r" (val_mask)
+              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), [remain] "r"(cnt_remain), \
+              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), [vmask] "r" (val_mask), \
               [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
@@ -1118,6 +1125,7 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2_RELU
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_RELU
@@ -1129,8 +1137,7 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1141,8 +1148,8 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
               [wr20]"w"(wr20),
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
+              [vmask] "r" (val_mask),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1239,6 +1246,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2_RELU6
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_RELU6
@@ -1250,8 +1258,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1263,7 +1270,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
+              [vmask] "r" (val_mask),
               [six_ptr] "r"(six),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
@@ -1361,6 +1368,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2_LEAKY_RELU
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_LEAKY_RELU
@@ -1372,8 +1380,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1385,7 +1392,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
+              [vmask] "r" (val_mask)
               [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
@@ -1485,6 +1492,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2
@@ -1496,8 +1504,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1509,7 +1516,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
+              [vmask] "r" (val_mask)
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1604,6 +1611,7 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_RELU
@@ -1615,9 +1623,9 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero),
+              [ptr_out1] "+r"(doutr1)
+            : [vmask] "r" (val_mask),
+              [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
               [wr02]"w"(wr02),
@@ -1628,7 +1636,6 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1723,6 +1730,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_RELU6
@@ -1734,8 +1742,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1747,7 +1754,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
+              [vmask] "r" (val_mask),
               [six_ptr] "r"(six),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
@@ -1843,6 +1850,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
+        cnt = cnt_col * 8 + cnt_remain;
         asm volatile(
           INIT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2_LEAKY_RELU
@@ -1854,8 +1862,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask)
+              [ptr_out1] "+r"(doutr1)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1867,7 +1874,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain),
+              [vmask] "r" (val_mask)
               [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
