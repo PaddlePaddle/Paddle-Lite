@@ -94,7 +94,7 @@ namespace fp16 {
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_RELU6                       \
-  "ld1    {v21.8h}, [%[six_ptr]]                    \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -105,7 +105,7 @@ namespace fp16 {
   "blt    1f                                        \n"
 
 #define LEFT_RESULT_FP16_S2_LEAKY_RELU                  \
-  "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
@@ -175,7 +175,7 @@ namespace fp16 {
   "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_RELU6                        \
-  "ld1    {v21.8h}, [%[six_ptr]]                    \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -186,7 +186,7 @@ namespace fp16 {
   "bge    2b                                        \n"
 
 #define MID_RESULT_FP16_S2_LEAKY_RELU                   \
-  "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
@@ -281,7 +281,7 @@ namespace fp16 {
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_RELU6                      \
-  "ld1    {v21.8h}, [%[six_ptr]]                    \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
@@ -291,7 +291,7 @@ namespace fp16 {
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_LEAKY_RELU                 \
-  "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
+  "ld1    q21, [%[bias_val], #0x10]                 \n" \
   "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
   "bif    v16.16b, v13.16b, v12.16b                 \n" \
@@ -803,25 +803,22 @@ namespace fp16 {
 
 #endif
 
-#define FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val) \
-  float16x8_t wr00 = vdupq_n_f16(weight_ptr[0]);     \
-  float16x8_t wr10 = vdupq_n_f16(weight_ptr[3]);     \
-  float16x8_t wr20 = vdupq_n_f16(weight_ptr[6]);     \
-  float16x8_t wr01 = vdupq_n_f16(weight_ptr[1]);     \
-  float16x8_t wr11 = vdupq_n_f16(weight_ptr[4]);     \
-  float16x8_t wr21 = vdupq_n_f16(weight_ptr[7]);     \
-  float16x8_t wr02 = vdupq_n_f16(weight_ptr[2]);     \
-  float16x8_t wr12 = vdupq_n_f16(weight_ptr[5]);     \
-  float16x8_t wr22 = vdupq_n_f16(weight_ptr[8]);     \
-  float16x8_t vzero = vdupq_n_f16(0.f);              \
-  float16_t v_bias[8] = {bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val};
+#define FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, alpha) \
+  float16x8_t wr00 = vdupq_n_f16(weight_ptr[0]);            \
+  float16x8_t wr10 = vdupq_n_f16(weight_ptr[3]);            \
+  float16x8_t wr20 = vdupq_n_f16(weight_ptr[6]);            \
+  float16x8_t wr01 = vdupq_n_f16(weight_ptr[1]);            \
+  float16x8_t wr11 = vdupq_n_f16(weight_ptr[4]);            \
+  float16x8_t wr21 = vdupq_n_f16(weight_ptr[7]);            \
+  float16x8_t wr02 = vdupq_n_f16(weight_ptr[2]);            \
+  float16x8_t wr12 = vdupq_n_f16(weight_ptr[5]);            \
+  float16x8_t wr22 = vdupq_n_f16(weight_ptr[8]);            \
+  float16x8_t vzero = vdupq_n_f16(0.f);                     \
+  float16_t v_bias[16] = {0.f};                             \
+  for (int i = 0; i < 8; i++) {                             \
+    v_bias[i] = bias_val;                                   \
+    v_bias[i + 8] = alpha;                                  \
+  }
 
 #define INIT_PTR_3x3_S2_FP16(din, w_in) \
   float16_t* doutr0 = nullptr;          \
@@ -1003,7 +1000,7 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1108,7 +1105,7 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1229,7 +1226,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, six[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1270,8 +1267,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [vmask] "r" (val_mask),
-              [six_ptr] "r"(six),
+              [vmask] "r" (val_mask)
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1351,7 +1347,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, scale[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1393,7 +1389,6 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [vmask] "r" (val_mask),
-              [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1474,7 +1469,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1593,7 +1588,7 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1712,7 +1707,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, six[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1755,7 +1750,6 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [vmask] "r" (val_mask),
-              [six_ptr] "r"(six),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1832,7 +1826,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, scale[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -1875,7 +1869,6 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [vmask] "r" (val_mask),
-              [scale_ptr] "r"(scale),
               [right_pad_num] "r"(right_pad_num), 
               [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
@@ -1951,7 +1944,7 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2054,7 +2047,7 @@ void conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2158,7 +2151,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, six[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2198,7 +2191,6 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [six_ptr] "r"(six)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -2265,7 +2257,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, scale[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2304,8 +2296,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
               [wr20]"w"(wr20),
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
-              [bias_val] "r"(v_bias),
-              [scale_ptr] "r"(scale)
+              [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -2371,7 +2362,7 @@ void conv_depthwise_3x3s2p0_bias_noact_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2476,7 +2467,7 @@ void conv_depthwise_3x3s2p0_bias_relu_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, 0.f)
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2581,7 +2572,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, six[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2620,8 +2611,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(float16_t* dout,
               [wr20]"w"(wr20),
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
-              [bias_val] "r"(v_bias),
-              [six_ptr] "r"(six)
+              [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -2689,7 +2679,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
 #ifdef __aarch64__
-      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val, scale[0])
 #else
       float16_t v_bias[8] = {bias_val,
                              bias_val,
@@ -2728,8 +2718,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
               [wr20]"w"(wr20),
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
-              [bias_val] "r"(v_bias),
-              [scale_ptr] "r"(scale)
+              [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"

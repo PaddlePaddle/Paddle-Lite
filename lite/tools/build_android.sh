@@ -206,14 +206,12 @@ function make_tiny_publish_so {
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
-  if [ -d $build_dir ]; then
-      rm -rf $build_dir
-  fi
-  mkdir -p $build_dir
+  
   cd $build_dir
 
   # Step2. prepare third-party libs: opencl libs.
   if [ "${WITH_OPENCL}" == "ON" ]; then
+       build_dir=${build_dir}.opencl
       prepare_opencl_source_code $workspace $build_dir
   fi
 
@@ -222,6 +220,7 @@ function make_tiny_publish_so {
       WITH_EXTRA=ON
   fi
   if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+       build_dir=${build_dir}.arm82_fp16
       TOOLCHAIN=clang
   fi
 
@@ -232,6 +231,10 @@ function make_tiny_publish_so {
           TOOLCHAIN=clang
       fi
   fi
+  if [ -d $build_dir ]; then
+      rm -rf $build_dir
+  fi
+  mkdir -p $build_dir
 
   # android api level for android version
   set_android_api_level

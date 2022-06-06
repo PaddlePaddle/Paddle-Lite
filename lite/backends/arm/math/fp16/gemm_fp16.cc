@@ -1995,9 +1995,9 @@ void gemm_prepack_8x16(bool is_transB,
               FMLA_N00_4
               FMLA_N01_4
               "6:                                 \n"
-              "ldr   v24.8h, [%[alpha_ptr]]\n"
-              "ldr   v25.8h, [%[alpha_ptr], #0x10]\n"
-              "ldr   v26.8h, [%[alpha_ptr], #0x20]\n"
+              "ldr   q24, [%[alpha_ptr]]\n"
+              "ldr   q25, [%[alpha_ptr], #0x10]\n"
+              "ldr   q26, [%[alpha_ptr], #0x20]\n"
               "cmp    %w[flag_act],   #1          \n"
               "beq 4f                             \n"
               "cmp    %w[flag_act],   #0          \n"
@@ -2047,7 +2047,7 @@ void gemm_prepack_8x16(bool is_transB,
                 [c_ptr6] "+r"(c_ptr6),
                 [c_ptr7] "+r"(c_ptr7)
               : [has_beta] "r"(has_beta),
-                [valpha] "r"(alpha_ptr),
+                [alpha_ptr] "r"(alpha_ptr),
                 [vbias] "w"(vbias),
                 [vbeta] "w"(vbeta),
                 [vzero] "w"(vzero),
@@ -2137,9 +2137,9 @@ void gemm_prepack_8x16(bool is_transB,
               "fmla v4.8h, v0.8h, v2.h[0]         \n"
               "6:                                 \n"
               "fadd v9.8h, v4.8h, v5.8h           \n"
-              "ldr   v24.8h, [%[alpha_ptr]]\n"
-              "ldr   v25.8h, [%[alpha_ptr], #0x10]\n"
-              "ldr   v26.8h, [%[alpha_ptr], #0x20]\n"
+              "ldr   q24, [%[alpha_ptr]]\n"
+              "ldr   q25, [%[alpha_ptr], #0x10]\n"
+              "ldr   q26, [%[alpha_ptr], #0x20]\n"
               "cmp    %w[flag_act],   #1          \n"
               "ins  v0.h[0], v9.h[0]              \n"
               "ins  v1.h[0], v9.h[1]              \n"
@@ -2230,7 +2230,7 @@ void gemm_prepack_8x16(bool is_transB,
                 [c_ptr6] "+r"(c_ptr6),
                 [c_ptr7] "+r"(c_ptr7)
               : [has_beta] "r"(has_beta),
-                [valpha] "r"(alpha_ptr),
+                [alpha_ptr] "r"(alpha_ptr),
                 [vbias] "w"(vbias),
                 [vbeta] "w"(vbeta),
                 [vzero] "w"(vzero),
@@ -2367,9 +2367,9 @@ void gemm_prepack_8x16(bool is_transB,
             FMLA_N00_8
             FMLA_N01_8
             "6:                                 \n"
-            "ldr   v24.8h, [%[alpha_ptr]]\n"
-            "ldr   v25.8h, [%[alpha_ptr], #0x10]\n"
-            "ldr   v26.8h, [%[alpha_ptr], #0x20]\n"
+            "ldr   q24, [%[alpha_ptr]]\n"
+            "ldr   q25, [%[alpha_ptr], #0x10]\n"
+            "ldr   q26, [%[alpha_ptr], #0x20]\n"
             "cmp    %w[flag_act],   #1          \n"
             "beq 4f                             \n"
             "cmp    %w[flag_act],   #0          \n"
@@ -2543,7 +2543,7 @@ void gemm_prepack_8x16(bool is_transB,
               [c_ptr6] "+r"(c_ptr6),
               [c_ptr7] "+r"(c_ptr7)
             : [has_beta] "r"(has_beta),
-              [valpha] "r"(alpha_ptr),
+              [alpha_ptr] "r"(alpha_ptr),
               [vbias] "w"(vbias),
               [vbeta] "w"(vbeta),
               [vzero] "w"(vzero),
