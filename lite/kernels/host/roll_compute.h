@@ -22,7 +22,7 @@ namespace kernels {
 namespace host {
 
 class RollCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

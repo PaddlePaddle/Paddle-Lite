@@ -115,10 +115,10 @@ void RollCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    roll, kHost, kAny, kAny, paddle::lite::kernels::host::RollCompute, def)
+    roll, kHost, kFloat, kAny, paddle::lite::kernels::host::RollCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
+                                      PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindInput("ShiftsTensor",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -126,6 +126,6 @@ REGISTER_LITE_KERNEL(
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
+                                       PRECISION(kFloat),
                                        DATALAYOUT(kAny))})
     .Finalize();
