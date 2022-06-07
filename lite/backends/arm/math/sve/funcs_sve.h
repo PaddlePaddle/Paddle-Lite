@@ -126,7 +126,9 @@ SVDUP_N_IMPL(uint8_t, svuint8_t, u8)
 SVDUP_N_IMPL(uint16_t, svuint16_t, u16)
 SVDUP_N_IMPL(uint32_t, svuint32_t, u32)
 SVDUP_N_IMPL(uint64_t, svuint64_t, u64)
+#ifdef ENABLE_ARM_FP16
 SVDUP_N_IMPL(float16_t, svfloat16_t, f16)
+#endif
 SVDUP_N_IMPL(float, svfloat32_t, f32)
 
 #undef SVDUP_N_IMPL
@@ -280,7 +282,9 @@ inline svbool_t svwhilelt(IndexType a, IndexType b) {
   }
 
 SVEXP_IMPL(svfloat32_t, f32)
+#ifdef ENABLE_ARM_FP16
 SVEXP_IMPL(svfloat16_t, f16)
+#endif
 
 #undef SVEXP_IMPL
 }  // namespace sve

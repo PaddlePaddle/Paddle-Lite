@@ -1835,7 +1835,7 @@ void gemm_prepack_8x16(bool is_transB,
 
   float16x8_t valpha = vdupq_n_f16(static_cast<float16_t>(local_alpha));
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
+  X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   float16x8_t vbeta = vdupq_n_f16(beta);
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t voffset = vdupq_n_f16(offset);
@@ -2594,7 +2594,7 @@ void gemm_prepack_8x8(bool is_transB,
   }
   float16_t alpha_ptr[40] = {0.f};
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
+  X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   tail_pre = tail_pre * 8 + flag_act;
   k_pre = k_pre * 32 + tail_pre;
   for (int i = 0; i < 8; i++) {
