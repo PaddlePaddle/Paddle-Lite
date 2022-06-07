@@ -24,6 +24,9 @@
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
+#ifdef LITE_WITH_ARM8_SVE2
+#include "lite/backends/arm/math/sve/funcs_sve.h"
+#endif
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
@@ -66,7 +69,9 @@ bool test_gemm_int8(bool tra,
   Tensor ta;
   Tensor tb;
   Tensor tc_int8;
+  Tensor tc_sve_int8;
   Tensor tc_fp32;
+  Tensor tc_sve_fp32;
   Tensor tc_basic_int8;
   Tensor tc_basic_fp32;
   Tensor tbias;
@@ -74,7 +79,9 @@ bool test_gemm_int8(bool tra,
   ta.Resize({m, k});
   tb.Resize({k, n});
   tc_int8.Resize({m, n});
+  tc_sve_int8.Resize({m, n});
   tc_fp32.Resize({m, n});
+  tc_sve_fp32.Resize({m, n});
   tc_basic_int8.Resize({m, n});
   tc_basic_fp32.Resize({m, n});
   tbias.Resize({m});
@@ -82,7 +89,9 @@ bool test_gemm_int8(bool tra,
   ta.set_precision(PRECISION(kInt8));
   tb.set_precision(PRECISION(kInt8));
   tc_int8.set_precision(PRECISION(kInt8));
+  tc_sve_int8.set_precision(PRECISION(kInt8));
   tc_fp32.set_precision(PRECISION(kFloat));
+  tc_sve_fp32.set_precision(PRECISION(kFloat));
   tc_basic_int8.set_precision(PRECISION(kInt8));
   tc_basic_fp32.set_precision(PRECISION(kFloat));
   tbias.set_precision(PRECISION(kFloat));
@@ -135,7 +144,9 @@ bool test_gemm_int8(bool tra,
   auto da = ta.mutable_data<int8_t>();
   auto db = tb.mutable_data<int8_t>();
   auto dc_int8 = tc_int8.mutable_data<int8_t>();
+  auto dc_sve_int8 = tc_sve_int8.mutable_data<int8_t>();
   auto dc_fp32 = tc_fp32.mutable_data<float>();
+  auto dc_sve_fp32 = tc_sve_fp32.mutable_data<float>();
   auto dc_basic_int8 = tc_basic_int8.mutable_data<int8_t>();
   auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
   // set intial input to be 0
@@ -216,7 +227,6 @@ bool test_gemm_int8(bool tra,
                                                act_param,
                                                &ctx);
   }
-
   /// int8 output compute
   Tensor tbias_int8;
   tbias_int8.Resize(tbias.dims());
@@ -225,6 +235,67 @@ bool test_gemm_int8(bool tra,
   for (int l = 0; l < tbias_int8.numel(); ++l) {
     dbias_int8[l] = dbias[l] / scale_c[0];
   }
+
+#ifdef LITE_WITH_ARM8_SVE2
+  //! prepack
+  Tensor tpackedA;
+  int hblock = paddle::lite::arm::math::sve::get_hblock_int8_sve(&ctx);
+  int round_up_a = ((hblock + m - 1) / hblock) * hblock;
+  int round_up_k = 8 * ((k + 7) / 8);
+  tpackedA.Resize({round_up_a * round_up_k});
+  auto prepack_data = tpackedA.data<int8_t>();
+
+  paddle::lite::arm::math::sve::prepackA_int8_sve(
+      tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
+  prepack_data = tpackedA.data<int8_t>();
+  // sve
+  Timer t1;
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    if (i == FLAGS_repeats - 1) {
+      memcpy(dc, dc_backup, sizeof(float) * m * ldc);
+    }
+    t1.Start();
+    /*
+    paddle::lite::arm::math::sve::gemm_prepack_int8<int8_t>(tpackedA.data<int8_t>(),
+                                               db,
+                                               dbias_int8,
+                                               dc_sve_int8,
+                                               m,
+                                               n,
+                                               k,
+                                               has_bias,
+                                               trb,
+                                               scale_merge_int8.data(),
+                                               act_param,
+                                               &ctx);
+    */
+    // dc_sve_fp32
+    paddle::lite::arm::math::sve::gemm_prepack_int8<float>(
+        tpackedA.data<int8_t>(),
+        db,
+        dbias_int8,
+        dc_sve_fp32,
+        m,
+        n,
+        k,
+        has_bias,
+        trb,
+        scale_merge_int8.data(),
+        act_param,
+        &ctx);
+    t1.Stop();
+  }
+
+  LOG(INFO) << "sve int8 M: " << m << ", N: " << n << ", K: " << k
+            << ", power_mode: " << cls << ", threads: " << ths
+            << ", GOPS: " << ops * 1e-9f
+            << " GOPS, avg time: " << t1.LapTimes().Avg()
+            << " ms, min time: " << t1.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t1.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t1.LapTimes().Min()
+            << " GOPs";
+#endif
+
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
     paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
