@@ -2256,6 +2256,14 @@ struct GaussRandomParam : ParamBase {
   float gauss_std{0.f};
 };
 
+struct RollParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* ShiftsTensor{};
+  lite::Tensor* Out{};
+  std::vector<int64_t> shifts{};
+  std::vector<int64_t> axis{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
