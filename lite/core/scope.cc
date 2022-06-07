@@ -85,7 +85,14 @@ Variable *Scope::FindLocalVar(const std::string &name) const {
 
 void Scope::DeleteLocalVar(const std::string &name) {
   rwlock_->RDLock();
-  if (FindLocalVar(name)) vars_.erase(name);
+  if (FindLocalVar(name)) {
+    auto *p = vars_[name].release();
+    if (!p) {
+      delete p;
+      p = nullptr;
+    }
+    vars_.erase(name);
+  }
   rwlock_->UNLock();
 }
 

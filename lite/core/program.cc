@@ -88,13 +88,13 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
   // Move the persistable var from exec scope to the root scope
-  if (tensor->persistable()) {
-    auto root_scope = scope->MutableParent();
-    if (root_scope != scope) {
-      auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
-      if (root_tensor != tensor) {
-        root_tensor->CopyDataFrom(*tensor);
-      }
+  auto root_scope = scope->MutableParent();
+  if (tensor->persistable() && root_scope != scope &&
+      !root_scope->FindLocalVar(var_name)) {
+    // Find or create new var in root scope
+    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+    if (root_tensor != tensor) {
+      root_tensor->CopyDataFrom(*tensor);
       scope->DeleteLocalVar(var_name);
     }
   }
