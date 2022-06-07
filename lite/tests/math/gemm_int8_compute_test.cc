@@ -238,25 +238,21 @@ bool test_gemm_int8(bool tra,
 
 #ifdef LITE_WITH_ARM8_SVE2
   //! prepack
-  Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::sve::get_hblock_int8_sve(&ctx);
-  int round_up_a = ((hblock + m - 1) / hblock) * hblock;
-  int round_up_k = 8 * ((k + 7) / 8);
-  tpackedA.Resize({round_up_a * round_up_k});
-  auto prepack_data = tpackedA.data<int8_t>();
+  Tensor tpackedA_sve;
+  int hblock_sve = paddle::lite::arm::math::sve::get_hblock_int8_sve(&ctx);
+  int round_up_a_sve = ((hblock_sve + m - 1) / hblock_sve) * hblock_sve;
+  int round_up_k_sve = 8 * ((k + 7) / 8);
+  tpackedA_sve.Resize({round_up_a_sve * round_up_k_sve});
 
   paddle::lite::arm::math::sve::prepackA_int8_sve(
-      tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
-  prepack_data = tpackedA.data<int8_t>();
+      tpackedA_sve.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
+
   // sve
   Timer t1;
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    if (i == FLAGS_repeats - 1) {
-      memcpy(dc, dc_backup, sizeof(float) * m * ldc);
-    }
     t1.Start();
     /*
-    paddle::lite::arm::math::sve::gemm_prepack_int8<int8_t>(tpackedA.data<int8_t>(),
+    paddle::lite::arm::math::sve::gemm_prepack_int8_sve<int8_t>(tpackedA_sve.data<int8_t>(),
                                                db,
                                                dbias_int8,
                                                dc_sve_int8,
@@ -270,8 +266,8 @@ bool test_gemm_int8(bool tra,
                                                &ctx);
     */
     // dc_sve_fp32
-    paddle::lite::arm::math::sve::gemm_prepack_int8<float>(
-        tpackedA.data<int8_t>(),
+    paddle::lite::arm::math::sve::gemm_prepack_int8_sve<float>(
+        tpackedA_sve.data<int8_t>(),
         db,
         dbias_int8,
         dc_sve_fp32,
