@@ -31,7 +31,7 @@ class Converter {
       : qnn_interface_(qnn_interface),
         qnn_graph_(qnn_graph),
         tensors_(tensors),
-        tensor_indexes_(0) {}
+        indexes_(0) {}
   ~Converter() {}
 
   // Convert a NNAdapter model to a trt network
@@ -59,8 +59,7 @@ class Converter {
   QNN_INTERFACE_VER_TYPE qnn_interface_;
   Qnn_GraphHandle_t* qnn_graph_{nullptr};
   std::map<core::Operand*, std::vector<Qnn_Tensor_t>>* tensors_{nullptr};
-  uint32_t tensor_indexes_{0};
-  uint32_t op_indexes_{0};
+  uint32_t indexes_{0};
   std::vector<std::vector<uint32_t>> dims_;
 };
 

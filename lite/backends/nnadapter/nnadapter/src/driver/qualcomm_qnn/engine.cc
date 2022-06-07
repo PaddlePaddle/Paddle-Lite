@@ -15,6 +15,7 @@
 #include "driver/qualcomm_qnn/engine.h"
 #include <utility>
 #include "driver/qualcomm_qnn/optimizer/convert_datalayout_nchw_to_nhwc.h"
+#include "driver/qualcomm_qnn/optimizer/restrict_input_output_quant_params.h"
 #include "driver/qualcomm_qnn/optimizer/unpack_op_fusion.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
@@ -86,6 +87,7 @@ int Program::BuildFromModel(core::Model* model) {
   FuseMatMulAddIntoFullyConnected(model);
   UnpackOpFusion(model);
   ConvertQuantizationSymmToAsymm(model);
+  RestrictInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Create graph

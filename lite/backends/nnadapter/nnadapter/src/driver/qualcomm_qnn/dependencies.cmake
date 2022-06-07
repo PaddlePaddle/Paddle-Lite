@@ -22,15 +22,4 @@ message(STATUS "NNADAPTER_QUALCOMM_QNN_SDK_ROOT: ${NNADAPTER_QUALCOMM_QNN_SDK_RO
 
 include_directories(${NNADAPTER_QUALCOMM_QNN_SDK_ROOT}/include)
 
-# only support cpu now
-set(QNN_LIB_PATH ${NNADAPTER_QUALCOMM_QNN_SDK_ROOT}/target/x86_64-linux-clang/lib)
-find_library(QNN_CPU_FILE NAMES QnnCpu
-  PATHS ${QNN_LIB_PATH}
-  CMAKE_FIND_ROOT_PATH_BOTH)
-if(NOT QNN_CPU_FILE)
-  message(FATAL_ERROR "Missing libQnnCpu.so in ${QNN_LIB_PATH}")
-endif()
-add_library(qnn_cpu SHARED IMPORTED GLOBAL)
-set_property(TARGET qnn_cpu PROPERTY IMPORTED_LOCATION ${QNN_CPU_FILE})
-
-set(DEPS ${DEPS} qnn_cpu)
+# do not need libs during compiling.

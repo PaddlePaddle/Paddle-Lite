@@ -12,26 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/qualcomm_qnn/converter/converter.h"
-#include "operation/unary_activations.h"
-#include "utility/debug.h"
-#include "utility/logging.h"
+#pragma once
+#include "core/types.h"
 
 namespace nnadapter {
 namespace qualcomm_qnn {
 
-int ConvertActivations(Converter* converter, core::Operation* operation) {
-  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Convert to qnn tensors and node
-  auto input_tensor = converter->GetMappedTensor(input_operand);
-  auto output_tensor = converter->GetMappedTensor(output_operand);
-  std::map<NNAdapterOperationType, const char*> op_type_map{
-      {NNADAPTER_RELU, QNN_OP_RELU},
-  };
-  converter->AddNode(
-      op_type_map.at(operation->type), {input_tensor}, {output_tensor});
-  return NNADAPTER_NO_ERROR;
-}
+// Make the restriction for int8 quantized ops.
+// For example, relu out's offset should better be 0, otherwise conv+relu may
+// get wrong results.
+void RestrictInputOutputQuantParams(core::Model* model);
 
 }  // namespace qualcomm_qnn
 }  // namespace nnadapter

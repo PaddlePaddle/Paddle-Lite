@@ -51,7 +51,7 @@ int Converter::Apply(core::Model* model) {
 Qnn_Tensor_t Converter::ConvertOperand(core::Operand* operand,
                                        const std::vector<int32_t>& dimensions) {
   Qnn_Tensor_t tensor = QNN_TENSOR_INIT;
-  tensor.id = tensor_indexes_++;
+  tensor.id = indexes_++;
   if (IsModelInputOperand(operand)) {
     tensor.type = QNN_TENSOR_TYPE_APP_WRITE;
   } else if (IsModelOutputOperand(operand)) {
@@ -143,7 +143,7 @@ Qnn_Param_t Converter::GetParam(const char* name,
                                 std::vector<T> data,
                                 std::vector<uint32_t> dims) {
   Qnn_Tensor_t tensor = QNN_TENSOR_INIT;
-  tensor.id = tensor_indexes_++;
+  tensor.id = indexes_++;
   tensor.type = QNN_TENSOR_TYPE_STATIC;
   tensor.dataFormat = QNN_TENSOR_DATA_FORMAT_FLAT_BUFFER;
   tensor.dataType = GetQnnDatatype<T>();
@@ -179,7 +179,7 @@ void Converter::AddNode(const char* op_type,
                         std::vector<Qnn_Param_t> params) {
   Qnn_OpConfig_t op_def = QNN_OPCONFIG_INIT;
   std::string name(op_type);
-  name += "_" + std::to_string(op_indexes_++);
+  name += "_" + std::to_string(indexes_++);
   op_def.name = name.c_str();
   op_def.packageName = QNN_OP_PACKAGE_NAME_QTI_AISW;
   op_def.typeName = op_type;
