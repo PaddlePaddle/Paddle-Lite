@@ -81,56 +81,74 @@ int Program::Build(core::Model* model, core::Cache* cache) {
                       << runtime_core_->get_versions(device_name);
   InitializeDeviceConfig(
       device_name, runtime_core_, context_->GetDeviceConfig());
-  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
-}
-
-int Program::BuildFromCache(core::Cache* cache) {
-  NNADAPTER_LOG(FATAL) << "Build from cache is unimpleted.";
-  return NNADAPTER_DEVICE_INTERNAL_ERROR;
-}
-
-int Program::BuildFromModel(core::Model* model) {
-  NNADAPTER_VLOG(5) << "NNAdapter model:" << std::endl << Visualize(model);
-  Converter converter(&parameter_node_map_, &tensor_map_);
-  NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
-  // Indentify the inputs and outputs
-  auto input_count = model->input_operands.size();
-  auto parameter_nodes =
-      std::vector<std::shared_ptr<default_opset::Parameter>>();
-  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  NNADAPTER_CHECK_EQ(input_count, parameter_node_map_.size());
-  if (input_count > 0) {
-    input_types_.resize(input_count);
-    for (size_t i = 0; i < input_count; i++) {
-      auto operand = model->input_operands[i];
+  if (!cache->buffer.empty()) {
+    // Build from cache
+    input_types_ = cache->input_types;
+    output_types_ = cache->output_types;
+    std::stringstream model_stream;
+    model_stream.write(reinterpret_cast<char*>(cache->buffer.data()),
+                       cache->buffer.size());
+    NNADAPTER_VLOG(3) << "NNAdapter model cache size(bytes):"
+                      << model_stream.str().size();
+    compiled_model_ =
+        std::make_shared<ov::CompiledModel>(runtime_core_->import_model(
+            model_stream, context_->GetFirtSelectedDeviceName()));
+    NNADAPTER_VLOG(3) << "Build from cache success.";
+  } else {
+    // Build from model
+    NNADAPTER_VLOG(5) << "NNAdapter model:" << std::endl << Visualize(model);
+    Converter converter(&parameter_node_map_, &tensor_map_);
+    NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
+    // Indentify the inputs and outputs
+    auto input_count = model->input_operands.size();
+    auto parameter_nodes =
+        std::vector<std::shared_ptr<default_opset::Parameter>>();
+    NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    NNADAPTER_CHECK_EQ(input_count, parameter_node_map_.size());
+    if (input_count > 0) {
+      input_types_.resize(input_count);
+      for (size_t i = 0; i < input_count; i++) {
+        auto operand = model->input_operands[i];
+        const auto& type = operand->type;
+        NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
+        input_types_[i] = type;
+        NNADAPTER_CHECK(parameter_node_map_.find(operand) !=
+                        parameter_node_map_.end());
+        parameter_nodes.push_back(parameter_node_map_[operand]);
+      }
+    }
+    auto output_count = model->output_operands.size();
+    NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+    NNADAPTER_CHECK_GT(output_count, 0);
+    output_types_.resize(output_count);
+    for (size_t i = 0; i < output_count; i++) {
+      auto operand = model->output_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
-      input_types_[i] = type;
-      NNADAPTER_CHECK(parameter_node_map_.find(operand) !=
-                      parameter_node_map_.end());
-      parameter_nodes.push_back(parameter_node_map_[operand]);
+      output_types_[i] = type;
+      auto result_node =
+          std::make_shared<default_opset::Result>(*tensor_map_[operand].back());
+      result_nodes_.push_back(result_node);
+    }
+    // Convert NNAdapter model to OpenVINO model
+    std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
+        result_nodes_, parameter_nodes, "openvino_graph");
+    compiled_model_ =
+        std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
+            ov_model, context_->GetFirtSelectedDeviceName()));
+    NNADAPTER_VLOG(3) << "Build from model success.";
+    // Cache compiled openvino model.
+    if (cache->token && cache->dir) {
+      std::stringstream model_stream;
+      compiled_model_->export_model(model_stream);
+      NNADAPTER_VLOG(3) << "NNAdapter model cache size(bytes):"
+                        << model_stream.str().size();
+      cache->buffer.resize(model_stream.str().size());
+      memcpy(reinterpret_cast<char*>(cache->buffer.data()),
+             model_stream.str().data(),
+             model_stream.str().size());
     }
   }
-  auto output_count = model->output_operands.size();
-  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
-  NNADAPTER_CHECK_GT(output_count, 0);
-  output_types_.resize(output_count);
-  for (size_t i = 0; i < output_count; i++) {
-    auto operand = model->output_operands[i];
-    const auto& type = operand->type;
-    NNADAPTER_CHECK(tensor_map_.find(operand) != tensor_map_.end());
-    output_types_[i] = type;
-    auto result_node =
-        std::make_shared<default_opset::Result>(*tensor_map_[operand].back());
-    result_nodes_.push_back(result_node);
-  }
-  // Convert NNAdapter model to OpenVINO model
-  std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
-      result_nodes_, parameter_nodes, "openvino_graph");
-  compiled_model_ =
-      std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
-          ov_model, context_->GetFirtSelectedDeviceName()));
-  NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
 
