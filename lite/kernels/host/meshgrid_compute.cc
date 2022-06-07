@@ -118,3 +118,16 @@ REGISTER_LITE_KERNEL(meshgrid, kHost, kFloat, kAny, meshgrid_int32, int32)
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+using meshgrid_int64 =
+    paddle::lite::kernels::host::MeshgridCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(meshgrid, kHost, kFloat, kAny, meshgrid_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
+    .Finalize();

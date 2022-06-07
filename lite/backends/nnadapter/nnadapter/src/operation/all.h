@@ -194,6 +194,7 @@ REGISTER_OPERATION(PRIOR_BOX,
 REGISTER_OPERATION(QUANTIZE, ValidateQuantize, PrepareQuantize, ExecuteQuantize)
 REGISTER_OPERATION(RANGE, ValidateRange, PrepareRange, ExecuteRange)
 REGISTER_OPERATION(REDUCE_MEAN, ValidateReduce, PrepareReduce, ExecuteReduce)
+REGISTER_OPERATION(REDUCE_MAX, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(REDUCE_SUM, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(RELU,
                    ValidateUnaryActivations,
