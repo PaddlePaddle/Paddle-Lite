@@ -35,12 +35,14 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   std::string build_config_file_path() { return build_config_file_path_; }
+  std::string op_params_file_path() { return op_params_file_path_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
   std::string build_config_file_path_ = "";
+  std::string op_params_file_path_ = "";
 };
 
 class Program {

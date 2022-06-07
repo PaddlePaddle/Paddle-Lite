@@ -53,13 +53,13 @@ endif()
 add_library(magicmind_runtime SHARED IMPORTED GLOBAL)
 set_property(TARGET magicmind_runtime PROPERTY IMPORTED_LOCATION ${CAMBRICON_MLU_SDK_MAGICMIND_RUNTIME_FILE})
 
-find_library(CAMBRICON_MLU_SDK_MAGICMIND_PLUGIN_FILE NAMES mm_plugin
+find_library(CAMBRICON_MLU_SDK_MAGICMIND_PLUGIN_FILE NAMES magicmind_plugin
   PATHS ${NNADAPTER_CAMBRICON_MLU_SDK_ROOT}/${CAMBRICON_MLU_SDK_SUB_LIB_PATH}
   CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT CAMBRICON_MLU_SDK_MAGICMIND_PLUGIN_FILE)
-    message(FATAL_ERROR "Missing libmm_plugin.so in ${NNADAPTER_CAMBRICON_MLU_SDK_ROOT}/${CAMBRICON_MLU_SDK_SUB_LIB_PATH}")
+    message(FATAL_ERROR "Missing libmagicmind_plugin.so in ${NNADAPTER_CAMBRICON_MLU_SDK_ROOT}/${CAMBRICON_MLU_SDK_SUB_LIB_PATH}")
 endif()
-add_library(mm_plugin SHARED IMPORTED GLOBAL)
-set_property(TARGET mm_plugin PROPERTY IMPORTED_LOCATION ${CAMBRICON_MLU_SDK_MAGICMIND_PLUGIN_FILE})
+add_library(magicmind_plugin SHARED IMPORTED GLOBAL)
+set_property(TARGET magicmind_plugin PROPERTY IMPORTED_LOCATION ${CAMBRICON_MLU_SDK_MAGICMIND_PLUGIN_FILE})
 
-set(DEPS ${DEPS} magicmind magicmind_runtime mm_plugin)
+set(DEPS ${DEPS} magicmind magicmind_runtime magicmind_plugin)

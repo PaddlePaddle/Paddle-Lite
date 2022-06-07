@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "operation/yolo_box.h"
+#include <string>
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/utility.h"
 namespace nnadapter {
 namespace cambricon_mlu {
 
@@ -32,8 +34,17 @@ int ConvertYoloBox(Converter* converter, core::Operation* operation) {
     imgsize_tensor = converter->ConvertOperand(imgsize_operand);
   }
 
+  int image_height = 608;
+  int image_width = 608;
+  auto op_params = GetKeyValues(converter->op_params().c_str());
+  if (op_params.count("image_height")) {
+    image_height = stoi(op_params["image_height"]);
+  }
+  if (op_params.count("image_width")) {
+    image_width = stoi(op_params["image_width"]);
+  }
   auto img_shape_tensor = converter->AddInt32ConstantTensor(
-      std::vector<int32_t>({608, 608}).data(), {1, 2});
+      std::vector<int32_t>({image_height, image_width}).data(), {1, 2});
   auto yolo_box_node =
       converter->network()->AddIYoloBoxNode(input_tensor, img_shape_tensor);
   NNADAPTER_CHECK(yolo_box_node) << "Failed to add yolo_box node.";
@@ -50,7 +61,7 @@ int ConvertYoloBox(Converter* converter, core::Operation* operation) {
   yolo_box_node->SetDownsampleRatioVal(static_cast<int64_t>(downsample_ratio));
   yolo_box_node->SetClipBBoxVal(clip_bbox);
   yolo_box_node->SetScaleXYVal(scale_x_y);
-  yolo_box_node->SetImageShape(608, 608);
+  yolo_box_node->SetImageShape(image_height, image_width);
   auto boxes_tensor = yolo_box_node->GetOutput(0);
   auto scores_tensor = yolo_box_node->GetOutput(1);
   converter->UpdateTensorMap(boxes_operand, boxes_tensor);

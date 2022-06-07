@@ -44,8 +44,6 @@ int ConvertRoiAlign(Converter* converter, core::Operation* operation) {
       std::pair<std::string, std::vector<magicmind::ITensor*>>("input", rois));
   plugin_inputs.insert(std::pair<std::string, std::vector<magicmind::ITensor*>>(
       "rois_num", rois_num));
-  // plugin_inputs["input"] = rois;
-  // plugin_inputs["rois_num"] = rois_num;
   magicmind::DataTypeMap plugin_outputs_dtype;
   plugin_outputs_dtype["output"] = {magicmind::DataType::FLOAT16};
   auto convert_rois_node = converter->network()->AddIPluginNode(
@@ -69,7 +67,6 @@ int ConvertRoiAlign(Converter* converter, core::Operation* operation) {
                                 static_cast<int64_t>(output_width));
   auto output_tensor = roi_align_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
-  // converter->UpdateTensorMap(output_operand, convert_rois_out_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

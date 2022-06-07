@@ -15,6 +15,7 @@
 #include "driver/cambricon_mlu/engine.h"
 #include <unistd.h>
 #include <algorithm>
+#include <fstream>
 #include <limits>
 #include <utility>
 #include <vector>
@@ -48,6 +49,19 @@ Context::Context(void* device, const char* properties) : device_(device) {
     NNADAPTER_LOG(INFO) << "BuildConfig file path: " << build_config_file_path_;
   } else {
     NNADAPTER_LOG(INFO) << "Build model with default config.";
+  }
+
+  std::string op_params_file_path;
+  if (key_values.count(CAMBRICON_MLU_OP_PARAMS_FILE_PATH)) {
+    op_params_file_path = key_values[CAMBRICON_MLU_OP_PARAMS_FILE_PATH];
+  } else {
+    op_params_file_path = GetStringFromEnv(CAMBRICON_MLU_OP_PARAMS_FILE_PATH);
+  }
+  if (!op_params_file_path.empty()) {
+    op_params_file_path_ = op_params_file_path;
+    NNADAPTER_LOG(INFO) << "op_params file path: " << op_params_file_path_;
+  } else {
+    NNADAPTER_LOG(INFO) << "op convert with default value.";
   }
 }
 
@@ -97,7 +111,17 @@ int Program::BuildFromModel(core::Model* model) {
   FixQuantizedOps(model);
   FixNonMaxSuppression(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  Converter converter(&tensors_, mm_network_.get());
+  std::stringstream op_params;
+  if (!context_->op_params_file_path().empty()) {
+    std::ifstream op_params_file(context_->op_params_file_path().c_str());
+    if (!op_params_file.is_open()) {
+      NNADAPTER_LOG(WARNING) << " op params file open failed.";
+    } else {
+      op_params << op_params_file.rdbuf();
+    }
+    op_params_file.close();
+  }
+  Converter converter(&tensors_, mm_network_.get(), op_params.str());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
 
   // Indentify the inputs and outputs
