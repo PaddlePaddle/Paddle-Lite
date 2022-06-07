@@ -152,7 +152,8 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
           }
         }
 
-        if (xpu_use_fp16_optimizer_) {
+        if (xpu_use_fp16_optimizer_ &&
+            xpu_special_op_.count(instruct.op_type())) {
           type_match = false;
           if (kernel.summary().find(xpu_disable_flag_) != std::string::npos) {
             score = 0;
@@ -260,6 +261,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   void GetScore(PrecisionType precision, size_t* score_tmp);
   void NodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
   void InplaceNodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
+  void SpecialNodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
   void NodeOutputPrecision(const std::unique_ptr<SSAGraph>& graph,
                            lite::mir::Node* node,
                            const std::unique_ptr<lite::KernelBase>& kernel);
@@ -295,6 +297,13 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   std::map<std::string, PrecisionType> xpu_output_type_{};
   std::string xpu_disable_flag_{};
   const std::set<std::string> consider_cpu_op_{"cast"};
+  const std::set<std::string> xpu_special_op_{"__xpu__fc",
+                                              "conv3d",
+                                              "__xpu__conv2d",
+                                              "gather",
+                                              "pool2d",
+                                              "concat",
+                                              "calib"};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",

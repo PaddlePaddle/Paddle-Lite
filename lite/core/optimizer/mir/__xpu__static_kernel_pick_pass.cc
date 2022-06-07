@@ -45,6 +45,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (xpu_use_fp16_optimizer_) {
     GetXPUDeviceType();
     NodeInputPrecision(graph);
+    SpecialNodeInputPrecision(graph);
     InplaceNodeInputPrecision(graph);
   }
 
@@ -254,7 +255,6 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
   // only use in FC，it will not use in future.
   if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
       lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-    VLOG(6) << "work??";
     if (kernel.alias() == "XPU_Int8_FP32_FP32" &&
         instruct.op_type() == "__xpu__fc") {
       *score *= 2;
@@ -333,13 +333,14 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
   }
 }
 
-void XPUStaticKernelPickPass::NodeInputPrecision(
+// Special nodes like conv2d, matmul ; collect input data precision for eatch
+// registry kernel as a candidate set.
+void XPUStaticKernelPickPass::SpecialNodeInputPrecision(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     auto& inst = node->AsStmt();
     const auto* op_info = inst.op_info();
-    // not collect inplace op
-    if (xpu_inplace_op_.count(inst.op_type())) {
+    if (xpu_special_op_.count(inst.op_type()) == 0) {
       continue;
     }
 
@@ -367,12 +368,56 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
         const auto* decl_type = kernel->GetInputDeclType(arg_name);
         CHECK(decl_type);
         precison = decl_type->precision();
+        temp_map.emplace(kernel->summary(), precison);
+        kernel_input_type.emplace_back(temp_map);
+      }
 
-        if (inst.op_type() == "fetch") {
-          auto* scope = graph->GetScope();
-          auto* var = scope->FindVar(var_name);
-          precison = var->GetMutable<lite::Tensor>()->precision();
+      xpu_input_type_.insert({var_name, kernel_input_type});
+    }
+  }
+}
+
+void XPUStaticKernelPickPass::NodeInputPrecision(
+    const std::unique_ptr<SSAGraph>& graph) {
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    auto& inst = node->AsStmt();
+    const auto* op_info = inst.op_info();
+    // not collect inplace op
+    if (xpu_special_op_.count(inst.op_type())) {
+      continue;
+    }
+
+    if (xpu_inplace_op_.count(inst.op_type())) {
+      continue;
+    }
+
+    if (inst.op_type() == "feed") {
+      continue;
+    }
+
+    for (auto* in_node : node->inlinks) {
+      auto& var = in_node->AsArg();
+      const auto& var_name = var.name;
+      std::string arg_name;
+      CHECK(op_info->GetInputArgname(var_name, &arg_name))
+          << "Can not find the input argument,current var name : " << var_name;
+      VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
+      if (input_parameter_name_.count(arg_name) == 0) {
+        continue;
+      }
+
+      std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
+      for (auto&& kernel : inst.kernels()) {
+        if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
+          VLOG(6) << " ignore collect current kernel:" << kernel->summary();
+          continue;
         }
+
+        std::map<std::string, PrecisionType> temp_map;
+        PrecisionType precison;
+        auto* scope = graph->GetScope();
+        auto* var = scope->FindVar(var_name);
+        precison = var->GetMutable<lite::Tensor>()->precision();
 
         temp_map.emplace(kernel->summary(), precison);
         kernel_input_type.emplace_back(temp_map);
@@ -383,7 +428,8 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
   }
 }
 
-// Special for inplace op.
+// Special for inplace op.Its input data precision is determined by the output
+// precision of the previous node
 void XPUStaticKernelPickPass::InplaceNodeInputPrecision(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
@@ -542,7 +588,6 @@ void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
   }
 
   // output data precision score
-  VLOG(6) << "size:" << out_names.size();
   for (size_t i = 0; i < out_names.size(); ++i) {
     std::string tmp;
     CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
