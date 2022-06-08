@@ -965,32 +965,31 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"       \
   "bne 0b\n"
 
-#define COMPUTE_SMMLA_8x4_REMAIN                    \
-  "1: \n"                                           \
-  "cmp %x[rem_cnt], #2\n"                           \
-  "beq 2f\n"                                        \
-  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"       \
-  "ld1b   {z7.b}, p0/Z, [%x[b_ptr],  #3, MUL VL]\n" \
-  "smmla  z8.s,  z0.b, z4.b\n"                      \
-  "smmla  z14.s, z1.b, z4.b\n"                      \
-  "smmla  z20.s, z2.b, z4.b\n"                      \
-  "smmla  z26.s, z3.b, z4.b\n"                      \
-  "addvl %x[b_ptr], %x[b_ptr], #4\n"                \
-  "smmla  z9.s,  z0.b, z5.b\n"                      \
-  "smmla  z15.s, z1.b, z5.b\n"                      \
-  "smmla  z21.s, z2.b, z5.b\n"                      \
-  "smmla  z27.s, z3.b, z5.b\n"                      \
-  "add    %x[a_ptr], %x[a_ptr], #0x40\n"            \
-  "b 3f\n"                                          \
-  "2: \n" COMPUTE_SMMLA_8x4_0                       \
-  "smmla  z8.s,  z0.b, z6.b\n"                      \
-  "smmla  z14.s, z1.b, z6.b\n"                      \
-  "smmla  z20.s, z2.b, z6.b\n"                      \
-  "smmla  z26.s, z3.b, z6.b\n"                      \
-  "smmla  z9.s,  z0.b, z7.b\n"                      \
-  "smmla  z15.s, z1.b, z7.b\n"                      \
-  "smmla  z21.s, z2.b, z7.b\n"                      \
-  "smmla  z27.s, z3.b, z7.b\n"                      \
+#define COMPUTE_SMMLA_8x4_REMAIN              \
+  "1: \n"                                     \
+  "cmp %x[rem_cnt], #2\n"                     \
+  "beq 2f\n"                                  \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n" \
+  "smmla  z8.s,  z0.b, z4.b\n"                \
+  "smmla  z14.s, z1.b, z4.b\n"                \
+  "smmla  z20.s, z2.b, z4.b\n"                \
+  "smmla  z26.s, z3.b, z4.b\n"                \
+  "addvl %x[b_ptr], %x[b_ptr], #2\n"          \
+  "smmla  z9.s,  z0.b, z5.b\n"                \
+  "smmla  z15.s, z1.b, z5.b\n"                \
+  "smmla  z21.s, z2.b, z5.b\n"                \
+  "smmla  z27.s, z3.b, z5.b\n"                \
+  "add    %x[a_ptr], %x[a_ptr], #0x40\n"      \
+  "b 3f\n"                                    \
+  "2: \n" COMPUTE_SMMLA_8x4_0                 \
+  "smmla  z8.s,  z0.b, z6.b\n"                \
+  "smmla  z14.s, z1.b, z6.b\n"                \
+  "smmla  z20.s, z2.b, z6.b\n"                \
+  "smmla  z26.s, z3.b, z6.b\n"                \
+  "smmla  z9.s,  z0.b, z7.b\n"                \
+  "smmla  z15.s, z1.b, z7.b\n"                \
+  "smmla  z21.s, z2.b, z7.b\n"                \
+  "smmla  z27.s, z3.b, z7.b\n"                \
   "add    %x[a_ptr], %x[a_ptr], #0x80\n"
 
 #define CVT_SMMLA_INT32_TO_FP32_8x4           \
@@ -2255,8 +2254,6 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
           }
           for (int i = 0; i < rem_rem; i += 2) {
             const int8_t* a_ptr = a_ptr_l;
-            int tail = tail_pre;
-            int k = k_pre;
             bool last = (i + 1 == rem_rem);
             // 8x1
             gemm_smmla_int8_kernel_8x1<dtype>(a_ptr,
