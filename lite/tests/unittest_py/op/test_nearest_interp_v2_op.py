@@ -31,8 +31,9 @@ class TestNearestV2InterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
         # precision bugs will be fix in the future
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
@@ -86,6 +87,7 @@ class TestNearestV2InterpOp(AutoScanTest):
         out_h = draw(st.integers(min_value=1, max_value=32))
         data_layout = draw(st.sampled_from(["NCHW"]))
         test_case = draw(st.sampled_from([1, 2, 3]))
+        infer_shape_with_scale = draw(st.booleans())
 
         def generate_input1(*args, **kwargs):
             return np.random.normal(0.0, 1.0, X_shape).astype(np.float32)
@@ -109,20 +111,33 @@ class TestNearestV2InterpOp(AutoScanTest):
         assume(scale2 * X_shape[2] > 1.0)
         assume(scale2 * X_shape[3] > 1.0)
         assume(test_case != 2)
+        scale = [scale1, scale2]
+
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            assume(scale1 > 1.5 or scale1 < 1)
+            assume(scale2 > 1.5 or scale2 < 1)
+            if infer_shape_with_scale:
+                out_h = -1
+                out_w = -1
+            else:
+                scale = []
 
         nnadapter_device_name = self.get_nnadapter_device_name()
-        if nnadapter_device_name == "nvidia_tensorrt":
+        has_tensorrt_device = "nvidia_tensorrt" in self.get_nnadapter_device_name(
+        )
+        if self.get_target() == 'NNAdapter':
             nearest_interp_v2 = OpConfig(
                 type="nearest_interp_v2",
                 inputs={"X": ["input_data_x"]},
                 outputs={"Out": ["output_data"]},
                 attrs={
                     "data_layout": data_layout,
-                    "scale": [scale1, scale2],
+                    "scale": scale,
                     "out_w": out_w,
                     "out_h": out_h,
                     "interp_method": interp_method,
                     "align_corners": False
+                    if has_tensorrt_device else align_corners
                 })
             program_config = ProgramConfig(
                 ops=[nearest_interp_v2],

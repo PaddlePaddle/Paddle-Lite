@@ -46,7 +46,8 @@ class TestGatherOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -67,6 +68,8 @@ class TestGatherOp(AutoScanTest):
         index_type = draw(st.sampled_from(["int32", "int64"]))
         with_tenor_axis = draw(st.booleans())
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            with_tenor_axis = False
         if self.get_target() == "OpenCL":
             axis_type = "int32"
             index_type = "int32"

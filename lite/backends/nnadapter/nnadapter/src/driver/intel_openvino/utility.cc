@@ -83,6 +83,24 @@ ElementType ConvertToOVElementType(
   return ov::element::f32;
 }
 
+PadMode ConvertPadModeCodeToOVPadMode(int pad_mode_code) {
+  switch (pad_mode_code) {
+    case NNADAPTER_PAD_MODE_CONSTANT:
+      return PadMode::CONSTANT;
+    case NNADAPTER_PAD_MODE_REFLECT:
+      return PadMode::REFLECT;
+    case NNADAPTER_PAD_MODE_EDGE:
+    case NNADAPTER_PAD_MODE_REPLICATE:
+      return PadMode::EDGE;
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand pad mode code("
+          << pad_mode_code << ") to pad mode !";
+      break;
+  }
+  return PadMode::CONSTANT;
+}
+
 template <>
 ElementType GetElementType<int8_t>() {
   return ov::element::i8;
