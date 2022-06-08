@@ -350,7 +350,7 @@ namespace fp16 {
 #define RIGHT_COMPUTE_FP16_S2P0_SMALL                   \
   "ldr    q18, [%[vmask]]                           \n" \
   "ldr    q19, [%[vmask], #0x10]                    \n" \
-  "ldr    q20, [%[rmask], #0x10]                    \n" \
+  "ldr    q20, [%[rmask]]                           \n" \
   "bif    v0.16b, %[vzero].16b, v18.16b             \n" \
   "bif    v1.16b, %[vzero].16b, v19.16b             \n" \
   "bif    v2.16b, %[vzero].16b, v18.16b             \n" \
