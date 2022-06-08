@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
-#include <xpu/runtime.h>
 #include <algorithm>
 #include <list>
 #include <map>
@@ -666,13 +665,13 @@ void XPUStaticKernelPickPass::GetXPUDeviceType() {
   }
 
   if (cur_dev_attr <= 1) {
-    VLOG(4) << "Currents  XPU device : XPU1";
+    VLOG(4) << "Currents XPU device : XPU1";
     xpu_disable_flag_ = "DISABLE_XPU1";
   } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
-    VLOG(4) << "Currents  XPU device : XPU2";
+    VLOG(4) << "Currents XPU device : XPU2";
     xpu_disable_flag_ = "DISABLE_XPU2";
   } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
-    VLOG(4) << "Currents  XPU device : XPU3";
+    VLOG(4) << "Currents XPU device : XPU3";
     xpu_disable_flag_ = "DISABLE_XPU3";
   } else {
     VLOG(4) << "invaid XPU device";
