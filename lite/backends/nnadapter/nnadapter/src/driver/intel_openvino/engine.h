@@ -60,10 +60,6 @@ class Program {
               uint32_t output_count,
               core::Argument* output_arguments);
 
-  // Build from model or cache
-  int BuildFromModel(core::Model* model);
-  int BuildFromCache(core::Cache* cache);
-
  private:
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
