@@ -17,7 +17,6 @@
 
 USE_MIR_PASS(demo);
 USE_MIR_PASS(static_kernel_pick_pass);
-USE_MIR_PASS(__xpu__static_kernel_pick_pass);
 USE_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass);
 USE_MIR_PASS(op_transformation_pass);
 USE_MIR_PASS(variable_place_inference_pass);
@@ -108,6 +107,7 @@ USE_MIR_PASS(__xpu__bigru_fuse_pass);
 USE_MIR_PASS(__xpu__dynamic_lstm_fuse_pass);
 USE_MIR_PASS(__xpu__multi_softmax_fuse_pass);
 USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
+USE_MIR_PASS(__xpu__static_kernel_pick_pass);
 USE_MIR_PASS(x86_int8_attribute_pass);
 USE_MIR_PASS(fill_range_fuse_pass);
 USE_MIR_PASS(range_calc_offline_pass);
