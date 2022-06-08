@@ -184,10 +184,9 @@ class XPUMultiSliceSoftmaxFuser {
         "__xpu__multi_softmax_concat_output_" + in_name;
     CHECK(graph->RetrieveArgument(concat_output_name) == nullptr);
     auto* concat_output_node = graph->NewArgumentNode(concat_output_name);
-    concat_output_node->arg()->is_weight = true;
     concat_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->MutableParent()->NewTensor(concat_output_name);
+    scope->NewTensor(concat_output_name);
     op_desc.SetOutput("ConcatOut", {concat_output_name});
 
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());

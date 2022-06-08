@@ -172,6 +172,7 @@ void SliceCompute<T>::Run() {
     int end = ends[i] < 0 ? ends[i] + static_cast<int>(in_dims[axis]) : ends[i];
     x_dim_end_[axis] = (std::min)(end, static_cast<int>(in_dims[axis]));
   }
+  out->Resize(out_dims);
 
   int r =
       xdnn::slice(ctx.GetRawContext(),         /* context */
