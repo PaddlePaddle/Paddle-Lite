@@ -28,7 +28,7 @@ const int MBLOCK_INT8_SVE = 8;
 const int NBLOCK_INT8_SVE = 12;
 
 #define ROUNDUP_SVE(a, b) ((((a) + (b)-1) / (b)) * (b))
-inline int get_hblock_int8_sve(ARMContext* ctx) { return MBLOCK_INT8_SVE }
+inline int get_hblock_int8_sve(ARMContext* ctx) { return MBLOCK_INT8_SVE; }
 
 void prepackA_int8_sve(int8_t* out,
                        const int8_t* in,

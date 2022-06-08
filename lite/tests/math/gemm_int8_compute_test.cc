@@ -269,14 +269,14 @@ bool test_gemm_int8(bool tra,
     paddle::lite::arm::math::sve::gemm_prepack_int8_sve<float>(
         tpackedA_sve.data<int8_t>(),
         db,
-        dbias_int8,
+        dbias,
         dc_sve_fp32,
         m,
         n,
         k,
         has_bias,
         trb,
-        scale_merge_int8.data(),
+        scale_merge_fp32.data(),
         act_param,
         &ctx);
     t1.Stop();
@@ -404,6 +404,65 @@ bool test_gemm_int8(bool tra,
         return false;
       }
     }
+#ifdef LITE_WITH_ARM8_SVE2
+    // fp32
+    tensor_cmp_host(tc_basic_fp32, tc_sve_fp32, max_ratio, max_diff);
+    LOG(INFO) << "sve fp32 compare result, max diff: " << max_diff
+              << ", max ratio: " << max_ratio;
+    if (std::abs(max_ratio) > 1e-4f && std::abs(max_diff) > 5e-5f) {
+      Tensor tdiff;
+      tdiff.set_precision(PRECISION(kFloat));
+      tdiff.Resize(tc_sve_fp32.dims());
+      tensor_diff(tc_basic_fp32, tc_sve_fp32, tdiff);
+      LOG(INFO) << "basic result: ";
+      print_tensor(tc_basic_fp32);
+      LOG(INFO) << "lite result: ";
+      print_tensor(tc_sve_fp32);
+      LOG(INFO) << "diff result: ";
+      print_tensor(tdiff);
+      return false;
+    }
+    /// int8 result
+    max_ratio = 0;
+    max_diff = 0;
+    tensor_cmp_host(tc_basic_int8, tc_sve_int8, max_ratio, max_diff);
+    LOG(INFO) << "sve int8 compare result, max diff: " << max_diff
+              << ", max ratio: " << max_ratio;
+    if (0 && fabs(max_ratio) > 1e-4f) {
+      Tensor tdiff;
+      tdiff.Resize(tc_sve_int8.dims());
+      tdiff.set_precision(PRECISION(kInt8));
+      tensor_diff(tc_basic_int8, tc_sve_int8, tdiff);
+      auto ptr = tdiff.data<int8_t>();
+      auto ptr_basic_fp32 = tc_basic_fp32.data<float>();
+      float count = 0;
+      bool check = true;
+      for (int i = 0; i < tdiff.numel(); ++i) {
+        if (abs(ptr[i]) > 1) {
+          check = false;
+          LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
+                     << ", after scale: " << ptr_basic_fp32[i] / scale_c[0];
+          break;
+        }
+        if (ptr[i] != 0) {
+          LOG(ERROR) << "basic float data: " << ptr_basic_fp32[i]
+                     << ", after scale: " << ptr_basic_fp32[i] / scale_c[0];
+          count += 1;
+        }
+      }
+      check =
+          check && count < std::max(10, static_cast<int>(0.01 * tdiff.numel()));
+      if (!check) {
+        LOG(WARNING) << "int8 basic result";
+        print_tensor(tc_basic_int8);
+        LOG(WARNING) << "int8 lite result";
+        print_tensor(tc_sve_int8);
+        LOG(WARNING) << "int8 diff tensor";
+        print_tensor(tdiff);
+        return false;
+      }
+    }
+#endif
   }
 #endif
   return true;

@@ -46,9 +46,9 @@ void prepackA_m8k8_int8_sve(int8_t* out,
   int8_t* dout = out;
   const int8_t* inptr = in;
   int cnt = x_len >> 4;
-  int remain = x_len & 15;
+  int remain = x_len % 16;
   int rem_cnt = remain >> 3;
-  int rem_rem = remain & 7;
+  int rem_rem = remain % 8;
   LITE_PARALLEL_COMMON_BEGIN(y, tid, mmax, m0, 8) {
     int8_t* outptr = dout + kup * (y - m0);
     const int8_t* inptr_row[8];
@@ -92,14 +92,14 @@ void prepackA_m8k8_int8_sve(int8_t* out,
         "ld1b {z7.b}, p0/Z, [%x[inptr7]]\n"
         "subs %x[cnt], %x[cnt], #1\n"
         // zip-64
-        "uzp1 z8.d,  z0.d, z1.d\n"  // a0-7b0-7
-        "uzp2 z12.d, z0.d, z1.d\n"  // a8-15b8-15
-        "uzp1 z9.d,  z2.d, z3.d\n"  // c0-7d0-7
-        "uzp2 z13.d, z2.d, z3.d\n"  // c8-15d8-15
-        "uzp1 z10.d, z4.d, z5.d\n"  // e0-7f0-7
-        "uzp1 z11.d, z6.d, z7.d\n"  // g0-7h0-7
-        "uzp2 z14.d, z4.d, z5.d\n"  // e8-15f8-15
-        "uzp2 z15.d, z6.d, z7.d\n"  // g8-15g8-15
+        "trn1 z8.d,  z0.d, z1.d\n"  // a0-7b0-7
+        "trn2 z12.d, z0.d, z1.d\n"  // a8-15b8-15
+        "trn1 z9.d,  z2.d, z3.d\n"  // c0-7d0-7
+        "trn2 z13.d, z2.d, z3.d\n"  // c8-15d8-15
+        "trn1 z10.d, z4.d, z5.d\n"  // e0-7f0-7
+        "trn1 z11.d, z6.d, z7.d\n"  // g0-7h0-7
+        "trn2 z14.d, z4.d, z5.d\n"  // e8-15f8-15
+        "trn2 z15.d, z6.d, z7.d\n"  // g8-15g8-15
 
         "add %x[inptr0], %x[inptr0], #0x10\n"
         "add %x[inptr1], %x[inptr1], #0x10\n"
@@ -139,10 +139,10 @@ void prepackA_m8k8_int8_sve(int8_t* out,
         "add %x[inptr6], %x[inptr6], #0x08\n"
         "add %x[inptr7], %x[inptr7], #0x08\n"
         // zip-64
-        "uzp1 z8.d,  z0.d, z1.d\n"  // a0-7b0-7
-        "uzp1 z9.d,  z2.d, z3.d\n"  // c0-7d0-7
-        "uzp1 z10.d, z4.d, z5.d\n"  // e0-7f0-7
-        "uzp1 z11.d, z6.d, z7.d\n"  // g0-7h0-7
+        "trn1 z8.d,  z0.d, z1.d\n"  // a0-7b0-7
+        "trn1 z9.d,  z2.d, z3.d\n"  // c0-7d0-7
+        "trn1 z10.d, z4.d, z5.d\n"  // e0-7f0-7
+        "trn1 z11.d, z6.d, z7.d\n"  // g0-7h0-7
         "st1b {z8.b},  p0, [%x[outptr]]\n"
         "st1b {z9.b},  p0, [%x[outptr], #1, MUL VL]\n"
         "st1b {z10.b}, p0, [%x[outptr], #2, MUL VL]\n"
@@ -195,30 +195,30 @@ void prepackA_m8k8_int8_sve(int8_t* out,
 
 #define ZIP8x16_16x8                                                          \
   /* zip-8 */                                                                 \
-  "uzp1 z8.b,   z0.b, z1.b\n"                        /* a0b0a2b2...a14b14*/   \
-  "uzp2 z9.b,   z0.b, z1.b\n"                        /* a1b1a3b3...a15b15*/   \
-  "uzp1 z10.b,  z2.b, z2.b\n"                        /* c0d0c2d2...c14d14*/   \
-  "uzp2 z11.b,  z3.b, z3.b\n"                        /* c1d1c3d3...c15c15*/   \
-  "uzp1 z12.b,  z4.b, z5.b\n"                        /* e0f0e2f2...e14f14*/   \
-  "uzp2 z13.b,  z4.b, z5.b\n"                        /* e1f1e3f3...e15f15*/   \
-  "uzp1 z14.b,  z6.b, z7.b\n"                        /* g0h0g2h2...g14h14*/   \
-  "uzp2 z15.b,  z6.b, z7.b\n" /* g1h1g3h3...g15h15*/ /* zip-16 */             \
-  "uzp1 z0.h,   z8.h,  z10.h\n"                      /*  a0b0c0d0a4....*/     \
-  "uzp2 z1.h,   z8.h,  z10.h\n"                      /* a2b2c2d2a6...*/       \
-  "uzp1 z2.h,   z9.h,  z11.h\n"                      /* a1b1c1d1a5..*/        \
-  "uzp2 z3.h,   z9.h,  z11.h\n"                      /* a3b3c3d3a7...*/       \
-  "uzp1 z4.h,   z12.h, z14.h\n"                      /* e0f0g0h0e4...*/       \
-  "uzp2 z5.h,   z12.h, z14.h\n"                      /* e2f2g2h2e6...*/       \
-  "uzp1 z6.h,   z13.h, z15.h\n"                      /* e1f1g1h1e5...*/       \
-  "uzp2 z7.h,   z13.h, z15.h\n" /* e3f3g3h3e7...*/   /* zip-32 */             \
-  "uzp1 z8.b,   z0.b, z4.b\n"                        /* a0b0c0d0e0f0g0h0a8*/  \
-  "uzp2 z9.b,   z0.b, z4.b\n"                        /* a4b4c4d4e4f4g4h4a12*/ \
-  "uzp1 z10.b,  z1.b, z5.b\n"                        /* a2b2c2d2e2f2g2h2a10*/ \
-  "uzp2 z11.b,  z1.b, z5.b\n"                        /* a6b6c6d6e6646464a14*/ \
-  "uzp1 z12.b,  z2.b, z6.b\n"                        /* a1b1c1d1e1f1g1h1a9*/  \
-  "uzp2 z13.b,  z2.b, z6.b\n"                        /* a5b5c5d5e5f5g5hha13*/ \
-  "uzp1 z14.b,  z3.b, z7.b\n"                        /* a3b3c3d3e3f3g3h3a11*/ \
-  "uzp2 z15.b,  z3.b, z7.b\n"                        /* a7b7c7d7e7f7g7h7a15*/
+  "trn1 z8.b,   z0.b, z1.b\n"                        /* a0b0a2b2...a14b14*/   \
+  "trn2 z9.b,   z0.b, z1.b\n"                        /* a1b1a3b3...a15b15*/   \
+  "trn1 z10.b,  z2.b, z3.b\n"                        /* c0d0c2d2...c14d14*/   \
+  "trn2 z11.b,  z2.b, z3.b\n"                        /* c1d1c3d3...c15c15*/   \
+  "trn1 z12.b,  z4.b, z5.b\n"                        /* e0f0e2f2...e14f14*/   \
+  "trn2 z13.b,  z4.b, z5.b\n"                        /* e1f1e3f3...e15f15*/   \
+  "trn1 z14.b,  z6.b, z7.b\n"                        /* g0h0g2h2...g14h14*/   \
+  "trn2 z15.b,  z6.b, z7.b\n" /* g1h1g3h3...g15h15*/ /* zip-16 */             \
+  "trn1 z0.h,   z8.h,  z10.h\n"                      /*  a0b0c0d0a4....*/     \
+  "trn2 z1.h,   z8.h,  z10.h\n"                      /* a2b2c2d2a6...*/       \
+  "trn1 z2.h,   z9.h,  z11.h\n"                      /* a1b1c1d1a5..*/        \
+  "trn2 z3.h,   z9.h,  z11.h\n"                      /* a3b3c3d3a7...*/       \
+  "trn1 z4.h,   z12.h, z14.h\n"                      /* e0f0g0h0e4...*/       \
+  "trn2 z5.h,   z12.h, z14.h\n"                      /* e2f2g2h2e6...*/       \
+  "trn1 z6.h,   z13.h, z15.h\n"                      /* e1f1g1h1e5...*/       \
+  "trn2 z7.h,   z13.h, z15.h\n" /* e3f3g3h3e7...*/   /* zip-32 */             \
+  "trn1 z8.s,   z0.s, z4.s\n"                        /* a0b0c0d0e0f0g0h0a8*/  \
+  "trn2 z9.s,   z0.s, z4.s\n"                        /* a4b4c4d4e4f4g4h4a12*/ \
+  "trn1 z10.s,  z1.s, z5.s\n"                        /* a2b2c2d2e2f2g2h2a10*/ \
+  "trn2 z11.s,  z1.s, z5.s\n"                        /* a6b6c6d6e6646464a14*/ \
+  "trn1 z12.s,  z2.s, z6.s\n"                        /* a1b1c1d1e1f1g1h1a9*/  \
+  "trn2 z13.s,  z2.s, z6.s\n"                        /* a5b5c5d5e5f5g5hha13*/ \
+  "trn1 z14.s,  z3.s, z7.s\n"                        /* a3b3c3d3e3f3g3h3a11*/ \
+  "trn2 z15.s,  z3.s, z7.s\n"                        /* a7b7c7d7e7f7g7h7a15*/
 
 void prepackA_m8k8_trans_int8_sve(int8_t* out,
                                   const int8_t* in,
@@ -235,9 +235,9 @@ void prepackA_m8k8_trans_int8_sve(int8_t* out,
   int8_t* dout = out;
   const int8_t* inptr = in;
   int cnt = x_len >> 4;
-  int remain = x_len & 15;
+  int remain = x_len % 15;
   int rem_cnt = remain >> 3;
-  int rem_rem = remain & 7;
+  int rem_rem = remain % 8;
 
   LITE_PARALLEL_COMMON_BEGIN(y, tid, kmax, k0, 8) {
     int8_t* outptr = dout + (y - k0);
@@ -282,14 +282,14 @@ void prepackA_m8k8_trans_int8_sve(int8_t* out,
         "ld1b {z7.b}, p0/Z, [%x[inptr7]]\n"
         "subs %x[cnt], %x[cnt], #1\n" ZIP8x16_16x8
         // zip-64
-        "uzp1 z0.d,  z8.d,  z12.d\n"  // 0-1
-        "uzp2 z1.d,  z8.d,  z12.d\n"  // 8-9
-        "uzp1 z2.d,  z9.d,  z13.d\n"  // 4-5
-        "uzp2 z3.d,  z9.d,  z13.d\n"  // 12-13
-        "uzp1 z4.d,  z10.d, z14.d\n"  // 2-3
-        "uzp2 z5.d,  z10.d, z14.d\n"  // 10-11
-        "uzp1 z6.d,  z11.d, z15.d\n"  // 6-7
-        "uzp2 z7.d,  z11.d, z15.d\n"  // 14-15
+        "trn1 z0.d,  z8.d,  z12.d\n"  // 0-1
+        "trn2 z1.d,  z8.d,  z12.d\n"  // 8-9
+        "trn1 z2.d,  z9.d,  z13.d\n"  // 4-5
+        "trn2 z3.d,  z9.d,  z13.d\n"  // 12-13
+        "trn1 z4.d,  z10.d, z14.d\n"  // 2-3
+        "trn2 z5.d,  z10.d, z14.d\n"  // 10-11
+        "trn1 z6.d,  z11.d, z15.d\n"  // 6-7
+        "trn2 z7.d,  z11.d, z15.d\n"  // 14-15
 
         "add %x[inptr0], %x[inptr0], #0x10\n"
         "add %x[inptr1], %x[inptr1], #0x10\n"
@@ -329,10 +329,10 @@ void prepackA_m8k8_trans_int8_sve(int8_t* out,
         "add %x[inptr6], %x[inptr6], #0x08\n"
         "add %x[inptr7], %x[inptr7], #0x08\n" ZIP8x16_16x8
         // zip-64
-        "uzp1 z0.d,  z8.d,  z12.d\n"  // 0-1
-        "uzp1 z2.d,  z9.d,  z13.d\n"  // 4-5
-        "uzp1 z4.d,  z10.d, z14.d\n"  // 2-3
-        "uzp1 z6.d,  z11.d, z15.d\n"  // 6-7
+        "trn1 z0.d,  z8.d,  z12.d\n"  // 0-1
+        "trn1 z2.d,  z9.d,  z13.d\n"  // 4-5
+        "trn1 z4.d,  z10.d, z14.d\n"  // 2-3
+        "trn1 z6.d,  z11.d, z15.d\n"  // 6-7
 
         "st1b {z0.b}, p0, [%x[outptr]]\n"
         "st1b {z4.b}, p0, [%x[outptr], #1, MUL VL]\n"
@@ -411,13 +411,13 @@ void loadb_k8n12_int8_sve(int8_t* out,
   int8_t* dout = out;
   const int8_t* din = in + k0 * ldin + n0;
   int cnt = x_len / 12;
-  int right_remain = x_len & 11;
+  int right_remain = x_len % 12;
 
   int rem_cnt = right_remain >> 2;
-  int rem_rem = right_remain & 3;
+  int rem_rem = right_remain % 4;
   int rem_2 = rem_rem >> 1;
-  int rem_2_rem = rem_rem & 1;
-  rem_2 = (rem_rem + 1) >> 2;
+  int rem_2_rem = rem_rem % 2;
+  rem_2 = (rem_rem + 1) >> 1;
   int kup = ROUNDUP_SVE(y_len, 8);
   int cnt_12 = (cnt > 0) ? 12 : 0;
   int cnt_4 = (rem_cnt > 0) ? 4 : 0;
@@ -475,14 +475,14 @@ void loadb_k8n12_int8_sve(int8_t* out,
         "ld1b {z7.b}, p0/Z, [%x[inptr7]]\n"
         "subs %x[cnt], %x[cnt], #1\n" ZIP8x16_16x8
         // zip-64
-        "uzp1 z0.d,  z8.d,  z12.d\n"  // 0-1
-        "uzp2 z1.d,  z8.d,  z12.d\n"  // 8-9
-        "uzp1 z2.d,  z9.d,  z13.d\n"  // 4-5
-        "uzp2 z3.d,  z9.d,  z13.d\n"  // 12-13
-        "uzp1 z4.d,  z10.d, z14.d\n"  // 2-3
-        "uzp2 z5.d,  z10.d, z14.d\n"  // 10-11
-        "uzp1 z6.d,  z11.d, z15.d\n"  // 6-7
-        "uzp2 z7.d,  z11.d, z15.d\n"  // 14-15
+        "trn1 z0.d,  z8.d,  z12.d\n"  // 0-1
+        "trn2 z1.d,  z8.d,  z12.d\n"  // 8-9
+        "trn1 z2.d,  z9.d,  z13.d\n"  // 4-5
+        "trn2 z3.d,  z9.d,  z13.d\n"  // 12-13
+        "trn1 z4.d,  z10.d, z14.d\n"  // 2-3
+        "trn2 z5.d,  z10.d, z14.d\n"  // 10-11
+        "trn1 z6.d,  z11.d, z15.d\n"  // 6-7
+        "trn2 z7.d,  z11.d, z15.d\n"  // 14-15
 
         "add %x[inptr0], %x[inptr0], #0x0c\n"
         "add %x[inptr1], %x[inptr1], #0x0c\n"
@@ -513,8 +513,8 @@ void loadb_k8n12_int8_sve(int8_t* out,
         "ld1b {z7.b}, p0/Z, [%x[inptr7]]\n"
         "subs %x[rem_cnt], %x[rem_cnt], #1\n" ZIP8x16_16x8
         // zip-64
-        "uzp1 z0.d,  z8.d,  z12.d\n"  // 0-1
-        "uzp1 z4.d,  z10.d, z14.d\n"  // 2-3
+        "trn1 z0.d,  z8.d,  z12.d\n"  // 0-1
+        "trn1 z4.d,  z10.d, z14.d\n"  // 2-3
         "add %x[inptr0], %x[inptr0], #0x04\n"
         "add %x[inptr1], %x[inptr1], #0x04\n"
         "add %x[inptr2], %x[inptr2], #0x04\n"
@@ -571,23 +571,23 @@ void loadb_k8n12_int8_sve(int8_t* out,
         outptr_row_1[6] = *inptr_row[6]++;
         outptr_row_1[7] = *inptr_row[7]++;
         if (i == rem_2 - 1 && rem_2_rem) {
-          outptr_row_1[0] = 0;
-          outptr_row_1[1] = 0;
-          outptr_row_1[2] = 0;
-          outptr_row_1[3] = 0;
-          outptr_row_1[4] = 0;
-          outptr_row_1[5] = 0;
-          outptr_row_1[6] = 0;
-          outptr_row_1[7] = 0;
+          outptr_row_1[8] = 0;
+          outptr_row_1[9] = 0;
+          outptr_row_1[10] = 0;
+          outptr_row_1[11] = 0;
+          outptr_row_1[12] = 0;
+          outptr_row_1[13] = 0;
+          outptr_row_1[14] = 0;
+          outptr_row_1[15] = 0;
         } else {
-          outptr_row_1[0] = *inptr_row[0]++;
-          outptr_row_1[1] = *inptr_row[1]++;
-          outptr_row_1[2] = *inptr_row[2]++;
-          outptr_row_1[3] = *inptr_row[3]++;
-          outptr_row_1[4] = *inptr_row[4]++;
-          outptr_row_1[5] = *inptr_row[5]++;
-          outptr_row_1[6] = *inptr_row[6]++;
-          outptr_row_1[7] = *inptr_row[7]++;
+          outptr_row_1[8] = *inptr_row[0]++;
+          outptr_row_1[9] = *inptr_row[1]++;
+          outptr_row_1[10] = *inptr_row[2]++;
+          outptr_row_1[11] = *inptr_row[3]++;
+          outptr_row_1[12] = *inptr_row[4]++;
+          outptr_row_1[13] = *inptr_row[5]++;
+          outptr_row_1[14] = *inptr_row[6]++;
+          outptr_row_1[15] = *inptr_row[7]++;
         }
         outptr_row_1 += stride_2;
       }
@@ -789,24 +789,29 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "prfm   pldl1keep, [%[a_ptr], #256]\n"            \
   "cbz    %x[k],  1f\n"
 
-#define COMPUTE_SMMLA_8x2                      \
-  "0: \n"                                      \
-  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"  \
-  "ld1rqb {z6.b}, p0/Z, [%x[a_ptr], #0x40]\n"  \
-  "smmla  z8.s,  z0.b, z4.b\n"                 \
-  "smmla  z14.s, z1.b, z4.b\n"                 \
-  "ld1rqb {z7.b}, p0/Z, [%x[a_ptr], #0x50]\n"  \
-  "ld1rqb {z9.b}, p0/Z, [%x[a_ptr], #0x60]\n"  \
-  "smmla  z20.s, z2.b, z4.b\n"                 \
-  "smmla  z26.s, z3.b, z4.b\n"                 \
-  "ld1rqb {z10.b}, p0/Z, [%x[a_ptr], #0x70]\n" \
-  "addvl  %x[b_ptr], %x[b_ptr], #2\n"          \
-  "add    %x[a_ptr], %x[a_ptr], #0x80\n"       \
-  "subs   %x[k], %[k], #1\n"                   \
-  "smmla  z8.s,  z6.b,  z5.b\n"                \
-  "smmla  z14.s, z7.b,  z5.b\n"                \
-  "smmla  z20.s, z9.b,  z5.b\n"                \
-  "smmla  z26.s, z10.b, z5.b\n"                \
+#define COMPUTE_SMMLA_8x2                           \
+  "0: \n"                                           \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"       \
+  "ld1rqb {z6.b}, p0/Z, [%x[a_ptr], #0x40]\n"       \
+  "smmla  z8.s,  z0.b, z4.b\n"                      \
+  "smmla  z14.s, z1.b, z4.b\n"                      \
+  "ld1rqb {z7.b}, p0/Z, [%x[a_ptr], #0x50]\n"       \
+  "ld1rqb {z9.b}, p0/Z, [%x[a_ptr], #0x60]\n"       \
+  "smmla  z20.s, z2.b, z4.b\n"                      \
+  "smmla  z26.s, z3.b, z4.b\n"                      \
+  "ld1rqb {z10.b}, p0/Z, [%x[a_ptr], #0x70]\n"      \
+  "addvl  %x[b_ptr], %x[b_ptr], #2\n"               \
+  "add    %x[a_ptr], %x[a_ptr], #0x80\n"            \
+  "subs   %x[k], %[k], #1\n"                        \
+  "ld1b   {z4.b}, p0/Z, [%x[b_ptr]]\n"              \
+  "ld1rqb {z0.b}, p0/Z, [%x[a_ptr]]\n"              \
+  "smmla  z8.s,  z6.b,  z5.b\n"                     \
+  "smmla  z14.s, z7.b,  z5.b\n"                     \
+  "ld1rqb {z1.b}, p0/Z, [%x[a_ptr], #0x10]\n"       \
+  "smmla  z20.s, z9.b,  z5.b\n"                     \
+  "smmla  z26.s, z10.b, z5.b\n"                     \
+  "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"       \
+  "ld1b   {z5.b}, p0/Z, [%x[b_ptr],  #1, MUL VL]\n" \
   "bne 0b\n"
 
 #define COMPUTE_SMMLA_8x2_REMAIN               \
@@ -814,7 +819,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "cmp %x[rem_cnt], #2\n"                      \
   "beq 2f\n"                                   \
   "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"  \
-  "addvl %x[b_ptr], %x[b_ptr], #2\n"           \
+  "addvl  %x[b_ptr], %x[b_ptr], #1\n"          \
   "add    %x[a_ptr], %x[a_ptr], #0x40\n"       \
   "smmla  z8.s,  z0.b, z4.b\n"                 \
   "smmla  z14.s, z1.b, z4.b\n"                 \
@@ -843,14 +848,14 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "mov z6.s, #0x0\n"                          \
   "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
   "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"  \
-  "uzp1 z2.d,  z8.d,  z0.d\n"                 \
-  "uzp2 z3.d,  z8.d,  z0.d\n"                 \
-  "uzp1 z8.d,  z14.d, z0.d\n"                 \
-  "uzp2 z9.d,  z14.d, z0.d\n"                 \
-  "uzp1 z14.d, z20.d, z0.d\n"                 \
-  "uzp2 z15.d, z20.d, z0.d\n"                 \
-  "uzp1 z20.d, z26.d, z0.d\n"                 \
-  "uzp2 z21.d, z26.d, z0.d\n"                 \
+  "trn1 z2.d,  z8.d,  z0.d\n"                 \
+  "trn2 z3.d,  z8.d,  z0.d\n"                 \
+  "trn1 z8.d,  z14.d, z0.d\n"                 \
+  "trn2 z9.d,  z14.d, z0.d\n"                 \
+  "trn1 z14.d, z20.d, z0.d\n"                 \
+  "trn2 z15.d, z20.d, z0.d\n"                 \
+  "trn1 z20.d, z26.d, z0.d\n"                 \
+  "trn2 z21.d, z26.d, z0.d\n"                 \
   "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
   "dup    z30.s,  z0.s[0]\n"                  \
   "dup    z29.s,  z0.s[1]\n"                  \
@@ -992,14 +997,14 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "3: \n"                                     \
   "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
   "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"  \
-  "uzp1 z2.d,  z8.d,  z9.d\n"                 \
-  "uzp2 z3.d,  z8.d,  z9.d\n"                 \
-  "uzp1 z8.d,  z14.d, z15.d\n"                \
-  "uzp2 z9.d,  z14.d, z15.d\n"                \
-  "uzp1 z14.d, z20.d, z21.d\n"                \
-  "uzp2 z15.d, z20.d, z21.d\n"                \
-  "uzp1 z20.d, z26.d, z27.d\n"                \
-  "uzp2 z21.d, z26.d, z27.d\n"                \
+  "trn1 z2.d,  z8.d,  z9.d\n"                 \
+  "trn2 z3.d,  z8.d,  z9.d\n"                 \
+  "trn1 z8.d,  z14.d, z15.d\n"                \
+  "trn2 z9.d,  z14.d, z15.d\n"                \
+  "trn1 z14.d, z20.d, z21.d\n"                \
+  "trn2 z15.d, z20.d, z21.d\n"                \
+  "trn1 z20.d, z26.d, z27.d\n"                \
+  "trn2 z21.d, z26.d, z27.d\n"                \
   "mov z6.s, #0x0\n"                          \
   "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
   "dup    z30.s,  z0.s[0]\n"                  \
@@ -1084,7 +1089,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "movprfx z4, z30\n  fadd z4.s,   p0/m,  z4.s,  z1.s\n" \
   "movprfx z5, z29\n  fadd z5.s,   p0/m,  z5.s,  z1.s\n" \
   "movprfx z6, z28\n  fadd z6.s,   p0/m,  z6.s,  z1.s\n" \
-  "movprfx z7, z27\n  fadd z7.s,   p0/m,  z6.s,  z1.s\n" \
+  "movprfx z7, z27\n  fadd z7.s,   p0/m,  z7.s,  z1.s\n" \
   "fmul z30.s,  p0/m, z30.s,   z2.s\n"                   \
   "fmul z29.s,  p0/m, z29.s,   z2.s\n"                   \
   "fmul z28.s,  p0/m, z28.s,   z2.s\n"                   \
@@ -1104,7 +1109,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "movprfx z4, z26\n  fadd z4.s,   p0/m,  z4.s,  z1.s\n" \
   "movprfx z5, z25\n  fadd z5.s,   p0/m,  z5.s,  z1.s\n" \
   "movprfx z6, z24\n  fadd z6.s,   p0/m,  z6.s,  z1.s\n" \
-  "movprfx z7, z23\n  fadd z7.s,   p0/m,  z6.s,  z1.s\n" \
+  "movprfx z7, z23\n  fadd z7.s,   p0/m,  z7.s,  z1.s\n" \
   "fmul z26.s,  p0/m, z26.s,   z2.s\n"                   \
   "fmul z25.s,  p0/m, z25.s,   z2.s\n"                   \
   "fmul z24.s,  p0/m, z24.s,   z2.s\n"                   \
@@ -1177,12 +1182,12 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fcvtzs z25.s, p0/m, z25.s\n" \
   "fcvtzs z24.s, p0/m, z24.s\n" \
   "fcvtzs z23.s, p0/m, z23.s\n" \
-  "uzp1 z1.h,    z30.h, z28.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z29.h, z27.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
-  "uzp1 z3.h,    z26.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z4.h,    z24.h, z23.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
-  "uzp1 z30.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1d1 */ \
-  "uzp1 z31.b,   z3.b,  z4.b\n" /* a0b0c0z0a1b1c1d1 */ \
+  "trn1 z1.h,    z30.h, z28.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z29.h, z27.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
+  "trn1 z3.h,    z26.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z4.h,    z24.h, z23.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
+  "trn1 z30.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1d1 */ \
+  "trn1 z31.b,   z3.b,  z4.b\n" /* a0b0c0z0a1b1c1d1 */ \
   "st1b {z30.b},  p0, [%x[c_ptr0]]\n" \
   "st1b {z31.b},  p0, [%x[c_ptr1]]\n"
 
@@ -1376,30 +1381,30 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "3: \n"                                               \
   "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"                   \
   "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"            \
-  "uzp1 z2.d,  z8.d,  z9.d\n"                           \
-  "uzp2 z3.d,  z8.d,  z9.d\n"                           \
-  "uzp1 z4.d,  z10.d, z11.d\n"                          \
-  "uzp2 z5.d,  z10.d, z11.d\n"                          \
-  "uzp1 z6.d,  z12.d, z13.d\n"                          \
-  "uzp2 z7.d,  z12.d, z13.d\n"                          \
-  "uzp1 z8.d,  z14.d, z15.d\n"                          \
-  "uzp2 z9.d,  z14.d, z15.d\n"                          \
-  "uzp1 z10.d, z16.d, z17.d\n"                          \
-  "uzp2 z11.d, z16.d, z17.d\n"                          \
-  "uzp1 z12.d, z18.d, z19.d\n"                          \
-  "uzp2 z13.d, z18.d, z19.d\n"                          \
-  "uzp1 z14.d, z20.d, z21.d\n"                          \
-  "uzp2 z15.d, z20.d, z21.d\n"                          \
-  "uzp1 z16.d, z22.d, z23.d\n"                          \
-  "uzp2 z17.d, z22.d, z23.d\n"                          \
-  "uzp1 z18.d, z24.d, z25.d\n"                          \
-  "uzp2 z19.d, z24.d, z25.d\n"                          \
-  "uzp1 z20.d, z26.d, z27.d\n"                          \
-  "uzp2 z21.d, z26.d, z27.d\n"                          \
-  "uzp1 z22.d, z28.d, z29.d\n"                          \
-  "uzp2 z23.d, z28.d, z29.d\n"                          \
-  "uzp1 z24.d, z30.d, z31.d\n"                          \
-  "uzp2 z25.d, z30.d, z31.d\n"                          \
+  "trn1 z2.d,  z8.d,  z9.d\n"                           \
+  "trn2 z3.d,  z8.d,  z9.d\n"                           \
+  "trn1 z4.d,  z10.d, z11.d\n"                          \
+  "trn2 z5.d,  z10.d, z11.d\n"                          \
+  "trn1 z6.d,  z12.d, z13.d\n"                          \
+  "trn2 z7.d,  z12.d, z13.d\n"                          \
+  "trn1 z8.d,  z14.d, z15.d\n"                          \
+  "trn2 z9.d,  z14.d, z15.d\n"                          \
+  "trn1 z10.d, z16.d, z17.d\n"                          \
+  "trn2 z11.d, z16.d, z17.d\n"                          \
+  "trn1 z12.d, z18.d, z19.d\n"                          \
+  "trn2 z13.d, z18.d, z19.d\n"                          \
+  "trn1 z14.d, z20.d, z21.d\n"                          \
+  "trn2 z15.d, z20.d, z21.d\n"                          \
+  "trn1 z16.d, z22.d, z23.d\n"                          \
+  "trn2 z17.d, z22.d, z23.d\n"                          \
+  "trn1 z18.d, z24.d, z25.d\n"                          \
+  "trn2 z19.d, z24.d, z25.d\n"                          \
+  "trn1 z20.d, z26.d, z27.d\n"                          \
+  "trn2 z21.d, z26.d, z27.d\n"                          \
+  "trn1 z22.d, z28.d, z29.d\n"                          \
+  "trn2 z23.d, z28.d, z29.d\n"                          \
+  "trn1 z24.d, z30.d, z31.d\n"                          \
+  "trn2 z25.d, z30.d, z31.d\n"                          \
   "mov z28.s, #0x0\n"                                   \
   "movprfx z26, z2\n fadd z26.s, p0/m, z26.s, z28.s\n"  \
   "ld1rqw {z2.s}, p0/Z, [%x[scale]]\n"                  \
@@ -1818,30 +1823,30 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fcvtzs z20.s, p0/m, z20.s\n" \
   "fcvtzs z22.s, p0/m, z22.s\n" \
   "fcvtzs z24.s, p0/m, z24.s\n" \
-  "uzp1 z1.h,    z29.h, z31.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z30.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z29.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z26.h, z6.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z4.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z26.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z27.h, z7.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z5.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z27.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z8.h, z12.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z10.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z8.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z9.h, z13.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z11.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z9.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z14.h, z18.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z16.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z14.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z15.h, z19.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z17.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z15.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "uzp1 z1.h,    z20.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "uzp1 z2.h,    z22.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "uzp1 z20.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z29.h, z31.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z30.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z29.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z26.h, z6.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z4.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z26.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z27.h, z7.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z5.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z27.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z8.h, z12.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z10.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z8.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z9.h, z13.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z11.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z9.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z14.h, z18.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z16.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z14.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z15.h, z19.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z17.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z15.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
+  "trn1 z1.h,    z20.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "trn1 z2.h,    z22.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
+  "trn1 z20.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
   "st1b {z29.b},  p0, [%x[c_ptr0]]\n" \
   "st1b {z26.b},  p0, [%x[c_ptr1]]\n" \
   "st1b {z27.b},  p0, [%x[c_ptr2]]\n" \
@@ -1867,6 +1872,7 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float), bool last) {
   // clang-format off
   asm volatile(
     INIT_SMMLA_8x2
+    COMPUTE_SMMLA_8x2
     COMPUTE_SMMLA_8x2_REMAIN
     CVT_SMMLA_INT32_TO_FP32_8x2
     SMMLA_ACT_PROCESS_8x4
@@ -1881,6 +1887,7 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t), bool last) {
   // clang-format off
   asm volatile(
     INIT_SMMLA_8x2
+    COMPUTE_SMMLA_8x2
     COMPUTE_SMMLA_8x2_REMAIN
     CVT_SMMLA_INT32_TO_FP32_8x2
     SMMLA_ACT_PROCESS_8x4
@@ -1920,13 +1927,13 @@ template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
   // clang-format off
   asm volatile(
-    INIT_SMMLA_8x12
-    COMPUTE_SMMLA_8x12_0
-    COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_8x12_REMAIN
+    INIT_SMMLA_8x4
+    COMPUTE_SMMLA_8x4_0
+    COMPUTE_SMMLA_8x4_1
+    COMPUTE_SMMLA_8x4_REMAIN
     CVT_SMMLA_INT32_TO_FP32_8x12
-    SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_FP32_8x12
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_FP32_8x4
     ASM_PARAMS
   );
   // clang-format on
@@ -1992,13 +1999,13 @@ template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
   // clang-format off
   asm volatile(
-    INIT_SMMLA_8x12
-    COMPUTE_SMMLA_8x12_0
-    COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_8x12_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x12
-    SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_INT8_8x12
+    INIT_SMMLA_8x4
+    COMPUTE_SMMLA_8x4_0
+    COMPUTE_SMMLA_8x4_1
+    COMPUTE_SMMLA_8x4_REMAIN
+    CVT_SMMLA_INT32_TO_FP32_8x4
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_INT8_8x4
     ASM_PARAMS
   );
   // clang-format on
