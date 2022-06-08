@@ -153,16 +153,17 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
         }
 
         if (xpu_use_fp16_optimizer_ &&
-            xpu_special_op_.count(instruct.op_type())) {
+            (xpu_special_op_.count(instruct.op_type()) ||
+             xpu_inplace_op_.count(instruct.op_type()))) {
           type_match = false;
           if (kernel.summary().find(xpu_disable_flag_) != std::string::npos) {
             score = 0;
             VLOG(6) << " ignore pick current kernel:" << kernel.summary();
           } else if (xpu_inplace_op_.count(instruct.op_type())) {
-            ConsiderInplaceOpScore(
-                kernel, instruct, in_names, out_names, &score);
+            InplaceOpScore(
+                kernel, instruct, in_names, out_names, &type_match, &score);
           } else {
-            GetInputOutputDataCompatScore(
+            SpecialOpScore(
                 kernel, instruct, in_names, out_names, &type_match, &score);
           }
         }
@@ -259,25 +260,35 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                           const lite::KernelBase& kernel,
                           const paddle::lite::mir::Node::Stmt& instruct);
   void GetScore(PrecisionType precision, size_t* score_tmp);
-  void NodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
-  void InplaceNodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
-  void SpecialNodeInputPrecision(const std::unique_ptr<SSAGraph>& graph);
+
+  void NodeInputPrecision(lite::mir::Node* node,
+                          const std::unique_ptr<SSAGraph>& graph);
+  void InplaceNodeInputPrecision(lite::mir::Node* node);
+  void SpecialNodeInputPrecision(lite::mir::Node* node);
+
   void NodeOutputPrecision(const std::unique_ptr<SSAGraph>& graph,
-                           lite::mir::Node* node,
-                           const std::unique_ptr<lite::KernelBase>& kernel);
-  void GetInputOutputDataCompatScore(
-      const lite::KernelBase& kernel,
-      const paddle::lite::mir::Node::Stmt& instruct,
-      const std::vector<std::string>& in_names,
-      const std::vector<std::string>& out_names,
-      bool* type_match,
-      size_t* score);
+                           lite::mir::Node* node);
+  void InplaceNodeOutputPrecision(const paddle::lite::mir::Node::Stmt& instruct,
+                                  const std::vector<std::string>& in_names,
+                                  const std::vector<std::string>& out_names);
+  void SpecialNodeOutputPrecision(
+      const std::unique_ptr<SSAGraph>& graph,
+      lite::mir::Node* node,
+      const std::unique_ptr<lite::KernelBase>& kernel);
+
+  void SpecialOpScore(const lite::KernelBase& kernel,
+                      const paddle::lite::mir::Node::Stmt& instruct,
+                      const std::vector<std::string>& in_names,
+                      const std::vector<std::string>& out_names,
+                      bool* type_match,
+                      size_t* score);
   void GetXPUDeviceType();
-  void ConsiderInplaceOpScore(const lite::KernelBase& kernel,
-                              const paddle::lite::mir::Node::Stmt& instruct,
-                              const std::vector<std::string>& in_names,
-                              const std::vector<std::string>& out_names,
-                              size_t* score);
+  void InplaceOpScore(const lite::KernelBase& kernel,
+                      const paddle::lite::mir::Node::Stmt& instruct,
+                      const std::vector<std::string>& in_names,
+                      const std::vector<std::string>& out_names,
+                      bool* type_match,
+                      size_t* score);
 
  private:
   core::KernelPickFactor kernel_pick_factors_;

@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/xpu/target_wrapper.h"
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
@@ -43,9 +44,26 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   DicideUseFP16Optimizer(graph);
   if (xpu_use_fp16_optimizer_) {
     GetXPUDeviceType();
-    NodeInputPrecision(graph);
-    SpecialNodeInputPrecision(graph);
-    InplaceNodeInputPrecision(graph);
+    for (auto& node : graph->StmtTopologicalOrder()) {
+      if (xpu_special_op_.count(node->AsStmt().op_type())) {
+        SpecialNodeInputPrecision(node);
+        continue;
+      }
+
+      if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
+        continue;
+      }
+
+      NodeInputPrecision(node, graph);
+    }
+
+    for (auto& node : graph->StmtTopologicalOrder()) {
+      if (xpu_inplace_op_.count(node->AsStmt().op_type()) == 0) {
+        continue;
+      }
+
+      InplaceNodeInputPrecision(node);
+    }
   }
 
   // sort kernels by the factors.
@@ -100,7 +118,15 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
     if (!instruct.op_info()->HasAttr("enable_int8")) {
       if (xpu_use_fp16_optimizer_) {
-        NodeOutputPrecision(graph, node, scored.front().second);
+        if (xpu_special_op_.count(node->AsStmt().op_type())) {
+          SpecialNodeOutputPrecision(graph, node, scored.front().second);
+        } else if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
+          InplaceNodeOutputPrecision(node->AsStmt(),
+                                     instruct.op_info()->input_names(),
+                                     instruct.op_info()->output_names());
+        } else {
+          NodeOutputPrecision(graph, node);
+        }
       }
 
       instruct.kernels().emplace_back(std::move(scored.front().second));
@@ -292,18 +318,39 @@ void XPUStaticKernelPickPass::GetScore(PrecisionType precision,
   }
 }
 
-// Collect output data precision of registered kernel in eatch node.
-// only collect data  precision,if output arg_name in output_parameter_name_.
 void XPUStaticKernelPickPass::NodeOutputPrecision(
+    const std::unique_ptr<SSAGraph>& graph, lite::mir::Node* node) {
+  auto& inst = node->AsStmt();
+  if (inst.op_type() == "fetch") {
+    return;
+  }
+
+  const auto* op_info = inst.op_info();
+  for (auto* out_node : node->outlinks) {
+    auto& var = out_node->AsArg();
+    const auto& var_name = var.name;
+    std::string arg_name;
+    CHECK(op_info->GetOutputArgname(var_name, &arg_name))
+        << "Can not find the output argument,current var name : " << var_name;
+    VLOG(6) << " output arg name:" << arg_name << " var name:" << var_name;
+    auto* scope = graph->GetScope();
+    auto* var_ptr = scope->FindVar(var_name);
+    if (var_ptr == nullptr) {
+      VLOG(6) << "Can't find ouput var_name:  " << var_name
+              << "in current scope.";
+      continue;
+    }
+
+    PrecisionType precison = var_ptr->GetMutable<lite::Tensor>()->precision();
+    xpu_output_type_.insert({var_name, precison});
+  }
+}
+
+void XPUStaticKernelPickPass::SpecialNodeOutputPrecision(
     const std::unique_ptr<SSAGraph>& graph,
     lite::mir::Node* node,
     const std::unique_ptr<lite::KernelBase>& kernel) {
   auto& inst = node->AsStmt();
-
-  // not collect inplace op output precision
-  if (xpu_inplace_op_.count(inst.op_type())) {
-    return;
-  }
 
   std::vector<std::string> out_var_names;
   const auto* op_info = inst.op_info();
@@ -322,181 +369,170 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
     const auto* decl_type = kernel->GetOutputDeclType(arg_name);
     CHECK(decl_type);
     PrecisionType precison = decl_type->precision();
-    if (inst.op_type() == "feed") {
-      auto* scope = graph->GetScope();
-      auto* var = scope->FindVar(var_name);
-      precison = var->GetMutable<lite::Tensor>()->precision();
-    }
-
     xpu_output_type_.insert({var_name, precison});
+  }
+}
+
+void XPUStaticKernelPickPass::InplaceNodeOutputPrecision(
+    const paddle::lite::mir::Node::Stmt& instruct,
+    const std::vector<std::string>& in_names,
+    const std::vector<std::string>& out_names) {
+  PrecisionType pre_op_output_precision = PrecisionType::kUnk;
+  for (size_t i = 0; i < in_names.size(); ++i) {
+    std::string tmp;
+    CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+    VLOG(6) << "current kernel input data variable name:" << in_names[i]
+            << "Parameter name:" << tmp;
+    if (input_parameter_name_.count(tmp) &&
+        xpu_output_type_.count(in_names[i])) {
+      pre_op_output_precision = xpu_output_type_[in_names[i]];
+    }
+  }
+
+  // collect inplace op output data precision
+  if (pre_op_output_precision != PrecisionType::kUnk) {
+    for (size_t i = 0; i < out_names.size(); ++i) {
+      std::string tmp;
+      CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+      if (output_parameter_name_.count(tmp)) {
+        xpu_output_type_.insert({out_names[i], pre_op_output_precision});
+      }
+    }
   }
 }
 
 // Special nodes like conv2d, matmul ; collect input data precision for eatch
 // registry kernel as a candidate set.
-void XPUStaticKernelPickPass::SpecialNodeInputPrecision(
-    const std::unique_ptr<SSAGraph>& graph) {
-  for (auto& node : graph->StmtTopologicalOrder()) {
-    auto& inst = node->AsStmt();
-    const auto* op_info = inst.op_info();
-    if (xpu_special_op_.count(inst.op_type()) == 0) {
+void XPUStaticKernelPickPass::SpecialNodeInputPrecision(lite::mir::Node* node) {
+  auto& inst = node->AsStmt();
+  const auto* op_info = inst.op_info();
+  for (auto* in_node : node->inlinks) {
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
+    std::string arg_name;
+    CHECK(op_info->GetInputArgname(var_name, &arg_name))
+        << "Can not find the input argument,current var name : " << var_name;
+    VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
+    if (input_parameter_name_.count(arg_name) == 0) {
       continue;
     }
 
-    for (auto* in_node : node->inlinks) {
-      auto& var = in_node->AsArg();
-      const auto& var_name = var.name;
-      std::string arg_name;
-      CHECK(op_info->GetInputArgname(var_name, &arg_name))
-          << "Can not find the input argument,current var name : " << var_name;
-      VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
-      if (input_parameter_name_.count(arg_name) == 0) {
+    std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
+    for (auto&& kernel : inst.kernels()) {
+      if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
+        VLOG(6) << " ignore collect current kernel:" << kernel->summary();
         continue;
       }
 
-      std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
-      for (auto&& kernel : inst.kernels()) {
-        if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
-          VLOG(6) << " ignore collect current kernel:" << kernel->summary();
-          continue;
-        }
+      std::map<std::string, PrecisionType> tmp_map;
+      PrecisionType precison;
 
-        std::map<std::string, PrecisionType> temp_map;
-        PrecisionType precison;
-
-        const auto* decl_type = kernel->GetInputDeclType(arg_name);
-        CHECK(decl_type);
-        precison = decl_type->precision();
-        temp_map.emplace(kernel->summary(), precison);
-        kernel_input_type.emplace_back(temp_map);
-      }
-
-      xpu_input_type_.insert({var_name, kernel_input_type});
+      const auto* decl_type = kernel->GetInputDeclType(arg_name);
+      CHECK(decl_type);
+      precison = decl_type->precision();
+      tmp_map.emplace(kernel->summary(), precison);
+      kernel_input_type.emplace_back(std::move(tmp_map));
     }
+
+    xpu_input_type_.insert({var_name, kernel_input_type});
   }
 }
 
 void XPUStaticKernelPickPass::NodeInputPrecision(
-    const std::unique_ptr<SSAGraph>& graph) {
-  for (auto& node : graph->StmtTopologicalOrder()) {
-    auto& inst = node->AsStmt();
-    const auto* op_info = inst.op_info();
-    // not collect inplace op
-    if (xpu_special_op_.count(inst.op_type())) {
+    lite::mir::Node* node, const std::unique_ptr<SSAGraph>& graph) {
+  auto& inst = node->AsStmt();
+  if (inst.op_type() == "feed") {
+    return;
+  }
+
+  const auto* op_info = inst.op_info();
+  for (auto* in_node : node->inlinks) {
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
+    std::string arg_name;
+    CHECK(op_info->GetInputArgname(var_name, &arg_name))
+        << "Can not find the input argument,current var name : " << var_name;
+    VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
+
+    std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
+    std::map<std::string, PrecisionType> tmp_map;
+    PrecisionType precison;
+    auto* scope = graph->GetScope();
+    auto* var_ptr = scope->FindVar(var_name);
+    if (var_ptr == nullptr) {
+      VLOG(6) << "Can't find input var_name:  " << var_name
+              << "in current scope.";
       continue;
     }
 
-    if (xpu_inplace_op_.count(inst.op_type())) {
-      continue;
-    }
-
-    if (inst.op_type() == "feed") {
-      continue;
-    }
-
-    for (auto* in_node : node->inlinks) {
-      auto& var = in_node->AsArg();
-      const auto& var_name = var.name;
-      std::string arg_name;
-      CHECK(op_info->GetInputArgname(var_name, &arg_name))
-          << "Can not find the input argument,current var name : " << var_name;
-      VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
-      if (input_parameter_name_.count(arg_name) == 0) {
-        continue;
-      }
-
-      std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
-      for (auto&& kernel : inst.kernels()) {
-        if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
-          VLOG(6) << " ignore collect current kernel:" << kernel->summary();
-          continue;
-        }
-
-        std::map<std::string, PrecisionType> temp_map;
-        PrecisionType precison;
-        auto* scope = graph->GetScope();
-        auto* var = scope->FindVar(var_name);
-        precison = var->GetMutable<lite::Tensor>()->precision();
-
-        temp_map.emplace(kernel->summary(), precison);
-        kernel_input_type.emplace_back(temp_map);
-      }
-
-      xpu_input_type_.insert({var_name, kernel_input_type});
-    }
+    precison = var_ptr->GetMutable<lite::Tensor>()->precision();
+    tmp_map.emplace(inst.op_type(), precison);
+    kernel_input_type.emplace_back(std::move(tmp_map));
+    xpu_input_type_.insert({var_name, kernel_input_type});
   }
 }
 
-// Special for inplace op.Its input data precision is determined by the output
-// precision of the previous node
-void XPUStaticKernelPickPass::InplaceNodeInputPrecision(
-    const std::unique_ptr<SSAGraph>& graph) {
-  for (auto& node : graph->StmtTopologicalOrder()) {
-    auto& inst = node->AsStmt();
-    const auto* op_info = inst.op_info();
-    // inplace op only has one inpute variable.
-    std::string inplace_op_input_name{"none"};
+// Special for inplace op.
+void XPUStaticKernelPickPass::InplaceNodeInputPrecision(lite::mir::Node* node) {
+  auto& inst = node->AsStmt();
+  const auto* op_info = inst.op_info();
+  // inplace op only has one inpute variable.
+  std::string inplace_op_input_name{"none"};
+  for (auto* in_node : node->inlinks) {
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
+    std::string arg_name;
+    CHECK(op_info->GetInputArgname(var_name, &arg_name))
+        << "Can not find the input argument,current var name : " << var_name;
+    VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
+    if (input_parameter_name_.count(arg_name)) {
+      inplace_op_input_name = var_name;
+    }
+  }
 
-    if (xpu_inplace_op_.count(inst.op_type()) == 0) {
+  for (auto* out_node : node->outlinks) {
+    auto& var = out_node->AsArg();
+    const auto& var_name = var.name;
+    std::string arg_name;
+    int num = 0;
+
+    CHECK(op_info->GetOutputArgname(var_name, &arg_name))
+        << "Can not find the output argument,current var name : " << var_name;
+    VLOG(6) << " output arg name:" << arg_name << " var name:" << var_name;
+    // inplace op only have one output variable,but ic can connect input
+    // variables of multiple Ops
+    int output_match_num = xpu_input_type_.count(var_name);
+    if (output_parameter_name_.count(arg_name) == 0 || output_match_num == 0) {
       continue;
     }
 
-    for (auto* in_node : node->inlinks) {
-      auto& var = in_node->AsArg();
-      const auto& var_name = var.name;
-      std::string arg_name;
-      CHECK(op_info->GetInputArgname(var_name, &arg_name))
-          << "Can not find the input argument,current var name : " << var_name;
-      VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
-      if (input_parameter_name_.count(arg_name)) {
-        inplace_op_input_name = var_name;
+    for (auto iter = xpu_input_type_.begin(); iter != xpu_input_type_.end();
+         ++iter) {
+      if (num >= output_match_num) {
+        break;
       }
-    }
 
-    for (auto* out_node : node->outlinks) {
-      auto& var = out_node->AsArg();
-      const auto& var_name = var.name;
-      std::string arg_name;
-      int num = 0;
-
-      CHECK(op_info->GetOutputArgname(var_name, &arg_name))
-          << "Can not find the output argument,current var name : " << var_name;
-      VLOG(6) << " output arg name:" << arg_name << " var name:" << var_name;
-      // inplace op only have one output variable,but ic can connect input
-      // variables of multiple Ops
-      int output_match_num = xpu_input_type_.count(var_name);
-      if (output_parameter_name_.count(arg_name) == 0 ||
-          output_match_num == 0) {
+      if (iter->first != var_name) {
         continue;
       }
 
-      for (auto iter = xpu_input_type_.begin(); iter != xpu_input_type_.end();
-           ++iter) {
-        if (num >= output_match_num) {
-          break;
-        }
-
-        if (iter->first != var_name) {
-          continue;
-        }
-
-        ++num;
-        xpu_input_type_.insert({inplace_op_input_name, iter->second});
-      }
-      VLOG(4) << "inplace op :" << inst.op_type() << "input prision"
-              << "replace by the next op input prision ";
-      VLOG(4) << "inplace op :" << inst.op_type()
-              << ", inpute name:" << inplace_op_input_name
-              << ",the next op input input name : " << var_name;
+      ++num;
+      xpu_input_type_.insert({inplace_op_input_name, iter->second});
     }
+    VLOG(6) << "inplace op :" << inst.op_type() << "input prision"
+            << "replace by the next op input prision ";
+    VLOG(6) << "inplace op :" << inst.op_type()
+            << ", inpute name:" << inplace_op_input_name
+            << ",the next op input input name : " << var_name;
   }
 }
 
-void XPUStaticKernelPickPass::ConsiderInplaceOpScore(
+void XPUStaticKernelPickPass::InplaceOpScore(
     const lite::KernelBase& kernel,
     const paddle::lite::mir::Node::Stmt& instruct,
     const std::vector<std::string>& in_names,
     const std::vector<std::string>& out_names,
+    bool* type_match,
     size_t* score) {
   PrecisionType pre_op_output_precision = PrecisionType::kUnk;
   for (size_t i = 0; i < in_names.size(); ++i) {
@@ -517,6 +553,7 @@ void XPUStaticKernelPickPass::ConsiderInplaceOpScore(
               kernel.GetInputDeclType(tmp)->precision() ||
           pre_op_output_precision == PrecisionType::kAny) {
         GetScore(pre_op_output_precision, &score_tmp);
+        *type_match = true;
         VLOG(6) << "inplace op match input data precision";
       }
 
@@ -536,7 +573,7 @@ void XPUStaticKernelPickPass::ConsiderInplaceOpScore(
   }
 }
 
-void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
+void XPUStaticKernelPickPass::SpecialOpScore(
     const lite::KernelBase& kernel,
     const paddle::lite::mir::Node::Stmt& instruct,
     const std::vector<std::string>& in_names,
@@ -547,6 +584,7 @@ void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
   bool intput_match = true;
   bool output_match = true;
   bool consider_cpu = false;
+  // delete??
   if (consider_cpu_op_.count(instruct.op_type())) {
     consider_cpu = true;
   }
@@ -559,12 +597,16 @@ void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
   for (size_t i = 0; i < in_names.size(); ++i) {
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-    VLOG(6) << "current kernel input data variable name:" << in_names[i]
-            << "Parameter name:" << tmp;
-    if (input_parameter_name_.count(tmp) == 0 ||
-        xpu_output_type_.count(in_names[i]) == 0) {
+    if (input_parameter_name_.count(tmp) == 0) {
       continue;
     }
+
+    if (xpu_output_type_.count(in_names[i]) == 0) {
+      continue;
+    }
+
+    VLOG(6) << "current kernel input data variable name:" << in_names[i]
+            << ", Parameter name:" << tmp;
 
     size_t score_tmp = 0;
     if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kAny) {
@@ -591,13 +633,18 @@ void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
     std::string tmp;
     CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
     int output_match_num = xpu_input_type_.count(out_names[i]);
-    VLOG(6) << "name:" << out_names[i] << "," << output_match_num;
-    int num = 0;
-    size_t score_tmp = 0;
-    if (output_parameter_name_.count(tmp) == 0 || output_match_num == 0) {
+    if (output_parameter_name_.count(tmp) == 0) {
       continue;
     }
 
+    if (output_match_num == 0) {
+      continue;
+    }
+
+    VLOG(6) << "current kernel output data variable name:" << out_names[i]
+            << ", Parameter name:" << tmp;
+    int num = 0;
+    size_t score_tmp = 0;
     for (auto iter = xpu_input_type_.begin(); iter != xpu_input_type_.end();
          ++iter) {
       if (num >= output_match_num) {
@@ -652,18 +699,8 @@ void XPUStaticKernelPickPass::GetInputOutputDataCompatScore(
 void XPUStaticKernelPickPass::GetXPUDeviceType() {
   int cur_dev_idx = 0;
   uint64_t cur_dev_attr = 0;
-  int ret = xpu_current_device(&cur_dev_idx);
-  if (ret) {
-    VLOG(4) << "Not found XPU device.";
-    return;
-  }
-
-  ret = xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx);
-  if (ret) {
-    VLOG(4) << "Not found XPU device.";
-    return;
-  }
-
+  XPU_CALL(xpu_current_device(&cur_dev_idx));
+  XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
   if (cur_dev_attr <= 1) {
     VLOG(4) << "Currents XPU device : XPU1";
     xpu_disable_flag_ = "DISABLE_XPU1";
