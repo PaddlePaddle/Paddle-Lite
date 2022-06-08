@@ -203,14 +203,14 @@ void prepackA_m8k8_int8_sve(int8_t* out,
   "uzp2 z13.b,  z4.b, z5.b\n"                        /* e1f1e3f3...e15f15*/   \
   "uzp1 z14.b,  z6.b, z7.b\n"                        /* g0h0g2h2...g14h14*/   \
   "uzp2 z15.b,  z6.b, z7.b\n" /* g1h1g3h3...g15h15*/ /* zip-16 */             \
-  "uzp1 z0.h,  z8.h,  z10.h\n"                       /*  a0b0c0d0a4....*/     \
-  "uzp2 z1.h,  z8.h,  z10.h\n"                       /* a2b2c2d2a6...*/       \
-  "uzp1 z2.h,  z9.h,  z11.h\n"                       /* a1b1c1d1a5..*/        \
-  "uzp2 z3.h,  z9.h,  z11.h\n"                       /* a3b3c3d3a7...*/       \
-  "uzp1 z4.h,  z12.h, z14.h\n"                       /* e0f0g0h0e4...*/       \
-  "uzp2 z5.h,  z12.h, z14.h\n"                       /* e2f2g2h2e6...*/       \
-  "uzp1 z6.h,  z13.h, z15.h\n"                       /* e1f1g1h1e5...*/       \
-  "uzp2 z7.h,  z13.h, z15.h\n" /* e3f3g3h3e7...*/    /* zip-32 */             \
+  "uzp1 z0.h,   z8.h,  z10.h\n"                      /*  a0b0c0d0a4....*/     \
+  "uzp2 z1.h,   z8.h,  z10.h\n"                      /* a2b2c2d2a6...*/       \
+  "uzp1 z2.h,   z9.h,  z11.h\n"                      /* a1b1c1d1a5..*/        \
+  "uzp2 z3.h,   z9.h,  z11.h\n"                      /* a3b3c3d3a7...*/       \
+  "uzp1 z4.h,   z12.h, z14.h\n"                      /* e0f0g0h0e4...*/       \
+  "uzp2 z5.h,   z12.h, z14.h\n"                      /* e2f2g2h2e6...*/       \
+  "uzp1 z6.h,   z13.h, z15.h\n"                      /* e1f1g1h1e5...*/       \
+  "uzp2 z7.h,   z13.h, z15.h\n" /* e3f3g3h3e7...*/   /* zip-32 */             \
   "uzp1 z8.b,   z0.b, z4.b\n"                        /* a0b0c0d0e0f0g0h0a8*/  \
   "uzp2 z9.b,   z0.b, z4.b\n"                        /* a4b4c4d4e4f4g4h4a12*/ \
   "uzp1 z10.b,  z1.b, z5.b\n"                        /* a2b2c2d2e2f2g2h2a10*/ \
@@ -415,15 +415,18 @@ void loadb_k8n12_int8_sve(int8_t* out,
 
   int rem_cnt = right_remain >> 2;
   int rem_rem = right_remain & 3;
+  int rem_2 = rem_rem >> 1;
+  int rem_2_rem = rem_rem & 1;
+  rem_2 = (rem_rem + 1) >> 2;
   int kup = ROUNDUP_SVE(y_len, 8);
   int cnt_12 = (cnt > 0) ? 12 : 0;
   int cnt_4 = (rem_cnt > 0) ? 4 : 0;
-  int cnt_1 = (rem_rem > 0) ? 1 : 0;
+  int cnt_2 = (rem_2 > 0) ? 2 : 0;
   int stride_12 = cnt_12 * kup;
   int stride_4 = cnt_4 * kup;
-  int stride_1 = cnt_1 * kup;
+  int stride_2 = cnt_2 * kup;
   int stride_w_4 = stride_12 * cnt;
-  int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
+  int stride_w_2 = stride_w_4 + stride_4 * rem_cnt;
 
   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 8) {
     const int8_t* inptr_row[8];
@@ -434,7 +437,7 @@ void loadb_k8n12_int8_sve(int8_t* out,
 
     int8_t* outptr_row_col = dout + y * cnt_12;  // 12;
     int8_t* outptr_row_4 = dout + stride_w_4 + y * cnt_4;
-    int8_t* outptr_row_1 = dout + stride_w_1 + y * cnt_1;
+    int8_t* outptr_row_1 = dout + stride_w_2 + y * cnt_2;
     if (y + 7 > y_len) {
       switch (y_len - y) {
         case 1:
@@ -558,7 +561,7 @@ void loadb_k8n12_int8_sve(int8_t* out,
           "z14",
           "z15");
     if (rem_rem > 0) {
-      for (int i = 0; i < rem_rem; i++) {
+      for (int i = 0; i < rem_2; i++) {
         outptr_row_1[0] = *inptr_row[0]++;
         outptr_row_1[1] = *inptr_row[1]++;
         outptr_row_1[2] = *inptr_row[2]++;
@@ -567,7 +570,26 @@ void loadb_k8n12_int8_sve(int8_t* out,
         outptr_row_1[5] = *inptr_row[5]++;
         outptr_row_1[6] = *inptr_row[6]++;
         outptr_row_1[7] = *inptr_row[7]++;
-        outptr_row_1 += stride_1;
+        if (i == rem_2 - 1 && rem_2_rem) {
+          outptr_row_1[0] = 0;
+          outptr_row_1[1] = 0;
+          outptr_row_1[2] = 0;
+          outptr_row_1[3] = 0;
+          outptr_row_1[4] = 0;
+          outptr_row_1[5] = 0;
+          outptr_row_1[6] = 0;
+          outptr_row_1[7] = 0;
+        } else {
+          outptr_row_1[0] = *inptr_row[0]++;
+          outptr_row_1[1] = *inptr_row[1]++;
+          outptr_row_1[2] = *inptr_row[2]++;
+          outptr_row_1[3] = *inptr_row[3]++;
+          outptr_row_1[4] = *inptr_row[4]++;
+          outptr_row_1[5] = *inptr_row[5]++;
+          outptr_row_1[6] = *inptr_row[6]++;
+          outptr_row_1[7] = *inptr_row[7]++;
+        }
+        outptr_row_1 += stride_2;
       }
     }
   }
@@ -737,13 +759,432 @@ void prepackA_int8_sve(TensorLite* tout,
       const float32_t *scale, const float32_t *alpha, int k, int tail, \
       int flag_act
 template <typename Dtype>
-inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(Dtype));
+inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(Dtype), bool last);
 
 template <typename Dtype>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(Dtype));
 
 template <typename Dtype>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
+
+#define INIT_SMMLA_8x2                              \
+  "ptrue p0.b \n"                                   \
+  "prfm   pldl1keep, [%[a_ptr]]\n"                  \
+  "prfm   pldl1keep, [%[b_ptr]]\n"                  \
+  "mov    z8.s,   #0x0\n"                           \
+  "mov    z14.s,  #0x0\n"                           \
+  "mov    z20.s,  #0x0\n"                           \
+  "mov    z26.s,  #0x0\n"                           \
+  "ld1rqb {z0.b}, p0/Z, [%x[a_ptr]]\n"              \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"             \
+  "prfm   pldl1keep, [%[b_ptr], #64]\n"             \
+  "ld1b   {z4.b}, p0/Z, [%x[b_ptr]]\n"              \
+  "ld1rqb {z1.b}, p0/Z, [%x[a_ptr], #0x10]\n"       \
+  "ld1b   {z5.b}, p0/Z, [%x[b_ptr],  #1, MUL VL]\n" \
+  "prfm   pldl1keep, [%[a_ptr], #128]\n"            \
+  "prfm   pldl1keep, [%[b_ptr], #128]\n"            \
+  "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"       \
+  "prfm   pldl1keep, [%[a_ptr], #192]\n"            \
+  "prfm   pldl1keep, [%[b_ptr], #192]\n"            \
+  "prfm   pldl1keep, [%[a_ptr], #256]\n"            \
+  "cbz    %x[k],  1f\n"
+
+#define COMPUTE_SMMLA_8x2                      \
+  "0: \n"                                      \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"  \
+  "ld1rqb {z6.b}, p0/Z, [%x[a_ptr], #0x40]\n"  \
+  "smmla  z8.s,  z0.b, z4.b\n"                 \
+  "smmla  z14.s, z1.b, z4.b\n"                 \
+  "ld1rqb {z7.b}, p0/Z, [%x[a_ptr], #0x50]\n"  \
+  "ld1rqb {z9.b}, p0/Z, [%x[a_ptr], #0x60]\n"  \
+  "smmla  z20.s, z2.b, z4.b\n"                 \
+  "smmla  z26.s, z3.b, z4.b\n"                 \
+  "ld1rqb {z10.b}, p0/Z, [%x[a_ptr], #0x70]\n" \
+  "addvl  %x[b_ptr], %x[b_ptr], #2\n"          \
+  "add    %x[a_ptr], %x[a_ptr], #0x80\n"       \
+  "subs   %x[k], %[k], #1\n"                   \
+  "smmla  z8.s,  z6.b,  z5.b\n"                \
+  "smmla  z14.s, z7.b,  z5.b\n"                \
+  "smmla  z20.s, z9.b,  z5.b\n"                \
+  "smmla  z26.s, z10.b, z5.b\n"                \
+  "bne 0b\n"
+
+#define COMPUTE_SMMLA_8x2_REMAIN               \
+  "1: \n"                                      \
+  "cmp %x[rem_cnt], #2\n"                      \
+  "beq 2f\n"                                   \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"  \
+  "addvl %x[b_ptr], %x[b_ptr], #2\n"           \
+  "add    %x[a_ptr], %x[a_ptr], #0x40\n"       \
+  "smmla  z8.s,  z0.b, z4.b\n"                 \
+  "smmla  z14.s, z1.b, z4.b\n"                 \
+  "smmla  z20.s, z2.b, z4.b\n"                 \
+  "smmla  z26.s, z3.b, z4.b\n"                 \
+  "b 3f\n"                                     \
+  "2: \n"                                      \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"  \
+  "ld1rqb {z6.b}, p0/Z, [%x[a_ptr], #0x40]\n"  \
+  "smmla  z8.s,  z0.b, z4.b\n"                 \
+  "smmla  z14.s, z1.b, z4.b\n"                 \
+  "ld1rqb {z7.b}, p0/Z, [%x[a_ptr], #0x50]\n"  \
+  "ld1rqb {z9.b}, p0/Z, [%x[a_ptr], #0x60]\n"  \
+  "smmla  z20.s, z2.b, z4.b\n"                 \
+  "smmla  z26.s, z3.b, z4.b\n"                 \
+  "ld1rqb {z10.b}, p0/Z, [%x[a_ptr], #0x70]\n" \
+  "addvl  %x[b_ptr], %x[b_ptr], #2\n"          \
+  "add    %x[a_ptr], %x[a_ptr], #0x80\n"       \
+  "smmla  z8.s,  z6.b,  z5.b\n"                \
+  "smmla  z14.s, z7.b,  z5.b\n"                \
+  "smmla  z20.s, z9.b,  z5.b\n"                \
+  "smmla  z26.s, z10.b, z5.b\n"
+
+#define CVT_SMMLA_INT32_TO_FP32_8x2           \
+  "3: \n"                                     \
+  "mov z6.s, #0x0\n"                          \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
+  "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"  \
+  "uzp1 z2.d,  z8.d,  z0.d\n"                 \
+  "uzp2 z3.d,  z8.d,  z0.d\n"                 \
+  "uzp1 z8.d,  z14.d, z0.d\n"                 \
+  "uzp2 z9.d,  z14.d, z0.d\n"                 \
+  "uzp1 z14.d, z20.d, z0.d\n"                 \
+  "uzp2 z15.d, z20.d, z0.d\n"                 \
+  "uzp1 z20.d, z26.d, z0.d\n"                 \
+  "uzp2 z21.d, z26.d, z0.d\n"                 \
+  "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
+  "dup    z30.s,  z0.s[0]\n"                  \
+  "dup    z29.s,  z0.s[1]\n"                  \
+  "ld1rqw {z5.s}, p0/Z, [%x[scale], #0x10]\n" \
+  "scvtf  z2.s,  p0/m, z2.s\n"                \
+  "scvtf  z3.s,  p0/m, z3.s\n"                \
+  "dup    z28.s,  z0.s[2]\n"                  \
+  "dup    z27.s,  z0.s[3]\n"                  \
+  "scvtf  z8.s,  p0/m, z8.s\n"                \
+  "scvtf  z9.s,  p0/m, z9.s\n"                \
+  "dup    z26.s,  z1.s[0]\n"                  \
+  "dup    z25.s,  z1.s[1]\n"                  \
+  "scvtf  z14.s, p0/m, z14.s\n"               \
+  "scvtf  z15.s, p0/m, z15.s\n"               \
+  "dup    z24.s,  z1.s[2]\n"                  \
+  "dup    z23.s,  z1.s[3]\n"                  \
+  "scvtf  z20.s, p0/m, z20.s\n"               \
+  "scvtf  z21.s, p0/m, z21.s\n"               \
+  "fmla   z30.s, z2.s, z4.s[0]\n"             \
+  "fmla   z29.s, z3.s, z4.s[1]\n"             \
+  "fmla   z28.s, z8.s, z4.s[2]\n"             \
+  "fmla   z27.s, z9.s, z4.s[3]\n"             \
+  "fmla   z26.s, z14.s, z5.s[0]\n"            \
+  "fmla   z25.s, z15.s, z5.s[2]\n"            \
+  "fmla   z24.s, z20.s, z5.s[2]\n"            \
+  "fmla   z23.s, z21.s, z5.s[3]\n"
+
+#define SMMLA_STORE_FP32_8x2            \
+  "st1w {z30.s},  p0, [%x[c_ptr0]]\n"   \
+  "st1w {z29.s},  p0, [%x[c_ptr1]]\n"   \
+  "st1w {z28.s},  p0, [%x[c_ptr2]]\n"   \
+  "st1w {z27.s},  p0, [%x[c_ptr3]]\n"   \
+  "st1w {z26.s},  p0, [%x[c_ptr4]]\n"   \
+  "st1w {z25.s},  p0, [%x[c_ptr5]]\n"   \
+  "st1w {z24.s},  p0, [%x[c_ptr6]]\n"   \
+  "st1w {z23.s},  p0, [%x[c_ptr7]]\n"   \
+  "add %x[c_ptr0], %x[c_ptr0], #0x08\n" \
+  "add %x[c_ptr1], %x[c_ptr1], #0x08\n" \
+  "add %x[c_ptr2], %x[c_ptr2], #0x08\n" \
+  "add %x[c_ptr3], %x[c_ptr3], #0x08\n" \
+  "add %x[c_ptr4], %x[c_ptr4], #0x08\n" \
+  "add %x[c_ptr5], %x[c_ptr5], #0x08\n" \
+  "add %x[c_ptr6], %x[c_ptr6], #0x08\n" \
+  "add %x[c_ptr7], %x[c_ptr7], #0x08\n"
+
+#define INIT_SMMLA_8x4                              \
+  "ptrue p0.b \n"                                   \
+  "prfm   pldl1keep, [%[a_ptr]]\n"                  \
+  "prfm   pldl1keep, [%[b_ptr]]\n"                  \
+  "mov    z8.s,   #0x0\n"                           \
+  "mov    z14.s,  #0x0\n"                           \
+  "mov    z20.s,  #0x0\n"                           \
+  "mov    z26.s,  #0x0\n"                           \
+  "ld1rqb {z0.b}, p0/Z, [%x[a_ptr]]\n"              \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"             \
+  "prfm   pldl1keep, [%[b_ptr], #64]\n"             \
+  "ld1b   {z4.b}, p0/Z, [%x[b_ptr]]\n"              \
+  "mov    z9.s,   #0x0\n"                           \
+  "mov    z15.s,  #0x0\n"                           \
+  "mov    z21.s,  #0x0\n"                           \
+  "mov    z27.s,  #0x0\n"                           \
+  "ld1rqb {z1.b}, p0/Z, [%x[a_ptr], #0x10]\n"       \
+  "ld1b   {z5.b}, p0/Z, [%x[b_ptr],  #1, MUL VL]\n" \
+  "prfm   pldl1keep, [%[a_ptr], #128]\n"            \
+  "prfm   pldl1keep, [%[b_ptr], #128]\n"            \
+  "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"       \
+  "ld1b   {z6.b}, p0/Z, [%x[b_ptr],  #2, MUL VL]\n" \
+  "prfm   pldl1keep, [%[a_ptr], #192]\n"            \
+  "prfm   pldl1keep, [%[b_ptr], #192]\n"            \
+  "prfm   pldl1keep, [%[a_ptr], #256]\n"            \
+  "cbz    %x[k],  1f\n"
+
+#define COMPUTE_SMMLA_8x4_0                         \
+  "0: \n"                                           \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"       \
+  "ld1b   {z7.b}, p0/Z, [%x[b_ptr],  #3, MUL VL]\n" \
+  "smmla  z8.s,  z0.b, z4.b\n"                      \
+  "smmla  z14.s, z1.b, z4.b\n"                      \
+  "smmla  z20.s, z2.b, z4.b\n"                      \
+  "smmla  z26.s, z3.b, z4.b\n"                      \
+  "addvl %x[b_ptr], %x[b_ptr], #4\n"                \
+  "smmla  z9.s,  z0.b, z5.b\n"                      \
+  "smmla  z15.s, z1.b, z5.b\n"                      \
+  "smmla  z21.s, z2.b, z5.b\n"                      \
+  "smmla  z27.s, z3.b, z5.b\n"                      \
+  "ld1rqb {z0.b}, p0/Z, [%x[a_ptr], #0x40]\n"       \
+  "ld1rqb {z1.b}, p0/Z, [%x[a_ptr], #0x50]\n"       \
+  "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x60]\n"       \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x70]\n"
+
+#define COMPUTE_SMMLA_8x4_1                         \
+  "ld1b   {z4.b}, p0/Z, [%x[b_ptr],  #0, MUL VL]\n" \
+  "smmla  z8.s,  z0.b, z6.b\n"                      \
+  "smmla  z14.s, z1.b, z6.b\n"                      \
+  "smmla  z20.s, z2.b, z6.b\n"                      \
+  "smmla  z26.s, z3.b, z6.b\n"                      \
+  "ld1b   {z5.b}, p0/Z, [%x[b_ptr],  #1, MUL VL]\n" \
+  "smmla  z9.s,  z0.b, z7.b\n"                      \
+  "smmla  z15.s, z1.b, z7.b\n"                      \
+  "smmla  z21.s, z2.b, z7.b\n"                      \
+  "smmla  z27.s, z3.b, z7.b\n"                      \
+  "add    %x[a_ptr], %x[a_ptr], #0x80\n"            \
+  "subs   %x[k], %[k], #1\n"                        \
+  "ld1b   {z6.b}, p0/Z, [%x[b_ptr],  #2, MUL VL]\n" \
+  "ld1rqb {z0.b}, p0/Z, [%x[a_ptr]]\n"              \
+  "ld1rqb {z1.b}, p0/Z, [%x[a_ptr], #0x10]\n"       \
+  "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"       \
+  "bne 0b\n"
+
+#define COMPUTE_SMMLA_8x4_REMAIN                    \
+  "1: \n"                                           \
+  "cmp %x[rem_cnt], #2\n"                           \
+  "beq 2f\n"                                        \
+  "ld1rqb {z3.b}, p0/Z, [%x[a_ptr], #0x30]\n"       \
+  "ld1b   {z7.b}, p0/Z, [%x[b_ptr],  #3, MUL VL]\n" \
+  "smmla  z8.s,  z0.b, z4.b\n"                      \
+  "smmla  z14.s, z1.b, z4.b\n"                      \
+  "smmla  z20.s, z2.b, z4.b\n"                      \
+  "smmla  z26.s, z3.b, z4.b\n"                      \
+  "addvl %x[b_ptr], %x[b_ptr], #4\n"                \
+  "smmla  z9.s,  z0.b, z5.b\n"                      \
+  "smmla  z15.s, z1.b, z5.b\n"                      \
+  "smmla  z21.s, z2.b, z5.b\n"                      \
+  "smmla  z27.s, z3.b, z5.b\n"                      \
+  "add    %x[a_ptr], %x[a_ptr], #0x40\n"            \
+  "b 3f\n"                                          \
+  "2: \n" COMPUTE_SMMLA_8x4_0                       \
+  "smmla  z8.s,  z0.b, z6.b\n"                      \
+  "smmla  z14.s, z1.b, z6.b\n"                      \
+  "smmla  z20.s, z2.b, z6.b\n"                      \
+  "smmla  z26.s, z3.b, z6.b\n"                      \
+  "smmla  z9.s,  z0.b, z7.b\n"                      \
+  "smmla  z15.s, z1.b, z7.b\n"                      \
+  "smmla  z21.s, z2.b, z7.b\n"                      \
+  "smmla  z27.s, z3.b, z7.b\n"                      \
+  "add    %x[a_ptr], %x[a_ptr], #0x80\n"
+
+#define CVT_SMMLA_INT32_TO_FP32_8x4           \
+  "3: \n"                                     \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
+  "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"  \
+  "uzp1 z2.d,  z8.d,  z9.d\n"                 \
+  "uzp2 z3.d,  z8.d,  z9.d\n"                 \
+  "uzp1 z8.d,  z14.d, z15.d\n"                \
+  "uzp2 z9.d,  z14.d, z15.d\n"                \
+  "uzp1 z14.d, z20.d, z21.d\n"                \
+  "uzp2 z15.d, z20.d, z21.d\n"                \
+  "uzp1 z20.d, z26.d, z27.d\n"                \
+  "uzp2 z21.d, z26.d, z27.d\n"                \
+  "mov z6.s, #0x0\n"                          \
+  "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
+  "dup    z30.s,  z0.s[0]\n"                  \
+  "dup    z29.s,  z0.s[1]\n"                  \
+  "ld1rqw {z5.s}, p0/Z, [%x[scale], #0x10]\n" \
+  "scvtf  z2.s,  p0/m, z2.s\n"                \
+  "scvtf  z3.s,  p0/m, z3.s\n"                \
+  "dup    z28.s,  z0.s[2]\n"                  \
+  "dup    z27.s,  z0.s[3]\n"                  \
+  "scvtf  z8.s,  p0/m, z8.s\n"                \
+  "scvtf  z9.s,  p0/m, z9.s\n"                \
+  "dup    z26.s,  z1.s[0]\n"                  \
+  "dup    z25.s,  z1.s[1]\n"                  \
+  "scvtf  z14.s, p0/m, z14.s\n"               \
+  "scvtf  z15.s, p0/m, z15.s\n"               \
+  "dup    z24.s,  z1.s[2]\n"                  \
+  "dup    z23.s,  z1.s[3]\n"                  \
+  "scvtf  z20.s, p0/m, z20.s\n"               \
+  "scvtf  z21.s, p0/m, z21.s\n"               \
+  "fmla   z30.s, z2.s, z4.s[0]\n"             \
+  "fmla   z29.s, z3.s, z4.s[1]\n"             \
+  "fmla   z28.s, z8.s, z4.s[2]\n"             \
+  "fmla   z27.s, z9.s, z4.s[3]\n"             \
+  "fmla   z26.s, z14.s, z5.s[0]\n"            \
+  "fmla   z25.s, z15.s, z5.s[2]\n"            \
+  "fmla   z24.s, z20.s, z5.s[2]\n"            \
+  "fmla   z23.s, z21.s, z5.s[3]\n"
+
+// clang-format off
+#define SMMLA_RELU_8x4(inst) \
+  #inst " z30.s,  p0/m, z30.s, z0.s\n" \
+  #inst " z29.s,  p0/m, z29.s, z0.s\n" \
+  #inst " z28.s,  p0/m, z28.s, z0.s\n" \
+  #inst " z27.s,  p0/m, z27.s, z0.s\n" \
+  #inst " z26.s,  p0/m, z26.s, z0.s\n" \
+  #inst " z25.s,  p0/m, z25.s, z0.s\n" \
+  #inst " z24.s,  p0/m, z24.s, z0.s\n" \
+  #inst " z23.s,  p0/m, z23.s, z0.s\n"
+// clang-format on
+
+#define SMMLA_LEAKYRELU_8x4                           \
+  "mov z0.s, #0x0    \n"                              \
+  "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"                \
+  "movprfx z4, z30\n  fmin z4.s,  p0/m, z4.s, z0.s\n" \
+  "movprfx z5, z29\n  fmin z5.s,  p0/m, z5.s, z0.s\n" \
+  "movprfx z6, z28\n  fmin z6.s,  p0/m, z6.s, z0.s\n" \
+  "movprfx z7, z27\n  fmin z7.s,  p0/m, z7.s, z0.s\n" \
+  "fmax z30.s, p0/m, z30.s,  z0.s\n"                  \
+  "fmax z29.s, p0/m, z29.s,  z0.s\n"                  \
+  "fmax z28.s, p0/m, z28.s,  z0.s\n"                  \
+  "fmax z27.s, p0/m, z27.s,  z0.s\n"                  \
+  "fmul z4.s,  p0/m, z4.s,   z1.s\n"                  \
+  "fmul z5.s,  p0/m, z5.s,   z1.s\n"                  \
+  "fmul z6.s,  p0/m, z6.s,   z1.s\n"                  \
+  "fmul z7.s,  p0/m, z7.s,   z1.s\n"                  \
+  "fadd z30.s, p0/m, z30.s,  z4.s\n"                  \
+  "fadd z29.s, p0/m, z29.s,  z4.s\n"                  \
+  "fadd z28.s, p0/m, z28.s,  z6.s\n"                  \
+  "fadd z27.s, p0/m, z27.s,  z7.s\n"                  \
+  "movprfx z4, z26\n  fmin z4.s,  p0/m, z4.s, z0.s\n" \
+  "movprfx z5, z25\n  fmin z5.s,  p0/m, z5.s, z0.s\n" \
+  "movprfx z6, z24\n  fmin z6.s,  p0/m, z6.s, z0.s\n" \
+  "movprfx z7, z23\n  fmin z7.s,  p0/m, z7.s, z0.s\n" \
+  "fmax z26.s, p0/m, z26.s,  z0.s\n"                  \
+  "fmax z25.s, p0/m, z25.s,  z0.s\n"                  \
+  "fmax z24.s, p0/m, z24.s,  z0.s\n"                  \
+  "fmax z23.s, p0/m, z23.s,  z0.s\n"                  \
+  "fmul z4.s,  p0/m, z4.s,   z1.s\n"                  \
+  "fmul z5.s,  p0/m, z5.s,   z1.s\n"                  \
+  "fmul z6.s,  p0/m, z6.s,   z1.s\n"                  \
+  "fmul z7.s,  p0/m, z7.s,   z1.s\n"                  \
+  "fadd z26.s, p0/m, z26.s,  z4.s\n"                  \
+  "fadd z25.s, p0/m, z25.s,  z4.s\n"                  \
+  "fadd z24.s, p0/m, z24.s,  z6.s\n"                  \
+  "fadd z23.s, p0/m, z23.s,  z7.s\n"
+
+#define SMMLA_HARDSWIDH_8x4                              \
+  "mov z0.s, #0x0    \n"                                 \
+  "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"                   \
+  "ld1rqw {z2.s}, p0/Z, [%x[alpha], #0x10]\n"            \
+  "ld1rqw {z3.s}, p0/Z, [%x[alpha], #0x20]\n"            \
+  "movprfx z4, z30\n  fadd z4.s,   p0/m,  z4.s,  z1.s\n" \
+  "movprfx z5, z29\n  fadd z5.s,   p0/m,  z5.s,  z1.s\n" \
+  "movprfx z6, z28\n  fadd z6.s,   p0/m,  z6.s,  z1.s\n" \
+  "movprfx z7, z27\n  fadd z7.s,   p0/m,  z6.s,  z1.s\n" \
+  "fmul z30.s,  p0/m, z30.s,   z2.s\n"                   \
+  "fmul z29.s,  p0/m, z29.s,   z2.s\n"                   \
+  "fmul z28.s,  p0/m, z28.s,   z2.s\n"                   \
+  "fmul z27.s,  p0/m, z27.s,   z2.s\n"                   \
+  "fmax z4.s,   p0/m, z4.s,    z0.s\n"                   \
+  "fmax z5.s,   p0/m, z5.s,    z0.s\n"                   \
+  "fmax z6.s,   p0/m, z6.s,    z0.s\n"                   \
+  "fmax z7.s,   p0/m, z7.s,    z0.s\n"                   \
+  "fmin z4.s,   p0/m, z4.s,    z3.s\n"                   \
+  "fmin z5.s,   p0/m, z5.s,    z3.s\n"                   \
+  "fmin z6.s,   p0/m, z6.s,    z3.s\n"                   \
+  "fmin z7.s,   p0/m, z7.s,    z3.s\n"                   \
+  "fmul z30.s,  p0/m, z30.s,   z4.s\n"                   \
+  "fmul z29.s,  p0/m, z29.s,   z5.s\n"                   \
+  "fmul z28.s,  p0/m, z28.s,   z6.s\n"                   \
+  "fmul z27.s,  p0/m, z27.s,   z7.s\n"                   \
+  "movprfx z4, z26\n  fadd z4.s,   p0/m,  z4.s,  z1.s\n" \
+  "movprfx z5, z25\n  fadd z5.s,   p0/m,  z5.s,  z1.s\n" \
+  "movprfx z6, z24\n  fadd z6.s,   p0/m,  z6.s,  z1.s\n" \
+  "movprfx z7, z23\n  fadd z7.s,   p0/m,  z6.s,  z1.s\n" \
+  "fmul z26.s,  p0/m, z26.s,   z2.s\n"                   \
+  "fmul z25.s,  p0/m, z25.s,   z2.s\n"                   \
+  "fmul z24.s,  p0/m, z24.s,   z2.s\n"                   \
+  "fmul z23.s,  p0/m, z23.s,   z2.s\n"                   \
+  "fmax z4.s,   p0/m, z4.s,    z0.s\n"                   \
+  "fmax z5.s,   p0/m, z5.s,    z0.s\n"                   \
+  "fmax z6.s,   p0/m, z6.s,    z0.s\n"                   \
+  "fmax z7.s,   p0/m, z7.s,    z0.s\n"                   \
+  "fmin z4.s,   p0/m, z4.s,    z3.s\n"                   \
+  "fmin z5.s,   p0/m, z5.s,    z3.s\n"                   \
+  "fmin z6.s,   p0/m, z6.s,    z3.s\n"                   \
+  "fmin z7.s,   p0/m, z7.s,    z3.s\n"                   \
+  "fmul z26.s,  p0/m, z26.s,   z4.s\n"                   \
+  "fmul z25.s,  p0/m, z25.s,   z5.s\n"                   \
+  "fmul z24.s,  p0/m, z24.s,   z6.s\n"                   \
+  "fmul z23.s,  p0/m, z23.s,   z7.s\n"
+
+#define SMMLA_ACT_PROCESS_8x4 \
+  "cmp %x[flag_act], #1\n"     \
+  "beq 3f\n"     \
+  "cmp %x[flag_act], #0\n"     \
+  "beq 10f\n"     \
+  "cmp %x[flag_act], #2\n"     \
+  "beq 4f\n"     \
+  "cmp %x[flag_act], #3\n"     \
+  "beq 5f\n"     \
+  SMMLA_HARDSWIDH_8x4 \
+  "3: \n"        \
+  "mov z0.s, #0x0    \n" \
+  SMMLA_RELU_8x4(fmax) \
+  "b 10f\n"      \
+  "4: \n"        \
+  "mov z0.s, #0x0    \n" \
+  SMMLA_RELU_8x4(fmax) \
+  "ld1rqw {z0.s}, p0/Z, [%x[alpha]]\n"                   \
+  SMMLA_RELU_8x4(fmin) \
+  "b 10f\n"     \
+  "5: \n"        \
+  SMMLA_LEAKYRELU_8x4 \
+  "b 10f\n"     \
+  "10: \n"
+
+#define SMMLA_STORE_FP32_8x4            \
+  "st1w {z30.s},  p0, [%x[c_ptr0]]\n"   \
+  "st1w {z29.s},  p0, [%x[c_ptr1]]\n"   \
+  "st1w {z28.s},  p0, [%x[c_ptr2]]\n"   \
+  "st1w {z27.s},  p0, [%x[c_ptr3]]\n"   \
+  "st1w {z26.s},  p0, [%x[c_ptr4]]\n"   \
+  "st1w {z25.s},  p0, [%x[c_ptr5]]\n"   \
+  "st1w {z24.s},  p0, [%x[c_ptr6]]\n"   \
+  "st1w {z23.s},  p0, [%x[c_ptr7]]\n"   \
+  "add %x[c_ptr0], %x[c_ptr0], #0x10\n" \
+  "add %x[c_ptr1], %x[c_ptr1], #0x10\n" \
+  "add %x[c_ptr2], %x[c_ptr2], #0x10\n" \
+  "add %x[c_ptr3], %x[c_ptr3], #0x10\n" \
+  "add %x[c_ptr4], %x[c_ptr4], #0x10\n" \
+  "add %x[c_ptr5], %x[c_ptr5], #0x10\n" \
+  "add %x[c_ptr6], %x[c_ptr6], #0x10\n" \
+  "add %x[c_ptr7], %x[c_ptr7], #0x10\n"
+
+#define SMMLA_STORE_INT8_8x4 \
+  "ld1rqw {z0.s}, p0/Z, [%x[alpha], #0x30]\n"      \
+  SMMLA_RELU_8x4(fmax) \
+  "mov z0.s, #0x00\n"           \
+  "fcvtzs z30.s, p0/m, z30.s\n" \
+  "fcvtzs z29.s, p0/m, z29.s\n" \
+  "fcvtzs z28.s, p0/m, z28.s\n" \
+  "fcvtzs z27.s, p0/m, z27.s\n" \
+  "fcvtzs z26.s, p0/m, z26.s\n" \
+  "fcvtzs z25.s, p0/m, z25.s\n" \
+  "fcvtzs z24.s, p0/m, z24.s\n" \
+  "fcvtzs z23.s, p0/m, z23.s\n" \
+  "uzp1 z1.h,    z30.h, z28.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "uzp1 z2.h,    z29.h, z27.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
+  "uzp1 z3.h,    z26.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
+  "uzp1 z4.h,    z24.h, z23.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
+  "uzp1 z30.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1d1 */ \
+  "uzp1 z31.b,   z3.b,  z4.b\n" /* a0b0c0z0a1b1c1d1 */ \
+  "st1b {z30.b},  p0, [%x[c_ptr0]]\n" \
+  "st1b {z31.b},  p0, [%x[c_ptr1]]\n"
 
 #define INIT_SMMLA_8x12                             \
   "ptrue p0.b \n"                                   \
@@ -866,7 +1307,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "ld1rqb {z2.b}, p0/Z, [%x[a_ptr], #0x20]\n"        \
   "bne 0b\n"
 
-#define COMPUTE_SMMLA_REMAIN                         \
+#define COMPUTE_SMMLA_8x12_REMAIN                    \
   "1: \n"                                            \
   "cmp %x[rem_cnt], #2\n"                            \
   "beq 2f\n"                                         \
@@ -1315,7 +1756,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "b 10f\n"     \
   "10: \n"
 
-#define SMMLA_STORE_FP32                          \
+#define SMMLA_STORE_FP32_8x12                     \
   "st1w {z29.s},  p0, [%x[c_ptr0]]\n"             \
   "st1w {z26.s},  p0, [%x[c_ptr1]]\n"             \
   "st1w {z27.s},  p0, [%x[c_ptr2]]\n"             \
@@ -1349,7 +1790,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "add %x[c_ptr6], %x[c_ptr6], #0x30\n"           \
   "add %x[c_ptr7], %x[c_ptr7], #0x30\n"
 
-#define SMMLA_STORE_INT8 \
+#define SMMLA_STORE_INT8_8x12 \
   "ld1rqw {z0.s}, p0/Z, [%x[alpha], #0x30]\n"      \
   SMMLA_RELU_8x12(fmax) \
   "mov z0.s, #0x00\n"           \
@@ -1408,17 +1849,9 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "st1b {z9.b},   p0, [%x[c_ptr4]]\n" \
   "st1b {z14.b},  p0, [%x[c_ptr5]]\n" \
   "st1b {z15.b},  p0, [%x[c_ptr6]]\n" \
-  "st1b {z20.b},  p0, [%x[c_ptr7]]\n" \
-  "add %x[c_ptr0], %x[c_ptr0], #0x10\n" \
-  "add %x[c_ptr1], %x[c_ptr1], #0x10\n" \
-  "add %x[c_ptr2], %x[c_ptr2], #0x10\n" \
-  "add %x[c_ptr3], %x[c_ptr3], #0x10\n" \
-  "add %x[c_ptr4], %x[c_ptr4], #0x10\n" \
-  "add %x[c_ptr5], %x[c_ptr5], #0x10\n" \
-  "add %x[c_ptr6], %x[c_ptr6], #0x10\n" \
-  "add %x[c_ptr7], %x[c_ptr7], #0x10\n"
+  "st1b {z20.b},  p0, [%x[c_ptr7]]\n"
 
-#define ASM_PARAMS_8x12                                                   \
+#define ASM_PARAMS                                                        \
   : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k), \
     [c_ptr0] "+r"(c_ptr0), [c_ptr1] "+r"(c_ptr1), [c_ptr2] "+r"(c_ptr2), \
     [c_ptr3] "+r"(c_ptr3), [c_ptr4] "+r"(c_ptr4), [c_ptr5] "+r"(c_ptr5), \
@@ -1429,31 +1862,128 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
     "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26", \
     "z27", "z28", "z29", "z30", "z31"
+template <>
+inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float), bool last) {
+  // clang-format off
+  asm volatile(
+    INIT_SMMLA_8x2
+    COMPUTE_SMMLA_8x2_REMAIN
+    CVT_SMMLA_INT32_TO_FP32_8x2
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_FP32_8x2
+    ASM_PARAMS
+  );
+  // clang-format on
+}
 
 template <>
-inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float)) {}
+inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t), bool last) {
+  // clang-format off
+  asm volatile(
+    INIT_SMMLA_8x2
+    COMPUTE_SMMLA_8x2_REMAIN
+    CVT_SMMLA_INT32_TO_FP32_8x2
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_INT8_8x4
+    ASM_PARAMS
+  );
+  // clang-format on
+  int8_t vout0[32] = {0};
+  const auto all_true_pg = svptrue<int8_t>();
+  svst1(all_true_pg, vout0, svld1(all_true_pg, c_ptr0));
+  svst1(all_true_pg, vout0 + 16, svld1(all_true_pg, c_ptr1));
+  int cnt = 2;
+  if (last) cnt = 1;
+  for (int i = 0; i < cnt; i++) {
+    int index = i * 4;
+    int index2 = 16 + index;
+    c_ptr0[i] = vout0[index];
+    c_ptr1[i] = vout0[index + 1];
+    c_ptr2[i] = vout0[index + 2];
+    c_ptr3[i] = vout0[index + 3];
+    c_ptr4[i] = vout0[index2];
+    c_ptr5[i] = vout0[index2 + 1];
+    c_ptr6[i] = vout0[index2 + 2];
+    c_ptr7[i] = vout0[index2 + 3];
+  }
+  c_ptr0 += cnt;
+  c_ptr1 += cnt;
+  c_ptr2 += cnt;
+  c_ptr3 += cnt;
+  c_ptr4 += cnt;
+  c_ptr5 += cnt;
+  c_ptr6 += cnt;
+  c_ptr7 += cnt;
+}
 
 template <>
-inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {}
-
-template <>
-inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {}
-
-template <>
-inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {}
-
-template <>
-inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
+inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
   // clang-format off
   asm volatile(
     INIT_SMMLA_8x12
     COMPUTE_SMMLA_8x12_0
     COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_REMAIN
+    COMPUTE_SMMLA_8x12_REMAIN
     CVT_SMMLA_INT32_TO_FP32_8x12
     SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_FP32
-    ASM_PARAMS_8x12
+    SMMLA_STORE_FP32_8x12
+    ASM_PARAMS
+  );
+  // clang-format on
+}
+
+template <>
+inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
+  // clang-format off
+  asm volatile(
+    INIT_SMMLA_8x4
+    COMPUTE_SMMLA_8x4_0
+    COMPUTE_SMMLA_8x4_1
+    COMPUTE_SMMLA_8x4_REMAIN
+    CVT_SMMLA_INT32_TO_FP32_8x4
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_INT8_8x4
+    ASM_PARAMS
+  );
+  // clang-format on
+  int8_t vout0[32] = {0};
+  const auto all_true_pg = svptrue<int8_t>();
+  svst1(all_true_pg, vout0, svld1(all_true_pg, c_ptr0));
+  svst1(all_true_pg, vout0 + 16, svld1(all_true_pg, c_ptr1));
+  for (int i = 0; i < 4; i++) {
+    int index = i * 4;
+    int index2 = 16 + index;
+    c_ptr0[i] = vout0[index];
+    c_ptr1[i] = vout0[index + 1];
+    c_ptr2[i] = vout0[index + 2];
+    c_ptr3[i] = vout0[index + 3];
+    c_ptr4[i] = vout0[index2];
+    c_ptr5[i] = vout0[index2 + 1];
+    c_ptr6[i] = vout0[index2 + 2];
+    c_ptr7[i] = vout0[index2 + 3];
+  }
+  c_ptr0 += 4;
+  c_ptr1 += 4;
+  c_ptr2 += 4;
+  c_ptr3 += 4;
+  c_ptr4 += 4;
+  c_ptr5 += 4;
+  c_ptr6 += 4;
+  c_ptr7 += 4;
+}
+
+template <>
+inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
+  // clang-format off
+  asm volatile(
+    INIT_SMMLA_8x4
+    COMPUTE_SMMLA_8x4_0
+    COMPUTE_SMMLA_8x4_1
+    COMPUTE_SMMLA_8x4_REMAIN
+    CVT_SMMLA_INT32_TO_FP32_8x4
+    SMMLA_ACT_PROCESS_8x4
+    SMMLA_STORE_FP32_8x4
+    ASM_PARAMS
   );
   // clang-format on
 }
@@ -1465,13 +1995,37 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
     INIT_SMMLA_8x12
     COMPUTE_SMMLA_8x12_0
     COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_REMAIN
+    COMPUTE_SMMLA_8x12_REMAIN
     CVT_SMMLA_INT32_TO_FP32_8x12
     SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_INT8
-    ASM_PARAMS_8x12
+    SMMLA_STORE_INT8_8x12
+    ASM_PARAMS
   );
   // clang-format on
+  int ai = 3;
+  int aj = 4;
+  for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < 4; i++) {
+      c_ptr0[i + ai] = c_ptr0[i + aj];
+      c_ptr1[i + ai] = c_ptr1[i + aj];
+      c_ptr2[i + ai] = c_ptr2[i + aj];
+      c_ptr3[i + ai] = c_ptr3[i + aj];
+      c_ptr4[i + ai] = c_ptr4[i + aj];
+      c_ptr5[i + ai] = c_ptr5[i + aj];
+      c_ptr6[i + ai] = c_ptr6[i + aj];
+      c_ptr7[i + ai] = c_ptr7[i + aj];
+    }
+    ai += 3;
+    aj += 4;
+  }
+  c_ptr0 += 12;
+  c_ptr1 += 12;
+  c_ptr2 += 12;
+  c_ptr3 += 12;
+  c_ptr4 += 12;
+  c_ptr5 += 12;
+  c_ptr6 += 12;
+  c_ptr7 += 12;
 }
 /// a: m*k  b: k*n  c: m*n
 // A: m/8 * (8 * 8 * k_8), A0 = a0_0-7 + a1_0-7 A1 = a2_0-7 + a3_0-7
@@ -1692,10 +2246,11 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               tail_pre,
                                               flag_act);
           }
-          for (int i = 0; i < rem_rem; i++) {
+          for (int i = 0; i < rem_rem; i += 2) {
             const int8_t* a_ptr = a_ptr_l;
             int tail = tail_pre;
             int k = k_pre;
+            bool last = (i + 1 == rem_rem);
             // 8x1
             gemm_smmla_int8_kernel_8x1<dtype>(a_ptr,
                                               b_ptr,
@@ -1712,7 +2267,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               alpha,
                                               k_pre,
                                               tail_pre,
-                                              flag_act);
+                                              flag_act,
+                                              last);
           }
         } else {
           const int8_t* a_ptr = a_ptr_l;
@@ -1772,7 +2328,7 @@ GEMM_PREPACK_INT8_SVE(float);
 #undef SMMLA_ACT_PROCESS_8x12
 #undef SMMLA_STORE_FP32
 #undef SMMLA_STORE_INT8
-#undef ASM_PARAMS_8x12
+#undef ASM_PARAMS
 #undef GEMM_PREPACK_INT8_SVE
 }  // namespace sve
 }  // namespace math
