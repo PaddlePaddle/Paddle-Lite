@@ -73,8 +73,13 @@ class DeviceInfo {
   int Setup();
   bool set_a53_valid();
   bool has_sve2();
+<<<<<<< 8951385a8ac69bc9273da0c9df7f8c5d6e2cc7c1
   bool has_sve2_f32mm();
   bool has_sve2_i8mm();
+=======
+  bool has_svei8mm();
+  bool has_svef32mm();
+>>>>>>> [ARM] add sve2 int8 conv3x3s2direct backends
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
@@ -185,8 +190,13 @@ class DeviceInfo {
   std::vector<bool> dot_;
   bool has_a53_valid_;
   bool has_sve2_;
+<<<<<<< 8951385a8ac69bc9273da0c9df7f8c5d6e2cc7c1
   bool has_sve2_i8mm_;
   bool has_sve2_f32mm_;
+=======
+  bool has_svei8mm_;
+  bool has_svef32mm_;
+>>>>>>> [ARM] add sve2 int8 conv3x3s2direct backends
 
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,

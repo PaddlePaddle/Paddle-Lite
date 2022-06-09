@@ -26,25 +26,27 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-namespace sve {
+namespace sve2 {
 
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 template <typename Dtype>
-void conv_3x3s2_direct_int8_sve(const int8_t* din,
-                            Dtype* dout,
-                            int num,
-                            int chout,
-                            int hout,
-                            int wout,
-                            int chin,
-                            int hin,
-                            int win,
-                            const int8_t* weights,
-                            const float* bias,
-                            const operators::ConvParam& param,
-                            Context<TARGET(kARM)>* ctx,
-                            const float* scale);
+void conv_3x3s2_direct_int8_sve2(const int8_t* din,
+                                 Dtype* dout,
+                                 int num,
+                                 int chout,
+                                 int hout,
+                                 int wout,
+                                 int chin,
+                                 int hin,
+                                 int win,
+                                 const int8_t* weights,
+                                 const float* bias,
+                                 const operators::ConvParam& param,
+                                 Context<TARGET(kARM)>* ctx,
+                                 const float* scale);
+#endif
 
-}  // namespace sve
+}  // namespace sve2
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -371,6 +371,8 @@ class Context<TargetType::kARM> {
   bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
   bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
   bool has_sve2() const { return DeviceInfo::Global().has_sve2(); }
+  bool has_svei8mm() const { return DeviceInfo::Global().has_svei8mm(); }
+  bool has_svef32mm() const { return DeviceInfo::Global().has_svef32mm(); }
 
   template <typename T>
   T* workspace_data() {
