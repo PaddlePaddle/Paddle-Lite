@@ -208,9 +208,9 @@ function make_tiny_publish_so {
   fi
   
   if [ -d $build_dir ]; then
-       rm -rf $build_dir
-   fi
-   mkdir -p $build_dir
+      rm -rf $build_dir
+  fi
+  mkdir -p $build_dir
   
   cd $build_dir
 
