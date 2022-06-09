@@ -948,6 +948,8 @@ template void conv_3x3s2_direct_int8_sve2(const int8_t* din,
 #undef INIT_WEIGHT
 #undef COMPUTE_SVE2_1
 #undef COMPUTE_SVE2_2
+#undef COMPUTE_SVE2_1_B4
+#undef COMPUTE_SVE2_2_B4
 #undef STORE_LINE0_BLK8
 #undef STORE_LINE1_BLK8
 #undef STORE_LINE0_BLK4
