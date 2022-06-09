@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/conv_direct.h"
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-#include "lite/backends/arm/math/sve/conv3x3s2_direct_int8_sve.h"
+#include "lite/backends/arm/math/sve2/conv3x3s2_direct_int8_sve2.h"
 #endif
 
 namespace paddle {
@@ -87,39 +87,39 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-  if(1) /*support svei8mm*/ {
-    lite::arm::math::sve::conv_3x3s2_direct_int8_sve(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx,
-                                          w_scale_.data());
-    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8_sve")
+  if (ctx.has_svei8mm()) /*support svei8mm*/ {
+    lite::arm::math::sve2::conv_3x3s2_direct_int8_sve2(i_data,
+                                                       o_data,
+                                                       bs,
+                                                       oc,
+                                                       oh,
+                                                       ow,
+                                                       ic,
+                                                       ih,
+                                                       iw,
+                                                       w_data,
+                                                       b_data,
+                                                       param,
+                                                       &ctx,
+                                                       w_scale_.data());
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8_sve2")
   } else {
 #endif
-  lite::arm::math::conv_3x3s2_direct_int8(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx,
-                                          w_scale_.data());
-  KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
+    lite::arm::math::conv_3x3s2_direct_int8(i_data,
+                                            o_data,
+                                            bs,
+                                            oc,
+                                            oh,
+                                            ow,
+                                            ic,
+                                            ih,
+                                            iw,
+                                            w_data,
+                                            b_data,
+                                            param,
+                                            &ctx,
+                                            w_scale_.data());
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
   }
 #endif
@@ -156,39 +156,39 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oc = o_dims[1];
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-  if(1) {
-    lite::arm::math::sve::conv_3x3s2_direct_int8_sve(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx,
-                                          w_scale_.data());
-    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8_sve")
+  if (ctx.has_svei8mm()) {
+    lite::arm::math::sve2::conv_3x3s2_direct_int8_sve2(i_data,
+                                                       o_data,
+                                                       bs,
+                                                       oc,
+                                                       oh,
+                                                       ow,
+                                                       ic,
+                                                       ih,
+                                                       iw,
+                                                       w_data,
+                                                       b_data,
+                                                       param,
+                                                       &ctx,
+                                                       w_scale_.data());
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8_sve2")
   } else {
 #endif
-  lite::arm::math::conv_3x3s2_direct_int8(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx,
-                                          w_scale_.data());
-  KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
+    lite::arm::math::conv_3x3s2_direct_int8(i_data,
+                                            o_data,
+                                            bs,
+                                            oc,
+                                            oh,
+                                            ow,
+                                            ic,
+                                            ih,
+                                            iw,
+                                            w_data,
+                                            b_data,
+                                            param,
+                                            &ctx,
+                                            w_scale_.data());
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
   }
 #endif
