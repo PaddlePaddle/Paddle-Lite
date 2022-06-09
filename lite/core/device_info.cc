@@ -1201,8 +1201,6 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 bool DeviceInfo::set_a53_valid() { return has_a53_valid_; }
 
 bool DeviceInfo::has_sve2() { return has_sve2_; }
-bool DeviceInfo::has_svei8mm() { return has_svei8mm_; }
-bool DeviceInfo::has_svef32mm() { return has_svef32mm_; }
 
 bool DeviceInfo::has_sve2_f32mm() { return has_sve2_f32mm_; }
 
@@ -1265,21 +1263,12 @@ int DeviceInfo::Setup() {
 
   // SVE2
   has_sve2_ = false;
-<<<<<<< 8951385a8ac69bc9273da0c9df7f8c5d6e2cc7c1
   has_sve2_i8mm_ = false;
   has_sve2_f32mm_ = false;
 #if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
   has_sve2_ = check_sve2_valid();
   has_sve2_f32mm_ = has_sve2_ && check_sve2_f32mm_vaild();
   has_sve2_i8mm_ = has_sve2_ && check_sve2_i8mm_vaild();
-=======
-  has_svei8mm_ = false;
-  has_svef32mm_ = false;
-#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
-  has_sve2_ = check_sve2_valid();
-  has_svei8mm_ = check_svei8mm_valid();
-  has_svef32mm_ = check_svef32mm_valid();
->>>>>>> [ARM] add sve2 int8 conv3x3s2direct backends
 #endif
 
   // output info
@@ -1306,13 +1295,8 @@ int DeviceInfo::Setup() {
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
   LOG(INFO) << "SVE2 support: " << has_sve2_;
-<<<<<<< 8951385a8ac69bc9273da0c9df7f8c5d6e2cc7c1
   LOG(INFO) << "SVE2 f32mm support: " << has_sve2_f32mm_;
   LOG(INFO) << "SVE2 i8mm support: " << has_sve2_i8mm_;
-=======
-  LOG(INFO) << "SVEI8MM support: " << has_svei8mm_;
-  LOG(INFO) << "SVEF32MM support: " << has_svef32mm_;
->>>>>>> [ARM] add sve2 int8 conv3x3s2direct backends
   // set default run mode
   SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND,
              1);  // use single thread by default

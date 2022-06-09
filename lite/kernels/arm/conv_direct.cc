@@ -87,7 +87,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-  if (ctx.has_svei8mm()) /*support svei8mm*/ {
+  if (ctx.has_sve2_i8mm()) /*support svei8mm*/ {
     lite::arm::math::sve2::conv_3x3s2_direct_int8_sve2(i_data,
                                                        o_data,
                                                        bs,
@@ -156,7 +156,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oc = o_dims[1];
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-  if (ctx.has_svei8mm()) {
+  if (ctx.has_sve2_i8mm()) {
     lite::arm::math::sve2::conv_3x3s2_direct_int8_sve2(i_data,
                                                        o_data,
                                                        bs,

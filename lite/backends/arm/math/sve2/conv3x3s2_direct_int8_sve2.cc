@@ -208,6 +208,98 @@ namespace sve2 {
   "smlalb z8.s,  z15.h, z4.h[0]\n" \
   "smlalt z9.s,  z15.h, z4.h[0]\n"
 
+#define COMPUTE_SVE2_1_B4           \
+  "ld1b z8.b, p0/Z, [%x[r0]]\n"     \
+  "add %x[r0], %x[r0], x10\n"       \
+  "ld1b z9.b, p0/Z, [%x[r2]]\n"     \
+  "add %x[r2], %x[r2], x10\n"       \
+  "sshllb z0.h, z8.b, #0\n"         \
+  "sshllt z1.h, z8.b, #0\n"         \
+  "sshllb z2.h, z9.b, #0\n"         \
+  "sshllt z3.h, z9.b, #0\n"         \
+  "smullb z19.s, z10.h, z0.h[0]\n"  \
+  "smullt z20.s, z10.h, z0.h[0]\n"  \
+  "smullb z21.s, z10.h, z0.h[1]\n"  \
+  "smullt z22.s, z10.h, z0.h[1]\n"  \
+  "smullb z23.s, z10.h, z0.h[2]\n"  \
+  "smullt z24.s, z10.h, z0.h[2]\n"  \
+  "smullb z25.s, z10.h, z0.h[3]\n"  \
+  "smullt z26.s, z10.h, z0.h[3]\n"  \
+  "smlalb z19.s, z16.h, z2.h[0]\n"  \
+  "smlalt z20.s, z16.h, z2.h[0]\n"  \
+  "smlalb z21.s, z16.h, z2.h[1]\n"  \
+  "smlalt z22.s, z16.h, z2.h[1]\n"  \
+  "smlalb z23.s, z16.h, z2.h[2]\n"  \
+  "smlalt z24.s, z16.h, z2.h[2]\n"  \
+  "smlalb z25.s, z16.h, z2.h[3]\n"  \
+  "smlalt z26.s, z16.h, z2.h[3]\n"  \
+  "smlalb z19.s, z11.h, z1.h[0]\n"  \
+  "smlalt z20.s, z11.h, z1.h[0]\n"  \
+  "smlalb z21.s, z11.h, z1.h[1]\n"  \
+  "smlalt z22.s, z11.h, z1.h[1]\n"  \
+  "smlalb z23.s, z11.h, z1.h[2]\n"  \
+  "smlalt z24.s, z11.h, z1.h[2]\n"  \
+  "smlalb z25.s, z11.h, z1.h[3]\n"  \
+  "smlalt z26.s, z11.h, z1.h[3]\n"  \
+  "smlalb z19.s, z17.h, z3.h[0]\n"  \
+  "smlalt z20.s, z17.h, z3.h[0]\n"  \
+  "smlalb z21.s, z17.h, z3.h[1]\n"  \
+  "smlalt z22.s, z17.h, z3.h[1]\n"  \
+  "smlalb z23.s, z17.h, z3.h[2]\n"  \
+  "smlalt z24.s, z17.h, z3.h[2]\n"  \
+  "smlalb z25.s, z17.h, z3.h[3]\n"  \
+  "smlalt z26.s, z17.h, z3.h[3]\n"  \
+  "ldr q31, [%x[r0]]\n"             \
+  "sshllb z4.h, z31.b, #0\n"        \
+  "smlalb z19.s, z12.h, z0.h[1]\n"  \
+  "smlalt z20.s, z12.h, z0.h[1]\n"  \
+  "smlalb z21.s, z12.h, z0.h[2]\n"  \
+  "smlalt z22.s, z12.h, z0.h[2]\n"  \
+  "smlalb z23.s, z12.h, z0.h[3]\n"  \
+  "smlalt z24.s, z12.h, z0.h[3]\n"  \
+  "smlalb z25.s,  z12.h, z4.h[0]\n" \
+  "smlalt z26.s,  z12.h, z4.h[0]\n" \
+  "ld1b z31.b, p0/Z, [%x[r1]]\n"    \
+  "add %x[r1], %x[r1], x10\n"       \
+  "sshllb z0.h, z31.b, #0\n"        \
+  "sshllt z1.h, z31.b, #0\n"        \
+  "smlalb z19.s, z18.h, z2.h[1]\n"  \
+  "smlalt z20.s, z18.h, z2.h[1]\n"  \
+  "smlalb z21.s, z18.h, z2.h[2]\n"  \
+  "smlalt z22.s, z18.h, z2.h[2]\n"  \
+  "smlalb z23.s, z18.h, z2.h[3]\n"  \
+  "smlalt z24.s, z18.h, z2.h[3]\n"  \
+  "ldr q31, [%x[r2]]\n"             \
+  "sshllb z5.h, z31.b, #0\n"        \
+  "smlalb z25.s, z18.h, z5.h[0]\n"  \
+  "smlalt z26.s, z18.h, z5.h[0]\n"  \
+  "smlalb z19.s, z13.h, z0.h[0]\n"  \
+  "smlalt z20.s, z13.h, z0.h[0]\n"  \
+  "smlalb z21.s, z13.h, z0.h[1]\n"  \
+  "smlalt z22.s, z13.h, z0.h[1]\n"  \
+  "smlalb z23.s, z13.h, z0.h[2]\n"  \
+  "smlalt z24.s, z13.h, z0.h[2]\n"  \
+  "smlalb z25.s, z13.h, z0.h[3]\n"  \
+  "smlalt z26.s, z13.h, z0.h[3]\n"  \
+  "smlalb z19.s, z14.h, z1.h[0]\n"  \
+  "smlalt z20.s, z14.h, z1.h[0]\n"  \
+  "smlalb z21.s, z14.h, z1.h[1]\n"  \
+  "smlalt z22.s, z14.h, z1.h[1]\n"  \
+  "smlalb z23.s, z14.h, z1.h[2]\n"  \
+  "smlalt z24.s, z14.h, z1.h[2]\n"  \
+  "smlalb z25.s, z14.h, z1.h[3]\n"  \
+  "smlalt z26.s, z14.h, z1.h[3]\n"  \
+  "ldr q31, [%x[r1]]\n"             \
+  "sshllb z4.h, z31.b, #0\n"        \
+  "smlalb z19.s, z15.h, z0.h[1]\n"  \
+  "smlalt z20.s, z15.h, z0.h[1]\n"  \
+  "smlalb z21.s, z15.h, z0.h[2]\n"  \
+  "smlalt z22.s, z15.h, z0.h[2]\n"  \
+  "smlalb z23.s, z15.h, z0.h[3]\n"  \
+  "smlalt z24.s, z15.h, z0.h[3]\n"  \
+  "smlalb z25.s,  z15.h, z4.h[0]\n" \
+  "smlalt z26.s,  z15.h, z4.h[0]\n"
+
 #define STORE_LINE0_BLK8                          \
   "ld2w {z0.s, z1.s}, p0/Z, [%x[ptr_out0]]\n"     \
   "add z19.s, p0/M, z19.s, z0.s\n"                \
@@ -429,6 +521,92 @@ namespace sve2 {
   "smlalt z7.s,  z18.h, z2.h[7]\n" \
   "smlalb z8.s,  z18.h, z5.h[0]\n" \
   "smlalt z9.s,  z18.h, z5.h[0]\n"
+
+#define COMPUTE_SVE2_2_B4           \
+  "ld1b z31.b, p0/Z, [%x[r3]]\n"    \
+  "add %x[r3], %x[r3], x10\n"       \
+  "sshllb z0.h, z31.b, #0\n"        \
+  "sshllt z1.h, z31.b, #0\n"        \
+  "ldr q31, [%x[r3]]\n"             \
+  "sshllb z4.h, z31.b, #0\n"        \
+  "smullb z19.s, z10.h, z2.h[0]\n"  \
+  "smullt z20.s, z10.h, z2.h[0]\n"  \
+  "smullb z21.s, z10.h, z2.h[1]\n"  \
+  "smullt z22.s, z10.h, z2.h[1]\n"  \
+  "smullb z23.s, z10.h, z2.h[2]\n"  \
+  "smullt z24.s, z10.h, z2.h[2]\n"  \
+  "smullb z25.s, z10.h, z2.h[3]\n"  \
+  "smullt z26.s, z10.h, z2.h[3]\n"  \
+  "smlalb z19.s, z11.h, z3.h[0]\n"  \
+  "smlalt z20.s, z11.h, z3.h[0]\n"  \
+  "smlalb z21.s, z11.h, z3.h[1]\n"  \
+  "smlalt z22.s, z11.h, z3.h[1]\n"  \
+  "smlalb z23.s, z11.h, z3.h[2]\n"  \
+  "smlalt z24.s, z11.h, z3.h[2]\n"  \
+  "smlalb z25.s, z11.h, z3.h[3]\n"  \
+  "smlalt z26.s, z11.h, z3.h[3]\n"  \
+  "smlalb z19.s, z12.h, z2.h[1]\n"  \
+  "smlalt z20.s, z12.h, z2.h[1]\n"  \
+  "smlalb z21.s, z12.h, z2.h[2]\n"  \
+  "smlalt z22.s, z12.h, z2.h[2]\n"  \
+  "smlalb z23.s, z12.h, z2.h[3]\n"  \
+  "smlalt z24.s, z12.h, z2.h[3]\n"  \
+  "smlalb z25.s,  z12.h, z5.h[0]\n" \
+  "smlalt z26.s,  z12.h, z5.h[0]\n" \
+  "smlalb z19.s, z13.h, z0.h[0]\n"  \
+  "smlalt z20.s, z13.h, z0.h[0]\n"  \
+  "smlalb z21.s, z13.h, z0.h[1]\n"  \
+  "smlalt z22.s, z13.h, z0.h[1]\n"  \
+  "smlalb z23.s, z13.h, z0.h[2]\n"  \
+  "smlalt z24.s, z13.h, z0.h[2]\n"  \
+  "smlalb z25.s, z13.h, z0.h[3]\n"  \
+  "smlalt z26.s, z13.h, z0.h[3]\n"  \
+  "smlalb z19.s, z14.h, z1.h[0]\n"  \
+  "smlalt z20.s, z14.h, z1.h[0]\n"  \
+  "smlalb z21.s, z14.h, z1.h[1]\n"  \
+  "smlalt z22.s, z14.h, z1.h[1]\n"  \
+  "smlalb z23.s, z14.h, z1.h[2]\n"  \
+  "smlalt z24.s, z14.h, z1.h[2]\n"  \
+  "smlalb z25.s, z14.h, z1.h[3]\n"  \
+  "smlalt z26.s, z14.h, z1.h[3]\n"  \
+  "smlalb z19.s, z15.h, z0.h[1]\n"  \
+  "smlalt z20.s, z15.h, z0.h[1]\n"  \
+  "smlalb z21.s, z15.h, z0.h[2]\n"  \
+  "smlalt z22.s, z15.h, z0.h[2]\n"  \
+  "smlalb z23.s, z15.h, z0.h[3]\n"  \
+  "smlalt z24.s, z15.h, z0.h[3]\n"  \
+  "smlalb z25.s,  z15.h, z4.h[0]\n" \
+  "smlalt z26.s,  z15.h, z4.h[0]\n" \
+  "ld1b z31.b, p0/Z, [%x[r4]]\n"    \
+  "add %x[r4], %x[r4], x10\n"       \
+  "sshllb z2.h, z31.b, #0\n"        \
+  "sshllt z3.h, z31.b, #0\n"        \
+  "ldr q31, [%x[r4]]\n"             \
+  "sshllb z5.h, z31.b, #0\n"        \
+  "smlalb z19.s, z16.h, z2.h[0]\n"  \
+  "smlalt z20.s, z16.h, z2.h[0]\n"  \
+  "smlalb z21.s, z16.h, z2.h[1]\n"  \
+  "smlalt z22.s, z16.h, z2.h[1]\n"  \
+  "smlalb z23.s, z16.h, z2.h[2]\n"  \
+  "smlalt z24.s, z16.h, z2.h[2]\n"  \
+  "smlalb z25.s, z16.h, z2.h[3]\n"  \
+  "smlalt z26.s, z16.h, z2.h[3]\n"  \
+  "smlalb z19.s, z17.h, z3.h[0]\n"  \
+  "smlalt z20.s, z17.h, z3.h[0]\n"  \
+  "smlalb z21.s, z17.h, z3.h[1]\n"  \
+  "smlalt z22.s, z17.h, z3.h[1]\n"  \
+  "smlalb z23.s, z17.h, z3.h[2]\n"  \
+  "smlalt z24.s, z17.h, z3.h[2]\n"  \
+  "smlalb z25.s, z17.h, z3.h[3]\n"  \
+  "smlalt z26.s, z17.h, z3.h[3]\n"  \
+  "smlalb z19.s, z18.h, z2.h[1]\n"  \
+  "smlalt z20.s, z18.h, z2.h[1]\n"  \
+  "smlalb z21.s, z18.h, z2.h[2]\n"  \
+  "smlalt z22.s, z18.h, z2.h[2]\n"  \
+  "smlalb z23.s, z18.h, z2.h[3]\n"  \
+  "smlalt z24.s, z18.h, z2.h[3]\n"  \
+  "smlalb z25.s,  z18.h, z5.h[0]\n" \
+  "smlalt z26.s,  z18.h, z5.h[0]\n"
 
 #define STORE_LINE1_BLK8                          \
   "ld2w {z0.s, z1.s}, p0/Z, [%x[ptr_out1]]\n"     \
@@ -659,6 +837,7 @@ void conv_3x3s2_direct_int8_sve2(const int8_t* din,
             int32_t* ptr_out1 = pre_out1;
             int w_loop_8 = w_loop_b8;
             int w_loop_4 = w_loop_b4;
+
             // clang-format off
             asm volatile(
               INIT_WEIGHT
@@ -678,13 +857,13 @@ void conv_3x3s2_direct_int8_sve2(const int8_t* din,
               "beq 3f\n"
               "lsr x10, %x[cntb], #1\n"
               "whilelt p0.b, xzr, x10\n"
-              COMPUTE_SVE2_1
+              COMPUTE_SVE2_1_B4
               "ptrue p0.b\n"
               "mov x10, %x[cntb]\n"
               STORE_LINE0_BLK4
               "lsr x10, %x[cntb], #1\n"
               "whilelt p0.b, xzr, x10\n"
-              COMPUTE_SVE2_2
+              COMPUTE_SVE2_2_B4
               "ptrue p0.b\n"
               "mov x10, %x[cntb]\n"
               STORE_LINE1_BLK4
