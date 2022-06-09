@@ -47,6 +47,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (xpu_use_fp16_optimizer_) {
     GetXPUDeviceType();
     for (auto& node : graph->StmtTopologicalOrder()) {
+      if (!node->IsStmt()) continue;
       if (xpu_special_op_.count(node->AsStmt().op_type())) {
         SpecialNodeInputPrecision(node);
         continue;
@@ -60,6 +61,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
 
     for (auto& node : graph->StmtTopologicalOrder()) {
+      if (!node->IsStmt()) continue;
       if (xpu_inplace_op_.count(node->AsStmt().op_type()) == 0) {
         continue;
       }
@@ -242,7 +244,7 @@ void XPUStaticKernelPickPass::ForceUseFP32Kernel(
   if (kernel.place().target != TARGET(kXPU)) {
     return;
   }
-
+#ifdef LITE_WITH_XPU
   // only use in FC，it will not use in future.
   if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
       lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
@@ -253,7 +255,7 @@ void XPUStaticKernelPickPass::ForceUseFP32Kernel(
     }
     return;
   }
-
+#endif
   if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int31") {
     if (kernel.alias() == "XPU_Real_kFloat" &&
         PRECISION_INT31_OP_.count(instruct.op_type())) {
@@ -278,7 +280,7 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
   if (kernel.place().target != TARGET(kXPU)) {
     return;
   }
-
+#ifdef LITE_WITH_XPU
   // only use in FC，it will not use in future.
   if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
       lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
@@ -289,7 +291,7 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
     }
     return;
   }
-
+#endif
   if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int8") {
     if (kernel.alias() == "XPU_Int8_FP32_FP32" &&
         PRECISION_INT8_OP_.count(instruct.op_type())) {
@@ -701,8 +703,10 @@ void XPUStaticKernelPickPass::SpecialOpScore(
 void XPUStaticKernelPickPass::GetXPUDeviceType() {
   int cur_dev_idx = 0;
   uint64_t cur_dev_attr = 0;
+#ifdef LITE_WITH_XPU
   XPU_CALL(xpu_current_device(&cur_dev_idx));
   XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
+#endif
   if (cur_dev_attr <= 1) {
     VLOG(4) << "Currents XPU device : XPU1";
     xpu_disable_flag_ = "DISABLE_XPU1";
