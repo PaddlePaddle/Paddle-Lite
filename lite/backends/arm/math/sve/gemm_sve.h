@@ -30,7 +30,7 @@ const int MBLOCK_SVE = 8;
 const int NBLOCK_SVE_FP16 = 16;
 const int NBLOCK_SVE_FP32 = 12;
 
-inline int get_hblock_sve(ARMContext* ctx, int m, int dytpe) {
+inline int get_hblock_sve(ARMContext* ctx, int m, int dtype) {
   if (m <= 4) {
     return 4;
   } else {

@@ -340,6 +340,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_fp32.Launch();
           t0.Stop();
         }
+
         LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
                   << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
                   << ", min time: " << t0.LapTimes().Min() << " ms"
@@ -354,6 +355,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_int8.Launch();
           t0.Stop();
         }
+
         LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
                   << ",running time, avg: " << t0.LapTimes().Avg()
                   << ", min time: " << t0.LapTimes().Min()
