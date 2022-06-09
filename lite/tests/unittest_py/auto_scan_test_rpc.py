@@ -33,6 +33,7 @@ class AutoScanTest(AutoScanBaseTest):
                         params,
                         feed_data,
                         pred_config,
+                        prog_config,
                         server_ip="localhost") -> Dict[str, np.ndarray]:
         paddle_lite_path = os.path.abspath(__file__)
         paddlelite_source_path = re.findall(r"(.+?)Paddle-Lite",
@@ -43,7 +44,7 @@ class AutoScanTest(AutoScanBaseTest):
         conn = rpyc.connect(server_ip, port_id)
         conn._config['sync_request_timeout'] = 2400
         out, model = conn.root.run_lite_model(model, params, feed_data,
-                                              pred_config)
+                                              pred_config, prog_config)
         result_res = copy.deepcopy(out)
         return result_res, model
 

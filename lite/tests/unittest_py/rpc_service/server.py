@@ -80,7 +80,8 @@ def ParsePaddleLiteConfig(self, config):
 
 
 class RPCService(rpyc.Service):
-    def exposed_run_lite_model(self, model, params, inputs, config_str):
+    def exposed_run_lite_model(self, model, params, inputs, config_str,
+                               prog_config):
         '''
         Test a single case.
         '''

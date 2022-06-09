@@ -67,16 +67,73 @@ parser.add_argument(
     default="",
     type=str,
     help="Set nnadapter mixed precision quantization config path")
+parser.add_argument(
+    "--username", default="", type=str, help="Set user name for remote login")
+parser.add_argument(
+    "--ip", default="", type=str, help="Set the IP address for remote login")
+parser.add_argument(
+    "--password",
+    default="",
+    type=str,
+    help="Set user name and password for remote login")
+parser.add_argument(
+    "--run_mode",
+    default='local',
+    choices=['local', 'ssh', 'adb'],
+    help="Set auto scan test run mode, default with local")
+parser.add_argument(
+    "--remote_work_dir",
+    default="",
+    type=str,
+    help="Set the working directory where the remote login is located")
+parser.add_argument(
+    "--adb_device_name",
+    default="",
+    type=str,
+    help="Set the adb device serial number")
+parser.add_argument(
+    "--target_os",
+    default="linux",
+    choices=['android', 'linux'],
+    help="Set the OS of the target machine")
+parser.add_argument(
+    "--target_arch",
+    default="armv8",
+    choices=['x86', 'armv7', 'armv8', 'armv7hf'],
+    help="Set the ABI of the target machine")
+parser.add_argument(
+    "--target_abi",
+    default="arm64",
+    choices=['arm64', 'armhf', 'amd64', 'arm64-v8a', 'armeabi-v7a'],
+    help="Set the target abi of the target machine")
+parser.add_argument(
+    "--host_android_ndk_path",
+    default="",
+    type=str,
+    help="Setting the android ndk path in host machine to build the autoscan cxx test demo"
+)
+parser.add_argument(
+    "--remote_env_variable",
+    default="",
+    type=str,
+    help="Setting environment variables on the target machine")
 args = parser.parse_args()
 
-if (args.target == "ARM" and platform.system() == 'Darwin') or (
-        args.target == "OpenCL") or (
-            args.target == "Metal") or args.enforce_rpc == "on":
-    from auto_scan_test_rpc import AutoScanTest
-    from auto_scan_test_rpc import FusePassAutoScanTest
+if args.run_mode == "ssh":
+    from auto_scan_test_ssh import AutoScanTest
+    from auto_scan_test_ssh import FusePassAutoScanTest
+elif args.run_mode == "adb":
+    from auto_scan_test_adb import AutoScanTest
+    from auto_scan_test_adb import FusePassAutoScanTest
 else:
-    from auto_scan_test_no_rpc import AutoScanTest
-    from auto_scan_test_no_rpc import FusePassAutoScanTest
+    if (args.target == "ARM" and platform.system() == 'Darwin') or (
+            args.target == "OpenCL") or (
+                args.target == "Metal") or args.enforce_rpc == "on":
+        from auto_scan_test_rpc import AutoScanTest
+        from auto_scan_test_rpc import FusePassAutoScanTest
+    else:
+        from auto_scan_test_no_rpc import AutoScanTest
+        from auto_scan_test_no_rpc import FusePassAutoScanTest
 
 IgnoreReasons = IgnoreReasonsBase
 AutoScanTest = AutoScanTest

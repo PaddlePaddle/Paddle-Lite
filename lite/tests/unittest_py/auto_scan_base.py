@@ -99,6 +99,56 @@ parser.add_argument(
     default="",
     type=str,
     help="Set nnadapter mixed precision quantization config path")
+parser.add_argument(
+    "--username", default="", type=str, help="Set user name for remote login")
+parser.add_argument(
+    "--ip", default="", type=str, help="Set the IP address for remote login")
+parser.add_argument(
+    "--password",
+    default="",
+    type=str,
+    help="Set user name and password for remote login")
+parser.add_argument(
+    "--run_mode",
+    default='local',
+    choices=['local', 'ssh', 'adb'],
+    help="Set auto scan test run mode, default with local")
+parser.add_argument(
+    "--remote_work_dir",
+    default="",
+    type=str,
+    help="Set the working directory where the remote login is located")
+parser.add_argument(
+    "--adb_device_name",
+    default="",
+    type=str,
+    help="Set the adb device serial number")
+parser.add_argument(
+    "--target_os",
+    default="linux",
+    choices=['android', 'linux'],
+    help="Set the OS of the target machine")
+parser.add_argument(
+    "--target_arch",
+    default="armv8",
+    choices=['x86', 'armv7', 'armv8', 'armv7hf'],
+    help="Set the target arch of the target machine")
+parser.add_argument(
+    "--target_abi",
+    default="arm64",
+    choices=['arm64', 'armhf', 'amd64', 'arm64-v8a', 'armeabi-v7a'],
+    help="Set the target abi of the target machine")
+parser.add_argument(
+    "--host_android_ndk_path",
+    default="",
+    type=str,
+    help="Setting the android ndk path in host machine to build the autoscan cxx test demo"
+)
+parser.add_argument(
+    "--remote_env_variable",
+    default="",
+    type=str,
+    help="Setting environment variables on the target machine")
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -563,7 +613,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     os.mkdir(self.cache_dir)
                 try:
                     result, opt_model_bytes = self.run_lite_config(
-                        model, params, feed_data, pred_config, args.server_ip)
+                        model, params, feed_data, pred_config, prog_config,
+                        args.server_ip)
                     results.append(result)
                     # add ignore methods
                     if self.passes is not None:  # pass check
@@ -663,6 +714,8 @@ class AutoScanBaseTest(unittest.TestCase):
 
     # judge if correct kernel is picked
     def assert_kernel_type(self, model_bytes, op_list, paddlelite_config):
+        if model_bytes == None:
+            return
         pg = paddle.static.deserialize_program(model_bytes)
         main_block = pg.desc.block(0)
         after_op_list = list()

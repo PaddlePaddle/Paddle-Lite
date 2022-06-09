@@ -88,6 +88,7 @@ class AutoScanTest(AutoScanBaseTest):
                         params,
                         inputs,
                         pred_config,
+                        prog_config,
                         server_ip="localhost") -> Dict[str, np.ndarray]:
         # 1. store original model
         with open(self.cache_dir + "/model", "wb") as f:
