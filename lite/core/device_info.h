@@ -73,6 +73,8 @@ class DeviceInfo {
   int Setup();
   bool set_a53_valid();
   bool has_sve2();
+  bool has_svei8mm();
+  bool has_svef32mm();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
@@ -156,6 +158,8 @@ class DeviceInfo {
   std::vector<bool> dot_;
   bool has_a53_valid_;
   bool has_sve2_;
+  bool has_svei8mm_;
+  bool has_svef32mm_;
 
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
