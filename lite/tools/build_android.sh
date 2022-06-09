@@ -206,12 +206,10 @@ function make_tiny_publish_so {
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
-  
   if [ -d $build_dir ]; then
       rm -rf $build_dir
   fi
   mkdir -p $build_dir
-  
   cd $build_dir
 
   # Step2. prepare third-party libs: opencl libs.
