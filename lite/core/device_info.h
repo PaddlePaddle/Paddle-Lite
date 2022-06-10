@@ -131,7 +131,26 @@ class DeviceInfo {
     return false;
 #endif
   }
-  bool has_fp16() const { return fp16_[active_ids_[0]]; }
+  bool has_fp16() const {
+    std::vector<ARMArch> fp16_arch = {kX1,
+                                      kX2,
+                                      kA55,
+                                      kA75,
+                                      kA76,
+                                      kA77,
+                                      kA78,
+                                      kGold,
+                                      kGold_Prime,
+                                      kSilver,
+                                      kA710};
+    for (int i = 0; i < core_num_; ++i) {
+      auto iter = std::find(fp16_arch.begin(), fp16_arch.end(), archs_[i]);
+      if (iter != std::end(fp16_arch)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   template <typename T>
   T* workspace_data() {
