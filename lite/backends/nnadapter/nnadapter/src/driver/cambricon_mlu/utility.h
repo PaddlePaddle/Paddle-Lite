@@ -45,6 +45,8 @@ namespace cambricon_mlu {
 #define MLU_CNRT_CHECK(msg) \
   NNADAPTER_CHECK_EQ(msg, cnrtSuccess) << (msg) << " " << cnrtGetErrorStr(msg)
 
+#define MLU_MM_CHECK(msg) NNADAPTER_CHECK(msg.ok()) << " " << msg.ToString()
+
 // Convert NNAdapter types to magicmind dtype
 magicmind::DataType ConvertToMagicMindDtype(
     NNAdapterOperandPrecisionCode input_precision);

@@ -43,6 +43,8 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY =
     "cache_%d_output_indexes";
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
+static const char* NNADAPTER_RUNTIME_CACHE_CACHE_INPUTS_PERM_KEY =
+    "cache_%d_inputs_perm";
 
 void* AccessSubmodelInput(void* memory,
                           NNAdapterOperandType* type,
@@ -530,6 +532,18 @@ bool Compilation::Serialize(std::vector<uint8_t>* buffer) {
           program.output_indexes.data(),
           output_count * sizeof(int)));
     }
+    // inputs perm
+    if (!program.cache->inputs_perm.empty()) {
+      value.resize(input_count * sizeof(int));
+      for (size_t j = 0; j < input_count; j++) {
+        memcpy(&value[j * sizeof(int)],
+               &program.cache->inputs_perm[j],
+               sizeof(int));
+      }
+      NNADAPTER_CHECK(helper->Set(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUTS_PERM_KEY, i),
+          value));
+    }
     // model buffer
     if (!program.cache->buffer.empty()) {
       NNADAPTER_CHECK(helper->Set(
@@ -653,6 +667,12 @@ bool Compilation::Deserialize(void* buffer, uint64_t size) {
           programs_[i].output_indexes[j] = -j - 1;
         }
       }
+      // inputs perm
+      cache->inputs_perm.resize(input_count);
+      helper->Get(
+          string_format(NNADAPTER_RUNTIME_CACHE_CACHE_INPUTS_PERM_KEY, i),
+          cache->inputs_perm.data(),
+          input_count * sizeof(int));
       // model buffer
       NNADAPTER_CHECK(helper->Get(
           string_format(NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY, i),

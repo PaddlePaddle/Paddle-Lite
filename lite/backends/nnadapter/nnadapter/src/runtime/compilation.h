@@ -100,6 +100,7 @@ class Compilation {
       buffers_;  // The shared buffers among the submodels
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<int> inputs_perm_;
   Context* context_{nullptr};
   bool completed_{false};
 };

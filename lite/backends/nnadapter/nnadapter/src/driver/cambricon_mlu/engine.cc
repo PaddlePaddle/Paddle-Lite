@@ -64,6 +64,9 @@ void Program::Clear() {
   tensors_.clear();
   input_types_.clear();
   output_types_.clear();
+  input_names_.clear();
+  inputs_perm_.clear();
+  model_buffer_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
 }
@@ -76,6 +79,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   dump_graph_buffer_ = &cache->buffer;
   if (cache->buffer.empty()) {
     NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
+    if (cache->dir) {
+      cache->buffer = model_buffer_;
+      cache->inputs_perm = inputs_perm_;
+    }
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
   }
@@ -85,8 +92,15 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  NNADAPTER_LOG(FATAL) << "Build from cache is unimpleted.";
-  return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  size_t model_size = 0;
+  model_size = cache->buffer.size();
+  mm_model_.reset(magicmind::CreateIModel());
+  MLU_MM_CHECK(
+      mm_model_->DeserializeFromMemory(cache->buffer.data(), model_size));
+  input_types_ = cache->input_types;
+  output_types_ = cache->output_types;
+  inputs_perm_ = cache->inputs_perm;
+  return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromModel(core::Model* model) {
@@ -148,6 +162,14 @@ int Program::BuildFromModel(core::Model* model) {
   }
   mm_model_.reset(mm_builder_->BuildModel("camb_model", network, config));
   NNADAPTER_VLOG(3) << "Build success.";
+  inputs_perm_.resize(input_count);
+  for (size_t i = 0; i < input_count; i++) {
+    inputs_perm_[i] = mm_model_->GetInputIndexByName(input_names_[i].c_str());
+  }
+  size_t model_size = 0;
+  MLU_MM_CHECK(mm_model_->GetSerializedModelSize(&model_size));
+  model_buffer_.resize(model_size);
+  MLU_MM_CHECK(mm_model_->SerializeToMemory(model_buffer_.data(), model_size));
   return NNADAPTER_NO_ERROR;
 }
 
@@ -189,7 +211,7 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_VLOG(3) << "Execute begining.";
   std::vector<magicmind::IRTTensor*> inputs = {};
   std::vector<magicmind::IRTTensor*> outputs = {};
-  magicmind::CreateInputTensors(mm_context_.get(), &inputs);
+  MLU_MM_CHECK(magicmind::CreateInputTensors(mm_context_.get(), &inputs));
   for (uint32_t i = 0; i < input_count; i++) {
     void* ptr = nullptr;
     auto& arg = input_arguments[i];
@@ -200,8 +222,7 @@ int Program::Execute(uint32_t input_count,
     auto type = input_types_[arg.index];
     auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
-    auto tensor_name = input_names_[arg.index];
-    auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
+    auto input_tensor = inputs.at(inputs_perm_[i]);
     if (IsDeviceMemory(input_tensor)) {
       auto length = GetOperandTypeBufferLength(type);
       MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
@@ -215,7 +236,7 @@ int Program::Execute(uint32_t input_count,
         ConvertToMagicMindDims(type.dimensions.data, type.dimensions.count));
   }
 
-  mm_context_->Enqueue(inputs, &outputs, queue_);
+  MLU_MM_CHECK(mm_context_->Enqueue(inputs, &outputs, queue_));
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
   NNADAPTER_VLOG(3) << "Execute ending.";
   for (uint32_t i = 0; i < output_count; i++) {
