@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-
+#ifdef LITE_WITH_XPU
 #include <limits>
 #include <map>
 #include <memory>
@@ -324,6 +324,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "unsqueeze",
                                               "unsqueeze2"};
 };
+#endif
 
 }  // namespace mir
 }  // namespace lite
