@@ -251,20 +251,6 @@ bool test_gemm_int8(bool tra,
   Timer t1;
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t1.Start();
-    /*
-    paddle::lite::arm::math::sve::gemm_prepack_int8_sve<int8_t>(tpackedA_sve.data<int8_t>(),
-                                               db,
-                                               dbias_int8,
-                                               dc_sve_int8,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               trb,
-                                               scale_merge_int8.data(),
-                                               act_param,
-                                               &ctx);
-    */
     // dc_sve_fp32
     paddle::lite::arm::math::sve::gemm_prepack_int8_sve<float>(
         tpackedA_sve.data<int8_t>(),
@@ -282,7 +268,33 @@ bool test_gemm_int8(bool tra,
     t1.Stop();
   }
 
-  LOG(INFO) << "sve int8 M: " << m << ", N: " << n << ", K: " << k
+  LOG(INFO) << "sve int8_fp32 M: " << m << ", N: " << n << ", K: " << k
+            << ", power_mode: " << cls << ", threads: " << ths
+            << ", GOPS: " << ops * 1e-9f
+            << " GOPS, avg time: " << t1.LapTimes().Avg()
+            << " ms, min time: " << t1.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t1.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t1.LapTimes().Min()
+            << " GOPs";
+  t1.Reset();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    t1.Start();
+    paddle::lite::arm::math::sve::gemm_prepack_int8_sve<int8_t>(
+        tpackedA_sve.data<int8_t>(),
+        db,
+        dbias_int8,
+        dc_sve_int8,
+        m,
+        n,
+        k,
+        has_bias,
+        trb,
+        scale_merge_int8.data(),
+        act_param,
+        &ctx);
+    t1.Stop();
+  }
+  LOG(INFO) << "sve int8_int8 M: " << m << ", N: " << n << ", K: " << k
             << ", power_mode: " << cls << ", threads: " << ths
             << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t1.LapTimes().Avg()

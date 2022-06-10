@@ -782,7 +782,7 @@ void prepackA_int8_sve(TensorLite* tout,
       Dtype *&c_ptr0, Dtype *&c_ptr1, Dtype *&c_ptr2, Dtype *&c_ptr3,  \
       Dtype *&c_ptr4, Dtype *&c_ptr5, Dtype *&c_ptr6, Dtype *&c_ptr7,  \
       const float32_t *scale, const float32_t *alpha, int k, int tail, \
-      int flag_act, int last, int last_line
+      int flag_act, int last
 template <typename Dtype>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(Dtype));
 
@@ -1200,26 +1200,15 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "add %x[c_ptr6], %x[c_ptr6], #0x10\n" \
   "add %x[c_ptr7], %x[c_ptr7], #0x10\n"
 
-#define SMMLA_STORE_INT8_8x4 \
-  "ld1rqw {z0.s}, p0/Z, [%x[alpha], #0x30]\n"      \
-  SMMLA_RELU_8x4(fmax) \
-  "mov z0.s, #0x00\n"           \
-  "fcvtzs z30.s, p0/m, z30.s\n" \
-  "fcvtzs z29.s, p0/m, z29.s\n" \
-  "fcvtzs z28.s, p0/m, z28.s\n" \
-  "fcvtzs z27.s, p0/m, z27.s\n" \
-  "fcvtzs z26.s, p0/m, z26.s\n" \
-  "fcvtzs z25.s, p0/m, z25.s\n" \
-  "fcvtzs z24.s, p0/m, z24.s\n" \
-  "fcvtzs z23.s, p0/m, z23.s\n" \
-  "trn1 z1.h,    z30.h, z28.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z29.h, z27.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
-  "trn1 z3.h,    z26.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z4.h,    z25.h, z23.h \n"/* b0-d0-b1-d1-b2-d2-b3-d3 */\
-  "trn1 z30.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1d1 */ \
-  "trn1 z31.b,   z3.b,  z4.b\n" /* a0b0c0z0a1b1c1d1 */ \
-  "st1b {z30.b},  p0, [%x[c_ptr0]]\n" \
-  "st1b {z31.b},  p0, [%x[c_ptr1]]\n"
+#define SMMLA_STORE_INT8_8x4          \
+  "st1w {z30.s},  p0, [%x[c_ptr0]]\n" \
+  "st1w {z29.s},  p0, [%x[c_ptr1]]\n" \
+  "st1w {z28.s},  p0, [%x[c_ptr2]]\n" \
+  "st1w {z27.s},  p0, [%x[c_ptr3]]\n" \
+  "st1w {z26.s},  p0, [%x[c_ptr4]]\n" \
+  "st1w {z25.s},  p0, [%x[c_ptr5]]\n" \
+  "st1w {z24.s},  p0, [%x[c_ptr6]]\n" \
+  "st1w {z23.s},  p0, [%x[c_ptr7]]\n"
 
 #define INIT_SMMLA_8x12                             \
   "ptrue p0.b \n"                                   \
@@ -1826,68 +1815,33 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "addvl %x[c_ptr6], %x[c_ptr6], #3\n"            \
   "addvl %x[c_ptr7], %x[c_ptr7], #3\n"
 
-#define SMMLA_STORE_INT8_8x12 \
-  "ld1rqw {z0.s}, p0/Z, [%x[alpha], #0x30]\n"      \
-  SMMLA_RELU_8x12(fmax) \
-  "mov z0.s, #0x00\n"           \
-  "fcvtzs z29.s, p0/m, z29.s\n" \
-  "fcvtzs z30.s, p0/m, z30.s\n" \
-  "fcvtzs z31.s, p0/m, z31.s\n" \
-  "fcvtzs z26.s, p0/m, z26.s\n" \
-  "fcvtzs z4.s,  p0/m, z4.s\n"  \
-  "fcvtzs z6.s,  p0/m, z6.s\n"  \
-  "fcvtzs z27.s, p0/m, z27.s\n" \
-  "fcvtzs z5.s,  p0/m, z5.s\n"  \
-  "fcvtzs z7.s,  p0/m, z7.s\n"  \
-  "fcvtzs z8.s,  p0/m, z8.s\n"  \
-  "fcvtzs z10.s, p0/m, z10.s\n" \
-  "fcvtzs z12.s, p0/m, z12.s\n" \
-  "fcvtzs z9.s,  p0/m, z9.s\n"  \
-  "fcvtzs z11.s, p0/m, z11.s\n" \
-  "fcvtzs z13.s, p0/m, z13.s\n" \
-  "fcvtzs z14.s, p0/m, z14.s\n" \
-  "fcvtzs z16.s, p0/m, z16.s\n" \
-  "fcvtzs z18.s, p0/m, z18.s\n" \
-  "fcvtzs z15.s, p0/m, z15.s\n" \
-  "fcvtzs z17.s, p0/m, z17.s\n" \
-  "fcvtzs z19.s, p0/m, z19.s\n" \
-  "fcvtzs z20.s, p0/m, z20.s\n" \
-  "fcvtzs z22.s, p0/m, z22.s\n" \
-  "fcvtzs z24.s, p0/m, z24.s\n" \
-  "trn1 z1.h,    z29.h, z31.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z30.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z29.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z26.h, z6.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z4.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z26.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z27.h, z7.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z5.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z27.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z8.h, z12.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z10.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z8.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z9.h, z13.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z11.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z9.b,    z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z14.h, z18.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z16.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z14.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z15.h, z19.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z17.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z15.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "trn1 z1.h,    z20.h, z24.h\n"/* a0-c0-a1-c1-a2-c2-a3-c3 */\
-  "trn1 z2.h,    z22.h, z0.h \n"/* b0-z0-b1-z1-b2-z2-b3-z3 */\
-  "trn1 z20.b,   z1.b,  z2.b\n" /* a0b0c0z0a1b1c1z1 */ \
-  "st1b {z29.b},  p0, [%x[c_ptr0]]\n" \
-  "st1b {z26.b},  p0, [%x[c_ptr1]]\n" \
-  "st1b {z27.b},  p0, [%x[c_ptr2]]\n" \
-  "st1b {z8.b},   p0, [%x[c_ptr3]]\n" \
-  "st1b {z9.b},   p0, [%x[c_ptr4]]\n" \
-  "st1b {z14.b},  p0, [%x[c_ptr5]]\n" \
-  "st1b {z15.b},  p0, [%x[c_ptr6]]\n" \
-  "st1b {z20.b},  p0, [%x[c_ptr7]]\n"
+#define SMMLA_STORE_INT8_8x12_1                   \
+  "st1w {z29.s},  p0, [%x[c_ptr0]]\n"             \
+  "st1w {z26.s},  p0, [%x[c_ptr1]]\n"             \
+  "st1w {z27.s},  p0, [%x[c_ptr2]]\n"             \
+  "st1w {z8.s},   p0, [%x[c_ptr3]]\n"             \
+  "st1w {z9.s},   p0, [%x[c_ptr4]]\n"             \
+  "st1w {z14.s},  p0, [%x[c_ptr5]]\n"             \
+  "st1w {z15.s},  p0, [%x[c_ptr6]]\n"             \
+  "st1w {z20.s},  p0, [%x[c_ptr7]]\n"             \
+  "st1w {z30.s},  p0, [%x[c_ptr0], #1, MUL VL]\n" \
+  "st1w {z4.s},   p0, [%x[c_ptr1], #1, MUL VL]\n" \
+  "st1w {z5.s},   p0, [%x[c_ptr2], #1, MUL VL]\n" \
+  "st1w {z10.s},  p0, [%x[c_ptr3], #1, MUL VL]\n" \
+  "st1w {z11.s},  p0, [%x[c_ptr4], #1, MUL VL]\n" \
+  "st1w {z16.s},  p0, [%x[c_ptr5], #1, MUL VL]\n" \
+  "st1w {z17.s},  p0, [%x[c_ptr6], #1, MUL VL]\n" \
+  "st1w {z22.s},  p0, [%x[c_ptr7], #1, MUL VL]\n" \
+  "st1w {z31.s},  p0, [%x[c_ptr0], #2, MUL VL]\n" \
+  "st1w {z6.s},   p0, [%x[c_ptr1], #2, MUL VL]\n" \
+  "st1w {z7.s},   p0, [%x[c_ptr2], #2, MUL VL]\n" \
+  "st1w {z12.s},  p0, [%x[c_ptr3], #2, MUL VL]\n" \
+  "st1w {z13.s},  p0, [%x[c_ptr4], #2, MUL VL]\n" \
+  "st1w {z18.s},  p0, [%x[c_ptr5], #2, MUL VL]\n" \
+  "st1w {z19.s},  p0, [%x[c_ptr6], #2, MUL VL]\n" \
+  "st1w {z24.s},  p0, [%x[c_ptr7], #2, MUL VL]\n"
 
-#define ASM_PARAMS                                                        \
+#define ASM_PARAMS_FP32                                                   \
   : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k), \
     [c_ptr0] "+r"(c_ptr0), [c_ptr1] "+r"(c_ptr1), [c_ptr2] "+r"(c_ptr2), \
     [c_ptr3] "+r"(c_ptr3), [c_ptr4] "+r"(c_ptr4), [c_ptr5] "+r"(c_ptr5), \
@@ -1899,6 +1853,20 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
     "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26", \
     "z27", "z28", "z29", "z30", "z31"
+
+#define ASM_PARAMS_INT8                                                   \
+  : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k)  \
+  : [c_ptr0] "r"(out0), [c_ptr1] "r"(out1), [c_ptr2] "r"(out2), \
+    [c_ptr3] "r"(out3), [c_ptr4] "r"(out4), [c_ptr5] "r"(out5), \
+    [c_ptr6] "r"(out6), [c_ptr7] "r"(out7), \
+    [bias] "r"(bias), [alpha] "r"(alpha), [scale] "r"(scale), \
+    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last) \
+  : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
+    "z5", "z6", "z7", \
+    "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
+    "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26", \
+    "z27", "z28", "z29", "z30", "z31"
+
 template <>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float)) {
   // clang-format off
@@ -1909,18 +1877,21 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float)) {
     CVT_SMMLA_INT32_TO_FP32_8x2
     SMMLA_ACT_PROCESS_8x4
     SMMLA_STORE_FP32_8x2
-    ASM_PARAMS
+    ASM_PARAMS_FP32
   );
   // clang-format on
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
-  int8_t origin_data[32] = {0};
-  if (last_line) {
-    memcpy(origin_data, c_ptr0, sizeof(int8_t) * 16);
-    memcpy(origin_data + 16, c_ptr1, sizeof(int8_t) * 16);
-  }
+  float out0[4] = {0};
+  float out1[4] = {0};
+  float out2[4] = {0};
+  float out3[4] = {0};
+  float out4[4] = {0};
+  float out5[4] = {0};
+  float out6[4] = {0};
+  float out7[4] = {0};
   // clang-format off
   asm volatile(
     INIT_SMMLA_8x2
@@ -1929,26 +1900,44 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
     CVT_SMMLA_INT32_TO_FP32_8x2
     SMMLA_ACT_PROCESS_8x4
     SMMLA_STORE_INT8_8x4
-    ASM_PARAMS
+    ASM_PARAMS_INT8
   );
   // clang-format on
-  int8_t vout0[32] = {0};
-  const auto all_true_pg = svptrue<int8_t>();
-  svst1(all_true_pg, vout0, svld1(all_true_pg, c_ptr0));
-  svst1(all_true_pg, vout0 + 16, svld1(all_true_pg, c_ptr1));
   int cnt = 2;
   if (last == 0) cnt = 1;
   for (int i = 0; i < cnt; i++) {
-    int index = i * 4;
-    int index2 = 16 + index;
-    c_ptr0[i] = vout0[index];
-    c_ptr1[i] = vout0[index + 1];
-    c_ptr2[i] = vout0[index + 2];
-    c_ptr3[i] = vout0[index + 3];
-    c_ptr4[i] = vout0[index2];
-    c_ptr5[i] = vout0[index2 + 1];
-    c_ptr6[i] = vout0[index2 + 2];
-    c_ptr7[i] = vout0[index2 + 3];
+    c_ptr0[i] =
+        out0[i] > -127
+            ? (out0[i] <= 127 ? saturate_cast<int8_t>(roundf(out0[i])) : 127)
+            : -127;
+    c_ptr1[i] =
+        out1[i] > -127
+            ? (out1[i] <= 127 ? saturate_cast<int8_t>(roundf(out1[i])) : 127)
+            : -127;
+    c_ptr2[i] =
+        out2[i] > -127
+            ? (out2[i] <= 127 ? saturate_cast<int8_t>(roundf(out2[i])) : 127)
+            : -127;
+    c_ptr3[i] =
+        out3[i] > -127
+            ? (out3[i] <= 127 ? saturate_cast<int8_t>(roundf(out3[i])) : 127)
+            : -127;
+    c_ptr4[i] =
+        out4[i] > -127
+            ? (out4[i] <= 127 ? saturate_cast<int8_t>(roundf(out4[i])) : 127)
+            : -127;
+    c_ptr5[i] =
+        out5[i] > -127
+            ? (out5[i] <= 127 ? saturate_cast<int8_t>(roundf(out5[i])) : 127)
+            : -127;
+    c_ptr6[i] =
+        out6[i] > -127
+            ? (out6[i] <= 127 ? saturate_cast<int8_t>(roundf(out6[i])) : 127)
+            : -127;
+    c_ptr7[i] =
+        out7[i] > -127
+            ? (out7[i] <= 127 ? saturate_cast<int8_t>(roundf(out7[i])) : 127)
+            : -127;
   }
   c_ptr0 += cnt;
   c_ptr1 += cnt;
@@ -1958,12 +1947,6 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
   c_ptr5 += cnt;
   c_ptr6 += cnt;
   c_ptr7 += cnt;
-  if (last_line) {
-    for (int i = 0; i < 16 - cnt; i++) {
-      c_ptr0[i] = origin_data[i + cnt];
-      c_ptr1[i] = origin_data[i + cnt + 16];
-    }
-  }
 }
 
 template <>
@@ -1977,18 +1960,21 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
     CVT_SMMLA_INT32_TO_FP32_8x4
     SMMLA_ACT_PROCESS_8x4
     SMMLA_STORE_FP32_8x4
-    ASM_PARAMS
+    ASM_PARAMS_FP32
   );
   // clang-format on
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
-  int8_t origin_data[32] = {0};
-  if (last_line) {
-    memcpy(origin_data, c_ptr0, sizeof(int8_t) * 16);
-    memcpy(origin_data + 16, c_ptr1, sizeof(int8_t) * 16);
-  }
+  float out0[4] = {0};
+  float out1[4] = {0};
+  float out2[4] = {0};
+  float out3[4] = {0};
+  float out4[4] = {0};
+  float out5[4] = {0};
+  float out6[4] = {0};
+  float out7[4] = {0};
   // clang-format off
   asm volatile(
     INIT_SMMLA_8x4
@@ -1998,24 +1984,42 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
     CVT_SMMLA_INT32_TO_FP32_8x4
     SMMLA_ACT_PROCESS_8x4
     SMMLA_STORE_INT8_8x4
-    ASM_PARAMS
+    ASM_PARAMS_INT8
   );
   // clang-format on
-  int8_t vout0[32] = {0};
-  const auto all_true_pg = svptrue<int8_t>();
-  svst1(all_true_pg, vout0, svld1(all_true_pg, c_ptr0));
-  svst1(all_true_pg, vout0 + 16, svld1(all_true_pg, c_ptr1));
   for (int i = 0; i < 4; i++) {
-    int index = i * 4;
-    int index2 = 16 + index;
-    c_ptr0[i] = vout0[index];
-    c_ptr1[i] = vout0[index + 1];
-    c_ptr2[i] = vout0[index + 2];
-    c_ptr3[i] = vout0[index + 3];
-    c_ptr4[i] = vout0[index2];
-    c_ptr5[i] = vout0[index2 + 1];
-    c_ptr6[i] = vout0[index2 + 2];
-    c_ptr7[i] = vout0[index2 + 3];
+    c_ptr0[i] =
+        out0[i] > -127
+            ? (out0[i] <= 127 ? saturate_cast<int8_t>(roundf(out0[i])) : 127)
+            : -127;
+    c_ptr1[i] =
+        out1[i] > -127
+            ? (out1[i] <= 127 ? saturate_cast<int8_t>(roundf(out1[i])) : 127)
+            : -127;
+    c_ptr2[i] =
+        out2[i] > -127
+            ? (out2[i] <= 127 ? saturate_cast<int8_t>(roundf(out2[i])) : 127)
+            : -127;
+    c_ptr3[i] =
+        out3[i] > -127
+            ? (out3[i] <= 127 ? saturate_cast<int8_t>(roundf(out3[i])) : 127)
+            : -127;
+    c_ptr4[i] =
+        out4[i] > -127
+            ? (out4[i] <= 127 ? saturate_cast<int8_t>(roundf(out4[i])) : 127)
+            : -127;
+    c_ptr5[i] =
+        out5[i] > -127
+            ? (out5[i] <= 127 ? saturate_cast<int8_t>(roundf(out5[i])) : 127)
+            : -127;
+    c_ptr6[i] =
+        out6[i] > -127
+            ? (out6[i] <= 127 ? saturate_cast<int8_t>(roundf(out6[i])) : 127)
+            : -127;
+    c_ptr7[i] =
+        out7[i] > -127
+            ? (out7[i] <= 127 ? saturate_cast<int8_t>(roundf(out7[i])) : 127)
+            : -127;
   }
   c_ptr0 += 4;
   c_ptr1 += 4;
@@ -2025,12 +2029,6 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
   c_ptr5 += 4;
   c_ptr6 += 4;
   c_ptr7 += 4;
-  if (last_line) {
-    for (int i = 0; i < 12; i++) {
-      c_ptr0[i] = origin_data[i + 4];
-      c_ptr1[i] = origin_data[i + 20];
-    }
-  }
 }
 
 template <>
@@ -2044,24 +2042,21 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
     CVT_SMMLA_INT32_TO_FP32_8x12
     SMMLA_ACT_PROCESS_8x12
     SMMLA_STORE_FP32_8x12
-    ASM_PARAMS
+    ASM_PARAMS_FP32
   );
   // clang-format on
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
-  int8_t origin_data[128] = {0};
-  if (last_line) {
-    memcpy(origin_data, c_ptr0, sizeof(int8_t) * 16);
-    memcpy(origin_data + 16, c_ptr1, sizeof(int8_t) * 16);
-    memcpy(origin_data + 32, c_ptr2, sizeof(int8_t) * 16);
-    memcpy(origin_data + 48, c_ptr3, sizeof(int8_t) * 16);
-    memcpy(origin_data + 64, c_ptr4, sizeof(int8_t) * 16);
-    memcpy(origin_data + 80, c_ptr5, sizeof(int8_t) * 16);
-    memcpy(origin_data + 96, c_ptr6, sizeof(int8_t) * 16);
-    memcpy(origin_data + 112, c_ptr7, sizeof(int8_t) * 16);
-  }
+  float out0[12] = {0};
+  float out1[12] = {0};
+  float out2[12] = {0};
+  float out3[12] = {0};
+  float out4[12] = {0};
+  float out5[12] = {0};
+  float out6[12] = {0};
+  float out7[12] = {0};
 
   // clang-format off
   asm volatile(
@@ -2072,24 +2067,42 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
     CVT_SMMLA_INT32_TO_FP32_8x12
     SMMLA_ACT_PROCESS_8x12
     SMMLA_STORE_INT8_8x12
-    ASM_PARAMS
+    ASM_PARAMS_INT8
   );
   // clang-format on
-  int ai = 3;
-  int aj = 4;
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 4; i++) {
-      c_ptr0[i + ai] = c_ptr0[i + aj];
-      c_ptr1[i + ai] = c_ptr1[i + aj];
-      c_ptr2[i + ai] = c_ptr2[i + aj];
-      c_ptr3[i + ai] = c_ptr3[i + aj];
-      c_ptr4[i + ai] = c_ptr4[i + aj];
-      c_ptr5[i + ai] = c_ptr5[i + aj];
-      c_ptr6[i + ai] = c_ptr6[i + aj];
-      c_ptr7[i + ai] = c_ptr7[i + aj];
-    }
-    ai += 3;
-    aj += 4;
+  for (int i = 0; i < 12; i++) {
+    c_ptr0[i] =
+        out0[i] > -127
+            ? (out0[i] <= 127 ? saturate_cast<int8_t>(roundf(out0[i])) : 127)
+            : -127;
+    c_ptr1[i] =
+        out1[i] > -127
+            ? (out1[i] <= 127 ? saturate_cast<int8_t>(roundf(out1[i])) : 127)
+            : -127;
+    c_ptr2[i] =
+        out2[i] > -127
+            ? (out2[i] <= 127 ? saturate_cast<int8_t>(roundf(out2[i])) : 127)
+            : -127;
+    c_ptr3[i] =
+        out3[i] > -127
+            ? (out3[i] <= 127 ? saturate_cast<int8_t>(roundf(out3[i])) : 127)
+            : -127;
+    c_ptr4[i] =
+        out4[i] > -127
+            ? (out4[i] <= 127 ? saturate_cast<int8_t>(roundf(out4[i])) : 127)
+            : -127;
+    c_ptr5[i] =
+        out5[i] > -127
+            ? (out5[i] <= 127 ? saturate_cast<int8_t>(roundf(out5[i])) : 127)
+            : -127;
+    c_ptr6[i] =
+        out6[i] > -127
+            ? (out6[i] <= 127 ? saturate_cast<int8_t>(roundf(out6[i])) : 127)
+            : -127;
+    c_ptr7[i] =
+        out7[i] > -127
+            ? (out7[i] <= 127 ? saturate_cast<int8_t>(roundf(out7[i])) : 127)
+            : -127;
   }
   c_ptr0 += 12;
   c_ptr1 += 12;
@@ -2099,18 +2112,6 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
   c_ptr5 += 12;
   c_ptr6 += 12;
   c_ptr7 += 12;
-  if (last_line) {
-    for (int i = 0; i < 4; i++) {
-      c_ptr0[i] = origin_data[12 + i];
-      c_ptr1[i] = origin_data[28 + i];
-      c_ptr2[i] = origin_data[44 + i];
-      c_ptr3[i] = origin_data[60 + i];
-      c_ptr4[i] = origin_data[76 + i];
-      c_ptr5[i] = origin_data[92 + i];
-      c_ptr6[i] = origin_data[108 + i];
-      c_ptr7[i] = origin_data[124 + i];
-    }
-  }
 }
 /// a: m*k  b: k*n  c: m*n
 // A: m/8 * (8 * 8 * k_8), A0 = a0_0-7 + a1_0-7 A1 = a2_0-7 + a3_0-7
@@ -2285,9 +2286,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
       const int8_t* a_ptr_l = A_packed + y * kup;
       const int8_t* b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
-        bool last_line = false;
         if ((y + 7) >= ymax) {
-          last_line = true;
           switch ((y + 7) - ymax) {
             case 6:
               c_ptr1 = cout1;
@@ -2329,8 +2328,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               k_pre,
                                               tail_pre,
                                               flag_act,
-                                              1,
-                                              last_line);
+                                              1);
           }
           for (int i = 0; i < rem_rem; i += 2) {
             const int8_t* a_ptr = a_ptr_l;
@@ -2352,8 +2350,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               k_pre,
                                               tail_pre,
                                               flag_act,
-                                              last,
-                                              last_line);
+                                              last);
           }
         } else {
           const int8_t* a_ptr = a_ptr_l;
@@ -2373,8 +2370,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                              k_pre,
                                              tail_pre,
                                              flag_act,
-                                             1,
-                                             last_line);
+                                             1);
         }
       }
     }
