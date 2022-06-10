@@ -235,7 +235,7 @@ void prepackA_m8k8_trans_int8_sve(int8_t* out,
   int8_t* dout = out;
   const int8_t* inptr = in;
   int cnt = x_len >> 4;
-  int remain = x_len % 15;
+  int remain = x_len % 16;
   int rem_cnt = remain >> 3;
   int rem_rem = remain % 8;
   int stride = 8 * ROUNDUP_SVE(kmax - k0, 8);
@@ -1815,7 +1815,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "addvl %x[c_ptr6], %x[c_ptr6], #3\n"            \
   "addvl %x[c_ptr7], %x[c_ptr7], #3\n"
 
-#define SMMLA_STORE_INT8_8x12_1                   \
+#define SMMLA_STORE_INT8_8x12                     \
   "st1w {z29.s},  p0, [%x[c_ptr0]]\n"             \
   "st1w {z26.s},  p0, [%x[c_ptr1]]\n"             \
   "st1w {z27.s},  p0, [%x[c_ptr2]]\n"             \
@@ -2409,7 +2409,8 @@ GEMM_PREPACK_INT8_SVE(float);
 #undef SMMLA_ACT_PROCESS_8x12
 #undef SMMLA_STORE_FP32
 #undef SMMLA_STORE_INT8
-#undef ASM_PARAMS
+#undef ASM_PARAMS_FP32
+#undef ASM_PARAMS_INT8
 #undef GEMM_PREPACK_INT8_SVE
 }  // namespace sve
 }  // namespace math
