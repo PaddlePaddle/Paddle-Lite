@@ -81,7 +81,6 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
     if (cache->dir) {
       cache->buffer = model_buffer_;
-      cache->inputs_perm = inputs_perm_;
     }
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
@@ -92,14 +91,21 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  size_t model_size = 0;
-  model_size = cache->buffer.size();
-  mm_model_.reset(magicmind::CreateIModel());
-  MLU_MM_CHECK(
-      mm_model_->DeserializeFromMemory(cache->buffer.data(), model_size));
   input_types_ = cache->input_types;
   output_types_ = cache->output_types;
-  inputs_perm_ = cache->inputs_perm;
+  auto input_count = cache->input_types.size();
+  size_t buffer_size = cache->buffer.size();
+  size_t version_size = sizeof(float);
+  size_t perm_size = input_count * sizeof(int);
+  size_t model_size = buffer_size - version_size - perm_size;
+  memcpy(&model_version_, &cache->buffer[0], version_size);
+  mm_model_.reset(magicmind::CreateIModel());
+  MLU_MM_CHECK(mm_model_->DeserializeFromMemory(
+      cache->buffer.data() + version_size, model_size));
+  inputs_perm_.resize(input_count);
+  memcpy(inputs_perm_.data(),
+         &cache->buffer[model_size + version_size],
+         perm_size);
   return NNADAPTER_NO_ERROR;
 }
 
@@ -168,8 +174,15 @@ int Program::BuildFromModel(core::Model* model) {
   }
   size_t model_size = 0;
   MLU_MM_CHECK(mm_model_->GetSerializedModelSize(&model_size));
-  model_buffer_.resize(model_size);
-  MLU_MM_CHECK(mm_model_->SerializeToMemory(model_buffer_.data(), model_size));
+  size_t version_size = sizeof(float);
+  size_t inputs_perm_size = input_count * sizeof(int);
+  model_buffer_.resize(version_size + model_size + inputs_perm_size);
+  memcpy(&model_buffer_[0], &model_version_, version_size);
+  MLU_MM_CHECK(mm_model_->SerializeToMemory(model_buffer_.data() + version_size,
+                                            model_size));
+  memcpy(&model_buffer_[version_size + model_size],
+         inputs_perm_.data(),
+         inputs_perm_size);
   return NNADAPTER_NO_ERROR;
 }
 

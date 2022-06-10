@@ -54,7 +54,6 @@ typedef struct Cache {
   const char* dir;
   std::vector<NNAdapterOperandType> input_types;
   std::vector<NNAdapterOperandType> output_types;
-  std::vector<int> inputs_perm;
   std::vector<uint8_t> buffer;
 } Cache;
 
