@@ -22,34 +22,50 @@ namespace lite {
 namespace operators {
 
 bool ReverseOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
-  for (auto axis : param_.Axis) {
-    CHECK_OR_FALSE(axis < static_cast<int>((param_.X)->dims().size()));
-    CHECK_OR_FALSE(axis >= static_cast<int>(-(param_.X)->dims().size()));
+  CHECK(param_.X || param_.X_array);
+  CHECK(param_.Out || param_.Out_array);
+  if (param_.X) {
+    for (auto axis : param_.Axis) {
+      CHECK_LT(axis, static_cast<int>((param_.X)->dims().size()));
+      CHECK_GE(axis, static_cast<int>(-(param_.X)->dims().size()));
+    }
   }
   return true;
 }
 
 bool ReverseOpLite::InferShapeImpl() const {
-  auto x_dims = param_.X->dims();
-  int x_rank = x_dims.size();
-
-  std::vector<int64_t> out_dims;
-  for (int64_t i = 0; i < x_rank; i++) out_dims.push_back(x_dims[i]);
-
-  param_.Out->Resize(lite::DDim(out_dims));
+  if (param_.X) {
+    param_.Out->Resize(param_.X->dims());
+  } else if (param_.X_array) {
+    param_.Out_array->resize(param_.X_array->size());
+    for (size_t i = 0; i < param_.X_array->size(); i++) {
+      param_.Out_array->at(i).Resize(param_.X_array->at(i).dims());
+    }
+  } else {
+    LOG(FATAL) << "x or x_array must be set.";
+  }
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool ReverseOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto x = op_desc.Input("X").front();
-  auto out = op_desc.Output("Out").front();
+  auto x_name = op_desc.Input("X").front();
+  auto out_name = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  auto x_var = scope->FindVar(x_name);
+  if (x_var->IsType<Tensor>()) {
+    param_.X = scope->FindMutableTensor(x_name);
+    param_.Out = scope->FindMutableTensor(out_name);
+  } else if (x_var->IsType<std::vector<Tensor>>()) {
+    param_.X_array = x_var->GetMutable<std::vector<Tensor>>();
+    param_.Out_array =
+        scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
+  } else {
+    LOG(FATAL) << "X type for reverse op is unsupported. Expected type is "
+                  "tensor or tensor_array.";
+  }
   param_.Axis = op_desc.GetAttr<std::vector<int>>("axis");
+
   return true;
 }
 
