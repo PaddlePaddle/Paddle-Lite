@@ -792,6 +792,7 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(Dtype));
 template <typename Dtype>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
 
+// clang-format off
 #define INIT_SMMLA_8x2                              \
   "ptrue p0.b \n"                                   \
   "prfm   pldl1keep, [%[a_ptr]]\n"                  \
@@ -1063,7 +1064,6 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmla   z24.s, z20.s, z5.s[2]\n"            \
   "fmla   z23.s, z21.s, z5.s[3]\n"
 
-// clang-format off
 #define SMMLA_RELU_8x4(inst) \
   #inst " z30.s,  p0/m, z30.s, z0.s\n" \
   #inst " z29.s,  p0/m, z29.s, z0.s\n" \
@@ -1073,7 +1073,6 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   #inst " z25.s,  p0/m, z25.s, z0.s\n" \
   #inst " z24.s,  p0/m, z24.s, z0.s\n" \
   #inst " z23.s,  p0/m, z23.s, z0.s\n"
-// clang-format on
 
 #define SMMLA_LEAKYRELU_8x4                           \
   "mov z0.s, #0x0    \n"                              \
@@ -1201,14 +1200,138 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "add %x[c_ptr7], %x[c_ptr7], #0x10\n"
 
 #define SMMLA_STORE_INT8_8x4          \
-  "st1w {z30.s},  p0, [%x[c_ptr0]]\n" \
-  "st1w {z29.s},  p0, [%x[c_ptr1]]\n" \
-  "st1w {z28.s},  p0, [%x[c_ptr2]]\n" \
-  "st1w {z27.s},  p0, [%x[c_ptr3]]\n" \
-  "st1w {z26.s},  p0, [%x[c_ptr4]]\n" \
-  "st1w {z25.s},  p0, [%x[c_ptr5]]\n" \
-  "st1w {z24.s},  p0, [%x[c_ptr6]]\n" \
-  "st1w {z23.s},  p0, [%x[c_ptr7]]\n"
+  "mov z0.s, #0x0\n"                  \
+  "ld1rqw {z1.s}, p0/Z, [%x[alpha], #0x30]\n" \
+  "mov z2.s, #127\n"            \
+  "movprfx z15, z30\n fmin z15.s, p0/m, z15.s, z0.s\n" \
+  "movprfx z14, z29\n fmin z14.s, p0/m, z14.s, z0.s\n" \
+  "movprfx z13, z28\n fmin z13.s, p0/m, z13.s, z0.s\n" \
+  "movprfx z12, z27\n fmin z12.s, p0/m, z12.s, z0.s\n" \
+  "fmax z30.s, p0/m, z30.s, z0.s\n" \
+  "fmax z29.s, p0/m, z29.s, z0.s\n" \
+  "fmax z28.s, p0/m, z28.s, z0.s\n" \
+  "fmax z27.s, p0/m, z27.s, z0.s\n" \
+  /* a + 0.5 */ \
+  "fadd z30.s, p0/m, z30.s, z1.s\n" \
+  "fadd z29.s, p0/m, z29.s, z1.s\n" \
+  "fadd z28.s, p0/m, z28.s, z1.s\n" \
+  "fadd z27.s, p0/m, z27.s, z1.s\n" \
+  /* a - 0.5 */ \
+  "fsub z15.s, p0/m, z15.s, z1.s\n" \
+  "fsub z14.s, p0/m, z14.s, z1.s\n" \
+  "fsub z13.s, p0/m, z13.s, z1.s\n" \
+  "fsub z12.s, p0/m, z12.s, z1.s\n" \
+  /* fp32->int32 */ \
+  "fcvtzs z30.s, p0/m, z30.s\n" \
+  "fcvtzs z29.s, p0/m, z29.s\n" \
+  "fcvtzs z28.s, p0/m, z28.s\n" \
+  "fcvtzs z27.s, p0/m, z27.s\n" \
+  "fcvtzs z15.s, p0/m, z15.s\n" \
+  "fcvtzs z14.s, p0/m, z14.s\n" \
+  "fcvtzs z13.s, p0/m, z13.s\n" \
+  "fcvtzs z12.s, p0/m, z12.s\n" \
+  "add z30.s, p0/m, z30.s, z15.s\n" \
+  "add z29.s, p0/m, z29.s, z14.s\n" \
+  "add z28.s, p0/m, z28.s, z13.s\n" \
+  "add z27.s, p0/m, z27.s, z12.s\n" \
+  /* a + 127 */ \
+  "add z30.s, p0/m, z30.s, z2.s\n" \
+  "add z29.s, p0/m, z29.s, z2.s\n" \
+  "add z28.s, p0/m, z28.s, z2.s\n" \
+  "add z27.s, p0/m, z27.s, z2.s\n" \
+  /* a  + 127 > 0 */ \
+  "smax z30.s, p0/m, z30.s, z0.s\n"\
+  "smax z29.s, p0/m, z29.s, z0.s\n"\
+  "smax z28.s, p0/m, z28.s, z0.s\n"\
+  "smax z27.s, p0/m, z27.s, z0.s\n"\
+  /* a - 127 */ \
+  "sub z30.s, p0/m, z30.s, z2.s\n" \
+  "sub z29.s, p0/m, z29.s, z2.s\n" \
+  "sub z28.s, p0/m, z28.s, z2.s\n" \
+  "sub z27.s, p0/m, z27.s, z2.s\n" \
+  "mov x0, #12\n" \
+  "mov x1, #16\n" \
+  "whilelt p1.b, x0, x1\n" \
+  /* int32-> int8*/ \
+  "uzp1 z15.h, z30.h, z30.h\n" \
+  "uzp1 z14.h, z29.h, z29.h\n" \
+  "uzp1 z13.h, z28.h, z28.h\n" \
+  "uzp1 z12.h, z27.h, z27.h\n" \
+  "uzp1 z30.b, z15.b, z15.b\n" \
+  "uzp1 z29.b, z14.b, z14.b\n" \
+  "uzp1 z28.b, z13.b, z13.b\n" \
+  "uzp1 z27.b, z12.b, z12.b\n" \
+  "movprfx z15, z26\n fmin z15.s, p0/m, z15.s, z0.s\n" \
+  "movprfx z14, z25\n fmin z14.s, p0/m, z14.s, z0.s\n" \
+  "movprfx z13, z24\n fmin z13.s, p0/m, z13.s, z0.s\n" \
+  "movprfx z12, z23\n fmin z12.s, p0/m, z12.s, z0.s\n" \
+  "fmax z26.s, p0/m, z26.s, z0.s\n" \
+  "fmax z25.s, p0/m, z25.s, z0.s\n" \
+  "fmax z24.s, p0/m, z24.s, z0.s\n" \
+  "fmax z23.s, p0/m, z23.s, z0.s\n" \
+  /* a + 0.5 */ \
+  "fadd z26.s, p0/m, z26.s, z1.s\n" \
+  "fadd z25.s, p0/m, z25.s, z1.s\n" \
+  "fadd z24.s, p0/m, z24.s, z1.s\n" \
+  "fadd z23.s, p0/m, z23.s, z1.s\n" \
+  /* a - 0.5 */ \
+  "fsub z15.s, p0/m, z15.s, z1.s\n" \
+  "fsub z14.s, p0/m, z14.s, z1.s\n" \
+  "fsub z13.s, p0/m, z13.s, z1.s\n" \
+  "fsub z12.s, p0/m, z12.s, z1.s\n" \
+  /* fp32->int32 */ \
+  "fcvtzs z26.s, p0/m, z26.s\n" \
+  "fcvtzs z25.s, p0/m, z25.s\n" \
+  "fcvtzs z24.s, p0/m, z24.s\n" \
+  "fcvtzs z23.s, p0/m, z23.s\n" \
+  "fcvtzs z15.s, p0/m, z15.s\n" \
+  "fcvtzs z14.s, p0/m, z14.s\n" \
+  "fcvtzs z13.s, p0/m, z13.s\n" \
+  "fcvtzs z12.s, p0/m, z12.s\n" \
+  "add z26.s, p0/m, z26.s, z15.s\n" \
+  "add z25.s, p0/m, z25.s, z14.s\n" \
+  "add z24.s, p0/m, z24.s, z13.s\n" \
+  "add z23.s, p0/m, z23.s, z12.s\n" \
+  /* a + 127 */ \
+  "add z26.s, p0/m, z26.s, z2.s\n" \
+  "add z25.s, p0/m, z25.s, z2.s\n" \
+  "add z24.s, p0/m, z24.s, z2.s\n" \
+  "add z23.s, p0/m, z23.s, z2.s\n" \
+  /* a  + 127 > 0 */ \
+  "smax z26.s, p0/m, z26.s, z0.s\n"\
+  "smax z25.s, p0/m, z25.s, z0.s\n"\
+  "smax z24.s, p0/m, z24.s, z0.s\n"\
+  "smax z23.s, p0/m, z23.s, z0.s\n"\
+  /* a - 127 */ \
+  "sub z26.s, p0/m, z26.s, z2.s\n" \
+  "sub z25.s, p0/m, z25.s, z2.s\n" \
+  "sub z24.s, p0/m, z24.s, z2.s\n" \
+  "sub z23.s, p0/m, z23.s, z2.s\n" \
+  /* int32-> int8*/ \
+  "uzp1 z15.h, z30.h, z30.h\n" \
+  "uzp1 z14.h, z29.h, z29.h\n" \
+  "uzp1 z13.h, z28.h, z28.h\n" \
+  "uzp1 z12.h, z27.h, z27.h\n" \
+  "uzp1 z30.b, z15.b, z15.b\n" \
+  "uzp1 z29.b, z14.b, z14.b\n" \
+  "uzp1 z28.b, z13.b, z13.b\n" \
+  "uzp1 z27.b, z12.b, z12.b\n" \
+  "st1b {z30.b},  p1, [%x[c_ptr0]]\n" \
+  "st1b {z29.b},  p1, [%x[c_ptr1]]\n" \
+  "st1b {z28.b},  p1, [%x[c_ptr2]]\n" \
+  "st1b {z27.b},  p1, [%x[c_ptr3]]\n" \
+  "st1b {z26.b},  p1, [%x[c_ptr4]]\n" \
+  "st1b {z25.b},  p1, [%x[c_ptr5]]\n" \
+  "st1b {z24.b},  p1, [%x[c_ptr6]]\n" \
+  "st1b {z23.b},  p1, [%x[c_ptr7]]\n" \
+  "add %[c_ptr0], %[c_ptr0], #0x4\n"  \
+  "add %[c_ptr1], %[c_ptr1], #0x4\n"  \
+  "add %[c_ptr2], %[c_ptr2], #0x4\n"  \
+  "add %[c_ptr3], %[c_ptr3], #0x4\n"  \
+  "add %[c_ptr4], %[c_ptr4], #0x4\n"  \
+  "add %[c_ptr5], %[c_ptr5], #0x4\n"  \
+  "add %[c_ptr6], %[c_ptr6], #0x4\n"  \
+  "add %[c_ptr7], %[c_ptr7], #0x4\n"
 
 #define INIT_SMMLA_8x12                             \
   "ptrue p0.b \n"                                   \
@@ -1503,7 +1626,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmla   z22.s,  z23.s,  z3.s[3]\n"                    \
   "fmla   z24.s,  z25.s,  z3.s[3]\n"
 
-// clang-format off
+
 #define SMMLA_RELU_8x12(inst) \
   #inst " z29.s,  p0/m, z29.s, z0.s\n" \
   #inst " z30.s,  p0/m, z30.s, z0.s\n" \
@@ -1815,31 +1938,309 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "addvl %x[c_ptr6], %x[c_ptr6], #3\n"            \
   "addvl %x[c_ptr7], %x[c_ptr7], #3\n"
 
-#define SMMLA_STORE_INT8_8x12                     \
-  "st1w {z29.s},  p0, [%x[c_ptr0]]\n"             \
-  "st1w {z26.s},  p0, [%x[c_ptr1]]\n"             \
-  "st1w {z27.s},  p0, [%x[c_ptr2]]\n"             \
-  "st1w {z8.s},   p0, [%x[c_ptr3]]\n"             \
-  "st1w {z9.s},   p0, [%x[c_ptr4]]\n"             \
-  "st1w {z14.s},  p0, [%x[c_ptr5]]\n"             \
-  "st1w {z15.s},  p0, [%x[c_ptr6]]\n"             \
-  "st1w {z20.s},  p0, [%x[c_ptr7]]\n"             \
-  "st1w {z30.s},  p0, [%x[c_ptr0], #1, MUL VL]\n" \
-  "st1w {z4.s},   p0, [%x[c_ptr1], #1, MUL VL]\n" \
-  "st1w {z5.s},   p0, [%x[c_ptr2], #1, MUL VL]\n" \
-  "st1w {z10.s},  p0, [%x[c_ptr3], #1, MUL VL]\n" \
-  "st1w {z11.s},  p0, [%x[c_ptr4], #1, MUL VL]\n" \
-  "st1w {z16.s},  p0, [%x[c_ptr5], #1, MUL VL]\n" \
-  "st1w {z17.s},  p0, [%x[c_ptr6], #1, MUL VL]\n" \
-  "st1w {z22.s},  p0, [%x[c_ptr7], #1, MUL VL]\n" \
-  "st1w {z31.s},  p0, [%x[c_ptr0], #2, MUL VL]\n" \
-  "st1w {z6.s},   p0, [%x[c_ptr1], #2, MUL VL]\n" \
-  "st1w {z7.s},   p0, [%x[c_ptr2], #2, MUL VL]\n" \
-  "st1w {z12.s},  p0, [%x[c_ptr3], #2, MUL VL]\n" \
-  "st1w {z13.s},  p0, [%x[c_ptr4], #2, MUL VL]\n" \
-  "st1w {z18.s},  p0, [%x[c_ptr5], #2, MUL VL]\n" \
-  "st1w {z19.s},  p0, [%x[c_ptr6], #2, MUL VL]\n" \
-  "st1w {z24.s},  p0, [%x[c_ptr7], #2, MUL VL]\n"
+#define SMMLA_STORE_INT8_8x12                           \
+  "mov z0.s, #0x0\n"                                    \
+  "ld1rqw {z1.s}, p0/Z, [%x[alpha], #0x30]\n"           \
+  "mov z2.s, #127\n"                                    \
+  "movprfx z21, z29\n fmin z21.s, p0/m, z21.s, z0.s\n"  \
+  "movprfx z23, z30\n fmin z23.s, p0/m, z23.s, z0.s\n"  \
+  "movprfx z25, z31\n fmin z25.s, p0/m, z25.s, z0.s\n"  \
+  "fmax z29.s, p0/m, z29.s, z0.s\n"                     \
+  "fmax z30.s, p0/m, z30.s, z0.s\n"                     \
+  "fmax z31.s, p0/m, z31.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z29.s, p0/m, z29.s, z1.s\n"                     \
+  "fadd z30.s, p0/m, z30.s, z1.s\n"                     \
+  "fadd z31.s, p0/m, z31.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z29.s, p0/m, z29.s\n"                         \
+  "fcvtzs z30.s, p0/m, z30.s\n"                         \
+  "fcvtzs z31.s, p0/m, z31.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z29.s, p0/m, z29.s, z21.s\n"                     \
+  "add z30.s, p0/m, z30.s, z23.s\n"                     \
+  "add z31.s, p0/m, z31.s, z25.s\n" /* a + 127 */       \
+  "add z29.s, p0/m, z29.s, z2.s\n"                      \
+  "add z30.s, p0/m, z30.s, z2.s\n"                      \
+  "add z31.s, p0/m, z31.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z29.s, p0/m, z29.s, z0.s\n"                     \
+  "smax z30.s, p0/m, z30.s, z0.s\n"                     \
+  "smax z31.s, p0/m, z31.s, z0.s\n" /* a - 127 */       \
+  "sub z29.s, p0/m, z29.s, z2.s\n"                      \
+  "sub z30.s, p0/m, z30.s, z2.s\n"                      \
+  "sub z31.s, p0/m, z31.s, z2.s\n"                      \
+  "mov x0, #14\n"                                       \
+  "mov x1, #16\n"                                       \
+  "whilelt p1.b, x0, x1\n" /* int32-> int8*/            \
+  "uzp1 z21.h, z29.h, z30.h\n"                          \
+  "uzp1 z23.h, z31.h, z31.h\n"                          \
+  "uzp1 z29.b, z21.b, z21.b\n"                          \
+  "uzp1 z30.b, z23.b, z23.b\n"                          \
+  "movprfx z21, z26\n fmin z21.s, p0/m, z21.s, z0.s\n"  \
+  "movprfx z23, z4\n  fmin z23.s, p0/m, z23.s, z0.s\n"  \
+  "movprfx z25, z6\n  fmin z25.s, p0/m, z25.s, z0.s\n"  \
+  "uzp1 z31.d, z29.d, z30.d\n"                          \
+  "fmax z26.s, p0/m, z26.s, z0.s\n"                     \
+  "fmax z4.s,  p0/m, z4.s,  z0.s\n"                     \
+  "fmax z6.s,  p0/m, z6.s,  z0.s\n" /* a + 0.5 */       \
+  "fadd z26.s, p0/m, z26.s, z1.s\n"                     \
+  "fadd z4.s,  p0/m, z4.s,  z1.s\n"                     \
+  "fadd z6.s,  p0/m, z6.s,  z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z26.s, p0/m, z26.s\n"                         \
+  "fcvtzs z4.s,  p0/m, z4.s\n"                          \
+  "fcvtzs z6.s,  p0/m, z6.s\n"                          \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z26.s, p0/m, z26.s, z21.s\n"                     \
+  "add z4.s,  p0/m, z4.s,  z23.s\n"                     \
+  "add z6.s,  p0/m, z6.s,  z25.s\n" /* a + 127 */       \
+  "add z26.s, p0/m, z26.s, z2.s\n"                      \
+  "add z4.s,  p0/m, z4.s,  z2.s\n"                      \
+  "add z6.s,  p0/m, z6.s,  z2.s\n" /* a  + 127 > 0 */   \
+  "smax z26.s, p0/m, z26.s, z0.s\n"                     \
+  "smax z4.s,  p0/m, z4.s,  z0.s\n"                     \
+  "smax z6.s,  p0/m, z6.s,  z0.s\n" /* a - 127 */       \
+  "sub z26.s, p0/m, z26.s, z2.s\n"                      \
+  "sub z4.s,  p0/m, z4.s,  z2.s\n"                      \
+  "sub z6.s,  p0/m, z6.s,  z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z26.h, z4.h\n"                           \
+  "uzp1 z23.h, z6.h,  z6.h\n"                           \
+  "uzp1 z26.b, z21.b, z21.b\n"                          \
+  "uzp1 z4.b,  z23.b, z23.b\n"                          \
+  "movprfx z21, z27\n fmin z21.s, p0/m, z21.s, z0.s\n"  \
+  "movprfx z23, z5\n  fmin z23.s, p0/m, z23.s, z0.s\n"  \
+  "movprfx z25, z7\n  fmin z25.s, p0/m, z25.s, z0.s\n"  \
+  "uzp1 z6.d,  z26.d, z4.d\n"                           \
+  "fmax z27.s, p0/m, z27.s, z0.s\n"                     \
+  "fmax z5.s,  p0/m, z5.s,  z0.s\n"                     \
+  "fmax z7.s,  p0/m, z7.s,  z0.s\n" /* a + 0.5 */       \
+  "fadd z27.s, p0/m, z27.s, z1.s\n"                     \
+  "fadd z5.s,  p0/m, z5.s,  z1.s\n"                     \
+  "fadd z7.s,  p0/m, z7.s,  z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z27.s, p0/m, z27.s\n"                         \
+  "fcvtzs z5.s,  p0/m, z5.s\n"                          \
+  "fcvtzs z7.s,  p0/m, z7.s\n"                          \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z27.s, p0/m, z27.s, z21.s\n"                     \
+  "add z5.s,  p0/m, z5.s,  z23.s\n"                     \
+  "add z7.s,  p0/m, z7.s,  z25.s\n" /* a + 127 */       \
+  "add z27.s, p0/m, z27.s, z2.s\n"                      \
+  "add z5.s,  p0/m, z5.s,  z2.s\n"                      \
+  "add z7.s,  p0/m, z7.s,  z2.s\n" /* a  + 127 > 0 */   \
+  "smax z27.s, p0/m, z27.s, z0.s\n"                     \
+  "smax z5.s,  p0/m, z5.s,  z0.s\n"                     \
+  "smax z7.s,  p0/m, z7.s,  z0.s\n" /* a - 127 */       \
+  "sub z27.s, p0/m, z27.s, z2.s\n"                      \
+  "sub z5.s,  p0/m, z5.s,  z2.s\n"                      \
+  "sub z7.s,  p0/m, z7.s,  z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z27.h, z5.h\n"                           \
+  "uzp1 z23.h, z7.h,  z7.h\n"                           \
+  "uzp1 z27.b, z21.b, z21.b\n"                          \
+  "uzp1 z5.b,  z23.b, z23.b\n"                          \
+  "movprfx z21, z8\n   fmin z21.s, p0/m, z21.s, z0.s\n" \
+  "movprfx z23, z10\n  fmin z23.s, p0/m, z23.s, z0.s\n" \
+  "movprfx z25, z12\n  fmin z25.s, p0/m, z25.s, z0.s\n" \
+  "uzp1 z7.d,  z27.d, z5.d\n"                           \
+  "fmax z8.s,  p0/m, z8.s,  z0.s\n"                     \
+  "fmax z10.s, p0/m, z10.s, z0.s\n"                     \
+  "fmax z12.s, p0/m, z12.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z8.s,  p0/m, z8.s,  z1.s\n"                     \
+  "fadd z10.s, p0/m, z10.s, z1.s\n"                     \
+  "fadd z12.s, p0/m, z12.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z8.s,  p0/m, z8.s\n"                          \
+  "fcvtzs z10.s, p0/m, z10.s\n"                         \
+  "fcvtzs z12.s, p0/m, z12.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z8.s,  p0/m,  z8.s, z21.s\n"                     \
+  "add z10.s, p0/m, z10.s,  z23.s\n"                    \
+  "add z12.s, p0/m, z12.s,  z25.s\n" /* a + 127 */      \
+  "add z8.s,  p0/m, z8.s,  z2.s\n"                      \
+  "add z10.s, p0/m, z10.s, z2.s\n"                      \
+  "add z12.s, p0/m, z12.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z8.s,  p0/m, z8.s,  z0.s\n"                     \
+  "smax z10.s, p0/m, z10.s, z0.s\n"                     \
+  "smax z12.s, p0/m, z12.s, z0.s\n" /* a - 127 */       \
+  "sub z8.s,  p0/m, z8.s,  z2.s\n"                      \
+  "sub z10.s, p0/m, z10.s, z2.s\n"                      \
+  "sub z12.s, p0/m, z12.s, z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z8.h,  z10.h\n"                          \
+  "uzp1 z23.h, z12.h, z12.h\n"                          \
+  "uzp1 z8.b,  z21.b, z21.b\n"                          \
+  "uzp1 z10.b, z23.b, z23.b\n"                          \
+  "movprfx z21, z9\n   fmin z21.s, p0/m, z21.s, z0.s\n" \
+  "movprfx z23, z11\n  fmin z23.s, p0/m, z23.s, z0.s\n" \
+  "movprfx z25, z13\n  fmin z25.s, p0/m, z25.s, z0.s\n" \
+  "uzp1 z12.d, z8.d,  z10.d\n"                          \
+  "fmax z9.s,  p0/m, z9.s,  z0.s\n"                     \
+  "fmax z11.s, p0/m, z11.s, z0.s\n"                     \
+  "fmax z13.s, p0/m, z13.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z9.s,  p0/m, z9.s,  z1.s\n"                     \
+  "fadd z11.s, p0/m, z11.s, z1.s\n"                     \
+  "fadd z13.s, p0/m, z13.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z9.s,  p0/m, z9.s\n"                          \
+  "fcvtzs z11.s, p0/m, z11.s\n"                         \
+  "fcvtzs z13.s, p0/m, z13.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z9.s,  p0/m, z9.s,  z21.s\n"                     \
+  "add z11.s, p0/m, z11.s, z23.s\n"                     \
+  "add z13.s, p0/m, z13.s, z25.s\n" /* a + 127 */       \
+  "add z9.s,  p0/m, z9.s,  z2.s\n"                      \
+  "add z11.s, p0/m, z11.s, z2.s\n"                      \
+  "add z13.s, p0/m, z13.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z9.s,  p0/m, z9.s,  z0.s\n"                     \
+  "smax z11.s, p0/m, z11.s, z0.s\n"                     \
+  "smax z13.s, p0/m, z13.s, z0.s\n" /* a - 127 */       \
+  "sub z9.s,  p0/m, z9.s,  z2.s\n"                      \
+  "sub z11.s, p0/m, z11.s, z2.s\n"                      \
+  "sub z13.s, p0/m, z13.s, z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z9.h,  z11.h\n"                          \
+  "uzp1 z23.h, z13.h, z13.h\n"                          \
+  "uzp1 z9.b,  z21.b, z21.b\n"                          \
+  "uzp1 z11.b, z23.b, z23.b\n"                          \
+  "movprfx z21, z14\n  fmin z21.s, p0/m, z21.s, z0.s\n" \
+  "movprfx z23, z16\n  fmin z23.s, p0/m, z23.s, z0.s\n" \
+  "movprfx z25, z18\n  fmin z25.s, p0/m, z25.s, z0.s\n" \
+  "uzp1 z13.d, z9.d,  z11.d\n"                          \
+  "fmax z14.s, p0/m, z14.s, z0.s\n"                     \
+  "fmax z16.s, p0/m, z16.s, z0.s\n"                     \
+  "fmax z18.s, p0/m, z18.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z14.s, p0/m, z14.s,  z1.s\n"                    \
+  "fadd z16.s, p0/m, z16.s, z1.s\n"                     \
+  "fadd z18.s, p0/m, z18.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z14.s, p0/m, z14.s\n"                         \
+  "fcvtzs z16.s, p0/m, z16.s\n"                         \
+  "fcvtzs z18.s, p0/m, z18.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z14.s, p0/m, z14.s, z21.s\n"                     \
+  "add z16.s, p0/m, z16.s, z23.s\n"                     \
+  "add z18.s, p0/m, z18.s, z25.s\n" /* a + 127 */       \
+  "add z14.s, p0/m, z14.s, z2.s\n"                      \
+  "add z16.s, p0/m, z16.s, z2.s\n"                      \
+  "add z18.s, p0/m, z18.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z14.s, p0/m, z14.s, z0.s\n"                     \
+  "smax z16.s, p0/m, z16.s, z0.s\n"                     \
+  "smax z18.s, p0/m, z18.s, z0.s\n" /* a - 127 */       \
+  "sub z14.s, p0/m, z14.s, z2.s\n"                      \
+  "sub z16.s, p0/m, z16.s, z2.s\n"                      \
+  "sub z18.s, p0/m, z18.s, z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z14.h, z16.h\n"                          \
+  "uzp1 z23.h, z18.h, z18.h\n"                          \
+  "uzp1 z14.b, z21.b, z21.b\n"                          \
+  "uzp1 z16.b, z23.b, z23.b\n"                          \
+  "movprfx z21, z15\n  fmin z21.s, p0/m, z21.s, z0.s\n" \
+  "movprfx z23, z17\n  fmin z23.s, p0/m, z23.s, z0.s\n" \
+  "movprfx z25, z19\n  fmin z25.s, p0/m, z25.s, z0.s\n" \
+  "uzp1 z18.d, z14.d,  z16.d\n"                         \
+  "fmax z15.s, p0/m, z15.s, z0.s\n"                     \
+  "fmax z17.s, p0/m, z17.s, z0.s\n"                     \
+  "fmax z19.s, p0/m, z19.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z15.s, p0/m, z15.s,  z1.s\n"                    \
+  "fadd z17.s, p0/m, z17.s, z1.s\n"                     \
+  "fadd z19.s, p0/m, z19.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z15.s, p0/m, z15.s\n"                         \
+  "fcvtzs z17.s, p0/m, z17.s\n"                         \
+  "fcvtzs z19.s, p0/m, z19.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z15.s, p0/m, z15.s, z21.s\n"                     \
+  "add z17.s, p0/m, z17.s, z23.s\n"                     \
+  "add z19.s, p0/m, z19.s, z25.s\n" /* a + 127 */       \
+  "add z15.s, p0/m, z15.s, z2.s\n"                      \
+  "add z17.s, p0/m, z17.s, z2.s\n"                      \
+  "add z19.s, p0/m, z19.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z15.s, p0/m, z15.s, z0.s\n"                     \
+  "smax z17.s, p0/m, z17.s, z0.s\n"                     \
+  "smax z19.s, p0/m, z19.s, z0.s\n" /* a - 127 */       \
+  "sub z15.s, p0/m, z15.s, z2.s\n"                      \
+  "sub z17.s, p0/m, z17.s, z2.s\n"                      \
+  "sub z19.s, p0/m, z19.s, z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z15.h, z17.h\n"                          \
+  "uzp1 z23.h, z19.h, z19.h\n"                          \
+  "uzp1 z15.b, z21.b, z21.b\n"                          \
+  "uzp1 z17.b, z23.b, z23.b\n"                          \
+  "movprfx z21, z20\n  fmin z21.s, p0/m, z21.s, z0.s\n" \
+  "movprfx z23, z22\n  fmin z23.s, p0/m, z23.s, z0.s\n" \
+  "movprfx z25, z24\n  fmin z25.s, p0/m, z25.s, z0.s\n" \
+  "uzp1 z19.d, z15.d,  z17.d\n"                         \
+  "fmax z20.s, p0/m, z20.s, z0.s\n"                     \
+  "fmax z22.s, p0/m, z22.s, z0.s\n"                     \
+  "fmax z24.s, p0/m, z24.s, z0.s\n" /* a + 0.5 */       \
+  "fadd z20.s, p0/m, z20.s,  z1.s\n"                    \
+  "fadd z22.s, p0/m, z22.s, z1.s\n"                     \
+  "fadd z24.s, p0/m, z24.s, z1.s\n" /* a - 0.5 */       \
+  "fsub z21.s, p0/m, z21.s, z1.s\n"                     \
+  "fsub z23.s, p0/m, z23.s, z1.s\n"                     \
+  "fsub z25.s, p0/m, z25.s, z1.s\n" /* fp32->int32 */   \
+  "fcvtzs z20.s, p0/m, z20.s\n"                         \
+  "fcvtzs z22.s, p0/m, z22.s\n"                         \
+  "fcvtzs z24.s, p0/m, z24.s\n"                         \
+  "fcvtzs z21.s, p0/m, z21.s\n"                         \
+  "fcvtzs z23.s, p0/m, z23.s\n"                         \
+  "fcvtzs z25.s, p0/m, z25.s\n"                         \
+  "add z20.s, p0/m, z20.s, z21.s\n"                     \
+  "add z22.s, p0/m, z22.s, z23.s\n"                     \
+  "add z24.s, p0/m, z24.s, z25.s\n" /* a + 127 */       \
+  "add z20.s, p0/m, z20.s, z2.s\n"                      \
+  "add z22.s, p0/m, z22.s, z2.s\n"                      \
+  "add z24.s, p0/m, z24.s, z2.s\n" /* a  + 127 > 0 */   \
+  "smax z20.s, p0/m, z20.s, z0.s\n"                     \
+  "smax z22.s, p0/m, z22.s, z0.s\n"                     \
+  "smax z24.s, p0/m, z24.s, z0.s\n" /* a - 127 */       \
+  "sub z20.s, p0/m, z20.s, z2.s\n"                      \
+  "sub z22.s, p0/m, z22.s, z2.s\n"                      \
+  "sub z24.s, p0/m, z24.s, z2.s\n" /* int32-> int8*/    \
+  "uzp1 z21.h, z20.h, z22.h\n"                          \
+  "uzp1 z23.h, z24.h, z24.h\n"                          \
+  "uzp1 z20.b, z21.b, z21.b\n"                          \
+  "uzp1 z22.b, z23.b, z23.b\n"                          \
+  "uzp1 z24.d, z20.d, z22.d\n"                          \
+  "st1b {z31.b},  p1, [%x[c_ptr0]]\n"                   \
+  "st1b {z6.b},   p1, [%x[c_ptr1]]\n"                   \
+  "st1b {z7.b},   p1, [%x[c_ptr2]]\n"                   \
+  "st1b {z12.b},  p1, [%x[c_ptr3]]\n"                   \
+  "st1b {z13.b},  p1, [%x[c_ptr4]]\n"                   \
+  "st1b {z18.b},  p1, [%x[c_ptr5]]\n"                   \
+  "st1b {z19.b},  p1, [%x[c_ptr6]]\n"                   \
+  "st1b {z24.b},  p1, [%x[c_ptr7]]\n"                   \
+  "add %x[c_ptr0], %x[c_ptr0], #0x0c\n"                 \
+  "add %x[c_ptr1], %x[c_ptr1], #0x0c\n"                 \
+  "add %x[c_ptr2], %x[c_ptr2], #0x0c\n"                 \
+  "add %x[c_ptr3], %x[c_ptr3], #0x0c\n"                 \
+  "add %x[c_ptr4], %x[c_ptr4], #0x0c\n"                 \
+  "add %x[c_ptr5], %x[c_ptr5], #0x0c\n"                 \
+  "add %x[c_ptr6], %x[c_ptr6], #0x0c\n"                 \
+  "add %x[c_ptr7], %x[c_ptr7], #0x0c\n"
 
 #define ASM_PARAMS_FP32                                                   \
   : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k), \
@@ -1869,17 +2270,9 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
 
 template <>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float)) {
-  // clang-format off
-  asm volatile(
-    INIT_SMMLA_8x2
-    COMPUTE_SMMLA_8x2
-    COMPUTE_SMMLA_8x2_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x2
-    SMMLA_ACT_PROCESS_8x4
-    SMMLA_STORE_FP32_8x2
-    ASM_PARAMS_FP32
-  );
-  // clang-format on
+  asm volatile(INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
+                   CVT_SMMLA_INT32_TO_FP32_8x2 SMMLA_ACT_PROCESS_8x4
+                       SMMLA_STORE_FP32_8x2 ASM_PARAMS_FP32);
 }
 
 template <>
@@ -1892,17 +2285,9 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
   float out5[4] = {0};
   float out6[4] = {0};
   float out7[4] = {0};
-  // clang-format off
-  asm volatile(
-    INIT_SMMLA_8x2
-    COMPUTE_SMMLA_8x2
-    COMPUTE_SMMLA_8x2_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x2
-    SMMLA_ACT_PROCESS_8x4
-    SMMLA_STORE_INT8_8x4
-    ASM_PARAMS_INT8
-  );
-  // clang-format on
+  asm volatile(INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
+                   CVT_SMMLA_INT32_TO_FP32_8x2 SMMLA_ACT_PROCESS_8x4
+                       SMMLA_STORE_INT8_8x4 ASM_PARAMS_INT8);
   int cnt = 2;
   if (last == 0) cnt = 1;
   for (int i = 0; i < cnt; i++) {
@@ -1951,168 +2336,36 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
 
 template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
-  // clang-format off
   asm volatile(
-    INIT_SMMLA_8x4
-    COMPUTE_SMMLA_8x4_0
-    COMPUTE_SMMLA_8x4_1
-    COMPUTE_SMMLA_8x4_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x4
-    SMMLA_ACT_PROCESS_8x4
-    SMMLA_STORE_FP32_8x4
-    ASM_PARAMS_FP32
-  );
-  // clang-format on
+      INIT_SMMLA_8x4 COMPUTE_SMMLA_8x4_0 COMPUTE_SMMLA_8x4_1
+          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4
+              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_FP32_8x4 ASM_PARAMS_FP32);
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
-  float out0[4] = {0};
-  float out1[4] = {0};
-  float out2[4] = {0};
-  float out3[4] = {0};
-  float out4[4] = {0};
-  float out5[4] = {0};
-  float out6[4] = {0};
-  float out7[4] = {0};
-  // clang-format off
   asm volatile(
-    INIT_SMMLA_8x4
-    COMPUTE_SMMLA_8x4_0
-    COMPUTE_SMMLA_8x4_1
-    COMPUTE_SMMLA_8x4_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x4
-    SMMLA_ACT_PROCESS_8x4
-    SMMLA_STORE_INT8_8x4
-    ASM_PARAMS_INT8
-  );
-  // clang-format on
-  for (int i = 0; i < 4; i++) {
-    c_ptr0[i] =
-        out0[i] > -127
-            ? (out0[i] <= 127 ? saturate_cast<int8_t>(roundf(out0[i])) : 127)
-            : -127;
-    c_ptr1[i] =
-        out1[i] > -127
-            ? (out1[i] <= 127 ? saturate_cast<int8_t>(roundf(out1[i])) : 127)
-            : -127;
-    c_ptr2[i] =
-        out2[i] > -127
-            ? (out2[i] <= 127 ? saturate_cast<int8_t>(roundf(out2[i])) : 127)
-            : -127;
-    c_ptr3[i] =
-        out3[i] > -127
-            ? (out3[i] <= 127 ? saturate_cast<int8_t>(roundf(out3[i])) : 127)
-            : -127;
-    c_ptr4[i] =
-        out4[i] > -127
-            ? (out4[i] <= 127 ? saturate_cast<int8_t>(roundf(out4[i])) : 127)
-            : -127;
-    c_ptr5[i] =
-        out5[i] > -127
-            ? (out5[i] <= 127 ? saturate_cast<int8_t>(roundf(out5[i])) : 127)
-            : -127;
-    c_ptr6[i] =
-        out6[i] > -127
-            ? (out6[i] <= 127 ? saturate_cast<int8_t>(roundf(out6[i])) : 127)
-            : -127;
-    c_ptr7[i] =
-        out7[i] > -127
-            ? (out7[i] <= 127 ? saturate_cast<int8_t>(roundf(out7[i])) : 127)
-            : -127;
-  }
-  c_ptr0 += 4;
-  c_ptr1 += 4;
-  c_ptr2 += 4;
-  c_ptr3 += 4;
-  c_ptr4 += 4;
-  c_ptr5 += 4;
-  c_ptr6 += 4;
-  c_ptr7 += 4;
+      INIT_SMMLA_8x4 COMPUTE_SMMLA_8x4_0 COMPUTE_SMMLA_8x4_1
+          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4
+              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_INT8_8x4 ASM_PARAMS_FP32);
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
-  // clang-format off
   asm volatile(
-    INIT_SMMLA_8x12
-    COMPUTE_SMMLA_8x12_0
-    COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_8x12_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x12
-    SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_FP32_8x12
-    ASM_PARAMS_FP32
-  );
-  // clang-format on
+      INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
+          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
+              SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_FP32_8x12 ASM_PARAMS_FP32);
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
-  float out0[12] = {0};
-  float out1[12] = {0};
-  float out2[12] = {0};
-  float out3[12] = {0};
-  float out4[12] = {0};
-  float out5[12] = {0};
-  float out6[12] = {0};
-  float out7[12] = {0};
-
-  // clang-format off
   asm volatile(
-    INIT_SMMLA_8x12
-    COMPUTE_SMMLA_8x12_0
-    COMPUTE_SMMLA_8x12_1
-    COMPUTE_SMMLA_8x12_REMAIN
-    CVT_SMMLA_INT32_TO_FP32_8x12
-    SMMLA_ACT_PROCESS_8x12
-    SMMLA_STORE_INT8_8x12
-    ASM_PARAMS_INT8
-  );
-  // clang-format on
-  for (int i = 0; i < 12; i++) {
-    c_ptr0[i] =
-        out0[i] > -127
-            ? (out0[i] <= 127 ? saturate_cast<int8_t>(roundf(out0[i])) : 127)
-            : -127;
-    c_ptr1[i] =
-        out1[i] > -127
-            ? (out1[i] <= 127 ? saturate_cast<int8_t>(roundf(out1[i])) : 127)
-            : -127;
-    c_ptr2[i] =
-        out2[i] > -127
-            ? (out2[i] <= 127 ? saturate_cast<int8_t>(roundf(out2[i])) : 127)
-            : -127;
-    c_ptr3[i] =
-        out3[i] > -127
-            ? (out3[i] <= 127 ? saturate_cast<int8_t>(roundf(out3[i])) : 127)
-            : -127;
-    c_ptr4[i] =
-        out4[i] > -127
-            ? (out4[i] <= 127 ? saturate_cast<int8_t>(roundf(out4[i])) : 127)
-            : -127;
-    c_ptr5[i] =
-        out5[i] > -127
-            ? (out5[i] <= 127 ? saturate_cast<int8_t>(roundf(out5[i])) : 127)
-            : -127;
-    c_ptr6[i] =
-        out6[i] > -127
-            ? (out6[i] <= 127 ? saturate_cast<int8_t>(roundf(out6[i])) : 127)
-            : -127;
-    c_ptr7[i] =
-        out7[i] > -127
-            ? (out7[i] <= 127 ? saturate_cast<int8_t>(roundf(out7[i])) : 127)
-            : -127;
-  }
-  c_ptr0 += 12;
-  c_ptr1 += 12;
-  c_ptr2 += 12;
-  c_ptr3 += 12;
-  c_ptr4 += 12;
-  c_ptr5 += 12;
-  c_ptr6 += 12;
-  c_ptr7 += 12;
+      INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
+          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
+              SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_INT8_8x12 ASM_PARAMS_FP32);
 }
+// clang-format on
 /// a: m*k  b: k*n  c: m*n
 // A: m/8 * (8 * 8 * k_8), A0 = a0_0-7 + a1_0-7 A1 = a2_0-7 + a3_0-7
 // B: (k_8 * (8 * 12)) * n_12, B0 = b0-7_0 + b0-7_1 B1 = b0-7_2 + b0-7_3
@@ -2152,7 +2405,22 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
   float offset = 0.f;
   float threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[16] = {0.f};
+  float alpha[16] = {0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.f,
+                     0.5f,
+                     0.5f,
+                     0.5f,
+                     0.5f};
   if (act_param.has_active) {
     switch (act_param.active_type) {
       case lite_api::ActivationType::kRelu:
@@ -2163,7 +2431,6 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
         local_alpha = act_param.Relu_clipped_coef;
         for (int i = 0; i < 4; i++) {
           alpha[i] = local_alpha;
-          alpha[i + 12] = -127;
         }
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -2171,7 +2438,6 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
         local_alpha = act_param.Leaky_relu_alpha;
         for (int i = 0; i < 4; i++) {
           alpha[i] = local_alpha;
-          alpha[i + 12] = -127;
         }
         break;
       case lite_api::ActivationType::kHardSwish:
@@ -2183,7 +2449,6 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
           alpha[i] = offset;
           alpha[i + 4] = local_alpha;
           alpha[i + 8] = threshold;
-          alpha[i + 12] = -127;
         }
         break;
       default:
