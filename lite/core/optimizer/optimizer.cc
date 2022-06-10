@@ -14,7 +14,9 @@
 
 #include "lite/core/optimizer/optimizer.h"
 #include <fstream>
+#ifdef LITE_WITH_XPU
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
+#endif
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
