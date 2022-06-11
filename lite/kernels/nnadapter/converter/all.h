@@ -399,6 +399,7 @@ REGISTER_CONVERTER(floor,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu");
 REGISTER_CONVERTER(meshgrid, ConvertMeshgrid, "huawei_ascend_npu");
+REGISTER_CONVERTER(sqrt, ConvertSqrt, "intel_openvino");
 REGISTER_CONVERTER(square,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu");
