@@ -239,8 +239,10 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
-       "static_kernel_pick_pass",         // pick original kernel from graph
+       "static_kernel_pick_pass",  // pick original kernel from graph
+#ifdef LITE_WITH_XPU
        "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
+#endif
 
        "remove_tf_redundant_ops_pass",
        "variable_place_inference_pass",  // inference arg/var's
