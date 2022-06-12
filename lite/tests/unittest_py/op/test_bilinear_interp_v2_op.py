@@ -64,8 +64,9 @@ class TestBilinearV2Op(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -80,6 +81,7 @@ class TestBilinearV2Op(AutoScanTest):
         in_shape = [batch, channel, height, width]
         out_size_shape = draw(st.sampled_from([[1, 2]]))
         align_corners = draw(st.booleans())
+        infer_shape_with_scale = draw(st.booleans())
         align_mode = draw(st.sampled_from([0, 1]))
         out_h = draw(st.integers(min_value=3, max_value=10))
         out_w = draw(st.integers(min_value=3, max_value=10))
@@ -104,9 +106,17 @@ class TestBilinearV2Op(AutoScanTest):
 
         assume(scale[0] * in_shape[2] > 1.0)
         assume(scale[1] * in_shape[3] > 1.0)
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            if infer_shape_with_scale:
+                out_h = -1
+                out_w = -1
+            else:
+                scale = []
 
         nnadapter_device_name = self.get_nnadapter_device_name()
-        if nnadapter_device_name == "nvidia_tensorrt":
+        has_tensorrt_device = "nvidia_tensorrt" in self.get_nnadapter_device_name(
+        )
+        if self.get_target() == 'NNAdapter':
             bilinear_interp_v2_op = OpConfig(
                 type="bilinear_interp_v2",
                 inputs={"X": ["input_data"]},
@@ -118,8 +128,9 @@ class TestBilinearV2Op(AutoScanTest):
                     "out_w": out_w,
                     "scale": scale,
                     "interp_method": "bilinear",
-                    "align_corners": False,
-                    "align_mode": 0
+                    "align_corners": False
+                    if has_tensorrt_device else align_corners,
+                    "align_mode": 0 if has_tensorrt_device else align_mode
                 })
             program_config = ProgramConfig(
                 ops=[bilinear_interp_v2_op],
