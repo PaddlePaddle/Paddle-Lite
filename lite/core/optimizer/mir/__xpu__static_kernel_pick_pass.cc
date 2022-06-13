@@ -41,6 +41,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       << "kernel_pick_factors should be specified first";
   CHECK(graph) << "graph not valid";
 
+  // Collect input data precision for each node in the graph
   DicideUseFP16Optimizer(graph);
   if (xpu_use_fp16_optimizer_) {
     GetXPUDeviceType();
@@ -344,7 +345,7 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
     }
 
     PrecisionType precison = var_ptr->GetMutable<lite::Tensor>()->precision();
-    xpu_output_type_.insert({var_name, precison});
+    xpu_output_type_.emplace(var_name, precison);
   }
 }
 
@@ -371,7 +372,7 @@ void XPUStaticKernelPickPass::SpecialNodeOutputPrecision(
     const auto* decl_type = kernel->GetOutputDeclType(arg_name);
     CHECK(decl_type);
     PrecisionType precison = decl_type->precision();
-    xpu_output_type_.insert({var_name, precison});
+    xpu_output_type_.emplace(var_name, precison);
   }
 }
 
@@ -397,7 +398,7 @@ void XPUStaticKernelPickPass::InplaceNodeOutputPrecision(
       std::string tmp;
       CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
       if (output_parameter_name_.count(tmp)) {
-        xpu_output_type_.insert({out_names[i], pre_op_output_precision});
+        xpu_output_type_.emplace(out_names[i], pre_op_output_precision);
       }
     }
   }
@@ -436,7 +437,7 @@ void XPUStaticKernelPickPass::SpecialNodeInputPrecision(lite::mir::Node* node) {
       kernel_input_type.emplace_back(std::move(tmp_map));
     }
 
-    xpu_input_type_.insert({var_name, kernel_input_type});
+    xpu_input_type_.emplace(var_name, kernel_input_type);
   }
 }
 
@@ -470,7 +471,7 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
     precison = var_ptr->GetMutable<lite::Tensor>()->precision();
     tmp_map.emplace(inst.op_type(), precison);
     kernel_input_type.emplace_back(std::move(tmp_map));
-    xpu_input_type_.insert({var_name, kernel_input_type});
+    xpu_input_type_.emplace(var_name, kernel_input_type);
   }
 }
 
@@ -519,7 +520,7 @@ void XPUStaticKernelPickPass::InplaceNodeInputPrecision(lite::mir::Node* node) {
       }
 
       ++num;
-      xpu_input_type_.insert({inplace_op_input_name, iter->second});
+      xpu_input_type_.emplace(inplace_op_input_name, iter->second);
     }
     VLOG(6) << "inplace op :" << inst.op_type() << "input prision"
             << "replace by the next op input prision ";
@@ -569,7 +570,7 @@ void XPUStaticKernelPickPass::InplaceOpScore(
       std::string tmp;
       CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
       if (output_parameter_name_.count(tmp)) {
-        xpu_output_type_.insert({out_names[i], pre_op_output_precision});
+        xpu_output_type_.emplace(out_names[i], pre_op_output_precision);
       }
     }
   }
