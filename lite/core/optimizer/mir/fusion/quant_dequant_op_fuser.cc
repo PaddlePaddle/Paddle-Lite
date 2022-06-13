@@ -383,7 +383,8 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
       quantized_op_type_ == "conv2d_transpose") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
-  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
+  } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul" ||
+             quantized_op_type_ == "matmul_v2") {
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
@@ -550,8 +551,9 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       }
       // PaddleLite only supports this int8 ops for now
       // TODO(pjc) : support conv2d_transpose
-      if (op_type == "mul" || op_type == "matmul" || op_type == "conv2d" ||
-          op_type == "depthwise_conv2d" || op_type == "conv2d_transpose") {
+      if (op_type == "mul" || op_type == "matmul" || op_type == "matmul_v2" ||
+          op_type == "conv2d" || op_type == "depthwise_conv2d" ||
+          op_type == "conv2d_transpose") {
 #ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
 #endif
