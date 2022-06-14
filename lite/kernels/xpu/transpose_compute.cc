@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void TransposeCompute::Run() {
+template <class T>
+void TransposeCompute<T>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   auto x = param.x;
@@ -38,10 +39,10 @@ void TransposeCompute::Run() {
   for (int i = 0; i < ndims; ++i) {
     x_shape_host[i] = x_dims[i];
   }
-  int r =
-      xdnn::transpose<float>(ctx.GetRawContext(),
-                             x->data<float>(),
-                             param.output->mutable_data<float>(TARGET(kXPU)),
+
+  int r = xdnn::transpose<T>(ctx.GetRawContext(),
+                             x->data<T>(),
+                             param.output->mutable_data<T>(TARGET(kXPU)),
                              x_shape_host,
                              axis);
   CHECK_EQ(r, 0);
@@ -56,7 +57,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
+                     paddle::lite::kernels::xpu::TransposeCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -66,17 +67,18 @@ REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
+                     paddle::lite::kernels::xpu::TransposeCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
+                     paddle::lite::kernels::xpu::TransposeCompute<int64_t>,
                      def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})

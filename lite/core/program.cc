@@ -87,6 +87,18 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
+  // Move the persistable var from exec scope to the root scope
+  auto root_scope = scope->MutableParent();
+  if (tensor->persistable() && root_scope != scope &&
+      !root_scope->FindLocalVar(var_name)) {
+    // Find or create new var in root scope
+    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+    if (root_tensor != tensor) {
+      root_tensor->CopyDataFrom(*tensor);
+      scope->DeleteLocalVar(var_name);
+    }
+  }
+
   if (var_name != "feed" && var_name != "fetch") {
     var->SetShape(tensor->dims().data());
     auto precision = tensor->precision();
@@ -579,8 +591,7 @@ void Program::PrepareWorkspace(
 #if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       }
 #endif
-
-      // Create tensors or wights from variable description.
+      // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
@@ -603,6 +614,7 @@ void Program::PrepareWorkspace(
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
           tensor->set_precision(var_data_type);
+          tensor->set_persistable(var_desc->Persistable());
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));

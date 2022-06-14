@@ -56,6 +56,8 @@ NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/de
 NNADAPTER_WITH_NVIDIA_TENSORRT=OFF
 NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
+NNADAPTER_WITH_QUALCOMM_QNN=OFF
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
 NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
@@ -232,6 +234,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
                         -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
+                        -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
+                        -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
                         -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
@@ -616,6 +620,14 @@ function main {
                 ;;
             --nnadapter_nvidia_tensorrt_root=*)
                 NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_qualcomm_qnn=*)
+                NNADAPTER_WITH_QUALCOMM_QNN="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_qnn_sdk_root=*)
+                NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_kunlunxin_xtcl=*)

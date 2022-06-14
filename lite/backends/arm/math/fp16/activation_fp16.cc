@@ -337,8 +337,8 @@ void act_tanh<float16_t>(const float16_t* din,
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim8; ++k) {
       float16x8_t data = vld1q_f16(ptr_in_thread);
-      data = vminq_f32(data, vmax_f16);
-      data = vmaxq_f32(data, vmin_f16);
+      data = vminq_f16(data, vmax_f16);
+      data = vmaxq_f16(data, vmin_f16);
       float16x8_t exp_plus_vec = expq_ps_f16(data);
       float16x8_t exp_minus_vec = expq_ps_f16(vnegq_f16(data));
       float16x8_t exp_sum_vec = vaddq_f16(exp_plus_vec, exp_minus_vec);
