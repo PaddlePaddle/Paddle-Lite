@@ -33,7 +33,6 @@ int PrepareNonMaxSuppression(core::Operation* operation) {
   // Infer the shape and type of output operands
   std::vector<int> output_shape;
   auto input_dims = input_operands[0]->type.dimensions.count;
-  // auto input_dims_ptr = input_operands[0]->type.dimensions.data;
   NNADAPTER_CHECK_EQ(input_dims, 3) << "Box dims should be 3D.";
   output_shape.push_back(NNADAPTER_UNKNOWN);
   output_shape.push_back(6);
