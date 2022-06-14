@@ -70,6 +70,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"intel_openvino"});
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"qualcomm_qnn"});
 #else
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"builtin_device"});
