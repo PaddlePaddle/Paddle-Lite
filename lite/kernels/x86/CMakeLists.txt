@@ -65,6 +65,7 @@ if(WITH_MKL)
 endif()
 
 add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc)
+add_kernel(matmul_v2_compute_x86 X86 basic SRCS matmul_v2_compute.cc)
 add_kernel(box_coder_compute_x86 X86 basic SRCS box_coder_compute.cc)
 add_kernel(density_prior_box_compute_x86 X86 basic SRCS density_prior_box_compute.cc)
 add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc)
