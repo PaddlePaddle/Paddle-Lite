@@ -80,12 +80,12 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-      if (ctx.has_sve2()) {
-        lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
-        return;
-      }
-#endif
+// #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+//       if (ctx.has_sve2()) {
+//         lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
+//         return;
+//       }
+// #endif
       lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }
@@ -187,6 +187,7 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 
   const float16_t* din = param.x->data<float16_t>();
   float16_t* dout = param.output->mutable_data<float16_t>();
+  auto& ctx = this->ctx_->As<ARMContext>();
 
   std::vector<int>& ksize = param.ksize;
   std::vector<int>& strides = param.strides;
@@ -225,6 +226,12 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       lite::arm::math::fp16::pooling_global_max_fp16(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
+// #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+//       if (ctx.has_sve2()) {
+//         lite::arm::math::pooling_global_avg_fp16_sve2(POOL_IN_PARAM);
+//         return;
+//       }
+// #endif
       lite::arm::math::fp16::pooling_global_avg_fp16(POOL_IN_PARAM);
       return;
     }
