@@ -87,8 +87,11 @@ class Program {
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   std::vector<std::string> input_names_;
+  std::vector<int> inputs_perm_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
+  std::vector<uint8_t> model_buffer_;
+  float model_version_ = 1.0f;
 };
 
 }  // namespace cambricon_mlu
