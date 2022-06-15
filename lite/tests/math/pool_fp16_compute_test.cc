@@ -280,9 +280,9 @@ TEST(TesPoolCustom, test_pool_fp16_custom_size) {
 #if 1  /// custom
 TEST(TesPoolGlobal, test_pool_fp16_global) {
   
-  for(auto &h : {32,64})
+  for(auto &h : {51})
   test_pool_fp16(
-      {DDim({1, 32, h, h})},
+      {DDim({1, 64, h, h})},
       {2, 2},
       {1, 1},
       {1, 1, 1, 1},
