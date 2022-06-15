@@ -600,6 +600,9 @@ class LITE_API MobileConfig : public ConfigBase {
   void SetArmL3CacheSize(
       L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
       int absolute_val = -1);
+
+  // note: check device support fp16
+  bool check_fp16_valid();
 };
 
 template <typename ConfigT>
