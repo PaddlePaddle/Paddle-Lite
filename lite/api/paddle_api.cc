@@ -361,6 +361,17 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #endif
 }
 
+void ConfigBase::set_opencl_all_buffer(bool all_buffer_flag) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    paddle::lite::CLRuntime::Global()->set_all_buffer(all_buffer_flag);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "set opencl all buffer. ";
+#endif
+  }
+#endif
+}
+
 void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode, threads_);

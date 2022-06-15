@@ -49,6 +49,12 @@ add_kernel(batch_norm_opencl_image OPENCL basic SRCS batch_norm_image_compute.cc
 add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc)
 add_kernel(clip_opencl_image OPENCL basic SRCS clip_image_compute.cc)
 add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc)
+add_kernel(softmax_opencl_buffer OPENCL basic SRCS softmax_buffer_compute.cc)
+add_kernel(pow_opencl_buffer OPENCL basic SRCS pow_buffer_compute.cc)
+add_kernel(scale_opencl_buffer OPENCL basic SRCS scale_buffer_compute.cc)
+add_kernel(transpose_opencl_buffer OPENCL basic SRCS transpose_buffer_compute.cc)
+add_kernel(reduce_opencl_buffer OPENCL basic SRCS reduce_buffer_compute.cc)
+add_kernel(argmax_opencl_buffer OPENCL basic SRCS argmax_buffer_compute.cc)
 add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_compute.cc)
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
@@ -149,10 +155,31 @@ lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
 lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
              DEPS kernels core)
 
+lite_cc_test(test_softmax_buffer_opencl SRCS softmax_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_pow_buffer_opencl SRCS pow_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_scale_buffer_opencl SRCS scale_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_reduce_buffer_opencl SRCS reduce_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_transpose_buffer_opencl SRCS transpose_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_argmax_buffer_opencl SRCS argmax_buffer_compute_test.cc
+             DEPS kernels core)
+
 lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_rnn_buffer_opencl SRCS rnn_buffer_compute_test.cc
              DEPS kernels core)
 
 #lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
@@ -178,6 +205,7 @@ add_kernel(slice_opencl_buffer OPENCL basic SRCS slice_buffer_compute.cc)
 add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc)
 add_kernel(squeeze_unsqueeze_opencl_buffer OPENCL basic SRCS squeeze_unsqueeze_buffer_compute.cc)
 add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
+add_kernel(rnn_opencl_buffer OPENCL basic SRCS rnn_buffer_compute.cc)
 # extra
 # wait to add ...
 

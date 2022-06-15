@@ -240,7 +240,7 @@ class LITE_API ConfigBase {
   ///          CL_PRECISION_FP16: force fp16
   /// \return void
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
-
+  void set_opencl_all_buffer(bool all_buffer_flag = false);
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;

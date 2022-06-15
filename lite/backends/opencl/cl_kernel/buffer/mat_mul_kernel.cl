@@ -42,6 +42,26 @@ __kernel void mat_mul_naive(__global const CL_DTYPE* a,
   C(m, n, ldc) = res * alpha;
 }
 
+__kernel void matmul_buffer(__global const CL_DTYPE* a,
+                            __global const CL_DTYPE* b,
+                            __global CL_DTYPE* c,
+                            const int M,
+                            const int N,
+                            const int K,
+                            const int lda,
+                            const int ldb,
+                            const int ldc,
+                            const float alpha) {
+  const int m = get_global_id(0);
+  const int n = get_global_id(1);
+
+  CL_DTYPE res = 0.f;
+  for (short k = 0; k < K; ++k) {
+    res += A(m, k, lda) * B(k, n, ldb);
+  }
+  C(m, n, ldc) = res * alpha;
+}
+
 // gemv_1x4: M = 1
 // a: param.input  {M, K}
 // b: param.w      {K, N}

@@ -216,6 +216,10 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       }
     } else {
       // for y_persistable is false!!!
+      if (x_dims.size() <= 2 && y_dims.size() <= 2) {
+        build_options_ += " -DUSE_IMAGE_Y ";
+        use_image_y_ = true;
+      }
     }
     // reset to original fp16 precision
     if (precision_forced_to_fp32) {
@@ -378,6 +382,16 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
             kernel_func_name_ = "matmul_xytranspose";
             kernel_file_name_ = "image/matmul_unpersistable_y_kernel.cl";
           }
+        } else if (x_dims.size() == 2 && y_dims.size() == 2) {
+          m_ = transpose_x_ ? x_dims[1] : x_dims[0];
+          k_ = transpose_x_ ? x_dims[0] : x_dims[1];
+          n_ = transpose_y_ ? y_dims[0] : y_dims[1];
+          kernel_func_name_ = "matmul";
+          kernel_file_name_ = "image/matmul_opt_kernel.cl";
+          if (transpose_x_) {
+            kernel_func_name_ = "matmul_transpose_x";
+            kernel_file_name_ = "image/matmul_xtranspose_kernel.cl";
+          }
         } else {
           LOG(FATAL) << "unsupported input case.";
         }
@@ -449,16 +463,42 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       }
     } else {
       // for y_persistable is false!!!
-      local_work_size_ = cl::NullRange;
-      auto default_work_size =
-          DefaultGlobalWorkSize(out_dims,
-                                DDim(std::vector<DDim::value_type>{
-                                    static_cast<int64_t>(out_img_shape[0]),
-                                    static_cast<int64_t>(out_img_shape[1])}));
-      global_work_size_ =
-          cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                      static_cast<cl::size_type>(default_work_size[1]),
-                      static_cast<cl::size_type>(default_work_size[2])};
+      if (x_dims.size() <= 2 && y_dims.size() <= 2) {
+        if (transpose_x_) {
+          local_work_size_ = cl::NDRange(32, 4, 1);
+          global_work_size_ =
+              cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
+                          local_work_size_[1],
+                          UP_DIV(m_, 4));
+        } else {
+          size_t max_work_group_size = 0;
+          kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                           CL_KERNEL_WORK_GROUP_SIZE,
+                                           &max_work_group_size);
+          local_work_size_ = cl::NDRange(
+              std::min(static_cast<int>(max_work_group_size / 64), 8), 4, 16);
+          global_work_size_ =
+              cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
+          if (is_mali_ || is_apple_m1_) {
+            local_work_size_ = cl::NDRange(4, 4, 16);
+            global_work_size_ =
+                cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
+                            local_work_size_[1],
+                            ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
+          }
+        }
+      } else {
+        local_work_size_ = cl::NullRange;
+        auto default_work_size =
+            DefaultGlobalWorkSize(out_dims,
+                                  DDim(std::vector<DDim::value_type>{
+                                      static_cast<int64_t>(out_img_shape[0]),
+                                      static_cast<int64_t>(out_img_shape[1])}));
+        global_work_size_ =
+            cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
+                        static_cast<cl::size_type>(default_work_size[1]),
+                        static_cast<cl::size_type>(default_work_size[2])};
+      }
     }
     VLOG(4) << "local_work_size[3D]: " << local_work_size_[0] << " "
             << local_work_size_[1] << " " << local_work_size_[2];
@@ -519,18 +559,30 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       }
     } else {
       // for y_persistable is false!!!
-      auto* y_img_ = GET_DATA_GPU(matmul_v2_param_->Y);
-      auto out_dims = matmul_v2_param_->Out->dims();
-      int out_width = out_dims[out_dims.size() - 1];
-      int out_height = out_dims[out_dims.size() - 2];
-      status = kernel.setArg(arg_idx++, *y_img_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, k_);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_width);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, out_height);
-      CL_CHECK_FATAL(status);
+      if (x_dims.size() <= 2 && y_dims.size() <= 2) {
+        auto* y_img_ = GET_DATA_GPU(matmul_v2_param_->Y);
+        status = kernel.setArg(arg_idx++, *y_img_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, m_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, k_blks_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, n_blks_);
+        CL_CHECK_FATAL(status);
+      } else {
+        auto* y_img_ = GET_DATA_GPU(matmul_v2_param_->Y);
+        auto out_dims = matmul_v2_param_->Out->dims();
+        int out_width = out_dims[out_dims.size() - 1];
+        int out_height = out_dims[out_dims.size() - 2];
+        status = kernel.setArg(arg_idx++, *y_img_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, k_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, out_width);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, out_height);
+        CL_CHECK_FATAL(status);
+      }
     }
     status = kernel.setArg(arg_idx++, alpha_);
 
@@ -542,6 +594,25 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
+#ifdef LITE_WITH_PROFILE
+    event_.wait();
+    auto queue_start_nanos =
+        event_.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
+    auto submit_start_nanos =
+        event_.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
+    auto run_start_nanos =
+        event_.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    auto run_stop_nanos = event_.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+
+    double time_ms = (submit_start_nanos - queue_start_nanos) / 1000000.0;
+    std::cout << "transpose GetQueuedToSubmitTime: " << time_ms << std::endl;
+
+    time_ms = (run_start_nanos - submit_start_nanos) / 1000000.0;
+    std::cout << "transpose GetSubmitToStartTime: " << time_ms << std::endl;
+
+    time_ms = (run_stop_nanos - run_start_nanos) / 1000000.0;
+    std::cout << "transpose GetStartToEndTime: " << time_ms << std::endl;
+#endif
   }
 
   void convert(const float* nchw, void* image, const DDim& tensor_dim) {

@@ -155,8 +155,13 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       CHECK_GE(w_dims.size(), 2UL);
       CHECK_LE(param.output->dims().size(), 4UL);
 
-      m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-      k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+      int in_num_col_dims = param.in_num_col_dims;
+      std::string op_type = param.op_type;
+      if (op_type == "matmul" || op_type == "matmul_v2") {
+        in_num_col_dims = x_dims.size() - 1;
+      }
+      m_ = x_dims.Slice(0, in_num_col_dims).production();
+      k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
       k_blks_ = UP_DIV(k_, 4);
@@ -273,6 +278,25 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
+#ifdef LITE_WITH_PROFILE
+      event_.wait();
+      auto queue_start_nanos =
+          event_.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
+      auto submit_start_nanos =
+          event_.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
+      auto run_start_nanos =
+          event_.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+      auto run_stop_nanos = event_.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+
+      double time_ms = (submit_start_nanos - queue_start_nanos) / 1000000.0;
+      std::cout << "GetQueuedToSubmitTime: " << time_ms << std::endl;
+
+      time_ms = (run_start_nanos - submit_start_nanos) / 1000000.0;
+      std::cout << "GetSubmitToStartTime: " << time_ms << std::endl;
+
+      time_ms = (run_stop_nanos - run_start_nanos) / 1000000.0;
+      std::cout << "GetStartToEndTime: " << time_ms << std::endl;
+#endif
     } else {
       x_img_ = x_img_src;
     }
@@ -316,9 +340,27 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                   global_work_size_,
                                   local_work_size_,
                                   nullptr,
-                                  event_);
+                                  event_1);
     CL_CHECK_FATAL(status);
+    // #ifdef LITE_WITH_PROFILE
+    event_1.wait();
+    auto queue_start_nanos =
+        event_1.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
+    auto submit_start_nanos =
+        event_1.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
+    auto run_start_nanos =
+        event_1.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    auto run_stop_nanos = event_1.getProfilingInfo<CL_PROFILING_COMMAND_END>();
 
+    double time_ms = (submit_start_nanos - queue_start_nanos) / 1000000.0;
+    std::cout << "0GetQueuedToSubmitTime: " << time_ms << std::endl;
+
+    time_ms = (run_start_nanos - submit_start_nanos) / 1000000.0;
+    std::cout << "0GetSubmitToStartTime: " << time_ms << std::endl;
+
+    time_ms = (run_stop_nanos - run_start_nanos) / 1000000.0;
+    std::cout << "0GetStartToEndTime: " << time_ms << std::endl;
+    // #endif
     if (out_dims.size() > 2) {
       int N, C, H, W;
       cl::NDRange output_gws;
@@ -375,8 +417,28 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                     output_gws,
                                     cl::NullRange,
                                     nullptr,
-                                    event_);
+                                    event_2);
       CL_CHECK_FATAL(status);
+#ifdef LITE_WITH_PROFILE
+      event_2.wait();
+      auto queue_start_nanos =
+          event_2.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
+      auto submit_start_nanos =
+          event_2.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
+      auto run_start_nanos =
+          event_2.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+      auto run_stop_nanos =
+          event_2.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+
+      double time_ms = (submit_start_nanos - queue_start_nanos) / 1000000.0;
+      std::cout << "1GetQueuedToSubmitTime: " << time_ms << std::endl;
+
+      time_ms = (run_start_nanos - submit_start_nanos) / 1000000.0;
+      std::cout << "1GetSubmitToStartTime: " << time_ms << std::endl;
+
+      time_ms = (run_stop_nanos - run_start_nanos) / 1000000.0;
+      std::cout << "1GetStartToEndTime: " << time_ms << std::endl;
+#endif
     }
   }
 

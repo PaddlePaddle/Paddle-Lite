@@ -140,7 +140,13 @@ class CLRuntime {
     }
   }
 
+  void set_all_buffer(bool all_buffer_flag) {
+    is_cl_all_buffer_ = all_buffer_flag;
+  }
+
   lite_api::CLPrecisionType get_precision() { return precision_; }
+
+  bool get_all_buffer() { return is_cl_all_buffer_; }
 
   void SetBinaryPathName(const std::string& path, const std::string& name) {
     binary_path_name_.clear();
@@ -263,7 +269,7 @@ class CLRuntime {
 
   std::shared_ptr<cl::CommandQueue> CreateCommandQueue(
       const cl::Context& context) {
-    cl_command_queue_properties properties = 0;
+    cl_command_queue_properties properties = CL_QUEUE_PROFILING_ENABLE;
 
 #ifdef LITE_WITH_PROFILE
     properties |= CL_QUEUE_PROFILING_ENABLE;
@@ -331,6 +337,8 @@ class CLRuntime {
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
   lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
+
+  bool is_cl_all_buffer_{false};
 
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;

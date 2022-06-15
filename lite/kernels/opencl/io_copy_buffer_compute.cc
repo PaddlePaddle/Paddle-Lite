@@ -99,10 +99,31 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
-    auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
-    CHECK(data);
-    CHECK(param.x->raw_data());
-    h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    bool fp16_support_ =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    bool cl_all_buffer = CLRuntime::Global()->get_all_buffer();
+    if (fp16_support_ && cl_all_buffer) {
+      // fp16
+      std::vector<half_t> x_source_half(param.x->dims().production());
+      for (size_t i = 0; i < param.x->dims().production(); ++i) {
+        x_source_half[i] = Float2Half(param.x->data<float>()[i]);
+      }
+      auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size / 2);
+      CHECK(data);
+      CHECK(param.x->raw_data());
+      h2d_duration_ =
+          CopyFromHostSync(data, x_source_half.data(), mem_size / 2);
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
+      CHECK(data);
+      CHECK(param.x->raw_data());
+      h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    }
+
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims()[0];
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.x->memory_size():" << mem_size;
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -146,16 +167,6 @@ class IoCopykOpenCLToHostCompute
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
-    auto mem_size = param.x->memory_size();
-    auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
-    const cl::Buffer* x_ptr;
-    if (param.process_type == 1) {
-      x_ptr = param.x->data<uint8_t, cl::Buffer>();
-      param.y->set_precision(PRECISION(kUInt8));
-    } else {
-      x_ptr = param.x->data<float, cl::Buffer>();
-      param.y->set_precision(PRECISION(kFloat));
-    }
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "copy size " << mem_size;
@@ -166,8 +177,30 @@ class IoCopykOpenCLToHostCompute
     VLOG(4) << "param.process_type:" << param.process_type;
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-
-    d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+    auto mem_size = param.x->memory_size();
+    const cl::Buffer* x_ptr;
+    if (param.process_type == 1) {
+      x_ptr = param.x->data<uint8_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kUInt8));
+    } else {
+      x_ptr = param.x->data<float, cl::Buffer>();
+      param.y->set_precision(PRECISION(kFloat));
+    }
+    bool fp16_support_ =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    bool cl_all_buffer = CLRuntime::Global()->get_all_buffer();
+    if (fp16_support_ && cl_all_buffer) {
+      std::vector<half_t> half_data(param.x->dims().production());
+      d2h_duration_ =
+          CopyToHostSync(half_data.data(), param.x->raw_data(), mem_size);
+      float* data = param.y->mutable_data<float>(TARGET(kHost), mem_size * 2);
+      for (size_t i = 0; i < param.x->dims().production(); ++i) {
+        data[i] = Half2Float(half_data.data()[i]);
+      }
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+      d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+    }
   }
 
   std::string doc() const override { return "Copy IO from OpenCL to HOST"; }

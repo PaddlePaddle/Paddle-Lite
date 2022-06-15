@@ -105,6 +105,23 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           Place{TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           Place{TARGET(kARM), PRECISION(kAny), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "opencl_buffer") {
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageFolder)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "opencl") {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});

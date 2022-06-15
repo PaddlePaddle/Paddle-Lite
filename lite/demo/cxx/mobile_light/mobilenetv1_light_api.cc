@@ -181,6 +181,8 @@ void RunModel(std::string model_dir,
       // CL_PRECISION_FP32: 1, force fp32
       // CL_PRECISION_FP16: 2, force fp16
       config.set_opencl_precision(CL_PRECISION_FP16);
+
+      config.set_opencl_all_buffer(true);
     }
   } else {
     std::cout << "*** nb model will be running on cpu. ***" << std::endl;

@@ -103,6 +103,7 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  bool trans_weights{false};
   std::string Prelu_mode{
       "channel"};  // prelu param, can be "all", "channel" or "element"
   std::string op_type{"mul"};
