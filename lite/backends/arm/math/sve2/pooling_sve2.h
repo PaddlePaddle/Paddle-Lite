@@ -23,8 +23,9 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+typedef __fp16 float16_t;
+
 void pooling_global_avg_sve2(const float* din,
                              float* dout,
                              int num,
@@ -34,6 +35,17 @@ void pooling_global_avg_sve2(const float* din,
                              int chin,
                              int hin,
                              int win);
+
+void pooling_global_avg_fp16_sve2(const float16_t* din,
+                             float16_t* dout,
+                             int num,
+                             int chout,
+                             int hout,
+                             int wout,
+                             int chin,
+                             int hin,
+                             int win);
+
 #endif
 
 }  // namespace math
