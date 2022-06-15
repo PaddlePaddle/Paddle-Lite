@@ -37,7 +37,8 @@ class TestPriorBoxOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -65,6 +66,8 @@ class TestPriorBoxOp(AutoScanTest):
 
         offset = 0.5
         min_max_aspect_ratios_order = draw(st.sampled_from([True, False]))
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            assume(step_w == step_h)
 
         def generate_input(*args, **kwargs):
             return np.random.random((batch_size, image_channels, image_w,
