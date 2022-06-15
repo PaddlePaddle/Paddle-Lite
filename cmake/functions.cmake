@@ -194,7 +194,7 @@ function(lite_cc_test TARGET)
           COMMAND ${TARGET} ${args_ARGS}
           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   # No unit test should exceed 10 minutes.
-  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
+  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 1200)
 
 endfunction()
 
