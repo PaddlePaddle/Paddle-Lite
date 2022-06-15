@@ -230,9 +230,9 @@ TEST(TestPoolRand, test_pool_rand) {
 
 #if 1  /// custom
 TEST(TesPoolGlobal, test_pool_fp32_global) {
-  for(auto &h : {32,64})
+  for(auto &h : {51})
   test_pool_fp32(
-      {DDim({1, 32, h, h})},
+      {DDim({1, 64, h, h})},
       {2, 2},
       {1, 1},
       {1, 1, 1, 1},
