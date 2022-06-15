@@ -47,6 +47,7 @@
 #include <limits>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/sve/gemm_sve.h"
+#include "lite/backends/arm/math/sve/gemm_sve_i8mm.h"
 #include "lite/backends/arm/math/sve/softmax_sve.h"
 
 #ifdef ENABLE_ARM_FP16
