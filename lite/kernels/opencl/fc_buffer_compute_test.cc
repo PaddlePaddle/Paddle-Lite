@@ -133,7 +133,7 @@ TEST(fc, compute) {
         const bool fp16_flag =
             (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
         auto kernels = KernelRegistry::Global().Create(
-            "fc", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+            "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
         ASSERT_FALSE(kernels.empty());
         auto kernel = std::move(kernels.front());
 
@@ -364,4 +364,4 @@ TEST(fc, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fc, kOpenCL, kFP16, kNCHW, def);

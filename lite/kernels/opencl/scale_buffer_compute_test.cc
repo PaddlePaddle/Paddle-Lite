@@ -68,7 +68,7 @@ void test(const lite_api::CLPrecisionType p, const DDim& input_dim) {
             << lite_api::CLPrecisionTypeToStr(p) << " x_dim=" << input_dim;
 
   auto kernels = KernelRegistry::Global().Create(
-      "scale", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "scale", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -233,4 +233,4 @@ TEST(scale, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(scale, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(scale, kOpenCL, kFP16, kNCHW, def);

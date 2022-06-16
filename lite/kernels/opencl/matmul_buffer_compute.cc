@@ -31,7 +31,7 @@ namespace kernels {
 namespace opencl {
 
 class MatMulV2Compute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::MatMulParam;
 
@@ -234,10 +234,32 @@ class MatMulV2Compute
 
 REGISTER_LITE_KERNEL(matmul,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::MatMulV2Compute,
+                     Yhost)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(matmul,
+                     kOpenCL,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::opencl::MatMulV2Compute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(matmul_v2,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::MatMulV2Compute,
+                     Yhost)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
@@ -245,11 +267,11 @@ REGISTER_LITE_KERNEL(matmul,
 
 REGISTER_LITE_KERNEL(matmul_v2,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::opencl::MatMulV2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();

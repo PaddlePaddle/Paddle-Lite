@@ -177,21 +177,9 @@ class RnnCompute
                  std::vector<Tensor*> state,
                  int max_step) {
     auto& context = ctx_->As<OpenCLContext>();
-    auto* output_buf =
-        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
-            ? output->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
-            : output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    auto* output_buf1 =
-        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
-            ? state[0]->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
-            : state[0]->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    auto* output_buf2 =
-        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
-            ? state[1]->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
-            : state[1]->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
+    auto* output_buf = GET_BUFFER_GPU(output);
+    auto* output_buf1 = GET_BUFFER_GPU(state[0]);
+    auto* output_buf2 = GET_BUFFER_GPU(state[1]);
     size_t frame_size = init_h->dims()[1];
     float cell_clip = 0.0;
     // init_h weight_hh
@@ -400,6 +388,21 @@ class RnnCompute
 
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+
+    auto* output_buf =
+        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+            ? output->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+            : output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
+    auto* output_buf1 =
+        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+            ? state[0]->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+            : state[0]->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
+    auto* output_buf2 =
+        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+            ? state[1]->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+            : state[1]->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
     if (fp16_support) {
       init_c_buf_t_ = new Tensor;

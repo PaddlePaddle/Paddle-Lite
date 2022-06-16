@@ -33,7 +33,11 @@ class PowComputeBuffer
     VLOG(4) << "pow x_dims: " << x_dims;
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-    if (pow_param_->X->persistable()) {
+    auto type = pow_param_->X->target();
+    if (type == TargetType::kHost || type == TargetType::kARM) {
+      x_persistable_ = true;
+    }
+    if (x_persistable_) {
       if (fp16_support) {
         // fp16
         pow_x_buf_t_ = std::unique_ptr<Tensor>(new Tensor);
@@ -81,14 +85,25 @@ class PowComputeBuffer
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
-
+      if (x_dims.size() == 2) {
+        w_ = x_dims[1];
+        h_ = x_dims[0];
+      } else if (x_dims.size() == 3) {
+        c_ = x_dims[0];
+        w_ = x_dims[2];
+        h_ = x_dims[1];
+      } else if (x_dims.size() == 4) {
+        c_ = x_dims[1];
+        w_ = x_dims[3];
+        b_ = x_dims[0];
+        h_ = x_dims[2];
+      }
       SetGlobalLocal();
     }
   }
 
   void Run() override {
     auto x_dims = pow_param_->X->dims();
-    // auto* x_buf = GET_BUFFER_GPU(pow_param_->X);
     auto* out_buf =
         (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
             ? pow_param_->Out->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
@@ -102,7 +117,7 @@ class PowComputeBuffer
 
     auto& kernel = kernel_;
     cl_int status;
-    if (pow_param_->X->persistable()) {
+    if (x_persistable_) {
       auto* x_buf = GET_BUFFER_GPU(pow_x_buf_t_);
       status = kernel.setArg(0, *x_buf);
       CL_CHECK_FATAL(status);
@@ -119,13 +134,13 @@ class PowComputeBuffer
     CL_CHECK_FATAL(status);
     status = kernel.setArg(4, static_cast<int>(power));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<int>(x_dims[0]));
+    status = kernel.setArg(5, static_cast<int>(b_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<int>(x_dims[1]));
+    status = kernel.setArg(6, static_cast<int>(c_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, static_cast<int>(x_dims[2]));
+    status = kernel.setArg(7, static_cast<int>(h_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(8, static_cast<int>(x_dims[3]));
+    status = kernel.setArg(8, static_cast<int>(w_));
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -158,13 +173,10 @@ class PowComputeBuffer
 #endif
 
   void SetGlobalLocal() {
-    auto x_dims = pow_param_->X->dims();
-    int c = x_dims[1];
-    int w = x_dims[3];
-    int bh = x_dims[0] * x_dims[2];
-    global_work_size_ = cl::NDRange{static_cast<cl::size_type>(bh),
-                                    static_cast<cl::size_type>(c),
-                                    static_cast<cl::size_type>((w + 7) / 8)};
+    // auto x_dims = pow_param_->X->dims();
+    global_work_size_ = cl::NDRange{static_cast<cl::size_type>(b_ * h_),
+                                    static_cast<cl::size_type>(c_),
+                                    static_cast<cl::size_type>((w_ + 7) / 8)};
     VLOG(4) << "gws: " << global_work_size_[0] << ", " << global_work_size_[1]
             << ", " << global_work_size_[2];
   }
@@ -173,7 +185,11 @@ class PowComputeBuffer
   std::string kernel_func_name_{""};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
-
+  bool x_persistable_{false};
+  int c_{1};
+  int w_{1};
+  int b_{1};
+  int h_{1};
   std::unique_ptr<Tensor> pow_x_buf_t_;
   param_t* pow_param_{nullptr};
   cl::Kernel kernel_;

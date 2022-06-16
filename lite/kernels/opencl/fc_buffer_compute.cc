@@ -31,7 +31,7 @@ namespace kernels {
 namespace opencl {
 
 class FcCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::FcParam;
 
@@ -55,7 +55,7 @@ class FcCompute
       is_adreno_ = false;
     }
     is_adreno_ = true;
-    prepare_trans_w_ = false;
+    prepare_trans_w_ = true;
     std::cout << "is_adreno_" << is_adreno_ << std::endl;
     std::cout << "prepare_trans_w_" << prepare_trans_w_ << std::endl;
     if (fc_param_->activation_type == "prelu") {
@@ -354,7 +354,7 @@ class FcCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+    fc, kOpenCL, kFP16, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -363,7 +363,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
+    fc, kOpenCL, kFP16, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})

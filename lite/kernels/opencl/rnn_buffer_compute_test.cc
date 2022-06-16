@@ -205,8 +205,10 @@ static inline void TestWithKernel(
   struct timeval end;
   gettimeofday(&start, NULL);
 
+  // for (int i = 0; i < 100; i++){
   kernel->Launch();
   CLRuntime::Global()->command_queue().finish();
+  // }
 
   gettimeofday(&end, NULL);
   time_use = (end.tv_sec - start.tv_sec) * 1000000 +
@@ -278,7 +280,7 @@ static inline void TestWithKernel(
 
 TEST(rnn_opencl, compute) {
   auto kernels = KernelRegistry::Global().Create(
-      "rnn", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "rnn", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   TestWithKernel(kernel);
@@ -289,4 +291,4 @@ TEST(rnn_opencl, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(rnn, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(rnn, kOpenCL, kFP16, kNCHW, def);

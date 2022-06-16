@@ -69,22 +69,32 @@ void test(const lite_api::CLPrecisionType p, const DDim& input_dim) {
             << lite_api::CLPrecisionTypeToStr(p) << " x_dim=" << input_dim;
 
   auto kernels = KernelRegistry::Global().Create(
-      "pow", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "pow", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
-
+  bool input_persist = true;
   float scale = 1.0;
   float shift = 0.0;
   float factor = 2;
 
-  lite::Tensor input, input_h, output, output_h;
+  lite::Tensor input, input_h, output, output_h, input_persist_fp32;
   operators::PowParam param;
-  if (fp16_flag) {
-    param.X = &input_h;
-    param.Out = &output_h;
+  if (input_persist) {
+    if (fp16_flag) {
+      param.X = &input_persist_fp32;
+      param.Out = &output_h;
+    } else {
+      param.X = &input_persist_fp32;
+      param.Out = &output;
+    }
   } else {
-    param.X = &input;
-    param.Out = &output;
+    if (fp16_flag) {
+      param.X = &input_h;
+      param.Out = &output_h;
+    } else {
+      param.X = &input;
+      param.Out = &output;
+    }
   }
   param.factor = factor;
 
@@ -96,11 +106,7 @@ void test(const lite_api::CLPrecisionType p, const DDim& input_dim) {
   input_h.Resize(input_dim);
   output.Resize(output_dim);
   output_h.Resize(output_dim);
-
-  // std::vector<float> x_cpu(x_dim.production());
-  // std::vector<float> out_from_cpu(out_dim.production());
-  // std::vector<float> out_from_gpu(out_dim.production());
-  // fill_data_rand(x_cpu.data(), -1.f, 1.f, x_dim.production());
+  input_persist_fp32.Resize(input_dim);
 
   std::default_random_engine engine;
   std::uniform_real_distribution<float> dist(-5, 5);
@@ -110,9 +116,11 @@ void test(const lite_api::CLPrecisionType p, const DDim& input_dim) {
   std::vector<float> output_source(output_dim.production());
   std::vector<float> output_half2float(output_dim.production());
   size_t x_size = input_dim.production() * sizeof(float);
+  auto* input_persist_fp32_data = input_persist_fp32.mutable_data<float>();
   for (size_t i = 0; i < input_dim.production(); ++i) {
     x_source[i] = static_cast<int>(dist(engine));
     x_source_half[i] = Float2Half(x_source[i]);
+    input_persist_fp32_data[i] = x_source[i];
   }
 
   auto* x_data = input.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
@@ -204,7 +212,7 @@ TEST(pow, compute_basic) {
   for (const auto precision_type :
        {lite_api::CLPrecisionType::CL_PRECISION_FP16,
         lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
-    for (const auto x_dim : std::vector<std::vector<int64_t>>{{5, 3, 7, 9}}) {
+    for (const auto x_dim : std::vector<std::vector<int64_t>>{{601, 30}}) {
       int ndims = x_dim.size();
       test(precision_type, DDim(x_dim));
     }
@@ -218,4 +226,4 @@ TEST(pow, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(pow, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(pow, kOpenCL, kFP16, kNCHW, def);

@@ -33,9 +33,8 @@ namespace kernels {
 namespace opencl {
 
 // reshape operator
-class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
-                                                   PRECISION(kFP16),
-                                                   DATALAYOUT(kImageDefault)> {
+class ReshapeComputeFloatBuffer
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ReshapeParam;
 
@@ -43,9 +42,9 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-    ch->cl_event =
-        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+    // ch->kernel_func_name = kernel_func_name_;
+    // ch->cl_event =
+    //     event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
 #endif
 
@@ -68,10 +67,9 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     int size =
         (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
             ? x_dims.production() * sizeof(half_t)
-            : x_dims.production() *
-                  sizeof(float) TargetWrapperCL::MemcpySync(
-                      y_buffer, x_buffer, size, IoDirection::DtoD);
-
+            : x_dims.production() * sizeof(float);
+    TargetWrapperCL::MemcpySync(y_buffer, x_buffer, size, IoDirection::DtoD);
+    output->Resize(out_dims);
 #ifdef LITE_WITH_LOG
     VLOG(4) << TargetToStr(x->target());
     VLOG(4) << TargetToStr(param.output->target());
@@ -91,8 +89,8 @@ REGISTER_LITE_KERNEL(reshape,
                      kOpenCL,
                      kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
-                     image2d)
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
@@ -111,8 +109,8 @@ REGISTER_LITE_KERNEL(reshape2,
                      kOpenCL,
                      kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReshapeComputeFloatImage,
-                     image2d)
+                     paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

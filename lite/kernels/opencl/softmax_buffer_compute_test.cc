@@ -102,7 +102,7 @@ void test(const lite_api::CLPrecisionType p,
             << " axis=" << axis;
 
   auto kernels = KernelRegistry::Global().Create(
-      "softmax", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "softmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -267,4 +267,4 @@ TEST(softmax, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(softmax, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(softmax, kOpenCL, kFP16, kNCHW, def);

@@ -33,7 +33,7 @@ namespace opencl {
 
 // transpose operator
 class TransposeComputeFloatBuffer
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::TransposeParam;
 
@@ -81,6 +81,40 @@ class TransposeComputeFloatBuffer
     // x: input
     auto x = transpose_param_->x;
     x_tensor_dims_ = x->dims();
+    bool fp16_support =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    auto type = transpose_param_->x->target();
+    if (type == TargetType::kHost || type == TargetType::kARM) {
+      x_persistable_ = true;
+    }
+    if (x_persistable_) {
+      if (fp16_support) {
+        // fp16
+        transpose_x_buf_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto* transpose_x_cpu = transpose_param_->x->data<float>();
+        auto transpose_x_cpu_t = std::unique_ptr<Tensor>(new Tensor);
+        transpose_x_cpu_t->Resize(x_tensor_dims_);
+        auto* transpose_x_buffer_data =
+            MUTABLE_DATA_CPU(transpose_x_cpu_t.get());
+        FloatArray2HalfArray(const_cast<float*>(transpose_x_cpu),
+                             static_cast<half_t*>(transpose_x_buffer_data),
+                             x_tensor_dims_.production());
+        auto* transpose_x_gpu_data = transpose_x_buf_t_->mutable_data(
+            TARGET(kOpenCL), transpose_x_cpu_t->memory_size());
+        TargetWrapperCL::MemcpySync(transpose_x_gpu_data,
+                                    transpose_x_cpu_t->raw_data(),
+                                    transpose_x_cpu_t->memory_size(),
+                                    IoDirection::HtoD);
+      } else {
+        transpose_x_buf_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto transpose_x_gpu_data = transpose_x_buf_t_->mutable_data(
+            TARGET(kOpenCL), transpose_param_->x->memory_size());
+        TargetWrapperCL::MemcpySync(transpose_x_gpu_data,
+                                    transpose_param_->x->raw_data(),
+                                    transpose_param_->x->memory_size(),
+                                    IoDirection::HtoD);
+      }
+    }
     // output: output
     auto output = transpose_param_->output;
     output_tensor_dims_ = output->dims();
@@ -91,10 +125,11 @@ class TransposeComputeFloatBuffer
     std::cout << "===" << axis_[0] << axis_[1] << axis_[2] << axis_[3]
               << std::endl;
 
-    if (output_tensor_dims_.size() == 4 && axis_[1] == 2 && axis_[2] == 1 &&
-        axis_[3] == 3) {
-      kernel_func_name_ = "transpose_0213_buffer";
-    } else if (output_tensor_dims_.size() == 4) {
+    // if (output_tensor_dims_.size() == 4 && axis_[1] == 2 && axis_[2] == 1 &&
+    //     axis_[3] == 3) {
+    //   kernel_func_name_ = "transpose_0213_buffer";
+    // } else
+    if (output_tensor_dims_.size() == 4) {
       std::set<std::vector<int>> unsupported_cases{
           std::vector<int>({0, 3, 1, 2})};
       // if (unsupported_cases.find(axis_) == unsupported_cases.end()) {
@@ -103,7 +138,7 @@ class TransposeComputeFloatBuffer
       kernel_func_name_ = "transpose_general_buffer";
       // }
     } else if (output_tensor_dims_.size() == 2) {
-      LOG(FATAL) << "Unsupported output dims: 2 ";
+      kernel_func_name_ = "transpose_general_buffer";
     } else {
       kernel_func_name_ = "transpose_general_buffer";
     }
@@ -205,7 +240,7 @@ class TransposeComputeFloatBuffer
   }
 
   void Run() override {
-    auto* x_buf = GET_BUFFER_GPU(transpose_param_->x);
+    // auto* x_buf = GET_BUFFER_GPU(transpose_param_->x);
     auto* output_buf = GET_BUFFER_GPU(transpose_param_->output);
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -214,8 +249,15 @@ class TransposeComputeFloatBuffer
     if (kernel_func_name_ == "transpose_general_buffer" ||
         kernel_func_name_ == "transpose_0213_buffer") {
       // set kernel args
-      status = kernel.setArg(0, *x_buf);
-      CL_CHECK_FATAL(status);
+      if (x_persistable_) {
+        auto* x_buf = GET_BUFFER_GPU(transpose_x_buf_t_);
+        status = kernel.setArg(0, *x_buf);
+        CL_CHECK_FATAL(status);
+      } else {
+        auto* x_buf = GET_BUFFER_GPU(transpose_param_->x);
+        status = kernel.setArg(0, *x_buf);
+        CL_CHECK_FATAL(status);
+      }
       status = kernel.setArg(1, *output_buf);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(2, *output_tensor_idxs_data_);
@@ -256,6 +298,8 @@ class TransposeComputeFloatBuffer
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
+  bool x_persistable_{false};
+  std::unique_ptr<Tensor> transpose_x_buf_t_;
   param_t* transpose_param_{nullptr};
   std::unique_ptr<Tensor> output_tensor_idxs_t_{nullptr};
   cl::Buffer* output_tensor_idxs_data_;

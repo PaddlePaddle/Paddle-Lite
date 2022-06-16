@@ -110,7 +110,7 @@ void test(const lite_api::CLPrecisionType p,
 
   // set kernel
   auto kernels = KernelRegistry::Global().Create(
-      "matmul", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "matmul", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   kernel->SetParam(param);
@@ -175,13 +175,13 @@ void test(const lite_api::CLPrecisionType p,
   LOG(INFO) << "\n\t[  PASSED  ] "
             << " Test Precision=" << lite_api::CLPrecisionTypeToStr(p)
             << " m=" << m << " n=" << n << " k=" << k;
-  getchar();
+  // getchar();
 }
 
 TEST(matmul, compute_basic) {
   const auto precision_type = lite_api::CLPrecisionType::CL_PRECISION_FP32;
   int m = 1, k = 1024;
-  std::vector<int> vec_n = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1000};
+  std::vector<int> vec_n = {1, 2, 4, 8, 16, 32, 64, 128, 256};
   for (auto n = 0; n < vec_n.size(); n++) {
     test(precision_type, m, vec_n[n], k);
   }
@@ -193,4 +193,4 @@ TEST(matmul, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(matmul, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(matmul, kOpenCL, kFP16, kNCHW, def);

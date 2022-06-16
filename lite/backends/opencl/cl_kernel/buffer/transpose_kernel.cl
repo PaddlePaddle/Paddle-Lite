@@ -75,7 +75,7 @@ __kernel void transpose_10_buffer(__global const CL_DTYPE* src,
     int src_base_p = widx * out_tensor_h + hidx;
     CL_DTYPE4 src0 = vload4(0, src + src_base_p);
     CL_DTYPE4 src1 = vload4(0, src + src_base_p + out_tensor_h);
-    CL_DTYPE4 src2 = vload4(0, src + src_base_p + out_tensor_h << 1);
+    CL_DTYPE4 src2 = vload4(0, src + src_base_p + (out_tensor_h << 1));
     CL_DTYPE4 src3 = vload4(0, src + src_base_p + out_tensor_h * 3);
 
     CL_DTYPE4 dst0 = (CL_DTYPE4)(src0.s0, src1.s0, src2.s0, src3.s0);
@@ -86,7 +86,7 @@ __kernel void transpose_10_buffer(__global const CL_DTYPE* src,
     int dst_base_p = hidx * out_tensor_w + widx;
     vstore4(dst0, 0, dst + dst_base_p);
     vstore4(dst1, 0, dst + dst_base_p + out_tensor_w);
-    vstore4(dst2, 0, dst + dst_base_p + out_tensor_w << 1);
+    vstore4(dst2, 0, dst + dst_base_p + (out_tensor_w << 1));
     vstore4(dst3, 0, dst + dst_base_p + out_tensor_w * 3);
   }
 }

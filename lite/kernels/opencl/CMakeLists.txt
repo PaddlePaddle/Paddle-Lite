@@ -25,6 +25,7 @@ add_kernel(elementwise_opencl_image OPENCL basic SRCS elementwise_image_compute.
 add_kernel(pool_opencl_image OPENCL basic SRCS pool_image_compute.cc)
 add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc)
 add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc)
+add_kernel(reshape_opencl_buffer OPENCL basic SRCS reshape_buffer_compute.cc)
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc)
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc)
 add_kernel(conv_transpose_opencl_image OPENCL basic SRCS conv_transpose_image_compute.cc)
@@ -95,6 +96,9 @@ lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_reshape_buffer_opencl SRCS reshape_buffer_compute_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
@@ -182,8 +186,8 @@ lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
 lite_cc_test(test_rnn_buffer_opencl SRCS rnn_buffer_compute_test.cc
              DEPS kernels core)
 
-#lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
-#             DEPS kernels core)
+lite_cc_test(test_matmul_buffer_opencl SRCS matmul_buffer_compute_test.cc
+            DEPS kernels core)
 ######################
 # buffer kernel      #
 ######################

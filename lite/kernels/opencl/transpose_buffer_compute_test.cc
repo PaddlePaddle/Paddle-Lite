@@ -21,7 +21,10 @@
 #include "lite/operators/reshape_op.h"
 #include "lite/utils/log/logging.h"
 
-#define FP16_MAX_DIFF (3e-4)
+#define FP32_ABS_DIFF (1e-7)
+#define FP32_RELATIVE_DIFF (1e-6)
+#define FP16_ABS_DIFF (2e-1)
+#define FP16_RELATIVE_DIFF (2e-1)
 
 namespace paddle {
 namespace lite {
@@ -71,52 +74,86 @@ void Transpose0213(float* input,
   }
 }
 
+void Transpose10(float* input, float* output, const int ih, const int iw) {
+  for (auto h = 0; h < ih; h++) {
+    for (auto w = 0; w < iw; w++) {
+      output[w * ih + h] = input[h * iw + w];
+    }
+  }
+}
+
+void Transpose102(
+    float* input, float* output, const int ic, const int ih, const int iw) {
+  for (auto c = 0; c < ic; c++) {
+    for (auto h = 0; h < ih; h++) {
+      for (auto w = 0; w < iw; w++) {
+        output[h * ic * iw + c * iw + w] = input[c * ih * iw + h * iw + w];
+      }
+    }
+  }
+}
+
 static inline void TestWithKernel(
-    const std::unique_ptr<paddle::lite::KernelBase>& kernel) {
-  int64_t batch_size = 1;
-  int64_t ic = 4;
-  int64_t ih = 128;
-  int64_t iw = 64;
-
-  int64_t oc = 128;
-  int64_t oh = 4;
-  int64_t ow = 64;
-
-  lite_api::CLPrecisionType p = lite_api::CLPrecisionType::CL_PRECISION_FP16;
+    const std::unique_ptr<paddle::lite::KernelBase>& kernel,
+    const lite_api::CLPrecisionType p,
+    const DDim& input_dim) {
   CLRuntime::Global()->set_precision(p);
   const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
-
-  lite::Tensor input, input_h, output, output_h;
+  bool input_persist = true;
+  lite::Tensor input, input_h, output, output_h, input_persist_fp32;
   operators::TransposeParam param;
 
-  if (fp16_flag) {
-    param.x = &input_h;
-    param.output = &output_h;
+  if (input_persist) {
+    if (fp16_flag) {
+      param.x = &input_persist_fp32;
+      param.output = &output_h;
+    } else {
+      param.x = &input_persist_fp32;
+      param.output = &output;
+    }
   } else {
-    param.x = &input;
-    param.output = &output;
+    if (fp16_flag) {
+      param.x = &input_h;
+      param.output = &output_h;
+    } else {
+      param.x = &input;
+      param.output = &output;
+    }
   }
-  param.axis = std::vector<int>({0, 2, 1, 3});
-  const DDim input_dim =
-      lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+
+  DDim output_dim;
+  DDim input_dim_full, output_dim_full;
+  if (input_dim.size() == 2) {
+    param.axis = std::vector<int>({1, 0});
+    output_dim = lite::DDim{std::vector<int64_t>({input_dim[1], input_dim[0]})};
+    input_dim_full =
+        lite::DDim{std::vector<int64_t>({1, 1, input_dim[0], input_dim[1]})};
+    output_dim_full =
+        lite::DDim{std::vector<int64_t>({1, 1, output_dim[0], output_dim[1]})};
+  } else if (input_dim.size() == 3) {
+    param.axis = std::vector<int>({1, 0, 2});
+    output_dim = lite::DDim{
+        std::vector<int64_t>({input_dim[1], input_dim[0], input_dim[2]})};
+    input_dim_full = lite::DDim{
+        std::vector<int64_t>({1, input_dim[0], input_dim[1], input_dim[2]})};
+    output_dim_full = lite::DDim{
+        std::vector<int64_t>({1, output_dim[0], output_dim[1], output_dim[2]})};
+  } else {
+    param.axis = std::vector<int>({0, 2, 1, 3});
+    output_dim = lite::DDim{std::vector<int64_t>(
+        {input_dim[0], input_dim[2], input_dim[1], input_dim[3]})};
+    input_dim_full = input_dim;
+    output_dim_full = output_dim;
+  }
+
   input.Resize(input_dim);
   input_h.Resize(input_dim);
-  const DDim output_dim =
-      lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+  input_persist_fp32.Resize(input_dim);
   output.Resize(output_dim);
   output_h.Resize(output_dim);
   LOG(INFO) << "prepare kernel SetParam------";
   kernel->SetParam(param);
 
-  // std::vector<float> input_v(batch_size * ic * ih * iw);
-
-  LOG(INFO) << "gen input ...";
-
-  // float* input_v_data = &input_v[0];
-  auto index = 0;
-  // for (auto& i : input_v) {
-  //   i = index++;
-  // }
   std::default_random_engine engine;
   std::uniform_real_distribution<float> dist(-5, 5);
 
@@ -125,15 +162,18 @@ static inline void TestWithKernel(
   std::vector<float> output_source(output_dim.production());
   std::vector<float> output_half2float(output_dim.production());
   size_t x_size = input_dim.production() * sizeof(float);
+  auto* input_persist_fp32_data = input_persist_fp32.mutable_data<float>();
   for (size_t i = 0; i < input_dim.production(); ++i) {
     x_source[i] = static_cast<int>(dist(engine));
     x_source_half[i] = Float2Half(x_source[i]);
+    input_persist_fp32_data[i] = x_source[i];
   }
 
   auto* x_data = input.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   auto* x_data_h = input_h.mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL));
   auto* out_data = output.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   auto* out_data_h = output_h.mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL));
+
   if (fp16_flag) {
     x_size = input_dim.production() * sizeof(half_t);
     TargetWrapperCL::MemcpySync(
@@ -153,10 +193,10 @@ static inline void TestWithKernel(
   kernel->SetContext(std::move(transpose_context));
 
   LOG(INFO) << "kernel launch ...";
-  for (int i = 0; i < 100; i++) {
-    kernel->Launch();
-    CLRuntime::Global()->command_queue().finish();
-  }
+  // for (int i = 0; i < 100; i++) {
+  kernel->Launch();
+  CLRuntime::Global()->command_queue().finish();
+  // }
 
   std::vector<float> out_data_from_gpu(output_dim.production());
   std::vector<half_t> out_data_from_gpu_half(output_dim.production());
@@ -172,69 +212,145 @@ static inline void TestWithKernel(
                                 IoDirection::DtoH);
   }
 
-  Transpose0213(x_source.data(), output_source.data(), batch_size, ic, ih, iw);
+  if (input_dim.size() == 4) {
+    Transpose0213(x_source.data(),
+                  output_source.data(),
+                  input_dim[0],
+                  input_dim[1],
+                  input_dim[2],
+                  input_dim[3]);
+  } else if (input_dim.size() == 2) {
+    Transpose10(
+        x_source.data(), output_source.data(), input_dim[0], input_dim[1]);
+  } else {
+    Transpose102(x_source.data(),
+                 output_source.data(),
+                 input_dim[0],
+                 input_dim[1],
+                 input_dim[2]);
+  }
 
   for (int eidx = 0; eidx < output_dim.production(); ++eidx) {
     output_half2float[eidx] = Half2Float(out_data_from_gpu_half.data()[eidx]);
   }
 
-  // PrintData("input", static_cast<float*>(x_source.data()), batch_size, ic,
-  // ih, iw);
-  // PrintData("output", static_cast<float*>(output_source.data()), batch_size,
-  // oc, oh, ow);
-  // PrintData("gpu", static_cast<float*>(out_data_from_gpu.data()), batch_size,
-  // oc, oh, ow);
-  // PrintData("gpu_half", static_cast<float*>(output_half2float.data()),
-  // batch_size, oc, oh, ow);
-  // check output data
-  index = 0;
-  for (auto n = 0; n < batch_size; n++) {
-    for (auto h = 0; h < ih; h++) {
-      for (auto c = 0; c < ic; c++) {
-        for (auto w = 0; w < iw; w++) {
-          auto input_index = n * ic * ih * iw + c * ih * iw + h * iw + w;
-          auto input_value = x_source[input_index];
-          float output_value = 0.f;
-          if (fp16_flag) {
-            output_value = Half2Float(out_data_from_gpu_half.data()[index]);
-          } else {
-            output_value = out_data_from_gpu[index];
-          }
-          auto abs_diff = abs(input_value - output_value);
-          auto relative_diff = COMPUTE_RELATIVE_DIFF(input_value, output_value);
-          EXPECT_EQ(
-              (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
-              true);
-          // if (relative_diff > FP16_MAX_DIFF){
-          //   std::cout << "output_value: " << output_value << "; input_value:
-          //   " << input_value << std::endl;
-          // }
-          index++;
-        }
-      }
+  PrintData("input",
+            static_cast<float*>(x_source.data()),
+            input_dim_full[0],
+            input_dim_full[1],
+            input_dim_full[2],
+            input_dim_full[3]);
+  PrintData("output",
+            static_cast<float*>(output_source.data()),
+            output_dim_full[0],
+            output_dim_full[1],
+            output_dim_full[2],
+            output_dim_full[3]);
+  PrintData("gpu",
+            static_cast<float*>(out_data_from_gpu.data()),
+            output_dim_full[0],
+            output_dim_full[1],
+            output_dim_full[2],
+            output_dim_full[3]);
+  PrintData("gpu_half",
+            static_cast<float*>(output_half2float.data()),
+            output_dim_full[0],
+            output_dim_full[1],
+            output_dim_full[2],
+            output_dim_full[3]);
+  VLOG(4) << "output_data vs output_ref_data";
+  auto relative_diff_thres =
+      fp16_flag ? FP16_RELATIVE_DIFF : FP32_RELATIVE_DIFF;
+  auto abs_diff_thres = fp16_flag ? FP16_ABS_DIFF : FP32_ABS_DIFF;
+  uint32_t diff_cnt = 0;
+  for (int i = 0; i < output_dim.production(); i++) {
+    auto out_gpu_data = out_data_from_gpu[i];
+    if (fp16_flag) {
+      out_gpu_data = output_half2float[i];
+    }
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_gpu_data, output_source[i]);
+    auto abs_diff = COMPUTE_ABS_DIFF(out_gpu_data, output_source[i]);
+    EXPECT_FALSE(relative_diff > relative_diff_thres &&
+                 abs_diff > abs_diff_thres);
+    if (relative_diff > relative_diff_thres && abs_diff > abs_diff_thres) {
+      LOG(WARNING) << lite_api::CLPrecisionTypeToStr(p) << "   err idx: " << i
+                   << " abs_diff: " << abs_diff
+                   << "\t relative_diff: " << relative_diff
+                   << "\t out_ins: " << out_gpu_data
+                   << "\t out_ref: " << output_source[i];
+      diff_cnt++;
     }
   }
+  if (diff_cnt != 0) {
+    LOG(FATAL) << "Err num " << diff_cnt << "/" << output_dim.production();
+  }
+
+  LOG(INFO) << "\n\t[  PASSED  ] "
+            << " Test Precision=" << lite_api::CLPrecisionTypeToStr(p)
+            << " x_dim=" << input_dim;
+  // check output data
+  // index = 0;
+  // for (auto n = 0; n < batch_size; n++) {
+  //   for (auto h = 0; h < ih; h++) {
+  //     for (auto c = 0; c < ic; c++) {
+  //       for (auto w = 0; w < iw; w++) {
+  //         auto input_index = n * ic * ih * iw + c * ih * iw + h * iw + w;
+  //         auto input_value = x_source[input_index];
+  //         float output_value = 0.f;
+  //         if (fp16_flag) {
+  //           output_value = Half2Float(out_data_from_gpu_half.data()[index]);
+  //         } else {
+  //           output_value = out_data_from_gpu[index];
+  //         }
+  //         auto abs_diff = abs(input_value - output_value);
+  //         auto relative_diff = COMPUTE_RELATIVE_DIFF(input_value,
+  //         output_value);
+  //         EXPECT_EQ(
+  //             (relative_diff <= FP16_MAX_DIFF) || (abs_diff <=
+  //             FP16_MAX_DIFF),
+  //             true);
+  //         // if (relative_diff > FP16_MAX_DIFF){
+  //         //   std::cout << "output_value: " << output_value << ";
+  //         input_value:
+  //         //   " << input_value << std::endl;
+  //         // }
+  //         index++;
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 TEST(transpose_opencl, compute) {
   auto kernels = KernelRegistry::Global().Create(
-      "transpose", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      "transpose", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
-  TestWithKernel(kernel);
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP16,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    for (const auto x_dim : std::vector<std::vector<int64_t>>{{2, 3, 2}}) {
+      int ndims = x_dim.size();
+      TestWithKernel(kernel, precision_type, DDim(x_dim));
+    }
+
+    // Special case, such as large num
+    // const auto x_dims = std::vector<int64_t>{1, 1000};
+    // test(precision_type, DDim(x_dims), 1);
+  }
 }
 
-TEST(transpose2_opencl, compute) {
-  auto kernels = KernelRegistry::Global().Create(
-      "transpose2", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
-  ASSERT_FALSE(kernels.empty());
-  auto kernel = std::move(kernels.front());
-  TestWithKernel(kernel);
-}
+// TEST(transpose2_opencl, compute) {
+//   auto kernels = KernelRegistry::Global().Create(
+//       "transpose2", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+//   ASSERT_FALSE(kernels.empty());
+//   auto kernel = std::move(kernels.front());
+//   // TestWithKernel(kernel);
+// }
 
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(transpose, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(transpose, kOpenCL, kFP16, kNCHW, def);
