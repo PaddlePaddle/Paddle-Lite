@@ -29,55 +29,60 @@ namespace paddle {
 namespace lite {
 
 TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
-  std::vector<std::string> nnadapter_device_names;
+  std::vector<std::string> nnadapter_device_names{"qualcomm_qnn"};
   std::string nnadapter_context_properties;
-  std::vector<paddle::lite_api::Place> valid_places;
-  float out_accuracy_threshold = 1.0f;
-  valid_places.push_back(lite_api::Place{TARGET(kNNAdapter), PRECISION(kInt8)});
-  valid_places.push_back(
-      lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
-#if defined(LITE_WITH_ARM)
-  valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
-  valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
-#elif defined(LITE_WITH_X86)
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
-#else
-  LOG(INFO) << "Unsupported host arch!";
-  return;
-#endif
-#if defined(LITE_WITH_NNADAPTER)
-#if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
-  nnadapter_device_names.emplace_back("rockchip_npu");
-  out_accuracy_threshold = 0.76f;
-#elif defined(NNADAPTER_WITH_MEDIATEK_APU)
-  nnadapter_device_names.emplace_back("mediatek_apu");
-  out_accuracy_threshold = 0.74f;
-#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
-  nnadapter_device_names.emplace_back("verisilicon_timvx");
-  out_accuracy_threshold = 0.76f;
-#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
-  nnadapter_device_names.emplace_back("android_nnapi");
-  out_accuracy_threshold = 0.99f;
-#elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
-  nnadapter_device_names.emplace_back("google_xnnpack");
-  out_accuracy_threshold = 0.99f;
-#else
-  return;
-#endif
-#else
-  return;
-#endif
+  float out_accuracy_threshold = 0.7;
+  //   std::vector<paddle::lite_api::Place> valid_places;
+  //   float out_accuracy_threshold = 1.0f;
+  //   valid_places.push_back(lite_api::Place{TARGET(kNNAdapter),
+  //   PRECISION(kInt8)});
+  //   valid_places.push_back(
+  //       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
+  // #if defined(LITE_WITH_ARM)
+  //   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
+  //   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
+  // #elif defined(LITE_WITH_X86)
+  //   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
+  //   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
+  // #else
+  //   LOG(INFO) << "Unsupported host arch!";
+  //   return;
+  // #endif
+  // #if defined(LITE_WITH_NNADAPTER)
+  // #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
+  //   nnadapter_device_names.emplace_back("rockchip_npu");
+  //   out_accuracy_threshold = 0.76f;
+  // #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
+  //   nnadapter_device_names.emplace_back("mediatek_apu");
+  //   out_accuracy_threshold = 0.74f;
+  // #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  //   nnadapter_device_names.emplace_back("verisilicon_timvx");
+  //   out_accuracy_threshold = 0.76f;
+  // #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  //   nnadapter_device_names.emplace_back("android_nnapi");
+  //   out_accuracy_threshold = 0.99f;
+  // #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
+  //   nnadapter_device_names.emplace_back("google_xnnpack");
+  //   out_accuracy_threshold = 0.99f;
+  // #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  //   nnadapter_device_names.emplace_back("qualcomm_qnn");
+  //   out_accuracy_threshold = 0.7;
+  // #else
+  //   return;
+  // #endif
+  // #else
+  //   return;
+  // #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
-  // Use the full api with CxxConfig to generate the optimized model
-  lite_api::CxxConfig cxx_config;
-  cxx_config.set_model_dir(FLAGS_model_dir);
-  cxx_config.set_valid_places(valid_places);
-  cxx_config.set_nnadapter_device_names(nnadapter_device_names);
-  cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
-  predictor = lite_api::CreatePaddlePredictor(cxx_config);
-  predictor->SaveOptimizedModel(FLAGS_model_dir,
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+  //   // Use the full api with CxxConfig to generate the optimized model
+  //   lite_api::CxxConfig cxx_config;
+  //   cxx_config.set_model_dir(FLAGS_model_dir);
+  //   cxx_config.set_valid_places(valid_places);
+  //   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
+  //   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  //   predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  //   predictor->SaveOptimizedModel(FLAGS_model_dir,
+  //                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
   // Use the light api with MobileConfig to load and run the optimized model
   paddle::lite_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
@@ -86,6 +91,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
   mobile_config.set_nnadapter_device_names(nnadapter_device_names);
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  mobile_config.set_nnadapter_model_cache_dir("./");
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");

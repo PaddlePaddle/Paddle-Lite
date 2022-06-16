@@ -72,12 +72,15 @@ typedef enum {
   NNADAPTER_QUANT_INT8_SYMM_PER_LAYER = 24,
   NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL = 25,
   NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER = 26,
-  NNADAPTER_QUANT_INT16_SYMM_PER_LAYER = 27,
-  NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL = 28,
-  NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER = 29,
-  NNADAPTER_QUANT_INT32_SYMM_PER_LAYER = 30,
-  NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL = 31,
-  NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER = 32,
+  NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL = 27,
+  NNADAPTER_QUANT_INT16_SYMM_PER_LAYER = 28,
+  NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL = 29,
+  NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER = 30,
+  NNADAPTER_QUANT_UINT16_ASYMM_PER_CHANNEL = 31,
+  NNADAPTER_QUANT_INT32_SYMM_PER_LAYER = 32,
+  NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL = 33,
+  NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER = 34,
+  NNADAPTER_QUANT_UINT32_ASYMM_PER_CHANNEL = 35,
 } NNAdapterOperandPrecisionCode;
 
 /**
@@ -2322,6 +2325,19 @@ typedef struct NNAdapterAsymmPerLayerQuantParams {
 } NNAdapterAsymmPerLayerQuantParams;
 
 /**
+ * The quantization parameters for NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL
+ * operand.
+ *
+ * Available since version 1.
+ */
+typedef struct NNAdapterAsymmPerChannelQuantParams {
+  uint32_t channel_dim;
+  uint32_t count;
+  float* scales;
+  int32_t* zero_points;
+} NNAdapterAsymmPerChannelQuantParams;
+
+/**
  * The type of operand's dimensions, include shape and dynamic shape.
  *
  * Available since version 1.
@@ -2369,6 +2385,7 @@ typedef struct NNAdapterOperandType {
     NNAdapterSymmPerLayerQuantParams symm_per_layer_params;
     NNAdapterSymmPerChannelQuantParams symm_per_channel_params;
     NNAdapterAsymmPerLayerQuantParams asymm_per_layer_params;
+    NNAdapterAsymmPerChannelQuantParams asymm_per_channel_params;
   };
 } NNAdapterOperandType;
 

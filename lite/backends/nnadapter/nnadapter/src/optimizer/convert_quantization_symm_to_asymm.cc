@@ -53,6 +53,42 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
       }
     } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL: {
+      operand->type.precision = NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL;
+      auto channel_dim = operand->type.symm_per_channel_params.channel_dim;
+      auto count = operand->type.symm_per_channel_params.scale_count;
+      auto scales = operand->type.symm_per_channel_params.scales;
+      int32_t* zero_points =
+          static_cast<int32_t*>(malloc(count * sizeof(int32_t)));
+      for (uint32_t i = 0; i < count; i++) {
+        zero_points[i] = zero_point;
+      }
+      operand->type.asymm_per_channel_params = {.channel_dim = channel_dim,
+                                                .count = count,
+                                                .scales = scales,
+                                                .zero_points = zero_points};
+      auto is_constant_copy = operand->type.lifetime == NNADAPTER_CONSTANT_COPY;
+      auto is_constant_reference =
+          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+      if (zero_point != 0 && (is_constant_copy || is_constant_reference)) {
+        auto transform_buffer = static_cast<uint8_t*>(operand->buffer);
+        if (is_constant_reference) {
+          transform_buffer = static_cast<uint8_t*>(malloc(operand->length));
+        }
+        for (uint32_t i = 0; i < operand->length; i++) {
+          transform_buffer[i] = static_cast<uint8_t>(std::min(
+              std::max(static_cast<int16_t>(
+                           reinterpret_cast<int8_t*>(operand->buffer)[i]) +
+                           zero_point,
+                       0),
+              255));
+        }
+        if (is_constant_reference) {
+          operand->buffer = transform_buffer;
+          operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+        }
+      }
+    } break;
     default:
       break;
   }

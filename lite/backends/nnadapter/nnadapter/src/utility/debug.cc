@@ -624,12 +624,15 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToString(
     NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_CHANNEL);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_CHANNEL);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_LAYER);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_CHANNEL);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_CHANNEL);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_LAYER);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_CHANNEL);
     default:
       name = "UNKNOWN";
       break;
@@ -839,12 +842,15 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
     NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER, qi8sl);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_CHANNEL, qi8sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_LAYER, qu8al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_CHANNEL, qu8ac);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_LAYER, qi16sl);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_CHANNEL, qi16sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_LAYER, qu16al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_CHANNEL, qu16ac);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_LAYER, qi32sl);
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_CHANNEL, qu32ac);
     default:
       NNADAPTER_LOG(FATAL) << "Unhandle case: type="
                            << OperandPrecisionCodeToString(type) << ".";
@@ -1002,6 +1008,31 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
     case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER: {
       os << " scale: " << type->asymm_per_layer_params.scale;
       os << " zero_point: " << type->asymm_per_layer_params.zero_point;
+    } break;
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_CHANNEL: {
+      os << " scales: [";
+      for (uint32_t i = 0; i < max_scale_display_size &&
+                           i < type->asymm_per_channel_params.count;
+           i++) {
+        os << type->asymm_per_channel_params.scales[i] << ",";
+      }
+      if (type->asymm_per_channel_params.count > max_scale_display_size) {
+        os << "...";
+      }
+      os << "]";
+      os << " zero_points: [";
+      for (uint32_t i = 0; i < max_scale_display_size &&
+                           i < type->asymm_per_channel_params.count;
+           i++) {
+        os << type->asymm_per_channel_params.zero_points[i] << ",";
+      }
+      if (type->asymm_per_channel_params.count > max_scale_display_size) {
+        os << "...";
+      }
+      os << "]";
+      os << " channel_dim: " << type->asymm_per_channel_params.channel_dim;
     } break;
     default:
       break;

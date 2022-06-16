@@ -35,15 +35,21 @@ NNADAPTER_EXPORT bool IsPerLayerQuantType(NNAdapterOperandPrecisionCode type) {
 NNADAPTER_EXPORT bool IsPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL ||
          type == NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL ||
-         type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
+         type == NNADAPTER_QUANT_UINT16_ASYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsAsymmetricQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL ||
          type == NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER ||
-         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER;
+         type == NNADAPTER_QUANT_UINT16_ASYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsSymmetricQuantType(NNAdapterOperandPrecisionCode type) {
@@ -151,6 +157,7 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
     case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
     case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL:
       return 1;
     case NNADAPTER_INT16:
     case NNADAPTER_UINT16:
@@ -158,6 +165,7 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
     case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
     case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
     case NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_CHANNEL:
       return 2;
     case NNADAPTER_INT32:
     case NNADAPTER_UINT32:
@@ -165,6 +173,7 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
     case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
     case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_CHANNEL:
       return 4;
     case NNADAPTER_INT64:
     case NNADAPTER_UINT64:
