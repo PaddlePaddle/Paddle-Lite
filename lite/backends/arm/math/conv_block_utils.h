@@ -25,7 +25,6 @@
 #include "lite/operators/op_params.h"
 #include "lite/utils/log/cp_logging.h"
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-// #include "lite/backends/arm/math/sve/funcs_sve.h"
 #include "lite/backends/arm/math/sve/gemm_sve_i8mm.h"
 #endif
 
