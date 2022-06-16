@@ -1706,7 +1706,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   #inst " z20.s,  p0/m, z20.s, z0.s\n" \
   #inst " z22.s,  p0/m, z22.s, z0.s\n" \
   #inst " z24.s,  p0/m, z24.s, z0.s\n"
-// clang-format on
+
 #define SMMLA_LEAKYRELU_8x12                             \
   "mov z0.s, #0x0    \n"                                 \
   "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"                   \
@@ -1993,30 +1993,24 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "addvl %x[c_ptr7], %x[c_ptr7], #3\n"
 
 #define SMMLA_STORE_INT8_ASM(a, b, c)                           \
-  "fcmge v21.4s,  v" #a                                         \
-  ".4s,  v2.4s       \n"                                        \
-  "fcmge v23.4s,  v" #b                                         \
-  ".4s,  v2.4s       \n"                                        \
-  "fcmge v25.4s,  v" #c                                         \
-  ".4s,  v2.4s       \n"                                        \
-  "bif   v" #a                                                  \
-  ".16b, v2.16b, v21.16b      \n"                               \
-  "bif   v" #b                                                  \
-  ".16b, v2.16b, v23.16b      \n"                               \
-  "bif   v" #c                                                  \
-  ".16b, v2.16b, v25.16b      \n" /* fp32 -> int32 */           \
-  "fcvtas  v21.4s,  v" #a                                       \
-  ".4s              \n"                                         \
-  "fcvtas  v23.4s,  v" #b                                       \
-  ".4s              \n"                                         \
-  "fcvtas  v25.4s,  v" #c                                       \
-  ".4s             \n" /* int32 -> int16 */                     \
-  "sqxtn   v0.4h,  v21.4s              \n"                      \
-  "sqxtn2  v0.8h,  v23.4s              \n"                      \
-  "sqxtn   v1.4h,  v25.4s              \n" /* int16 -> int8  */ \
-  "sqxtn   v" #c                                                \
-  ".8b,  v0.8h          \n"                                     \
+  "fcmge v21.4s,  v" #a ".4s,  v2.4s       \n" \
+  "fcmge v23.4s,  v" #b ".4s,  v2.4s       \n" \
+  "fcmge v25.4s,  v" #c ".4s,  v2.4s       \n" \
+  "bif   v" #a ".16b, v2.16b, v21.16b      \n" \
+  "bif   v" #b ".16b, v2.16b, v23.16b      \n" \
+  "bif   v" #c ".16b, v2.16b, v25.16b      \n" \
+  /* fp32 -> int32 */                          \
+  "fcvtas  v21.4s,  v" #a ".4s             \n" \
+  "fcvtas  v23.4s,  v" #b ".4s             \n" \
+  "fcvtas  v25.4s,  v" #c ".4s             \n" \
+  /* int32 -> int16 */                        \
+  "sqxtn   v0.4h,  v21.4s                  \n" \
+  "sqxtn2  v0.8h,  v23.4s                  \n" \
+  "sqxtn   v1.4h,  v25.4s                  \n" \
+  /* int16 -> int8  */                         \
+  "sqxtn   v" #c ".8b,  v0.8h              \n" \
   "sqxtn   v" #b ".8b,  v1.8h           \n"
+// clang-format on
 
 #define SMMLA_STORE_INT8_8x12 \
   "mov z2.s, #-127 \n"         \
@@ -2044,14 +2038,6 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "str s16, [%[c_ptr5]], #4\n"           \
   "str s17, [%[c_ptr6]], #4\n"           \
   "str s22, [%[c_ptr7]], #4\n"
-// "st1 {v31.8b}, [[%[c_ptr0]], #0x08\n" \
-  // "st1 {v6.8b},  [[%[c_ptr1]], #0x08\n" \
-  // "st1 {v7.8b},  [[%[c_ptr2]], #0x08\n" \
-  // "st1 {v12.8b}, [[%[c_ptr3]], #0x08\n" \
-  // "st1 {v13.8b}, [[%[c_ptr4]], #0x0c\n" \
-  // "st1 {v18.8b}, [[%[c_ptr5]], #0x0c\n" \
-  // "st1 {v19.8b}, [[%[c_ptr6]], #0x0c\n" \
-  // "st1 {v24.8b}, [[%[c_ptr7]], #0x0c\n"
 
 #define SMMLA_STORE_INT8_8x12_1                         \
   "mov z0.s, #0x0\n"                                    \
