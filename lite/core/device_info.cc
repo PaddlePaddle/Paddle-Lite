@@ -46,7 +46,7 @@
  */
 
 #ifdef LITE_WITH_LINUX
-#include <sys/syscall.h>
+//#include <sys/syscall.h>
 #include <unistd.h>
 #endif
 #ifdef LITE_WITH_ANDROID
@@ -530,14 +530,15 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   pid_t pid = gettid();
 #endif
   cpu_set_t mask;
-  CPU_ZERO(&mask);
+  //  CPU_ZERO(&mask);
   for (int i = 0; i < cpu_ids.size(); ++i) {
     PD_CPU_SET(cpu_ids[i], &mask);
   }
-  int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
-  if (syscallret) {
-    return -1;
-  }
+  //  int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask),
+  //  &mask);
+  //  if (syscallret) {
+  //    return -1;
+  //  }
   return 0;
 }
 

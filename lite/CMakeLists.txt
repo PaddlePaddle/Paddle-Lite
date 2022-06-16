@@ -762,3 +762,6 @@ if(LITE_WITH_NNADAPTER)
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})
   endforeach()
 endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "")
+SET(CMAKE_CXX_FLAGS "-fPIC")

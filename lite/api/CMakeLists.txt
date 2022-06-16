@@ -137,6 +137,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
 else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
+    set(CMAKE_CXX_FLAGS_RELEASE "")
+    set(CMAKE_CXX_FLAGS "-fPIC")
+    set(TARGET_COMIPILE_FLAGS "")
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
     add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
