@@ -704,6 +704,7 @@ void XPUStaticKernelPickPass::GetXPUDeviceType() {
   uint64_t cur_dev_attr = 0;
 
   XPU_CALL(xpu_current_device(&cur_dev_idx));
+  XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
   if (cur_dev_attr <= 1) {
     VLOG(4) << "Currents XPU device : XPU1";
     xpu_disable_flag_ = "DISABLE_XPU1";
