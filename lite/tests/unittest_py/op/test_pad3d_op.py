@@ -36,6 +36,8 @@ class TestPad3dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -55,6 +57,8 @@ class TestPad3dOp(AutoScanTest):
                 st.integers(
                     min_value=0, max_value=6), min_size=6, max_size=6))
         data_format = draw(st.sampled_from(["NCDHW", "NDHWC"]))
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            assume(mode != "circular")
         for i in range(6):
             assume(padding_data[i] < in_shape[1])
             assume(padding_data[i] < in_shape[2])

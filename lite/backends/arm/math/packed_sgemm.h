@@ -85,6 +85,11 @@ void loadb(
 
 void loadb_trans(
     float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax);
+void loadb_eight(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax);
+
+void loadb_trans_eight(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax);
 void sgemm_prepack(bool is_transB,
                    int M,
                    int N,

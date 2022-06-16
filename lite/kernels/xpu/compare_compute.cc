@@ -34,6 +34,18 @@ struct LessThanFunctor {
   }
 };
 
+template <typename T>
+struct EqualFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        bool* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_equal<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
 template <PrecisionType PType, class T, class Functor>
 void CompareCompute<PType, T, Functor>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
@@ -151,4 +163,64 @@ REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_int64, int64)
                                        PRECISION(kBool),
                                        DATALAYOUT(kAny))})
     .BindPaddleOpVersion("less_than", 1)
+    .Finalize();
+
+using equal_float = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    float,
+    paddle::lite::kernels::xpu::EqualFunctor<float>>;
+REGISTER_LITE_KERNEL(equal, kXPU, kFloat, kAny, equal_float, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("equal", 1)
+    .Finalize();
+
+using equal_int32 = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    int,
+    paddle::lite::kernels::xpu::EqualFunctor<int>>;
+REGISTER_LITE_KERNEL(equal, kXPU, kFloat, kAny, equal_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("equal", 1)
+    .Finalize();
+
+using euqal_int64 = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    int64_t,
+    paddle::lite::kernels::xpu::EqualFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(equal, kXPU, kFloat, kAny, euqal_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("equal", 1)
     .Finalize();

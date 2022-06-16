@@ -769,6 +769,9 @@ struct Index_selectParam : ParamBase {
 struct ReverseParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
+  // for tensor_array
+  std::vector<lite::Tensor>* X_array{nullptr};
+  std::vector<lite::Tensor>* Out_array{nullptr};
   std::vector<int> Axis;
 };
 
@@ -2251,6 +2254,14 @@ struct GaussRandomParam : ParamBase {
   int dtype{5};
   float mean{0.f};
   float gauss_std{0.f};
+};
+
+struct RollParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* ShiftsTensor{};
+  lite::Tensor* Out{};
+  std::vector<int64_t> shifts{};
+  std::vector<int64_t> axis{};
 };
 
 }  // namespace operators

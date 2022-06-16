@@ -35,12 +35,14 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   std::string build_config_file_path() { return build_config_file_path_; }
+  std::string op_params_file_path() { return op_params_file_path_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
   std::string build_config_file_path_ = "";
+  std::string op_params_file_path_ = "";
 };
 
 class Program {
@@ -87,8 +89,11 @@ class Program {
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   std::vector<std::string> input_names_;
+  std::vector<int> inputs_perm_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
+  std::vector<uint8_t> model_buffer_;
+  float model_version_ = 1.0f;
 };
 
 }  // namespace cambricon_mlu

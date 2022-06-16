@@ -42,7 +42,9 @@ int ConvertPriorBox(Converter* converter, OpInfo* op, Scope* scope) {
   auto step_h = op->GetAttr<float>("step_h");
   auto offset = op->GetAttr<float>("offset");
   auto min_max_aspect_ratios_order =
-      op->GetAttr<bool>("min_max_aspect_ratios_order");
+      op->HasAttr("min_max_aspect_ratios_order")
+          ? op->GetAttr<bool>("min_max_aspect_ratios_order")
+          : false;
   auto input_operand = converter->AddInputOperand(scope, input_name);
   auto image_operand = converter->AddInputOperand(scope, image_name);
   auto boxes_operand = converter->AddOutputOperand(boxes_name);

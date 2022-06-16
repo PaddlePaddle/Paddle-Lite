@@ -46,6 +46,8 @@ void InitializeDeviceConfig(
 
 // Convert NNAdapterAutoPadCode to OpenVINO ov::op::PadType
 PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code);
+// Convert NNAdapterPadModeCode to OpenVINO ov::op::PadMode
+PadMode ConvertPadModeCodeToOVPadMode(int pad_mode_code);
 // Convert NNAdapterOperandPrecisionCode to OpenVINO ov::element::Type
 ElementType ConvertToOVElementType(
     const NNAdapterOperandPrecisionCode& precision_code);

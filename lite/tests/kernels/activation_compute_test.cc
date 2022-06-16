@@ -987,6 +987,13 @@ TEST(Activation_rsqrt, precision) {
 
 TEST(Activation_sqrt, precision) {
   Place place;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#else
+  return;
+#endif
+#endif
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
 #elif defined(LITE_WITH_ARM)

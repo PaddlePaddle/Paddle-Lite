@@ -389,6 +389,8 @@ TEST(ReduceMean, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_err = 1e-1;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_err = 1e-1;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_err = 1e-3;
   keep_dim_vec = std::vector<bool>{false};
