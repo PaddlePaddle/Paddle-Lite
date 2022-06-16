@@ -1,0 +1,2 @@
+paddlelite==2.10rc0
+numpy
