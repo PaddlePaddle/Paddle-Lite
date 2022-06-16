@@ -757,7 +757,7 @@ class MMDNNBidEmbGrnnAtt {
     CHECK_EQ(r, 0);
     bi_rv_.Infer(ctx, sentense, emb_rv, grnn_rv);
     r = xdnn::sequence_reverse<float, int>(
-        ctx, grnn_rv, sentense.lod_32, grnn_rv_rv, batch, cap_h_);
+        ctx, grnn_rv, grnn_rv_rv, sentense.lod_32_vector, cap_h_);
     CHECK_EQ(r, 0);
     r = xdnn::sequence_last_pool(
         ctx, grnn_rv, pool_rv, sentense.lod_32_vector, batch, cap_h_, 0);
@@ -965,9 +965,8 @@ class MMDNNMergeAll {
     CHECK_EQ(r, 0);
     r = xdnn::sequence_reverse<float, int>(ctx,
                                            topk_concat_out_fw,
-                                           sentense.lod_32,
                                            topk_concat_out_rv,
-                                           batch,
+                                           sentense.lod_32_vector,
                                            cap_e_);
     CHECK_EQ(r, 0);
     coverage_fw_.Infer(ctx, sentense, topk_concat_out_fw, grnn_fw);

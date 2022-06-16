@@ -34,7 +34,9 @@
 
 namespace paddle {
 namespace lite {
-
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+#endif
 template <typename Dtype>
 void fill_tensor_host_const_impl(Dtype* dio, Dtype value, int64_t size) {
   for (int64_t i = 0; i < size; ++i) {
@@ -61,6 +63,13 @@ void fill_tensor_const(Tensor& tensor, float value) {  // NOLINT
       fill_tensor_host_const_impl(
           tensor.mutable_data<int>(), static_cast<int>(value), size);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      fill_tensor_host_const_impl(tensor.mutable_data<float16_t>(),
+                                  static_cast<float16_t>(value),
+                                  size);
+      break;
+#endif
     case PRECISION(kFloat):
       fill_tensor_host_const_impl(
           tensor.mutable_data<float>(), static_cast<float>(value), size);
@@ -115,6 +124,11 @@ void fill_tensor_rand(Tensor& tensor) {  // NOLINT
     case PRECISION(kInt32):
       fill_tensor_host_rand_impl(tensor.mutable_data<int>(), size);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      fill_tensor_host_rand_impl(tensor.mutable_data<float16_t>(), size);
+      break;
+#endif
     case PRECISION(kFloat):
       fill_tensor_host_rand_impl(tensor.mutable_data<float>(), size);
       break;
@@ -159,6 +173,14 @@ void fill_tensor_rand(Tensor& tensor, float vstart, float vend) {  // NOLINT
                                   static_cast<int>(vend),
                                   size);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      fill_tensor_host_rand_impl2(tensor.mutable_data<float16_t>(),
+                                  static_cast<float16_t>(vstart),
+                                  static_cast<float16_t>(vend),
+                                  size);
+      break;
+#endif
     case PRECISION(kFloat):
       fill_tensor_host_rand_impl2(
           tensor.mutable_data<float>(), vstart, vend, size);
@@ -201,6 +223,11 @@ void print_tensor(const Tensor& tensor) {
     case PRECISION(kFloat):
       print_tensor_host_impl(tensor.data<float>(), size, width);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      print_tensor_host_impl(tensor.data<float16_t>(), size, width);
+      break;
+#endif
     default:
       LOG(FATAL) << "data type: " << PrecisionRepr(type)
                  << " is unsupported now";
@@ -224,6 +251,10 @@ double tensor_mean(const Tensor& tensor) {
       return tensor_mean_value_host_impl(tensor.data<int8_t>(), size);
     case PRECISION(kInt32):
       return tensor_mean_value_host_impl(tensor.data<int>(), size);
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      return tensor_mean_value_host_impl(tensor.data<float16_t>(), size);
+#endif
     case PRECISION(kFloat):
       return tensor_mean_value_host_impl(tensor.data<float>(), size);
     default:
@@ -272,6 +303,15 @@ void tensor_cmp_host(const Tensor& src1_basic,
                        max_ratio,
                        max_diff);
       return;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      data_diff_kernel(src1_basic.data<float16_t>(),
+                       src2.data<float16_t>(),
+                       size,
+                       max_ratio,
+                       max_diff);
+#endif
+      return;
     case PRECISION(kInt32):
       data_diff_kernel(
           src1_basic.data<int>(), src2.data<int>(), size, max_ratio, max_diff);
@@ -297,9 +337,12 @@ void tensor_diff_kernel(const dtype* src1,
                         PrecisionType precision) {
   switch (precision) {
     case PRECISION(kFloat):
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+#endif
     case PRECISION(kInt32):
       for (int i = 0; i < size; ++i) {
-        VLOG(4) << i << "   " << src1[i] << "  " << src2[i];
+        // VLOG(4) << i << "   " << src1[i] << "  " << src2[i];
         dst[i] = src1[i] - src2[i];
       }
       return;
@@ -334,6 +377,15 @@ void tensor_diff(const Tensor& t1, const Tensor& t2, Tensor& tdiff) {  // NOLINT
                          tdiff.mutable_data<float>(),
                          size1,
                          t1.precision());
+      return;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      tensor_diff_kernel(t1.data<float16_t>(),
+                         t2.data<float16_t>(),
+                         tdiff.mutable_data<float16_t>(),
+                         size1,
+                         t1.precision());
+#endif
       return;
     case PRECISION(kInt32):
       tensor_diff_kernel(t1.data<int>(),

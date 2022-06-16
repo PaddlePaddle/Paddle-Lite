@@ -711,5 +711,14 @@ void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
 #endif
 }
 
+// This is the method for check fp16 instruction is valid
+bool MobileConfig::check_fp16_valid() {
+#ifdef LITE_WITH_ARM
+  return lite::DeviceInfo::Global().has_fp16();
+#else
+  return false;
+#endif
+}
+
 }  // namespace lite_api
 }  // namespace paddle

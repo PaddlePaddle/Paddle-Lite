@@ -23,24 +23,12 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/math/conv_ut.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
-
-DEFINE_int32(power_mode,
-             0,
-             "power mode: "
-             "0 for POWER_HIGH;"
-             "1 for POWER_LOW;"
-             "2 for POWER_FULL;"
-             "3 for NO_BIND");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
-DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "spmm: M");
 DEFINE_int32(N, 512, "spmm: N");
@@ -52,252 +40,9 @@ DEFINE_bool(traB, false, "spmm: B transpose");
 DEFINE_int32(relu_type,
              0,
              "relu type, 0: no relu; 1: relu; 2: relu6; 3: leaky_relu;");
-DEFINE_bool(flag_bias, false, "with bias");
 DEFINE_bool(flag_semi, false, "with semi");
 
 DEFINE_double(flag_sparsity, 0.8, "with sparsity");
-
-template <typename T>
-int ComputeSparseZeros(const Tensor* weights, const int num) {
-  const T* data = weights->data<T>();
-  int zero_num = 0;
-  for (int i = 0; i < num; ++i) {
-    if (data[i] == static_cast<T>(0)) {
-      ++zero_num;
-    }
-  }
-  return zero_num;
-}
-
-template <typename T>
-int ComputeSemiSparseZeros(const Tensor* weights,
-                           int* count_nonzeroes,
-                           int* count_channels,
-                           int* count_blocks,
-                           int* flag_semi,
-                           const int height,
-                           const int width) {
-  const T* data = weights->data<T>();
-  int num_nonzeroes = 0;
-  int num_nonzero_blocks2 = 0;
-  int num_nonzero_blocks4 = 0;
-  int align4 = height & (-4);
-  int align2 = height & (-2);
-  for (size_t oc = 0; oc < align4; oc += 4) {
-    for (size_t ic = 0; ic < width; ic++) {
-      const size_t row0_nonzero =
-          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
-      const size_t row1_nonzero =
-          static_cast<size_t>(data[(oc + 1) * width + ic] != static_cast<T>(0));
-      const size_t row2_nonzero =
-          static_cast<size_t>(data[(oc + 2) * width + ic] != static_cast<T>(0));
-      const size_t row3_nonzero =
-          static_cast<size_t>(data[(oc + 3) * width + ic] != static_cast<T>(0));
-      num_nonzeroes +=
-          row0_nonzero + row1_nonzero + row2_nonzero + row3_nonzero;
-      num_nonzero_blocks2 +=
-          (row0_nonzero | row1_nonzero) + (row2_nonzero | row3_nonzero);
-      num_nonzero_blocks4 +=
-          (row0_nonzero | row1_nonzero | row2_nonzero | row3_nonzero);
-    }
-  }
-  for (size_t oc = align4; oc < align2; oc += 2) {
-    for (size_t ic = 0; ic < width; ic++) {
-      const size_t row0_nonzero =
-          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
-      const size_t row1_nonzero =
-          static_cast<size_t>(data[(oc + 1) * width + ic] != static_cast<T>(0));
-      num_nonzeroes += row0_nonzero + row1_nonzero;
-      num_nonzero_blocks2 += (row0_nonzero | row1_nonzero);
-    }
-  }
-  const size_t num_block2_nonzeroes = num_nonzeroes;
-  for (size_t oc = align2; oc < height; oc++) {
-    for (size_t ic = 0; ic < width; ic++) {
-      num_nonzeroes +=
-          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
-    }
-  }
-  *flag_semi = 0;
-  *count_channels = height;
-  *count_nonzeroes = num_nonzeroes;
-  *count_blocks = num_nonzeroes;
-  if ((num_block2_nonzeroes * 5 >= num_nonzero_blocks2 * 9) && (height > 1)) {
-    // 2-channel blocks have 90%+ non-zeroes
-    *count_channels = (*count_channels) / 2 + (*count_channels) % 2;
-    // spmm_parameters = &xnn_params.f32.spmm2;
-    *flag_semi = 1;
-    // Non-zeroes which don't fit into whole 2-channel blocks, processed
-    // one-by-one
-    const size_t num_remaining_nonzeroes = num_nonzeroes - num_block2_nonzeroes;
-    *count_nonzeroes = num_nonzero_blocks2 * 2 + num_remaining_nonzeroes;
-    *count_blocks = num_nonzero_blocks2 + num_remaining_nonzeroes;
-  }
-  return height * width - (*count_nonzeroes);
-}
-
-template <typename T>
-int ComputeSparseWeight(const Tensor* w_tensor,
-                        const int M,
-                        const int K,
-                        const int N,
-                        const int num_nonzeroes,
-                        Tensor* nonzero_output_tensor,
-                        Tensor* oc_nonzeros_tensor,
-                        Tensor* diffs_tensor) {
-  const T* weights = w_tensor->data<T>();
-  T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
-  auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
-  auto* diffs = diffs_tensor->mutable_data<int32_t>();
-  int first_ic = 0, last_ic = 0;
-  bool first_nonzero = true;
-  int nonzero_index = 0, diff_index = 0;
-  for (int ocb = 0; ocb < M; ocb++) {
-    oc_nonzeros[ocb] = 0;
-    for (int ic = 0; ic < K; ic++) {
-      if (weights[ocb * K + ic] != static_cast<T>(0)) {
-        nonzero_output[nonzero_index++] = weights[ocb * K + ic];
-        if (first_nonzero) {
-          first_ic = ic;
-        } else {
-          const int diff = (ic - last_ic) * sizeof(T);
-          diffs[diff_index++] = diff * N;
-        }
-        first_nonzero = false;
-        last_ic = ic;
-        oc_nonzeros[ocb] += 1;
-      }
-    }
-    oc_nonzeros[ocb] = nonzero_index;
-  }
-  int tmp_diff = 0;
-  int tmp_ik = 0;
-  for (size_t ocb = 0; ocb < M; ocb++) {
-    if (ocb == 0) {
-      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    } else {
-      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    }
-    if (tmp_ik != 0) {
-      diffs[tmp_ik - 1] = tmp_diff;
-    }
-  }
-  if (!first_nonzero) {
-    const int diff = (first_ic - last_ic) * sizeof(T);
-    diffs[diff_index++] = diff * N;
-  }
-  return first_ic;
-}
-
-template <typename T>
-int ComputeSemiSparseWeight(const Tensor* w_tensor,
-                            const int M,
-                            const int K,
-                            const int N,
-                            const int count_nonzeroes,
-                            const int count_channels,
-                            const int count_blocks,
-                            Tensor* nonzero_output_tensor,
-                            Tensor* oc_nonzeros_tensor,
-                            Tensor* diffs_tensor) {
-  const T* weights = w_tensor->data<T>();
-  T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
-  auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
-  auto* diffs = diffs_tensor->mutable_data<int32_t>();
-  int align2 = M & (-2);
-  size_t output_channels_block_size = 2;
-  size_t first_ic = 0, last_ic = 0;
-  bool first_nonzero = true;
-  int nonzero_index = 0, diff_index = 0;
-  size_t block_index = 0, block_n = 0;
-  for (size_t ocb = 0; ocb < align2; ocb += output_channels_block_size) {
-    for (size_t ic = 0; ic < K; ic++) {
-      bool is_nonzero_block = false;
-      for (size_t oco = 0; oco < output_channels_block_size; oco++) {
-        is_nonzero_block |=
-            (weights[(ocb + oco) * K + ic] != static_cast<T>(0));
-      }
-      if (is_nonzero_block) {
-        for (size_t oco = 0; oco < output_channels_block_size; oco++) {
-          nonzero_output[nonzero_index++] = weights[(ocb + oco) * K + ic];
-        }
-        if (first_nonzero) {
-          first_ic = ic;
-        } else {
-          const int diff = (ic - last_ic) * sizeof(T);
-          diffs[diff_index++] = diff * N;
-        }
-        first_nonzero = false;
-        last_ic = ic;
-        oc_nonzeros[block_index] += 1;
-        block_n++;
-      }
-    }
-    oc_nonzeros[block_index++] = block_n;
-  }
-  for (size_t ocb = align2; ocb < M; ocb++) {
-    for (size_t ic = 0; ic < K; ic++) {
-      if (weights[ocb * K + ic] != static_cast<T>(0)) {
-        nonzero_output[nonzero_index++] = weights[ocb * K + ic];
-        if (first_nonzero) {
-          first_ic = ic;
-        } else {
-          const int diff = (ic - last_ic) * sizeof(T);
-          diffs[diff_index++] = diff * N;
-        }
-        first_nonzero = false;
-        last_ic = ic;
-        oc_nonzeros[block_index] += 1;
-        block_n++;
-      }
-    }
-    oc_nonzeros[block_index++] = block_n;
-  }
-  int tmp_diff = 0;
-  int tmp_ik = 0;
-  size_t block_i = 0;
-  for (size_t ocb = 0; ocb < align2; ocb += output_channels_block_size) {
-    if (block_i == 0) {
-      for (int ik = 0; ik < oc_nonzeros[block_i]; ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    } else {
-      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]);
-           ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    }
-    if (tmp_ik != 0) {
-      diffs[tmp_ik - 1] = tmp_diff;
-    }
-    block_i++;
-  }
-  for (size_t ocb = align2; ocb < M; ocb++) {
-    if (block_i == 0) {
-      for (int ik = 0; ik < oc_nonzeros[block_i]; ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    } else {
-      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]);
-           ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    }
-    if (tmp_ik != 0) {
-      diffs[tmp_ik - 1] = tmp_diff;
-    }
-    block_i++;
-  }
-  if (!first_nonzero) {
-    const int diff = (first_ic - last_ic) * sizeof(T);
-    diffs[diff_index++] = diff * N;
-  }
-  return first_ic;
-}
 
 #ifdef LITE_WITH_ARM
 bool test_spmm_int8(bool tra,
@@ -772,14 +517,14 @@ TEST(TestLiteSpmmInt8, spmm_prepacked_int8) {
                                                    th,
                                                    sp);
                         if (flag) {
-                          LOG(INFO)
-                              << "test m = " << m << ", n=" << n << ", k=" << k
-                              << ", bias: " << (has_bias ? "true" : "false")
-                              << ", semi: " << (has_semi ? "true" : "false")
-                              << ", relu: " << relu_type
-                              << ", trans A: " << (tra ? "true" : "false")
-                              << ", trans B: " << (trb ? "true" : "false")
-                              << " passed\n";
+                          VLOG(4) << "test m = " << m << ", n=" << n
+                                  << ", k=" << k
+                                  << ", bias: " << (has_bias ? "true" : "false")
+                                  << ", semi: " << (has_semi ? "true" : "false")
+                                  << ", relu: " << relu_type
+                                  << ", trans A: " << (tra ? "true" : "false")
+                                  << ", trans B: " << (trb ? "true" : "false")
+                                  << " passed\n";
                         } else {
                           LOG(FATAL)
                               << "test m = " << m << ", n=" << n << ", k=" << k

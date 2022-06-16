@@ -18,6 +18,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "optimizer/constant_fold_shape_and_associated_operations.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -228,6 +229,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
     FuseMatMulAddIntoFullyConnected(model);
+    ConstantFoldShapeAndAssociatedOperations(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph

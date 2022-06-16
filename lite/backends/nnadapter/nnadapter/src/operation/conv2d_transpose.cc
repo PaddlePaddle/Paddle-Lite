@@ -60,7 +60,7 @@ NNADAPTER_EXPORT int PrepareConv2DTranspose(core::Operation* operation) {
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
     output_dimensions[0] = input_dimensions[0];
-    output_dimensions[1] = output_channel_size;
+    output_dimensions[1] = group * output_channel_size;
     if (output_shape_height != -1) {
       output_dimensions[2] = output_shape_height;
     } else {

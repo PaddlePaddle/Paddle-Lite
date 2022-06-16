@@ -54,6 +54,8 @@ class TestLayerNormOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -83,28 +85,61 @@ class TestLayerNormOp(AutoScanTest):
         def generate_bias(*args, **kwargs):
             return np.random.random([channel_dim]).astype(np.float32)
 
+        def generate_inputs(target_nnadapter):
+            inputs1 = {}
+            inputs2 = {}
+            if target_nnadapter:
+                inputs1 = {"X": ["input_data"]}
+                inputs2 = {
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                }
+            else:
+                inputs1 = {
+                    "X": ["input_data"],
+                    "Scale": ["scale_data"],
+                    "Bias": ["bias_data"]
+                }
+                inputs2 = {
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                    "scale_data":
+                    TensorConfig(data_gen=partial(generate_scale)),
+                    "bias_data": TensorConfig(data_gen=partial(generate_bias))
+                }
+            return [inputs1, inputs2]
+
+        def generate_attrs(target_nnadapter):
+            attrs = {}
+            if target_nnadapter:
+                attrs = {
+                    "epsilon": epsilon,
+                    "Scale": generate_scale(),
+                    "Bias": generate_bias(),
+                    "begin_norm_axis": begin_norm_axis
+                }
+            else:
+                attrs = {
+                    "epsilon": epsilon,
+                    "begin_norm_axis": begin_norm_axis
+                }
+            return attrs
+
+        inputs = generate_inputs(self.get_target() == 'NNAdapter')
+        attrs = generate_attrs(self.get_target() == 'NNAdapter')
         run_op = OpConfig(
             type="layer_norm",
-            inputs={
-                "X": ["input_data"],
-                "Scale": ["scale_data"],
-                "Bias": ["bias_data"]
-            },
+            inputs=inputs[0],
             outputs={
                 "Y": ["output_data"],
                 "Mean": ["mean_data"],
                 "Variance": ["variance_data"],
             },
-            attrs={"epsilon": epsilon,
-                   "begin_norm_axis": begin_norm_axis})
+            attrs=attrs)
         program_config = ProgramConfig(
             ops=[run_op],
             weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
-                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
-                "bias_data": TensorConfig(data_gen=partial(generate_bias)),
-            },
+            inputs=inputs[1],
             outputs=["output_data", "mean_data", "variance_data"])
         return program_config
 

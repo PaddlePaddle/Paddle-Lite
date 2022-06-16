@@ -114,6 +114,8 @@ TEST(CxxApi, share_external_data) {
 #ifdef LITE_WITH_ARM
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
+  LOG(INFO) << "This devices support fp16 instruction: "
+            << config.check_fp16_valid();
   config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
   // disable L3 cache on workspace_ allocating
   config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
@@ -164,6 +166,8 @@ TEST(MobileConfig, LoadfromMemory) {
   std::string model_buffer = lite::ReadFile(model_file);
   // set model buffer and run model
   lite_api::MobileConfig config;
+  LOG(INFO) << "This devices support fp16 instruction: "
+            << config.check_fp16_valid();
   config.set_model_from_buffer(model_buffer);
   // allocate 1M initial space for workspace_
   config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);

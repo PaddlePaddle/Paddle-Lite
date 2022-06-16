@@ -26,7 +26,7 @@ void MatchMatrixTensorCompute::PrepareForRun() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   float w_max = param.__xpu__w_max;
-  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   std::vector<float> w_max_v(max_ptr_size, w_max);
   weight_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));

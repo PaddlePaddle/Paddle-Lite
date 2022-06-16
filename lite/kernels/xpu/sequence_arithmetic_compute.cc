@@ -44,10 +44,11 @@ void SequenceArithmeticCompute::Run() {
         r = xdnn::add<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
         r = xdnn::add<float>(
@@ -60,10 +61,11 @@ void SequenceArithmeticCompute::Run() {
         r = xdnn::sub<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
         r = xdnn::sub<float>(
@@ -76,10 +78,11 @@ void SequenceArithmeticCompute::Run() {
         r = xdnn::mul<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
         r = xdnn::mul<float>(

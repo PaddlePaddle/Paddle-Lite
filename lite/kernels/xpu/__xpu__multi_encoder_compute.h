@@ -52,6 +52,10 @@ class XPUMultiEncoderCompute
   template <typename T>
   std::vector<const T *> *get_weight();
 
+  void prepare_quant_max(const std::vector<float> &max_value,
+                         int n_layers,
+                         int max_ptr_len,
+                         std::vector<const float *> &max_xpu_ptrs);
   template <typename T, typename TW, typename TGEMM>
   void run_encoder(const T *in, T *out);
 };

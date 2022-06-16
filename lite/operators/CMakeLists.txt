@@ -163,6 +163,8 @@ add_operator(flip_op extra SRCS flip_op.cc)
 add_operator(index_select_op extra SRCS index_select_op.cc)
 add_operator(gaussian_random_op extra SRCS gaussian_random_op.cc)
 add_operator(unfold_op extra SRCS unfold_op.cc)
+add_operator(log_softmax_op extra SRCS log_softmax_op.cc)
+add_operator(roll_op extra SRCS roll_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)

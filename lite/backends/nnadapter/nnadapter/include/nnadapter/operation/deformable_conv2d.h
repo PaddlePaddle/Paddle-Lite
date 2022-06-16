@@ -75,7 +75,7 @@ namespace operation {
   NNADAPTER_CHECK_EQ(input_operands[9]->length / sizeof(int32_t), 2);          \
   std::vector<int32_t> dilations(dilations_buffer, dilations_buffer + 2);      \
   for (size_t i = 0; i < dilations.size(); i++) {                              \
-    NNADAPTER_VLOG(5) << "dilations[" << i << "]: " << strides[i];             \
+    NNADAPTER_VLOG(5) << "dilations[" << i << "]: " << dilations[i];           \
   }                                                                            \
   /* Fuse code */                                                              \
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);    \

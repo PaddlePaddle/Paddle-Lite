@@ -150,6 +150,10 @@ REGISTER_OPERATION(LOG,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
+REGISTER_OPERATION(LOG_SOFTMAX,
+                   ValidateLogSoftmax,
+                   PrepareLogSoftmax,
+                   ExecuteLogSoftmax)
 REGISTER_OPERATION(LP_NORMALIZATION,
                    ValidateLpNormalization,
                    PrepareLpNormalization,
@@ -190,6 +194,7 @@ REGISTER_OPERATION(PRIOR_BOX,
 REGISTER_OPERATION(QUANTIZE, ValidateQuantize, PrepareQuantize, ExecuteQuantize)
 REGISTER_OPERATION(RANGE, ValidateRange, PrepareRange, ExecuteRange)
 REGISTER_OPERATION(REDUCE_MEAN, ValidateReduce, PrepareReduce, ExecuteReduce)
+REGISTER_OPERATION(REDUCE_MAX, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(REDUCE_SUM, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(RELU,
                    ValidateUnaryActivations,
@@ -246,5 +251,9 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ExecuteUnsqueeze)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
+REGISTER_OPERATION(NON_MAX_SUPPRESSION,
+                   ValidateNonMaxSuppression,
+                   PrepareNonMaxSuppression,
+                   ExecuteNonMaxSuppression)
 
 #endif  // NOLINT

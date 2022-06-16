@@ -245,9 +245,6 @@ void LoadModelPb(const std::string &model_dir,
   pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
-#ifdef WITH_CONVERT_TO_SSA
-  general::ssa::ConvertToSSA(cpp_prog);
-#endif
 
   // Load params data from file.
   // NOTE: Only main block be used now.

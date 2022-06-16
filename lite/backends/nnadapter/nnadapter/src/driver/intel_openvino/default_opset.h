@@ -23,10 +23,12 @@ namespace default_opset = ov::opset8;
 using Node = ov::Node;
 using OutputNode = ov::Output<ov::Node>;
 using PadType = ov::op::PadType;
+using PadMode = ov::op::PadMode;
 using ElementType = ov::element::Type;
 using Shape = ov::Shape;
 
 using Tensor = OutputNode;
+using TensorVector = ov::OutputVector;
 using Operator = Node;
 }  // namespace intel_openvino
 }  // namespace nnadapter

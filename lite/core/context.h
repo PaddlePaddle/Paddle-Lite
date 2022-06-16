@@ -370,6 +370,7 @@ class Context<TargetType::kARM> {
   bool has_dot() const { return DeviceInfo::Global().has_dot(); }
   bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
   bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
+  bool has_sve2() const { return DeviceInfo::Global().has_sve2(); }
 
   template <typename T>
   T* workspace_data() {

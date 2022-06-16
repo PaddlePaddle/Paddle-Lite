@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <iostream>
 namespace nnadapter {
 namespace operation {
 

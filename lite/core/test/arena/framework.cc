@@ -56,6 +56,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"nvidia_tensorrt"});
+#elif defined(DNNADAPTER_WITH_QUALCOMM_QNN)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"qualcomm_qnn"});
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"kunlunxin_xtcl"});
@@ -65,6 +67,11 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"google_xnnpack"});
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"intel_openvino"});
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"qualcomm_qnn"});
 #else
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"builtin_device"});

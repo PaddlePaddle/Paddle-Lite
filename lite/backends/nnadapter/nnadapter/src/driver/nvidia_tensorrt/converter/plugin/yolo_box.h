@@ -30,28 +30,29 @@ class YoloBoxPluginDynamic : public PluginDynamic {
                        bool iou_aware,
                        float iou_aware_factor);
   YoloBoxPluginDynamic(const void* serial_data, size_t serial_length);
-  nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
+  nvinfer1::IPluginV2DynamicExt* clone() const TRT_NOEXCEPT;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                   const nvinfer1::PluginTensorDesc* output_desc,
-                  const void* const* inputs,
+                  void const* const* inputs,
                   void* const* outputs,
                   void* workspace,
-                  cudaStream_t stream) noexcept;
-  const char* getPluginType() const noexcept;
-  size_t getSerializationSize() const noexcept;
-  void serialize(void* buffer) const noexcept;
+                  cudaStream_t stream) TRT_NOEXCEPT;
+  const char* getPluginType() const TRT_NOEXCEPT;
+  size_t getSerializationSize() const TRT_NOEXCEPT;
+  void serialize(void* buffer) const TRT_NOEXCEPT;
 
   nvinfer1::DimsExprs getOutputDimensions(
       int32_t output_index,
       const nvinfer1::DimsExprs* inputs,
       int32_t nb_inputs,
-      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
+      nvinfer1::IExprBuilder& expr_builder)  // NOLINT
+      TRT_NOEXCEPT;
 
-  int32_t getNbOutputs() const noexcept;
+  int32_t getNbOutputs() const TRT_NOEXCEPT;
 
   nvinfer1::DataType getOutputDataType(int32_t index,
                                        const nvinfer1::DataType* input_types,
-                                       int32_t nb_inputs) const noexcept;
+                                       int32_t nb_inputs) const TRT_NOEXCEPT;
 
  private:
   std::vector<int32_t> anchors_;
@@ -66,10 +67,10 @@ class YoloBoxPluginDynamic : public PluginDynamic {
 
 class YoloBoxPluginDynamicCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 }  // namespace nvidia_tensorrt

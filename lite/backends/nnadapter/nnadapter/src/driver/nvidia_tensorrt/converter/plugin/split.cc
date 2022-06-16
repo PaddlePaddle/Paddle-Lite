@@ -17,7 +17,7 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-int SplitPlugin::initialize() noexcept {
+int SplitPlugin::initialize() TRT_NOEXCEPT {
   // notice input dims is [C, H, W]
   nvinfer1::Dims dims = input_dims_[0];
   outer_rows_ = 1;
@@ -42,16 +42,21 @@ int SplitPlugin::initialize() noexcept {
   return 0;
 }
 
-void SplitPlugin::terminate() noexcept {
+void SplitPlugin::terminate() TRT_NOEXCEPT {
   cudaFree(dev_segment_offsets_);
   cudaFree(dev_output_ptrs_);
 }
 
 int SplitPlugin::enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+                         void const* const* inputs,
+                         void* const* outputs,
+#else
                          const void* const* inputs,
                          void** outputs,
+#endif
                          void* workspace,
-                         cudaStream_t stream) noexcept {
+                         cudaStream_t stream) TRT_NOEXCEPT {
   float const* input_ptr = reinterpret_cast<float const*>(inputs[0]);
   float* const* outputs_ptr = reinterpret_cast<float* const*>(outputs);
   cudaMalloc(reinterpret_cast<void**>(&dev_output_ptrs_),
@@ -73,9 +78,8 @@ int SplitPlugin::enqueue(int batch_size,
   return 0;
 }
 
-nvinfer1::Dims SplitPlugin::getOutputDimensions(int index,
-                                                const nvinfer1::Dims* inputs,
-                                                int nb_input_dims) noexcept {
+nvinfer1::Dims SplitPlugin::getOutputDimensions(
+    int index, const nvinfer1::Dims* inputs, int nb_input_dims) TRT_NOEXCEPT {
   nvinfer1::Dims output_dims = inputs[0];
   output_dims.d[axis_] = size_splits_.at(index);
   return output_dims;

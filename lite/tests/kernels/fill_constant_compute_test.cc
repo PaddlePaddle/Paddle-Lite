@@ -280,6 +280,10 @@ TEST(fill_constant, precision) {
   abs_error = 1e-2;
   TestFillConstantValue(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestFillConstantShape(place, abs_error);
+  TestFillConstantValue(place, abs_error);
+  return;
 #else
   return;
 #endif

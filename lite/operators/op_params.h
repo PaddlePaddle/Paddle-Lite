@@ -260,6 +260,13 @@ struct SoftmaxParam : ParamBase {
   bool eleminate_success{false};
 };
 
+// For LogSoftmax op
+struct LogSoftmaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  int axis{-1};
+};
+
 // For Reshape and Reshape2 Op
 struct ReshapeParam : ParamBase {
   const lite::Tensor* x{};
@@ -330,15 +337,15 @@ struct ActivationGradParam : ParamBase {
 struct SparseConvParam : ParamBase {
   const lite::Tensor* x{};
   // An array of float values storing non-zero kernel elements
-  const lite::Tensor* nonzero_weights{};
+  lite::Tensor* nonzero_weights{};
   /* An array of int32_t values storing scaled
    * [by sizeof(input element)] difference  between input channels
    * corresponding to successive non-zero element
    */
-  const lite::Tensor* diffs{};
+  lite::Tensor* diffs{};
   // the number of non-zero kernel elements per each output channel
-  const lite::Tensor* oc_nonzeros{};
-  const lite::Tensor* bias{nullptr};
+  lite::Tensor* oc_nonzeros{};
+  lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
   int first_ic{0};
   int flag_semi{0};
@@ -762,6 +769,9 @@ struct Index_selectParam : ParamBase {
 struct ReverseParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
+  // for tensor_array
+  std::vector<lite::Tensor>* X_array{nullptr};
+  std::vector<lite::Tensor>* Out_array{nullptr};
   std::vector<int> Axis;
 };
 
@@ -2244,6 +2254,14 @@ struct GaussRandomParam : ParamBase {
   int dtype{5};
   float mean{0.f};
   float gauss_std{0.f};
+};
+
+struct RollParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* ShiftsTensor{};
+  lite::Tensor* Out{};
+  std::vector<int64_t> shifts{};
+  std::vector<int64_t> axis{};
 };
 
 }  // namespace operators
