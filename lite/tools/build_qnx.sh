@@ -1,0 +1,3 @@
+rm -rf build.qnx && mkdir build.qnx && cd build.qnx
+cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/os/qnx7.cmake -DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON  -DLITE_ON_TINY_PUBLISH=ON -DLITE_WITH_ARM=ON -DLITE_WITH_JAVA=OFF -DWITH_TESTING=OFF -DLITE_WITH_X86=OFF -DLITE_WITH_LOG=OFF -DARM_TARGET_OS=qnx -DWITH_MKL=OFF #armlinux
+make publish_inference -j4
