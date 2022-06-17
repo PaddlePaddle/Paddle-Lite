@@ -24,7 +24,7 @@ namespace xpu {
 void WriteToArrayCompute::Run() {
   auto& param = this->template Param<operators::WriteToArrayParam>();
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int64_t id;
   TargetWrapperXPU::MemcpySync(

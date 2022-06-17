@@ -23,7 +23,7 @@ namespace kernels {
 namespace xpu {
 
 void AssignValueCompute::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   int dtype = param.dtype;
   std::vector<float> fp32_values = param.fp32_values;
   std::vector<int> int32_values = param.int32_values;

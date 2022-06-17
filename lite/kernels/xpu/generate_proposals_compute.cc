@@ -29,7 +29,7 @@ namespace kernels {
 namespace xpu {
 
 void GenerateProposalsCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto anchors_numel = param.Anchors->numel();
   num_guard_ = TargetWrapperXPU::MallocScratchPad(2 * sizeof(int));
   box_sel_guard_ =
@@ -47,8 +47,8 @@ void GenerateProposalsCompute::PrepareForRun() {
 }
 
 void GenerateProposalsCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto* scores = param.Scores;              // N * A * H * W
   auto* bbox_deltas = param.BboxDeltas;     // N * 4A * H * W
   auto* im_info = param.ImInfo;             // N * 3

@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void BatchNormCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   float epsilon = param.epsilon;
   auto& x_dims = param.x->dims();
   CHECK_LE(x_dims.size(), 4);

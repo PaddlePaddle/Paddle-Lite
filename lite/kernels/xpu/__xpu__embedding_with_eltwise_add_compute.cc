@@ -22,7 +22,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   CHECK_GT(param.Tables.size(), 0);
   auto embed_dim = param.Tables[0]->dims()[1];
   for (auto* table : param.Tables) {
@@ -35,8 +35,8 @@ void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
 }
 
 void XPUEmbeddingWithEltwiseAddCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& id_dims = param.Ids[0]->dims();
   int idx_len = id_dims[0] * id_dims[1];
   int emb_layer_num = param.Ids.size();
