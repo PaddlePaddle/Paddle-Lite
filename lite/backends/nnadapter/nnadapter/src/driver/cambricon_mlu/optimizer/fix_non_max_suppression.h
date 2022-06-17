@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,12 @@
 
 #pragma once
 
-#include "openvino/opsets/opset8.hpp"
+#include "core/types.h"
 
 namespace nnadapter {
-namespace intel_openvino {
+namespace cambricon_mlu {
 
-namespace default_opset = ov::opset8;
-using Node = ov::Node;
-using OutputNode = ov::Output<ov::Node>;
-using PadType = ov::op::PadType;
-using PadMode = ov::op::PadMode;
-using ElementType = ov::element::Type;
-using Shape = ov::Shape;
+void FixNonMaxSuppression(core::Model* model);
 
-using Tensor = OutputNode;
-using TensorVector = ov::OutputVector;
-using Operator = Node;
-}  // namespace intel_openvino
+}  // namespace cambricon_mlu
 }  // namespace nnadapter

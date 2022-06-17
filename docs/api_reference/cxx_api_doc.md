@@ -266,6 +266,8 @@ class MobileConfig;
 
 ```c++
 MobileConfig config;
+// 判断设备是否支持 FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)
+bool suppor_fp16 = config.check_fp16_valid();
 // 设置 NaiveBuffer 格式模型目录，从文件加载模型时使用
 config.set_model_from_file(<your_model_path>);
 // 设置工作线程数
@@ -276,6 +278,14 @@ config.set_power_mode(LITE_POWER_HIGH);
 // 根据 MobileConfig 创建 PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
+
+### `check_fp16_valid`
+
+```c++
+bool check_fp16_valid();
+```
+
+判断当前设备是否支持FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)，且该方法仅对 **arm CPU** 有效
 
 ### `set_model_from_file`
 

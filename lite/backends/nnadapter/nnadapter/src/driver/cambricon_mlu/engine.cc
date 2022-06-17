@@ -15,11 +15,13 @@
 #include "driver/cambricon_mlu/engine.h"
 #include <unistd.h>
 #include <algorithm>
+#include <fstream>
 #include <limits>
 #include <utility>
 #include <vector>
 #include "driver/cambricon_mlu/converter.h"
 #include "driver/cambricon_mlu/optimizer/convert_datalayout_nchw_to_nhwc.h"
+#include "driver/cambricon_mlu/optimizer/fix_non_max_suppression.h"
 #include "driver/cambricon_mlu/optimizer/fix_quantized_ops.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
@@ -48,6 +50,19 @@ Context::Context(void* device, const char* properties) : device_(device) {
   } else {
     NNADAPTER_LOG(INFO) << "Build model with default config.";
   }
+
+  std::string op_params_file_path;
+  if (key_values.count(CAMBRICON_MLU_OP_PARAMS_FILE_PATH)) {
+    op_params_file_path = key_values[CAMBRICON_MLU_OP_PARAMS_FILE_PATH];
+  } else {
+    op_params_file_path = GetStringFromEnv(CAMBRICON_MLU_OP_PARAMS_FILE_PATH);
+  }
+  if (!op_params_file_path.empty()) {
+    op_params_file_path_ = op_params_file_path;
+    NNADAPTER_LOG(INFO) << "op_params file path: " << op_params_file_path_;
+  } else {
+    NNADAPTER_LOG(INFO) << "op convert with default value.";
+  }
 }
 
 Context::~Context() {}
@@ -64,6 +79,9 @@ void Program::Clear() {
   tensors_.clear();
   input_types_.clear();
   output_types_.clear();
+  input_names_.clear();
+  inputs_perm_.clear();
+  model_buffer_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
 }
@@ -76,6 +94,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   dump_graph_buffer_ = &cache->buffer;
   if (cache->buffer.empty()) {
     NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
+    if (cache->dir) {
+      cache->buffer = model_buffer_;
+    }
   } else {
     NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
   }
@@ -85,8 +106,22 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  NNADAPTER_LOG(FATAL) << "Build from cache is unimpleted.";
-  return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  input_types_ = cache->input_types;
+  output_types_ = cache->output_types;
+  auto input_count = cache->input_types.size();
+  size_t buffer_size = cache->buffer.size();
+  size_t version_size = sizeof(float);
+  size_t perm_size = input_count * sizeof(int);
+  size_t model_size = buffer_size - version_size - perm_size;
+  memcpy(&model_version_, &cache->buffer[0], version_size);
+  mm_model_.reset(magicmind::CreateIModel());
+  MLU_MM_CHECK(mm_model_->DeserializeFromMemory(
+      cache->buffer.data() + version_size, model_size));
+  inputs_perm_.resize(input_count);
+  memcpy(inputs_perm_.data(),
+         &cache->buffer[model_size + version_size],
+         perm_size);
+  return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromModel(core::Model* model) {
@@ -94,8 +129,19 @@ int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   FixQuantizedOps(model);
+  FixNonMaxSuppression(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  Converter converter(&tensors_, mm_network_.get());
+  std::stringstream op_params;
+  if (!context_->op_params_file_path().empty()) {
+    std::ifstream op_params_file(context_->op_params_file_path().c_str());
+    if (!op_params_file.is_open()) {
+      NNADAPTER_LOG(WARNING) << " op params file open failed.";
+    } else {
+      op_params << op_params_file.rdbuf();
+    }
+    op_params_file.close();
+  }
+  Converter converter(&tensors_, mm_network_.get(), op_params.str());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
 
   // Indentify the inputs and outputs
@@ -148,6 +194,21 @@ int Program::BuildFromModel(core::Model* model) {
   }
   mm_model_.reset(mm_builder_->BuildModel("camb_model", network, config));
   NNADAPTER_VLOG(3) << "Build success.";
+  inputs_perm_.resize(input_count);
+  for (size_t i = 0; i < input_count; i++) {
+    inputs_perm_[i] = mm_model_->GetInputIndexByName(input_names_[i].c_str());
+  }
+  size_t model_size = 0;
+  MLU_MM_CHECK(mm_model_->GetSerializedModelSize(&model_size));
+  size_t version_size = sizeof(float);
+  size_t inputs_perm_size = input_count * sizeof(int);
+  model_buffer_.resize(version_size + model_size + inputs_perm_size);
+  memcpy(&model_buffer_[0], &model_version_, version_size);
+  MLU_MM_CHECK(mm_model_->SerializeToMemory(model_buffer_.data() + version_size,
+                                            model_size));
+  memcpy(&model_buffer_[version_size + model_size],
+         inputs_perm_.data(),
+         inputs_perm_size);
   return NNADAPTER_NO_ERROR;
 }
 
@@ -189,7 +250,7 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_VLOG(3) << "Execute begining.";
   std::vector<magicmind::IRTTensor*> inputs = {};
   std::vector<magicmind::IRTTensor*> outputs = {};
-  magicmind::CreateInputTensors(mm_context_.get(), &inputs);
+  MLU_MM_CHECK(magicmind::CreateInputTensors(mm_context_.get(), &inputs));
   for (uint32_t i = 0; i < input_count; i++) {
     void* ptr = nullptr;
     auto& arg = input_arguments[i];
@@ -200,8 +261,7 @@ int Program::Execute(uint32_t input_count,
     auto type = input_types_[arg.index];
     auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
-    auto tensor_name = input_names_[arg.index];
-    auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
+    auto input_tensor = inputs.at(inputs_perm_[i]);
     if (IsDeviceMemory(input_tensor)) {
       auto length = GetOperandTypeBufferLength(type);
       MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
@@ -215,7 +275,7 @@ int Program::Execute(uint32_t input_count,
         ConvertToMagicMindDims(type.dimensions.data, type.dimensions.count));
   }
 
-  mm_context_->Enqueue(inputs, &outputs, queue_);
+  MLU_MM_CHECK(mm_context_->Enqueue(inputs, &outputs, queue_));
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
   NNADAPTER_VLOG(3) << "Execute ending.";
   for (uint32_t i = 0; i < output_count; i++) {
@@ -225,6 +285,8 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
+    auto out_dims = outputs[i]->GetDimensions();
+    type->dimensions.data[0] = out_dims[0];
     auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();

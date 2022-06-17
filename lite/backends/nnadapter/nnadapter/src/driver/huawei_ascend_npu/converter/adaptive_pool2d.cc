@@ -30,6 +30,7 @@ int ConvertAdaptivePool2D(Converter* converter, core::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   if (operation->type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(5, 1, 1)
     auto pool2d_op =
         converter->AddOperator<ge::op::AdaptiveMaxPool2d>(output_operand);
     pool2d_op->set_attr_output_size(
@@ -59,6 +60,10 @@ int ConvertAdaptivePool2D(Converter* converter, core::Operation* operation) {
     SET_INPUT(dummy_add_op, x1, adaptive_pool2d_operator);
     SET_INPUT(dummy_add_op, x2, dummy_sub_operator);
     MAP_OUTPUT(dummy_add_op, y, output_operand);
+#else
+    NNADAPTER_LOG(FATAL) << "AdaptiveMaxPool2d has bugs when CANN >= 5.1.rc1, "
+                            "it will be fixed later";
+#endif
   } else {
     auto pool2d_op =
         converter->AddOperator<ge::op::AdaptiveAvgPool2d>(output_operand);
