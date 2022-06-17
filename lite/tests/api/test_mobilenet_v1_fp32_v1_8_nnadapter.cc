@@ -66,6 +66,9 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+  out_accuracy_threshold = 0.79f;
 #else
   nnadapter_device_names.emplace_back("builtin_device");
   out_accuracy_threshold = 0.79f;

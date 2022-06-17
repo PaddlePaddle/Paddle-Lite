@@ -47,6 +47,9 @@ TEST(VisionTransformer, test_vit_base_patch16_224_fp32_v2_3_nnadapter) {
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
   out_accuracy_threshold = 0.60f;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+  out_accuracy_threshold = 0.80f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

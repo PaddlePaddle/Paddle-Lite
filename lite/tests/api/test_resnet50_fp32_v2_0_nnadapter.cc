@@ -53,6 +53,9 @@ TEST(ResNet50, test_resnet50_fp32_v2_0_nnadapter) {
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   nnadapter_device_names.emplace_back("kunlunxin_xtcl");
   out_accuracy_threshold = 0.77f;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
