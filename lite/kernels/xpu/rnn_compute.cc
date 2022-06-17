@@ -116,8 +116,8 @@ void runLSTMLayer(xdnn::Context* ctx,
 }
 
 void RnnCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = this->Param<operators::RnnParam>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<operators::RnnParam>();
   // INPUT
   auto input = param.Input;
   auto pre_state = param.PreState;

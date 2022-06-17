@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void ArgmaxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto x = param.X;
   auto out = param.Out;

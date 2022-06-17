@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void Im2SequenceCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
 
   int batch = x_dims[0];

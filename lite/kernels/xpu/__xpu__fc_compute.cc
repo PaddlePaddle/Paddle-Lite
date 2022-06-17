@@ -25,8 +25,8 @@ namespace kernels {
 namespace xpu {
 
 void XPUFcCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<param_t>();
   auto w_ptr = param.w->data<float>();
   auto weight_dims = param.w->dims();
   bool quant_int8 = false;
@@ -75,8 +75,8 @@ void XPUFcCompute::PrepareForRun() {
 }
 
 void XPUFcCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto input_dims = param.input->dims();
   auto in_mat_dims = input_dims.Flatten2D(param.in_num_col_dims);

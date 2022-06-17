@@ -97,8 +97,8 @@ void XPUMultiEncoderCompute::prepare_quant_max(
 }
 
 void XPUMultiEncoderCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<param_t>();
   // prepare bias
   for (auto* fc_bias : param.fc_bias) {
     arg_fc_bias_.push_back(fc_bias->data<float>());
@@ -157,8 +157,8 @@ void XPUMultiEncoderCompute::PrepareForRun() {
 
 template <typename T, typename TW, typename TGEMM>
 void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   xdnn::VectorParam<int> query_lod;
   if (param.SeqLod && param.SeqLod->data<int>()) {
@@ -224,8 +224,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
 }
 
 void XPUMultiEncoderCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   const float* in = param.input->data<float>();
   float* out = param.output->mutable_data<float>(TARGET(kXPU));
   if (ctx.GetRawContext()->dev().type() == xdnn::kXPU1) {
