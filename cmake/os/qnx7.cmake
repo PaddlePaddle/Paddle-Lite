@@ -17,3 +17,5 @@ set(CMAKE_RANLIB $ENV{QNX_HOST}/usr/bin/nto${ntoarch}-ranlib
     CACHE PATH "QNX ranlib Program" FORCE)
 set(CMAKE_AR $ENV{QNX_HOST}/usr/bin/nto${ntoarch}-ar
     CACHE PATH "QNX qr Program" FORCE)
+
+add_definitions(-DLITE_WITH_QNX)

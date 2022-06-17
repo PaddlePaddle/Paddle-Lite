@@ -490,7 +490,7 @@ if (LITE_WITH_ARM)
             add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
             add_dependencies(publish_inference tiny_publish_cxx_lib)
         else()
-            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") )
+            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") OR (ARM_TARGET_OS STREQUAL "qnx"))
                 # compile cplus shared library, pack the cplus demo and lib into the publish directory.
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
@@ -504,7 +504,7 @@ if (LITE_WITH_ARM)
                     )
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)
-                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND NOT (ARM_TARGET_OS STREQUAL "qnx"))
                     add_custom_command(TARGET tiny_publish_cxx_lib POST_BUILD
                                 COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_light_api_shared.so)
                 endif()
@@ -762,6 +762,3 @@ if(LITE_WITH_NNADAPTER)
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})
   endforeach()
 endif()
-
-set(CMAKE_CXX_FLAGS_RELEASE "")
-SET(CMAKE_CXX_FLAGS "-fPIC")

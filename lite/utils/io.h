@@ -20,7 +20,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) or defined(LITE_WITH_QNX)
 #include "dirent.h"  // NOLINT
 #else
 #include <dirent.h>
@@ -114,17 +114,17 @@ static std::vector<std::string> ListDir(const std::string& path,
   }
 
   std::vector<std::string> paths;
-  //  DIR* parent_dir_fd = opendir(path.c_str());
-  //  dirent* dp;
-  //  while ((dp = readdir(parent_dir_fd)) != nullptr) {
-  //    // Exclude '.', '..' and hidden dir
-  //    std::string name(dp->d_name);
-  //    if (name == "." || name == ".." || name[0] == '.') continue;
-  //    if (IsDir(Join<std::string>({path, name}, "/"))) {
-  //      paths.push_back(name);
-  //    }
-  //  }
-  //  closedir(parent_dir_fd);
+  DIR* parent_dir_fd = opendir(path.c_str());
+  dirent* dp;
+  while ((dp = readdir(parent_dir_fd)) != nullptr) {
+    // Exclude '.', '..' and hidden dir
+    std::string name(dp->d_name);
+    if (name == "." || name == ".." || name[0] == '.') continue;
+    if (IsDir(Join<std::string>({path, name}, "/"))) {
+      paths.push_back(name);
+    }
+  }
+  closedir(parent_dir_fd);
   return paths;
 }
 
@@ -134,18 +134,20 @@ static std::vector<std::string> ListFile(const std::string& path) {
   }
 
   std::vector<std::string> paths;
-  //  DIR* parent_dir_fd = opendir(path.c_str());
-  //  dirent* dp;
-  //  while ((dp = readdir(parent_dir_fd)) != nullptr) {
-  //    // Exclude '.', '..' and hidden dir
-  //    std::string name(dp->d_name);
-  //    if (name == "." || name == ".." || name[0] == '.') continue;
-  //    // Is file
-  //    if (dp->d_type == DT_REG) {
-  //      paths.push_back(name);
-  //    }
-  //  }
-  //  closedir(parent_dir_fd);
+  DIR* parent_dir_fd = opendir(path.c_str());
+  dirent* dp;
+  while ((dp = readdir(parent_dir_fd)) != nullptr) {
+    // Exclude '.', '..' and hidden dir
+    std::string name(dp->d_name);
+    if (name == "." || name == ".." || name[0] == '.') continue;
+// Is file
+#ifndef LITE_WITH_QNX
+    if (dp->d_type == DT_REG) {
+      paths.push_back(name);
+    }
+#endif
+  }
+  closedir(parent_dir_fd);
   return paths;
 }
 
