@@ -51,6 +51,9 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
   out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  out_accuracy_threshold = 0.79f;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   nnadapter_device_names.emplace_back("verisilicon_timvx");
   out_accuracy_threshold = 0.79f;
