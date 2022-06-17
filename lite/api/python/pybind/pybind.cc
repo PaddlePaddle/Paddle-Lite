@@ -40,6 +40,9 @@ namespace paddle {
 namespace lite {
 namespace pybind {
 
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
+
 using lite::LightPredictorImpl;
 using lite_api::CxxConfig;
 using lite_api::DataLayoutType;
@@ -203,7 +206,9 @@ void BindLiteMobileConfig(py::module *m) {
 
   mobile_config.def(py::init<>())
       .def("set_model_from_file", &MobileConfig::set_model_from_file)
-      .def("set_model_from_buffer", &MobileConfig::set_model_from_buffer)
+      .def("set_model_from_buffer",
+           overload_cast_<const std::string &>()(
+               &MobileConfig::set_model_from_buffer))
       .def("set_model_dir", &MobileConfig::set_model_dir)
       .def("model_dir", &MobileConfig::model_dir)
       .def("set_model_buffer", &MobileConfig::set_model_buffer)

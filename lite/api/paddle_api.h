@@ -573,6 +573,8 @@ class LITE_API MobileConfig : public ConfigBase {
   // buffer
   void set_model_from_file(const std::string& x);
   void set_model_from_buffer(const std::string& x);
+  void set_model_from_buffer(std::string&& x);
+  void set_model_from_buffer(const char* buffer, size_t length);
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 
