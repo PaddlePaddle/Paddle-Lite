@@ -190,6 +190,7 @@ TEST(AdaptiveMaxPool2D, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+  return;
 #else
   return;
 #endif

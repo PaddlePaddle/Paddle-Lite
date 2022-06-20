@@ -687,10 +687,22 @@ _SetPreferredInputsForWarmup(int64_t);
 void MobileConfig::set_model_from_file(const std::string &x) {
   lite_model_file_ = x;
 }
+
 void MobileConfig::set_model_from_buffer(const std::string &x) {
   lite_model_file_ = x;
   model_from_memory_ = true;
 }
+
+void MobileConfig::set_model_from_buffer(std::string &&x) {
+  lite_model_file_.assign(std::forward<std::string>(x));
+  model_from_memory_ = true;
+}
+
+void MobileConfig::set_model_from_buffer(const char *buffer, size_t length) {
+  lite_model_file_.assign(buffer, length);
+  model_from_memory_ = true;
+}
+
 void MobileConfig::set_model_buffer(const char *model_buffer,
                                     size_t model_buffer_size,
                                     const char *param_buffer,
@@ -708,6 +720,15 @@ void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
                                      int absolute_val) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+#endif
+}
+
+// This is the method for check fp16 instruction is valid
+bool MobileConfig::check_fp16_valid() {
+#ifdef LITE_WITH_ARM
+  return lite::DeviceInfo::Global().has_fp16();
+#else
+  return false;
 #endif
 }
 

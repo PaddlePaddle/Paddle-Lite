@@ -251,5 +251,9 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ExecuteUnsqueeze)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
+REGISTER_OPERATION(NON_MAX_SUPPRESSION,
+                   ValidateNonMaxSuppression,
+                   PrepareNonMaxSuppression,
+                   ExecuteNonMaxSuppression)
 
 #endif  // NOLINT
