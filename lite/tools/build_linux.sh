@@ -196,7 +196,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-                        -DLITE_BUILD_TAILOR=$WITH_STRIP \
+                        -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
