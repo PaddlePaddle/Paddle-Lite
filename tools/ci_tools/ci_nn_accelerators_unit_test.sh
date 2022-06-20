@@ -801,7 +801,6 @@ function qualcomm_qnn_build_and_test() {
             if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
                 continue
             fi
-            export
             ctest -V -R ^$test_name$
         done
         cd - >/dev/null
