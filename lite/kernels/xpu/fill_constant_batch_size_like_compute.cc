@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void FillConstantBatchSizeLikeCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int write_size = param.out->numel();
   if (write_size == 0) {
     param.out->set_target(TARGET(kXPU));

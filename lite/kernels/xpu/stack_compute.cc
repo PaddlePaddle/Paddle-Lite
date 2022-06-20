@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void StackCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int n = param.X.size();
   auto x_dims = param.X[0]->dims();

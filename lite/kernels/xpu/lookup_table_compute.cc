@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void LookupTableCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int ym = param.Ids->numel();
   int xm = param.W->dims()[0];

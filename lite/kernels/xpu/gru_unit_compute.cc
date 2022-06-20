@@ -25,7 +25,7 @@ namespace kernels {
 namespace xpu {
 
 void GRUUnitCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto weight = param.weight;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
@@ -73,7 +73,7 @@ void GRUUnitCompute::PrepareForRun() {
 }
 
 void GRUUnitCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = *param_.get_mutable<operators::GRUUnitParam>();
   // inputs
   auto input = param.input;

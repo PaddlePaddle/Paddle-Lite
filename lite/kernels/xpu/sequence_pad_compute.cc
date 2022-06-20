@@ -25,7 +25,7 @@ namespace kernels {
 namespace xpu {
 
 void SequencePadCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
 
   auto* x = param.X;
