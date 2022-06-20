@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void ReluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::relu(ctx.GetRawContext(),
                      param.X->data<float>(),
@@ -33,8 +33,8 @@ void ReluCompute::Run() {
 }
 
 void Relu6Compute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::relu6(ctx.GetRawContext(),
                       param.X->data<float>(),
@@ -44,8 +44,8 @@ void Relu6Compute::Run() {
 }
 
 void GeluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::gelu(ctx.GetRawContext(),
                      param.X->data<float>(),
@@ -55,8 +55,8 @@ void GeluCompute::Run() {
 }
 
 void TanhCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::tanh(ctx.GetRawContext(),
                      param.X->data<float>(),
@@ -66,8 +66,8 @@ void TanhCompute::Run() {
 }
 
 void SigmoidCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::sigmoid(ctx.GetRawContext(),
                         param.X->data<float>(),
@@ -77,8 +77,8 @@ void SigmoidCompute::Run() {
 }
 
 void AbsCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::abs(ctx.GetRawContext(),
                     param.X->data<float>(),
@@ -88,8 +88,8 @@ void AbsCompute::Run() {
 }
 
 void ExpCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::exp(ctx.GetRawContext(),
                     param.X->data<float>(),
@@ -99,8 +99,8 @@ void ExpCompute::Run() {
 }
 
 void SquareCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::square(ctx.GetRawContext(),
                        param.X->data<float>(),
@@ -110,8 +110,8 @@ void SquareCompute::Run() {
 }
 
 void ReciprocalCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   float* xpu_factor = nullptr;
   XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
@@ -130,8 +130,8 @@ void ReciprocalCompute::Run() {
 }
 
 void SqrtCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::sqrt(ctx.GetRawContext(),
                      param.X->data<float>(),
@@ -141,8 +141,8 @@ void SqrtCompute::Run() {
 }
 
 void RsqrtCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::rsqrt(ctx.GetRawContext(),
                       param.X->data<float>(),
@@ -152,8 +152,8 @@ void RsqrtCompute::Run() {
 }
 
 void PowCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   float* xpu_factor = nullptr;
   XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
@@ -172,8 +172,8 @@ void PowCompute::Run() {
 }
 
 void SignCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::sign(ctx.GetRawContext(),
                      param.X->data<float>(),
@@ -183,8 +183,8 @@ void SignCompute::Run() {
 }
 
 void HardSwishCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::hard_swish(ctx.GetRawContext(),
                            param.X->data<float>(),
@@ -194,8 +194,8 @@ void HardSwishCompute::Run() {
 }
 
 void HardSigmoidCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::hard_sigmoid(ctx.GetRawContext(),
                              param.X->data<float>(),
@@ -206,8 +206,8 @@ void HardSigmoidCompute::Run() {
 }
 
 void LeakyReluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::leaky_relu(ctx.GetRawContext(),
                            param.X->data<float>(),
@@ -218,8 +218,8 @@ void LeakyReluCompute::Run() {
 }
 
 void LogCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::log<float>(ctx.GetRawContext(),    /* context */
                            param.X->data<float>(), /* x */
@@ -229,8 +229,8 @@ void LogCompute::Run() {
 }
 
 void SoftsignCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::softsign(ctx.GetRawContext(),
                          param.X->data<float>(),
@@ -240,8 +240,8 @@ void SoftsignCompute::Run() {
 }
 
 void SwishCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto beta = param.Swish_beta;
   CHECK(std::abs(beta - 1.0f) < 1e-7);
   int r = xdnn::swish(ctx.GetRawContext(),
@@ -252,8 +252,8 @@ void SwishCompute::Run() {
 }
 
 void PReluCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
   int outer_size = x_dims[0];
   int channel_size = param.Prelu_alpha->numel();

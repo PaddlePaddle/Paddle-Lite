@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void YoloBoxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto input_dims = param.X->dims();
   std::vector<int> anchors = param.anchors;
   CHECK_LE(anchors.size(), 6UL);

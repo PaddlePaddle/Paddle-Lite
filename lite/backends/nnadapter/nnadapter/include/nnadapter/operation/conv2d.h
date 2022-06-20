@@ -47,20 +47,20 @@ namespace operation {
   /* (2) For NHWC, [1, filter_height, filter_width, C_out] when */             \
   /* depthwise_mode=TRUE, otherwise is [C_out, filter_height, filter_width,*/  \
   /* C_in] */                                                                  \
-  auto filter_layout = filter_operand->type.layout;                            \
-  auto output_channel_size =                                                   \
-      filter_operand->type.dimensions                                          \
-          .data[!is_depthwise_mode                                             \
-                    ? 0                                                        \
-                    : (filter_layout == NNADAPTER_NCHW ? 0 : 3)];              \
-  auto filter_channel_size =                                                   \
-      filter_operand->type.dimensions.data[filter_layout == NNADAPTER_NCHW     \
-                                               ? 1                             \
-                                               : (is_depthwise_mode ? 0 : 3)]; \
-  auto filter_height = filter_operand->type.dimensions                         \
-                           .data[filter_layout == NNADAPTER_NCHW ? 2 : 1];     \
-  auto filter_width = filter_operand->type.dimensions                          \
-                          .data[filter_layout == NNADAPTER_NCHW ? 3 : 2];      \
+  /* (3) For HWCN, [filter_height, filter_width, 1, C_out] when */             \
+  /* depthwise_mode=TRUE, otherwise is [filter_height, filter_width, */        \
+  /* C_in, C_out] */                                                           \
+  int32_t filter_num;                                                          \
+  int32_t filter_height;                                                       \
+  int32_t filter_width;                                                        \
+  int32_t filter_channel_size;                                                 \
+  operation::GetConv2DOperandDim(filter_operand,                               \
+                                 &filter_num,                                  \
+                                 &filter_channel_size,                         \
+                                 &filter_height,                               \
+                                 &filter_width);                               \
+  int32_t output_channel_size =                                                \
+      is_depthwise_mode ? input_channel_size : filter_num;                     \
   NNADAPTER_VLOG(5) << "input_channel_size: " << input_channel_size;           \
   NNADAPTER_VLOG(5) << "output_channel_size: " << output_channel_size;         \
   NNADAPTER_VLOG(5) << "filter_channel_size: " << filter_channel_size;         \
@@ -128,6 +128,11 @@ int32_t CalcConv2DOutputSize(int32_t input_size,
                              int32_t pad_bottom_or_right,
                              int32_t stride_height_or_width,
                              int32_t dilation_height_or_width);
-
+// Get Conv2d operand dim according to the operand data layout
+void GetConv2DOperandDim(const core::Operand* operand,
+                         int32_t* n,
+                         int32_t* c,
+                         int32_t* h,
+                         int32_t* w);
 }  // namespace operation
 }  // namespace nnadapter

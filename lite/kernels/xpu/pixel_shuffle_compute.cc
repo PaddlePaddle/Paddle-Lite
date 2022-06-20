@@ -25,13 +25,13 @@ namespace xpu {
 template <class T>
 void PixelShuffleCompute<T>::Run() {
   auto& param = Param<operators::PixelShuffleParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
-  const T* x_data = param.x->data<T>();
+  const T* x_data = param.x->template data<T>();
   int upscale_factor = param.upscale_factor;
   auto in_dims = param.x->dims();
 
-  T* output_data = param.output->mutable_data<T>(TARGET(kXPU));
+  T* output_data = param.output->template mutable_data<T>(TARGET(kXPU));
 
   int r = xdnn::pixel_shuffle<T>(ctx.GetRawContext(),
                                  x_data,

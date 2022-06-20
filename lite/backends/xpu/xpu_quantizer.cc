@@ -91,10 +91,10 @@ void XPUQuantizer::QuantFP32ToIntX<int8_t>(const float* src_ptr,
   paddle::lite::xpu::math::ConvertFP32ToInt8(src_ptr, dst_ptr, max_val, numel);
 }
 
-template <typename Tcpu,
-          typename Txpu,
-          typename std::enable_if<!std::is_same<Tcpu, float>::value,
-                                  Tcpu>::type* ptr = nullptr>
+template <
+    typename Tcpu,
+    typename Txpu,
+    typename std::enable_if<!std::is_same<Tcpu, float>::value, Tcpu>::type* ptr>
 void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
                                     const DDimLite& dims,
                                     bool data_transpose,
@@ -102,10 +102,10 @@ void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
   LOG(FATAL) << "Not support for Tcpu is " << CppTypeToString<Tcpu>();
 }
 
-template <typename Tcpu,
-          typename Txpu,
-          typename std::enable_if<std::is_same<Tcpu, float>::value, Tcpu>::type*
-              ptr = nullptr>
+template <
+    typename Tcpu,
+    typename Txpu,
+    typename std::enable_if<std::is_same<Tcpu, float>::value, Tcpu>::type* ptr>
 void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
                                     const DDimLite& dims,
                                     bool data_transpose,

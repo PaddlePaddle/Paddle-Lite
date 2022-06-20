@@ -23,7 +23,7 @@ namespace kernels {
 namespace xpu {
 
 void IncrementCompute::PrepareForRun() {
-  auto& param = this->Param<operators::IncrementParam>();
+  auto& param = this->template Param<operators::IncrementParam>();
   auto* x = param.X;
   step_guard_ = TargetWrapperXPU::MallocScratchPad(1 * 4);
   cast_out_guard_ = TargetWrapperXPU::MallocScratchPad(1 * 4);
@@ -53,8 +53,8 @@ void IncrementCompute::PrepareForRun() {
 }
 
 void IncrementCompute::Run() {
-  auto& param = this->Param<operators::IncrementParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<operators::IncrementParam>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto* x = param.X;
   auto* out = param.Out;
 
