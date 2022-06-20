@@ -24,8 +24,8 @@ namespace kernels {
 namespace xpu {
 
 void Pool2DCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   CHECK_EQ(param.strides.size(), 2UL);
   CHECK_EQ(param.paddings->size(), 4UL);

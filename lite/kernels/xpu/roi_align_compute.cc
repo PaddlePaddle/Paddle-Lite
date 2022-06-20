@@ -25,8 +25,8 @@ namespace xpu {
 static constexpr int kROISize = 4;
 
 void RoiAlignCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* in = param.X;
   auto* rois = param.ROIs;

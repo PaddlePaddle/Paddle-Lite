@@ -24,8 +24,8 @@ namespace xpu {
 
 template <class T>
 void TransposeCompute<T>::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.x;
   auto& axis = param.axis;
   int ndims = axis.size();
@@ -40,11 +40,12 @@ void TransposeCompute<T>::Run() {
     x_shape_host[i] = x_dims[i];
   }
 
-  int r = xdnn::transpose<T>(ctx.GetRawContext(),
-                             x->data<T>(),
-                             param.output->mutable_data<T>(TARGET(kXPU)),
-                             x_shape_host,
-                             axis);
+  int r =
+      xdnn::transpose<T>(ctx.GetRawContext(),
+                         x->template data<T>(),
+                         param.output->template mutable_data<T>(TARGET(kXPU)),
+                         x_shape_host,
+                         axis);
   CHECK_EQ(r, 0);
 }
 

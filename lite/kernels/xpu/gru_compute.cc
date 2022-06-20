@@ -39,7 +39,7 @@ inline xdnn::Activation_t GetActType(const std::string& act_type) {
 }
 
 void GRUCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto weight = param.weight;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
@@ -87,7 +87,7 @@ void GRUCompute::PrepareForRun() {
 }
 
 void GRUCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = *param_.get_mutable<operators::GRUParam>();
 
   bool origin_mode = param.origin_mode;

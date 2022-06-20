@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void MatchMatrixTensorCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<param_t>();
   float w_max = param.__xpu__w_max;
   int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   std::vector<float> w_max_v(max_ptr_size, w_max);
@@ -45,8 +45,8 @@ void MatchMatrixTensorCompute::PrepareForRun() {
 }
 
 void MatchMatrixTensorCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* x = param.x;
   auto* y = param.y;

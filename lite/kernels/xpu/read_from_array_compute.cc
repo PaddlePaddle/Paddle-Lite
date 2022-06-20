@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void ReadFromArrayCompute::Run() {
-  auto& param = this->Param<operators::ReadFromArrayParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<operators::ReadFromArrayParam>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
   int64_t id;
