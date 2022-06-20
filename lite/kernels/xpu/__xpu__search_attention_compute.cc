@@ -27,7 +27,7 @@ void XPUMmdnnSearchAttentionCompute::PrepareForRun() {
       TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   pad_begin_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   w_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(2 * max_ptr_size * sizeof(float));
@@ -41,8 +41,8 @@ void XPUMmdnnSearchAttentionCompute::PrepareForRun() {
 }
 
 void XPUMmdnnSearchAttentionCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* X = param.X;
   auto* W = param.W;

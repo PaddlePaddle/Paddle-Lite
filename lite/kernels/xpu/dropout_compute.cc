@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void DropoutCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   float scale = 1.0f;
   if (param.dropout_implementation == "upscale_in_train") {
     scale = 1.0f;

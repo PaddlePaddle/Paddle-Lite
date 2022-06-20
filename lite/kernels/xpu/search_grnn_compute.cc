@@ -24,7 +24,7 @@ namespace kernels {
 namespace xpu {
 
 void SearchGrnnCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int maxptr_size = ctx.GetRawContext()->max_ptr_size();
   maxs_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(6 * maxptr_size * sizeof(float));
