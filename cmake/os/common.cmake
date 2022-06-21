@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Arm config
 if(LITE_WITH_ARM)
-  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
+  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos" "qnx")
   set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
   set(ARM_TARGET_LANG_LIST "gcc" "clang")
   set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
