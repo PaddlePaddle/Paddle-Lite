@@ -336,7 +336,7 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
     CHECK(op_info->GetOutputArgname(var_name, &arg_name))
         << "Can not find the output argument,current var name : " << var_name;
     VLOG(6) << " output arg name:" << arg_name << " var name:" << var_name;
-    auto* scope = graph->GetScope();
+    Scope* scope = node->AsStmt().op()->scope();
     auto* var_ptr = scope->FindVar(var_name);
     if (var_ptr == nullptr) {
       VLOG(6) << "Can't find ouput var_name:  " << var_name
@@ -460,7 +460,8 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
     std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
     std::map<std::string, PrecisionType> tmp_map;
     PrecisionType precison;
-    auto* scope = graph->GetScope();
+    Scope* scope = node->AsStmt().op()->scope();
+
     auto* var_ptr = scope->FindVar(var_name);
     if (var_ptr == nullptr) {
       VLOG(6) << "Can't find input var_name:  " << var_name

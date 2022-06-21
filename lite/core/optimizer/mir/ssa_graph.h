@@ -93,11 +93,6 @@ class SSAGraph : GraphBase {
 
   std::string dump();
 
-#ifdef LITE_WITH_XPU
-  void CopyScope(const Scope *scope) { scope_ = scope; }
-  const Scope *GetScope() const { return scope_; }
-#endif
-
  private:
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.

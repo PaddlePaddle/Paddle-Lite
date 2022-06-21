@@ -50,11 +50,6 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
     graph.reset(new mir::SSAGraph);
     graph->Build(program, valid_places_, block_idx);
     graph->SetValidPlaces(valid_places_);
-
-#ifdef LITE_WITH_XPU
-    auto* scope = program.exec_scope();
-    graph->CopyScope(scope);
-#endif
     graphs_.emplace_back(std::move(graph));
   }
   SpecifyKernelPickTactic(kernel_pick_factor_);
