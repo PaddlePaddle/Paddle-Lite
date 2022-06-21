@@ -196,7 +196,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-                        -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+                        -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
@@ -494,7 +494,7 @@ function main {
                 ;;
             # ON or OFF, default OFF
             --with_strip=*)
-                BUILD_TAILOR="${i#*=}"
+                WITH_STRIP="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir
