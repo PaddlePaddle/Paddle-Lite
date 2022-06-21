@@ -760,5 +760,21 @@ if(LITE_WITH_NNADAPTER)
       DEPENDS ${device_name}
       )
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})
+    
+    if (${device_name} STREQUAL "qualcomm_qnn")
+      add_custom_target(publish_inference_nnadapter_qualcomm_qnn_cpu_op_package
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/qualcomm_qnn/converter/cpu/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        DEPENDS qualcomm_qnn_cpu_custom_op_package
+      )
+      add_dependencies(publish_inference publish_inference_nnadapter_qualcomm_qnn_cpu_op_package)
+
+      add_custom_target(publish_inference_nnadapter_qualcomm_qnn_htp_op_package
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/qualcomm_qnn/converter/htp/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        DEPENDS qualcomm_qnn_htp_custom_op_package
+      )
+      add_dependencies(publish_inference publish_inference_nnadapter_qualcomm_qnn_htp_op_package)
+    endif()
   endforeach()
 endif()
