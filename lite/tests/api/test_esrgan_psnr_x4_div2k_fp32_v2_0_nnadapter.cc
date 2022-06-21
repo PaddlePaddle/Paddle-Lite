@@ -45,6 +45,8 @@ TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
