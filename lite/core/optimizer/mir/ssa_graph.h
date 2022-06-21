@@ -128,9 +128,6 @@ class SSAGraph : GraphBase {
   std::vector<Place> valid_places_;
   int block_idx_ = kRootBlockIdx;
   int num_node_created_ = 0;
-#ifdef LITE_WITH_XPU
-  const Scope *scope_;
-#endif
 };
 
 // Remove the link between a -> b.
