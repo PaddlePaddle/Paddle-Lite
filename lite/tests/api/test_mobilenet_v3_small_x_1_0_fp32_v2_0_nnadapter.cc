@@ -52,7 +52,7 @@ TEST(MobileNetV3_small_x1_0, test_mobilenetv3_small_x_1_0_fp32_v2_0_nnadapter) {
   out_accuracy_threshold = 0.7f;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   nnadapter_device_names.emplace_back("huawei_kirin_npu");
-  out_accuracy_threshold = 0.73f;
+  out_accuracy_threshold = 0.68f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

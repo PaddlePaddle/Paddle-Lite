@@ -22,8 +22,6 @@ namespace huawei_kirin_npu {
 
 int ConvertHardSigmoid(Converter* converter, core::Operation* operation) {
   HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(fabs(alpha - 1.0f / 6) <= 1e-5f && fabs(beta - 0.5) <= 1e-5f)
-      << "Only supports alpha = 0.2f and beta = 0.5f!";
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
