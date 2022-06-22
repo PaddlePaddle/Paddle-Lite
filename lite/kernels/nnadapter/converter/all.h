@@ -19,6 +19,7 @@ REGISTER_CONVERTER(batch_norm,
                    ConvertBatchNorm,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,huawei_"
                    "kirin_npu,intel_openvino,nvidia_tensorrt,eeasytech_npu");
+REGISTER_CONVERTER(bmm, ConvertBmm, "intel_openvino");
 REGISTER_CONVERTER(cast,
                    ConvertCast,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_"
