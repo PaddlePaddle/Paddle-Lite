@@ -85,9 +85,10 @@ void TileCompute<T, PType>::Run() {
       int dst_stride = in_stride[i + 1] * right;
       for (int m = 0; m < num; m++) {
         for (int j = 0; j < bcast_dims[i]; j++) {
-          std::memcpy(tmp_dst + j * dst_stride / bcast_dims[i] + m * dst_stride,
-                      tmp_src + m * dst_stride / bcast_dims[i],
-                      dst_stride / bcast_dims[i] * sizeof(T));
+          std::memcpy(
+              tmp_dst + j * (dst_stride / bcast_dims[i]) + m * dst_stride,
+              tmp_src + m * (dst_stride / bcast_dims[i]),
+              dst_stride / bcast_dims[i] * sizeof(T));
         }
       }
       tmp_src_tensor.CopyDataFrom(tmp_dst_tensor);

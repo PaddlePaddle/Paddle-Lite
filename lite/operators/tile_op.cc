@@ -118,6 +118,7 @@ bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   } else if (opdesc.HasInput("repeat_times_tensor") &&
              (opdesc.Input("repeat_times_tensor").size() != 0)) {
     auto temp = opdesc.Input("repeat_times_tensor");
+    param_.repeat_times_tensor.clear();
     for (auto var : temp) {
       param_.repeat_times_tensor.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
