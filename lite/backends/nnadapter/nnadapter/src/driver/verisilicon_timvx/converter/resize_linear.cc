@@ -30,7 +30,14 @@ int ConvertResizeLinear(Converter* converter, core::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
 
-  float factor = reinterpret_cast<float*>(input_operands[2]->buffer)[0];
+  float factor = 0.0f;
+  if (scales_operand) {
+    factor = reinterpret_cast<float*>(input_operands[2]->buffer)[0];
+  } else {
+    factor = static_cast<float>(shape_operand->type.dimensions.data[2] /
+                                input_operand->type.dimensions.data[2]);
+    NNADAPTER_VLOG(5) << "ResizeLinear factor: " << factor;
+  }
   auto resize_op = converter->graph()->CreateOperation<tim::vx::ops::Resize>(
       tim::vx::ResizeType::BILINEAR,
       factor,
