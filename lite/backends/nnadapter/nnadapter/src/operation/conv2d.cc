@@ -72,31 +72,37 @@ CalcConv2DOutputSize(int32_t input_size,
          1;
 }
 
-NNADAPTER_EXPORT void GetConv2DOperandDim(const core::Operand* operand,
-                                          int32_t* n,
-                                          int32_t* c,
+NNADAPTER_EXPORT void GetConv2DFilterDims(const core::Operand* filter_operand,
+                                          int32_t* c_out,
+                                          int32_t* c_in,
                                           int32_t* h,
-                                          int32_t* w) {
-  auto data_layout = operand->type.layout;
-  switch (data_layout) {
+                                          int32_t* w,
+                                          bool is_depthwise_mode) {
+  auto filter_layout = filter_operand->type.layout;
+  switch (filter_layout) {
     case NNADAPTER_NHWC:
-      *n = operand->type.dimensions.data[0];
-      *c = operand->type.dimensions.data[3];
-      *h = operand->type.dimensions.data[1];
-      *w = operand->type.dimensions.data[2];
+      if (is_depthwise_mode) {
+        *c_out = filter_operand->type.dimensions.data[3];
+        *c_in = filter_operand->type.dimensions.data[0];
+      } else {
+        *c_out = filter_operand->type.dimensions.data[0];
+        *c_in = filter_operand->type.dimensions.data[3];
+      }
+      *h = filter_operand->type.dimensions.data[1];
+      *w = filter_operand->type.dimensions.data[2];
       break;
     case NNADAPTER_HWCN:
-      *n = operand->type.dimensions.data[3];
-      *c = operand->type.dimensions.data[2];
-      *h = operand->type.dimensions.data[0];
-      *w = operand->type.dimensions.data[1];
+      *c_out = filter_operand->type.dimensions.data[3];
+      *c_in = filter_operand->type.dimensions.data[2];
+      *h = filter_operand->type.dimensions.data[0];
+      *w = filter_operand->type.dimensions.data[1];
       break;
     case NNADAPTER_NCHW:
     default:
-      *n = operand->type.dimensions.data[0];
-      *c = operand->type.dimensions.data[1];
-      *h = operand->type.dimensions.data[2];
-      *w = operand->type.dimensions.data[3];
+      *c_out = filter_operand->type.dimensions.data[0];
+      *c_in = filter_operand->type.dimensions.data[1];
+      *h = filter_operand->type.dimensions.data[2];
+      *w = filter_operand->type.dimensions.data[3];
   }
 }
 
