@@ -109,6 +109,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_TRANSPOSE:
@@ -140,7 +141,6 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_SIGMOID:
-      case NNADAPTER_SWISH:
       case NNADAPTER_SOFTMAX: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         // The zeroPoint of the output of softmax and sigmoid must be 0.
