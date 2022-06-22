@@ -510,6 +510,8 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
@@ -744,6 +746,9 @@ TEST(Activation_swish, precision) {
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
