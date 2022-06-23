@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifdef LITE_WITH_XPU
 #pragma once
 #include <limits>
 #include <map>
@@ -95,6 +94,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
           (place.precision == kernel.precision() ||
+           kernel.precision() == PRECISION(kFloat) ||
            kernel.precision() == PRECISION(kAny) ||
            place.precision == PRECISION(kAny))) {
         // score skipped, if kernel is int8, but op is not int8
@@ -313,7 +313,16 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "gather",
                                               "pool2d",
                                               "concat",
-                                              "calib"};
+                                              "calib",
+                                              "relu",
+                                              "tanh",
+                                              "sigmoid",
+                                              "leaky_relu",
+                                              "conv2d_transpose",
+                                              "elementwise_mul",
+                                              "elementwise_add",
+                                              "reduce_mean"};
+
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",
@@ -327,4 +336,3 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-#endif

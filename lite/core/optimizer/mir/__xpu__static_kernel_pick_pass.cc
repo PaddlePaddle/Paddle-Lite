@@ -724,8 +724,8 @@ void XPUStaticKernelPickPass::GetXPUDeviceType() {
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+#endif
 
 REGISTER_MIR_PASS(__xpu__static_kernel_pick_pass,
                   paddle::lite::mir::XPUStaticKernelPickPass)
     .BindTargets({TARGET(kXPU)});
-#endif
