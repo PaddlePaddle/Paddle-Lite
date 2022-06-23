@@ -23,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class StackCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::StackParam;
 

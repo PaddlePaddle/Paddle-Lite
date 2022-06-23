@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/slice_compute.h"
+#include <algorithm>
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -20,6 +22,62 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
+
+template <class T>
+void DealTensorArray(XPUContext ctx,
+                     const operators::SliceParam& param,
+                     const std::vector<int>& starts,
+                     const std::vector<int>& ends,
+                     bool out_is_array) {
+  auto in_array = param.XTensorList;
+  // If the input is LoDTensorArray, the rank of input is 1.
+  int64_t in_size = in_array->size();
+  int64_t start = starts[0] < 0 ? (starts[0] + in_size) : starts[0];
+  int64_t end = ends[0] < 0 ? (ends[0] + in_size) : ends[0];
+
+  start = std::max(start, static_cast<int64_t>(0));
+  end = std::max(end, static_cast<int64_t>(0));
+  end = std::min(end, in_size);
+
+  CHECK_GT(end, start) << "end should greater than start";
+  int64_t out_size = end - start;
+
+  if (out_is_array) {
+    auto out_array = param.OutTensorList;
+    out_array->resize(out_size);
+    for (int i = 0; i < out_size; ++i) {
+      auto* out_tensor = &out_array->at(i);
+      auto in_tensor = in_array->at(i + start);
+      out_tensor->Resize(in_tensor.dims());
+      out_tensor->set_lod(in_tensor.lod());
+      out_tensor->set_precision(in_tensor.precision());
+      if (in_tensor.memory_size() > 0) {
+        out_tensor->mutable_data(TARGET(kXPU), in_tensor.memory_size());
+        int r = xdnn::copy<T>(ctx.GetRawContext(),
+                              in_tensor.template data<T>(),
+                              static_cast<T*>(out_tensor->raw_data()),
+                              in_tensor.numel());
+        CHECK_EQ(r, 0) << " write to array failed";
+      } else {
+        VLOG(4) << "WARNING: The input tensor 'x_tensor' holds no memory, so "
+                   "nothing has been written to output array["
+                << i << "].";
+      }
+    }
+  } else {
+    auto out_tensor = param.Out;
+    auto in_tensor = in_array->at(start);
+    out_tensor->Resize(in_tensor.dims());
+    out_tensor->set_lod(in_tensor.lod());
+    out_tensor->set_precision(in_tensor.precision());
+    out_tensor->mutable_data(TARGET(kXPU), in_tensor.memory_size());
+    int r = xdnn::copy<T>(ctx.GetRawContext(),
+                          in_tensor.data<T>(),
+                          static_cast<T*>(out_tensor->raw_data()),
+                          in_tensor.numel());
+    CHECK_EQ(r, 0) << " write to array failed";
+  }
+}
 
 inline std::vector<int> GetIntDataFromTensorList(
     const std::vector<lite::Tensor*>& list_tensor) {
@@ -77,8 +135,6 @@ void SliceCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  auto out = param.Out;
-  auto in = param.X;
   auto axes = param.axes;
   auto StartsTensor = param.StartsTensor;
   auto EndsTensor = param.EndsTensor;
@@ -88,9 +144,6 @@ void SliceCompute<T>::Run() {
   auto ends = param.ends;
   auto infer_flags = param.infer_flags;
   auto decrease_axis = param.decrease_axis;
-
-  auto out_dims = out->dims();
-  auto in_dims = in->dims();
 
   bool need_infer = false;
   if (StartsTensor || EndsTensor) {
@@ -114,52 +167,69 @@ void SliceCompute<T>::Run() {
     }
     CHECK_EQ(ends.size(), axes.size())
         << "The size of ends must be equal to the size of axes.";
-    out_dims = in_dims;
-    int dim_value, start, end;
-    for (size_t i = 0; i < axes.size(); ++i) {
-      dim_value = out_dims[axes[i]];
-      if (dim_value > 0) {
-        // when end = start + 1 and start == -1
-        if (starts[i] == -1 && ends[i] == 0 && infer_flags[i] == -1) {
-          auto ret =
-              std::find(decrease_axis.begin(), decrease_axis.end(), axes[i]);
-          if (ret != decrease_axis.end()) {
-            ends[i] = 10000000;
-          }
-        }
+  }
+  // if slice input is tensor_array
+  if (param.X == nullptr && param.XTensorList != nullptr) {
+    DealTensorArray<T>(
+        ctx,
+        param,
+        starts,
+        ends,
+        (param.Out == nullptr && param.OutTensorList != nullptr));
+    return;
+  }
 
-        start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
-        end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = (std::max)(start, 0);
-        end = (std::max)(end, 0);
-        end = (std::min)(end, dim_value);
-        CHECK_GT(end, start) << "end should greater than start";
-        out_dims[axes[i]] = end - start;
-      }
-    }
-    out->Resize(out_dims);
-    // generate new shape
-    if (decrease_axis.size() > 0) {
-      std::vector<int64_t> new_out_shape;
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
-        out_dims[decrease_axis[i]] = 0;
-      }
-
-      for (size_t i = 0; i < out_dims.size(); ++i) {
-        if (out_dims[i] != 0) {
-          new_out_shape.push_back(out_dims[i]);
+  auto out = param.Out;
+  auto in = param.X;
+  auto out_dims = out->dims();
+  auto in_dims = in->dims();
+  out_dims = in_dims;
+  int dim_value, start, end;
+  for (size_t i = 0; i < axes.size(); ++i) {
+    dim_value = out_dims[axes[i]];
+    if (dim_value > 0) {
+      // when end = start + 1 and start == -1
+      if (starts[i] == -1 && ends[i] == 0 && infer_flags[i] == -1) {
+        auto ret =
+            std::find(decrease_axis.begin(), decrease_axis.end(), axes[i]);
+        if (ret != decrease_axis.end()) {
+          ends[i] = 10000000;
         }
       }
-      if (new_out_shape.size() == 0) {
-        new_out_shape.push_back(1);
-      }
 
-      DDim new_dims;
-      new_dims.ConstructFrom(new_out_shape);
-      out_dims = new_dims;
+      start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+      end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      start = (std::max)(start, 0);
+      end = (std::max)(end, 0);
+      end = (std::min)(end, dim_value);
+      CHECK_GT(end, start) << "end should greater than start";
+      out_dims[axes[i]] = end - start;
     }
   }
+
+  out->Resize(out_dims);
+  // generate new shape
+  if (decrease_axis.size() > 0) {
+    std::vector<int64_t> new_out_shape;
+    for (size_t i = 0; i < decrease_axis.size(); ++i) {
+      CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
+      out_dims[decrease_axis[i]] = 0;
+    }
+
+    for (size_t i = 0; i < out_dims.size(); ++i) {
+      if (out_dims[i] != 0) {
+        new_out_shape.push_back(out_dims[i]);
+      }
+    }
+    if (new_out_shape.size() == 0) {
+      new_out_shape.push_back(1);
+    }
+
+    DDim new_dims;
+    new_dims.ConstructFrom(new_out_shape);
+    out_dims = new_dims;
+  }
+
   auto x_shape = in_dims.Vectorize();
   std::vector<int> x_shape_(x_shape.begin(), x_shape.end());
   std::vector<int> x_dim_begin_(in_dims.size(), 0);
@@ -205,6 +275,21 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
+using SliceFloat32 = paddle::lite::kernels::xpu::SliceCompute<float>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, array_def)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
 using SliceInt32 = paddle::lite::kernels::xpu::SliceCompute<int32_t>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
     .BindInput("Input",
@@ -220,10 +305,40 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
+using SliceInt32 = paddle::lite::kernels::xpu::SliceCompute<int32_t>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, array_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
 using SliceInt64 = paddle::lite::kernels::xpu::SliceCompute<int64_t>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt64, int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
+using SliceInt64 = paddle::lite::kernels::xpu::SliceCompute<int64_t>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt64, array_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("StartsTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("EndsTensor",

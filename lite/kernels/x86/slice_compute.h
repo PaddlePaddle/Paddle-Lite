@@ -28,6 +28,47 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
+void DealTensorArray(const std::vector<lite::Tensor>* XTensorList,
+                     std::vector<lite::Tensor>* OutTensorList,
+                     lite::Tensor* Out,
+                     const std::vector<int>& starts,
+                     const std::vector<int>& ends,
+                     bool out_is_array) {
+  auto in_array = XTensorList;
+  // If the input is LoDTensorArray, the rank of input is 1.
+  int64_t in_size = in_array->size();
+  int64_t start = starts[0] < 0 ? (starts[0] + in_size) : starts[0];
+  int64_t end = ends[0] < 0 ? (ends[0] + in_size) : ends[0];
+
+  start = std::max(start, static_cast<int64_t>(0));
+  end = std::max(end, static_cast<int64_t>(0));
+  end = std::min(end, in_size);
+
+  CHECK_GT(end, start) << "end should greater than start";
+  int64_t out_size = end - start;
+
+  if (out_is_array) {
+    auto out_array = OutTensorList;
+    out_array->resize(out_size);
+    for (int i = 0; i < out_size; ++i) {
+      auto* out_tensor = &out_array->at(i);
+      auto in_tensor = in_array->at(i + start);
+      out_tensor->set_lod(in_tensor.lod());
+      if (in_tensor.memory_size() > 0) {
+        out_tensor->CopyDataFrom(in_tensor);
+      } else {
+        VLOG(4) << "WARNING: The input tensor 'x_tensor' holds no memory, so "
+                   "nothing has been written to output array["
+                << i << "].";
+      }
+    }
+  } else {
+    auto out_tensor = Out;
+    auto in_tensor = in_array->at(start);
+    out_tensor->CopyDataFrom(in_tensor);
+  }
+}
+
 inline std::vector<int> GetIntDataFromTensorList(
     const std::vector<lite::Tensor*>& list_tensor) {
   std::vector<int> vec_data;
@@ -219,6 +260,8 @@ void slice_compute(const lite::Tensor* in,
 template <class T>
 void slice_compute_(const lite::Tensor* Input,
                     lite::Tensor* Out,
+                    const std::vector<lite::Tensor>* XTensorList,
+                    std::vector<lite::Tensor>* OutTensorList,
                     std::vector<int> axes,
                     std::vector<int> starts,
                     std::vector<int> ends,
@@ -228,6 +271,38 @@ void slice_compute_(const lite::Tensor* Input,
                     std::vector<lite::Tensor*> StartsTensorList,
                     std::vector<lite::Tensor*> EndsTensorList,
                     std::vector<int> infer_flags) {
+  if (Input == nullptr && XTensorList != nullptr) {
+    bool need_infer = false;
+    if (StartsTensor || EndsTensor) {
+      need_infer = true;
+    }
+    if (StartsTensorList.size() > 0 || EndsTensorList.size() > 0) {
+      need_infer = true;
+    }
+    if (need_infer) {
+      if (StartsTensor) {
+        starts = GetIntDataFromTensor(StartsTensor);
+      } else if (StartsTensorList.size() > 0) {
+        starts = GetIntDataFromTensorList(StartsTensorList);
+      }
+      CHECK_EQ(starts.size(), axes.size())
+          << "The size of starts must be equal to the size of axes.";
+      if (EndsTensor) {
+        ends = GetIntDataFromTensor(EndsTensor);
+      } else if (EndsTensorList.size() > 0) {
+        ends = GetIntDataFromTensorList(EndsTensorList);
+      }
+      CHECK_EQ(ends.size(), axes.size())
+          << "The size of starts must be equal to the size of axes.";
+    }
+    DealTensorArray(XTensorList,
+                    OutTensorList,
+                    Out,
+                    starts,
+                    ends,
+                    (Out == nullptr && OutTensorList != nullptr));
+    return;
+  }
   int rank = Input->dims().size();
   switch (rank) {
     case 1:
@@ -320,6 +395,8 @@ class SliceCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     slice_compute_<T>(param.X,
                       param.Out,
+                      param.XTensorList,
+                      param.OutTensorList,
                       param.axes,
                       param.starts,
                       param.ends,
