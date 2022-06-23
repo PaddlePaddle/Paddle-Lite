@@ -258,7 +258,8 @@ class TestMatmulV2Op(AutoScanTest):
         def _teller2(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data_x"].shape)
             transpose_X = program_config.ops[0].attrs["trans_x"]
-            if ((predictor_config.target() == TargetType.ARM) or (predictor_config.target() == TargetType.X86)):
+            if ((predictor_config.target() == TargetType.ARM) or
+                (predictor_config.target() == TargetType.X86)):
                 y_shape = list(program_config.inputs["input_data_y"].shape)
                 if len(x_shape) == 1 and len(
                         y_shape) == 1 and transpose_X == True:

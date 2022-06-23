@@ -271,8 +271,6 @@ class MatMulV2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           o_data[0] += x_data[i] * y_data[i] * alpha;
         }
       } else if (x_transpose == true && y_transpose == true) {
-
-        std::cout<<"========"<<m<<","<<n<<","<<k<<"\n";
         blas.GEMM(false,
                   false,
                   m,
