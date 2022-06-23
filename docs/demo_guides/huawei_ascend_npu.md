@@ -6,9 +6,9 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 
 
 ### 已支持的芯片
 
-- Ascend 310 （CANN Version ≥  3.3.0）
-- Ascend 710 （CANN Version ≥  5.0.2.alpha005)
-- Ascend 910 （CANN Version ≥  5.0.2.alpha005)
+- Ascend 310  （CANN Version ≥  3.3.0）
+- Ascend 310P （CANN Version ≥  5.0.2.alpha005)
+- Ascend 910  （CANN Version ≥  5.0.2.alpha005)
 
 ### 已支持的设备
 
@@ -568,7 +568,7 @@ $ npu-smi info
 
   - HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS：
 
-    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。设备 ID 是指当前机器中可用的昇腾芯片 ID，例如 1 块 Atlas 300I 卡包含 4 颗 Ascend310 芯片，因此，可以将 HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS 设置为 0~3，而 1 块 Atlas 300I pro 卡只有一颗 Ascend 710 芯片，因此只能设置为 0。
+    指定昇腾设备的 ID号，例如HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3或HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0。设备 ID 是指当前机器中可用的昇腾芯片 ID，例如 1 块 Atlas 300I 卡包含 4 颗 Ascend310 芯片，因此，可以将 HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS 设置为 0~3，而 1 块 Atlas 300I pro 卡只有一颗 Ascend 310P 芯片，因此只能设置为 0。
 
   - HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
 
