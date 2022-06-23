@@ -50,6 +50,9 @@ TEST(SqueezeNet, test_squeezenet_v1_fp32_v2_0_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
   out_accuracy_threshold = 0.63f;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+  out_accuracy_threshold = 0.60f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

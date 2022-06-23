@@ -50,6 +50,9 @@ TEST(DarkNet, test_darknet53_fp32_v2_3_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
   out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+  out_accuracy_threshold = 0.75f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
