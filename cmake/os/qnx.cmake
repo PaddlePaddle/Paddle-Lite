@@ -31,12 +31,8 @@ set(CMAKE_CXX_COMPILER_TARGET ${arch})
 set(CMAKE_ASM_COMPILER qcc -V${arch})
 set(CMAKE_ASM_DEFINE_FLAG "-Wa,--defsym,")
 
-set(CMAKE_RANLIB ${QNX_HOST}/usr/bin/nto${ntoarch}-ranlib CACHE PATH "QNX ranlib program" FORCE)
-set(CMAKE_AR ${QNX_HOST}/usr/bin/nto${ntoarch}-ar CACHE PATH "QNX ar program" FORCE)
-set(CMAKE_NM ${QNX_HOST}/usr/bin/nto${ntoarch}-nm CACHE PATH "QNX nm program" FORCE)
-set(CMAKE_LINKER ${QNX_HOST}/usr/bin/nto${ntoarch}-ld CACHE PATH "QNX ld program" FORCE)
 set(CMAKE_STRIP ${QNX_HOST}/usr/bin/nto${ntoarch}-strip CACHE PATH "QNX strip program" FORCE)
 
 add_definitions(-DLITE_WITH_QNX)
 add_definitions(-D_QNX_SOURCE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -D_QNX_SOURCE=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -V${arch} -fPIC -D_QNX_SOURCE=1")
