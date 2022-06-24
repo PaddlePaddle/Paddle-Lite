@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
-#ifdef LITE_WITH_XPU
 #include <algorithm>
 #include <list>
 #include <map>
@@ -20,10 +19,11 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/backends/xpu/target_wrapper.h"
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
 namespace paddle {
 namespace lite {
 namespace mir {
