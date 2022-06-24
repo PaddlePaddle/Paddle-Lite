@@ -767,6 +767,8 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
+      case NNADAPTER_MAX:
+      case NNADAPTER_MIN:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB:
         ConvertElementwise(operation);
@@ -842,6 +844,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
       case NNADAPTER_LOG:
+      case NNADAPTER_SWISH:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:

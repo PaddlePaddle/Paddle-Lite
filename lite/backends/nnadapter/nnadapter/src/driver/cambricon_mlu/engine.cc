@@ -286,7 +286,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
     auto out_dims = outputs[i]->GetDimensions();
-    type->dimensions.data[0] = out_dims[0];
+    type->dimensions.data[0] = IsScalar(out_dims) ? 1 : out_dims[0];
     auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
