@@ -1,6 +1,6 @@
 set(QNX TRUE)
 set(CMAKE_SYSTEM_NAME QNX)
-#set(ntoarch x86)
+
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
   set(arch gcc_ntoaarch64le_cxx)
   set(ntoarch aarch64)
@@ -24,13 +24,10 @@ endif()
 
 set(CMAKE_C_COMPILER ${QNX_HOST}/usr/bin/qcc -V${arch})
 set(CMAKE_C_COMPILER_TARGET ${arch})
-
 set(CMAKE_CXX_COMPILER ${QNX_HOST}/usr/bin/q++ -V${arch})
 set(CMAKE_CXX_COMPILER_TARGET ${arch})
-
 set(CMAKE_ASM_COMPILER qcc -V${arch})
 set(CMAKE_ASM_DEFINE_FLAG "-Wa,--defsym,")
-
 set(CMAKE_STRIP ${QNX_HOST}/usr/bin/nto${ntoarch}-strip CACHE PATH "QNX strip program" FORCE)
 
 add_definitions(-DLITE_WITH_QNX)
