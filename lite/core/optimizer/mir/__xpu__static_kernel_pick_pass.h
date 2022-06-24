@@ -313,15 +313,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "gather",
                                               "pool2d",
                                               "concat",
-                                              "calib",
-                                              "relu",
-                                              "tanh",
-                                              "sigmoid",
-                                              "leaky_relu",
-                                              "conv2d_transpose",
-                                              "elementwise_mul",
-                                              "elementwise_add",
-                                              "reduce_mean"};
+                                              "calib"};
 
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
