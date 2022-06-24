@@ -21,7 +21,6 @@
 #include <vector>
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
-
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 namespace paddle {
