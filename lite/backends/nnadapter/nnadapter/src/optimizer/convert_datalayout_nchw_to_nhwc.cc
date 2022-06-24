@@ -844,6 +844,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
       case NNADAPTER_LOG:
+      case NNADAPTER_SWISH:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
