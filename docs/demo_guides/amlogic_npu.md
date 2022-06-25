@@ -2,7 +2,7 @@
 
 Paddle Lite 已支持晶晨 NPU 的预测部署。
 其接入原理是与之前华为 Kirin NPU、瑞芯微 Rockchip NPU 等类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 Amlogic NPU 组网 API 进行网络构建，在线生成并执行模型。
-- 本文介绍的是 Paddle Lite 基于 AmlogicNPU DDK 来调用晶晨 SoC 的 NPU 算力，考虑到算子以及模型支持的广度，如果需要在晶晨 SoC 上部署较为复杂的模型，建议参考[芯原 TIM-VX 部署示例](./verisilicon_timvx)，同样能调用晶晨 SoC 的 NPU 算力，且支持场景更多。
+- **请注意**：本文介绍的是 Paddle Lite 基于 AmlogicNPU DDK 来调用晶晨 SoC 的 NPU 算力，考虑到算子以及模型支持的广度，如果需要在晶晨 SoC 上部署较为复杂的模型，我们强烈建议您参考[芯原 TIM-VX 部署示例](./verisilicon_timvx)，同样能调用晶晨 SoC 的 NPU 算力，且支持场景更多。
 
 ## 支持现状
 
