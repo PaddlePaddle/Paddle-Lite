@@ -41,7 +41,8 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       << "kernel_pick_factors should be specified first";
   CHECK(graph) << "graph not valid";
 
-  // Collect input data precision for each node in the graph
+// Collect input data precision for each node in the graph
+#ifdef LITE_WITH_XPU
   DicideUseFP16Optimizer(graph);
   if (xpu_use_fp16_optimizer_) {
     GetXPUDeviceType();
@@ -68,6 +69,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       InplaceNodeInputPrecision(node);
     }
   }
+#endif
 
   // sort kernels by the factors.
   VLOG(2) << "graph block_idx: " << graph->blockIdx();
@@ -120,6 +122,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     instruct.kernels().clear();
 
     if (!instruct.op_info()->HasAttr("enable_int8")) {
+#ifdef LITE_WITH_XPU
       if (xpu_use_fp16_optimizer_) {
         if (xpu_special_op_.count(node->AsStmt().op_type())) {
           SpecialNodeOutputPrecision(graph, node, scored.front().second);
@@ -131,6 +134,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
           NodeOutputPrecision(graph, node);
         }
       }
+#endif
 
       instruct.kernels().emplace_back(std::move(scored.front().second));
       VLOG(2) << "the final pick kernel is "

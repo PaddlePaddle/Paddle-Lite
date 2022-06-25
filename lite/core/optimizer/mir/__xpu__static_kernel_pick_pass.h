@@ -150,7 +150,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
             }
           }
         }
-
+#ifdef LITE_WITH_XPU
         if (xpu_use_fp16_optimizer_ &&
             (xpu_special_op_.count(instruct.op_type()) ||
              xpu_inplace_op_.count(instruct.op_type()))) {
@@ -166,6 +166,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                 kernel, instruct, in_names, out_names, &type_match, &score);
           }
         }
+#endif
 
         if (type_match) {
           score *= 2;
@@ -173,9 +174,10 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
         }
         VLOG(4) << "[score s4]:" << score;
       }
-
+#ifdef LITE_WITH_XPU
       ForceUseFP32Kernel(&score, kernel, instruct);
       ForceUseInt8Kernel(&score, kernel, instruct);
+#endif
 
       // add new rules for datatype: When the input types are consistent with
       // kernel's input types, select the kernel of the datatype.
@@ -251,6 +253,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       return false;
     }
   }
+#ifdef LITE_WITH_XPU
   void DicideUseFP16Optimizer(const std::unique_ptr<SSAGraph>& graph);
   void ForceUseFP32Kernel(size_t* score,
                           const lite::KernelBase& kernel,
@@ -288,16 +291,15 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                       const std::vector<std::string>& out_names,
                       bool* type_match,
                       size_t* score);
+#endif
 
  private:
   core::KernelPickFactor kernel_pick_factors_;
-
+#ifdef LITE_WITH_XPU
   bool xpu_use_fp16_optimizer_{false};
-
   // TODO(quwei:) addn more op
   const std::set<std::string> PRECISION_INT31_OP_{"__xpu__fc"};
   const std::set<std::string> PRECISION_INT8_OP_{"__xpu__fc"};
-
   const std::set<std::string> input_parameter_name_{
       "Input", "X", "Y", "Branch", "BBoxes", "Scores", "repeat_times_tensor"};
   const std::set<std::string> output_parameter_name_{
@@ -314,7 +316,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "pool2d",
                                               "concat",
                                               "calib"};
-
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",
@@ -323,6 +324,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "squeeze2",
                                               "unsqueeze",
                                               "unsqueeze2"};
+#endif
 };
 
 }  // namespace mir
