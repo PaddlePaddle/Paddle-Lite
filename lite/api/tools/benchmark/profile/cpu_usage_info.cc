@@ -15,6 +15,9 @@
 #include "cpu_usage_info.h"  //NOLINT
 #include <string.h>
 #include <sys/stat.h>
+#ifndef LITE_WITH_QNX
+#include <sys/sysinfo.h>
+#endif
 #include <sys/time.h>
 #include <unistd.h>
 #include <chrono>  //NOLINT
