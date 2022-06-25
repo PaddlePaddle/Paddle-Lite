@@ -447,21 +447,21 @@ if (LITE_WITH_ARM)
                 COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                 COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                 COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-		#COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${PADDLE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                 )
             if(NOT IOS)
                 add_dependencies(publish_inference_cxx_lib bundle_full_api)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
-		#add_dependencies(publish_inference_cxx_lib test_model_bin)
-		#add_dependencies(publish_inference_cxx_lib benchmark_bin)
+                add_dependencies(publish_inference_cxx_lib test_model_bin)
+                add_dependencies(publish_inference_cxx_lib benchmark_bin)
 		if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux" OR ARM_TARGET_OS STREQUAL "armmacos" OR ARM_TARGET_OS STREQUAL "qnx")
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
                           COMMAND cp ${PADDLE_BINARY_DIR}/lite/api/libpaddle_light_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
                           COMMAND cp ${PADDLE_BINARY_DIR}/lite/api/libpaddle_full_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
-			  #COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/tools/benchmark/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                          COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/tools/benchmark/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                           )
                 elseif(ARM_TARGET_OS STREQUAL "armmacos")
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
