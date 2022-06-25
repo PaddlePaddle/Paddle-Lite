@@ -19,10 +19,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/xpu/target_wrapper.h"
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
-#ifdef LITE_WITH_XPU
-#include "lite/backends/xpu/target_wrapper.h"
 namespace paddle {
 namespace lite {
 namespace mir {
@@ -227,6 +226,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 }
 
+#ifdef LITE_WITH_XPU
 void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
     const std::unique_ptr<SSAGraph>& graph) {
   if (graph->valid_places()[0].precision == PrecisionType::kFP16) {
