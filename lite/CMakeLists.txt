@@ -468,7 +468,7 @@ if (LITE_WITH_ARM)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
                         COMMAND cp ${PADDLE_BINARY_DIR}/lite/api/*.dylib ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
-			COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/tools/benchmark/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/tools/benchmark/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                         )
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
