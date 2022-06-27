@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <vector>
+
 namespace nnadapter {
 namespace operation {
 
@@ -81,10 +83,14 @@ namespace operation {
   uint32_t min_sizes_size = min_sizes_operand->length / sizeof(float);         \
   std::vector<float> min_sizes(min_sizes_data,                                 \
                                min_sizes_data + min_sizes_size);               \
-  float* max_sizes_data = reinterpret_cast<float*>(max_sizes_operand->buffer); \
-  uint32_t max_sizes_size = max_sizes_operand->length / sizeof(float);         \
-  std::vector<float> max_sizes(max_sizes_data,                                 \
-                               max_sizes_data + max_sizes_size);               \
+  std::vector<float> max_sizes;                                                \
+  if (max_sizes_operand) {                                                     \
+    float* max_sizes_data =                                                    \
+        reinterpret_cast<float*>(max_sizes_operand->buffer);                   \
+    uint32_t max_sizes_size = max_sizes_operand->length / sizeof(float);       \
+    max_sizes =                                                                \
+        std::vector<float>(max_sizes_data, max_sizes_data + max_sizes_size);   \
+  }                                                                            \
   float* variances_data = reinterpret_cast<float*>(variances_operand->buffer); \
   uint32_t variances_size = variances_operand->length / sizeof(float);         \
   std::vector<float> variances(variances_data, variances_data + variances_size);

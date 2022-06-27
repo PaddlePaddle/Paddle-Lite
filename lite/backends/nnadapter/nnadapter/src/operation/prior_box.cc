@@ -72,7 +72,7 @@ NNADAPTER_EXPORT int PreparePriorBox(core::Operation* operation) {
                        &aspect_ratios_vec);
     size_t num_priors =
         aspect_ratios_vec.size() * min_sizes_operand->length / sizeof(float) +
-        max_sizes_operand->length / sizeof(float);
+        max_sizes.size();
     std::vector<int64_t> dim_vec(4);
     output_dimensions0[0] = input_dimensions[2];
     output_dimensions0[1] = input_dimensions[3];
