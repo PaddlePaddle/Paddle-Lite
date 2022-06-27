@@ -91,6 +91,7 @@ typedef enum {
 typedef enum {
   NNADAPTER_NCHW = 0,
   NNADAPTER_NHWC = 1,
+  NNADAPTER_HWCN = 2,
 } NNAdapterOperandLayoutCode;
 
 /**

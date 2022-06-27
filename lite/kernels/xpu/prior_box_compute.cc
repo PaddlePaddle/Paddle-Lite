@@ -47,7 +47,7 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
 }
 
 void PriorBoxCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   std::vector<float> variance = param.variances_;
 
   CHECK_EQ(variance.size(), 4);
@@ -59,8 +59,8 @@ void PriorBoxCompute::PrepareForRun() {
 }
 
 void PriorBoxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   std::vector<float> aspect_ratio = param.aspect_ratios;
   std::vector<float> aspect_ratios_vec;

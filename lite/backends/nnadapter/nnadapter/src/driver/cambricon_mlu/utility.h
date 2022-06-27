@@ -62,6 +62,7 @@ int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count);
 bool IsDeviceMemory(magicmind::IRTTensor* pointer);
+bool IsScalar(magicmind::Dims dim);
 
 template <typename T>
 struct MMDestroyer {

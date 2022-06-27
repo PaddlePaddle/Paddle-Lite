@@ -1016,7 +1016,7 @@ class XPUMmdnnBidEmbGrnnAttCompute
 };
 
 void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
@@ -1036,8 +1036,8 @@ void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
 }
 
 void XPUMmdnnBidEmbGrnnAttCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* xpu_ctx = ctx.GetRawContext();
 
@@ -1070,7 +1070,7 @@ class XPUMmdnnBidEmbGrnnAttCompute2
 };
 
 void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
@@ -1090,8 +1090,8 @@ void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
 }
 
 void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* xpu_ctx = ctx.GetRawContext();
 
@@ -1139,7 +1139,7 @@ class XPUMmdnnBidEmbAttCompute
 };
 
 void XPUMmdnnBidEmbAttCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
@@ -1151,8 +1151,8 @@ void XPUMmdnnBidEmbAttCompute::PrepareForRun() {
 }
 
 void XPUMmdnnBidEmbAttCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* xpu_ctx = ctx.GetRawContext();
 
@@ -1181,7 +1181,7 @@ class XPUMmdnnMatchConvTopkCompute
 };
 
 void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   compound_.Init(param.input_w,
                  param.input_w_max,
@@ -1196,8 +1196,8 @@ void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
 }
 
 void XPUMmdnnMatchConvTopkCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* xpu_ctx = ctx.GetRawContext();
 
@@ -1224,7 +1224,7 @@ class XPUMmdnnMergeAllCompute
 };
 
 void XPUMmdnnMergeAllCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.grnn_fw_wh,
@@ -1249,8 +1249,8 @@ void XPUMmdnnMergeAllCompute::PrepareForRun() {
 }
 
 void XPUMmdnnMergeAllCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* xpu_ctx = ctx.GetRawContext();
 
