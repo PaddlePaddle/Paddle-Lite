@@ -14,6 +14,9 @@
 
 #include "lite/core/optimizer/optimizer.h"
 #include <fstream>
+#ifdef LITE_WITH_XPU
+#include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
+#endif
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
@@ -49,7 +52,6 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
     graph->SetValidPlaces(valid_places_);
     graphs_.emplace_back(std::move(graph));
   }
-
   SpecifyKernelPickTactic(kernel_pick_factor_);
   InitTargetTypeTransformPass();
   InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
@@ -63,8 +65,12 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
 }
 
 void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
+  std::string static_pick_name = "static_kernel_pick_pass";
+#ifdef LITE_WITH_XPU
+  static_pick_name = "__xpu__static_kernel_pick_pass";
+#endif
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-      "static_kernel_pick_pass");
+      static_pick_name);
   CHECK(pass);
 
   *pass->mutable_kernel_pick_factors() = factor;
@@ -218,6 +224,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
+#ifdef LITE_WITH_XPU
+       "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
+#endif
 
        "remove_tf_redundant_ops_pass",
        "variable_place_inference_pass",  // inference arg/var's

@@ -193,4 +193,5 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(static_kernel_pick_pass,
                   paddle::lite::mir::StaticKernelPickPass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)});
