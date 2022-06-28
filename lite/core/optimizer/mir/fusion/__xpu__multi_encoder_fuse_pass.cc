@@ -1176,7 +1176,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
     std::vector<std::string> mul_types{"mul", "matmul"};
     std::vector<bool> with_q_scales{true, false};
-    std::vector<bool> norm_befores{false};
+    std::vector<bool> norm_befores{true, false};
 
     std::string fc_precision;
     bool adaptive_seqlen = false;
