@@ -86,6 +86,7 @@ WITH_TRAIN=OFF
 WITH_TINY_PUBLISH=ON
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
+WITH_ARM_DOTPROD=ON
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF

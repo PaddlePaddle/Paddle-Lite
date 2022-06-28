@@ -31,6 +31,7 @@ WITH_EXCEPTION=OFF
 BUILD_ARM82_FP16=OFF
 # controls whether to support SVE2 instructions, default is OFF
 WITH_ARM8_SVE2=OFF
+WITH_ARM_DOTPROD=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
