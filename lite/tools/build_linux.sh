@@ -250,6 +250,7 @@ function init_cmake_mutable_options {
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+                        -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
@@ -728,6 +729,10 @@ function main {
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            --with_arm_dotprod=*)
+                WITH_ARM_DOTPROD="${i#*=}"
                 shift
                 ;;
             --with_profile=*)
