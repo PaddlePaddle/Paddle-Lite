@@ -704,6 +704,19 @@ void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(core::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -724,6 +737,70 @@ void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
     auto output_operand = output_operands[i];
     TransposeOperand(output_operand, input_permutation);
     SetPermutation(output_operand, input_permutation);
+  }
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertStack(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_GE(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto* axis =
+      reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer);
+  if (*axis < 0) {
+    *axis += input_operands[0]->type.dimensions.count;
+  }
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Force to align the dimorder vector of all of input operands
+  std::vector<int32_t> reference_permutation;
+  core::Operand* reference_operand = nullptr;
+  for (size_t i = 0; i < input_count - 1; i++) {
+    auto input_operand = input_operands[i];
+    if (!IsConstantOperand(input_operand)) {
+      auto input_permutation = GetPermutation(input_operand);
+      if (input_permutation.size() > reference_permutation.size()) {
+        reference_permutation = input_permutation;
+        reference_operand = input_operand;
+      }
+    }
+  }
+  if (reference_permutation.empty()) {
+    // All of input operands are constant
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  } else {
+    for (size_t i = 0; i < input_count - 1; i++) {
+      auto input_operand = input_operands[i];
+      if (!IsConstantOperand(input_operand)) {
+        auto input_permutation = GetPermutation(input_operand);
+        auto transpose_input_permutation = MultiplyPermutation(
+            InversePermutation(input_permutation), reference_permutation);
+        if (!IsIdentityPermutation(transpose_input_permutation)) {
+          auto transpose_input_operand = AppendTransposeOperation(
+              model_, input_operand, transpose_input_permutation);
+          UpdateOperationInputOperands(
+              {operation}, input_operand, transpose_input_operand);
+          SetPermutation(transpose_input_operand, reference_permutation);
+        }
+      } else {
+        if (IsIdentityPermutation(reference_permutation)) {
+          // Ignore
+        } else {
+          NNADAPTER_CHECK_EQ(input_operand->type.dimensions.count,
+                             reference_permutation.size());
+          TransposeOperand(input_operand, reference_permutation);
+        }
+      }
+    }
+    for (auto& perm_data : reference_permutation) {
+      if (perm_data >= *axis) perm_data += 1;
+    }
+    reference_permutation.insert(reference_permutation.begin() + *axis, *axis);
+    TransposeOperand(output_operand, reference_permutation);
+    SetPermutation(output_operand, reference_permutation);
   }
 }
 
@@ -856,8 +933,14 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
         break;
+      case NNADAPTER_SQUEEZE:
+        ConvertSqueeze(operation);
+        break;
       case NNADAPTER_SPLIT:
         ConvertSplit(operation);
+        break;
+      case NNADAPTER_STACK:
+        ConvertStack(operation);
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
