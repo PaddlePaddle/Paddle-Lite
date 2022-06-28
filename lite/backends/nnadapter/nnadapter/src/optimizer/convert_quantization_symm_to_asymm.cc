@@ -53,6 +53,11 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
       }
     } break;
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
+      operand->type.precision = NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER;
+      auto scale = operand->type.symm_per_layer_params.scale;
+      operand->type.asymm_per_layer_params = {.scale = scale, .zero_point = 0};
+    } break;
     default:
       break;
   }
