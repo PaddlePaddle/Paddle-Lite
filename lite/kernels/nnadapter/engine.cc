@@ -287,54 +287,23 @@ Engine::Engine(KernelContext* ctx,
   };
   std::stable_sort(input_vars_.begin(), input_vars_.end(), sort_comp_func);
   std::stable_sort(output_vars_.begin(), output_vars_.end(), sort_comp_func);
-  // Get the specified devices and create a context for each device to build or
-  // load the device-specific program from the model or the cache file/buffer.
-  const auto& device_names =
-      ctx->As<NNAdapterContext>().NNAdapterDeviceNames(exec_scope_);
-  CHECK_GT(device_names.size(), 0) << "No device specified.";
-  for (const auto& device_name : device_names) {
-    NNAdapterDevice* device = nullptr;
-    int result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
-    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
-    if (found) {
-      const char* name = nullptr;
-      NNAdapterDevice_getName_invoke(device, &name);
-      const char* vendor = nullptr;
-      NNAdapterDevice_getVendor_invoke(device, &vendor);
-      NNAdapterDeviceType type = 0;
-      NNAdapterDevice_getType_invoke(device, &type);
-      int32_t version = 0;
-      NNAdapterDevice_getVersion_invoke(device, &version);
-      VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
-              << " type=" << type << " version=" << version;
-      devices_.push_back(device);
-    }
-  }
-  CHECK_GT(devices_.size(), 0) << "No device found.";
-  // Get the context properties from the scope
-  auto context_properties =
-      ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
-  VLOG(3) << "NNAdapter context_properties: " << context_properties;
-  // Create a context with multiple devices
-  NNAdapterContext_create_invoke(
-      devices_.data(),
-      devices_.size(),
-      context_properties.c_str(),
-      ctx->As<NNAdapterContext>().NNAdapterContextCallback(exec_scope_),
-      &context_);
-  // Get the model cache dir from the scope
+  // Get the context which is shared by all subgraphs and bound to a predictor,
+  // each predictor (including cloned predictor) has its own device context.
+  auto runtime_instance_ =
+      ctx_->As<NNAdapterContext>().AcquireNNAdapterRuntimeInstance(exec_scope_);
+  CHECK(runtime_instance_);
+  context_ = runtime_instance_->context();
+  CHECK(context_);
+  device_names_ = runtime_instance_->device_names();
+  CHECK(!device_names_.empty());
+  // Get the model cache dir for loading device model files to avoid model
+  // compilation.
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
   VLOG(3) << "NNAdapter model_cache_dir: " << model_cache_dir_;
 }
 
-Engine::~Engine() {
-  programs_.clear();
-  NNAdapterContext_destroy_invoke(context_);
-  for (auto* device : devices_) {
-    NNAdapterDevice_release_invoke(device);
-  }
-}
+Engine::~Engine() { programs_.clear(); }
 
 bool Engine::Run() {
   // Try to execute all cached programs.
@@ -354,17 +323,11 @@ bool Engine::Run() {
   // find valid program.
   VLOG(1) << "Warning: No suitable program found for current input shapes, try "
              "generating a new program online.";
-  std::vector<std::string> device_names;
-  for (auto* device : devices_) {
-    const char* name = nullptr;
-    NNAdapterDevice_getName_invoke(device, &name);
-    device_names.push_back(name);
-  }
   auto program = std::make_shared<Program>(context_);
   // Take the model cache buffer from the scope
   std::vector<char> model_cache_buffer;
-  // Generate a cache token based on the input names and shapes
-  auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
+  // Generate a cache token based on the device names, input names and shapes.
+  auto model_cache_token = GenerateModelCacheToken(device_names_, input_vars_);
   VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
   ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
       exec_scope_, model_cache_token, &model_cache_buffer);

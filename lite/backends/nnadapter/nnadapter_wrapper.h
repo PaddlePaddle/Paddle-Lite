@@ -14,6 +14,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
+#include <vector>
 #include "lite/backends/nnadapter/nnadapter/include/nnadapter/nnadapter.h"
 
 namespace paddle {
@@ -131,6 +133,9 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterDevice_getVersion)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterContext_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterContext_destroy)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterMemory_create)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterMemory_destroy)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterMemory_copy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_finish)
@@ -211,6 +216,24 @@ inline int NNAdapterContext_create_invoke(NNAdapterDevice** devices,
 
 inline void NNAdapterContext_destroy_invoke(NNAdapterContext* context) {
   NNAdapterWrapper::Global().NNAdapterContext_destroy(context);
+}
+
+inline int NNAdapterMemory_create_invoke(NNAdapterContext* context,
+                                         void* host_ptr_or_device_ptr,
+                                         size_t length,
+                                         int flags,
+                                         NNAdapterMemory** memory) {
+  return NNAdapterWrapper::Global().NNAdapterMemory_create(
+      context, host_ptr_or_device_ptr, length, flags, memory);
+}
+
+inline void NNAdapterMemory_destroy_invoke(NNAdapterMemory* memory) {
+  NNAdapterWrapper::Global().NNAdapterMemory_destroy(memory);
+}
+
+inline int NNAdapterMemory_copy_invoke(NNAdapterMemory* src,
+                                       NNAdapterMemory* dst) {
+  return NNAdapterWrapper::Global().NNAdapterMemory_copy(src, dst);
 }
 
 inline int NNAdapterModel_create_invoke(NNAdapterModel** model) {
@@ -353,6 +376,38 @@ inline int NNAdapterExecution_setOutput_invoke(
 inline int NNAdapterExecution_compute_invoke(NNAdapterExecution* execution) {
   return NNAdapterWrapper::Global().NNAdapterExecution_compute(execution);
 }
+
+class NNAdapterRuntimeInstance {
+ public:
+  NNAdapterRuntimeInstance() {}
+  ~NNAdapterRuntimeInstance();
+
+  // Query and acquire the specified devices, and create a context which is
+  // shared by all devices.
+  bool AcquireDevicesAndCreateContext(
+      const std::vector<std::string>& device_names,
+      const std::string& context_properties,
+      int (*context_callback)(int event_id, void* user_data));
+  // Destroy the context and release the devices.
+  void DestroyContextAndReleaseDevices();
+
+  // Runtime information
+  std::vector<NNAdapterDevice*> devices() { return devices_; }
+  std::vector<std::string> device_names() { return device_names_; }
+  std::vector<std::string> device_vendors() { return device_vendors_; }
+  std::vector<NNAdapterDeviceType> device_types() { return device_types_; }
+  ::NNAdapterContext* context() { return context_; }
+  bool IsValid() const { return !devices_.empty() && context_; }
+
+ private:
+  std::vector<NNAdapterDevice*> devices_;
+  std::vector<std::string> device_names_;
+  std::vector<std::string> device_vendors_;
+  std::vector<NNAdapterDeviceType> device_types_;
+  ::NNAdapterContext* context_{nullptr};
+};
+
+bool CheckNNAdapterDeviceAvailable(const std::string& device_name);
 
 }  // namespace lite
 }  // namespace paddle

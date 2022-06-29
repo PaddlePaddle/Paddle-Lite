@@ -19,6 +19,7 @@
 #include "runtime/context.h"
 #include "runtime/device.h"
 #include "runtime/execution.h"
+#include "runtime/memory.h"
 #include "runtime/model.h"
 #include "utility/debug.h"
 #include "utility/logging.h"

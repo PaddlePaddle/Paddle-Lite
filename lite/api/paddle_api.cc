@@ -42,6 +42,10 @@
 #include "lite/backends/metal/target_wrapper.h"
 #endif
 
+#ifdef LITE_WITH_NNADAPTER
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
 
@@ -436,15 +440,15 @@ void ConfigBase::set_subgraph_model_cache_buffers(
       std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
 }
 
-bool ConfigBase::check_nnadapter_device_name(
-    const std::string &nnadapter_device_name) {
+bool ConfigBase::check_nnadapter_device_available(
+    const std::string &device_name) {
   bool found = false;
 #ifdef LITE_WITH_NNADAPTER
-  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDeviceName(
-      nnadapter_device_name);
+  found = lite::CheckNNAdapterDeviceAvailable(device_name);
 #else
-  LOG(WARNING) << "The invoking of the function 'check_nnadapter_device' is "
-                  "ignored, please rebuild it with LITE_WITH_NNADAPTER=ON.";
+  LOG(WARNING) << "The invoking of the function "
+                  "'check_nnadapter_device_available' is ignored, please "
+                  "rebuild it with LITE_WITH_NNADAPTER=ON.";
 #endif
   return found;
 }

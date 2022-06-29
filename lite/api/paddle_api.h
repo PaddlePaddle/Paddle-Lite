@@ -259,7 +259,7 @@ class LITE_API ConfigBase {
     return subgraph_model_cache_buffers_;
   }
   // Check if the NNAdapter device is valid.
-  bool check_nnadapter_device_name(const std::string& device_name);
+  bool check_nnadapter_device_available(const std::string& device_name);
   // Choose the NNAdapter devices to build and run the model.
   void set_nnadapter_device_names(
       const std::vector<std::string>& device_names) {

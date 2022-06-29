@@ -84,7 +84,7 @@ class Engine {
   Scope* exec_scope_{nullptr};
   std::vector<Variable> input_vars_;
   std::vector<Variable> output_vars_;
-  std::vector<NNAdapterDevice*> devices_;
+  std::vector<std::string> device_names_;
   ::NNAdapterContext* context_{nullptr};
   std::vector<std::shared_ptr<Program>> programs_;
   std::string model_cache_dir_{""};

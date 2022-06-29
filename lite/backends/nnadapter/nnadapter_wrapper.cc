@@ -106,5 +106,72 @@ bool NNAdapterWrapper::Initialize() {
   return true;
 }
 
+NNAdapterRuntimeInstance::~NNAdapterRuntimeInstance() {
+  DestroyContextAndReleaseDevices();
+}
+
+bool NNAdapterRuntimeInstance::AcquireDevicesAndCreateContext(
+    const std::vector<std::string>& device_names,
+    const std::string& context_properties,
+    int (*context_callback)(int event_id, void* user_data)) {
+  CHECK(!IsValid()) << "Device context can only be created once!";
+  CHECK_GT(device_names.size(), 0) << "No device specified.";
+  devices_.clear();
+  device_names_.clear();
+  device_vendors_.clear();
+  device_types_.clear();
+  for (const auto& device_name : device_names) {
+    NNAdapterDevice* device = nullptr;
+    int result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
+    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+    if (found) {
+      const char* name = nullptr;
+      NNAdapterDevice_getName_invoke(device, &name);
+      const char* vendor = nullptr;
+      NNAdapterDevice_getVendor_invoke(device, &vendor);
+      NNAdapterDeviceType type = 0;
+      NNAdapterDevice_getType_invoke(device, &type);
+      int32_t version = 0;
+      NNAdapterDevice_getVersion_invoke(device, &version);
+      VLOG(3) << "NNAdapter device " << name << ": vendor=" << vendor
+              << " type=" << type << " version=" << version;
+      devices_.push_back(device);
+      device_names_.push_back(name);
+      device_vendors_.push_back(vendor);
+      device_types_.push_back(type);
+    }
+  }
+  CHECK_GT(devices_.size(), 0) << "No device found.";
+  VLOG(3) << "NNAdapter context_properties: " << context_properties;
+  VLOG(3) << "NNAdapter context_callback: " << context_callback;
+  // Create a context shared by multiple devices
+  return NNAdapterContext_create_invoke(devices_.data(),
+                                        devices_.size(),
+                                        context_properties.c_str(),
+                                        context_callback,
+                                        &context_) == NNADAPTER_NO_ERROR;
+}
+
+void NNAdapterRuntimeInstance::DestroyContextAndReleaseDevices() {
+  if (context_) {
+    NNAdapterContext_destroy_invoke(context_);
+  }
+  for (auto device : devices_) {
+    if (device) {
+      NNAdapterDevice_release_invoke(device);
+    }
+  }
+}
+
+bool CheckNNAdapterDeviceAvailable(const std::string& device_name) {
+  NNAdapterDevice* device = nullptr;
+  int result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
+  bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+  if (found) {
+    NNAdapterDevice_release_invoke(device);
+  }
+  return found;
+}
+
 }  // namespace lite
 }  // namespace paddle

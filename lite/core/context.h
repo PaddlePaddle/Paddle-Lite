@@ -198,18 +198,6 @@ class Context<TargetType::kNNAdapter> {
     return true;
   }
 
-#ifdef LITE_WITH_NNADAPTER
-  static bool CheckNNAdapterDeviceName(const std::string& device_name) {
-    NNAdapterDevice* device = nullptr;
-    int result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
-    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
-    if (found) {
-      NNAdapterDevice_release_invoke(device);
-    }
-    return found;
-  }
-#endif
-
   static void SetNNAdapterDeviceNames(
       Scope* scope, const std::vector<std::string>& device_names) {
     auto var = scope->Var("NNADAPTER_DEVICE_NAMES");
@@ -322,6 +310,29 @@ class Context<TargetType::kNNAdapter> {
     if (!var) return "";
     return var->Get<std::string>();
   }
+
+#ifdef LITE_WITH_NNADAPTER
+  static NNAdapterRuntimeInstance* CreateNNAdapterRuntimeInstance(
+      Scope* scope,
+      const std::vector<std::string>& device_names,
+      const std::string& context_properties,
+      int (*context_callback)(int event_id, void* user_data)) {
+    auto var = scope->Var("NNADAPTER_RUNTIME_INSTANCE");
+    CHECK(var);
+    auto data = var->GetMutable<NNAdapterRuntimeInstance>();
+    CHECK(data);
+    CHECK(data->AcquireDevicesAndCreateContext(
+        device_names, context_properties, context_callback));
+    return data;
+  }
+
+  static NNAdapterRuntimeInstance* AcquireNNAdapterRuntimeInstance(
+      Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_RUNTIME_INSTANCE");
+    if (!var) return nullptr;
+    return var->GetMutable<NNAdapterRuntimeInstance>();
+  }
+#endif
 };
 #endif
 

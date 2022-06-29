@@ -80,6 +80,13 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
   Context<TargetType::kNNAdapter>::SetNNAdapterDynamicShapeInfo(
       raw_predictor_->scope(), config.nnadapter_dynamic_shape_info());
+#ifdef LITE_WITH_NNADAPTER
+  Context<TargetType::kNNAdapter>::CreateNNAdapterRuntimeInstance(
+      raw_predictor_->scope(),
+      config.nnadapter_device_names(),
+      config.nnadapter_context_properties(),
+      config.nnadapter_context_callback());
+#endif
 #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \

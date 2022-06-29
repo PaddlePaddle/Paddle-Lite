@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "runtime/memory.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace runtime {
