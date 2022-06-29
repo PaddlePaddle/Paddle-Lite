@@ -178,6 +178,7 @@ add_kernel(slice_opencl_buffer OPENCL basic SRCS slice_buffer_compute.cc)
 add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc)
 add_kernel(squeeze_unsqueeze_opencl_buffer OPENCL basic SRCS squeeze_unsqueeze_buffer_compute.cc)
 add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
+add_kernel(reshape_opencl_buffer OPENCL basic SRCS reshape_buffer_compute.cc)
 # extra
 # wait to add ...
 
@@ -214,4 +215,7 @@ lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
 #             DEPS kernels core)
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_reshape_buffer_opencl SRCS reshape_buffer_compute_test.cc
              DEPS kernels core)
