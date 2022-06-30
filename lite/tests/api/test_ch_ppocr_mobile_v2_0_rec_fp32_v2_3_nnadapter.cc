@@ -46,6 +46,8 @@ TEST(ch_ppocr_mobile_v2_0_rec,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -68,6 +70,13 @@ TEST(ch_ppocr_mobile_v2_0_rec,
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
   mobile_config.set_nnadapter_device_names(nnadapter_device_names);
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  // Set dynamic shape info.
+  std::map<std::string, std::vector<std::vector<int64_t>>> dynamic_shape_info;
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  dynamic_shape_info["x"] = {{1, 3, 32, 100}, {1, 3, 32, 413}};
+  dynamic_shape_info["lstm_0.tmp_0"] = {{80, 1, 96}, {103, 1, 96}};
+  mobile_config.set_nnadapter_dynamic_shape_info(dynamic_shape_info);
+#endif
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
