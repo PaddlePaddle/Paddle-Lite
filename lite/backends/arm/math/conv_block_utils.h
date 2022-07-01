@@ -24,6 +24,9 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/log/cp_logging.h"
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+#include "lite/backends/arm/math/sve/gemm_sve_i8mm.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -79,6 +82,12 @@ inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx->has_sve2_i8mm()) {
+    sve::prepackA_int8_sve(&tout, tin, m, k, group, false, ctx);
+    return;
+  }
+#endif
   prepackA_int8(&tout, tin, m, k, group, false, ctx);
 }
 
