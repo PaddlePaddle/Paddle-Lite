@@ -94,6 +94,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
           (place.precision == kernel.precision() ||
+           kernel.precision() == PRECISION(kFloat) ||
            kernel.precision() == PRECISION(kAny) ||
            place.precision == PRECISION(kAny))) {
         // score skipped, if kernel is int8, but op is not int8
@@ -314,7 +315,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "gather",
                                               "pool2d",
                                               "concat",
-                                              "calib"};
+                                              "calib",
+                                              "bilinear_interp",
+                                              "bilinear_interp_v2"
+                                              "nearest_interp",
+                                              "nearest_interp_v2"};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",

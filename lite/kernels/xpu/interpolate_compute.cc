@@ -24,7 +24,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void BilinearInterpCompute::Run() {
+template <typename InType, PrecisionType PType>
+void BilinearInterpCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   lite::Tensor* X = param.X;
@@ -47,22 +48,23 @@ void BilinearInterpCompute::Run() {
   } else {
     trans_mode = 2;
   }
-  int r = xdnn::interpolate2d<float>(ctx.GetRawContext(),
-                                     X->data<float>(),
-                                     Out->mutable_data<float>(TARGET(kXPU)),
-                                     n,
-                                     c,
-                                     in_h,
-                                     in_w,
-                                     out_h,
-                                     out_w,
-                                     false,
-                                     trans_mode,
-                                     true);
+  int r = xdnn::interpolate2d<InType>(ctx.GetRawContext(),
+                                      X->data<InType>(),
+                                      Out->mutable_data<InType>(TARGET(kXPU)),
+                                      n,
+                                      c,
+                                      in_h,
+                                      in_w,
+                                      out_h,
+                                      out_w,
+                                      false,
+                                      trans_mode,
+                                      true);
   CHECK_EQ(r, 0);
 }
 
-void NearestInterpCompute::Run() {
+template <typename InType, PrecisionType PType>
+void NearestInterpCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   lite::Tensor* X = param.X;
@@ -77,18 +79,18 @@ void NearestInterpCompute::Run() {
   bool align_corners = param.align_corners;
   int trans_mode = (align_corners == true) ? 0 : 2;
 
-  int r = xdnn::interpolate2d<float>(ctx.GetRawContext(),
-                                     X->data<float>(),
-                                     Out->mutable_data<float>(TARGET(kXPU)),
-                                     n,
-                                     c,
-                                     in_h,
-                                     in_w,
-                                     out_h,
-                                     out_w,
-                                     true,
-                                     trans_mode,
-                                     true);
+  int r = xdnn::interpolate2d<InType>(ctx.GetRawContext(),
+                                      X->data<InType>(),
+                                      Out->mutable_data<InType>(TARGET(kXPU)),
+                                      n,
+                                      c,
+                                      in_h,
+                                      in_w,
+                                      out_h,
+                                      out_w,
+                                      true,
+                                      trans_mode,
+                                      true);
 
   CHECK_EQ(r, 0);
 }
@@ -98,12 +100,14 @@ void NearestInterpCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(bilinear_interp,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::BilinearInterpCompute,
-                     def)
+namespace xpu = paddle::lite::kernels::xpu;
+
+using BiliInterp_FP32 = xpu::BilinearInterpCompute<float, PRECISION(kFloat)>;
+using BiliInterp_FP16 = xpu::BilinearInterpCompute<float16, PRECISION(kFP16)>;
+using NearInterp_FP32 = xpu::NearestInterpCompute<float, PRECISION(kFloat)>;
+using NearInterp_FP16 = xpu::NearestInterpCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(bilinear_interp, kXPU, kFloat, kNCHW, BiliInterp_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -113,12 +117,19 @@ REGISTER_LITE_KERNEL(bilinear_interp,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(bilinear_interp_v2,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::BilinearInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    bilinear_interp, kXPU, kFP16, kNCHW, BiliInterp_FP16, binterp_FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    bilinear_interp_v2, kXPU, kFloat, kNCHW, BiliInterp_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -128,12 +139,18 @@ REGISTER_LITE_KERNEL(bilinear_interp_v2,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(nearest_interp,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::NearestInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    bilinear_interp_v2, kXPU, kFP16, kNCHW, BiliInterp_FP16, binterp_v2_FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(nearest_interp, kXPU, kFloat, kNCHW, NearInterp_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -143,12 +160,19 @@ REGISTER_LITE_KERNEL(nearest_interp,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(nearest_interp_v2,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::NearestInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    nearest_interp, kXPU, kFP16, kNCHW, NearInterp_FP16, ninterp_FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    nearest_interp_v2, kXPU, kFloat, kNCHW, NearInterp_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -156,4 +180,15 @@ REGISTER_LITE_KERNEL(nearest_interp_v2,
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    nearest_interp_v2, kXPU, kFP16, kNCHW, NearInterp_FP16, niterp_v2_FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
