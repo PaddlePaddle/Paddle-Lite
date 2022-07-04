@@ -716,24 +716,59 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
   auto axes_operand = input_operands[1];
-  // Recalculate the axis according to the dimorder vector of the input operand
+  // Recalculate the perm according to the dimorder vector of the input operand
   auto input_permutation = GetPermutation(input_operand);
-  if (axes_operand) {
+  std::vector<int32_t> nchw_layout = {0, 1, 2, 3};
+  std::vector<int32_t> axes;
+  if (axes_operand && (axes_operand->length / sizeof(int32_t)) > 0) {
     auto axes_count = axes_operand->length / sizeof(int32_t);
     auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);
+    axes = std::vector<int32_t>(axes_data, axes_data + axes_count);
+    // Recalculate the axes according to the dimorder vector of the input
+    // operand
     for (int32_t i = 0; i < axes_count; i++) {
       if (axes_data[i] < 0) {
         axes_data[i] += input_dimensions_count;
       }
       TransposeAxis(axes_data[i], input_permutation);
     }
-  }
-  std::vector<int32_t> output_permutation;
-  int32_t diff = input_dimensions_count - output_dimensions_count;
-  for (int32_t i = 0; i < input_dimensions_count; i++) {
-    if (input_permutation[i] >= diff) {
-      output_permutation.push_back(input_permutation[i] - diff);
+  } else {
+    for (int32_t i = 0; i < input_dimensions_count; i++) {
+      if (input_operand->type.dimensions.data[i] == 1) {
+        axes.push_back(i);
+      }
     }
+  }
+  for (int32_t i = 0; i < axes.size(); i++) {
+    if (axes[i] < 0) {
+      axes[i] += input_dimensions_count;
+    }
+    // Delete the dimension corresponding to the axis of the nchw_layout
+    for (auto it = nchw_layout.begin(); it != nchw_layout.end();) {
+      if (*it == axes[i]) {
+        it = nchw_layout.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    TransposeAxis(axes[i], input_permutation);
+    // Delete the dimension corresponding to the axis of the input_permutation
+    for (auto it = input_permutation.begin(); it != input_permutation.end();) {
+      if (*it == axes[i]) {
+        it = input_permutation.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  // Calculate the distance between current data layout and hchw data layout
+  std::vector<int32_t> output_permutation;
+  for (auto nchw_data : nchw_layout) {
+    int32_t index = std::distance(
+        input_permutation.begin(),
+        std::find(
+            input_permutation.begin(), input_permutation.end(), nchw_data));
+    output_permutation.push_back(index);
   }
   TransposeOperand(output_operand, output_permutation);
   SetPermutation(output_operand, output_permutation);
