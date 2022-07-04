@@ -60,8 +60,7 @@ void StackCompute<T, PType>::Run() {
 using stack_float =
     paddle::lite::kernels::xpu::StackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_float, def)
-    .BindInput("X",
-               {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
