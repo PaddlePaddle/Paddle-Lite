@@ -60,7 +60,7 @@ int Converter::Apply(const cpp::BlockDesc* block_desc,
           CHECK_EQ(dynamic_dimensions[j].size(), dimension_count)
               << "The dimension count of " << j << " th dynamic dimensions of "
               << i << "th input '" << name << "' shoud be " << dimension_count
-              << ", but recieved " << dynamic_dimensions[j].size();
+              << ", but received " << dynamic_dimensions[j].size();
           if (dynamic_dimensions[j][k] != dimensions[k]) {
             dynamic_axes.push_back(k);
             break;

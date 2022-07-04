@@ -43,7 +43,7 @@ function print_usage {
     echo "----------------------------------------"
 }
 
-function check_enviroment {
+function check_environment {
     if [ "X${BUILD_ROOT_DIR}" == "X" ]; then
 	echo -e "\nOption: --build_root_dir=xxx is required.\n";
 	exit 1
@@ -55,7 +55,7 @@ function check_enviroment {
 }
 
 function run_cpp_debug_tool {
-    check_enviroment
+    check_environment
 
     local tool_name="lite_model_debug_tool"
     local tool_path=$(find ${BUILD_ROOT_DIR} -type f -name ${tool_name})
@@ -79,7 +79,7 @@ function run_cpp_debug_tool {
 }
 
 function run_py_debug_tool {
-    check_enviroment
+    check_environment
 
     local tool_name="analysis_tool.py"
     local tool_path=$(find ${BUILD_ROOT_DIR} -type f -name ${tool_name})

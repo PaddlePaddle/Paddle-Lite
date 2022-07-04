@@ -247,7 +247,7 @@ int Program::Execute(uint32_t input_count,
   int ret = CheckInputsAndOutputs(
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
-  NNADAPTER_VLOG(3) << "Execute begining.";
+  NNADAPTER_VLOG(3) << "Execute beginning.";
   std::vector<magicmind::IRTTensor*> inputs = {};
   std::vector<magicmind::IRTTensor*> outputs = {};
   MLU_MM_CHECK(magicmind::CreateInputTensors(mm_context_.get(), &inputs));

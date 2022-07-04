@@ -212,7 +212,7 @@ TEST(Scale, performance) {
   std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester<float>(
       place, "def", DDim(std::vector<int64_t>{5, 2, 3, 4}), 1.2, 1.1, true));
 
-  // To modify the arm context, one can retrive the context as follows.
+  // To modify the arm context, one can retrieve the context as follows.
   // #ifdef LITE_WITH_ARM
   //   tester->context()->As<ARMContext>();
   // #endif

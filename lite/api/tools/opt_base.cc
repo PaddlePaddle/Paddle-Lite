@@ -422,7 +422,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
-      "  Arguements of sparse convolution in opt: \n"
+      "  Arguments of sparse convolution in opt: \n"
       "        `--sparse_model=(true|false)`\n"
       "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
