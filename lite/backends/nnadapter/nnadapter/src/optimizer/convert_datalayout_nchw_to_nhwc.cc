@@ -718,7 +718,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
   auto axes_operand = input_operands[1];
   // Recalculate the perm according to the dimorder vector of the input operand
   auto input_permutation = GetPermutation(input_operand);
-  std::vector<int32_t> nchw_layout = {0, 1, 2, 3};
+  std::vector<int32_t> origin_data_layout =
+      IdentityPermutation(input_dimensions_count);
   std::vector<int32_t> axes;
   if (axes_operand && (axes_operand->length / sizeof(int32_t)) > 0) {
     auto axes_count = axes_operand->length / sizeof(int32_t);
@@ -743,10 +744,11 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
     if (axes[i] < 0) {
       axes[i] += input_dimensions_count;
     }
-    // Delete the dimension corresponding to the axis of the nchw_layout
-    for (auto it = nchw_layout.begin(); it != nchw_layout.end();) {
+    // Delete the dimension corresponding to the axis of the origin_data_layout
+    for (auto it = origin_data_layout.begin();
+         it != origin_data_layout.end();) {
       if (*it == axes[i]) {
-        it = nchw_layout.erase(it);
+        it = origin_data_layout.erase(it);
       } else {
         ++it;
       }
@@ -763,7 +765,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
   }
   // Calculate the distance between current data layout and hchw data layout
   std::vector<int32_t> output_permutation;
-  for (auto nchw_data : nchw_layout) {
+  for (auto nchw_data : origin_data_layout) {
     int32_t index = std::distance(
         input_permutation.begin(),
         std::find(
