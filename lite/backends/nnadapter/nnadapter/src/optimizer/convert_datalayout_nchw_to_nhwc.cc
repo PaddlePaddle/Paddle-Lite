@@ -711,10 +711,32 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
-  // Skip NCHW2NHWC conversion
-  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+  auto axes_operand = input_operands[1];
+  // Recalculate the axis according to the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  if (axes_operand) {
+    auto axes_count = axes_operand->length / sizeof(int32_t);
+    auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);
+    for (int32_t i = 0; i < axes_count; i++) {
+      if (axes_data[i] < 0) {
+        axes_data[i] += input_dimensions_count;
+      }
+      TransposeAxis(axes_data[i], input_permutation);
+    }
+  }
+  std::vector<int32_t> output_permutation;
+  int32_t diff = input_dimensions_count - output_dimensions_count;
+  for (int32_t i = 0; i < input_dimensions_count; i++) {
+    if (input_permutation[i] >= diff) {
+      output_permutation.push_back(input_permutation[i] - diff);
+    }
+  }
+  TransposeOperand(output_operand, output_permutation);
+  SetPermutation(output_operand, output_permutation);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
