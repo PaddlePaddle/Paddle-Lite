@@ -40,7 +40,6 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   }
   // max
   int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
-  param.output_max->Resize({max_ptr_size});
   input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   if (quant_int8) {  // for paddle slim int8 quant
@@ -88,6 +87,8 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   int k = in_mat_dims[1];
   int n = param.w->dims()[1];
   bool quant_int8 = param.quant_w_max > 0.f;
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  param.output_max->Resize({max_ptr_size});
 
   float* output_max =
       quant_int8 ? nullptr

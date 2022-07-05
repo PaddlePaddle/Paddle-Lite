@@ -85,13 +85,9 @@ void XPUMultiEncoderCompute::prepare_quant_max(
       cpu_max.data(),
       sizeof(float) * max_ptr_len * max_value.size(),
       IoDirection::HtoD);
-  for (int i = 0; i < max_ptr_len * max_value.size(); i += max_ptr_len) {
-    max_xpu_ptrs.push_back(input_max_ptr + i);
-  }
-  if (matmul_quant) {
-    CHECK_EQ(max_xpu_ptrs.size(), (n_layers * 18));
-  } else {
-    CHECK_EQ(max_xpu_ptrs.size(), (n_layers * 12));
+  max_xpu_ptrs.resize(max_value.size());
+  for (int i = 0; i < max_value.size(); i += 1) {
+    max_xpu_ptrs[i] = input_max_ptr + i * max_ptr_len;
   }
   return;
 }

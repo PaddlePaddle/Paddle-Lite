@@ -176,8 +176,6 @@ class LITE_API Predictor {
 #ifdef LITE_WITH_XPU
     lite::TargetWrapperXPU::FreeL3Cache();
 #endif
-
-    ClearTensorArray(program_desc_);
   }
 
 #ifdef LITE_WITH_METAL
