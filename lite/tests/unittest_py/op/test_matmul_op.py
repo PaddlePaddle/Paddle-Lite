@@ -44,6 +44,10 @@ class TestMulOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        xpu_places = [
+            Place(TargetType.XPU, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=xpu_places)
 
         # self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
         #                             DataLayoutType.NCHW)
@@ -84,7 +88,7 @@ class TestMulOp(AutoScanTest):
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
             channels = draw(st.integers(min_value=1, max_value=64))
             batch = draw(st.integers(min_value=1, max_value=4))
-        if target_str == "ARM" or target_str == "X86" or target_str == "NNAdapter":
+        if target_str == "ARM" or target_str == "X86" or target_str == "NNAdapter" or target_str == "XPU":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))

@@ -86,7 +86,7 @@ class TestTranspose2Op(AutoScanTest):
         in_dtype = np.float32
         if (target == "X86"):
             use_mkldnn_data = True
-            in_dtype = draw(st.sampled_from([np.float32]))
+            in_dtype = draw(st.sampled_from([np.float32, np.int64]))
         elif (target == "ARM"):
             in_dtype = draw(
                 st.sampled_from([np.float32, np.int32, np.int64, np.int8]))

@@ -55,7 +55,7 @@ struct _NotEqualFunctor<float> {
   }
 };
 
-inline int GetElementwiseIndex(const int64_t *x_dims_array,
+inline int GetElementwiseIndex(const int *x_dims_array,
                                const int max_dim,
                                const int *index_array) {
   int index_ = 0;
@@ -67,7 +67,7 @@ inline int GetElementwiseIndex(const int64_t *x_dims_array,
   return index_;
 }
 
-inline void UpdateElementwiseIndexArray(const int64_t *out_dims_array,
+inline void UpdateElementwiseIndexArray(const int *out_dims_array,
                                         const int max_dim,
                                         int *index_array) {
   for (int i = max_dim - 1; i >= 0; --i) {
@@ -77,29 +77,6 @@ inline void UpdateElementwiseIndexArray(const int64_t *out_dims_array,
     } else {
       break;
     }
-  }
-}
-
-template <typename Functor, typename T, typename OutType = T>
-void CommonForwardBroadcast(const T *x_data,
-                            const T *y_data,
-                            OutType *out_data,
-                            int64_t *x_dims_array,
-                            int64_t *y_dims_array,
-                            int64_t *out_dims_array,
-                            int max_dim,
-                            Functor func) {
-  std::vector<int> index_array(max_dim, 0);
-
-  const int out_size = std::accumulate(
-      out_dims_array, out_dims_array + max_dim, 1, std::multiplies<int64_t>());
-  int x_index, y_index;
-  for (int out_index = 0; out_index < out_size; ++out_index) {
-    x_index = GetElementwiseIndex(x_dims_array, max_dim, index_array.data());
-    y_index = GetElementwiseIndex(y_dims_array, max_dim, index_array.data());
-    out_data[out_index] = func(x_data[x_index], y_data[y_index]);
-
-    UpdateElementwiseIndexArray(out_dims_array, max_dim, index_array.data());
   }
 }
 
@@ -122,6 +99,79 @@ inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
   return actual_dims;
 }
 
+inline void GetBroadcastDimsArrays(const DDim &x_dims,
+                                   const DDim &y_dims,
+                                   int *x_dims_array,
+                                   int *y_dims_array,
+                                   int *out_dims_array,
+                                   const int max_dim,
+                                   const int axis) {
+  CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
+  CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
+
+  if (x_dims.size() > y_dims.size()) {
+    std::fill(y_dims_array, y_dims_array + axis, 1);
+    if (axis + y_dims.size() < max_dim) {
+      std::fill(y_dims_array + axis + y_dims.size(), y_dims_array + max_dim, 1);
+    }
+    for (int i = 0; i < x_dims.size(); i++) x_dims_array[i] = x_dims[i];
+    for (int i = 0; i < y_dims.size(); i++)
+      *(y_dims_array + axis + i) = y_dims[i];
+  } else {
+    std::fill(x_dims_array, x_dims_array + axis, 1);
+    if (axis + x_dims.size() < max_dim) {
+      std::fill(x_dims_array + axis + x_dims.size(), x_dims_array + max_dim, 1);
+    }
+    for (int i = 0; i < x_dims.size(); i++)
+      *(x_dims_array + axis + i) = x_dims[i];
+    for (int i = 0; i < y_dims.size(); i++) *(y_dims_array + i) = y_dims[i];
+  }
+
+  for (int i = 0; i < max_dim; i++) {
+    CHECK(x_dims_array[i] == y_dims_array[i] || x_dims_array[i] <= 1 ||
+          y_dims_array[i] <= 1)
+        << "Broadcast dimension mismatch. Operands could not be broadcast.";
+
+    if ((x_dims_array[i] > 1 || y_dims_array[i] > 1) ||
+        (x_dims_array[i] == 1 && y_dims_array[i] == 1)) {
+      out_dims_array[i] = std::max(x_dims_array[i], y_dims_array[i]);
+    } else {
+      out_dims_array[i] = -1;
+    }
+  }
+}
+
+template <typename Functor, typename T, typename OutType = T>
+void CommonForwardBroadcast(const T *x_data,
+                            const T *y_data,
+                            OutType *out_data,
+                            int *x_dims_array,
+                            int *y_dims_array,
+                            int *out_dims_array,
+                            int max_dim,
+                            Functor func,
+                            const bool is_xsize_larger = true) {
+  std::vector<int> index_array(max_dim, 0);
+  CHECK(x_data != nullptr) << "The input X should not be empty.";
+  CHECK(y_data != nullptr) << "The input Y should not be empty.";
+
+  const int out_size = std::accumulate(
+      out_dims_array, out_dims_array + max_dim, 1, std::multiplies<int>());
+
+  int x_index, y_index;
+  for (int out_index = 0; out_index < out_size; ++out_index) {
+    x_index = GetElementwiseIndex(x_dims_array, max_dim, index_array.data());
+    y_index = GetElementwiseIndex(y_dims_array, max_dim, index_array.data());
+    if (is_xsize_larger) {
+      out_data[out_index] = func(x_data[x_index], y_data[y_index]);
+    } else {
+      out_data[out_index] = func(y_data[y_index], x_data[x_index]);
+    }
+
+    UpdateElementwiseIndexArray(out_dims_array, max_dim, index_array.data());
+  }
+}
+
 template <typename Functor, typename T, typename OutType = T>
 void CommonElementwiseBroadcastForward(const T *x,
                                        const T *y,
@@ -129,12 +179,24 @@ void CommonElementwiseBroadcastForward(const T *x,
                                        const DDim &x_dims,
                                        const DDim &y_dims,
                                        const DDim &out_dims,
-                                       Functor func) {
-  int max_dim = std::max(x_dims.size(), y_dims.size());
+                                       Functor func,
+                                       int axis,
+                                       const bool is_xsize_larger = true) {
+  int max_dim = (std::max)(x_dims.size(), y_dims.size());
+  axis = (axis == -1 ? std::abs(static_cast<int>(x_dims.size()) -
+                                static_cast<int>(y_dims.size()))
+                     : axis);
 
-  std::vector<int64_t> x_dims_array = x_dims.Vectorize();
-  std::vector<int64_t> y_dims_array = y_dims.Vectorize();
-  std::vector<int64_t> out_dims_array = out_dims.Vectorize();
+  std::vector<int> x_dims_array(max_dim);
+  std::vector<int> y_dims_array(max_dim);
+  std::vector<int> out_dims_array(max_dim);
+  GetBroadcastDimsArrays(x_dims,
+                         y_dims,
+                         x_dims_array.data(),
+                         y_dims_array.data(),
+                         out_dims_array.data(),
+                         max_dim,
+                         axis);
 
   CommonForwardBroadcast<Functor, T, OutType>(x,
                                               y,
@@ -143,7 +205,8 @@ void CommonElementwiseBroadcastForward(const T *x,
                                               y_dims_array.data(),
                                               out_dims_array.data(),
                                               max_dim,
-                                              func);
+                                              func,
+                                              is_xsize_larger);
 }
 
 inline void get_mid_dims(const lite::DDim &x_dims,
@@ -156,14 +219,15 @@ inline void get_mid_dims(const lite::DDim &x_dims,
   *pre = 1;
   *n = 1;
   *post = 1;
+  *is_run_common_broadcast = 0;
   for (int i = 0; i < axis; ++i) {
     (*pre) *= x_dims[i];
   }
 
   for (int i = 0; i < y_dims.size(); ++i) {
-    // do broadcast
     if (x_dims[i + axis] != y_dims[i]) {
       *is_run_common_broadcast = 1;
+      return;
     }
     (*n) *= y_dims[i];
   }
@@ -181,10 +245,18 @@ void CompareCompute<PType, CompareFunctor>::Run() {
   const size_t y_size = param.Y->numel();
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
+
   bool *z = param.Out->template mutable_data<bool>();
   const auto *x = param.X->template data<DType>();
   const auto *y = param.Y->template data<DType>();
-  if (x_size == y_size) {
+  bool is_xsize_larger = true;
+  int max_dim = x_dims.size();
+  if (x_dims.size() < y_dims.size()) {
+    is_xsize_larger = false;
+    max_dim = y_dims.size();
+  }
+
+  if (x_dims == y_dims) {
     for (int i = 0; i < x_size; ++i) {
       z[i] = CompareFunctor()(x[i], y[i]);
     }
@@ -192,36 +264,89 @@ void CompareCompute<PType, CompareFunctor>::Run() {
     int axis = (param.axis == -1 ? abs(static_cast<int>(x_dims.size()) -
                                        static_cast<int>(y_dims.size()))
                                  : param.axis);
+
     // If Y contains only one data, all_broad_cast mode will be applied.
     // In this mode, each member in X will compare to the only var in Y.
-    if (param.Y->numel() == 1) {
-      axis = x_dims.size();
-    }
     int outer_num, mid_num, inner_num;
     int is_run_common_broadcast = 0;
     int axis_trim = 0;
-    auto y_dims_trimed = trim_trailing_singular_dims(y_dims);
-    axis_trim = (y_dims_trimed.size() == 0) ? x_dims.size() : axis;
-    get_mid_dims(x_dims,
-                 y_dims_trimed,
-                 axis_trim,
-                 &outer_num,
-                 &mid_num,
-                 &inner_num,
-                 &is_run_common_broadcast);
+    if (is_xsize_larger) {
+      auto y_dims_trimed = trim_trailing_singular_dims(y_dims);
+      axis_trim = (y_dims_trimed.size() == 0) ? x_dims.size() : axis;
+
+      get_mid_dims(x_dims,
+                   y_dims_trimed,
+                   axis_trim,
+                   &outer_num,
+                   &mid_num,
+                   &inner_num,
+                   &is_run_common_broadcast);
+    } else {
+      auto x_dims_trimed = trim_trailing_singular_dims(x_dims);
+      axis_trim = (x_dims_trimed.size() == 0) ? y_dims.size() : axis;
+
+      get_mid_dims(y_dims,
+                   x_dims_trimed,
+                   axis_trim,
+                   &outer_num,
+                   &mid_num,
+                   &inner_num,
+                   &is_run_common_broadcast);
+    }
+
     if (is_run_common_broadcast == 1) {
       CommonElementwiseBroadcastForward<CompareFunctor, DType, bool>(
-          x, y, z, x_dims, y_dims, param.Out->dims(), CompareFunctor());
+          x,
+          y,
+          z,
+          x_dims,
+          y_dims,
+          param.Out->dims(),
+          CompareFunctor(),
+          axis,
+          is_xsize_larger);
       return;
     }
 
-    // get_mid_dims(x_dims, y_dims, axis, &outer_num, &mid_num, &inner_num);
-    for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
-      for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
-        auto y_data = y[mid_id];
-        for (int inner_id = 0; inner_id < inner_num; ++inner_id) {
-          int index = (outer_id * mid_num + mid_id) * inner_num + inner_id;
-          z[index] = CompareFunctor()(x[index], y_data);
+    if (inner_num == 1) {
+      if (is_xsize_larger) {
+        for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
+          for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
+            auto y_data = y[mid_id];
+            int index = outer_id * mid_num + mid_id;
+            z[index] = CompareFunctor()(x[index], y_data);
+          }
+        }
+      } else {
+        for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
+          for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
+            auto x_data = x[mid_id];
+            int index = outer_id * mid_num + mid_id;
+            z[index] = CompareFunctor()(x_data, y[index]);
+          }
+        }
+      }
+
+    } else {
+      if (is_xsize_larger) {
+        for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
+          for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
+            auto y_data = y[mid_id];
+            for (int inner_id = 0; inner_id < inner_num; ++inner_id) {
+              int index = (outer_id * mid_num + mid_id) * inner_num + inner_id;
+              z[index] = CompareFunctor()(x[index], y_data);
+            }
+          }
+        }
+      } else {
+        for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
+          for (int mid_id = 0; mid_id < mid_num; ++mid_id) {
+            auto x_data = x[mid_id];
+            for (int inner_id = 0; inner_id < inner_num; ++inner_id) {
+              int index = (outer_id * mid_num + mid_id) * inner_num + inner_id;
+              z[index] = CompareFunctor()(x_data, y[index]);
+            }
+          }
         }
       }
     }
