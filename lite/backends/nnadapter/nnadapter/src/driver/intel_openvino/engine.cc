@@ -85,6 +85,13 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     // Build from cache
     input_types_ = cache->input_types;
     output_types_ = cache->output_types;
+    // Check if the cached model is dynamic shape.
+    for (auto type : input_types_) {
+      if (IsDynamicShapeOperandType(type)) {
+        with_dynamic_shape_ = true;
+        break;
+      }
+    }
     std::stringstream model_stream;
     model_stream.write(reinterpret_cast<char*>(cache->buffer.data()),
                        cache->buffer.size());
@@ -130,15 +137,39 @@ int Program::Build(core::Model* model, core::Cache* cache) {
           std::make_shared<default_opset::Result>(*tensor_map_[operand].back());
       result_nodes_.push_back(result_node);
     }
+    // Get dynamic shape info.
+    std::map<ov::Output<ov::Node>, ov::PartialShape> dynamic_shape_map;
+    for (auto operand : model->input_operands) {
+      bool dynamic_shape_operand = false;
+      int count = operand->type.dimensions.count;
+      auto dims = operand->type.dimensions.data;
+      for (int i = 0; i < count; i++) {
+        if (dims[i] == NNADAPTER_UNKNOWN) {
+          with_dynamic_shape_ = true;
+          dynamic_shape_operand = true;
+          break;
+        }
+      }
+      if (dynamic_shape_operand) {
+        ov::PartialShape dynamic_shape =
+            ConvertDynamicDimensions(&operand->type.dimensions);
+        dynamic_shape_map[parameter_node_map_[operand]->output(0)] =
+            dynamic_shape;
+      }
+    }
     // Convert NNAdapter model to OpenVINO model
     std::shared_ptr<ov::Model> ov_model = std::make_shared<ov::Model>(
         result_nodes_, parameter_nodes, "openvino_graph");
-    compiled_model_ =
-        std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
-            ov_model, context_->GetFirtSelectedDeviceName()));
-    NNADAPTER_VLOG(3) << "Build from model success.";
+    // Set dynamic shape for OpenVino model.
+    if (with_dynamic_shape_) {
+      ov_model->reshape(dynamic_shape_map);
+    }
     // Cache compiled openvino model.
     if (cache->token && cache->dir) {
+      compiled_model_ = std::make_shared<ov::CompiledModel>(
+          runtime_core_->compile_model(ov_model,
+                                       context_->GetFirtSelectedDeviceName(),
+                                       ov::cache_dir(cache->dir)));
       std::stringstream model_stream;
       compiled_model_->export_model(model_stream);
       NNADAPTER_VLOG(3) << "NNAdapter model cache size(bytes):"
@@ -147,7 +178,12 @@ int Program::Build(core::Model* model, core::Cache* cache) {
       memcpy(reinterpret_cast<char*>(cache->buffer.data()),
              model_stream.str().data(),
              model_stream.str().size());
+    } else {
+      compiled_model_ =
+          std::make_shared<ov::CompiledModel>(runtime_core_->compile_model(
+              ov_model, context_->GetFirtSelectedDeviceName()));
     }
+    NNADAPTER_VLOG(3) << "Build from model success.";
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -171,10 +207,44 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
       return NNADAPTER_INVALID_DIMENSIONS;
     }
     // Check dimensions data
+    bool is_matched = true;
     for (uint32_t j = 0; j < count; j++) {
       if (data[j] != src_data[j]) {
-        return NNADAPTER_INVALID_DIMENSIONS;
+        is_matched = false;
+        break;
       }
+    }
+    if (is_matched) continue;
+    // Check dynamic dymensions data
+    if (with_dynamic_shape_) {
+      for (int i = 0; i < count; i++) {
+        is_matched = false;
+        int min_shape = src_dimensions.dynamic_data[0][i];
+        int max_shape = src_dimensions.dynamic_data[0][i];
+        for (int j = 0; j < src_dimensions.dynamic_count; j++) {
+          int shape = src_dimensions.dynamic_data[j][i];
+          if (shape == -1) {
+            is_matched = true;
+            break;
+          }
+          if (shape < min_shape) {
+            min_shape = shape;
+          }
+          if (shape > max_shape) {
+            max_shape = shape;
+          }
+        }
+        if (is_matched) continue;
+        if (data[i] < min_shape || data[i] > max_shape) {
+          NNADAPTER_VLOG(5) << "NNAdapter invalid dimensions:" << data[i]
+                            << " not in[" << min_shape << "," << max_shape
+                            << "]";
+          return NNADAPTER_INVALID_DIMENSIONS;
+        }
+      }
+    } else {
+      NNADAPTER_VLOG(5) << "NNAdapter invalid dimensions.";
+      return NNADAPTER_INVALID_DIMENSIONS;
     }
   }
   return NNADAPTER_NO_ERROR;
@@ -202,6 +272,9 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     ov::Tensor input_tensor = infer_request.get_input_tensor(i);
+    if (with_dynamic_shape_) {
+      input_tensor.set_shape(ConvertToOVShape(type.dimensions));
+    }
     memcpy(input_tensor.data(), buffer, length);
   }
   // Inference
@@ -213,11 +286,25 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK_LT(arg.index, output_count);
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
-    auto type = output_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type, nullptr);
-    auto length = GetOperandTypeBufferLength(type);
     ov::Tensor output_tensor = infer_request.get_output_tensor(i);
     auto output_size = output_tensor.get_byte_size();
+    // Skip copy to output if output tensor if empty.
+    if (output_size == 0) {
+      continue;
+    }
+    auto ov_out_shape = output_tensor.get_shape();
+    // Get the dimensions of the outputs from OpenVINO
+    // according to the dynamic dimensions of the inputs, fill them to 'type'
+    // and call the 'access' function to re-allocate the host output memory.
+    auto type = output_types_[arg.index];
+    if (with_dynamic_shape_ || IsDynamicShapeOperandType(type)) {
+      NNADAPTER_CHECK_EQ(ov_out_shape.size(), type.dimensions.count);
+      for (int i = 0; i < type.dimensions.count; i++) {
+        type.dimensions.data[i] = ov_out_shape[i];
+      }
+    }
+    auto buffer = arg.access(arg.memory, &type, nullptr);
+    auto length = GetOperandTypeBufferLength(type);
     NNADAPTER_CHECK_EQ(output_size, length);
     memcpy(buffer, output_tensor.data(), output_size);
   }
