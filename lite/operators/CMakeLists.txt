@@ -241,6 +241,9 @@ add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 
+# Only for Custom
+add_operator(__custom__yolo_box_3d_op basic SRCS __custom__yolo_box_3d_op.cc)
+
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)
 

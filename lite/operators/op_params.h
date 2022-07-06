@@ -2270,6 +2270,25 @@ struct RollParam : ParamBase {
   std::vector<int64_t> axis{};
 };
 
+/// --------------------- custom operators -------------------- ///
+// For yolo_box_3d
+struct CustomYoloBox3dParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* ImgSize{};
+  lite::Tensor* Boxes{};
+  lite::Tensor* Scores{};
+  lite::Tensor* Location{};
+  lite::Tensor* Dim{};
+  lite::Tensor* Alpha{};
+
+  std::vector<int> anchors{};
+  int class_num{0};
+  float conf_thresh{0.f};
+  int downsample_ratio{0};
+  bool clip_bbox{true};
+  float scale_x_y{1.0f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

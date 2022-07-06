@@ -428,6 +428,10 @@ REGISTER_CONVERTER(log_softmax,
                    "huawei_ascend_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "cambricon_mlu");
 REGISTER_CONVERTER(multiclass_nms3, ConvertMulticlassNms, "cambricon_mlu");
+// Custom op
+REGISTER_CONVERTER(__custom__yolo_box_3d,
+                   ConvertCustomYoloBox3d,
+                   "qualcomm_qnn");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

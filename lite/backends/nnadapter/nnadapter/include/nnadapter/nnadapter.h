@@ -2217,6 +2217,44 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_YOLO_BOX,
+
+  /**
+   * A custom operation, which adds the calculation of 3d information as output
+   * on the basis of yolo-box.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32 tensor of shape [N, C, H, W], its
+   * dimension(C) stores box locations, confidence score and classification
+   * one-hot keys of each anchor box.
+   * * 1: imgsize, a NNADAPTER_INT32 tensor of shape [N, 2], holds height and
+   * width of each input image used for resizing output box in input image
+   * scale.
+   * * 2: anchors, a NNADAPTER_INT32 tensor of shape [2], represents the anchor
+   * width and height, it will be parsed pair by pair.
+   * * 3: class_num, a NNADAPTER_INT32 tensor of shape [1], represents number of
+   * classes.
+   * * 4: conf_thresh, a NNADAPTER_FLOAT32 tensor of shape [1], the confidence
+   * scores threshold of detection boxes, boxes with confidence scores under
+   * threshold should be ignored.
+   * * 5: downsample_ratio, a NNADAPTER_INT32 tensor of shape [1], down-sampling
+   * rate from network input to this operation input.
+   * * 6: clip_bbox, a NNADAPTER_BOOL8 tensor of shape [1], whether clip output
+   * bonding box in `imgsize` boundary, defaults to true.
+   * * 7: scale_x_y, a NNADAPTER_FLOAT32 tensor of shape [1], scale the center
+   * point of decoded bounding box, defaults to 1.0.
+   *
+   * Outputs:
+   * * 0: boxes, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, 4], N is the
+   * batch size, M is the number of output boxes, and the coordinates of boxes
+   * [xmin, ymin, xmax, ymax].
+   * * 1: scores, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, `class_num`].
+   * * 2: location, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, 3].
+   * * 3: dim, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, 3].
+   * * 4: alpha, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, 2].
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CUSTOM_YOLO_BOX_3D,
 } NNAdapterOperationCode;
 
 /**

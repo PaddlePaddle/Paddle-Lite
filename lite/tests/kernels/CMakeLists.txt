@@ -73,6 +73,7 @@ lite_cc_test(test_kernel_meshgrid_compute SRCS meshgrid_compute_test.cc)
 lite_cc_test(test_kernel_adaptive_pool_compute SRCS adaptive_pool_compute_test.cc)
 #lite_cc_test(test_kernel_crf_decoding_compute SRCS crf_decoding_compute_test.cc)
 #lite_cc_test(test_uniform_random_compute SRCS uniform_random_compute_test.cc)
+lite_cc_test(test_kernel_custom_yolo_box_3d_compute SRCS __custom__yolo_box_3d_compute_test.cc)
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_gru_unit SRCS gru_unit_test.cc)
