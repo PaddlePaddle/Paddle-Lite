@@ -21,9 +21,6 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
-#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-#include "lite/backends/arm/math/sve2/pooling_sve2.h"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -80,12 +77,6 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-      if (ctx.has_sve2()) {
-        lite::arm::math::pooling_global_avg_sve2(POOL_IN_PARAM);
-        return;
-      }
-#endif
       lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }
