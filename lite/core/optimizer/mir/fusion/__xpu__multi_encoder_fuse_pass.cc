@@ -651,7 +651,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     const std::vector<std::string> quant_mul_ops = {
         "q_mul", "k_mul", "v_mul", "qkv_mul", "qkv_mul_3", "qkv_mul_4"};
     const std::vector<std::string> mul_add_ops = {
-        "q_add", "k_add", "v_add", "qkv_add", "qkv_add_3", "qkv_add_4"};
+        "q_add", "k_add", "v_add", "qkv_add", "qkv_act", "qkv_add_4"};
     const std::vector<std::string> matmul_ops = {"qk_matmul", "qkv_matmul"};
 
     auto* q_mul_op_info = matched.at("q_mul")->stmt()->op_info();
