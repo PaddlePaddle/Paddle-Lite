@@ -60,6 +60,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertSoftmax(core::Operation* operation);
   void ConvertSplit(core::Operation* operation);
   void ConvertSqueeze(core::Operation* operation);
+  void ConvertStack(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
 
