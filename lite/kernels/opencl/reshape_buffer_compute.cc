@@ -33,7 +33,7 @@ namespace kernels {
 namespace opencl {
 
 class ReshapeComputeFloatBuffer
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ReshapeParam;
 
@@ -42,7 +42,7 @@ class ReshapeComputeFloatBuffer
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const Tensor* const x = param.x;
-    Tensor* const output = param.output;
+    Tensor* output = param.output;
 
     auto output_dims = output->dims();
     auto output_lod = output->lod();
@@ -71,13 +71,13 @@ class ReshapeComputeFloatBuffer
 
 REGISTER_LITE_KERNEL(reshape,
                      kOpenCL,
-                     kFP16,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -85,19 +85,19 @@ REGISTER_LITE_KERNEL(reshape,
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reshape2,
                      kOpenCL,
-                     kFP16,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -107,7 +107,7 @@ REGISTER_LITE_KERNEL(reshape2,
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
