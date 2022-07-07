@@ -84,7 +84,7 @@ static DDim ValidateShape(const std::vector<int>& shape,
 TEST(reshape_opencl, compute) {
   LOG(INFO) << "to get kernel ...";
   auto kernels = KernelRegistry::Global().Create(
-      "reshape", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+      "reshape", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
   lite_api::CLPrecisionType p = lite_api::CLPrecisionType::CL_PRECISION_FP16;
@@ -217,5 +217,5 @@ TEST(reshape_opencl, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(reshape, kOpenCL, kFP16, kNCHW, def);
-USE_LITE_KERNEL(reshape2, kOpenCL, kFP16, kNCHW, def);
+USE_LITE_KERNEL(reshape, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(reshape2, kOpenCL, kFloat, kNCHW, def);
