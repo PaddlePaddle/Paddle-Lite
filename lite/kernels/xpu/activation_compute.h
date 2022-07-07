@@ -20,7 +20,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ReluCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -47,7 +48,8 @@ class GeluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~GeluCompute() = default;
 };
 
-class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class TanhCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -56,7 +58,8 @@ class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~TanhCompute() = default;
 };
 
-class SigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class SigmoidCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -164,7 +167,8 @@ class HardSigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~HardSigmoidCompute() = default;
 };
 
-class LeakyReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class LeakyReluCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
