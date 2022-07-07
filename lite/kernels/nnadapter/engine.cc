@@ -32,7 +32,8 @@ namespace nnadapter {
 // input variable names 3) The input variable shapes
 std::string GenerateModelCacheToken(
     const std::vector<std::string>& device_names,
-    const std::vector<Variable>& input_vars) {
+    const std::vector<Variable>& input_vars,
+    const std::vector<Variable>& output_vars) {
   std::ostringstream os;
   for (auto device_name : device_names) {
     os << device_name;
@@ -50,6 +51,9 @@ std::string GenerateModelCacheToken(
         }
       }
     }
+  }
+  for (size_t i = 0; i < output_vars.size(); i++) {
+    os << output_vars[i].name;
   }
   return MD5(os.str());
 }
@@ -364,7 +368,8 @@ bool Engine::Run() {
   // Take the model cache buffer from the scope
   std::vector<char> model_cache_buffer;
   // Generate a cache token based on the input names and shapes
-  auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
+  auto model_cache_token =
+      GenerateModelCacheToken(device_names, input_vars_, output_vars_);
   VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
   ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
       exec_scope_, model_cache_token, &model_cache_buffer);
