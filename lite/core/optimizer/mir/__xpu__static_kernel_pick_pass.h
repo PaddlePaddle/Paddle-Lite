@@ -297,8 +297,9 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
  private:
   core::KernelPickFactor kernel_pick_factors_;
-#ifdef LITE_WITH_XPU
+
   bool xpu_use_fp16_optimizer_{false};
+#ifdef LITE_WITH_XPU
   // TODO(quwei:) addn more op
   const std::set<std::string> PRECISION_INT31_OP_{"__xpu__fc"};
   const std::set<std::string> PRECISION_INT8_OP_{"__xpu__fc"};
