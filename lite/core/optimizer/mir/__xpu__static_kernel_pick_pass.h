@@ -93,9 +93,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       VLOG(4) << "[score s1]:" << score;
 
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
-          (place.precision == kernel.precision() ||
-           kernel.precision() == PRECISION(kAny) ||
-           place.precision == PRECISION(kAny))) {
+              (place.precision == kernel.precision() ||
+               kernel.precision() == PRECISION(kAny) ||
+               place.precision == PRECISION(kAny)) ||
+          // fp16 may also pick FP32 kernel preciison
+          (xpu_use_fp16_optimizer_ &&
+           kernel.precision() == PRECISION(kFloat))) {
         // score skipped, if kernel is int8, but op is not int8
         if (!(kernel.precision() == PRECISION(kInt8) &&
               !instruct.op_info()->HasAttr("enable_int8"))) {
@@ -314,7 +317,15 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "gather",
                                               "pool2d",
                                               "concat",
-                                              "calib"};
+                                              "calib",
+                                              "relu",
+                                              "tanh",
+                                              "sigmoid",
+                                              "leaky_relu",
+                                              "conv2d_transpose",
+                                              "elementwise_mul",
+                                              "elementwise_add",
+                                              "reduce_mean"};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",
