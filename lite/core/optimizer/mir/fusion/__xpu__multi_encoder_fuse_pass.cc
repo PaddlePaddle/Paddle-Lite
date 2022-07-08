@@ -101,7 +101,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* q_reshape2_xshape = VarNode("q_reshape2_xshape")
                                   ->assert_is_op_output("reshape2", "XShape")
                                   ->AsIntermediate();
-    std::string target_op_type = "matmul";
+    std::string target_op_type = matmul_type_;
     if (with_q_scale_) {
       target_op_type = "scale";
     }
@@ -121,7 +121,7 @@ class XPUSingleEncoderFuser : public FuseBase {
       q_scale = OpNode("q_scale", "scale")->AsIntermediate();
       q_scale_out = VarNode("q_scale_out")
                         ->assert_is_op_output("scale", "Out")
-                        ->assert_is_op_input("matmul", "X")
+                        ->assert_is_op_input(matmul_type_, "X")
                         ->AsIntermediate();
     }
 
@@ -151,16 +151,16 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* k_transpose2 = OpNode("k_transpose2", "transpose2")->AsIntermediate();
     auto* k_transpose2_out = VarNode("k_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
-                                 ->assert_is_op_input("matmul", "Y")
+                                 ->assert_is_op_input(matmul_type_, "Y")
                                  ->AsIntermediate();
     auto* k_transpose2_xshape =
         VarNode("k_transpose2_xshape")
             ->assert_is_op_output("transpose2", "XShape")
             ->AsIntermediate();
 
-    auto* qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
+    auto* qk_matmul = OpNode("qk_matmul", matmul_type_)->AsIntermediate();
     auto* qk_matmul_out = VarNode("qk_matmul_out")
-                              ->assert_is_op_output("matmul", "Out")
+                              ->assert_is_op_output(matmul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
                               ->AsIntermediate();
     auto* qk_mask = VarNode("qk_mask")
@@ -887,7 +887,7 @@ class XPUMultiEncoderFuser {
 
       // q/k/v fusion
       bool enable_qkv_fusion = true;
-      if (norm_before_0) {
+      if (norm_before_0 && !adaptive_seqlen_) {
         enable_qkv_fusion = false;
       }
       op_desc.SetAttr<bool>("enable_qkv_fusion", enable_qkv_fusion);
@@ -1174,9 +1174,9 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<std::string> input_poss{"X", "Y"};
     std::vector<std::string> qkv_ln_2_out_poss{"X", "Y"};
     std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
-    std::vector<std::string> mul_types{"mul", "matmul"};
+    std::vector<std::string> mul_types{"mul", "matmul", "matmul_v2"};
     std::vector<bool> with_q_scales{true, false};
-    std::vector<bool> norm_befores{false};
+    std::vector<bool> norm_befores{true, false};
 
     std::string fc_precision;
     bool adaptive_seqlen = false;
