@@ -38,13 +38,25 @@ class TypeTargetTransformPass : public ProgramPass {
                         Node* in,
                         std::map<std::string, Node*>* copied_nodes);
 
-  void AddIoCopyInst(const Type& from,
-                     const Type& to,
-                     Node* in,
-                     SSAGraph* graph,
-                     Node* inst_node,
-                     std::map<std::string, Node*>* copied_nodes,
-                     const std::vector<Place>& valid_places);
+  void ComplementOutputs(SSAGraph* graph,
+                         Node* inst_node,
+                         Node* out,
+                         std::map<std::string, Node*>* input_nodes);
+
+  void AddInputIoCopyInst(const Type& from,
+                          const Type& to,
+                          Node* in,
+                          SSAGraph* graph,
+                          Node* inst_node,
+                          std::map<std::string, Node*>* copied_nodes,
+                          const std::vector<Place>& valid_places);
+
+  void AddOutputIoCopyInst(const Type& from,
+                           const Type& to,
+                           Node* out,
+                           SSAGraph* graph,
+                           Node* inst_node,
+                           const std::vector<Place>& valid_places);
 
   void SetValidPlaces(const std::vector<Place>& valid_places);
 
