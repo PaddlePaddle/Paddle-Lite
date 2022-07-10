@@ -14,6 +14,8 @@
 
 #include "lite/kernels/xpu/conv2d_transpose_compute.h"
 #include <vector>
+#include "lite/backends/xpu/math.h"
+#include "lite/backends/xpu/target_wrapper.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
