@@ -98,7 +98,8 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
            place.precision == PRECISION(kAny) ||
            // fp16 may also pick FP32 kernel preciison
            (xpu_use_fp16_optimizer_ &&
-            kernel.precision() == PRECISION(kFloat)))) {
+            kernel.precision() == PRECISION(kFloat) &&
+            place.precision == PRECISION(kFP16)))) {
         // score skipped, if kernel is int8, but op is not int8
         if (!(kernel.precision() == PRECISION(kInt8) &&
               !instruct.op_info()->HasAttr("enable_int8"))) {
