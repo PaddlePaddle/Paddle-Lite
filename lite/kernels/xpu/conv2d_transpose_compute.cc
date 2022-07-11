@@ -216,7 +216,7 @@ void Conv2dTransposeCompute<TGEMM, TW, DX, DY, PType>::Run() {
 namespace xpu = paddle::lite::kernels::xpu;
 
 using Conv2dTranspose_FP16_FP32_FP32 = xpu::
-    Conv2dTransposeCompute<int16_t, int16_t, float, float, PRECISION(kFloat)>;
+    Conv2dTransposeCompute<int16_t, float, float, float, PRECISION(kFloat)>;
 
 using Conv2dTransposeFp16 = xpu::Conv2dTransposeCompute<int16_t,
                                                         int16_t,
