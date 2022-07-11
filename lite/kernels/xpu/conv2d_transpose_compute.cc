@@ -32,6 +32,7 @@ template <typename TGEMM,
 void Conv2dTransposeCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
+  ctx.GetRawContext();
 
   auto filter_ptr = param.filter->template data<float>();
   auto filter_dims = param.filter->dims();
