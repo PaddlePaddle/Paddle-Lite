@@ -67,6 +67,7 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 NNADAPTER_WITH_INTEL_OPENVINO=OFF
 # /opt/intel/openvino_<version>
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_INTEL_OPENVINO_SDK_VERSION=""
 NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
 NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
@@ -237,6 +238,7 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
                         -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_INTEL_OPENVINO_SDK_VERSION=$NNADAPTER_INTEL_OPENVINO_SDK_VERSION \
                         -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
@@ -653,6 +655,10 @@ function main {
                 ;;
             --nnadapter_intel_openvino_sdk_root=*)
                 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_intel_openvino_sdk_version=*)
+                NNADAPTER_INTEL_OPENVINO_SDK_VERSION="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_google_xnnpack=*)

@@ -76,6 +76,7 @@ class Program {
       parameter_node_map_;
   std::vector<std::shared_ptr<Operator>> result_nodes_;
   std::shared_ptr<ov::CompiledModel> compiled_model_{nullptr};
+  bool with_dynamic_shape_{false};
 };
 
 }  // namespace intel_openvino

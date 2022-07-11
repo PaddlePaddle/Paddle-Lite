@@ -46,6 +46,11 @@ class Converter {
 
   std::shared_ptr<Tensor> GetMappedTensor(core::Operand* operand);
 
+  // Convert NNAdapter filter's shape layout to openvino's
+  // layout for conv-like operater.
+  std::shared_ptr<Operator> GetGroupConvFilterShape(
+      std::shared_ptr<Tensor> filter, const int groups);
+
   template <typename T>
   std::shared_ptr<Operator> AddUnsqueezeOperator(
       std::shared_ptr<Tensor> input_tensor, std::vector<T> axes) {
