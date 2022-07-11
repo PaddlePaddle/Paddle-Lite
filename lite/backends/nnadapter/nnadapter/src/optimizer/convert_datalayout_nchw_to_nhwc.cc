@@ -763,7 +763,17 @@ void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
     TransposeOperand(output_operand, output_permutation);
     SetPermutation(output_operand, output_permutation);
   } else {
-    // Skip NCHW2NHWC conversion
+    // Force to restore the dimorder vector of the input operand
+    auto input_permutation = GetPermutation(input_operand);
+    auto transpose_input_permutation = InversePermutation(input_permutation);
+    if (!IsIdentityPermutation(transpose_input_permutation)) {
+      auto transpose_input_operand = AppendTransposeOperation(
+          model_, input_operand, transpose_input_permutation);
+      UpdateOperationInputOperands(
+          {operation}, input_operand, transpose_input_operand);
+      SetPermutation(transpose_input_operand,
+                     IdentityPermutation(input_dimensions_count));
+    }
     SetPermutation(output_operand,
                    IdentityPermutation(output_dimensions_count));
   }
