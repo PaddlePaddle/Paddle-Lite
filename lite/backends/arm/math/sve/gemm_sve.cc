@@ -74,285 +74,154 @@ namespace sve {
       }                                                            \
     }                                                              \
   }
-#define COMPUTE_ASM_0           \
-  "fmla z8.s,  z4.s, z0.s[0]\n" \
-  "fmla z11.s, z4.s, z0.s[1]\n" \
-  "fmla z14.s, z4.s, z0.s[2]\n" \
-  "fmla z17.s, z4.s, z0.s[3]\n" \
-  "fmla z20.s, z4.s, z1.s[0]\n" \
-  "fmla z23.s, z4.s, z1.s[1]\n" \
-  "fmla z26.s, z4.s, z1.s[2]\n" \
-  "fmla z29.s, z4.s, z1.s[3]\n"
 
-#define COMPUTE_ASM_1           \
-  "fmla z9.s,  z5.s, z0.s[0]\n" \
-  "fmla z12.s, z5.s, z0.s[1]\n" \
-  "fmla z15.s, z5.s, z0.s[2]\n" \
-  "fmla z18.s, z5.s, z0.s[3]\n" \
-  "fmla z21.s, z5.s, z1.s[0]\n" \
-  "fmla z24.s, z5.s, z1.s[1]\n" \
-  "fmla z27.s, z5.s, z1.s[2]\n" \
-  "fmla z30.s, z5.s, z1.s[3]\n"
+#define COMPUTE_ASM_PARAM(a, b, c, d, e, f, g, h, i) \
+  "fmla z" #a ".s, z" #i                             \
+  ".s, z0.s[0]\n"                                    \
+  "fmla z" #b ".s, z" #i                             \
+  ".s, z0.s[1]\n"                                    \
+  "fmla z" #c ".s, z" #i                             \
+  ".s, z0.s[2]\n"                                    \
+  "fmla z" #d ".s, z" #i                             \
+  ".s, z0.s[3]\n"                                    \
+  "fmla z" #e ".s, z" #i                             \
+  ".s, z1.s[0]\n"                                    \
+  "fmla z" #f ".s, z" #i                             \
+  ".s, z1.s[1]\n"                                    \
+  "fmla z" #g ".s, z" #i                             \
+  ".s, z1.s[2]\n"                                    \
+  "fmla z" #h ".s, z" #i ".s, z1.s[3]\n"
 
-#define COMPUTE_ASM_2           \
-  "fmla z10.s, z6.s, z0.s[0]\n" \
-  "fmla z13.s, z6.s, z0.s[1]\n" \
-  "fmla z16.s, z6.s, z0.s[2]\n" \
-  "fmla z19.s, z6.s, z0.s[3]\n" \
-  "fmla z22.s, z6.s, z1.s[0]\n" \
-  "fmla z25.s, z6.s, z1.s[1]\n" \
-  "fmla z28.s, z6.s, z1.s[2]\n" \
-  "fmla z31.s, z6.s, z1.s[3]\n"
+#define VMAXMIN_ASM(inst, a, b, c, d, e, f, g, h)                              \
+  #inst " z" #a ".s, p0/m, z" #a ".s, z0.s\n" #inst " z" #b ".s, p0/m, z" #b   \
+        ".s, z0.s\n" #inst " z" #c ".s, p0/m, z" #c ".s, z0.s\n" #inst " z" #d \
+        ".s, p0/m, z" #d ".s, z0.s\n" #inst " z" #e ".s, p0/m, z" #e           \
+        ".s, z0.s\n" #inst " z" #f ".s, p0/m, z" #f ".s, z0.s\n" #inst " z" #g \
+        ".s, p0/m, z" #g ".s, z0.s\n" #inst " z" #h ".s, p0/m, z" #h           \
+        ".s, z0.s\n"
 
-#define VMAXMIN_ASM_0(inst)                                                   \
-  #inst                                                                       \
-      " z8.s,  p0/m, z8.s, z0.s\n" #inst " z11.s, p0/m, z11.s, z0.s\n" #inst  \
-      " z14.s, p0/m, z14.s, z0.s\n" #inst " z17.s, p0/m, z17.s, z0.s\n" #inst \
-      " z20.s, p0/m, z20.s, z0.s\n" #inst " z23.s, p0/m, z23.s, z0.s\n" #inst \
-      " z26.s, p0/m, z26.s, z0.s\n" #inst " z29.s, p0/m, z29.s, z0.s\n"
-
-#define VMAXMIN_ASM_1(inst)                                                   \
-  #inst                                                                       \
-      " z9.s,  p0/m, z9.s, z0.s\n" #inst " z12.s, p0/m, z12.s, z0.s\n" #inst  \
-      " z15.s, p0/m, z15.s, z0.s\n" #inst " z18.s, p0/m, z18.s, z0.s\n" #inst \
-      " z21.s, p0/m, z21.s, z0.s\n" #inst " z24.s, p0/m, z24.s, z0.s\n" #inst \
-      " z27.s, p0/m, z27.s, z0.s\n" #inst " z30.s, p0/m, z30.s, z0.s\n"
-
-#define VMAXMIN_ASM_2(inst)                                                   \
-  #inst                                                                       \
-      " z10.s, p0/m, z10.s, z0.s\n" #inst " z13.s, p0/m, z13.s, z0.s\n" #inst \
-      " z16.s, p0/m, z16.s, z0.s\n" #inst " z19.s, p0/m, z19.s, z0.s\n" #inst \
-      " z22.s, p0/m, z22.s, z0.s\n" #inst " z25.s, p0/m, z25.s, z0.s\n" #inst \
-      " z28.s, p0/m, z28.s, z0.s\n" #inst " z31.s, p0/m, z31.s, z0.s\n"
-
-#define VLEAKY_ASM_0                                 \
-  "movprfx z2, z8\n  fmin z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z11\n fmin z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z14\n fmin z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z17\n fmin z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmax z8.s,  p0/m, z8.s,  z0.s\n"                  \
-  "fmax z11.s, p0/m, z11.s, z0.s\n"                  \
-  "fmax z14.s, p0/m, z14.s, z0.s\n"                  \
-  "fmax z17.s, p0/m, z17.s, z0.s\n"                  \
-  "fmul z2.s,  p0/m, z2.s,  z1.s\n"                  \
-  "fmul z3.s,  p0/m, z3.s,  z1.s\n"                  \
-  "fmul z4.s,  p0/m, z4.s,  z1.s\n"                  \
-  "fmul z5.s,  p0/m, z5.s,  z1.s\n"                  \
-  "fadd z8.s,  p0/m, z8.s,  z2.s\n"                  \
-  "fadd z11.s, p0/m, z11.s, z3.s\n"                  \
-  "fadd z14.s, p0/m, z14.s, z4.s\n"                  \
-  "fadd z17.s, p0/m, z17.s, z5.s\n"                  \
-  "movprfx z2, z20\n fmin z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z23\n fmin z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z26\n fmin z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z29\n fmin z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmax z20.s, p0/m, z20.s, z0.s\n"                  \
-  "fmax z23.s, p0/m, z23.s, z0.s\n"                  \
-  "fmax z26.s, p0/m, z26.s, z0.s\n"                  \
-  "fmax z29.s, p0/m, z29.s, z0.s\n"                  \
-  "fmul z2.s,  p0/m, z2.s,  z1.s\n"                  \
-  "fmul z3.s,  p0/m, z3.s,  z1.s\n"                  \
-  "fmul z4.s,  p0/m, z4.s,  z1.s\n"                  \
-  "fmul z5.s,  p0/m, z5.s,  z1.s\n"                  \
-  "fadd z20.s, p0/m, z20.s, z2.s\n"                  \
-  "fadd z23.s, p0/m, z23.s, z3.s\n"                  \
-  "fadd z26.s, p0/m, z26.s, z4.s\n"                  \
-  "fadd z29.s, p0/m, z29.s, z5.s\n"
-
-#define VLEAKY_ASM_1                                 \
-  "movprfx z2, z9\n  fmax z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z12\n fmax z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z15\n fmax z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z18\n fmax z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmin z9.s,  p0/m, z9.s,  z0.s\n"                  \
-  "fmin z12.s, p0/m, z12.s, z0.s\n"                  \
-  "fmin z15.s, p0/m, z15.s, z0.s\n"                  \
-  "fmin z18.s, p0/m, z18.s, z0.s\n"                  \
-  "fmul z9.s,  p0/m, z9.s,  z1.s\n"                  \
-  "fmul z12.s, p0/m, z12.s, z1.s\n"                  \
-  "fmul z15.s, p0/m, z15.s, z1.s\n"                  \
-  "fmul z18.s, p0/m, z18.s, z1.s\n"                  \
-  "fadd z9.s,  p0/m, z9.s,  z2.s\n"                  \
-  "fadd z12.s, p0/m, z12.s, z3.s\n"                  \
-  "fadd z15.s, p0/m, z15.s, z4.s\n"                  \
-  "fadd z18.s, p0/m, z18.s, z5.s\n"                  \
-  "movprfx z2, z21\n fmax z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z24\n fmax z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z27\n fmax z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z30\n fmax z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmin z21.s, p0/m, z21.s, z0.s\n"                  \
-  "fmin z24.s, p0/m, z24.s, z0.s\n"                  \
-  "fmin z27.s, p0/m, z27.s, z0.s\n"                  \
-  "fmin z30.s, p0/m, z30.s, z0.s\n"                  \
-  "fmul z21.s, p0/m, z21.s, z1.s\n"                  \
-  "fmul z24.s, p0/m, z24.s, z1.s\n"                  \
-  "fmul z27.s, p0/m, z27.s, z1.s\n"                  \
-  "fmul z30.s, p0/m, z30.s, z1.s\n"                  \
-  "fadd z21.s, p0/m, z21.s, z2.s\n"                  \
-  "fadd z24.s, p0/m, z24.s, z3.s\n"                  \
-  "fadd z27.s, p0/m, z27.s, z4.s\n"                  \
-  "fadd z30.s, p0/m, z30.s, z5.s\n"
-
-#define VLEAKY_ASM_2                                 \
-  "movprfx z2, z10\n fmax z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z13\n fmax z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z16\n fmax z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z19\n fmax z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmin z10.s, p0/m, z10.s, z0.s\n"                  \
-  "fmin z13.s, p0/m, z13.s, z0.s\n"                  \
-  "fmin z16.s, p0/m, z16.s, z0.s\n"                  \
-  "fmin z19.s, p0/m, z19.s, z0.s\n"                  \
-  "fmul z10.s, p0/m, z10.s, z1.s\n"                  \
-  "fmul z13.s, p0/m, z13.s, z1.s\n"                  \
-  "fmul z16.s, p0/m, z16.s, z1.s\n"                  \
-  "fmul z19.s, p0/m, z19.s, z1.s\n"                  \
-  "fadd z10.s, p0/m, z10.s, z2.s\n"                  \
-  "fadd z13.s, p0/m, z13.s, z3.s\n"                  \
-  "fadd z16.s, p0/m, z16.s, z4.s\n"                  \
-  "fadd z19.s, p0/m, z19.s, z5.s\n"                  \
-  "movprfx z2, z22\n fmax z2.s,  p0/m, z2.s, z0.s\n" \
-  "movprfx z3, z25\n fmax z3.s,  p0/m, z3.s, z0.s\n" \
-  "movprfx z4, z28\n fmax z4.s,  p0/m, z4.s, z0.s\n" \
-  "movprfx z5, z31\n fmax z5.s,  p0/m, z5.s, z0.s\n" \
-  "fmin z22.s, p0/m, z22.s, z0.s\n"                  \
-  "fmin z25.s, p0/m, z25.s, z0.s\n"                  \
-  "fmin z28.s, p0/m, z28.s, z0.s\n"                  \
-  "fmin z31.s, p0/m, z31.s, z0.s\n"                  \
-  "fmul z22.s, p0/m, z22.s, z1.s\n"                  \
-  "fmul z25.s, p0/m, z25.s, z1.s\n"                  \
-  "fmul z28.s, p0/m, z28.s, z1.s\n"                  \
-  "fmul z31.s, p0/m, z31.s, z1.s\n"                  \
-  "fadd z22.s, p0/m, z22.s, z2.s\n"                  \
-  "fadd z25.s, p0/m, z25.s, z3.s\n"                  \
-  "fadd z28.s, p0/m, z28.s, z4.s\n"                  \
-  "fadd z31.s, p0/m, z31.s, z5.s\n"
+#define VLEAKY_ASM(a, b, c, d, e, f, g, h) \
+  "movprfx z2, z" #a                       \
+  "\n  fmin z2.s,  p0/m, z2.s, z0.s\n"     \
+  "movprfx z3, z" #b                       \
+  "\n fmin z3.s,  p0/m, z3.s, z0.s\n"      \
+  "movprfx z4, z" #c                       \
+  "\n fmin z4.s,  p0/m, z4.s, z0.s\n"      \
+  "movprfx z5, z" #d                       \
+  "\n fmin z5.s,  p0/m, z5.s, z0.s\n"      \
+  "fmax z" #a ".s, p0/m, z" #a             \
+  ".s,  z0.s\n"                            \
+  "fmax z" #b ".s, p0/m, z" #b             \
+  ".s, z0.s\n"                             \
+  "fmax z" #c ".s, p0/m, z" #c             \
+  ".s, z0.s\n"                             \
+  "fmax z" #d ".s, p0/m, z" #d             \
+  ".s, z0.s\n"                             \
+  "fmul z2.s,  p0/m, z2.s,  z1.s\n"        \
+  "fmul z3.s,  p0/m, z3.s,  z1.s\n"        \
+  "fmul z4.s,  p0/m, z4.s,  z1.s\n"        \
+  "fmul z5.s,  p0/m, z5.s,  z1.s\n"        \
+  "fadd z" #a ".s, p0/m, z" #a             \
+  ".s, z2.s\n"                             \
+  "fadd z" #b ".s, p0/m, z" #b             \
+  ".s, z3.s\n"                             \
+  "fadd z" #c ".s, p0/m, z" #c             \
+  ".s, z4.s\n"                             \
+  "fadd z" #d ".s, p0/m, z" #d             \
+  ".s, z5.s\n"                             \
+  "movprfx z2, z" #e                       \
+  "\n  fmin z2.s,  p0/m, z2.s, z0.s\n"     \
+  "movprfx z3, z" #f                       \
+  "\n fmin z3.s,  p0/m, z3.s, z0.s\n"      \
+  "movprfx z4, z" #g                       \
+  "\n fmin z4.s,  p0/m, z4.s, z0.s\n"      \
+  "movprfx z5, z" #h                       \
+  "\n fmin z5.s,  p0/m, z5.s, z0.s\n"      \
+  "fmax z" #e ".s, p0/m, z" #e             \
+  ".s,  z0.s\n"                            \
+  "fmax z" #f ".s, p0/m, z" #f             \
+  ".s, z0.s\n"                             \
+  "fmax z" #g ".s, p0/m, z" #g             \
+  ".s, z0.s\n"                             \
+  "fmax z" #h ".s, p0/m, z" #h             \
+  ".s, z0.s\n"                             \
+  "fmul z2.s,  p0/m, z2.s,  z1.s\n"        \
+  "fmul z3.s,  p0/m, z3.s,  z1.s\n"        \
+  "fmul z4.s,  p0/m, z4.s,  z1.s\n"        \
+  "fmul z5.s,  p0/m, z5.s,  z1.s\n"        \
+  "fadd z" #e ".s, p0/m, z" #e             \
+  ".s, z2.s\n"                             \
+  "fadd z" #f ".s, p0/m, z" #f             \
+  ".s, z3.s\n"                             \
+  "fadd z" #g ".s, p0/m, z" #g             \
+  ".s, z4.s\n"                             \
+  "fadd z" #h ".s, p0/m, z" #h ".s, z5.s\n"
 
 // z1=offset z2=scale z3=threshold
-#define VHARDSWISH_ASM_0                               \
-  "movprfx z4, z8\n  fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z11\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z14\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z17\n fadd z7.s,  p0/m, z7.s, z1.s\n"   \
-  "fmul z8.s,  p0/m, z8.s,   z2.s\n"                   \
-  "fmul z11.s, p0/m, z11.s,  z2.s\n"                   \
-  "fmul z14.s, p0/m, z14.s,  z2.s\n"                   \
-  "fmul z17.s, p0/m, z17.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z8.s,  p0/m, z8.s,  z4.s\n"                    \
-  "fmul z11.s, p0/m, z11.s, z5.s\n"                    \
-  "fmul z14.s, p0/m, z14.s, z6.s\n"                    \
-  "fmul z17.s, p0/m, z17.s, z7.s\n"                    \
-  "movprfx z4, z20\n fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z23\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z26\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z29\n fadd z7.s,  p0/m, z7.s,   z1.s\n" \
-  "fmul z20.s, p0/m, z20.s,  z2.s\n"                   \
-  "fmul z23.s, p0/m, z23.s,  z2.s\n"                   \
-  "fmul z26.s, p0/m, z26.s,  z2.s\n"                   \
-  "fmul z29.s, p0/m, z29.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z20.s, p0/m, z20.s,  z4.s\n"                   \
-  "fmul z23.s, p0/m, z23.s, z5.s\n"                    \
-  "fmul z26.s, p0/m, z26.s, z6.s\n"                    \
-  "fmul z29.s, p0/m, z29.s, z7.s\n"
-
-#define VHARDSWISH_ASM_1                               \
-  "movprfx z4, z9\n  fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z12\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z15\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z18\n fadd z7.s,  p0/m, z7.s,   z1.s\n" \
-  "fmul z9.s,  p0/m, z9.s,   z2.s\n"                   \
-  "fmul z12.s, p0/m, z12.s,  z2.s\n"                   \
-  "fmul z15.s, p0/m, z15.s,  z2.s\n"                   \
-  "fmul z18.s, p0/m, z18.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z9.s,  p0/m, z9.s,  z4.s\n"                    \
-  "fmul z12.s, p0/m, z12.s, z5.s\n"                    \
-  "fmul z15.s, p0/m, z15.s, z6.s\n"                    \
-  "fmul z18.s, p0/m, z18.s, z7.s\n"                    \
-  "movprfx z4, z21\n fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z24\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z27\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z30\n fadd z7.s,  p0/m, z7.s,   z1.s\n" \
-  "fmul z21.s, p0/m, z21.s,   z2.s\n"                  \
-  "fmul z24.s, p0/m, z24.s,  z2.s\n"                   \
-  "fmul z27.s, p0/m, z27.s,  z2.s\n"                   \
-  "fmul z30.s, p0/m, z30.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z21.s, p0/m, z21.s,  z4.s\n"                   \
-  "fmul z24.s, p0/m, z24.s, z5.s\n"                    \
-  "fmul z27.s, p0/m, z27.s, z6.s\n"                    \
-  "fmul z30.s, p0/m, z30.s, z7.s\n"
-
-#define VHARDSWISH_ASM_2                               \
-  "movprfx z4, z10\n fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z13\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z16\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z19\n fadd z7.s,  p0/m, z7.s,   z1.s\n" \
-  "fmul z10.s, p0/m, z10.s,   z2.s\n"                  \
-  "fmul z13.s, p0/m, z13.s,  z2.s\n"                   \
-  "fmul z16.s, p0/m, z16.s,  z2.s\n"                   \
-  "fmul z19.s, p0/m, z19.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z10.s, p0/m, z10.s,  z4.s\n"                   \
-  "fmul z13.s, p0/m, z13.s, z5.s\n"                    \
-  "fmul z16.s, p0/m, z16.s, z6.s\n"                    \
-  "fmul z19.s, p0/m, z19.s, z7.s\n"                    \
-  "movprfx z4, z22\n fadd z4.s,  p0/m, z4.s, z1.s\n"   \
-  "movprfx z5, z25\n fadd z5.s,  p0/m, z5.s, z1.s\n"   \
-  "movprfx z6, z28\n fadd z6.s,  p0/m, z6.s, z1.s\n"   \
-  "movprfx z7, z31\n fadd z7.s,  p0/m, z7.s,   z1.s\n" \
-  "fmul z22.s, p0/m, z22.s,   z2.s\n"                  \
-  "fmul z25.s, p0/m, z25.s,  z2.s\n"                   \
-  "fmul z28.s, p0/m, z28.s,  z2.s\n"                   \
-  "fmul z31.s, p0/m, z31.s,  z2.s\n"                   \
-  "fmax z4.s,  p0/m, z4.s,   z0.s\n"                   \
-  "fmax z5.s,  p0/m, z5.s,   z0.s\n"                   \
-  "fmax z6.s,  p0/m, z6.s,   z0.s\n"                   \
-  "fmax z7.s,  p0/m, z7.s,   z0.s\n"                   \
-  "fmin z4.s,  p0/m, z4.s,   z3.s\n"                   \
-  "fmin z5.s,  p0/m, z5.s,   z3.s\n"                   \
-  "fmin z6.s,  p0/m, z6.s,   z3.s\n"                   \
-  "fmin z7.s,  p0/m, z7.s,   z3.s\n"                   \
-  "fmul z22.s, p0/m, z22.s,  z4.s\n"                   \
-  "fmul z25.s, p0/m, z25.s, z5.s\n"                    \
-  "fmul z28.s, p0/m, z28.s, z6.s\n"                    \
-  "fmul z31.s, p0/m, z31.s, z7.s\n"
+#define VHARDSWISH_ASM(a, b, c, d, e, f, g, h) \
+  "movprfx z4, z" #a                           \
+  "\n fadd z4.s,  p0/m, z4.s, z1.s\n"          \
+  "movprfx z5, z" #b                           \
+  "\n fadd z5.s,  p0/m, z5.s, z1.s\n"          \
+  "movprfx z6, z" #c                           \
+  "\n fadd z6.s,  p0/m, z6.s, z1.s\n"          \
+  "movprfx z7, z" #d                           \
+  "\n fadd z7.s,  p0/m, z7.s, z1.s\n"          \
+  "fmul z" #a ".s, p0/m, z" #a                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #b ".s, p0/m, z" #b                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #c ".s, p0/m, z" #c                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #d ".s, p0/m, z" #d                 \
+  ".s,  z2.s\n"                                \
+  "fmax z4.s,  p0/m, z4.s,   z0.s\n"           \
+  "fmax z5.s,  p0/m, z5.s,   z0.s\n"           \
+  "fmax z6.s,  p0/m, z6.s,   z0.s\n"           \
+  "fmax z7.s,  p0/m, z7.s,   z0.s\n"           \
+  "fmin z4.s,  p0/m, z4.s,   z3.s\n"           \
+  "fmin z5.s,  p0/m, z5.s,   z3.s\n"           \
+  "fmin z6.s,  p0/m, z6.s,   z3.s\n"           \
+  "fmin z7.s,  p0/m, z7.s,   z3.s\n"           \
+  "fmul z" #a ".s, p0/m, z" #a                 \
+  ".s,  z4.s\n"                                \
+  "fmul z" #b ".s, p0/m, z" #b                 \
+  ".s,  z5.s\n"                                \
+  "fmul z" #c ".s, p0/m, z" #c                 \
+  ".s,  z6.s\n"                                \
+  "fmul z" #d ".s, p0/m, z" #d                 \
+  ".s,  z7.s\n"                                \
+  "movprfx z4, z" #e                           \
+  "\n fadd z4.s,  p0/m, z4.s, z1.s\n"          \
+  "movprfx z5, z" #f                           \
+  "\n fadd z5.s,  p0/m, z5.s, z1.s\n"          \
+  "movprfx z6, z" #g                           \
+  "\n fadd z6.s,  p0/m, z6.s, z1.s\n"          \
+  "movprfx z7, z" #h                           \
+  "\n fadd z7.s,  p0/m, z7.s, z1.s\n"          \
+  "fmul z" #e ".s, p0/m, z" #e                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #f ".s, p0/m, z" #f                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #g ".s, p0/m, z" #g                 \
+  ".s,  z2.s\n"                                \
+  "fmul z" #h ".s, p0/m, z" #h                 \
+  ".s,  z2.s\n"                                \
+  "fmax z4.s,  p0/m, z4.s,   z0.s\n"           \
+  "fmax z5.s,  p0/m, z5.s,   z0.s\n"           \
+  "fmax z6.s,  p0/m, z6.s,   z0.s\n"           \
+  "fmax z7.s,  p0/m, z7.s,   z0.s\n"           \
+  "fmin z4.s,  p0/m, z4.s,   z3.s\n"           \
+  "fmin z5.s,  p0/m, z5.s,   z3.s\n"           \
+  "fmin z6.s,  p0/m, z6.s,   z3.s\n"           \
+  "fmin z7.s,  p0/m, z7.s,   z3.s\n"           \
+  "fmul z" #e ".s, p0/m, z" #e                 \
+  ".s,  z4.s\n"                                \
+  "fmul z" #f ".s, p0/m, z" #f                 \
+  ".s,  z5.s\n"                                \
+  "fmul z" #g ".s, p0/m, z" #g                 \
+  ".s,  z6.s\n"                                \
+  "fmul z" #h ".s, p0/m, z" #h ".s,  z7.s\n"
 
 void sgemm_prepacked_8x12_sve(bool is_transB,
                               int M,
@@ -507,7 +376,7 @@ void sgemm_prepacked_8x12_sve(bool is_transB,
               "add %x[a_ptr], %x[a_ptr], #0x20\n"
               "add %x[b_ptr], %x[b_ptr], #0x10\n"
               "subs %x[k], %x[k], #1\n"
-              COMPUTE_ASM_0
+              COMPUTE_ASM_PARAM(8, 11, 14, 17, 20, 23, 26, 29, 4)
               "bne 1b\n"
               "2: \n"
               "mov z0.s, #0x0    \n"
@@ -523,23 +392,23 @@ void sgemm_prepacked_8x12_sve(bool is_transB,
               "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"
               "ld1rqw {z2.s}, p0/Z, [%x[alpha], #0x10]\n"
               "ld1rqw {z3.s}, p0/Z, [%x[alpha], #0x20]\n"
-              VHARDSWISH_ASM_0
+              VHARDSWISH_ASM(8, 11, 14, 17, 20, 23, 26, 29)
               "b 10f\n"
               // relu
               "3: \n"
-              VMAXMIN_ASM_0(fmax)
+              VMAXMIN_ASM(fmax, 8, 11, 14, 17, 20, 23, 26, 29)
               "b 10f\n"
               // relu6
               "4: \n"
               "mov z0.s, #0x0    \n"
-              VMAXMIN_ASM_0(fmax)
+              VMAXMIN_ASM(fmax, 8, 11, 14, 17, 20, 23, 26, 29)
               "ld1rqw {z0.s}, p0/Z, [%x[alpha]]\n"
-              VMAXMIN_ASM_0(fmin)
+              VMAXMIN_ASM(fmin, 8, 11, 14, 17, 20, 23, 26, 29)
               "b 10f\n"
               // leakyrelu
               "5: \n"
               "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"
-              VLEAKY_ASM_0
+              VLEAKY_ASM(8, 11, 14, 17, 20, 23, 26, 29)
               // no act
               "10: \n"
               "st1w {z8.s},  p0, [%x[c_ptr0]]\n"
@@ -695,10 +564,10 @@ void sgemm_prepacked_8x12_sve(bool is_transB,
             "add %x[a_ptr], %x[a_ptr], #0x20\n"
             "ld1w   {z6.s}, p0/Z, [%x[b_ptr],  #2, MUL VL]\n"
             "add %x[b_ptr], %x[b_ptr], #0x30\n"
-            COMPUTE_ASM_0
-            COMPUTE_ASM_1
+            COMPUTE_ASM_PARAM(8, 11, 14, 17, 20, 23, 26, 29, 4)
+            COMPUTE_ASM_PARAM(9, 12, 15, 18, 21, 24, 27, 30, 5)
             "subs %x[k], %x[k], #1\n"
-            COMPUTE_ASM_2
+            COMPUTE_ASM_PARAM(10, 13, 16, 19, 22, 25, 28, 31, 6)
             "bne 1b\n"
             "2: \n"
             "mov z0.s, #0x0    \n"
@@ -714,33 +583,33 @@ void sgemm_prepacked_8x12_sve(bool is_transB,
             "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"
             "ld1rqw {z2.s}, p0/Z, [%x[alpha], #0x10]\n"
             "ld1rqw {z3.s}, p0/Z, [%x[alpha], #0x20]\n"
-            VHARDSWISH_ASM_0
-            VHARDSWISH_ASM_1
-            VHARDSWISH_ASM_2
+            VHARDSWISH_ASM(8, 11, 14, 17, 20, 23, 26, 29)
+            VHARDSWISH_ASM(9,  12, 15, 18, 21, 24, 27, 30)
+            VHARDSWISH_ASM(10, 13, 16, 19, 22, 25, 28, 31)
             "b 10f\n"
             // relu
             "3: \n"
-            VMAXMIN_ASM_0(fmax)
-            VMAXMIN_ASM_1(fmax)
-            VMAXMIN_ASM_2(fmax)
+            VMAXMIN_ASM(fmax, 8,  11, 14, 17, 20, 23, 26, 29)
+            VMAXMIN_ASM(fmax, 9,  12, 15, 18, 21, 24, 27, 30)
+            VMAXMIN_ASM(fmax, 10, 13, 16, 19, 22, 25, 28, 31)
             "b 10f\n"
             // relu6
             "4: \n"
             "mov z0.s, #0x0    \n"
-            VMAXMIN_ASM_0(fmax)
-            VMAXMIN_ASM_1(fmax)
-            VMAXMIN_ASM_2(fmax)
+            VMAXMIN_ASM(fmax, 8,  11, 14, 17, 20, 23, 26, 29)
+            VMAXMIN_ASM(fmax, 9,  12, 15, 18, 21, 24, 27, 30)
+            VMAXMIN_ASM(fmax, 10, 13, 16, 19, 22, 25, 28, 31)
             "ld1rqw {z0.s}, p0/Z, [%x[alpha]]\n"
-            VMAXMIN_ASM_0(fmin)
-            VMAXMIN_ASM_1(fmin)
-            VMAXMIN_ASM_2(fmin)
+            VMAXMIN_ASM(fmin, 8,  11, 14, 17, 20, 23, 26, 29)
+            VMAXMIN_ASM(fmin, 9,  12, 15, 18, 21, 24, 27, 30)
+            VMAXMIN_ASM(fmin, 10, 13, 16, 19, 22, 25, 28, 31)
             "b 10f\n"
             // leakyrelu
             "5: \n"
             "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"
-            VLEAKY_ASM_0
-            VLEAKY_ASM_1
-            VLEAKY_ASM_2
+            VLEAKY_ASM(8, 11, 14, 17, 20, 23, 26, 29)
+            VLEAKY_ASM(9,  12, 15, 18, 21, 24, 27, 30)
+            VLEAKY_ASM(10, 13, 16, 19, 22, 25, 28, 31)
             // no act
             "10: \n"
             "st1w {z8.s},  p0, [%x[c_ptr0]]\n"
@@ -1142,18 +1011,10 @@ void sgemm_prepack_sve<float>(GEMM_FUNCS_PARAM(float)) {
 #undef GEMM_ACTUAL_PARAM
 #undef X_BLOCK_COMPUTE_SVE
 #undef ACT_INIT
-#undef COMPUTE_ASM_0
-#undef COMPUTE_ASM_1
-#undef COMPUTE_ASM_2
-#undef VMAXMIN_ASM_0(inst)
-#undef VMAXMIN_ASM_1(inst)
-#undef VMAXMIN_ASM_2(inst)
-#undef VLEAKY_ASM_0
-#undef VLEAKY_ASM_1
-#undef VLEAKY_ASM_2
-#undef VHARDSWISH_ASM_0
-#undef VHARDSWISH_ASM_1
-#undef VHARDSWISH_ASM_2
+#undef COMPUTE_ASM_PARAM
+#undef VMAXMIN_ASM
+#undef VLEAKY_ASM
+#undef VHARDSWISH_ASM
 }  // namespace sve
 }  // namespace math
 }  // namespace arm

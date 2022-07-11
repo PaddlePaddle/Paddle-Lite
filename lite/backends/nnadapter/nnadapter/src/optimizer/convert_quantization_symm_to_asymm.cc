@@ -125,7 +125,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
-      case NNADAPTER_CONCAT: {
+      case NNADAPTER_CONCAT:
+      case NNADAPTER_STACK: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
           ConvertOperandSymmToAsymm(input_operands[i], 128);

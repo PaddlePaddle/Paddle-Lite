@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename DataType, typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename DataType, typename IndexType, PrecisionType PType>
+class GatherCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::GatherParam;
 
@@ -36,15 +36,27 @@ class GatherCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int32_t>
+typedef paddle::lite::kernels::xpu::GatherCompute<int32_t,
+                                                  int32_t,
+                                                  PRECISION(kInt32)>
     GatherXPUInt32Int32;
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int64_t>
+typedef paddle::lite::kernels::xpu::GatherCompute<int32_t,
+                                                  int64_t,
+                                                  PRECISION(kInt32)>
     GatherXPUInt32Int64;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int32_t>
+typedef paddle::lite::kernels::xpu::GatherCompute<float,
+                                                  int32_t,
+                                                  PRECISION(kFloat)>
     GatherXPUFloatInt32;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int64_t>
+typedef paddle::lite::kernels::xpu::GatherCompute<float16,
+                                                  int32_t,
+                                                  PRECISION(kFP16)>
+    GatherXPUkFP16Int32;
+typedef paddle::lite::kernels::xpu::GatherCompute<float,
+                                                  int64_t,
+                                                  PRECISION(kFloat)>
     GatherXPUFloatInt64;
-typedef paddle::lite::kernels::xpu::GatherCompute<int64_t, int32_t>
+typedef paddle::lite::kernels::xpu::GatherCompute<int64_t,
+                                                  int32_t,
+                                                  PRECISION(kInt64)>
     GatherXPUInt64Int32;
-typedef paddle::lite::kernels::xpu::GatherCompute<int64_t, int64_t>
-    GatherXPUInt64Int64;

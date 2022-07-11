@@ -71,7 +71,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   
 - 测试结果
 
-  |模型 |A311D||S905D3||C308X||RK1808||RV1109||RV1126||imx8mp||
+  |模型 |A311D||S905D3||C308X||RK1808||RV1109||RV1126||i.MX 8M Plus||
   |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
   |mobilenet_v1_int8_224_per_layer| 81.63213 | 5.1125| 280.4659| 12.8081 |167.623|6.9828|264.6235|6.139|335.0399|6.1995|281.63 | 5.1120 |106.656 | 3.212360|
@@ -87,14 +87,16 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 ### 准备设备环境
 
 - 确定开发板 NPU 驱动版本
-  - 由于晶晨 SoC、瑞芯微1代 Soc、恩智浦 imx8mp 等 使用芯原 NPU IP，因此，部署前要保证芯原 Linux Kernel NPU 驱动—— galcore.so 版本及所适用的芯片型号与依赖库保持一致。
+  - 由于晶晨 SoC、瑞芯微1代 Soc、恩智浦 i.MX 8M Plus 等 使用芯原 NPU IP，因此，部署前要保证芯原 Linux Kernel NPU 驱动—— galcore.so 版本及所适用的芯片型号与依赖库保持一致。
   - 请登录开发板，并通过命令行输入 `dmesg | grep Galcore` 查询 NPU 驱动版本。
     - 请务必注意，建议 NPU 驱动版本为：
-      |SoC 厂家|驱动板本|
-      |---|---|
-      |Amlogic|6.4.4.3|
-      |Rockchip|6.4.3.5|
-      |NXP|6.4.3.p1|
+
+  |SoC 厂家|驱动板本|
+  |---|---|
+  |Amlogic|6.4.4.3|
+  |Rockchip|6.4.3.5|
+  |NXP|6.4.3.p1|
+
     - 举个例子，以晶晨 Amlogic A311D 为例，需要为 6.4.4.3（其他搭载了芯原 NPU 的 SoC 驱动版本要求参照上表）：
       ```shell
       $ dmesg | grep Galcore
@@ -109,27 +111,29 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     - 『方法 2』：刷机，刷取 NPU 驱动版本符合要求的固件。
   - 我们首先描述『方法 1』手动替换驱动文件和依赖库，先行下载并解压[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，其中包含不同版本、不同芯片型号的 galcore.ko（既 NPU 驱动文件）和 NPU 依赖库。
     - 下表会罗列部分市面常见开发板的情况，以及我们在 [PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 中提供的现成的驱动文件和依赖库。请照着下表格，找到自己手中对应设备的芯片、开发板、Linux Kernel 版本（可命令行输入 uname -a 查看），从而获取到真正需要的 1）galcore.ko（既 NPU 驱动文件）；2）NPU 依赖库。并且分别将 galcore.ko 上传至开发板后，insmod galcore.ko，以及输入表格中的命令刷取正确的NPU 依赖库（软链接）。更加详细易懂的使用步骤会在下表格后描述。
-      |SoC 型号 | 开发板厂家 |开发板型号|OS |推荐Linux Kernl 版本|推荐NPU驱动版本 |是否提供galcore.ko驱动文件 |galcore.ko驱动文件路径 |是否提供 NPU 依赖库|刷取 NPU 依赖库软链接命令|
-      |---|---|---|---|---|---|---|---|---|---|
-      |Amlogic A311D |世野科技 Khadas |VIM3，[购买链接](https://www.khadas.cn/product-page/vim3)|android |4.9.113 |6.4.4.3 |是 |PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
-      |Amlogic A311D |世野科技 Khadas |VIM3，[购买链接](https://www.khadas.cn/product-page/vim3)|linux |4.9.241 |6.4.4.3 |是 |PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.241|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
-      |Amlogic A311D |荣品 | 荣品PR-A311D[购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.23.849147calaBS8s&id=614553849827)|linux | 4.9.113|6.4.4.3|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
-      |Amlogic A311D |*其他* || linux | 4.9.113|6.4.4.3|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
-      |Amlogic 905D3 |世野科技 Khadas |VIM3L，[购买链接](https://www.khadas.cn/product-page/vim3l)|android|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
-      |Amlogic 905D3 |世野科技 Khadas |VIM3L，[购买链接](https://www.khadas.cn/product-page/vim3l)|linux|4.9.241 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.241| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
-      |Amlogic 905D3 |荣品|荣品RP-S905，[购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.12.6c774cb50jm33m&id=615270715583)|linux|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
-      |Amlogic 905D3 |*其他*||linux|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
-      |Amlogic C308X |*其他*||linux|4.19.81 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/c308x/4.19.81|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon__timvx && ./switch_viv_sdk.sh 6_4_4_3 c308x|
-      |Rockchip RV1109|瑞芯微|RV1109 DDR3 EVB|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
-      |Rockchip RV1109|荣品|荣品RP-RV1109，[购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.17.849147calaBStimvx/viv_sdk_6_4_4_3/lib/c308x/4.19.81)| linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
-      |Rockchip RV1109|*其他*||linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
-      |Rockchip RV1126|瑞芯微|RV1126 DDR3 EVB|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
-      |Rockchip RV1126|荣品|荣品RP-RV1126，[购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.6.849147calaBS8s&id=641752963533&mt=)|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
-      |Rockchip RV1126|*其他*||linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
-      |Rockchip RK1808|瑞芯微|RK1808 DDR3 EVB|linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
-      |Rockchip RK1808|荣品|荣品RP-RK1808[购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.11.57821a67E535sj&id=615447675327)|linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
-      |Rockchip RK1808|*其他*||linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
-      |NPX i.MX 8M Plus|*其他*||linux|5.4.70|6.4.3.p1|否|目前常见的 NPX i.MX 8M Plus 开发板的系统较为特殊，其驱动文件是 buildin 在系统中的|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_p1 imx8mp|
+
+|SoC 型号 | 开发板厂家 |开发板型号|OS |推荐Linux Kernl 版本|推荐NPU驱动版本 |是否提供galcore.ko驱动文件 |galcore.ko驱动文件路径 |是否提供 NPU 依赖库|刷取 NPU 依赖库软链接命令|
+|---|---|---|---|---|---|---|---|---|---|
+|Amlogic A311D |世野科技 Khadas |VIM3 [购买链接](https://www.khadas.cn/product-page/vim3)|android |4.9.113 |6.4.4.3 |是 |PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
+|Amlogic A311D |世野科技 Khadas |VIM3 [购买链接](https://www.khadas.cn/product-page/vim3)|linux |4.9.241 |6.4.4.3 |是 |PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.241|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
+|Amlogic A311D |荣品 |PR-A311D [购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.23.849147calaBS8s&id=614553849827)|linux | 4.9.113|6.4.4.3|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
+|Amlogic A311D |*其他* || linux | 4.9.113|6.4.4.3|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/a311d/4.9.113|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 a311d|
+|Amlogic 905D3 |世野科技 Khadas |VIM3L [购买链接](https://www.khadas.cn/product-page/vim3l)|android|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
+|Amlogic 905D3 |世野科技 Khadas |VIM3L [购买链接](https://www.khadas.cn/product-page/vim3l)|linux|4.9.241 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.241| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
+|Amlogic 905D3 |荣品|RP-S905 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.12.6c774cb50jm33m&id=615270715583)|linux|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
+|Amlogic 905D3 |*其他*||linux|4.9.113 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/s905d3/4.9.113| 是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_4_3 s905d3|
+|Amlogic C308X |*其他*||linux|4.19.81 | 6.4.4.3| 是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_4_3/lib/c308x/4.19.81|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon__timvx && ./switch_viv_sdk.sh 6_4_4_3 c308x|
+|Rockchip RV1109|瑞芯微|RV1109 DDR3 EVB|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
+|Rockchip RV1109|荣品|RP-RV1109 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.3-c-s.w4002-22747001942.9.143851d6bSPUFo&id=633366427160)| linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
+|Rockchip RV1109|*其他*||linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1109/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1109|
+|Rockchip RV1126|瑞芯微|RV1126 DDR3 EVB|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
+|Rockchip RV1126|荣品|RP-RV1126 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.6.849147calaBS8s&id=641752963533&mt=)|linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
+|Rockchip RV1126|*其他*||linux|4.19.111|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_3_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 1126|
+|Rockchip RK1808|瑞芯微|RK1808 DDR3 EVB|linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
+|Rockchip RK1808|荣品|RP-RK1808 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.11.57821a67E535sj&id=615447675327)|linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
+|Rockchip RK1808|*其他*||linux|4.4.194|6.4.3.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_3_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_5 rk1808|
+|NPX i.MX 8M Plus|*其他*||linux|5.4.70|6.4.3.p1|否|目前常见的 NPX i.MX 8M Plus 开发板的系统较为特殊，其驱动文件是 buildin 在系统中的|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_p1 imx8mp|
+
     - 详细步骤：
       - 第一步：在上表格中，根据芯片型号、开发板商，找到对应自己的开发板那一行。
       - 第二步：登录开发板，命令行输入 uname -a 来确定自己开发板的 Linux Kernel 是否和表格中一致，如果不一致，请跳转至『方法 2』.
@@ -251,7 +255,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
                         - galcore.ko
                       ...
                   - viv_sdk_6_4_4_p1
-                    - imx8mp # 针对 nxp imx8mp 平台
+                    - imx8mp # 针对 nxp i.MX 8M Plus 平台
                       ...
                 - libpaddle_full_api_shared.so # 预编译 PaddleLite full api 库
                 - libpaddle_light_api_shared.so # 预编译 PaddleLite light api 库
@@ -335,7 +339,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
-  For SSH 链接开发板的使用场景
+  For SSH 连接开发板的使用场景
   #Linux arm64 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu IP地址 22 用户名 密码
   #Linux arm32 命令：
@@ -352,7 +356,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Prediction time: 81.678067 ms
     Postprocess time: 0.407000 ms
   
-  For ADB 链接开发板的使用场景
+  For ADB 连接开发板的使用场景
   #Linux arm64 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu adb设备号
   #Linux arm32 命令：
@@ -374,7 +378,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   在 芯原 NPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
-  For SSH 链接开发板的使用场景
+  For SSH 连接开发板的使用场景
   #Linux arm64 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx IP地址 22 用户名 密码
   #Linux arm32 命令：
@@ -391,7 +395,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Prediction time: 5.112500 ms
     Postprocess time: 0.411000 ms
   
-  For ADB 链接开发板的使用场景
+  For ADB 连接开发板的使用场景
   #Linux arm64 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 verisilicon_timvx adb设备号
   #Linux arm32 命令：

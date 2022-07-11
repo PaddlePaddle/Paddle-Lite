@@ -183,6 +183,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(OPTIONAL_CACHE_ARGS "")
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
+    set(PATCH_COMMAND "")
 
     IF(BUILD_FOR_HOST)
         # set for server compile.
@@ -213,6 +214,10 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
                 "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
                 "-DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}"
                 "-DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+        IF(LITE_WITH_ARM AND ARM_TARGET_OS STREQUAL "qnx")
+	  # Solve the problem that the old version of protobuf does not support QNX + aarch64
+	  SET(PATCH_COMMAND sed -e "s/#elif defined(__QNX__)/#elif defined(__arm__) \\&\\& defined(__QNX__)/g" -i ${SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h)
+        ENDIF()
     ENDIF()
     IF(WIN32)
         SET(OPTIONAL_ARGS ${OPTIONAL_ARGS} 
@@ -228,6 +233,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             PREFIX          ${PROTOBUF_SOURCES_DIR}
             SOURCE_SUBDIR   cmake
             UPDATE_COMMAND  ""
+	    PATCH_COMMAND   ${PATCH_COMMAND}
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
@@ -253,6 +259,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             ${EXTERNAL_PROJECT_LOG_ARGS}
             PREFIX          ${SOURCE_DIR}
             UPDATE_COMMAND  ""
+	    PATCH_COMMAND   ${PATCH_COMMAND}
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}

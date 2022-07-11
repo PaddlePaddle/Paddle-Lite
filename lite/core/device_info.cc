@@ -46,7 +46,13 @@
  */
 
 #ifdef LITE_WITH_LINUX
+
+#ifdef LITE_WITH_QNX
+#include <sys/neutrino.h>
+#else
 #include <sys/syscall.h>
+#endif
+
 #include <unistd.h>
 #endif
 #ifdef LITE_WITH_ANDROID
@@ -530,11 +536,20 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   pid_t pid = gettid();
 #endif
   cpu_set_t mask;
-  CPU_ZERO(&mask);
+  PD_CPU_ZERO(&mask);
+  unsigned int Runmask = 0;
   for (int i = 0; i < cpu_ids.size(); ++i) {
+#ifdef LITE_WITH_QNX
+    RMSK_SET(cpu_ids[i], &Runmask);  // set CPU
+#else
     PD_CPU_SET(cpu_ids[i], &mask);
+#endif
   }
+#ifdef LITE_WITH_QNX
+  int syscallret = ThreadCtl(_NTO_TCTL_RUNMASK, (unsigned int*)Runmask);
+#else
   int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
+#endif
   if (syscallret) {
     return -1;
   }

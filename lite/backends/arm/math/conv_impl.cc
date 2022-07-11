@@ -24,6 +24,9 @@
 #include "lite/core/parallel_defines.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+#include "lite/backends/arm/math/sve/gemm_sve_i8mm.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -582,7 +585,7 @@ void conv1x1s1_gemm(const float* i_data,
 #ifdef TARGET_IOS
         float* bias_ptr = new float[n];
 #else
-        float bias_ptr[n];  // NOLINT
+        float bias_ptr[n];   // NOLINT
 #endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
@@ -649,9 +652,23 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1 && m > 1) {
-    weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx->has_sve2_i8mm()) {
+    int hblock_sve = sve::get_hblock_int8_sve(ctx);
+    int k_roundup_sve = ROUNDUP(k, sve::KBLOCK_INT8_SVE);
+    int m_roundup_sve = ROUNDUP(m, hblock_sve);
+    if (n > 1 && m > 1) {
+      weights_size_per_group = ((m_roundup_sve * k_roundup_sve + 15) / 16) * 16;
+    }
+  } else {
+#endif
+    if (n > 1 && m > 1) {
+      weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
+    }
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
   }
+#endif
+
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
   auto act_param = param.activation_param;
@@ -708,18 +725,37 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
         delete[] scale_ptr;
 #endif
       } else {
-        gemm_prepack_int8(weights_group,
-                          din_group,
-                          bias_group,
-                          dout_group,
-                          m,
-                          n,
-                          k,
-                          flag_bias,
-                          false,
-                          scale_group,
-                          act_param,
-                          ctx);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+        if (ctx->has_sve2_i8mm()) {
+          sve::gemm_prepack_int8_sve(weights_group,
+                                     din_group,
+                                     bias_group,
+                                     dout_group,
+                                     m,
+                                     n,
+                                     k,
+                                     flag_bias,
+                                     false,
+                                     scale_group,
+                                     act_param,
+                                     ctx);
+        } else {
+#endif
+          gemm_prepack_int8(weights_group,
+                            din_group,
+                            bias_group,
+                            dout_group,
+                            m,
+                            n,
+                            k,
+                            flag_bias,
+                            false,
+                            scale_group,
+                            act_param,
+                            ctx);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+        }
+#endif
       }
     }
   }
@@ -918,14 +954,26 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   bool flag_bias = param.bias != nullptr;
 
   auto act_param = param.activation_param;
-
-  int hblock = get_hblock_int8(ctx);
-  int k_roundup = ROUNDUP(k, KBLOCK_INT8);
-  int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1 && m > 1) {
-    weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx->has_sve2_i8mm()) {
+    int hblock_sve = sve::get_hblock_int8_sve(ctx);
+    int k_roundup_sve = ROUNDUP(k, sve::KBLOCK_INT8_SVE);
+    int m_roundup_sve = ROUNDUP(m, hblock_sve);
+    if (n > 1 && m > 1) {
+      weights_size_per_group = ((m_roundup_sve * k_roundup_sve + 15) / 16) * 16;
+    }
+  } else {
+#endif
+    int hblock = get_hblock_int8(ctx);
+    int k_roundup = ROUNDUP(k, KBLOCK_INT8);
+    int m_roundup = ROUNDUP(m, hblock);
+    if (n > 1 && m > 1) {
+      weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
+    }
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
   }
+#endif
 
   int8_t* tmp_work_space =
       ctx->workspace_data<int8_t>() + ctx->llc_size() / sizeof(int8_t);
@@ -1001,18 +1049,37 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
         delete[] scale_ptr;
 #endif
       } else {
-        gemm_prepack_int8(weights_group,
-                          dB,
-                          bias_group,
-                          dout_group,
-                          m,
-                          n,
-                          k,
-                          flag_bias,
-                          false,
-                          scale_group,
-                          act_param,
-                          ctx);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+        if (ctx->has_sve2_i8mm()) {
+          sve::gemm_prepack_int8_sve(weights_group,
+                                     dB,
+                                     bias_group,
+                                     dout_group,
+                                     m,
+                                     n,
+                                     k,
+                                     flag_bias,
+                                     false,
+                                     scale_group,
+                                     act_param,
+                                     ctx);
+        } else {
+#endif
+          gemm_prepack_int8(weights_group,
+                            dB,
+                            bias_group,
+                            dout_group,
+                            m,
+                            n,
+                            k,
+                            flag_bias,
+                            false,
+                            scale_group,
+                            act_param,
+                            ctx);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+        }
+#endif
       }
     }
   }

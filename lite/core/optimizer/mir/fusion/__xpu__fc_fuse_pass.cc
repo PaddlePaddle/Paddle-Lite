@@ -82,27 +82,6 @@ class XPUFcFuser : public FuseBase {
     op_desc.SetInput("Input", {matched.at("x")->arg()->name});
     op_desc.SetInput("Filter", {matched.at("W")->arg()->name});
 
-    std::string precision = "int16";
-#ifdef LITE_WITH_XPU
-    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-      precision = "int31";
-      VLOG(3) << "Use int31 in XPUFcOp";
-    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-      precision = "int8";
-      if (op_desc.HasAttr("enable_int8") &&
-          op_desc.GetAttr<bool>("enable_int8")) {
-        CHECK(op_desc.HasAttr("X0_scale")) << " quant model fc no X0_scale";
-        CHECK(op_desc.HasAttr("Y0_scale")) << " quant model fc no Y0_scale";
-        VLOG(3) << "Use int8 quant model in XPUFcOp, InputMax:"
-                << 127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0]
-                << ", WeightMax: "
-                << 127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
-      }
-      VLOG(3) << "Use int8 in XPUFcOp";
-    }
-#endif
     if (with_bias_) {
       op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
     }
@@ -119,7 +98,6 @@ class XPUFcFuser : public FuseBase {
       output_node_name = "mul_out";
     }
     op_desc.SetOutput("Output", {output_name});
-    op_desc.SetAttr<std::string>("precision", precision);
     std::map<std::string, int> act_map{{"linear", 0},
                                        {"relu", 1},
                                        {"sigmoid", 2},

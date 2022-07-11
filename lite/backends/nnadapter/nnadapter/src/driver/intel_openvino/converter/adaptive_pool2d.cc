@@ -12,31 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/reshape.h"
+#include "operation/adaptive_pool2d.h"
 #include "driver/intel_openvino/converter/converter.h"
 #include "utility/debug.h"
-#include "utility/hints.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace intel_openvino {
 
-int ConvertReshape(Converter* converter, core::Operation* operation) {
-  RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertAdaptivePool2D(Converter* converter, core::Operation* operation) {
+  ADAPTIVE_POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert operand to OpenVINO tensor
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto shape_tensor = converter->GetMappedTensor(shape_operand);
-  if (!shape_tensor) {
-    shape_tensor = converter->ConvertOperand(shape_operand);
+  if (operation->type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {
+    auto shape_tensor =
+        converter->AddConstantTensor<int64_t>({output_height, output_width});
+    auto adaptive_avg_pool_op =
+        std::make_shared<default_opset::AdaptiveAvgPool>(*input_tensor,
+                                                         *shape_tensor);
+    MAP_OUTPUT(output_operand, adaptive_avg_pool_op, 0);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported adaptive pool2d operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
   }
-  auto reshape_op = std::make_shared<default_opset::Reshape>(
-      *input_tensor, *shape_tensor, true);
-  MAP_OUTPUT(output_operand, reshape_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 

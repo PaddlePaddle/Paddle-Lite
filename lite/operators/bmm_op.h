@@ -13,27 +13,40 @@
 // limitations under the License.
 
 #pragma once
-
+#include <string>
 #include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class StackCompute : public KernelLite<TARGET(kXPU), PType> {
+class BmmOpLite : public OpLite {
  public:
-  using param_t = operators::StackParam;
+  BmmOpLite() {}
 
-  virtual void Run();
+  explicit BmmOpLite(const std::string &type) : OpLite(type) {}
 
-  virtual ~StackCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool InferShapeWithCache() const override { return true; }
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+
+  std::string DebugString() const override { return "bmm"; }
+
+ private:
+  mutable BmmParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
