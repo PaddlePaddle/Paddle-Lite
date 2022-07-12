@@ -23,12 +23,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename TGEMM,
-          typename TW,
-          typename DX,
-          typename DY,
-          PrecisionType PType>
-class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), PType> {
+template <PrecisionType FilterPtype>
+class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
   using param_t = operators::ConvParam;
 
@@ -36,9 +32,6 @@ class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), PType> {
   void Run() override;
 
   virtual ~Conv2dTransposeCompute() = default;
-
- private:
-  XPUQuantData xpu_quant_filter_;
   uint64_t cur_dev_attr_ = 0;
 };
 
