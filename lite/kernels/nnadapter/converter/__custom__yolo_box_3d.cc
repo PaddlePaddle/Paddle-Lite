@@ -43,15 +43,11 @@ int ConvertCustomYoloBox3d(Converter* converter, OpInfo* op, Scope* scope) {
   int class_num;
   float conf_thresh;
   int downsample_ratio;
-  bool clip_bbox = true;
   float scale_x_y = 1.05f;
   anchors = op->GetAttr<std::vector<int>>("anchors");
   class_num = op->GetAttr<int>("class_num");
   conf_thresh = op->GetAttr<float>("conf_thresh");
   downsample_ratio = op->GetAttr<int>("downsample_ratio");
-  if (op->HasAttr("clip_bbox")) {
-    clip_bbox = op->GetAttr<bool>("clip_bbox");
-  }
   if (op->HasAttr("scale_x_y")) {
     scale_x_y = op->GetAttr<float>("scale_x_y");
   }
@@ -60,7 +56,6 @@ int ConvertCustomYoloBox3d(Converter* converter, OpInfo* op, Scope* scope) {
   auto conf_thresh_operand = converter->AddConstantOperand(conf_thresh);
   auto downsample_ratio_operand =
       converter->AddConstantOperand(downsample_ratio);
-  auto clip_bbox_operand = converter->AddConstantOperand(clip_bbox);
   auto scale_x_y_operand = converter->AddConstantOperand(scale_x_y);
   // Output operand
   auto boxes_name = op->Output("Boxes").front();
@@ -71,7 +66,7 @@ int ConvertCustomYoloBox3d(Converter* converter, OpInfo* op, Scope* scope) {
   auto location_operand = converter->AddOutputOperand(location_name);
   auto dim_name = op->Output("Dim").front();
   auto dim_operand = converter->AddOutputOperand(dim_name);
-  auto alpha_name = op->Output("Scores").front();
+  auto alpha_name = op->Output("Alpha").front();
   auto alpha_operand = converter->AddOutputOperand(alpha_name);
   converter->AddOperation(NNADAPTER_CUSTOM_YOLO_BOX_3D,
                           {input_operand,
@@ -80,7 +75,6 @@ int ConvertCustomYoloBox3d(Converter* converter, OpInfo* op, Scope* scope) {
                            class_num_operand,
                            conf_thresh_operand,
                            downsample_ratio_operand,
-                           clip_bbox_operand,
                            scale_x_y_operand},
                           {boxes_operand,
                            scores_operand,

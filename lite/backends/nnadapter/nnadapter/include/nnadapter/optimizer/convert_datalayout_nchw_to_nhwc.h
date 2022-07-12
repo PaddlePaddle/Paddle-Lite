@@ -62,6 +62,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertSqueeze(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
+  void ConvertCustomYoloBox3d(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

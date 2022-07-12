@@ -24,8 +24,8 @@ namespace operation {
   auto& output_operands = operation->output_operands;                         \
   auto input_count = input_operands.size();                                   \
   auto output_count = output_operands.size();                                 \
-  NNADAPTER_CHECK_EQ(input_count, 10);                                        \
-  NNADAPTER_CHECK_EQ(output_count, 2);                                        \
+  NNADAPTER_CHECK_EQ(input_count, 7);                                         \
+  NNADAPTER_CHECK_EQ(output_count, 5);                                        \
   /* Inputs */                                                                \
   auto input_operand = input_operands[0];                                     \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
@@ -48,9 +48,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "conf_thresh: " << conf_thresh;                        \
   auto downsample_ratio = *reinterpret_cast<int*>(input_operands[5]->buffer); \
   NNADAPTER_VLOG(5) << "downsample_ratio: " << downsample_ratio;              \
-  auto clip_bbox = *reinterpret_cast<bool*>(input_operands[6]->buffer);       \
-  NNADAPTER_VLOG(5) << "clip_bbox: " << clip_bbox;                            \
-  auto scale_x_y = *reinterpret_cast<float*>(input_operands[7]->buffer);      \
+  auto scale_x_y = *reinterpret_cast<float*>(input_operands[6]->buffer);      \
   NNADAPTER_VLOG(5) << "scale_x_y: " << scale_x_y;                            \
   /* Output */                                                                \
   auto boxes_operand = output_operands[0];                                    \

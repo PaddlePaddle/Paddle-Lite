@@ -553,6 +553,18 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "score_threshold"};
         output_args = {"Out", "NmsRoisNum", "Index"};
         break;
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D:
+        input_args = {
+            "input",
+            "imgsize",
+            "anchors",
+            "class_num",
+            "conf_thresh",
+            "downsample_ratio",
+            "scale_x_y",
+        };
+        output_args = {"boxes", "scores", "location", "dim", "alpha"};
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -672,6 +684,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
+    NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_BOX_3D);
     NNADAPTER_TYPE_TO_STRING(ABS);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);

@@ -2238,9 +2238,7 @@ typedef enum {
    * threshold should be ignored.
    * * 5: downsample_ratio, a NNADAPTER_INT32 tensor of shape [1], down-sampling
    * rate from network input to this operation input.
-   * * 6: clip_bbox, a NNADAPTER_BOOL8 tensor of shape [1], whether clip output
-   * bonding box in `imgsize` boundary, defaults to true.
-   * * 7: scale_x_y, a NNADAPTER_FLOAT32 tensor of shape [1], scale the center
+   * * 6: scale_x_y, a NNADAPTER_FLOAT32 tensor of shape [1], scale the center
    * point of decoded bounding box, defaults to 1.0.
    *
    * Outputs:

@@ -2285,7 +2285,6 @@ struct CustomYoloBox3dParam : ParamBase {
   int class_num{0};
   float conf_thresh{0.f};
   int downsample_ratio{0};
-  bool clip_bbox{true};
   float scale_x_y{1.0f};
 };
 

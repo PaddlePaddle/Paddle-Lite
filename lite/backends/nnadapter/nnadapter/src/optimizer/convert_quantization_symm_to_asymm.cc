@@ -120,6 +120,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CLIP:
       case NNADAPTER_CHANNEL_SHUFFLE:
       case NNADAPTER_SLICE:
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D:
       case NNADAPTER_FILL_LIKE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);

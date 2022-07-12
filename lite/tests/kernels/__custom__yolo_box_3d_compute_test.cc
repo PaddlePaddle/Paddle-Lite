@@ -81,6 +81,20 @@ inline void CalcDetectionBox(T* boxes_data,
 }
 
 template <typename T>
+std::vector<T> Softmax(std::vector<T> input) {
+  T total = 0;
+  auto max_value = *std::max_element(input.begin(), input.end());
+  for (auto x : input) {
+    total += std::exp(x - max_value);
+  }
+  std::vector<T> result;
+  for (auto x : input) {
+    result.push_back(std::exp(x - max_value) / total);
+  }
+  return result;
+}
+
+template <typename T>
 inline void CalcLabelScore(T* scores,
                            const T* input,
                            const int score_input_idx,
@@ -88,9 +102,13 @@ inline void CalcLabelScore(T* scores,
                            const int class_num,
                            const T conf,
                            const int stride) {
+  std::vector<T> softmax_inputs;
   for (int i = 0; i < class_num; i++) {
-    scores[score_output_idx + i] =
-        conf * Sigmoid(input[score_input_idx + i * stride]);
+    softmax_inputs.push_back(input[score_input_idx + i * stride]);
+  }
+  auto softmax_result = Softmax(softmax_inputs);
+  for (int i = 0; i < class_num; i++) {
+    scores[score_output_idx + i] = conf * softmax_result[i];
   }
 }
 }  // namespace
@@ -108,12 +126,14 @@ class YoloBox3dComputeTester : public arena::TestCase {
   std::string output4_ = "Alpha";
   std::vector<int> anchors_;
   int class_num_ = 4;
-  float conf_thresh_ = 0.f;
+  float conf_thresh_ = 0.0045;
   int downsample_ratio_ = 8;
   bool clip_bbox_ = false;
   float scale_x_y_ = 1.05f;
 
   DDim _dims0_{{1, 51, 80, 160}};
+  // DDim _dims0_{{1, 51, 40, 80}};
+  // DDim _dims0_{{1, 51, 20, 40}};
   DDim _dims1_{{1, 2}};
 
  public:
@@ -186,29 +206,29 @@ class YoloBox3dComputeTester : public arena::TestCase {
     // memset(location_data, 0, location->numel() * sizeof(T));
     // memset(dim_data, 0, dim->numel() * sizeof(T));
     // memset(alpha_data, 0, alpha->numel() * sizeof(T));
-
+    auto shape_size = 1 * 38400;
     std::ifstream boxes_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/pboxs.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/pboxs_2.raw",
         std::ios::in | std::ios::binary);
-    size_t boxes_size = 1 * 38400 * 4;
+    size_t boxes_size = shape_size * 4;
     std::vector<float> boxes_raw_data(boxes_size);
     boxes_file.read(reinterpret_cast<char*>(boxes_raw_data.data()),
                     boxes_size * sizeof(float));
     boxes_file.close();
 
     std::ifstream score_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/pscores.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/pscores_2.raw",
         std::ios::in | std::ios::binary);
-    size_t score_size = 1 * 38400 * 4;
+    size_t score_size = shape_size * 4;
     std::vector<float> score_raw_data(score_size);
     score_file.read(reinterpret_cast<char*>(score_raw_data.data()),
                     score_size * sizeof(float));
     score_file.close();
 
     std::ifstream location_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/plocation.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/plocation_2.raw",
         std::ios::in | std::ios::binary);
-    size_t location_size = 1 * 38400 * 3;
+    size_t location_size = shape_size * 3;
     std::vector<float> location_raw_data(location_size);
     location_file.read(reinterpret_cast<char*>(location_raw_data.data()),
                        location_size * sizeof(float));
@@ -217,9 +237,9 @@ class YoloBox3dComputeTester : public arena::TestCase {
         location_data, location_raw_data.data(), sizeof(float) * location_size);
 
     std::ifstream dim_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/pdim.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/pdim_2.raw",
         std::ios::in | std::ios::binary);
-    size_t dim_size = 1 * 38400 * 3;
+    size_t dim_size = shape_size * 3;
     std::vector<float> dim_raw_data(dim_size);
     dim_file.read(reinterpret_cast<char*>(dim_raw_data.data()),
                   dim_size * sizeof(float));
@@ -227,9 +247,9 @@ class YoloBox3dComputeTester : public arena::TestCase {
     memcpy(dim_data, dim_raw_data.data(), sizeof(float) * dim_size);
 
     std::ifstream alpha_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/palpha.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/palpha_2.raw",
         std::ios::in | std::ios::binary);
-    size_t alpha_size = 1 * 38400 * 2;
+    size_t alpha_size = shape_size * 2;
     std::vector<float> alpha_raw_data(alpha_size);
     alpha_file.read(reinterpret_cast<char*>(alpha_raw_data.data()),
                     alpha_size * sizeof(float));
@@ -357,8 +377,8 @@ class YoloBox3dComputeTester : public arena::TestCase {
         }
       }
     }
-    // memcpy(boxes_data, boxes_raw_data.data(), sizeof(float) * boxes_size);
-    // memcpy(scores_data, score_raw_data.data(), sizeof(float) * score_size);
+    memcpy(boxes_data, boxes_raw_data.data(), sizeof(float) * boxes_size);
+    memcpy(scores_data, score_raw_data.data(), sizeof(float) * score_size);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -390,12 +410,14 @@ class YoloBox3dComputeTester : public arena::TestCase {
 
     // Load raw image data from file
     std::ifstream image_file(
-        "/Work/Paddle-sty/Paddle-Lite/build_yolo_test/data/head_out.raw",
+        "/Work/qnn/Paddle-Lite/yolobox_3d_data/all/head_out_2.raw",
         std::ios::in | std::ios::binary);
     if (!image_file) {
       VLOG(4) << "failed: ";
       return;
     }
+    // size_t image_size = 1 * 51 * 20 * 40;
+    // size_t image_size = 1 * 51 * 40 * 80;
     size_t image_size = 1 * 51 * 80 * 160;
     std::vector<float> image_data(image_size);
     image_file.read(reinterpret_cast<char*>(image_data.data()),
@@ -415,6 +437,8 @@ void TestYoloBox3d(Place place, float abs_error) {
     for (float conf_thresh : {0.f}) {
       for (int downsample_ratio : {8}) {
         std::vector<int> anchor{10, 15, 24, 36, 72, 42};
+        // std::vector<int> anchor{35, 87, 102, 96, 60, 170};
+        // std::vector<int> anchor{220, 125, 128, 222, 264, 266};
         std::unique_ptr<arena::TestCase> tester(new YoloBox3dComputeTester<T>(
             place, "def", anchor, class_num, conf_thresh, downsample_ratio));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -425,9 +449,14 @@ void TestYoloBox3d(Place place, float abs_error) {
 }
 
 TEST(YoloBox3d, precision) {
-  float abs_error = 5e-1;
+  float abs_error = 1e-3;
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
+#endif
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

@@ -72,12 +72,25 @@ inline void CalcDetectionBox(T* boxes_data,
                              T* box,
                              const int box_idx,
                              const int img_height,
-                             const int img_width,
-                             bool clip_bbox) {
+                             const int img_width) {
   boxes_data[box_idx] = (box[0] - box[2] * 0.5f) * img_width;
   boxes_data[box_idx + 1] = (box[1] - box[3] * 0.5f) * img_height;
   boxes_data[box_idx + 2] = (box[0] + box[2] * 0.5f) * img_width;
   boxes_data[box_idx + 3] = (box[1] + box[3] * 0.5f) * img_height;
+}
+
+template <typename T>
+std::vector<T> softmax(std::vector<T> input) {
+  T total = 0;
+  auto max_value = *std::max_element(input.begin(), input.end());
+  for (auto x : input) {
+    total += std::exp(x - max_value);
+  }
+  std::vector<T> result;
+  for (auto x : input) {
+    result.push_back(std::exp(x - max_value) / total);
+  }
+  return result;
 }
 
 template <typename T>
@@ -88,9 +101,13 @@ inline void CalcLabelScore(T* scores,
                            const int class_num,
                            const T conf,
                            const int stride) {
+  std::vector<T> softmax_inputs;
   for (int i = 0; i < class_num; i++) {
-    scores[score_output_idx + i] =
-        conf * Sigmoid(input[score_input_idx + i * stride]);
+    softmax_inputs.push_back(input[score_input_idx + i * stride]);
+  }
+  auto softmax_result = softmax(softmax_inputs);
+  for (int i = 0; i < class_num; i++) {
+    scores[score_output_idx + i] = conf * softmax_result[i];
   }
 }
 
@@ -106,7 +123,6 @@ void YoloBox3d(lite::Tensor* X,
                int class_num,
                T conf_thresh,
                int downsample_ratio,
-               bool clip_bbox,
                T scale,
                T bias) {
   const int n = X->dims()[0];
@@ -166,12 +182,8 @@ void YoloBox3d(lite::Tensor* X,
                      bias);
           int box_output_idx =
               (batch_idx * b_num + an_idx * stride + h_idx * w + w_idx) * 4;
-          CalcDetectionBox(boxes_data,
-                           box,
-                           box_output_idx,
-                           img_height,
-                           img_width,
-                           clip_bbox);
+          CalcDetectionBox(
+              boxes_data, box, box_output_idx, img_height, img_width);
 
           // Calc score output
           int obj_idx = GetEntryIndex(batch_idx,
@@ -267,7 +279,6 @@ void CustomYoloBox3dCompute<T, TType, PType>::Run() {
   int class_num = param.class_num;
   T conf_thresh = static_cast<T>(param.conf_thresh);
   int downsample_ratio = param.downsample_ratio;
-  bool clip_bbox = param.clip_bbox;
   T scale_x_y = static_cast<T>(param.scale_x_y);
   T bias = static_cast<T>(-0.5 * (scale_x_y - 1.f));
   Boxes->clear();
@@ -286,7 +297,6 @@ void CustomYoloBox3dCompute<T, TType, PType>::Run() {
                class_num,
                conf_thresh,
                downsample_ratio,
-               clip_bbox,
                scale_x_y,
                bias);
 }

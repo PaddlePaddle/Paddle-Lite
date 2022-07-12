@@ -255,5 +255,9 @@ REGISTER_OPERATION(NON_MAX_SUPPRESSION,
                    ValidateNonMaxSuppression,
                    PrepareNonMaxSuppression,
                    ExecuteNonMaxSuppression)
+REGISTER_OPERATION(CUSTOM_YOLO_BOX_3D,
+                   ValidateCustomYoloBox3d,
+                   PrepareCustomYoloBox3d,
+                   ExecuteCustomYoloBox3d)
 
 #endif  // NOLINT
