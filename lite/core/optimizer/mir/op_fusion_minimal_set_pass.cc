@@ -970,17 +970,17 @@ void ApplyReshapeTransposeReshapeFuser(SSAGraph* graph) {
 }
 
 void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  ApplyIdentityScaleEliminator(graph.get());
+  // ApplyIdentityScaleEliminator(graph.get());
   ApplyMulElementwiseAddFuser(graph.get());
   ApplyFCActivationFuser(graph.get());
-  ApplyConv2dElementwiseAddFuser(graph.get());
-  ApplyConv2dBatchNormFuser(graph.get());
-  ApplyConv2dElementwiseAddFuser(graph.get());
-  ApplyConv2dActivationFuser(graph.get());
+  // ApplyConv2dElementwiseAddFuser(graph.get());
+  // ApplyConv2dBatchNormFuser(graph.get());
+  // ApplyConv2dElementwiseAddFuser(graph.get());
+  // ApplyConv2dActivationFuser(graph.get());
   // Since some hardware does not support 5-D inputs and outputs, and the
   // shuffle channel op is more general and friendly to hardware manufacturers,
   // it is necessary to convert reshape+transpose+reshape to shuffle channel op.
-  ApplyReshapeTransposeReshapeFuser(graph.get());
+  // ApplyReshapeTransposeReshapeFuser(graph.get());
 }
 
 }  // namespace mir

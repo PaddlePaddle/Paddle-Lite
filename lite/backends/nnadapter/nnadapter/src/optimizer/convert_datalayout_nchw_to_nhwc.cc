@@ -171,6 +171,32 @@ void NCHW2NHWCDataLayoutConverter::ConvertAdaptivePool2D(
   SetOperationLayout(operation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertBatchNormalization(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 6);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // Force to apply the dimorder vector of NCHW2NHWC conversion
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation =
+      MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AppendTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
+    SetPermutation(transpose_input_operand, kNCHW2NHWC);
+  }
+  TransposeOperand(output_operand, kNCHW2NHWC);
+  SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertPool2D(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -779,6 +805,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_MAX_POOL_2D:
         ConvertPool2D(operation);
+        break;
+      case NNADAPTER_BATCH_NORMALIZATION:
+        ConvertBatchNormalization(operation);
         break;
       case NNADAPTER_CAST:
         ConvertCast(operation);

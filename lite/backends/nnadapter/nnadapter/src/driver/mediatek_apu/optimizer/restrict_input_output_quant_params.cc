@@ -116,39 +116,100 @@ static bool RestrictBiasScaleEqualInputScaleMultiplyFilterScale(
     core::Operand* input_operand,
     core::Operand* weight_operand,
     core::Operand* bias_operand) {
-  if (!IsAsymmPerLayerQuantType(input_operand->type.precision) ||
-      !IsAsymmPerLayerQuantType(weight_operand->type.precision) ||
-      !IsSymmPerLayerQuantType(bias_operand->type.precision)) {
-    return false;
+  if (IsAsymmPerLayerQuantType(input_operand->type.precision) &&
+      IsAsymmPerLayerQuantType(weight_operand->type.precision) &&
+      IsInt32SymmPerLayerQuantType(bias_operand->type.precision)) {
+    auto input_scale = input_operand->type.asymm_per_layer_params.scale;
+    auto weight_scale = weight_operand->type.asymm_per_layer_params.scale;
+    auto& bias_scale = bias_operand->type.symm_per_layer_params.scale;
+    // Requantize the bias data if the following condition is not satisfied
+    double input_scale_x_weight_scale =
+        static_cast<double>(input_scale) * static_cast<double>(weight_scale);
+    if (fabs(input_scale_x_weight_scale - bias_scale) <= 1e-6f) {
+      return false;
+    }
+    NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
+    auto channel_size = bias_operand->type.dimensions.data[0];
+    auto bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
+    std::vector<float> dequantized_bias(channel_size);
+    NNADAPTER_CHECK(DequantizeData<int32_t>(bias_data,
+                                            &channel_size,
+                                            1,
+                                            &bias_scale,
+                                            NULL,
+                                            -1,
+                                            -2147483647,
+                                            2147483647,
+                                            dequantized_bias.data()));
+    NNADAPTER_VLOG(5) << "Requantize bias operand "
+                      << OperandIdToString(bias_operand) << ": scale "
+                      << bias_scale << " -> " << input_scale_x_weight_scale;
+    bias_scale = input_scale_x_weight_scale;
+    NNADAPTER_CHECK(QuantizeData<int32_t>(dequantized_bias.data(),
+                                          &channel_size,
+                                          1,
+                                          &bias_scale,
+                                          NULL,
+                                          -1,
+                                          -2147483647,
+                                          2147483647,
+                                          bias_data));
+    return true;
+  } else if (IsAsymmPerLayerQuantType(input_operand->type.precision) &&
+             IsSymmPerChannelQuantType(weight_operand->type.precision) &&
+             IsInt32SymmPerChannelQuantType(bias_operand->type.precision)) {
+    auto input_scale = input_operand->type.asymm_per_layer_params.scale;
+    auto weight_scales = weight_operand->type.symm_per_channel_params.scales;
+    auto bias_scales = bias_operand->type.symm_per_channel_params.scales;
+    NNADAPTER_CHECK_EQ(bias_operand->type.symm_per_channel_params.channel_dim,
+                       0);
+    NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
+    auto channel_size = bias_operand->type.dimensions.data[0];
+    NNADAPTER_CHECK_EQ(bias_operand->type.symm_per_channel_params.scale_count,
+                       channel_size);
+    // Requantize the bias data if the following condition is not satisfied
+    bool same = true;
+    std::vector<double> input_scale_x_weight_scales(channel_size);
+    for (int32_t i = 0; i < channel_size; i++) {
+      input_scale_x_weight_scales[i] = static_cast<double>(input_scale) *
+                                       static_cast<double>(weight_scales[i]);
+      if (fabs(input_scale_x_weight_scales[i] - bias_scales[i]) > 1e-6f) {
+        same = false;
+      }
+    }
+    if (same) return false;
+    auto bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
+    std::vector<float> dequantized_bias(channel_size);
+    NNADAPTER_CHECK(DequantizeData<int32_t>(
+        bias_data,
+        &channel_size,
+        1,
+        bias_scales,
+        NULL,
+        bias_operand->type.symm_per_channel_params.channel_dim,
+        -2147483647,
+        2147483647,
+        dequantized_bias.data()));
+    for (int32_t i = 0; i < channel_size; i++) {
+      NNADAPTER_VLOG(5) << "Requantize bias operand "
+                        << OperandIdToString(bias_operand) << ": scale[" << i
+                        << "] " << bias_scales[i] << " -> "
+                        << input_scale_x_weight_scales[i];
+      bias_scales[i] = input_scale_x_weight_scales[i];
+    }
+    NNADAPTER_CHECK(QuantizeData<int32_t>(
+        dequantized_bias.data(),
+        &channel_size,
+        1,
+        bias_scales,
+        NULL,
+        bias_operand->type.symm_per_channel_params.channel_dim,
+        -2147483647,
+        2147483647,
+        bias_data));
+    return true;
   }
-  auto input_scale = input_operand->type.asymm_per_layer_params.scale;
-  auto weight_scale = weight_operand->type.asymm_per_layer_params.scale;
-  auto& bias_scale = bias_operand->type.symm_per_layer_params.scale;
-  // Requantize the bias data if the following condition is not satisfied
-  double input_scale_x_weight_scale =
-      static_cast<double>(input_scale) * static_cast<double>(weight_scale);
-  if (fabs(input_scale_x_weight_scale - bias_scale) <= 1e-6f) {
-    return false;
-  }
-  NNADAPTER_VLOG(5) << "Requantize bias operand "
-                    << OperandIdToString(bias_operand) << ": scale "
-                    << bias_scale << " -> " << input_scale_x_weight_scale;
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
-  auto channel_size = bias_operand->type.dimensions.data[0];
-  auto quantized_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
-  std::vector<float> float_bias_data(channel_size);
-  DequantizeData<int32_t>(quantized_bias_data,
-                          channel_size,
-                          &bias_scale,
-                          1,
-                          float_bias_data.data());
-  bias_scale = input_scale_x_weight_scale;
-  QuantizeData<int32_t>(float_bias_data.data(),
-                        channel_size,
-                        &bias_scale,
-                        1,
-                        quantized_bias_data);
-  return true;
+  return false;
 }
 
 void RestrictInputOutputQuantParams(core::Model* model) {
@@ -203,6 +264,7 @@ void RestrictInputOutputQuantParams(core::Model* model) {
         break;
       case NNADAPTER_ADD:
       case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
       case NNADAPTER_MAT_MUL:

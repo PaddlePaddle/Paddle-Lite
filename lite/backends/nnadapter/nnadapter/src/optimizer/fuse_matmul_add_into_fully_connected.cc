@@ -103,8 +103,8 @@ bool MatMulAddFuser::HandleMatchedResults(
   if (!*reinterpret_cast<bool*>(matmul_transpose_y_operand->buffer)) {
     TransposeOperand(matmul_y_operand, std::vector<int32_t>({1, 0}));
   }
-  // Create a new FullyConnected operation and replace the matched subgraph
-  // nodes.
+  // Create a new NNADAPTER_FULLY_CONNECTED operation and replace the matched
+  // subgraph nodes.
   auto* fully_connected_operation = AddOperation(model);
   fully_connected_operation->type = NNADAPTER_FULLY_CONNECTED;
   fully_connected_operation->input_operands = {matmul_x_operand,
@@ -118,8 +118,12 @@ bool MatMulAddFuser::HandleMatchedResults(
 }
 
 NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {
-  MatMulAddFuser mat_mul_add_fuser;
-  mat_mul_add_fuser.Apply(model);
+  NNADAPTER_VLOG(5) << "Apply MatMulAddFuser";
+  bool stop;
+  do {
+    MatMulAddFuser mat_mul_add_fuser;
+    stop = mat_mul_add_fuser.Apply(model) == 0;
+  } while (!stop);
 }
 
 }  // namespace nnadapter
