@@ -22,7 +22,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-#include "lite/backends/arm/math/sve2/pooling_sve2.h"
+#include "lite/backends/arm/math/sve/pooling_sve.h"
 #endif
 
 namespace paddle {

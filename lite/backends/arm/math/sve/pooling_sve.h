@@ -37,14 +37,14 @@ void pooling_global_avg_sve2(const float* din,
                              int win);
 
 void pooling_global_avg_fp16_sve2(const float16_t* din,
-                             float16_t* dout,
-                             int num,
-                             int chout,
-                             int hout,
-                             int wout,
-                             int chin,
-                             int hin,
-                             int win);
+                                  float16_t* dout,
+                                  int num,
+                                  int chout,
+                                  int hout,
+                                  int wout,
+                                  int chin,
+                                  int hin,
+                                  int win);
 
 #endif
 

@@ -205,7 +205,7 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
                     const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
-#if 0  /// random param pool
+#if 1  /// random param pool
 TEST(TestPoolRand, test_pool_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 16}) {
@@ -258,7 +258,25 @@ TEST(TestPoolRand, test_pool_rand) {
 }
 #endif  /// random param conv
 
-#if 0  /// custom
+#ifdef LITE_WITH_ARM8_SVE2  /// global_pool
+TEST(TesPoolGlobal, test_pool_fp16_global) {
+  for (auto& h : {51})
+    test_pool_fp16({DDim({1, 64, h, h})},
+                   {2, 2},
+                   {1, 1},
+                   {1, 1, 1, 1},
+                   false,
+                   true,
+                   false,
+                   false,
+                   false,
+                   "avg",
+                   {1},
+                   {1});
+}
+#endif  // global_pool
+
+#if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp16_custom_size) {
   test_pool_fp16(
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
@@ -273,26 +291,5 @@ TEST(TesPoolCustom, test_pool_fp16_custom_size) {
       FLAGS_pooling_type,
       {FLAGS_threads},
       {FLAGS_power_mode});
-}
-#endif  // custom
-
-
-#if 1  /// custom
-TEST(TesPoolGlobal, test_pool_fp16_global) {
-  
-  for(auto &h : {51})
-  test_pool_fp16(
-      {DDim({1, 64, h, h})},
-      {2, 2},
-      {1, 1},
-      {1, 1, 1, 1},
-      false,
-      true,
-      false,
-      false,
-      false,
-      "avg",
-      {1},
-      {1});
 }
 #endif  // custom

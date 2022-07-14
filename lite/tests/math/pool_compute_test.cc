@@ -176,7 +176,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
                     const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
-#if 0  /// random param pool
+#if 1  /// random param pool
 TEST(TestPoolRand, test_pool_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 16}) {
@@ -228,21 +228,38 @@ TEST(TestPoolRand, test_pool_rand) {
 }
 #endif  /// random param conv
 
-#if 1  /// custom
+#ifdef LITE_WITH_ARM8_SVE2  // global_pool
 TEST(TesPoolGlobal, test_pool_fp32_global) {
-  for(auto &h : {51})
+  for (auto& h : {51})
+    test_pool_fp32({DDim({1, 64, h, h})},
+                   {2, 2},
+                   {1, 1},
+                   {1, 1, 1, 1},
+                   false,
+                   true,
+                   false,
+                   false,
+                   false,
+                   "avg",
+                   {1},
+                   {1});
+}
+#endif  // global_pool
+
+#if 1  /// custom
+TEST(TesPoolCustom, test_pool_fp32_custom_size) {
   test_pool_fp32(
-      {DDim({1, 64, h, h})},
-      {2, 2},
-      {1, 1},
-      {1, 1, 1, 1},
-      false,
-      true,
-      false,
-      false,
-      false,
-      "avg",
-      {1},
-      {1});
+      {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
+      {FLAGS_kernel_h, FLAGS_kernel_w},
+      {FLAGS_stride_h, FLAGS_stride_w},
+      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
+      FLAGS_ceil_mode,
+      FLAGS_flag_global,
+      FLAGS_exclusive,
+      FLAGS_adaptive,
+      FLAGS_use_quantizer,
+      FLAGS_pooling_type,
+      {FLAGS_threads},
+      {FLAGS_power_mode});
 }
 #endif  // custom
