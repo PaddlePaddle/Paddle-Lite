@@ -40,6 +40,9 @@ bool XPUFcOp::CheckShape() const {
       CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
+  if (param_.in_num_col_dims == -1) {
+    param_.in_num_col_dims += input_dims.size();
+  }
 
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
@@ -88,7 +91,8 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.act_param = op_desc.GetAttr<float>("act_param");
   param_.has_bias = op_desc.GetAttr<bool>("has_bias");
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
-
+  param_.transpose_x = op_desc.GetAttr<bool>("transpose_x");
+  param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
