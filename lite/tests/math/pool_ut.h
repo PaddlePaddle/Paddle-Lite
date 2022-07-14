@@ -38,8 +38,8 @@ DEFINE_int32(power_mode,
              "2 for POWER_FULL;"
              "3 for NO_BIND");
 DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(warmup, 10, "warmup times");
-DEFINE_int32(repeats, 100, "repeats times");
+DEFINE_int32(warmup, 0, "warmup times");
+DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
