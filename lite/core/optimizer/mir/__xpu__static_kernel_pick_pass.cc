@@ -44,8 +44,8 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 // Collect input data precision for each node in the graph
 #ifdef LITE_WITH_XPU
   DicideUseFP16Optimizer(graph);
+  GetXPUDeviceType();
   if (xpu_use_fp16_optimizer_) {
-    GetXPUDeviceType();
     for (auto& node : graph->StmtTopologicalOrder()) {
       if (!node->IsStmt()) continue;
       if (xpu_special_op_.count(node->AsStmt().op_type())) {
@@ -235,6 +235,12 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #ifdef LITE_WITH_XPU
 void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
     const std::unique_ptr<SSAGraph>& graph) {
+  if (GetStringFromEnv("XPUForceUseFP16", "false") == "true") {
+    xpu_use_fp16_optimizer_ = false;
+    VLOG(2) << "XPU force use data precision: FP16 ";
+    return;
+  }
+
   if (graph->valid_places()[0].precision == PrecisionType::kFP16) {
     xpu_use_fp16_optimizer_ = true;
     VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16 ";
