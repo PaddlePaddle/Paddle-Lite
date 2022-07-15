@@ -122,7 +122,7 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
         reinterpret_cast<float*>(x_col_before_concat_guard->addr_);
     XPUScratchPadGuard x_col_guard = TargetWrapperXPU::MallocScratchPad(
         (n * yh * yw * kh * kw * xc) * sizeof(float));
-    float* x_col = reinterpret_cast<float*>(x_col->addr_);
+    float* x_col = reinterpret_cast<float*>(x_col_guard->addr_);
     const float* weight = param.filter->data<float>();
     int ret = xdnn::transpose<float>(ctx.GetRawContext(),
                                      param.x->data<float>(),
