@@ -121,7 +121,7 @@ void ReciprocalCompute::Run() {
   float* xpu_factor_ptr = reinterpret_cast<float*>(xpu_factor_guard->addr_);
   int x_len = param.X->numel();
   int r = 0;
-  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor_prt, 1, 1.0f);
+  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor_ptr, 1, 1.0f);
   CHECK_EQ(r, 0);
   r = xdnn::broadcast_div(ctx.GetRawContext(),
                           xpu_factor_ptr,
