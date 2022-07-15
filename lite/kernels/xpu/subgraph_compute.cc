@@ -176,7 +176,7 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 }
 
 void SubgraphCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
                                    param.block_idx,
                                    param.program_desc,

@@ -91,6 +91,16 @@ class TargetWrapper<TARGET(kXPU)> {
         CHECK(xpu_stream_.get());
       }
       tls_raw_ctx_.get()->xpu_stream = xpu_stream_.get();
+      if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU1) {
+        LOG(INFO) << "running in KunLun1";
+      } else if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU2) {
+        LOG(INFO) << "running in KunLun2";
+      } else if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU3) {
+        LOG(INFO) << "running in KunLun3";
+      } else {
+        LOG(FATAL) << "running in unknown XPU device: "
+                   << static_cast<int>(tls_raw_ctx_.get()->dev().type());
+      }
       LOG(INFO) << "thread 0x" << std::hex << std::this_thread::get_id()
                 << " set context xpu stream: " << xpu_stream_.get();
       if (l3_planner_ == nullptr) {

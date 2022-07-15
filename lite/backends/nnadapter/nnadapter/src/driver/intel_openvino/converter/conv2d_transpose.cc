@@ -20,6 +20,7 @@
 #include "operation/conv2d.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace intel_openvino {
@@ -78,15 +79,20 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   // For group > 1, reshape filter.
   // Filters' layout is [I,O,W,H].
   // The final grouped filters' layout is [groups, grouped_i, O, W, H].
+  std::shared_ptr<Operator> reshape_op;
   if (group > 1) {
-    auto filter_reshape_tensor =
-        converter->AddConstantTensor<int64_t>({group,
-                                               filter_channel_size / group,
-                                               output_channel_size,
-                                               filter_height,
-                                               filter_width});
-    auto reshape_op = std::make_shared<default_opset::Reshape>(
-        *filter_tensor, *filter_reshape_tensor, false);
+    if (IsOperandWithDynamicShape(input_operand)) {
+      reshape_op = converter->GetGroupConvFilterShape(filter_tensor, group);
+    } else {
+      auto filter_reshape_tensor =
+          converter->AddConstantTensor<int64_t>({group,
+                                                 filter_channel_size / group,
+                                                 output_channel_size,
+                                                 filter_height,
+                                                 filter_width});
+      reshape_op = std::make_shared<default_opset::Reshape>(
+          *filter_tensor, *filter_reshape_tensor, false);
+    }
     auto conv2d_transpose_op =
         IsOutputSet()
             ? std::make_shared<default_opset::GroupConvolutionBackpropData>(

@@ -460,6 +460,15 @@ TEST(Elementwise, precision) {
   abs_error = 1e-1;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+  }
+  return;
 #else
   return;
 #endif

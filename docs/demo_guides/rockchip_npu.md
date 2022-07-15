@@ -1,8 +1,8 @@
 # 瑞芯微 NPU 部署示例
 
-Paddle Lite 已支持 Rockchip NPU 的预测部署。
+Paddle Lite 已支持 Rockchip 1代 NPU 的预测部署。
 其接入原理是与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 Rockchip NPU 组网 API 进行网络构建，在线生成并执行模型。
-
+- **请注意**：本文介绍的是 Paddle Lite 基于 RK DDK 来调用瑞芯微 SoC 的 NPU 算力，考虑到算子以及模型支持的广度，如果需要在瑞芯微 SoC 上部署较为复杂的模型，我们强烈建议您参考[芯原 TIM-VX 部署示例](./verisilicon_timvx)，同样能调用晶晨 SoC 的 NPU 算力，且支持场景更多。
 ## 支持现状
 
 ### 已支持的芯片

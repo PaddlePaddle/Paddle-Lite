@@ -23,7 +23,7 @@ namespace kernels {
 namespace xpu {
 
 void DensityPriorBoxCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   std::vector<float> variance = param.variances_;
   CHECK_EQ(variance.size(), 4);
   variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
@@ -34,8 +34,8 @@ void DensityPriorBoxCompute::PrepareForRun() {
 }
 
 void DensityPriorBoxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   bool is_clip = param.clip;
   std::vector<float> fixed_size = param.fixed_sizes;
   std::vector<float> fixed_ratio = param.fixed_ratios;

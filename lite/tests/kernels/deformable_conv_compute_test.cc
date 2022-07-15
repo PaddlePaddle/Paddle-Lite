@@ -236,8 +236,8 @@ class DeformableConvComputeTester : public arena::TestCase {
 void TestConvKsize(Place place, float abs_error = 2e-5) {
   for (auto dims :
        std::vector<std::vector<int64_t>>{{1, 3, 12, 12}, {5, 4, 17, 18}}) {
-    for (auto out_channels : {3, 6}) {
-      for (auto ksize : {1, 3, 5, 7}) {
+    for (auto out_channels : {6}) {
+      for (auto ksize : {1, 3, 7}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
             place, "def", DDim(dims), out_channels, {ksize, ksize}));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -250,7 +250,7 @@ void TestConvKsize(Place place, float abs_error = 2e-5) {
 void TestConvDilations(Place place, float abs_error = 2e-5) {
   for (auto dims :
        std::vector<std::vector<int64_t>>{{1, 2, 5, 6}, {5, 6, 9, 10}}) {
-    for (auto out_channels : {1, 3}) {
+    for (auto out_channels : {3}) {
       for (auto dilations : std::vector<std::vector<int>>{{2, 2}, {1, 2}}) {
 #if defined(NNADAPTER_WITH_INTEL_OPENVINO)
         if (dilations[0] != dilations[1]) {
@@ -277,9 +277,9 @@ void TestConvDilations(Place place, float abs_error = 2e-5) {
 void TestConvStrides(Place place, float abs_error = 2e-5) {
   for (auto dims :
        std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
-    for (auto out_channels : {1, 3}) {
+    for (auto out_channels : {3}) {
       for (auto strides :
-           std::vector<std::vector<int>>{{2, 2}, {3, 3}, {1, 2}, {3, 1}}) {
+           std::vector<std::vector<int>>{{2, 2}, {3, 3}, {1, 2}}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
             place, "def", DDim(dims), out_channels, {3, 3}, strides));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -292,7 +292,7 @@ void TestConvStrides(Place place, float abs_error = 2e-5) {
 void TestConvPaddings(Place place, float abs_error = 2e-5) {
   for (auto dims :
        std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
-    for (auto out_channels : {1, 3}) {
+    for (auto out_channels : {3}) {
       for (auto paddings :
            std::vector<std::vector<int>>{{1, 1}, {0, 0}, {2, 2}}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
@@ -328,7 +328,7 @@ void TestConvBias(Place place, float abs_error = 2e-5) {
 void TestConvAct(Place place, float abs_error = 2e-5) {
   for (auto dims :
        std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
-    for (auto out_channels : {1, 3}) {
+    for (auto out_channels : {1}) {
       std::unique_ptr<arena::TestCase> tester(
           new DeformableConvComputeTester(place,
                                           "def",

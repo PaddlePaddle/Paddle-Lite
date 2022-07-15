@@ -60,10 +60,6 @@ class Program {
               uint32_t output_count,
               core::Argument* output_arguments);
 
-  // Build from model or cache
-  int BuildFromModel(core::Model* model);
-  int BuildFromCache(core::Cache* cache);
-
  private:
   int CheckInputsAndOutputs(uint32_t input_count,
                             core::Argument* input_arguments,
@@ -80,6 +76,7 @@ class Program {
       parameter_node_map_;
   std::vector<std::shared_ptr<Operator>> result_nodes_;
   std::shared_ptr<ov::CompiledModel> compiled_model_{nullptr};
+  bool with_dynamic_shape_{false};
 };
 
 }  // namespace intel_openvino

@@ -56,6 +56,9 @@ NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/de
 NNADAPTER_WITH_NVIDIA_TENSORRT=OFF
 NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
+NNADAPTER_WITH_QUALCOMM_QNN=OFF
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
+NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=""
 NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
@@ -64,6 +67,7 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 NNADAPTER_WITH_INTEL_OPENVINO=OFF
 # /opt/intel/openvino_<version>
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_INTEL_OPENVINO_SDK_VERSION=""
 NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
 NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
@@ -83,13 +87,12 @@ WITH_TRAIN=OFF
 WITH_TINY_PUBLISH=ON
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
+WITH_ARM_DOTPROD=ON
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
-# option of light weight framework, default is OFF
-WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -107,8 +110,7 @@ readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                            -DCMAKE_BUILD_TYPE=Release \
+readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF"
 
@@ -122,9 +124,7 @@ function set_benchmark_options {
     # Linux. Otherwise opencl is not supported on Linux. See link for more info:
     # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
     WITH_OPENCL=OFF
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
-    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
     WITH_OPENCL=ON
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -153,13 +153,11 @@ function init_cmake_mutable_options {
     if [ "${ARCH}" == "x86" ]; then
         with_x86=ON
         arm_target_os=""
-        WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
         WITH_TINY_PUBLISH=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
         arm_target_os=armlinux
-        WITH_LIGHT_WEIGHT_FRAMEWORK=ON
         WITH_AVX=OFF
     fi
 
@@ -186,7 +184,6 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$WITH_LIGHT_WEIGHT_FRAMEWORK \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
@@ -232,18 +229,23 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
                         -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
+                        -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
+                        -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
+                        -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
                         -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
                         -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_INTEL_OPENVINO_SDK_VERSION=$NNADAPTER_INTEL_OPENVINO_SDK_VERSION \
                         -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+                        -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
@@ -618,6 +620,18 @@ function main {
                 NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_qualcomm_qnn=*)
+                NNADAPTER_WITH_QUALCOMM_QNN="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_qnn_sdk_root=*)
+                NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_hexagon_tools_root=*)
+                NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_kunlunxin_xtcl=*)
                 NNADAPTER_WITH_KUNLUNXIN_XTCL="${i#*=}"
                 shift
@@ -641,6 +655,10 @@ function main {
                 ;;
             --nnadapter_intel_openvino_sdk_root=*)
                 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_intel_openvino_sdk_version=*)
+                NNADAPTER_INTEL_OPENVINO_SDK_VERSION="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_google_xnnpack=*)
@@ -710,6 +728,10 @@ function main {
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            --with_arm_dotprod=*)
+                WITH_ARM_DOTPROD="${i#*=}"
                 shift
                 ;;
             --with_profile=*)

@@ -150,11 +150,12 @@ void transpose_mat(const lite_api::float16_t* din,
   int nw = width >> 3;
 #ifdef __aarch64__
   int nh = height >> 3;
+  int size_w = width << 3;
 #else
   int nh = height >> 2;
+  int size_w = width << 2;
 #endif
   int size_in = width * height;
-  int size_w = width << 3;
   int size_h = height << 3;
   int remain_w = (width & 7);
   int remain_ww = remain_w >> 2;
@@ -217,17 +218,17 @@ void transpose_mat(const lite_api::float16_t* din,
             "trn1 v10.2d, v1.2d, v5.2d\n"  // 2
             "trn2 v11.2d, v1.2d, v5.2d\n"  // 6
             "trn1 v12.2d, v2.2d, v6.2d\n"  // 1
-            "str q8, [%[dout0]], #16\n"
+            "str q8, [%[dout0]]\n"
             "trn2 v13.2d, v2.2d, v6.2d\n"  // 3
-            "str q9, [%[dout4]], #16\n"
+            "str q9, [%[dout4]]\n"
             "trn1 v14.2d, v3.2d, v7.2d\n"  // 5
-            "str q10, [%[dout2]], #16\n"
+            "str q10, [%[dout2]]\n"
             "trn2 v15.2d, v3.2d, v7.2d\n"  // 7
-            "str q11, [%[dout6]], #16\n"
-            "str q12, [%[dout1]], #16\n"
-            "str q14, [%[dout3]], #16\n"
-            "str q13, [%[dout5]], #16\n"
-            "str q15, [%[dout7]], #16\n"
+            "str q11, [%[dout6]]\n"
+            "str q12, [%[dout1]]\n"
+            "str q14, [%[dout3]]\n"
+            "str q13, [%[dout5]]\n"
+            "str q15, [%[dout7]]\n"
             : [din0] "+r"(din0),
               [din1] "+r"(din1),
               [din2] "+r"(din2),
@@ -235,16 +236,15 @@ void transpose_mat(const lite_api::float16_t* din,
               [din4] "+r"(din4),
               [din5] "+r"(din5),
               [din6] "+r"(din6),
-              [din7] "+r"(din7),
-              [dout0] "+r"(dout0),
-              [dout1] "+r"(dout1),
-              [dout2] "+r"(dout2),
-              [dout3] "+r"(dout3),
-              [dout4] "+r"(dout4),
-              [dout5] "+r"(dout5),
-              [dout6] "+r"(dout6),
-              [dout7] "+r"(dout7)
-            :
+              [din7] "+r"(din7)
+            : [dout0] "r"(dout0),
+              [dout1] "r"(dout1),
+              [dout2] "r"(dout2),
+              [dout3] "r"(dout3),
+              [dout4] "r"(dout4),
+              [dout5] "r"(dout5),
+              [dout6] "r"(dout6),
+              [dout7] "r"(dout7)
             : "cc",
               "memory",
               "v0",

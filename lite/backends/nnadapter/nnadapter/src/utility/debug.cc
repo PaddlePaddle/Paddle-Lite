@@ -332,6 +332,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_MAX:
       case NNADAPTER_REDUCE_SUM:
         input_args = {"input", "axes", "keep_dim"};
         output_args = {"output"};
@@ -540,6 +541,18 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "min_max_aspect_ratios_order"};
         output_args = {"Boxes", "Variances"};
         break;
+      case NNADAPTER_NON_MAX_SUPPRESSION:
+        input_args = {"BBoxes",
+                      "Scores",
+                      "background_label",
+                      "keep_top_k",
+                      "nms_eta",
+                      "nms_threshold",
+                      "nms_top_k",
+                      "normalized",
+                      "score_threshold"};
+        output_args = {"Out", "NmsRoisNum", "Index"};
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -630,6 +643,7 @@ NNADAPTER_EXPORT std::string OperandLayoutCodeToString(
   switch (type) {
     NNADAPTER_TYPE_TO_STRING(NCHW);
     NNADAPTER_TYPE_TO_STRING(NHWC);
+    NNADAPTER_TYPE_TO_STRING(HWCN);
     default:
       name = "UNKNOWN";
       break;
@@ -708,6 +722,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MESHGRID);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(NON_MAX_SUPPRESSION);
     NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
@@ -740,6 +755,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TILE);
     NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(YOLO_BOX);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     NNADAPTER_TYPE_TO_STRING(WHERE);
     default:

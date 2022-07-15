@@ -24,7 +24,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int maxptr_size = ctx.GetRawContext()->max_ptr_size();
   input_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
@@ -32,7 +32,7 @@ void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
       TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
   output_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   float W_max = param.W_max;
   float weight_max_cpu[maxptr_size] = {W_max};
   XPU_CALL(xpu_memcpy(weight_max_xpu_guard_->addr_,
@@ -43,8 +43,8 @@ void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
 }
 
 void XPUMmdnnSearchAttention2Compute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* input = param.X;
   auto* weight = param.W;

@@ -1568,6 +1568,16 @@ typedef struct Device {
   - 输出：
     - 0 ： output ，输出操作数，形状：一维操作数，长度由 `start` 、 `end` 、 `step` 共同决定， 类型与输入操作数 `start` 相同。
 
+- NNADAPTER_REDUCE_MAX
+
+  沿着给定的单个或多个轴计算最大值。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： axes ，给定的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT32 ，取值： 每个 `axis` 的有效范围是 [-R, R） ， R 是输入操作数 `input` 的维度，当 `axis` 为负数时，效果与 `axis` + R 一致，如果是空，则对所有维度计算并返回单个元素。
+    - 2 ： keepdim ，输出操作数是否保留减小的维度。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由 `input` 、 `axes` 、 `keepdim` 共同决定， 类型与输入操作数 `input` 相同。
+
 - NNADAPTER_REDUCE_MEAN
 
   沿着给定的单个或多个轴计算平均值。

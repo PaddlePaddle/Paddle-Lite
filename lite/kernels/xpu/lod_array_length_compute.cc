@@ -21,8 +21,8 @@ namespace kernels {
 namespace xpu {
 
 void LoDArrayLengthCompute::Run() {
-  auto& param = this->Param<operators::LoDArrayLengthParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<operators::LoDArrayLengthParam>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int64_t array_length = param.x->size();
   int r =
       xdnn::constant<int64_t>(ctx.GetRawContext(),

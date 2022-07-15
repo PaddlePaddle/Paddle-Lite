@@ -88,7 +88,6 @@ bool InterpolateV2Op::InferShapeImpl() const {
   auto out_lod = param_.Out->mutable_lod();
   *out_lod = param_.X->lod();
   param_.Out->Resize({n, c, out_h, out_w});
-
   return true;
 }
 

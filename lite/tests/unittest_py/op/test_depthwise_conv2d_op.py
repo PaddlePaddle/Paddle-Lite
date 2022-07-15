@@ -67,6 +67,10 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         self.enable_devices_on_nnadapter(device_names=[
             "kunlunxin_xtcl", "nvidia_tensorrt", "intel_openvino"
         ])
+        xpu_places = [
+            Place(TargetType.XPU, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=xpu_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -133,6 +137,9 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         def generate_bias(*args, **kwargs):
             return np.random.random([filter_m]).astype(np.float32)
 
+        def generate_zero_bias(*args, **kwargs):
+            return np.zeros([filter_m]).astype(np.float32)
+
         inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
         inputs_data = {
             "input_data": TensorConfig(data_gen=partial(generate_input))
@@ -146,6 +153,11 @@ class TestDepthwiseConv2dOp(AutoScanTest):
                 inputs_type["Bias"] = ["bias_data"]
                 weights_data['bias_data'] = TensorConfig(
                     data_gen=partial(generate_bias))
+
+        if self.get_target() == "XPU":
+            inputs_data["bias_data"] = TensorConfig(
+                data_gen=partial(generate_zero_bias))
+            inputs_type["Bias"] = ["bias_data"]
 
         depthwise_conv2d_op = OpConfig(
             type="depthwise_conv2d",
@@ -170,10 +182,16 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "XPU":
+            atol, rtol = 1e-3, 1e-3
+        return self.get_predictor_configs(), ["depthwise_conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def skip_bias_teller(program_config, predictor_config):
+            if self.get_target() == "XPU":
+                return False
             if "Bias" in program_config.ops[0].inputs.keys():
                 return True
             return False

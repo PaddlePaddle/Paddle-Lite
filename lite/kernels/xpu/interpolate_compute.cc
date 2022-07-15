@@ -25,8 +25,8 @@ namespace kernels {
 namespace xpu {
 
 void BilinearInterpCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   lite::Tensor* X = param.X;
   int n = X->dims()[0];
   int c = X->dims()[1];
@@ -63,8 +63,8 @@ void BilinearInterpCompute::Run() {
 }
 
 void NearestInterpCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   lite::Tensor* X = param.X;
   int n = X->dims()[0];
   int c = X->dims()[1];

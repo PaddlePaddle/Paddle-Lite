@@ -446,6 +446,13 @@ TEST(ReduceMax, precision) {
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #endif
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#else
+  return;
+#endif
+#endif
 
   test_reduce_max_4d(place);
   test_reduce_max_3d(place);

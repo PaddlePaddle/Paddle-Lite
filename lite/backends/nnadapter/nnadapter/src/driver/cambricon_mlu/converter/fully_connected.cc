@@ -23,11 +23,6 @@ namespace cambricon_mlu {
 
 int ConvertFullyConnected(Converter* converter, core::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  auto batch_size =
-      ProductionOfDimensions(input_operand->type.dimensions.data,
-                             input_operand->type.dimensions.count) /
-      input_size;
-  NNADAPTER_VLOG(5) << "batch_size: " << batch_size;
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -38,6 +33,19 @@ int ConvertFullyConnected(Converter* converter, core::Operation* operation) {
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
   // dimensions_count not equal 2
   if (input_operand->type.dimensions.count != 2) {
+    int production = 1;
+    for (int i = 0; i < input_operand->type.dimensions.count; i++) {
+      auto dimension = input_operand->type.dimensions.data[i];
+      if (dimension == NNADAPTER_UNKNOWN) {
+        production = -1;
+        break;
+      } else {
+        NNADAPTER_CHECK_GT(dimension, 0);
+        production *= dimension;
+      }
+    }
+    int batch_size = production == -1 ? -1 : production / input_size;
+    NNADAPTER_VLOG(5) << "fc batch_size: " << batch_size;
     auto shape_tensor = converter->AddInt32ConstantTensor(
         std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size})
             .data(),

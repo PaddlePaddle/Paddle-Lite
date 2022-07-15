@@ -46,6 +46,10 @@ TEST(ch_ppocr_server_v2_0_det,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

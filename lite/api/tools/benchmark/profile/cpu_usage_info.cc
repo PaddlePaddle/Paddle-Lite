@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cpu_usage_info.h"
+#include "cpu_usage_info.h"  //NOLINT
 #include <string.h>
 #include <sys/stat.h>
+#ifndef LITE_WITH_QNX
 #include <sys/sysinfo.h>
+#endif
 #include <sys/time.h>
 #include <unistd.h>
-#include <chrono>
+#include <chrono>  //NOLINT
 #include <iostream>
-#include <thread>
+#include <thread>  //NOLINT
 
 namespace paddle {
 namespace lite_api {
@@ -53,14 +55,14 @@ const char* CpuUsage::get_items(const char* buffer, unsigned int item) {
   return p;
 }
 
-unsigned long CpuUsage::get_cpu_total_occupy() {
+unsigned long CpuUsage::get_cpu_total_occupy() {  // NOLINT
   // get total cpu use time
 
   // different mode cpu occupy time
-  unsigned long user_time;
-  unsigned long nice_time;
-  unsigned long system_time;
-  unsigned long idle_time;
+  unsigned long user_time;    // NOLINT
+  unsigned long nice_time;    // NOLINT
+  unsigned long system_time;  // NOLINT
+  unsigned long idle_time;    // NOLINT
 
   FILE* fd;
   char buff[1024] = {0};
@@ -83,18 +85,18 @@ unsigned long CpuUsage::get_cpu_total_occupy() {
   return (user_time + nice_time + system_time + idle_time);
 }
 
-unsigned long CpuUsage::get_cpu_proc_occupy(int pid) {
+unsigned long CpuUsage::get_cpu_proc_occupy(int pid) {  // NOLINT
   // get specific pid cpu use time
-  unsigned int tmp_pid;
-  unsigned long utime;   // user time
-  unsigned long stime;   // kernel time
-  unsigned long cutime;  // all user time
-  unsigned long cstime;  // all dead time
+  unsigned int tmp_pid;  // NOLINT
+  unsigned long utime;   // user time // NOLINT
+  unsigned long stime;   // kernel time // NOLINT
+  unsigned long cutime;  // all user time // NOLINT
+  unsigned long cstime;  // all dead time // NOLINT
 
   char file_name[64] = {0};
   FILE* fd;
   char line_buff[1024] = {0};
-  sprintf(file_name, "/proc/%d/stat", pid);
+  sprintf(file_name, "/proc/%d/stat", pid);  // NOLINT
 
   fd = fopen(file_name, "r");
   if (nullptr == fd) return 0;
@@ -110,8 +112,8 @@ unsigned long CpuUsage::get_cpu_proc_occupy(int pid) {
 }
 
 float CpuUsage::GetCpuUsageRatio(int pid) {
-  unsigned long totalcputime1, totalcputime2;
-  unsigned long procputime1, procputime2;
+  unsigned long totalcputime1, totalcputime2;  // NOLINT
+  unsigned long procputime1, procputime2;      // NOLINT
 
   totalcputime1 = get_cpu_total_occupy();
   procputime1 = get_cpu_proc_occupy(pid);
@@ -126,7 +128,7 @@ float CpuUsage::GetCpuUsageRatio(int pid) {
   float pcpu = 0.0;
   if (0 != totalcputime2 - totalcputime1)
     pcpu = (procputime2 - procputime1) /
-           float(totalcputime2 - totalcputime1);  // float number
+           static_cast<float>(totalcputime2 - totalcputime1);  // float number
 
   int cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
   pcpu *= cpu_num;  // should multiply cpu num in multiple cpu machine
@@ -138,6 +140,6 @@ float GetCpuUsageRatio(int pid) {
   static CpuUsage cpu_monter;
   return cpu_monter.GetCpuUsageRatio(pid);
 }
-}  // namespace paddle
-}  // namespace lite_api
 }  // namespace profile
+}  // namespace lite_api
+}  // namespace paddle

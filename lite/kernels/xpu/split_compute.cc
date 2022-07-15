@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void SplitCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& dout = param.output;
   auto in_dim = param.x->dims();
   auto axis = param.axis;

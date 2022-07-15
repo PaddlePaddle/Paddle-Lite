@@ -704,6 +704,81 @@ void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(core::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertSqueeze(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  auto axes_operand = input_operands[1];
+  // Recalculate the perm according to the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  std::vector<int32_t> identity_permutation =
+      IdentityPermutation(input_dimensions_count);
+  std::vector<int32_t> axes;
+  if (axes_operand && (axes_operand->length / sizeof(int32_t)) > 0) {
+    auto axes_count = axes_operand->length / sizeof(int32_t);
+    auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);
+    // Recalculate the axes according to the dimorder vector of the input
+    // operand
+    for (int32_t i = 0; i < axes_count; i++) {
+      if (axes_data[i] < 0) {
+        axes_data[i] += input_dimensions_count;
+      }
+      // Delete the dimension corresponding to the axis of the
+      // identity_permutation
+      for (auto it = identity_permutation.begin();
+           it != identity_permutation.end();) {
+        if (*it == axes_data[i]) {
+          it = identity_permutation.erase(it);
+        } else {
+          ++it;
+        }
+      }
+      // Delete the dimension corresponding to the axis of the input_permutation
+      TransposeAxis(axes_data[i], input_permutation);
+      for (auto it = input_permutation.begin();
+           it != input_permutation.end();) {
+        if (*it == axes_data[i]) {
+          it = input_permutation.erase(it);
+        } else {
+          ++it;
+        }
+      }
+    }
+    // Calculate the distance between current data layout and origin data layout
+    std::vector<int32_t> output_permutation;
+    for (auto identity_data : identity_permutation) {
+      int32_t index = std::distance(input_permutation.begin(),
+                                    std::find(input_permutation.begin(),
+                                              input_permutation.end(),
+                                              identity_data));
+      output_permutation.push_back(index);
+    }
+    TransposeOperand(output_operand, output_permutation);
+    SetPermutation(output_operand, output_permutation);
+  } else {
+    // Force to restore the dimorder vector of the input operand
+    auto input_permutation = GetPermutation(input_operand);
+    auto transpose_input_permutation = InversePermutation(input_permutation);
+    if (!IsIdentityPermutation(transpose_input_permutation)) {
+      auto transpose_input_operand = AppendTransposeOperation(
+          model_, input_operand, transpose_input_permutation);
+      UpdateOperationInputOperands(
+          {operation}, input_operand, transpose_input_operand);
+      SetPermutation(transpose_input_operand,
+                     IdentityPermutation(input_dimensions_count));
+    }
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  }
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -724,6 +799,70 @@ void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
     auto output_operand = output_operands[i];
     TransposeOperand(output_operand, input_permutation);
     SetPermutation(output_operand, input_permutation);
+  }
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertStack(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_GE(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto* axis =
+      reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer);
+  if (*axis < 0) {
+    *axis += input_operands[0]->type.dimensions.count;
+  }
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Force to align the dimorder vector of all of input operands
+  std::vector<int32_t> reference_permutation;
+  core::Operand* reference_operand = nullptr;
+  for (size_t i = 0; i < input_count - 1; i++) {
+    auto input_operand = input_operands[i];
+    if (!IsConstantOperand(input_operand)) {
+      auto input_permutation = GetPermutation(input_operand);
+      if (input_permutation.size() > reference_permutation.size()) {
+        reference_permutation = input_permutation;
+        reference_operand = input_operand;
+      }
+    }
+  }
+  if (reference_permutation.empty()) {
+    // All of input operands are constant
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  } else {
+    for (size_t i = 0; i < input_count - 1; i++) {
+      auto input_operand = input_operands[i];
+      if (!IsConstantOperand(input_operand)) {
+        auto input_permutation = GetPermutation(input_operand);
+        auto transpose_input_permutation = MultiplyPermutation(
+            InversePermutation(input_permutation), reference_permutation);
+        if (!IsIdentityPermutation(transpose_input_permutation)) {
+          auto transpose_input_operand = AppendTransposeOperation(
+              model_, input_operand, transpose_input_permutation);
+          UpdateOperationInputOperands(
+              {operation}, input_operand, transpose_input_operand);
+          SetPermutation(transpose_input_operand, reference_permutation);
+        }
+      } else {
+        if (IsIdentityPermutation(reference_permutation)) {
+          // Ignore
+        } else {
+          NNADAPTER_CHECK_EQ(input_operand->type.dimensions.count,
+                             reference_permutation.size());
+          TransposeOperand(input_operand, reference_permutation);
+        }
+      }
+    }
+    for (auto& perm_data : reference_permutation) {
+      if (perm_data >= *axis) perm_data += 1;
+    }
+    reference_permutation.insert(reference_permutation.begin() + *axis, *axis);
+    TransposeOperand(output_operand, reference_permutation);
+    SetPermutation(output_operand, reference_permutation);
   }
 }
 
@@ -767,6 +906,8 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
+      case NNADAPTER_MAX:
+      case NNADAPTER_MIN:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB:
         ConvertElementwise(operation);
@@ -842,6 +983,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
       case NNADAPTER_LOG:
+      case NNADAPTER_SWISH:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
@@ -853,8 +995,14 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
         break;
+      case NNADAPTER_SQUEEZE:
+        ConvertSqueeze(operation);
+        break;
       case NNADAPTER_SPLIT:
         ConvertSplit(operation);
+        break;
+      case NNADAPTER_STACK:
+        ConvertStack(operation);
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);

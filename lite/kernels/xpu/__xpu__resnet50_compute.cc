@@ -20,7 +20,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUResNet50Compute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
 
   for (auto* filter : param.filter) {
     arg_filter_.push_back(
@@ -35,8 +35,8 @@ void XPUResNet50Compute::PrepareForRun() {
 }
 
 void XPUResNet50Compute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int n = param.input->dims()[0];
   int c = param.input->dims()[1];

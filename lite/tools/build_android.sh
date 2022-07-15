@@ -31,6 +31,7 @@ WITH_EXCEPTION=OFF
 BUILD_ARM82_FP16=OFF
 # controls whether to support SVE2 instructions, default is OFF
 WITH_ARM8_SVE2=OFF
+WITH_ARM_DOTPROD=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -104,7 +105,6 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
-  WITH_NNADAPTER=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -271,6 +271,7 @@ function make_tiny_publish_so {
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
+      -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
@@ -365,6 +366,7 @@ function make_full_publish_so {
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
+      -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
@@ -659,6 +661,10 @@ function main {
                 ;;
             --with_arm8_sve2=*)
                 WITH_ARM8_SVE2="${i#*=}"
+                shift
+                ;;
+            --with_arm_dotprod=*)
+                WITH_ARM_DOTPROD="${i#*=}"
                 shift
                 ;;
             help)

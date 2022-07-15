@@ -25,7 +25,7 @@ namespace xpu {
 template <typename T>
 void ExpandV2Compute<T>::Run() {
   auto& param = this->template Param<operators::ExpandV2Param>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   const auto* x = param.X;
   auto* out = param.Out;
   std::vector<int64_t> x_shape = x->dims().Vectorize();

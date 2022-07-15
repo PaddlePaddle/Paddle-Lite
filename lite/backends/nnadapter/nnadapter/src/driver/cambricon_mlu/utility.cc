@@ -134,5 +134,11 @@ bool IsDeviceMemory(magicmind::IRTTensor* pointer) {
   }
 }
 
+bool IsScalar(magicmind::Dims dim) {
+  auto dim_num = dim.GetDimsNum();
+  auto element_count = dim.GetElementCount();
+  return dim_num == 0 && element_count == 1;
+}
+
 }  // namespace cambricon_mlu
 }  // namespace nnadapter

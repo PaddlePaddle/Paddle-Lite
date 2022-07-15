@@ -16,6 +16,8 @@
 
 #include <cmath>
 #include <limits>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "lite/core/op_registry.h"
@@ -108,6 +110,9 @@ TEST(softmax_arm, compute) {
             param.x = &x;
             param.axis = axis;
             param.output = &output;
+            std::unique_ptr<KernelContext> ctx(new KernelContext);
+            ctx->As<ARMContext>();
+            softmax.SetContext(std::move(ctx));
             softmax.SetParam(param);
             softmax.Run();
             param.output = &output_ref;

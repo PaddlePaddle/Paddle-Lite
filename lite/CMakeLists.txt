@@ -455,7 +455,7 @@ if (LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
                 add_dependencies(publish_inference_cxx_lib benchmark_bin)
-                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux" OR ARM_TARGET_OS STREQUAL "armmacos")
+                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux" OR ARM_TARGET_OS STREQUAL "armmacos" OR ARM_TARGET_OS STREQUAL "qnx")
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
@@ -490,7 +490,7 @@ if (LITE_WITH_ARM)
             add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
             add_dependencies(publish_inference tiny_publish_cxx_lib)
         else()
-            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") )
+            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") OR (ARM_TARGET_OS STREQUAL "qnx"))
                 # compile cplus shared library, pack the cplus demo and lib into the publish directory.
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"

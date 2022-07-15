@@ -25,13 +25,16 @@ namespace xpu {
 namespace math = paddle::lite::xpu::math;
 
 void MatMulCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* x = param.X;
   auto* y = param.Y;
   auto* out = param.Out;
 
+  if (param.enable_int8) {
+    LOG(FATAL) << "xpu don't support matmul int8 outside encoder";
+  }
   auto& x_dims = x->dims();
   auto& y_dims = y->dims();
   auto mat_dim_a = math::CreateMatrixDescriptor(
@@ -86,7 +89,6 @@ void MatMulCompute::Run() {
         0.0f,                                    // beta
         nullptr,                                 // bias
         xdnn::Activation_t::LINEAR);             // act
-
   } else {
     // batch matmul
     r = xdnn::fc_batched<float, float, float, int16_t>(

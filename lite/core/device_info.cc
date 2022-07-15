@@ -46,7 +46,13 @@
  */
 
 #ifdef LITE_WITH_LINUX
+
+#ifdef LITE_WITH_QNX
+#include <sys/neutrino.h>
+#else
 #include <sys/syscall.h>
+#endif
+
 #include <unistd.h>
 #endif
 #ifdef LITE_WITH_ANDROID
@@ -102,6 +108,18 @@ namespace lite {
 bool check_sve2_valid() {
   auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
   if (mask & AARCH64_HWCAP2_SVE2) return true;
+  return false;
+}
+
+bool check_sve2_i8mm_vaild() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
+  if (mask & AARCH64_HWCAP2_SVEI8MM) return true;
+  return false;
+}
+
+bool check_sve2_f32mm_vaild() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
+  if (mask & AARCH64_HWCAP2_SVEF32MM) return true;
   return false;
 }
 #endif
@@ -518,11 +536,20 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   pid_t pid = gettid();
 #endif
   cpu_set_t mask;
-  CPU_ZERO(&mask);
+  PD_CPU_ZERO(&mask);
+  unsigned int Runmask = 0;
   for (int i = 0; i < cpu_ids.size(); ++i) {
+#ifdef LITE_WITH_QNX
+    RMSK_SET(cpu_ids[i], &Runmask);  // set CPU
+#else
     PD_CPU_SET(cpu_ids[i], &mask);
+#endif
   }
+#ifdef LITE_WITH_QNX
+  int syscallret = ThreadCtl(_NTO_TCTL_RUNMASK, (unsigned int*)Runmask);
+#else
   int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
+#endif
   if (syscallret) {
     return -1;
   }
@@ -1175,6 +1202,10 @@ bool DeviceInfo::set_a53_valid() { return has_a53_valid_; }
 
 bool DeviceInfo::has_sve2() { return has_sve2_; }
 
+bool DeviceInfo::has_sve2_f32mm() { return has_sve2_f32mm_; }
+
+bool DeviceInfo::has_sve2_i8mm() { return has_sve2_i8mm_; }
+
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
   mem_size_ = get_mem_size();
@@ -1232,8 +1263,12 @@ int DeviceInfo::Setup() {
 
   // SVE2
   has_sve2_ = false;
+  has_sve2_i8mm_ = false;
+  has_sve2_f32mm_ = false;
 #if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
   has_sve2_ = check_sve2_valid();
+  has_sve2_f32mm_ = has_sve2_ && check_sve2_f32mm_vaild();
+  has_sve2_i8mm_ = has_sve2_ && check_sve2_i8mm_vaild();
 #endif
 
   // output info
@@ -1260,6 +1295,8 @@ int DeviceInfo::Setup() {
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
   LOG(INFO) << "SVE2 support: " << has_sve2_;
+  LOG(INFO) << "SVE2 f32mm support: " << has_sve2_f32mm_;
+  LOG(INFO) << "SVE2 i8mm support: " << has_sve2_i8mm_;
   // set default run mode
   SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND,
              1);  // use single thread by default

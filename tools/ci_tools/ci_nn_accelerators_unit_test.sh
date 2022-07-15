@@ -58,7 +58,9 @@ NNADAPTER_NVIDIA_CUDA_SDK_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="/usr/local/tensorrt"
 # Intel OpenVINO options
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="/opt/intel/openvino_2022"
-
+# Qualcomm QNN options
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
+NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=""
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
 if [ ${os_name} == "Darwin" ]; then
@@ -738,6 +740,79 @@ function huawei_ascend_npu_build_and_test() {
     done
 }
 
+# Qualcomm QNN
+function qualcomm_qnn_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        sdk_root_dir=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+            toolchain=clang
+        else
+            echo "$arch isn't supported by Qualcomm QNN DDK!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_QUALCOMM_QNN=ON \
+            -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn.so)
+        local nnadapter_qnn_cpu_custom_op_package_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn_cpu_custom_op_package.so)
+        local nnadapter_qnn_htp_custom_op_package_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn_htp_custom_op_package.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        local nnadapter_qnn_cpu_custom_op_package_dir=${nnadapter_qnn_cpu_custom_op_package_path%/*}
+        local nnadapter_qnn_htp_custom_op_package_dir=${nnadapter_qnn_htp_custom_op_package_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir:$nnadapter_qnn_cpu_custom_op_package_dir:$nnadapter_qnn_htp_custom_op_package_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
 # Nvidia TensorRT 
 function nvidia_tensorrt_build_and_test() {
     # Build and run all of unittests and model tests
@@ -1365,7 +1440,7 @@ function kunlunxin_xtcl_build_and_test() {
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_KUNLUNXIN_XTCL=ON \
-            -DNNADAPTER_KUNLUNXIN_XTCL_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_ROOT \
+            -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
             -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
             -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
             -DCMAKE_BUILD_TYPE=Release
@@ -1680,6 +1755,14 @@ function main() {
             NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
             shift
             ;;
+        --nnadapter_qualcomm_qnn_sdk_root=*)
+            NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_qualcomm_hexagon_tools_root=*)
+            NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT="${i#*=}"
+            shift
+            ;;
         android_cpu_build_and_test)
             android_cpu_build_and_test
             shift
@@ -1698,6 +1781,10 @@ function main() {
             ;;
         huawei_ascend_npu_build_and_test)
             huawei_ascend_npu_build_and_test
+            shift
+            ;;
+        qualcomm_qnn_build_and_test)
+            qualcomm_qnn_build_and_test
             shift
             ;;
         rockchip_npu_build_and_test)

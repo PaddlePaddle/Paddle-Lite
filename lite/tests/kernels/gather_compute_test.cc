@@ -168,6 +168,8 @@ TEST(Gather, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)

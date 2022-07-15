@@ -573,6 +573,8 @@ class LITE_API MobileConfig : public ConfigBase {
   // buffer
   void set_model_from_file(const std::string& x);
   void set_model_from_buffer(const std::string& x);
+  void set_model_from_buffer(std::string&& x);
+  void set_model_from_buffer(const char* buffer, size_t length);
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 
@@ -600,6 +602,9 @@ class LITE_API MobileConfig : public ConfigBase {
   void SetArmL3CacheSize(
       L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
       int absolute_val = -1);
+
+  // note: check device support fp16
+  bool check_fp16_valid();
 };
 
 template <typename ConfigT>

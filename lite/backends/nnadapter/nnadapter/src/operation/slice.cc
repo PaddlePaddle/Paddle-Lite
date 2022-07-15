@@ -42,10 +42,11 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
       if (dim > 0) {
         int start = starts[i] < 0 ? (starts[i] + dim) : starts[i];
         int end = ends[i] < 0 ? (ends[i] + dim) : ends[i];
+        int step = std::abs(steps[i]);
         start = std::max(start, 0);
         end = std::max(end, 0);
         end = std::min(end, dim);
-        output_dimensions[axes[i]] = end - start;
+        output_dimensions[axes[i]] = (std::abs(end - start) + step - 1) / step;
       }
     }
   };
@@ -70,6 +71,7 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
         axes,
         starts,
         ends,
+        steps,
         dimension_type.data);
     for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
       math::slice<int32_t>(
@@ -79,6 +81,7 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
           axes,
           starts,
           ends,
+          steps,
           dimension_type.dynamic_data[i]);
     }
     SetTemporaryShape(output_operand, dimension_type);

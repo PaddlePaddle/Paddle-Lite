@@ -81,6 +81,11 @@ class TestConv2dOp(AutoScanTest):
             "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt",
             "intel_openvino"
         ])
+        xpu_places = [
+            Place(TargetType.XPU, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=xpu_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -127,6 +132,9 @@ class TestConv2dOp(AutoScanTest):
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
 
+        def generate_zero_bias(*args, **kwargs):
+            return np.zeros([cout]).astype(np.float32)
+
         inputs_data = {
             "input_data": TensorConfig(data_gen=partial(generate_input))
         }
@@ -134,6 +142,11 @@ class TestConv2dOp(AutoScanTest):
         if use_mkldnn:
             inputs_data["bias_data"] = TensorConfig(
                 data_gen=partial(generate_bias))
+            inputs_type["Bias"] = ["bias_data"]
+
+        if self.get_target() == "XPU":
+            inputs_data["bias_data"] = TensorConfig(
+                data_gen=partial(generate_zero_bias))
             inputs_type["Bias"] = ["bias_data"]
 
         conv_op = OpConfig(
@@ -164,6 +177,8 @@ class TestConv2dOp(AutoScanTest):
         atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
         if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+        elif target_str == "XPU":
             atol, rtol = 1e-3, 1e-3
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 

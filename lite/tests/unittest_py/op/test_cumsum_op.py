@@ -34,6 +34,8 @@ class TestCumsumOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.Any,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -50,6 +52,8 @@ class TestCumsumOp(AutoScanTest):
         axis = draw(
             st.integers(
                 min_value=-x_dims_size, max_value=x_dims_size - 1))
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            flatten = False
         if flatten:
             axis = -1
         exclusive = draw(st.booleans())

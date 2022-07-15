@@ -50,6 +50,10 @@ if(NNADAPTER_WITH_NVIDIA_TENSORRT)
   add_subdirectory(nvidia_tensorrt)
 endif()
 
+if(NNADAPTER_WITH_QUALCOMM_QNN)
+  add_subdirectory(qualcomm_qnn)
+endif()
+
 if(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   add_subdirectory(kunlunxin_xtcl)
 endif()

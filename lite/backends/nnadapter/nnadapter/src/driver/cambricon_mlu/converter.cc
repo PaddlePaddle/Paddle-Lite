@@ -35,6 +35,8 @@ namespace cambricon_mlu {
 
 magicmind::INetwork* Converter::network() { return network_; }
 
+const std::string& Converter::op_params() { return op_params_; }
+
 int Converter::Apply(core::Model* model) {
   // Convert the NNAdapter operations to MagicMind nodes
   std::vector<core::Operation*> operations =

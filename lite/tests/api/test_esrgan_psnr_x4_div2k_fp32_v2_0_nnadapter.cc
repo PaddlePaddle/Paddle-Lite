@@ -32,6 +32,7 @@ TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
+  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
@@ -45,6 +46,10 @@ TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+  out_accuracy_threshold = 0.96f;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+  out_accuracy_threshold = 0.86f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -124,7 +129,8 @@ TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
   for (float abs_error : {1e-1, 1e-2, 1e-3}) {
     float acc = CalOutAccuracy(results, gt_data, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.97);
+    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error),
+              out_accuracy_threshold);
   }
 
   LOG(INFO) << "================== Speed Report ===================";

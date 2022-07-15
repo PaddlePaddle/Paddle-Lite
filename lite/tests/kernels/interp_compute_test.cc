@@ -560,10 +560,25 @@ TEST(Interp, precision) {
   TestInterpAlignMode(place, abs_error);
   // TestInterpSizetensor(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  return;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
   TestInterpOuthw(place, abs_error);
   TestInterpScale(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
   return;
 #else
   return;

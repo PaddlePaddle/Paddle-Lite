@@ -43,73 +43,74 @@ namespace fp16 {
   "ld1    {v8.8h}, [%[din_ptr4]], #16               \n" \
   "ld1    {v10.8h}, [%[din_ptr5]], #16              \n" \
   "ld1    {v9.8h}, [%[din_ptr4]]                    \n" \
-  "ld1    {v11.8h}, [%[din_ptr5]]                   \n"
+  "ld1    {v11.8h}, [%[din_ptr5]]                   \n" \
+  "mov v12.16b, %[ww].16b                           \n"
 #define LEFT_COMPUTE_FP16_S1                                     \
   "ld1    {v16.8h}, [%[bias_val]]                   \n"          \
   "ld1    {v17.8h}, [%[bias_val]]                   \n"          \
   "ld1    {v18.8h}, [%[bias_val]]                   \n"          \
   "ld1    {v19.8h}, [%[bias_val]]                   \n"          \
-  "ext    v12.16b, %[vzero].16b, v0.16b, #14        \n"          \
+  "ext    v22.16b, %[vzero].16b, v0.16b, #14        \n"          \
   "ext    v13.16b, v0.16b, v1.16b, #2               \n"          \
-  "fmla   v16.8h, %[ww1].8h, v0.8h                  \n" /* r0 */ \
+  "fmla   v16.8h,  v0.8h, v12.h[1]                \n" /* r0 */   \
   "sub    %[din_ptr0], %[din_ptr0], #2              \n"          \
   "sub    %[din_ptr1], %[din_ptr1], #2              \n"          \
-  "fmla   v16.8h, %[ww0].8h, v12.8h                 \n"          \
-  "fmla   v16.8h, %[ww2].8h, v13.8h                 \n"          \
+  "fmla   v16.8h, v22.8h ,v12.h[0]                 \n"           \
+  "fmla   v16.8h, v13.8h ,v12.h[2]                \n"            \
   "ext    v14.16b, %[vzero].16b, v2.16b, #14        \n"          \
   "ext    v15.16b, v2.16b, v3.16b, #2               \n"          \
-  "ext    v12.16b, %[vzero].16b, v4.16b, #14        \n" /* r1 */ \
-  "fmla   v17.8h, %[ww1].8h, v2.8h                  \n"          \
-  "fmla   v16.8h, %[ww4].8h, v2.8h                  \n"          \
+  "ext    v22.16b, %[vzero].16b, v4.16b, #14        \n" /* r1 */ \
+  "fmla   v17.8h, v2.8h, v12.h[1]                  \n"           \
+  "fmla   v16.8h, v2.8h, v12.h[4]                  \n"           \
   "ext    v13.16b, v4.16b, v5.16b, #2               \n"          \
-  "fmla   v17.8h, %[ww0].8h, v14.8h                 \n"          \
-  "fmla   v16.8h, %[ww3].8h, v14.8h                 \n"          \
-  "fmla   v17.8h, %[ww2].8h, v15.8h                 \n"          \
-  "fmla   v16.8h, %[ww5].8h, v15.8h                 \n"          \
+  "fmla   v17.8h, v14.8h, v12.h[0]                 \n"           \
+  "fmla   v16.8h, v14.8h, v12.h[3]                 \n"           \
+  "fmla   v17.8h, v15.8h, v12.h[2]                 \n"           \
+  "fmla   v16.8h, v15.8h, v12.h[5]                 \n"           \
   "sub    %[din_ptr2], %[din_ptr2], #2              \n"          \
   "sub    %[din_ptr3], %[din_ptr3], #2              \n"          \
   "ext    v14.16b, %[vzero].16b, v6.16b, #14        \n" /* r2 */ \
   "ld1    {v0.8h}, [%[din_ptr0]], #16               \n"          \
-  "fmla   v18.8h, %[ww1].8h, v4.8h                  \n"          \
-  "fmla   v17.8h, %[ww4].8h, v4.8h                  \n"          \
-  "fmla   v16.8h, %[ww7].8h, v4.8h                  \n"          \
+  "fmla   v18.8h, v4.8h, v12.h[1]                  \n"           \
+  "fmla   v17.8h, v4.8h, v12.h[4]                  \n"           \
+  "fmla   v16.8h, v4.8h, v12.h[7]                  \n"           \
   "ext    v15.16b, v6.16b, v7.16b, #2               \n"          \
   "ld1    {v2.8h}, [%[din_ptr1]], #16               \n"          \
-  "fmla   v18.8h, %[ww0].8h, v12.8h                 \n"          \
-  "fmla   v17.8h, %[ww3].8h, v12.8h                 \n"          \
-  "fmla   v16.8h, %[ww6].8h, v12.8h                 \n"          \
+  "fmla   v18.8h, v22.8h, v12.h[0]                 \n"           \
+  "fmla   v17.8h, v22.8h, v12.h[3]                 \n"           \
+  "fmla   v16.8h, v22.8h, v12.h[6]                 \n"           \
   "ld1    {v1.8h}, [%[din_ptr0]]                    \n"          \
-  "fmla   v18.8h, %[ww2].8h, v13.8h                 \n"          \
-  "fmla   v17.8h, %[ww5].8h, v13.8h                 \n"          \
+  "fmla   v18.8h, v13.8h, v12.h[2]                 \n"           \
+  "fmla   v17.8h, v13.8h, v12.h[5]                 \n"           \
   "fmla   v16.8h, %[ww8].8h, v13.8h                 \n"          \
   "ld1    {v3.8h}, [%[din_ptr1]]                    \n"          \
   "sub    %[din_ptr4], %[din_ptr4], #2              \n"          \
   "sub    %[din_ptr5], %[din_ptr5], #2              \n"          \
-  "ext    v12.16b, %[vzero].16b, v8.16b, #14        \n" /* r3 */ \
+  "ext    v22.16b, %[vzero].16b, v8.16b, #14        \n" /* r3 */ \
   "ld1    {v4.8h}, [%[din_ptr2]], #16               \n"          \
-  "fmla   v19.8h, %[ww0].8h, v14.8h                 \n"          \
-  "fmla   v18.8h, %[ww3].8h, v14.8h                 \n"          \
-  "fmla   v17.8h, %[ww6].8h, v14.8h                 \n"          \
+  "fmla   v19.8h, v14.8h, v12.h[0]                 \n"           \
+  "fmla   v18.8h, v14.8h, v12.h[3]                 \n"           \
+  "fmla   v17.8h, v14.8h, v12.h[6]                 \n"           \
   "ext    v13.16b, v8.16b, v9.16b, #2               \n"          \
   "ld1    {v5.8h}, [%[din_ptr2]]                    \n"          \
-  "fmla   v19.8h, %[ww1].8h, v6.8h                  \n"          \
-  "fmla   v18.8h, %[ww4].8h, v6.8h                  \n"          \
-  "fmla   v17.8h, %[ww7].8h, v6.8h                  \n"          \
+  "fmla   v19.8h, v6.8h, v12.h[1]                  \n"           \
+  "fmla   v18.8h, v6.8h, v12.h[4]                  \n"           \
+  "fmla   v17.8h, v6.8h, v12.h[7]                  \n"           \
   "ld1    {v6.8h}, [%[din_ptr3]], #16               \n"          \
-  "fmla   v19.8h, %[ww2].8h, v15.8h                 \n"          \
-  "fmla   v18.8h, %[ww5].8h, v15.8h                 \n"          \
+  "fmla   v19.8h, v15.8h, v12.h[2]                 \n"           \
+  "fmla   v18.8h, v15.8h, v12.h[5]                 \n"           \
   "fmla   v17.8h, %[ww8].8h, v15.8h                 \n"          \
   "ld1    {v7.8h}, [%[din_ptr3]]                    \n"          \
   "ext    v14.16b, %[vzero].16b, v10.16b, #14       \n" /* r4 */ \
-  "fmla   v19.8h, %[ww3].8h, v12.8h                 \n"          \
-  "fmla   v18.8h, %[ww6].8h, v12.8h                 \n"          \
-  "fmla   v19.8h, %[ww4].8h, v8.8h                  \n"          \
-  "fmla   v18.8h, %[ww7].8h, v8.8h                  \n"          \
+  "fmla   v19.8h, v22.8h, v12.h[3]                 \n"           \
+  "fmla   v18.8h, v22.8h, v12.h[6]                 \n"           \
+  "fmla   v19.8h, v8.8h, v12.h[4]                  \n"           \
+  "fmla   v18.8h, v8.8h, v12.h[7]                  \n"           \
   "ext    v15.16b, v10.16b, v11.16b, #2             \n"          \
-  "fmla   v19.8h, %[ww5].8h, v13.8h                 \n"          \
+  "fmla   v19.8h, v13.8h, v12.h[5]                 \n"           \
   "fmla   v18.8h, %[ww8].8h, v13.8h                 \n"          \
-  "fmla   v19.8h, %[ww6].8h, v14.8h                 \n" /* r5 */ \
-  "fmla   v19.8h, %[ww7].8h, v10.8h                 \n"          \
+  "fmla   v19.8h, v14.8h, v12.h[6]                 \n" /* r5 */  \
+  "fmla   v19.8h, v10.8h, v12.h[7]                 \n"           \
   "fmla   v19.8h, %[ww8].8h, v15.8h                 \n"          \
   "ld1    {v8.8h}, [%[din_ptr4]], #16               \n"          \
   "ld1    {v9.8h}, [%[din_ptr4]]                    \n"          \
@@ -155,17 +156,17 @@ namespace fp16 {
 
 #define LEFT_RESULT_FP16_S1_LEAKY_RELU                  \
   "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
-  "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
-  "bif    v16.16b, v13.16b, v12.16b                 \n" \
+  "bif    v16.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v17.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v17.8h,  v21.8h                  \n" \
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
-  "fcmge  v12.8h,  v18.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v18.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v18.8h,  v21.8h                  \n" \
-  "bif    v18.16b, v13.16b, v12.16b                 \n" \
+  "bif    v18.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v19.8h,  %[vzero].8h             \n" \
-  "fmul   v15.8h,  v19.8h,  v21.8h                  \n" \
+  "fmul   v15.8h,  v19.8h,  v21.8h                 \n"  \
   "bif    v19.16b, v15.16b, v14.16b                 \n" \
   "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
@@ -180,63 +181,63 @@ namespace fp16 {
   "ld1    {v17.8h}, [%[bias_val]]                   \n"          \
   "ld1    {v18.8h}, [%[bias_val]]                   \n"          \
   "ld1    {v19.8h}, [%[bias_val]]                   \n"          \
-  "fmla   v16.8h, %[ww0].8h, v0.8h                  \n" /* r0 */ \
-  "ext    v12.16b, v0.16b, v1.16b, #2               \n"          \
+  "fmla   v16.8h, v0.8h, v12.h[0]                  \n" /* r0 */  \
+  "ext    v22.16b, v0.16b, v1.16b, #2               \n"          \
   "ext    v13.16b, v0.16b, v1.16b, #4               \n"          \
-  "fmla   v16.8h, %[ww1].8h, v12.8h                 \n"          \
-  "fmla   v16.8h, %[ww2].8h, v13.8h                 \n"          \
+  "fmla   v16.8h, v22.8h, v12.h[1]                 \n"           \
+  "fmla   v16.8h, v13.8h, v12.h[2]                 \n"           \
   "ext    v14.16b, v2.16b, v3.16b, #2               \n"          \
   "ext    v15.16b, v2.16b, v3.16b, #4               \n"          \
-  "ext    v12.16b, v4.16b, v5.16b, #2               \n" /* r1 */ \
-  "fmla   v17.8h, %[ww0].8h, v2.8h                  \n"          \
-  "fmla   v16.8h, %[ww3].8h, v2.8h                  \n"          \
+  "ext    v22.16b, v4.16b, v5.16b, #2               \n" /* r1 */ \
+  "fmla   v17.8h, v2.8h, v12.h[0]                  \n"           \
+  "fmla   v16.8h, v2.8h, v12.h[3]                  \n"           \
   "ext    v13.16b, v4.16b, v5.16b, #4               \n"          \
-  "fmla   v17.8h, %[ww1].8h, v14.8h                 \n"          \
-  "fmla   v16.8h, %[ww4].8h, v14.8h                 \n"          \
-  "fmla   v17.8h, %[ww2].8h, v15.8h                 \n"          \
-  "fmla   v16.8h, %[ww5].8h, v15.8h                 \n"          \
+  "fmla   v17.8h, v14.8h, v12.h[1]                 \n"           \
+  "fmla   v16.8h, v14.8h, v12.h[4]                 \n"           \
+  "fmla   v17.8h, v15.8h, v12.h[2]                 \n"           \
+  "fmla   v16.8h, v15.8h, v12.h[5]                 \n"           \
   "ext    v14.16b, v6.16b, v7.16b, #2               \n" /* r2 */ \
   "ld1    {v0.8h}, [%[din_ptr0]], #16               \n"          \
-  "fmla   v18.8h, %[ww0].8h, v4.8h                  \n"          \
-  "fmla   v17.8h, %[ww3].8h, v4.8h                  \n"          \
-  "fmla   v16.8h, %[ww6].8h, v4.8h                  \n"          \
+  "fmla   v18.8h, v4.8h, v12.h[0]                  \n"           \
+  "fmla   v17.8h, v4.8h, v12.h[3]                  \n"           \
+  "fmla   v16.8h, v4.8h, v12.h[6]                  \n"           \
   "ext    v15.16b, v6.16b, v7.16b, #4               \n"          \
   "ld1    {v2.8h}, [%[din_ptr1]], #16               \n"          \
-  "fmla   v18.8h, %[ww1].8h, v12.8h                 \n"          \
-  "fmla   v17.8h, %[ww4].8h, v12.8h                 \n"          \
-  "fmla   v16.8h, %[ww7].8h, v12.8h                 \n"          \
+  "fmla   v18.8h, v22.8h, v12.h[1]                 \n"           \
+  "fmla   v17.8h, v22.8h, v12.h[4]                 \n"           \
+  "fmla   v16.8h, v22.8h, v12.h[7]                 \n"           \
   "ld1    {v1.8h}, [%[din_ptr0]]                    \n"          \
-  "fmla   v18.8h, %[ww2].8h, v13.8h                 \n"          \
-  "fmla   v17.8h, %[ww5].8h, v13.8h                 \n"          \
+  "fmla   v18.8h, v13.8h, v12.h[2]                 \n"           \
+  "fmla   v17.8h, v13.8h, v12.h[5]                 \n"           \
   "fmla   v16.8h, %[ww8].8h, v13.8h                 \n"          \
   "ld1    {v3.8h}, [%[din_ptr1]]                    \n" /* r3 */ \
-  "ext    v12.16b, v8.16b, v9.16b, #2               \n"          \
+  "ext    v22.16b, v8.16b, v9.16b, #2               \n"          \
   "ld1    {v4.8h}, [%[din_ptr2]], #16               \n"          \
-  "fmla   v19.8h, %[ww0].8h, v6.8h                  \n"          \
-  "fmla   v18.8h, %[ww3].8h, v6.8h                  \n"          \
-  "fmla   v17.8h, %[ww6].8h, v6.8h                  \n"          \
+  "fmla   v19.8h, v6.8h, v12.h[0]                  \n"           \
+  "fmla   v18.8h, v6.8h, v12.h[3]                  \n"           \
+  "fmla   v17.8h, v6.8h, v12.h[6]                  \n"           \
   "ext    v13.16b, v8.16b, v9.16b, #4               \n"          \
-  "fmla   v19.8h, %[ww1].8h, v14.8h                 \n"          \
-  "fmla   v18.8h, %[ww4].8h, v14.8h                 \n"          \
-  "fmla   v17.8h, %[ww7].8h, v14.8h                 \n"          \
+  "fmla   v19.8h, v14.8h, v12.h[1]                 \n"           \
+  "fmla   v18.8h, v14.8h, v12.h[4]                 \n"           \
+  "fmla   v17.8h, v14.8h, v12.h[7]                 \n"           \
   "ld1    {v5.8h}, [%[din_ptr2]]                    \n"          \
-  "fmla   v19.8h, %[ww2].8h, v15.8h                 \n"          \
-  "fmla   v18.8h, %[ww5].8h, v15.8h                 \n"          \
+  "fmla   v19.8h, v15.8h, v12.h[2]                 \n"           \
+  "fmla   v18.8h, v15.8h, v12.h[5]                 \n"           \
   "fmla   v17.8h, %[ww8].8h, v15.8h                 \n"          \
   "ext    v14.16b, v10.16b, v11.16b, #2             \n" /* r4 */ \
   "ld1    {v6.8h}, [%[din_ptr3]], #16               \n"          \
-  "fmla   v19.8h, %[ww3].8h, v8.8h                  \n"          \
-  "fmla   v18.8h, %[ww6].8h, v8.8h                  \n"          \
-  "fmla   v19.8h, %[ww4].8h, v12.8h                 \n"          \
+  "fmla   v19.8h, v8.8h, v12.h[3]                  \n"           \
+  "fmla   v18.8h, v8.8h, v12.h[6]                  \n"           \
+  "fmla   v19.8h, v22.8h, v12.h[4]                 \n"           \
   "ld1    {v7.8h}, [%[din_ptr3]]                    \n"          \
-  "fmla   v18.8h, %[ww7].8h, v12.8h                 \n"          \
+  "fmla   v18.8h, v22.8h, v12.h[7]                 \n"           \
   "ext    v15.16b, v10.16b, v11.16b, #4             \n"          \
-  "fmla   v19.8h, %[ww5].8h, v13.8h                 \n"          \
+  "fmla   v19.8h, v13.8h, v12.h[5]                 \n"           \
   "fmla   v18.8h, %[ww8].8h, v13.8h                 \n"          \
   "ld1    {v8.8h}, [%[din_ptr4]], #16               \n" /* r5 */ \
-  "fmla   v19.8h, %[ww6].8h, v10.8h                 \n"          \
+  "fmla   v19.8h, v10.8h, v12.h[6]                 \n"           \
   "ld1    {v9.8h}, [%[din_ptr4]]                    \n"          \
-  "fmla   v19.8h, %[ww7].8h, v14.8h                 \n"          \
+  "fmla   v19.8h, v14.8h, v12.h[7]                 \n"           \
   "ld1    {v10.8h}, [%[din_ptr5]], #16              \n"          \
   "fmla   v19.8h, %[ww8].8h, v15.8h                 \n"          \
   "ld1    {v11.8h}, [%[din_ptr5]]                   \n"          \
@@ -278,15 +279,15 @@ namespace fp16 {
 
 #define MID_RESULT_FP16_S1_LEAKY_RELU                   \
   "ld1    {v20.8h}, [%[scale_ptr]]                  \n" \
-  "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v20.8h                  \n" \
-  "bif    v16.16b, v13.16b, v12.16b                 \n" \
+  "bif    v16.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v17.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v17.8h,  v20.8h                  \n" \
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
-  "fcmge  v12.8h,  v18.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v18.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v18.8h,  v20.8h                  \n" \
-  "bif    v18.16b, v13.16b, v12.16b                 \n" \
+  "bif    v18.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v19.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v19.8h,  v20.8h                  \n" \
   "bif    v19.16b, v15.16b, v14.16b                 \n" \
@@ -323,61 +324,61 @@ namespace fp16 {
   "bif    v3.16b, %[vzero].16b, v21.16b                   \n"          \
   "ld1    {v8.8h, v9.8h}, [%[din_ptr4]]                   \n"          \
   "ld1    {v10.8h, v11.8h}, [%[din_ptr5]]                 \n"          \
-  "ext    v12.16b, v0.16b, v1.16b, #2                     \n"          \
+  "ext    v22.16b, v0.16b, v1.16b, #2                     \n"          \
   "ext    v13.16b, v0.16b, v1.16b, #4                     \n"          \
-  "fmla   v16.8h,  %[ww0].8h,  v0.8h                      \n"          \
+  "fmla   v16.8h,  v0.8h,  v12.h[0]                      \n"           \
   "ext    v14.16b, v2.16b, v3.16b, #2                     \n" /*r0*/   \
   "ext    v15.16b, v2.16b, v3.16b, #4                     \n"          \
   "bif    v4.16b, %[vzero].16b, v20.16b                   \n"          \
   "bif    v5.16b, %[vzero].16b, v21.16b                   \n"          \
-  "fmla   v16.8h,  %[ww1].8h,  v12.8h                     \n"          \
+  "fmla   v16.8h,  v22.8h,  v12.h[1]                     \n"           \
   "bif    v6.16b, %[vzero].16b, v20.16b                   \n"          \
   "bif    v7.16b, %[vzero].16b, v21.16b                   \n"          \
-  "fmla   v16.8h,  %[ww2].8h,  v13.8h                     \n"          \
+  "fmla   v16.8h,  v13.8h,  v12.h[2]                     \n"           \
   "bif    v8.16b, %[vzero].16b, v20.16b                   \n" /*r1*/   \
   "bif    v9.16b, %[vzero].16b, v21.16b                   \n"          \
   "bif    v10.16b, %[vzero].16b, v20.16b                  \n"          \
   "bif    v11.16b, %[vzero].16b, v21.16b                  \n"          \
-  "ext    v12.16b, v4.16b, v5.16b, #2                     \n"          \
-  "fmla   v17.8h,  %[ww0].8h,  v2.8h                      \n"          \
-  "fmla   v16.8h,  %[ww3].8h,  v2.8h                      \n"          \
+  "ext    v22.16b, v4.16b, v5.16b, #2                     \n"          \
+  "fmla   v17.8h,  v2.8h,  v12.h[0]                      \n"           \
+  "fmla   v16.8h,  v2.8h,  v12.h[3]                      \n"           \
   "ext    v13.16b, v4.16b, v5.16b, #4                     \n"          \
-  "fmla   v17.8h,  %[ww1].8h,  v14.8h                     \n"          \
-  "fmla   v16.8h,  %[ww4].8h,  v14.8h                     \n"          \
-  "fmla   v17.8h,  %[ww2].8h,  v15.8h                     \n"          \
-  "fmla   v16.8h,  %[ww5].8h,  v15.8h                     \n"          \
+  "fmla   v17.8h,  v14.8h,  v12.h[1]                     \n"           \
+  "fmla   v16.8h,  v14.8h,  v12.h[4]                     \n"           \
+  "fmla   v17.8h,  v15.8h,  v12.h[2]                     \n"           \
+  "fmla   v16.8h,  v15.8h,  v12.h[5]                     \n"           \
   "ext    v14.16b, v6.16b, v7.16b, #2                     \n" /*r2*/   \
-  "fmla   v18.8h,  %[ww0].8h,  v4.8h                      \n"          \
-  "fmla   v17.8h,  %[ww3].8h,  v4.8h                      \n"          \
-  "fmla   v16.8h,  %[ww6].8h,  v4.8h                      \n"          \
+  "fmla   v18.8h,  v4.8h,  v12.h[0]                      \n"           \
+  "fmla   v17.8h,  v4.8h,  v12.h[3]                      \n"           \
+  "fmla   v16.8h,  v4.8h,  v12.h[6]                      \n"           \
   "ext    v15.16b, v6.16b, v7.16b, #4                     \n"          \
-  "fmla   v18.8h,  %[ww1].8h,  v12.8h                     \n"          \
-  "fmla   v17.8h,  %[ww4].8h,  v12.8h                     \n"          \
-  "fmla   v16.8h,  %[ww7].8h,  v12.8h                     \n"          \
-  "fmla   v18.8h,  %[ww2].8h,  v13.8h                     \n"          \
-  "fmla   v17.8h,  %[ww5].8h,  v13.8h                     \n"          \
+  "fmla   v18.8h,  v22.8h,  v12.h[1]                     \n"           \
+  "fmla   v17.8h,  v22.8h,  v12.h[4]                     \n"           \
+  "fmla   v16.8h,  v22.8h,  v12.h[7]                     \n"           \
+  "fmla   v18.8h,  v13.8h,  v12.h[2]                     \n"           \
+  "fmla   v17.8h,  v13.8h,  v12.h[5]                     \n"           \
   "fmla   v16.8h,  %[ww8].8h,  v13.8h                     \n"          \
-  "ext    v12.16b, v8.16b, v9.16b, #2                     \n" /* r3 */ \
-  "fmla   v19.8h, %[ww0].8h, v6.8h                        \n"          \
-  "fmla   v18.8h, %[ww3].8h, v6.8h                        \n"          \
-  "fmla   v17.8h, %[ww6].8h, v6.8h                        \n"          \
+  "ext    v22.16b, v8.16b, v9.16b, #2                     \n" /* r3 */ \
+  "fmla   v19.8h, v6.8h, v12.h[0]                        \n"           \
+  "fmla   v18.8h, v6.8h, v12.h[3]                        \n"           \
+  "fmla   v17.8h, v6.8h, v12.h[6]                        \n"           \
   "ext    v13.16b, v8.16b, v9.16b, #4                     \n"          \
-  "fmla   v19.8h,  %[ww1].8h,  v14.8h                     \n"          \
-  "fmla   v18.8h,  %[ww4].8h,  v14.8h                     \n"          \
-  "fmla   v17.8h,  %[ww7].8h,  v14.8h                     \n"          \
-  "fmla   v19.8h, %[ww2].8h, v15.8h                       \n"          \
-  "fmla   v18.8h, %[ww5].8h, v15.8h                       \n"          \
+  "fmla   v19.8h,  v14.8h,  v12.h[1]                     \n"           \
+  "fmla   v18.8h,  v14.8h,  v12.h[4]                     \n"           \
+  "fmla   v17.8h,  v14.8h,  v12.h[7]                     \n"           \
+  "fmla   v19.8h, v15.8h, v12.h[2]                       \n"           \
+  "fmla   v18.8h, v15.8h, v12.h[5]                       \n"           \
   "fmla   v17.8h, %[ww8].8h, v15.8h                       \n"          \
   "ext    v14.16b, v10.16b, v11.16b, #2                   \n" /* r4 */ \
-  "fmla   v19.8h, %[ww3].8h, v8.8h                        \n"          \
-  "fmla   v18.8h, %[ww6].8h, v8.8h                        \n"          \
-  "fmla   v19.8h, %[ww4].8h, v12.8h                       \n"          \
-  "fmla   v18.8h, %[ww7].8h, v12.8h                       \n"          \
+  "fmla   v19.8h, v8.8h, v12.h[3]                        \n"           \
+  "fmla   v18.8h, v8.8h, v12.h[6]                        \n"           \
+  "fmla   v19.8h, v22.8h, v12.h[4]                       \n"           \
+  "fmla   v18.8h, v22.8h, v12.h[7]                       \n"           \
   "ext    v15.16b, v10.16b, v11.16b, #4                   \n"          \
-  "fmla   v19.8h, %[ww5].8h, v13.8h                       \n"          \
+  "fmla   v19.8h, v13.8h, v12.h[5]                       \n"           \
   "fmla   v18.8h, %[ww8].8h, v13.8h                       \n"          \
-  "fmla   v19.8h, %[ww6].8h, v10.8h                       \n" /* r5 */ \
-  "fmla   v19.8h, %[ww7].8h, v14.8h                       \n"          \
+  "fmla   v19.8h, v10.8h, v12.h[6]                       \n" /* r5 */  \
+  "fmla   v19.8h, v14.8h, v12.h[7]                       \n"           \
   "fmla   v19.8h, %[ww8].8h, v15.8h                       \n"
 
 #define RIGHT_RESULT_FP16_S1_RELU                       \
@@ -413,15 +414,15 @@ namespace fp16 {
 
 #define RIGHT_RESULT_FP16_S1_LEAKY_RELU                 \
   "ld1    {v21.8h}, [%[scale_ptr]]                  \n" \
-  "fcmge  v12.8h,  v16.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v16.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v16.8h,  v21.8h                  \n" \
-  "bif    v16.16b, v13.16b, v12.16b                 \n" \
+  "bif    v16.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v17.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v17.8h,  v21.8h                  \n" \
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
-  "fcmge  v12.8h,  v18.8h,  %[vzero].8h             \n" \
+  "fcmge  v22.8h,  v18.8h,  %[vzero].8h             \n" \
   "fmul   v13.8h,  v18.8h,  v21.8h                  \n" \
-  "bif    v18.16b, v13.16b, v12.16b                 \n" \
+  "bif    v18.16b, v13.16b, v22.16b                 \n" \
   "fcmge  v14.8h,  v19.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v19.8h,  v21.8h                  \n" \
   "bif    v19.16b, v15.16b, v14.16b                 \n" \
@@ -442,80 +443,81 @@ namespace fp16 {
   "ld1    {v4.8h}, [%[din_ptr2]], #16               \n" \
   "ld1    {v6.8h}, [%[din_ptr3]], #16               \n" \
   "ld1    {v8.8h}, [%[din_ptr4]], #16               \n" \
-  "ld1    {v10.8h}, [%[din_ptr5]], #16              \n"
+  "ld1    {v10.8h}, [%[din_ptr5]], #16              \n" \
+  "mov v12.16b, %[ww].16b                           \n"
 
-#define RIGHT_COMPUTE_FP16_S1P1_SMALL                   \
-  "ld1    {v20.8h}, [%[vmask]], #16                 \n" \
-  "ld1    {v21.8h}, [%[vmask]]                      \n" \
-  "bif    v0.16b, %[vzero].16b, v20.16b             \n" \
-  "bif    v2.16b, %[vzero].16b, v20.16b             \n" \
-  "bif    v4.16b, %[vzero].16b, v20.16b             \n" \
-  "bif    v6.16b, %[vzero].16b, v20.16b             \n" \
-  "bif    v8.16b, %[vzero].16b, v20.16b             \n" \
-  "bif    v10.16b, %[vzero].16b, v20.16b            \n" \
-  "ld1    {v1.8h}, [%[din_ptr0]]                    \n" \
-  "ld1    {v3.8h}, [%[din_ptr1]]                    \n" \
-  "ld1    {v5.8h}, [%[din_ptr2]]                    \n" \
-  "ld1    {v7.8h}, [%[din_ptr3]]                    \n" \
-  "ld1    {v9.8h}, [%[din_ptr4]]                    \n" \
-  "ld1    {v15.8h}, [%[din_ptr5]]                   \n" \
-  "bif    v1.16b, %[vzero].16b, v21.16b             \n" \
-  "bif    v3.16b, %[vzero].16b, v21.16b             \n" \
-  "bif    v5.16b, %[vzero].16b, v21.16b             \n" \
-  "bif    v7.16b, %[vzero].16b, v21.16b             \n" \
-  "bif    v9.16b, %[vzero].16b, v21.16b             \n" \
-  "bif    v15.16b, %[vzero].16b, v21.16b            \n" \
-  "ld1    {v16.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v17.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v18.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v19.8h}, [%[bias_val]]                   \n" \
-  "fmla   v16.8h, %[ww1].8h, v0.8h                  \n" \
-  "ext    v11.16b, %[vzero].16b, v0.16b, #14        \n" \
-  "ext    v12.16b, v0.16b, v1.16b, #2               \n" \
-  "fmla   v16.8h, %[ww0].8h, v11.8h                 \n" \
-  "fmla   v16.8h, %[ww2].8h, v12.8h                 \n" \
-  "ext    v13.16b, %[vzero].16b, v2.16b, #14        \n" \
-  "ext    v14.16b, v2.16b, v3.16b, #2               \n" \
-  "fmla   v17.8h, %[ww1].8h, v2.8h                  \n" \
-  "fmla   v16.8h, %[ww4].8h, v2.8h                  \n" \
-  "ext    v11.16b, %[vzero].16b, v4.16b, #14        \n" \
-  "ext    v12.16b, v4.16b, v5.16b, #2               \n" \
-  "fmla   v17.8h, %[ww0].8h, v13.8h                 \n" \
-  "fmla   v16.8h, %[ww3].8h, v13.8h                 \n" \
-  "fmla   v17.8h, %[ww2].8h, v14.8h                 \n" \
-  "fmla   v16.8h, %[ww5].8h, v14.8h                 \n" \
-  "fmla   v18.8h, %[ww1].8h, v4.8h                  \n" \
-  "fmla   v17.8h, %[ww4].8h, v4.8h                  \n" \
-  "fmla   v16.8h, %[ww7].8h, v4.8h                  \n" \
-  "ext    v13.16b, %[vzero].16b, v6.16b, #14        \n" \
-  "ext    v14.16b, v6.16b, v7.16b, #2               \n" \
-  "fmla   v18.8h, %[ww0].8h, v11.8h                 \n" \
-  "fmla   v17.8h, %[ww3].8h, v11.8h                 \n" \
-  "fmla   v16.8h, %[ww6].8h, v11.8h                 \n" \
-  "fmla   v18.8h, %[ww2].8h, v12.8h                 \n" \
-  "fmla   v17.8h, %[ww5].8h, v12.8h                 \n" \
-  "fmla   v16.8h, %[ww8].8h, v12.8h                 \n" \
-  "fmla   v19.8h, %[ww1].8h, v6.8h                  \n" \
-  "fmla   v18.8h, %[ww4].8h, v6.8h                  \n" \
-  "fmla   v17.8h, %[ww7].8h, v6.8h                  \n" \
-  "ext    v11.16b, %[vzero].16b, v8.16b, #14        \n" \
-  "ext    v12.16b, v8.16b, v9.16b, #2               \n" \
-  "fmla   v19.8h, %[ww0].8h, v13.8h                 \n" \
-  "fmla   v18.8h, %[ww3].8h, v13.8h                 \n" \
-  "fmla   v17.8h, %[ww6].8h, v13.8h                 \n" \
-  "fmla   v19.8h, %[ww2].8h, v14.8h                 \n" \
-  "fmla   v18.8h, %[ww5].8h, v14.8h                 \n" \
-  "fmla   v17.8h, %[ww8].8h, v14.8h                 \n" \
-  "fmla   v19.8h, %[ww4].8h, v8.8h                  \n" \
-  "fmla   v18.8h, %[ww7].8h, v8.8h                  \n" \
-  "ext    v13.16b, %[vzero].16b, v10.16b, #14       \n" \
-  "ext    v14.16b, v10.16b, V15.16b, #2             \n" \
-  "fmla   v19.8h, %[ww3].8h, v11.8h                 \n" \
-  "fmla   v18.8h, %[ww6].8h, v11.8h                 \n" \
-  "fmla   v19.8h, %[ww5].8h, v12.8h                 \n" \
-  "fmla   v18.8h, %[ww8].8h, v12.8h                 \n" \
-  "fmla   v19.8h, %[ww7].8h, v10.8h                 \n" \
-  "fmla   v19.8h, %[ww6].8h, v13.8h                 \n" \
+#define RIGHT_COMPUTE_FP16_S1P1_SMALL                    \
+  "ld1    {v20.8h}, [%[vmask]], #16                 \n"  \
+  "ld1    {v21.8h}, [%[vmask]]                      \n"  \
+  "bif    v0.16b, %[vzero].16b, v20.16b             \n"  \
+  "bif    v2.16b, %[vzero].16b, v20.16b             \n"  \
+  "bif    v4.16b, %[vzero].16b, v20.16b             \n"  \
+  "bif    v6.16b, %[vzero].16b, v20.16b             \n"  \
+  "bif    v8.16b, %[vzero].16b, v20.16b             \n"  \
+  "bif    v10.16b, %[vzero].16b, v20.16b            \n"  \
+  "ld1    {v1.8h}, [%[din_ptr0]]                    \n"  \
+  "ld1    {v3.8h}, [%[din_ptr1]]                    \n"  \
+  "ld1    {v5.8h}, [%[din_ptr2]]                    \n"  \
+  "ld1    {v7.8h}, [%[din_ptr3]]                    \n"  \
+  "ld1    {v9.8h}, [%[din_ptr4]]                    \n"  \
+  "ld1    {v15.8h}, [%[din_ptr5]]                   \n"  \
+  "bif    v1.16b, %[vzero].16b, v21.16b             \n"  \
+  "bif    v3.16b, %[vzero].16b, v21.16b             \n"  \
+  "bif    v5.16b, %[vzero].16b, v21.16b             \n"  \
+  "bif    v7.16b, %[vzero].16b, v21.16b             \n"  \
+  "bif    v9.16b, %[vzero].16b, v21.16b             \n"  \
+  "bif    v15.16b, %[vzero].16b, v21.16b            \n"  \
+  "ld1    {v16.8h}, [%[bias_val]]                   \n"  \
+  "ld1    {v17.8h}, [%[bias_val]]                   \n"  \
+  "ld1    {v18.8h}, [%[bias_val]]                   \n"  \
+  "ld1    {v19.8h}, [%[bias_val]]                   \n"  \
+  "fmla   v16.8h, v0.8h, v12.h[1]                  \n"   \
+  "ext    v11.16b, %[vzero].16b, v0.16b, #14        \n"  \
+  "ext    v22.16b, v0.16b, v1.16b, #2               \n"  \
+  "fmla   v16.8h, v11.8h, v12.h[0]                 \n"   \
+  "fmla   v16.8h, v22.8h, v12.h[2]                 \n"   \
+  "ext    v13.16b, %[vzero].16b, v2.16b, #14        \n"  \
+  "ext    v14.16b, v2.16b, v3.16b, #2               \n"  \
+  "fmla   v17.8h, v2.8h, v12.h[1]                  \n"   \
+  "fmla   v16.8h, v2.8h, v12.h[4]                  \n"   \
+  "ext    v11.16b, %[vzero].16b, v4.16b, #14        \n"  \
+  "ext    v22.16b, v4.16b, v5.16b, #2               \n"  \
+  "fmla   v17.8h, v13.8h, v12.h[0]                 \n"   \
+  "fmla   v16.8h, v13.8h, v12.h[3]                 \n"   \
+  "fmla   v17.8h, v14.8h, v12.h[2]                 \n"   \
+  "fmla   v16.8h, v14.8h, v12.h[5]                 \n"   \
+  "fmla   v18.8h, v4.8h, v12.h[1]                  \n"   \
+  "fmla   v17.8h, v4.8h, v12.h[4]                  \n"   \
+  "fmla   v16.8h, v4.8h, v12.h[7]                  \n"   \
+  "ext    v13.16b, %[vzero].16b, v6.16b, #14        \n"  \
+  "ext    v14.16b, v6.16b, v7.16b, #2               \n"  \
+  "fmla   v18.8h, v11.8h, v12.h[0]                 \n"   \
+  "fmla   v17.8h, v11.8h, v12.h[3]                 \n"   \
+  "fmla   v16.8h, v11.8h, v12.h[6]                 \n"   \
+  "fmla   v18.8h, v22.8h, v12.h[2]                 \n"   \
+  "fmla   v17.8h, v22.8h, v12.h[5]                 \n"   \
+  "fmla   v16.8h, %[ww8].8h, v22.8h                 \n"  \
+  "fmla   v19.8h, v6.8h, v12.h[1]                  \n"   \
+  "fmla   v18.8h, v6.8h, v12.h[4]                  \n"   \
+  "fmla   v17.8h, v6.8h, v12.h[7]                  \n"   \
+  "ext    v11.16b, %[vzero].16b, v8.16b, #14        \n"  \
+  "ext    v22.16b, v8.16b, v9.16b, #2               \n"  \
+  "fmla   v19.8h, v13.8h, v12.h[0]                 \n"   \
+  "fmla   v18.8h, v13.8h, v12.h[3]                 \n"   \
+  "fmla   v17.8h, v13.8h, v12.h[6]                 \n"   \
+  "fmla   v19.8h, v14.8h, v12.h[2]                 \n"   \
+  "fmla   v18.8h, v14.8h, v12.h[5]                 \n"   \
+  "fmla   v17.8h, %[ww8].8h, v14.8h                 \n"  \
+  "fmla   v19.8h, v8.8h, v12.h[4]                  \n"   \
+  "fmla   v18.8h, v8.8h, v12.h[7]                  \n"   \
+  "ext    v13.16b, %[vzero].16b, v10.16b, #14       \n"  \
+  "ext    v14.16b, v10.16b, V15.16b, #2             \n"  \
+  "fmla   v19.8h, v11.8h, v12.h[3]                 \n"   \
+  "fmla   v18.8h, v11.8h, v12.h[6]                 \n"   \
+  "fmla   v19.8h, v22.8h, v12.h[5]                 \n"   \
+  "fmla   v18.8h, %[ww8].8h, v22.8h                  \n" \
+  "fmla   v19.8h, v10.8h, v12.h[7]                 \n"   \
+  "fmla   v19.8h, v13.8h, v12.h[6]                 \n"   \
   "fmla   v19.8h, %[ww8].8h, v14.8h                 \n"
 
 #define RIGHT_COMPUTE_FP16_S1P0_SMALL                   \
@@ -543,53 +545,53 @@ namespace fp16 {
   "ld1    {v17.8h}, [%[bias_val]]                   \n" \
   "ld1    {v18.8h}, [%[bias_val]]                   \n" \
   "ld1    {v19.8h}, [%[bias_val]]                   \n" \
-  "fmla   v16.8h, %[ww0].8h, v0.8h                  \n" \
-  "ext    v12.16b, v0.16b, v1.16b, #2               \n" \
+  "fmla   v16.8h, v0.8h, v12.h[0]                  \n"  \
+  "ext    v22.16b, v0.16b, v1.16b, #2               \n" \
   "ext    v13.16b, v0.16b, v1.16b, #4               \n" \
-  "fmla   v16.8h, %[ww1].8h, v12.8h                 \n" \
-  "fmla   v16.8h, %[ww2].8h, v13.8h                 \n" \
+  "fmla   v16.8h, v22.8h, v12.h[1]                 \n"  \
+  "fmla   v16.8h, v13.8h, v12.h[2]                 \n"  \
   "ext    v14.16b, v2.16b, v3.16b, #2               \n" \
   "ext    v15.16b, v2.16b, v3.16b, #4               \n" \
-  "fmla   v17.8h, %[ww0].8h, v2.8h                  \n" \
-  "fmla   v16.8h, %[ww3].8h, v2.8h                  \n" \
-  "ext    v12.16b, %[vzero].16b, v4.16b, #14        \n" \
+  "fmla   v17.8h, v2.8h, v12.h[0]                  \n"  \
+  "fmla   v16.8h, v2.8h, v12.h[3]                  \n"  \
+  "ext    v22.16b, %[vzero].16b, v4.16b, #14        \n" \
   "ext    v13.16b, v4.16b, %[vzero].16b, #2         \n" \
-  "fmla   v17.8h, %[ww1].8h, v14.8h                 \n" \
-  "fmla   v16.8h, %[ww3].8h, v14.8h                 \n" \
-  "fmla   v17.8h, %[ww2].8h, v15.8h                 \n" \
-  "fmla   v16.8h, %[ww5].8h, v15.8h                 \n" \
-  "fmla   v18.8h, %[ww1].8h, v4.8h                  \n" \
-  "fmla   v17.8h, %[ww4].8h, v4.8h                  \n" \
-  "fmla   v16.8h, %[ww7].8h, v4.8h                  \n" \
+  "fmla   v17.8h, v14.8h, v12.h[1]                 \n"  \
+  "fmla   v16.8h, v14.8h, v12.h[3]                 \n"  \
+  "fmla   v17.8h, v15.8h, v12.h[2]                 \n"  \
+  "fmla   v16.8h, v15.8h, v12.h[5]                 \n"  \
+  "fmla   v18.8h, v4.8h, v12.h[1]                  \n"  \
+  "fmla   v17.8h, v4.8h, v12.h[4]                  \n"  \
+  "fmla   v16.8h, v4.8h, v12.h[7]                  \n"  \
   "ext    v14.16b, %[vzero].16b, v6.16b, #14        \n" \
   "ext    v15.16b, v6.16b, %[vzero].16b, #2         \n" \
-  "fmla   v18.8h, %[ww0].8h, v12.8h                 \n" \
-  "fmla   v17.8h, %[ww3].8h, v12.8h                 \n" \
-  "fmla   v16.8h, %[ww6].8h, v12.8h                 \n" \
-  "fmla   v18.8h, %[ww2].8h, v13.8h                 \n" \
-  "fmla   v17.8h, %[ww5].8h, v13.8h                 \n" \
+  "fmla   v18.8h, v22.8h, v12.h[0]                 \n"  \
+  "fmla   v17.8h, v22.8h, v12.h[3]                 \n"  \
+  "fmla   v16.8h, v22.8h, v12.h[6]                 \n"  \
+  "fmla   v18.8h, v13.8h, v12.h[2]                 \n"  \
+  "fmla   v17.8h, v13.8h, v12.h[5]                 \n"  \
   "fmla   v16.8h, %[ww8].8h, v13.8h                 \n" \
-  "fmla   v19.8h, %[ww1].8h, v6.8h                  \n" \
-  "fmla   v18.8h, %[ww4].8h, v6.8h                  \n" \
-  "fmla   v17.8h, %[ww7].8h, v6.8h                  \n" \
-  "ext    v12.16b, %[vzero].16b, v8.16b, #14        \n" \
+  "fmla   v19.8h, v6.8h, v12.h[1]                  \n"  \
+  "fmla   v18.8h, v6.8h, v12.h[4]                  \n"  \
+  "fmla   v17.8h, v6.8h, v12.h[7]                  \n"  \
+  "ext    v22.16b, %[vzero].16b, v8.16b, #14        \n" \
   "ext    v13.16b, v8.16b, %[vzero].16b, #2         \n" \
-  "fmla   v19.8h, %[ww0].8h, v14.8h                 \n" \
-  "fmla   v18.8h, %[ww3].8h, v14.8h                 \n" \
-  "fmla   v17.8h, %[ww6].8h, v14.8h                 \n" \
-  "fmla   v19.8h, %[ww2].8h, v15.8h                 \n" \
-  "fmla   v18.8h, %[ww5].8h, v15.8h                 \n" \
+  "fmla   v19.8h, v14.8h, v12.h[0]                 \n"  \
+  "fmla   v18.8h, v14.8h, v12.h[3]                 \n"  \
+  "fmla   v17.8h, v14.8h, v12.h[6]                 \n"  \
+  "fmla   v19.8h, v15.8h, v12.h[2]                 \n"  \
+  "fmla   v18.8h, v15.8h, v12.h[5]                 \n"  \
   "fmla   v17.8h, %[ww8].8h, v15.8h                 \n" \
-  "fmla   v19.8h, %[ww4].8h, v8.8h                  \n" \
-  "fmla   v18.8h, %[ww7].8h, v8.8h                  \n" \
+  "fmla   v19.8h, v8.8h, v12.h[4]                  \n"  \
+  "fmla   v18.8h, v8.8h, v12.h[7]                  \n"  \
   "ext    v14.16b, %[vzero].16b, v10.16b, #14       \n" \
   "ext    v15.16b, v10.16b, %[vzero].16b, #2        \n" \
-  "fmla   v19.8h, %[ww3].8h, v12.8h                 \n" \
-  "fmla   v18.8h, %[ww6].8h, v12.8h                 \n" \
-  "fmla   v19.8h, %[ww5].8h, v13.8h                 \n" \
+  "fmla   v19.8h, v22.8h, v12.h[3]                 \n"  \
+  "fmla   v18.8h, v22.8h, v12.h[6]                 \n"  \
+  "fmla   v19.8h, v13.8h, v12.h[5]                 \n"  \
   "fmla   v18.8h, %[ww8].8h, v13.8h                 \n" \
-  "fmla   v19.8h, %[ww7].8h, v10.8h                 \n" \
-  "fmla   v19.8h, %[ww6].8h, v14.8h                 \n" \
+  "fmla   v19.8h, v10.8h, v12.h[7]                 \n"  \
+  "fmla   v19.8h, v14.8h, v12.h[6]                 \n"  \
   "fmla   v19.8h, %[ww8].8h, v15.8h                 \n" \
   "ld1    {v21.16b}, [%[rmask]], #16                \n" \
   "ld1    {v0.8h}, [%[ptr_out0]]                    \n" \
@@ -963,29 +965,6 @@ namespace fp16 {
 
 #endif
 
-#ifdef __aarch64__
-#define FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val) \
-  float16x8_t wr00 = vdupq_n_f16(weight_ptr[0]);     \
-  float16x8_t wr10 = vdupq_n_f16(weight_ptr[3]);     \
-  float16x8_t wr20 = vdupq_n_f16(weight_ptr[6]);     \
-  float16x8_t wr01 = vdupq_n_f16(weight_ptr[1]);     \
-  float16x8_t wr11 = vdupq_n_f16(weight_ptr[4]);     \
-  float16x8_t wr21 = vdupq_n_f16(weight_ptr[7]);     \
-  float16x8_t wr02 = vdupq_n_f16(weight_ptr[2]);     \
-  float16x8_t wr12 = vdupq_n_f16(weight_ptr[5]);     \
-  float16x8_t wr22 = vdupq_n_f16(weight_ptr[8]);     \
-  float16x8_t vzero = vdupq_n_f16(0.f);              \
-  float16_t v_bias[8] = {bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val,                   \
-                         bias_val};
-
-#else
-
 #define FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val) \
   float16x8_t wr = vld1q_f16(weight_ptr);            \
   float16x8_t wr8 = vdupq_n_f16(weight_ptr[8]);      \
@@ -998,8 +977,6 @@ namespace fp16 {
                          bias_val,                   \
                          bias_val,                   \
                          bias_val};
-
-#endif
 
 #ifdef __aarch64__
 #define INIT_PTR_3x3_S1_FP16(din, w_in) \
@@ -1324,13 +1301,12 @@ void conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(float16_t* dout,
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww] "w"(wr), [vzero] "w"(vzero), [ww8] "w"(wr8), \
+              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -1406,13 +1382,12 @@ void conv_depthwise_3x3s1p0_bias_relu_common_fp16_fp16(float16_t* dout,
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
+              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -1487,13 +1462,12 @@ void conv_depthwise_3x3s1p0_bias_relu6_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [six_ptr] "r"(six), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
+              [bias_val] "r"(v_bias), [six_ptr] "r"(six), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -1569,13 +1543,12 @@ void conv_depthwise_3x3s1p0_bias_leaky_relu_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [scale_ptr] "r"(scale), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
+              [bias_val] "r"(v_bias), [scale_ptr] "r"(scale), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -1650,13 +1623,12 @@ void conv_depthwise_3x3s1p0_bias_noact_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8),\
+              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
 
@@ -1734,13 +1706,12 @@ void conv_depthwise_3x3s1p1_bias_relu6_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [six_ptr] "r"(six), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
+              [bias_val] "r"(v_bias), [six_ptr] "r"(six), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -1818,13 +1789,12 @@ void conv_depthwise_3x3s1p1_bias_leaky_relu_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [scale_ptr] "r"(scale), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8),\
+              [bias_val] "r"(v_bias), [scale_ptr] "r"(scale), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
 
@@ -1903,13 +1873,12 @@ void conv_depthwise_3x3s1p1_bias_noact_common_fp16_fp16(
             : [cnt]"+r"(cnt), [din_ptr0]"+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [ptr_out2] "+r"(doutr2), \
-              [ptr_out3] "+r"(doutr3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
-              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
+              [ptr_out3] "+r"(doutr3)
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
+              [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num), [vmask] "r" (val_mask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
 
@@ -1983,12 +1952,11 @@ void conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero]"w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero]"w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", \
-              "v19", "v20", "v21"
+              "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -2058,12 +2026,11 @@ void conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero]"w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero]"w"(vzero), [ww8]"w"(wr8),\
               [bias_val] "r"(v_bias)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", \
-              "v19", "v20", "v21"              
+              "v19", "v20", "v21", "v22"              
         );
 #else
         asm volatile(
@@ -2134,12 +2101,11 @@ void conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero]"w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero]"w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [six_ptr]"r"(six)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", \
-              "v19", "v20", "v21"              
+              "v19", "v20", "v21", "v22"              
         );
 #else
         asm volatile(
@@ -2210,12 +2176,11 @@ void conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero]"w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero]"w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [scale_ptr]"r"(scale)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", \
-              "v19", "v20", "v21"
+              "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -2288,12 +2253,11 @@ void conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -2367,12 +2331,11 @@ void conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -2446,12 +2409,11 @@ void conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(float16_t* dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [six_ptr]"r"(six), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(
@@ -2527,12 +2489,11 @@ void conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5), \
               [ptr_out0] "+r"(tmp0), [ptr_out1] "+r"(tmp1), [ptr_out2] "+r"(tmp2), \
               [ptr_out3] "+r"(tmp3), [vmask] "+r" (val_mask)
-            : [vzero] "w"(vzero), [ww0]"w"(wr00), [ww1]"w"(wr01), [ww2]"w"(wr02), [ww3]"w"(wr10), \
-              [ww4]"w"(wr11), [ww5]"w"(wr12), [ww6]"w"(wr20), [ww7]"w"(wr21), [ww8] "w" (wr22), \
+            : [ww]"w"(wr), [vzero] "w"(vzero), [ww8]"w"(wr8), \
               [bias_val] "r"(v_bias), [scale_ptr]"r"(scale), [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", \
-              "v18", "v19", "v20", "v21"
+              "v18", "v19", "v20", "v21", "v22"
         );
 #else
         asm volatile(

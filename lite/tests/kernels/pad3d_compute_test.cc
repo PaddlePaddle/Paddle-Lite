@@ -275,6 +275,9 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
                 if (pad_mode != "constant" || pad_front != pad_back) continue;
 #endif
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+                if (pad_mode == "circular") continue;
+#endif
                 VLOG(4) << "pad3d pad_mode: " << pad_mode
                         << ", pad_val: " << pad_value
                         << ", padding: " << paddings[0] << ", " << paddings[1]
@@ -300,6 +303,8 @@ TEST(pad3d, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
   // TODO(shentanyue): support later

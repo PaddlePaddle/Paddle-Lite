@@ -25,6 +25,7 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
@@ -38,6 +39,7 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
@@ -51,6 +53,7 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
@@ -64,6 +67,7 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
@@ -77,6 +81,7 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),

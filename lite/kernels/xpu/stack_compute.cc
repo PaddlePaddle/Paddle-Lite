@@ -21,9 +21,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void StackCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+template <typename T, PrecisionType PType>
+void StackCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int n = param.X.size();
   auto x_dims = param.X[0]->dims();
@@ -39,15 +40,15 @@ void StackCompute::Run() {
   x_shape[axis] = 1;
   std::vector<std::vector<int>> xdims_list(n, x_shape);
 
-  std::vector<const float*> x_list(n, nullptr);
+  std::vector<const T*> x_list(n, nullptr);
   for (int i = 0; i < n; ++i) {
-    x_list[i] = param.X[i]->data<float>();
+    x_list[i] = param.X[i]->template data<T>();
   }
-  int r = xdnn::concat<float>(ctx.GetRawContext(),
-                              x_list,
-                              param.Out->mutable_data<float>(TARGET(kXPU)),
-                              xdims_list,
-                              axis);
+  int r = xdnn::concat<T>(ctx.GetRawContext(),
+                          x_list,
+                          param.Out->template mutable_data<T>(TARGET(kXPU)),
+                          xdims_list,
+                          axis);
   CHECK_EQ(r, 0);
 }
 
@@ -56,8 +57,16 @@ void StackCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    stack, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::StackCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+using stack_float =
+    paddle::lite::kernels::xpu::StackCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
+using stack_int64 =
+    paddle::lite::kernels::xpu::StackCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_int64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();

@@ -57,9 +57,15 @@ class TestMatmulV2Op(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(
+            device_names=["nvidia_tensorrt", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -252,7 +258,8 @@ class TestMatmulV2Op(AutoScanTest):
         def _teller2(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data_x"].shape)
             transpose_X = program_config.ops[0].attrs["trans_x"]
-            if predictor_config.target() == TargetType.ARM:
+            if ((predictor_config.target() == TargetType.ARM) or
+                (predictor_config.target() == TargetType.X86)):
                 y_shape = list(program_config.inputs["input_data_y"].shape)
                 if len(x_shape) == 1 and len(
                         y_shape) == 1 and transpose_X == True:

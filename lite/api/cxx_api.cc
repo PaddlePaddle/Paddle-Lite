@@ -176,7 +176,7 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
       << "The network has " << input_names_.size() << " inputs"
       << ", the offset should be less than this.";
   auto *in_var = exec_scope_->FindVar(input_names_[offset]);
-  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+  CHECK(in_var) << "no feed variable " << input_names_[offset]
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
@@ -249,7 +249,7 @@ const lite::Tensor *Predictor::GetOutput(size_t offset) const {
       << ", the offset should be less than this.";
   const std::string name = output_names_.at(offset);
   auto *out_var = exec_scope_->FindVar(name);
-  CHECK(out_var) << "no fatch variable " << name << " in exec_scope";
+  CHECK(out_var) << "no fetch variable " << name << " in exec_scope";
   return out_var->GetMutable<lite::Tensor>();
 }
 
@@ -265,7 +265,7 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 #else
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
   auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return &fetch_list.at(offset);
@@ -273,7 +273,7 @@ const lite::Tensor *Predictor::GetOutput(size_t offset) const {
 
 std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
   auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
 
   std::vector<const lite::Tensor *> outputs;

@@ -92,7 +92,10 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_MAT_MUL:
+      case NNADAPTER_MAX:
+      case NNADAPTER_MIN:
       case NNADAPTER_MUL:
+      case NNADAPTER_POW:
       case NNADAPTER_SUB: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(input_operands[1], 128);
@@ -106,6 +109,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_TRANSPOSE:
@@ -121,7 +125,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
-      case NNADAPTER_CONCAT: {
+      case NNADAPTER_CONCAT:
+      case NNADAPTER_STACK: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
           ConvertOperandSymmToAsymm(input_operands[i], 128);

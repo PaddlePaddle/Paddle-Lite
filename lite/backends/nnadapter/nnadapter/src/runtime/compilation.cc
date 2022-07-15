@@ -204,9 +204,9 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         << "th compiled program on the device '"
         << device_context->device->GetName() << "'";
   }
-  // Serialize the cache models into the file or memory at the first iteration
-  if (model_ && CheckCache()) {
-    if (!cache_token_.empty() && !cache_dir_.empty()) {
+  if (CheckCache()) {
+    // Serialize the cache models into the file or memory at the first iteration
+    if (model_ && !cache_token_.empty() && !cache_dir_.empty()) {
       bool skip = false;
       auto cache_count = programs_.size();
       for (size_t i = 0; i < cache_count; i++) {
@@ -232,7 +232,9 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         }
       }
     }
-    ClearCache();  // Clear the caches to reduce memory usage
+    // Clear the cache models to reduce memory consumption when the device
+    // program is first executed.
+    ClearCache();
   }
   return NNADAPTER_NO_ERROR;
 }

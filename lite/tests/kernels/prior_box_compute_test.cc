@@ -729,6 +729,13 @@ void test_prior_box(Place place) {
 
 TEST(PriorBox, precision) {
   Place place(TARGET(kHost));
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#else
+  return;
+#endif
+#endif
   test_prior_box(place);
 }
 

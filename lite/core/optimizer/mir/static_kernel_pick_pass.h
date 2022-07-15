@@ -140,11 +140,14 @@ class StaticKernelPickPass : public mir::StmtPass {
           for (size_t i = 0; i < in_names.size(); ++i) {
             std::string tmp;
             CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-            if (in_types.count(in_names[i]) &&
-                !PrecTypeCompatible(
-                    in_types.at(in_names[i]),
-                    kernel.GetInputDeclType(tmp)->precision())) {
-              type_match = false;
+            if (in_types.count(in_names[i])) {
+              if (!PrecTypeCompatible(
+                      in_types.at(in_names[i]),
+                      kernel.GetInputDeclType(tmp)->precision())) {
+                type_match = false;
+              } else {
+                score += 1;
+              }
             }
           }
         }
@@ -281,11 +284,11 @@ class StaticKernelPickPass : public mir::StmtPass {
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);
-    VLOG(4) << "kernel.op_type():" << kernel.op_type();
-    VLOG(4) << "kernel picker factors:" << kernel_pick_factors_;
-    VLOG(4) << "winner_picker place:" << winner_place.DebugString();
-    VLOG(4) << "[score(final)]:" << final_score;
-    VLOG(4) << "------------------------------";
+    VLOG(2) << "kernel.op_type():" << kernel.op_type();
+    VLOG(2) << "kernel picker factors:" << kernel_pick_factors_;
+    VLOG(2) << "winner_picker place:" << winner_place.DebugString();
+    VLOG(2) << "[score(final)]:" << final_score;
+    VLOG(2) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments
     // might have different data layout.
