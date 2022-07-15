@@ -76,3 +76,14 @@ REGISTER_LITE_KERNEL(tile, kXPU, kFloat, kNCHW, tile_float, def)
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+
+using tile_fp16 =
+    paddle::lite::kernels::xpu::TileCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(tile, kXPU, kFP16, kNCHW, tile_fp16, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("RepeatTimes",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("repeat_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();

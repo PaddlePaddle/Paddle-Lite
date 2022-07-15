@@ -87,8 +87,8 @@ struct MaxFunctor {
   }
 };
 
-template <class T, class Functor>
-void ElementwiseCompute<T, Functor>::Run() {
+template <class T, class Functor, PrecisionType PType>
+void ElementwiseCompute<T, Functor, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   const Tensor* x = param.X;
@@ -131,20 +131,45 @@ void ElementwiseCompute<T, Functor>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using AddFloat32 = xpu::ElementwiseCompute<float, xpu::AddFunctor<float>>;
-using AddFloat16 = xpu::ElementwiseCompute<float16, xpu::AddFunctor<float16>>;
-using AddInt32 = xpu::ElementwiseCompute<int, xpu::AddFunctor<int>>;
-using AddInt64 = xpu::ElementwiseCompute<int64_t, xpu::AddFunctor<int64_t>>;
+using AddFloat32 =
+    xpu::ElementwiseCompute<float, xpu::AddFunctor<float>, PRECISION(kFloat)>;
+using AddFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::AddFunctor<float16>,
+                                           PRECISION(kFP16)>;
+using AddInt32 =
+    xpu::ElementwiseCompute<int, xpu::AddFunctor<int>, PRECISION(kFloat)>;
+using AddInt64 = xpu::ElementwiseCompute<int64_t,
+                                         xpu::AddFunctor<int64_t>,
+                                         PRECISION(kFloat)>;
 
-using SubFloat32 = xpu::ElementwiseCompute<float, xpu::SubFunctor<float>>;
+using SubFloat32 =
+    xpu::ElementwiseCompute<float, xpu::SubFunctor<float>, PRECISION(kFloat)>;
+using SubFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::SubFunctor<float16>,
+                                           PRECISION(kFP16)>;
 
-using MulFloat32 = xpu::ElementwiseCompute<float, xpu::MulFunctor<float>>;
-using MulFloat16 = xpu::ElementwiseCompute<float16, xpu::MulFunctor<float16>>;
+using MulFloat32 =
+    xpu::ElementwiseCompute<float, xpu::MulFunctor<float>, PRECISION(kFloat)>;
+using MulFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::MulFunctor<float16>,
+                                           PRECISION(kFP16)>;
+using MulInt64 = xpu::ElementwiseCompute<int64_t,
+                                         xpu::MulFunctor<int64_t>,
+                                         PRECISION(kFloat)>;
 
-using MulInt64 = xpu::ElementwiseCompute<int64_t, xpu::MulFunctor<int64_t>>;
-using DivFloat32 = xpu::ElementwiseCompute<float, xpu::DivFunctor<float>>;
-using MaxFloat32 = xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>>;
-using MaxInt32 = xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>>;
+using DivFloat32 =
+    xpu::ElementwiseCompute<float, xpu::DivFunctor<float>, PRECISION(kFloat)>;
+using DivFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::DivFunctor<float16>,
+                                           PRECISION(kFP16)>;
+
+using MaxFloat32 =
+    xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>, PRECISION(kFloat)>;
+using MaxFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::MaxFunctor<float16>,
+                                           PRECISION(kFP16)>;
+using MaxInt32 =
+    xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -153,7 +178,7 @@ REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    elementwise_add, kXPU, kFloat, kNCHW, AddFloat16, DISABLE_XPU1_AddFloat16)
+    elementwise_add, kXPU, kFP16, kNCHW, AddFloat16, DISABLE_XPU1_AddFloat16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
@@ -177,6 +202,13 @@ REGISTER_LITE_KERNEL(elementwise_sub, kXPU, kFloat, kNCHW, SubFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kXPU, kFP16, kNCHW, SubFloat16, DISABLE_XPU1_SubFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -184,7 +216,7 @@ REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulFloat32, def)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    elementwise_mul, kXPU, kFloat, kNCHW, MulFloat16, DISABLE_XPU1_MulFloat16)
+    elementwise_mul, kXPU, kFP16, kNCHW, MulFloat16, DISABLE_XPU1_MulFloat16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
@@ -202,10 +234,24 @@ REGISTER_LITE_KERNEL(elementwise_div, kXPU, kFloat, kNCHW, DivFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(
+    elementwise_div, kXPU, kFP16, kNCHW, DivFloat16, DISABLE_XPU1_DivFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_max, kXPU, kFP16, kNCHW, MaxFloat16, DISABLE_XPU1_MaxFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxInt32, int32)

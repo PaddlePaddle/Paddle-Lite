@@ -331,7 +331,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "bilinear_interp",
                                               "bilinear_interp_v2",
                                               "nearest_interp",
-                                              "nearest_interp_v2"};
+                                              "nearest_interp_v2",
+                                              "tile",
+                                              "transpose",
+                                              "pixel_shuffle",
+                                              "expand_v2"};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",
