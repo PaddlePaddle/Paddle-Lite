@@ -144,6 +144,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       {"lite_quant_dequant_fuse_pass",
        "weight_quantization_preprocess_pass",
        "op_transformation_pass",
+       "identity_scale_eliminate_pass",
        "assign_value_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "fill_constant_calc_offline_pass",
