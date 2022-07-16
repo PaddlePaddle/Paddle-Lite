@@ -47,6 +47,25 @@ void Conv2DActivationFuser::BuildPattern() {
   // Operand patterns
   auto conv2d_input_pattern =
       CreatePattern("conv2d_input")->IsOperationInputOperand(conv2d_type_, 0);
+  int conv2d_fuse_code_index;
+  if (conv2d_type_ == NNADAPTER_CONV_2D) {
+    conv2d_fuse_code_index = 8;
+  } else if (conv2d_type_ == NNADAPTER_CONV_2D_TRANSPOSE) {
+    conv2d_fuse_code_index = 10;
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported operation type ("
+                         << OperationTypeToString(conv2d_type_) << ") !";
+  }
+  auto conv2d_fuse_code_pattern =
+      CreatePattern("conv2d_fuse_code")
+          ->IsOperationInputOperand(conv2d_type_, conv2d_fuse_code_index)
+          ->IsConstantOperand()
+          ->MatchCondition([](const Node* node) -> bool {
+            auto operand = node->operand;
+            return operand &&
+                   *reinterpret_cast<int32_t*>(operand->buffer) ==
+                       NNADAPTER_FUSED_NONE;
+          });
   auto conv2d_output_pattern = CreatePattern("conv2d_output")
                                    ->IsOperationOutputOperand(conv2d_type_, 0)
                                    ->IsIntermediate();
@@ -54,7 +73,9 @@ void Conv2DActivationFuser::BuildPattern() {
       CreatePattern("activation_output")
           ->IsOperationOutputOperand(activation_type_, 0);
   // Create the topological connections for the above patterns
-  *conv2d_input_pattern >> *conv2d_pattern >> *conv2d_output_pattern;
+  std::vector<Pattern*> conv2d_input_patterns{conv2d_input_pattern,
+                                              conv2d_fuse_code_pattern};
+  conv2d_input_patterns >> *conv2d_pattern >> *conv2d_output_pattern;
   *conv2d_output_pattern >> *activation_pattern >> *activation_output_pattern;
 }
 
@@ -62,20 +83,12 @@ bool Conv2DActivationFuser::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
   // Get the operands and operations from the matched subgraph nodes.
   auto conv2d_operation = nodes.at("conv2d")->operation;
+  auto conv2d_fuse_code_operand = nodes.at("conv2d_fuse_code")->operand;
   auto activation_output_operand = nodes.at("activation_output")->operand;
   // Replace the output operand the of NNADAPTER_CONV_2D with the output operand
   // of activation operations
-  auto conv2d_fuse_code = OperationTypeToFuseCode(activation_type_);
-  if (conv2d_type_ == NNADAPTER_CONV_2D) {
-    *reinterpret_cast<int32_t*>(conv2d_operation->input_operands[8]->buffer) =
-        conv2d_fuse_code;
-  } else if (conv2d_type_ == NNADAPTER_CONV_2D_TRANSPOSE) {
-    *reinterpret_cast<int32_t*>(conv2d_operation->input_operands[10]->buffer) =
-        conv2d_fuse_code;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported operation type ("
-                         << OperationTypeToString(conv2d_type_) << ") !";
-  }
+  *reinterpret_cast<int32_t*>(conv2d_fuse_code_operand->buffer) =
+      OperationTypeToFuseCode(activation_type_);
   conv2d_operation->output_operands[0] = activation_output_operand;
   // The matched intermediate operands and operations will be deleted only when
   // it returns true.

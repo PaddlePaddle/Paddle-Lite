@@ -421,14 +421,21 @@ uint32_t Converter::ConvertOperand(core::Operand* operand,
                                        type.symm_per_channel_params.channel_dim,
                                        false);
     } break;
-    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
+      // Only for bias
+      NNADAPTER_CHECK(is_constant);
+      index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
+                                        &dimensions[0],
+                                        dimensions.size(),
+                                        type.symm_per_layer_params.scale);
+    } break;
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       // Only for bias
       NNADAPTER_CHECK(is_constant);
-      index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                      &dimensions[0],
-                                      dimensions.size(),
-                                      false);
+      index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
+                                        &dimensions[0],
+                                        dimensions.size(),
+                                        0.0f);
     } break;
     default:
       NNADAPTER_LOG(FATAL)

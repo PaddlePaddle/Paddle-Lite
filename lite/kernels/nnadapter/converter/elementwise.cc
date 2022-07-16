@@ -116,26 +116,19 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   // Elementwise operation
   NNAdapterOperationType eltwise_operation_type;
   auto op_type = op->Type();
-  if (op_type == "elementwise_add" ||
-      op_type == "fusion_elementwise_add_activation") {
+  if (op_type == "elementwise_add") {
     eltwise_operation_type = NNADAPTER_ADD;
-  } else if (op_type == "elementwise_sub" ||
-             op_type == "fusion_elementwise_sub_activation") {
+  } else if (op_type == "elementwise_sub") {
     eltwise_operation_type = NNADAPTER_SUB;
-  } else if (op_type == "elementwise_mul" ||
-             op_type == "fusion_elementwise_mul_activation") {
+  } else if (op_type == "elementwise_mul") {
     eltwise_operation_type = NNADAPTER_MUL;
-  } else if (op_type == "elementwise_div" ||
-             op_type == "fusion_elementwise_div_activation") {
+  } else if (op_type == "elementwise_div") {
     eltwise_operation_type = NNADAPTER_DIV;
-  } else if (op_type == "elementwise_max" ||
-             op_type == "fusion_elementwise_max_activation") {
+  } else if (op_type == "elementwise_max") {
     eltwise_operation_type = NNADAPTER_MAX;
-  } else if (op_type == "elementwise_min" ||
-             op_type == "fusion_elementwise_min_activation") {
+  } else if (op_type == "elementwise_min") {
     eltwise_operation_type = NNADAPTER_MIN;
-  } else if (op_type == "elementwise_pow" ||
-             op_type == "fusion_elementwise_pow_activation") {
+  } else if (op_type == "elementwise_pow") {
     eltwise_operation_type = NNADAPTER_POW;
   } else {
     LOG(WARNING) << "Unsupported elementwise op type: " << op_type;

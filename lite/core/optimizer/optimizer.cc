@@ -152,8 +152,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "unsqueeze_calc_offline_pass",
        "reshape_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
-       // A minimal set of op fusion pass.
-       "op_fusion_minimal_set_pass",
        // For the fully quantization model, the quantization parameters of the
        // quantized ops are inferred by the propagation method according to the
        // input scales and out_threashold.

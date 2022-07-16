@@ -26,6 +26,7 @@ int ConvertArgMinMax(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
+    CHECK(IsValidSymmPerLayerQuantParams(x_scales));
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
@@ -38,20 +39,25 @@ int ConvertArgMinMax(Converter* converter, OpInfo* op, Scope* scope) {
   auto keepdim_operand =
       converter->AddConstantOperand(static_cast<int8_t>(keepdim));
 
-  // Dtype operand
+  // Dtype operand, using int64 by default
   int dtype = op->GetAttr<int>("dtype");
-  // Default int64
   if (dtype < 0) {
-    dtype = 3;
+    dtype = 3;  // INT64 in FluidType
   }
   auto dtype_operand = converter->AddConstantOperand(
       static_cast<int32_t>(ConvertFluidDataTypeToNNPrecisionCode(dtype)));
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+    CHECK(IsValidSymmPerLayerQuantParams(out_scales));
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
-  // Arg operation
+  // ArgMin or ArgMax operation
   NNAdapterOperationType arg_operation_type;
   auto op_type = op->Type();
   if (op_type == "arg_min") {

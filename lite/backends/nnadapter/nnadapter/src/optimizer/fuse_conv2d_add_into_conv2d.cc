@@ -44,6 +44,25 @@ void Conv2DAddFuser::BuildPattern() {
   // Operand patterns
   auto conv2d_input_pattern =
       CreatePattern("conv2d_input")->IsOperationInputOperand(conv2d_type_, 0);
+  int conv2d_fuse_code_index;
+  if (conv2d_type_ == NNADAPTER_CONV_2D) {
+    conv2d_fuse_code_index = 8;
+  } else if (conv2d_type_ == NNADAPTER_CONV_2D_TRANSPOSE) {
+    conv2d_fuse_code_index = 10;
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported operation type ("
+                         << OperationTypeToString(conv2d_type_) << ") !";
+  }
+  auto conv2d_fuse_code_pattern =
+      CreatePattern("conv2d_fuse_code")
+          ->IsOperationInputOperand(conv2d_type_, conv2d_fuse_code_index)
+          ->IsConstantOperand()
+          ->MatchCondition([](const Node* node) -> bool {
+            auto operand = node->operand;
+            return operand &&
+                   *reinterpret_cast<int32_t*>(operand->buffer) ==
+                       NNADAPTER_FUSED_NONE;
+          });
   auto conv2d_output_pattern = CreatePattern("conv2d_output")
                                    ->IsOperationOutputOperand(conv2d_type_, 0)
                                    ->IsOperationInputOperand(NNADAPTER_ADD, 0)
@@ -52,23 +71,18 @@ void Conv2DAddFuser::BuildPattern() {
                                ->IsOperationInputOperand(NNADAPTER_ADD, 1)
                                ->IsConstantOperand()
                                ->IsIntermediate();
-  auto add_fuse_code_pattern =
-      CreatePattern("add_fuse_code")
-          ->IsOperationInputOperand(NNADAPTER_ADD, 2)
-          ->IsConstantOperand()
-          ->MatchCondition([](const Node* node) -> bool {
-            auto operand = node->operand;
-            return operand &&
-                   *reinterpret_cast<int32_t*>(operand->buffer) ==
-                       NNADAPTER_FUSED_NONE;
-          })
-          ->IsIntermediate();
+  auto add_fuse_code_pattern = CreatePattern("add_fuse_code")
+                                   ->IsOperationInputOperand(NNADAPTER_ADD, 2)
+                                   ->IsConstantOperand()
+                                   ->IsIntermediate();
   auto add_output_pattern =
       CreatePattern("add_output")->IsOperationOutputOperand(NNADAPTER_ADD, 0);
   // Create the topological connections for the above patterns
+  std::vector<Pattern*> conv2d_input_patterns{conv2d_input_pattern,
+                                              conv2d_fuse_code_pattern};
   std::vector<Pattern*> add_input_patterns{
       conv2d_output_pattern, add_input_pattern, add_fuse_code_pattern};
-  *conv2d_input_pattern >> *conv2d_pattern >> *conv2d_output_pattern;
+  conv2d_input_patterns >> *conv2d_pattern >> *conv2d_output_pattern;
   add_input_patterns >> *add_pattern >> *add_output_pattern;
 }
 
@@ -76,6 +90,7 @@ bool Conv2DAddFuser::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
   // Get the operands and operations from the matched subgraph nodes.
   auto conv2d_operation = nodes.at("conv2d")->operation;
+  auto conv2d_fuse_code_operand = nodes.at("conv2d_fuse_code")->operand;
   auto conv2d_input_operand = conv2d_operation->input_operands[0];
   auto conv2d_output_operand = conv2d_operation->output_operands[0];
   auto conv2d_filter_operand = conv2d_operation->input_operands[1];
@@ -90,13 +105,12 @@ bool Conv2DAddFuser::HandleMatchedResults(
   }
   auto add_operation = nodes.at("add")->operation;
   auto add_input_operand = nodes.at("add_input")->operand;
+  auto add_fuse_code_operand = nodes.at("add_fuse_code")->operand;
   auto add_output_operand = nodes.at("add_output")->operand;
   if (ProductionOfDimensions(add_input_operand->type.dimensions.data,
                              add_input_operand->type.dimensions.count) !=
       conv2d_output_channel_size)
     return false;
-  // Replace the output operand the of NNADAPTER_CONV_2D with the output operand
-  // of add operations
   // Dequantize the bias operand of NNADAPTER_CONV_2D and the constant input
   // operand of NNADAPTER_ADD
   std::vector<float> dequantized_conv2d_bias(conv2d_output_channel_size);
@@ -192,6 +206,12 @@ bool Conv2DAddFuser::HandleMatchedResults(
            dequantized_conv2d_bias.data(),
            conv2d_bias_operand->length);
   }
+  // Update the value of the fuse code operand of NNADAPTER_CONV_2D with the
+  // value of the fuse code operand of NNADAPTER_ADD.
+  *reinterpret_cast<int32_t*>(conv2d_fuse_code_operand->buffer) =
+      *reinterpret_cast<int32_t*>(add_fuse_code_operand->buffer);
+  // Replace the output operand of NNADAPTER_CONV_2D with the output operand of
+  // NNADAPTER_ADD.
   conv2d_operation->output_operands[0] = add_output_operand;
   // The matched intermediate operands and operations will be deleted only when
   // it returns true.

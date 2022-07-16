@@ -26,17 +26,22 @@ int ConvertAssign(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
+    CHECK(IsValidSymmPerLayerQuantParams(x_scales));
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+    CHECK(IsValidSymmPerLayerQuantParams(out_scales));
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
   // Assign operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_ASSIGN, &input_operands, &output_operands);
-
+  converter->AddOperation(NNADAPTER_ASSIGN, {input_operand}, {output_operand});
   return NO_ERROR;
 }
 

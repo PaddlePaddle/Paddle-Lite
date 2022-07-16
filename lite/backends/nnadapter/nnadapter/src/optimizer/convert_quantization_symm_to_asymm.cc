@@ -62,18 +62,10 @@ static void PropagateAsymmZeroPoint(core::Operand* reference_operand,
                                     core::Operand* target_operand) {
   auto& reference_type = reference_operand->type;
   auto& target_type = target_operand->type;
-  auto reference_precision = reference_type.precision;
-  auto target_precision = target_type.precision;
-  if (IsAsymmPerLayerQuantType(reference_precision) &&
-      IsAsymmPerLayerQuantType(target_precision)) {
+  if (IsAsymmPerLayerQuantType(reference_type.precision) &&
+      IsAsymmPerLayerQuantType(target_type.precision)) {
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
-  } else {
-    NNADAPTER_LOG(WARNING) << "Unhandled case: reference_precision="
-                           << OperandPrecisionCodeToString(
-                                  reference_type.precision)
-                           << ", target_precision="
-                           << OperandPrecisionCodeToString(target_precision);
   }
 }
 
