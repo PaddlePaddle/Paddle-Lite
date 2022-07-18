@@ -143,6 +143,39 @@ REGISTER_CONVERTER(elementwise_pow,
                    ConvertElementwise,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_"
                    "openvino,nvidia_tensorrt,qualcomm_qnn");
+REGISTER_CONVERTER(fusion_elementwise_add_activation,
+                   ConvertElementwise,
+                   "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
+                   "huawei_ascend_npu,amlogic_npu,imagination_nna,cambricon_"
+                   "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
+                   "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
+                   "eeasytech_npu");
+REGISTER_CONVERTER(fusion_elementwise_sub_activation,
+                   ConvertElementwise,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
+                   "kunlunxin_xtcl,android_nnapi,google_xnnpack,eeasytech_npu");
+REGISTER_CONVERTER(fusion_elementwise_mul_activation,
+                   ConvertElementwise,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
+                   "kunlunxin_xtcl,android_nnapi,google_xnnpack,eeasytech_npu");
+REGISTER_CONVERTER(fusion_elementwise_div_activation,
+                   ConvertElementwise,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_timvx,"
+                   "kunlunxin_xtcl,android_nnapi,google_xnnpack");
+REGISTER_CONVERTER(
+    fusion_elementwise_min_activation,
+    ConvertElementwise,
+    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,kunlunxin_xtcl");
+REGISTER_CONVERTER(
+    fusion_elementwise_max_activation,
+    ConvertElementwise,
+    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,kunlunxin_xtcl");
+REGISTER_CONVERTER(fusion_elementwise_pow_activation,
+                   ConvertElementwise,
+                   "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl");
 REGISTER_CONVERTER(
     pow,
     ConvertPow,
