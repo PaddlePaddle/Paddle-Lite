@@ -190,9 +190,8 @@ bool QuantizeData(const float* input_data,
       for (int64_t k = 0; k < inner_count; k++) {
         auto index = i * scale_count * inner_count + j * inner_count + k;
         output_data[index] = std::min(
-            std::max(static_cast<int>(
-                         round(input_data[index] / output_scales[j]) +
-                         (output_zero_points ? output_zero_points[j] : 0)),
+            std::max(static_cast<int>(input_data[index] / output_scales[j]) +
+                         (output_zero_points ? output_zero_points[j] : 0),
                      dtype_min),
             dtype_max);
       }
