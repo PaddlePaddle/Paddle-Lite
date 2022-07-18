@@ -26,14 +26,7 @@ void RangeCompute<T, PType>::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   T start = (param.Start->template data<T>()[0]);
   T step = (param.Step->template data<T>()[0]);
-  const T* xpu_data_end = param.End->template data<T>();
-  T end = 0;
-  TargetWrapperXPU::MemcpySync(
-      &end, xpu_data_end, sizeof(T), IoDirection::DtoH);
-  int64_t len = 0;
-  InferShapeImpl(start, step, end, &len);
-
-  param.Out->Resize(std::vector<int64_t>({len}));
+  int64_t len = param.Out->numel();
   T* out_data = param.Out->template mutable_data<T>(TARGET(kXPU));
   int r = xdnn::range<T>(
       ctx.GetRawContext(), out_data, start, step, static_cast<int>(len));
@@ -53,7 +46,7 @@ REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_float, def)
                                       PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindInput("End",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindInput("Step",
@@ -74,7 +67,7 @@ REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int64, range_int64)
                                       PRECISION(kInt64),
                                       DATALAYOUT(kAny))})
     .BindInput("End",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),
                                       DATALAYOUT(kAny))})
     .BindInput("Step",
@@ -95,7 +88,7 @@ REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int32, range_int32)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("End",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("Step",

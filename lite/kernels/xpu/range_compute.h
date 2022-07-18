@@ -25,16 +25,6 @@ template <typename T, PrecisionType PType>
 class RangeCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
-  void InferShapeImpl(T start, T step, T end, int64_t* len) {
-    CHECK(!std::equal_to<T>()(step, 0))
-        << "The step of range op should not be 0.";
-    CHECK(((start < end) && (step > 0)) || ((start > end) && (step < 0)))
-        << "The step should be greater than 0 while start < end. And the "
-           "step should be less than 0 while start > end.";
-    *len = std::is_integral<T>::value
-               ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
-               : std::ceil(std::abs((end - start) / step));
-  }
 
   virtual ~RangeCompute() = default;
 };
