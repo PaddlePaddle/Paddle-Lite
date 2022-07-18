@@ -280,8 +280,8 @@ int TensorrtProgram::BuildFromModel() {
   }
   // 1. Optimize the model_
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model_);
-  FuseConv2DBatchNormIntoConv2D(model);
-  FuseConv2DAddIntoConv2D(model);
+  FuseConv2DBatchNormIntoConv2D(model_);
+  FuseConv2DAddIntoConv2D(model_);
   UnpackOpFusion(model_);
   RemoveReshapeBeforeFullyConnected(model_);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model_);
