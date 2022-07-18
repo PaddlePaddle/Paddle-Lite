@@ -87,6 +87,42 @@ struct MaxFunctor {
   }
 };
 
+template <typename T>
+struct MinFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_min<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct ModFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_mod<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct FloordivFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_floordiv<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
 template <class T, class Functor, PrecisionType PType>
 void ElementwiseCompute<T, Functor, PType>::Run() {
   auto& param = this->template Param<param_t>();
@@ -170,6 +206,34 @@ using MaxFloat16 = xpu::ElementwiseCompute<float16,
                                            PRECISION(kFP16)>;
 using MaxInt32 =
     xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>, PRECISION(kFloat)>;
+
+using MinFloat32 =
+    xpu::ElementwiseCompute<float, xpu::MinFunctor<float>, PRECISION(kFloat)>;
+
+using MinFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::MinFunctor<float16>,
+                                           PRECISION(kFP16)>;
+using MinInt32 =
+    xpu::ElementwiseCompute<int, xpu::MinFunctor<int>, PRECISION(kFloat)>;
+
+using ModFloat32 =
+    xpu::ElementwiseCompute<float, xpu::ModFunctor<float>, PRECISION(kFloat)>;
+
+using ModFloat16 = xpu::ElementwiseCompute<float16,
+                                           xpu::ModFunctor<float16>,
+                                           PRECISION(kFP16)>;
+using ModInt32 =
+    xpu::ElementwiseCompute<int, xpu::ModFunctor<int>, PRECISION(kFloat)>;
+
+using FloordivFloat32 = xpu::ElementwiseCompute<float,
+                                                xpu::FloordivFunctor<float>,
+                                                PRECISION(kFloat)>;
+
+using FloordivFloat16 = xpu::ElementwiseCompute<float16,
+                                                xpu::FloordivFunctor<float16>,
+                                                PRECISION(kFP16)>;
+using FloordivInt32 =
+    xpu::ElementwiseCompute<int, xpu::FloordivFunctor<int>, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -255,6 +319,69 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_min, kXPU, kFloat, kNCHW, MinFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_min, kXPU, kFP16, kNCHW, MinFloat16, DISABLE_XPU1_MinFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_min, kXPU, kFloat, kNCHW, MinInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mod, kXPU, kFloat, kNCHW, ModFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_mod, kXPU, kFP16, kNCHW, ModFloat16, DISABLE_XPU1_ModFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mod, kXPU, kFloat, kNCHW, ModInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_floordiv, kXPU, kFloat, kNCHW, FloordivFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_floordiv,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     FloordivFloat16,
+                     DISABLE_XPU1_FloordivFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_floordiv, kXPU, kFloat, kNCHW, FloordivInt32, int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
