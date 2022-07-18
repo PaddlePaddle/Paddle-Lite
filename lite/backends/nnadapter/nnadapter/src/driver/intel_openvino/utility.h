@@ -56,10 +56,22 @@ template <typename T>
 Shape ConvertToOVShape(std::vector<T> dimensions) {
   std::vector<size_t> ov_shape;
   for (auto dim : dimensions) {
-    ov_shape.push_back(dim);
+    if (dim == NNADAPTER_UNKNOWN) {
+      ov_shape.push_back(-1);
+    } else {
+      ov_shape.push_back(dim);
+    }
   }
   return Shape(ov_shape);
 }
+
+// Convert NNadapterOperandDimensionType to ov::Shape.
+Shape ConvertToOVShape(const NNAdapterOperandDimensionType& dimensions);
+
+// Collect dynamic shape info and convert to ov::PartialShape.
+ov::PartialShape ConvertDynamicDimensions(
+    NNAdapterOperandDimensionType* dimensions);
+
 // Convert C/C++ POD types to OpenVINO ov::element::Type
 template <typename T>
 ElementType GetElementType() {

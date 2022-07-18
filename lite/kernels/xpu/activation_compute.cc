@@ -21,13 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void ReluCompute::Run() {
+template <typename T, PrecisionType PType>
+void ReluCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::relu(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->template data<T>(),
+                     param.Out->template mutable_data<T>(TARGET(kXPU)),
                      param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -54,24 +55,26 @@ void GeluCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
-void TanhCompute::Run() {
+template <typename T, PrecisionType PType>
+void TanhCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::tanh(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->template data<T>(),
+                     param.Out->template mutable_data<T>(TARGET(kXPU)),
                      param.X->numel());
   CHECK_EQ(r, 0);
 }
 
-void SigmoidCompute::Run() {
+template <typename T, PrecisionType PType>
+void SigmoidCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::sigmoid(ctx.GetRawContext(),
-                        param.X->data<float>(),
-                        param.Out->mutable_data<float>(TARGET(kXPU)),
+                        param.X->template data<T>(),
+                        param.Out->template mutable_data<T>(TARGET(kXPU)),
                         param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -205,13 +208,13 @@ void HardSigmoidCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
-void LeakyReluCompute::Run() {
+template <typename T, PrecisionType PType>
+void LeakyReluCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-
   int r = xdnn::leaky_relu(ctx.GetRawContext(),
-                           param.X->data<float>(),
-                           param.Out->mutable_data<float>(TARGET(kXPU)),
+                           param.X->template data<T>(),
+                           param.Out->template mutable_data<T>(TARGET(kXPU)),
                            param.X->numel(),
                            param.Leaky_relu_alpha);
   CHECK_EQ(r, 0);
@@ -285,10 +288,18 @@ void FloorCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    relu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ReluCompute, def)
+using reluFP32 =
+    paddle::lite::kernels::xpu::ReluCompute<float, PRECISION(kFloat)>;
+using reluFP16 =
+    paddle::lite::kernels::xpu::ReluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(relu, kXPU, kFloat, kNCHW, reluFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(relu, kXPU, kFP16, kNCHW, reluFP16, reluFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -303,20 +314,30 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    tanh, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::TanhCompute, def)
+using tanhFP32 =
+    paddle::lite::kernels::xpu::TanhCompute<float, PRECISION(kFloat)>;
+using tanhFP16 =
+    paddle::lite::kernels::xpu::TanhCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(tanh, kXPU, kFloat, kNCHW, tanhFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+REGISTER_LITE_KERNEL(tanh, kXPU, kFP16, kNCHW, tanhFP16, tanhFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(sigmoid,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::SigmoidCompute,
-                     def)
+using sigmoidFP32 =
+    paddle::lite::kernels::xpu::SigmoidCompute<float, PRECISION(kFloat)>;
+using sigmoidFP16 =
+    paddle::lite::kernels::xpu::SigmoidCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(sigmoid, kXPU, kFloat, kNCHW, sigmoidFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(sigmoid, kXPU, kFP16, kNCHW, sigmoidFP16, sigmoidFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -397,14 +418,19 @@ REGISTER_LITE_KERNEL(hard_swish,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(leaky_relu,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::LeakyReluCompute,
-                     def)
+using leaky_reluFP32 =
+    paddle::lite::kernels::xpu::LeakyReluCompute<float, PRECISION(kFloat)>;
+using leaky_reluFP16 =
+    paddle::lite::kernels::xpu::LeakyReluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(leaky_relu, kXPU, kFloat, kNCHW, leaky_reluFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    leaky_relu, kXPU, kFP16, kNCHW, leaky_reluFP16, leaky_reluFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(softsign,
