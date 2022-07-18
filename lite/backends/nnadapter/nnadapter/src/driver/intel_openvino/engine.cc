@@ -14,6 +14,10 @@
 
 #include "driver/intel_openvino/engine.h"
 #include "driver/intel_openvino/converter/converter.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
@@ -96,7 +100,12 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(3) << "Build from cache success.";
   } else {
     // Build from model
-    NNADAPTER_VLOG(5) << "NNAdapter model:" << std::endl << Visualize(model);
+    NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DActivationIntoConv2D(model);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+    NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     Converter converter(&parameter_node_map_, &tensor_map_);
     NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
     // Indentify the inputs and outputs

@@ -19,7 +19,11 @@
 #include "driver/eeasytech_npu/converter/converter.h"
 #include "driver/eeasytech_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -57,7 +61,11 @@ int Program::BuildFromModel(core::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
+  FuseConv2DBatchNormIntoConv2D(model);
+  FuseConv2DAddIntoConv2D(model);
+  FuseConv2DActivationIntoConv2D(model);
   FuseMatMulAddIntoFullyConnected(model);
+  FuseReshapeTransposeReshapeIntoChannelShuffle(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
 
   // Convert a NNAdapter model to a eeasynpu graph
