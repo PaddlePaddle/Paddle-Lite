@@ -27,6 +27,9 @@ bool GridSamplerOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.out);
   CHECK_OR_FALSE(param_.grid);
+#ifdef LITE_WITH_XPU
+  return true;
+#endif
   auto x_dims = param_.x->dims();
   auto grid_dims = param_.grid->dims();
 

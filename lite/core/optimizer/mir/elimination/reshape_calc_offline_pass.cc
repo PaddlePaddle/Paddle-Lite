@@ -159,4 +159,4 @@ void ReshapeCalcOfflinePass::RemoveReshapePattern(
 
 REGISTER_MIR_PASS(reshape_calc_offline_pass,
                   paddle::lite::mir::ReshapeCalcOfflinePass)
-    .BindTargets({TARGET(kNNAdapter), TARGET(kXPU)});
+    .BindTargets({TARGET(kNNAdapter)});

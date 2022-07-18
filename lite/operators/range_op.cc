@@ -45,6 +45,9 @@ void GetSize(T start, T end, T step, int64_t* size) {
 #pragma optimize("", off)
 #endif
 bool RangeOpLite::InferShapeImpl() const {
+#ifdef LITE_WITH_XPU
+  return true;
+#endif
   int64_t size = 0;
   switch (param_.Start->precision()) {
     case PRECISION(kFloat):
