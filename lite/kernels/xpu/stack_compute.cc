@@ -60,8 +60,7 @@ void StackCompute<T, PType>::Run() {
 using stack_float =
     paddle::lite::kernels::xpu::StackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_float, def)
-    .BindInput("X",
-               {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
@@ -70,4 +69,11 @@ using stack_int64 =
 REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_int64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
+using stack_int32 =
+    paddle::lite::kernels::xpu::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kNCHW, stack_int32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();

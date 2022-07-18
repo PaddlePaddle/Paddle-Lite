@@ -79,6 +79,18 @@ REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
                      kNCHW,
+                     paddle::lite::kernels::xpu::TransposeCompute<int>,
+                     def_int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(transpose2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
                      paddle::lite::kernels::xpu::TransposeCompute<int64_t>,
                      def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
