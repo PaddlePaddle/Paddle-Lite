@@ -561,6 +561,16 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #endif
 }
 
+void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::local_l3_autotune = autotune;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_l3_cache_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 void set_xpu_gm_workspace_method(size_t gm_size) {
 #ifdef LITE_WITH_XPU
   lite::TargetWrapperXPU::local_gm_size = gm_size;

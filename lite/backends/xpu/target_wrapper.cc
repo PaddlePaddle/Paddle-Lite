@@ -127,12 +127,16 @@ void TargetWrapperXPU::FreeL3Cache() {
       local_l3_ptr_ = nullptr;
       XPU_CALL(tls_raw_ctx_->_l3_mgr.set(nullptr, 0));
     }
-    l3_planner_->run_autotune(l3_block_dict, local_l3_size);
+    if (local_l3_autotune) {
+      l3_planner_->run_autotune(l3_block_dict, local_l3_size);
+    }
   } else if (need_l3_mutex && TargetWrapperXPU::IsSharedL3Created()) {
     XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
     XPU_CALL(tls_raw_ctx_->_l3_mgr.set(nullptr, 0));
     mutex_l3_.unlock();
-    l3_planner_->run_autotune(l3_block_dict, shared_l3_size);
+    if (local_l3_autotune) {
+      l3_planner_->run_autotune(l3_block_dict, shared_l3_size);
+    }
   }
   for (size_t i = 0; i < l3_block_dict.size(); i++) {
     l3_block_dict[i]->clear();
@@ -168,6 +172,7 @@ LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
     std::numeric_limits<size_t>::max()};
+LITE_THREAD_LOCAL bool TargetWrapperXPU::local_l3_autotune{true};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{
     0x4000000};  // 64 * 1024 * 1024
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};
