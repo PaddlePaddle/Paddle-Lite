@@ -142,9 +142,8 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
   std::vector<float> batch_norm_alpha(conv2d_output_channel_size),
       batch_norm_beta(conv2d_output_channel_size);
   for (uint32_t i = 0; i < conv2d_output_channel_size; i++) {
-    double coeff = batch_norm_scale_data[i] /
-                   std::sqrt(batch_norm_variance_data[i] +
-                             static_cast<double>(batch_norm_epsilon));
+    float coeff = batch_norm_scale_data[i] /
+                  std::sqrt(batch_norm_variance_data[i] + batch_norm_epsilon);
     batch_norm_alpha[i] = coeff;
     batch_norm_beta[i] =
         -batch_norm_mean_data[i] * coeff + batch_norm_bias_data[i];
@@ -216,8 +215,9 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
       conv2d_filter_operand->type.symm_per_channel_params.scales[i] *=
           fabsf(batch_norm_alpha[i]);
-      conv2d_bias_operand->type.symm_per_channel_params.scales[i] *=
-          fabsf(batch_norm_alpha[i]);
+      conv2d_bias_operand->type.symm_per_channel_params.scales[i] =
+          conv2d_filter_operand->type.symm_per_channel_params.scales[i] *
+          conv2d_input_operand->type.symm_per_layer_params.scale;
       dequantized_conv2d_bias[i] =
           batch_norm_alpha[i] * dequantized_conv2d_bias[i] + batch_norm_beta[i];
     }
