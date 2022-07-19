@@ -149,9 +149,10 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     batch_norm_beta[i] =
         -batch_norm_mean_data[i] * coeff + batch_norm_bias_data[i];
   }
-  if (IsInt8SymmQuantType(conv2d_input_operand->type.precision) &&
-      IsInt8SymmQuantType(conv2d_filter_operand->type.precision) &&
-      IsInt8SymmQuantType(conv2d_output_operand->type.precision)) {
+  if (IsInt8SymmPerLayerQuantType(conv2d_input_operand->type.precision) &&
+      (IsInt8SymmPerLayerQuantType(conv2d_filter_operand->type.precision) ||
+       IsInt8SymmPerChannelQuantType(conv2d_filter_operand->type.precision)) &&
+      IsInt8SymmPerLayerQuantType(conv2d_output_operand->type.precision)) {
     auto conv2d_filter_data =
         reinterpret_cast<int8_t*>(conv2d_filter_operand->buffer);
     auto conv2d_bias_data =
@@ -222,7 +223,7 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     }
     for (int64_t i = 0; i < conv2d_filter_outer_size; i++) {
       for (int64_t j = 0; j < conv2d_output_channel_size; j++) {
-        if (batch_norm_alpha[i] >= 0.f) continue;
+        if (batch_norm_alpha[j] >= 0.f) continue;
         for (int64_t k = 0; k < conv2d_filter_inner_size; k++) {
           conv2d_filter_data[i * conv2d_output_channel_size *
                                  conv2d_filter_inner_size +
