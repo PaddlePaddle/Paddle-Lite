@@ -272,6 +272,17 @@ void PReluCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void FloorCompute::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  int r = xdnn::floor(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -443,5 +454,11 @@ REGISTER_LITE_KERNEL(
     prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    floor, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::FloorCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
