@@ -153,11 +153,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "unsqueeze_calc_offline_pass",
        "reshape_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
-       "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
-       "lite_conv_bn_fuse_pass",           //
-       "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
-       "lite_conv_activation_fuse_pass",
-       "lite_fc_fuse_pass",
+       // "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+       "lite_conv_bn_fuse_pass",  //
+       // "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
+       // "lite_conv_activation_fuse_pass",
+       // "lite_fc_fuse_pass",
        // For the fully quantization model, the quantization parameters of the
        // quantized ops are inferred by the propagation method according to the
        // input scales and out_threashold.
