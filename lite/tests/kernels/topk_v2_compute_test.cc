@@ -118,6 +118,8 @@ void test_topk_v2(Place place, float abs_error) {
        std::vector<std::vector<int64_t>>{{2, 3, 4, 5}, {3, 4, 5}, {4, 5}}) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
     for (int axis : {-1}) {
+#elif defined(LITE_WITH_XPU)
+    for (int axis : {-1}) {
 #else
     for (int axis : {-1, -2, 0}) {
 #endif
@@ -153,6 +155,8 @@ TEST(Topk, precision) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #else
   return;
 #endif
