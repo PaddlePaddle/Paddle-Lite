@@ -293,10 +293,9 @@ REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu,cambricon_mlu");
 REGISTER_CONVERTER(scale,
                    ConvertScale,
-                   "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
-                   "huawei_ascend_npu,amlogic_npu,imagination_nna,cambricon_"
-                   "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
-                   "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
+                   "mlu,android_nnapi,nvidia_tensorrt,intel_openvino,"
                    "eeasytech_npu");
 REGISTER_CONVERTER(
     transpose,
