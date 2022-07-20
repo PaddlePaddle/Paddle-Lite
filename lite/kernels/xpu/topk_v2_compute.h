@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -23,16 +20,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <PrecisionType FilterPtype>
-class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
+class TopkV2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ConvParam;
+  virtual void Run();
 
-  void PrepareForRun() override;
-  void Run() override;
-
-  virtual ~Conv2dTransposeCompute() = default;
-  uint64_t cur_dev_attr_ = 0;
+  virtual ~TopkV2Compute() = default;
 };
 
 }  // namespace xpu

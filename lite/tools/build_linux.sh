@@ -93,8 +93,6 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
-# option of light weight framework, default is OFF
-WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -112,8 +110,7 @@ readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                            -DCMAKE_BUILD_TYPE=Release \
+readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF"
 
@@ -127,9 +124,7 @@ function set_benchmark_options {
     # Linux. Otherwise opencl is not supported on Linux. See link for more info:
     # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
     WITH_OPENCL=OFF
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
-    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
     WITH_OPENCL=ON
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -158,13 +153,11 @@ function init_cmake_mutable_options {
     if [ "${ARCH}" == "x86" ]; then
         with_x86=ON
         arm_target_os=""
-        WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
         WITH_TINY_PUBLISH=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
         arm_target_os=armlinux
-        WITH_LIGHT_WEIGHT_FRAMEWORK=ON
         WITH_AVX=OFF
     fi
 
@@ -191,7 +184,6 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$WITH_LIGHT_WEIGHT_FRAMEWORK \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -23,16 +20,15 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <PrecisionType FilterPtype>
-class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
+template <typename T>
+class WhereCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::ConvParam;
+  using param_t = operators::WhereParam;
 
-  void PrepareForRun() override;
   void Run() override;
 
-  virtual ~Conv2dTransposeCompute() = default;
-  uint64_t cur_dev_attr_ = 0;
+  virtual ~WhereCompute() = default;
 };
 
 }  // namespace xpu

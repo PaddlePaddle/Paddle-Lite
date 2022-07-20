@@ -25,16 +25,19 @@ namespace fusion {
 
 class XPUFcFuser : public FuseBase {
  public:
-  explicit XPUFcFuser(bool with_bias, const std::string& act_type) {
+  explicit XPUFcFuser(bool with_bias,
+                      const std::string& act_type,
+                      const std::string& mul_type) {
     with_bias_ = with_bias;
     act_type_ = act_type;
+    mul_type_ = mul_type;
   }
 
   void BuildPattern() override {
-    auto* x = VarNode("x")->assert_is_op_input("mul", "X")->AsInput();
-    auto* W = VarNode("W")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* mul = OpNode("mul", "mul")->AsIntermediate();
-    auto* mul_out = VarNode("mul_out")->assert_is_op_output("mul", "Out");
+    auto* x = VarNode("x")->assert_is_op_input(mul_type_, "X")->AsInput();
+    auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* mul = OpNode("mul", mul_type_)->AsIntermediate();
+    auto* mul_out = VarNode("mul_out")->assert_is_op_output(mul_type_, "Out");
     PMNode* bias = nullptr;
     PMNode* add = nullptr;
     PMNode* add_out = nullptr;
@@ -81,7 +84,6 @@ class XPUFcFuser : public FuseBase {
     op_desc.SetType("__xpu__fc");
     op_desc.SetInput("Input", {matched.at("x")->arg()->name});
     op_desc.SetInput("Filter", {matched.at("W")->arg()->name});
-
     if (with_bias_) {
       op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
     }
@@ -102,6 +104,7 @@ class XPUFcFuser : public FuseBase {
                                        {"relu", 1},
                                        {"sigmoid", 2},
                                        {"tanh", 3},
+                                       {"gelu", 4},
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
@@ -117,9 +120,29 @@ class XPUFcFuser : public FuseBase {
     }
     op_desc.SetAttr<int>("act_type", act_map[act_type_]);
     op_desc.SetAttr<float>("act_param", act_param_);
-    op_desc.SetAttr(
-        "in_num_col_dims",
-        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+
+    op_desc.SetAttr<int>("in_num_col_dims", -1);
+    if (mul_type_ == "mul") {
+      op_desc.SetAttr(
+          "in_num_col_dims",
+          matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+      op_desc.SetAttr("transpose_x", false);
+      op_desc.SetAttr("transpose_w", true);
+    } else if (mul_type_ == "matmul") {
+      op_desc.SetAttr(
+          "transpose_x",
+          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("transpose_X"));
+      op_desc.SetAttr(
+          "transpose_w",
+          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("transpose_Y"));
+    } else {
+      op_desc.SetAttr(
+          "transpose_x",
+          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("trans_x"));
+      op_desc.SetAttr(
+          "transpose_w",
+          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("trans_y"));
+    }
 
     std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
@@ -147,6 +170,7 @@ class XPUFcFuser : public FuseBase {
  private:
   bool with_bias_;
   std::string act_type_;
+  std::string mul_type_;
 };
 
 }  // namespace fusion
@@ -158,6 +182,7 @@ class XPUFcFusePass : public ProgramPass {
     // TODO(weihaoji) support with_no_bias and more activation types
     for (auto with_bias : {true, /*false*/}) {
       for (auto act_type : {"relu",
+                            "gelu",
                             /*"sigmoid",
                             "tanh",
                             "leaky_relu",
@@ -165,8 +190,10 @@ class XPUFcFusePass : public ProgramPass {
                             "hard_sigmoid",
                             "relu6",*/
                             "linear"}) {
-        fusion::XPUFcFuser fuser(with_bias, act_type);
-        fuser(graph.get());
+        for (auto mul_type : {"mul", "matmul_v2"}) {
+          fusion::XPUFcFuser fuser(with_bias, act_type, mul_type);
+          fuser(graph.get());
+        }
       }
     }
   }
