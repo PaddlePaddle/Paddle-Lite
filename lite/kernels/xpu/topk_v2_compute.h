@@ -20,21 +20,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class BilinearInterpCompute : public KernelLite<TARGET(kXPU), PType> {
+class TopkV2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::InterpolateParam;
-  void Run() override;
-  virtual ~BilinearInterpCompute() = default;
-};
+  virtual void Run();
 
-template <typename InType, PrecisionType PType>
-class NearestInterpCompute : public KernelLite<TARGET(kXPU), PType> {
- public:
-  using param_t = operators::InterpolateParam;
-  void Run() override;
-
-  virtual ~NearestInterpCompute() = default;
+  virtual ~TopkV2Compute() = default;
 };
 
 }  // namespace xpu

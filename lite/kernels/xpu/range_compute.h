@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,27 +14,19 @@
 
 #pragma once
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class BilinearInterpCompute : public KernelLite<TARGET(kXPU), PType> {
+template <typename T, PrecisionType PType>
+class RangeCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::InterpolateParam;
-  void Run() override;
-  virtual ~BilinearInterpCompute() = default;
-};
-
-template <typename InType, PrecisionType PType>
-class NearestInterpCompute : public KernelLite<TARGET(kXPU), PType> {
- public:
-  using param_t = operators::InterpolateParam;
   void Run() override;
 
-  virtual ~NearestInterpCompute() = default;
+  virtual ~RangeCompute() = default;
 };
 
 }  // namespace xpu

@@ -179,6 +179,7 @@ class TargetWrapper<TARGET(kXPU)> {
   // l3 cache config
   static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
   static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
+  static LITE_THREAD_LOCAL bool local_l3_autotune;
   static LITE_THREAD_LOCAL size_t local_gm_size;
   static size_t shared_l3_size;  // model level l3 size
   static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
