@@ -473,12 +473,12 @@ __kernel void decode_center_size_axis0(__read_only image2d_t prior_box_image,
   target_box_height.x =
       exp(prior_box_var_input_3_x * target_box_input[3].x) * prior_box_height;
 
-  output[0].x = target_box_center_x.x - target_box_width.x / (half)2;
-  output[1].x = target_box_center_y.x - target_box_height.x / (half)2;
+  output[0].x = target_box_center_x.x - target_box_width.x / 2;
+  output[1].x = target_box_center_y.x - target_box_height.x / 2;
   output[2].x =
-      target_box_center_x.x + target_box_width.x / (half)2 - norm_value;
+      target_box_center_x.x + target_box_width.x / 2 - norm_value;
   output[3].x =
-      target_box_center_y.x + target_box_height.x / (half)2 - norm_value;
+      target_box_center_y.x + target_box_height.x / 2 - norm_value;
 
   if (out_C - out_c * 4 >= 2) {
     target_box_center_x.y =
@@ -491,12 +491,12 @@ __kernel void decode_center_size_axis0(__read_only image2d_t prior_box_image,
         exp(prior_box_var_input_2_x * target_box_input[2].y) * prior_box_width;
     target_box_height.y =
         exp(prior_box_var_input_3_x * target_box_input[3].y) * prior_box_height;
-    output[0].y = target_box_center_x.y - target_box_width.y / (half)2;
-    output[1].y = target_box_center_y.y - target_box_height.y / (half)2;
+    output[0].y = target_box_center_x.y - target_box_width.y / 2;
+    output[1].y = target_box_center_y.y - target_box_height.y / 2;
     output[2].y =
-        target_box_center_x.y + target_box_width.y / (half)2 - norm_value;
+        target_box_center_x.y + target_box_width.y / 2 - norm_value;
     output[3].y =
-        target_box_center_y.y + target_box_height.y / (half)2 - norm_value;
+        target_box_center_y.y + target_box_height.y / 2 - norm_value;
   }
   if (out_C - out_c * 4 >= 3) {
     target_box_center_x.z =
@@ -509,12 +509,12 @@ __kernel void decode_center_size_axis0(__read_only image2d_t prior_box_image,
         exp(prior_box_var_input_2_x * target_box_input[2].z) * prior_box_width;
     target_box_height.z =
         exp(prior_box_var_input_3_x * target_box_input[3].z) * prior_box_height;
-    output[0].z = target_box_center_x.z - target_box_width.z / (half)2;
-    output[1].z = target_box_center_y.z - target_box_height.z / (half)2;
+    output[0].z = target_box_center_x.z - target_box_width.z / 2;
+    output[1].z = target_box_center_y.z - target_box_height.z / 2;
     output[2].z =
-        target_box_center_x.z + target_box_width.z / (half)2 - norm_value;
+        target_box_center_x.z + target_box_width.z / 2 - norm_value;
     output[3].z =
-        target_box_center_y.z + target_box_height.z / (half)2 - norm_value;
+        target_box_center_y.z + target_box_height.z / 2 - norm_value;
   }
   if (out_C - out_c * 4 >= 4) {
     target_box_center_x.w =
@@ -527,12 +527,12 @@ __kernel void decode_center_size_axis0(__read_only image2d_t prior_box_image,
         exp(prior_box_var_input_2_x * target_box_input[2].w) * prior_box_width;
     target_box_height.w =
         exp(prior_box_var_input_3_x * target_box_input[3].w) * prior_box_height;
-    output[0].w = target_box_center_x.w - target_box_width.w / (half)2;
-    output[1].w = target_box_center_y.w - target_box_height.w / (half)2;
+    output[0].w = target_box_center_x.w - target_box_width.w / 2;
+    output[1].w = target_box_center_y.w - target_box_height.w / 2;
     output[2].w =
-        target_box_center_x.w + target_box_width.w / (half)2 - norm_value;
+        target_box_center_x.w + target_box_width.w / 2 - norm_value;
     output[3].w =
-        target_box_center_y.w + target_box_height.w / (half)2 - norm_value;
+        target_box_center_y.w + target_box_height.w / 2 - norm_value;
   }
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR,
@@ -708,12 +708,12 @@ __kernel void decode_center_size_axis1(__read_only image2d_t prior_box_image,
   target_box_height.x =
       exp(prior_box_var_input_3_x * target_box_input[3].x) * prior_box_height;
 
-  output[0].x = target_box_center_x.x - target_box_width.x / (half)2;
-  output[1].x = target_box_center_y.x - target_box_height.x / (half)2;
+  output[0].x = target_box_center_x.x - target_box_width.x / 2;
+  output[1].x = target_box_center_y.x - target_box_height.x / 2;
   output[2].x =
-      target_box_center_x.x + target_box_width.x / (half)2 - norm_value;
+      target_box_center_x.x + target_box_width.x / 2 - norm_value;
   output[3].x =
-      target_box_center_y.x + target_box_height.x / (half)2 - norm_value;
+      target_box_center_y.x + target_box_height.x / 2 - norm_value;
 
   if (out_C - out_c * 4 >= 2) {
     CL_DTYPE4 prior_box_input_1[4];
@@ -782,12 +782,12 @@ __kernel void decode_center_size_axis1(__read_only image2d_t prior_box_image,
                          prior_box_width_1;
     target_box_height.y = exp(prior_box_var_input_3_x * target_box_input[3].y) *
                           prior_box_height_1;
-    output[0].y = target_box_center_x.y - target_box_width.y / (half)2;
-    output[1].y = target_box_center_y.y - target_box_height.y / (half)2;
+    output[0].y = target_box_center_x.y - target_box_width.y / 2;
+    output[1].y = target_box_center_y.y - target_box_height.y / 2;
     output[2].y =
-        target_box_center_x.y + target_box_width.y / (half)2 - norm_value;
+        target_box_center_x.y + target_box_width.y / 2 - norm_value;
     output[3].y =
-        target_box_center_y.y + target_box_height.y / (half)2 - norm_value;
+        target_box_center_y.y + target_box_height.y / 2 - norm_value;
   }
   if (out_C - out_c * 4 >= 3) {
     CL_DTYPE4 prior_box_input_2[4];
@@ -857,12 +857,12 @@ __kernel void decode_center_size_axis1(__read_only image2d_t prior_box_image,
     target_box_height.z = exp(prior_box_var_input_3_x * target_box_input[3].z) *
                           prior_box_height_2;
 
-    output[0].z = target_box_center_x.z - target_box_width.z / (half)2;
-    output[1].z = target_box_center_y.z - target_box_height.z / (half)2;
+    output[0].z = target_box_center_x.z - target_box_width.z / 2;
+    output[1].z = target_box_center_y.z - target_box_height.z / 2;
     output[2].z =
-        target_box_center_x.z + target_box_width.z / (half)2 - norm_value;
+        target_box_center_x.z + target_box_width.z / 2 - norm_value;
     output[3].z =
-        target_box_center_y.z + target_box_height.z / (half)2 - norm_value;
+        target_box_center_y.z + target_box_height.z / 2 - norm_value;
   }
   if (out_C - out_c * 4 >= 4) {
     CL_DTYPE4 prior_box_input_3[4];
@@ -932,12 +932,12 @@ __kernel void decode_center_size_axis1(__read_only image2d_t prior_box_image,
                          prior_box_width_3;
     target_box_height.w = exp(prior_box_var_input_3_x * target_box_input[3].w) *
                           prior_box_height_3;
-    output[0].w = target_box_center_x.w - target_box_width.w / (half)2;
-    output[1].w = target_box_center_y.w - target_box_height.w / (half)2;
+    output[0].w = target_box_center_x.w - target_box_width.w / 2;
+    output[1].w = target_box_center_y.w - target_box_height.w / 2;
     output[2].w =
-        target_box_center_x.w + target_box_width.w / (half)2 - norm_value;
+        target_box_center_x.w + target_box_width.w / 2 - norm_value;
     output[3].w =
-        target_box_center_y.w + target_box_height.w / (half)2 - norm_value;
+        target_box_center_y.w + target_box_height.w / 2 - norm_value;
   }
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR,
