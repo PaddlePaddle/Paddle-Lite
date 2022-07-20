@@ -126,4 +126,4 @@ void RemoveScale1Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(remove_scale1_pass, paddle::lite::mir::RemoveScale1Pass)
-    .BindTargets({TARGET(kOpenCL), TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kOpenCL)});
