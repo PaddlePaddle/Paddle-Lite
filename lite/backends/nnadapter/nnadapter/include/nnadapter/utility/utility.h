@@ -27,6 +27,7 @@
 namespace nnadapter {
 
 // Check quantization type
+bool IsQuantType(NNAdapterOperandPrecisionCode type);
 bool IsPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsPerChannelQuantType(NNAdapterOperandPrecisionCode type);
 bool IsAsymmetricQuantType(NNAdapterOperandPrecisionCode type);
@@ -34,6 +35,9 @@ bool IsSymmetricQuantType(NNAdapterOperandPrecisionCode type);
 bool IsAsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsSymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsSymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
+bool IsInt8SymmQuantType(NNAdapterOperandPrecisionCode type);
+bool IsInt16SymmQuantType(NNAdapterOperandPrecisionCode type);
+bool IsInt32SymmQuantType(NNAdapterOperandPrecisionCode type);
 bool IsUInt8AsymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt8SymmPerLayerQuantType(NNAdapterOperandPrecisionCode type);
 bool IsInt8SymmPerChannelQuantType(NNAdapterOperandPrecisionCode type);
@@ -49,6 +53,7 @@ bool IsModelOutputOperandType(const NNAdapterOperandType& type);
 bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
 int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
+NNAdapterFuseCode OperationTypeToFuseCode(NNAdapterOperationType type);
 
 // Copy operand type under certain conditions
 void CopyOperandType(NNAdapterOperandType* dst_type,
@@ -154,45 +159,88 @@ void TransposeData(const T* input,
 
 // A naive implementation of quantize and dequantize operation
 template <typename T>
-void QuantizeData(const float* input_data,
-                  size_t input_data_count,
-                  float* input_scale,
-                  size_t input_scale_count,
+bool QuantizeData(const float* input_data,
+                  const int32_t* input_dimensions,
+                  uint32_t input_dimensions_count,
+                  const float* output_scales,
+                  const int32_t* output_zero_points,
+                  int32_t output_channel_dim,
+                  int dtype_min,
+                  int dtype_max,
                   T* output_data) {
-  bool per_layer = input_scale_count == 1;
-  NNADAPTER_CHECK(per_layer || input_data_count == input_scale_count)
-      << "Only input_scale_count == 1 and input_scale_count == "
-         "input_data_count is supported.";
-  int quant_bits = sizeof(T) * 8;
-  auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
-  auto dtype_min = static_cast<int>(0 - dtype_max);
-  for (size_t i = 0; i < input_data_count; i++) {
-    int scale_index = per_layer ? 0 : i;
-    output_data[i] = std::min(
-        std::max(static_cast<T>(input_data[i] / input_scale[scale_index]),
-                 dtype_min),
-        dtype_max);
+  if (!input_data || !input_dimensions || !input_dimensions_count ||
+      !output_scales || !output_data) {
+    return false;
   }
+  auto input_count =
+      ProductionOfDimensions(input_dimensions, input_dimensions_count);
+  auto scale_count = 1;
+  int64_t outer_count = input_count;
+  int64_t inner_count = 1;
+  if (output_channel_dim >= 0) {
+    NNADAPTER_CHECK_LT(output_channel_dim, input_dimensions_count);
+    scale_count = input_dimensions[output_channel_dim];
+    outer_count = ProductionOfDimensions(input_dimensions, output_channel_dim);
+    inner_count =
+        ProductionOfDimensions(input_dimensions + output_channel_dim + 1,
+                               input_dimensions_count - output_channel_dim - 1);
+  }
+  for (int64_t i = 0; i < outer_count; i++) {
+    for (size_t j = 0; j < scale_count; j++) {
+      for (int64_t k = 0; k < inner_count; k++) {
+        auto index = i * scale_count * inner_count + j * inner_count + k;
+        output_data[index] = std::min(
+            std::max(static_cast<int>(input_data[index] / output_scales[j]) +
+                         (output_zero_points ? output_zero_points[j] : 0),
+                     dtype_min),
+            dtype_max);
+      }
+    }
+  }
+  return true;
 }
 
 template <typename T>
-void DequantizeData(const T* input_data,
-                    size_t input_data_count,
-                    float* input_scale,
-                    size_t input_scale_count,
+bool DequantizeData(const T* input_data,
+                    const int32_t* input_dimensions,
+                    uint32_t input_dimensions_count,
+                    const float* input_scales,
+                    const int32_t* input_zero_points,
+                    int32_t input_channel_dim,
+                    int dtype_min,
+                    int dtype_max,
                     float* output_data) {
-  bool per_layer = input_scale_count == 1;
-  NNADAPTER_CHECK(per_layer || input_data_count == input_scale_count)
-      << "Only input_scale_count == 1 and input_scale_count == "
-         "input_data_count is supported.";
-  int quant_bits = sizeof(T) * 8;
-  auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
-  auto dtype_min = static_cast<int>(0 - dtype_max);
-  for (size_t i = 0; i < input_data_count; i++) {
-    int scale_index = per_layer ? 0 : i;
-    output_data[i] = std::min(std::max(input_data[i], dtype_min), dtype_max) *
-                     input_scale[scale_index];
+  if (!input_data || !input_dimensions || !input_dimensions_count ||
+      !input_scales || !output_data) {
+    return false;
   }
+  auto input_count =
+      ProductionOfDimensions(input_dimensions, input_dimensions_count);
+  auto scale_count = 1;
+  int64_t outer_count = input_count;
+  int64_t inner_count = 1;
+  if (input_channel_dim >= 0) {
+    NNADAPTER_CHECK_LT(input_channel_dim, input_dimensions_count);
+    scale_count = input_dimensions[input_channel_dim];
+    outer_count = ProductionOfDimensions(input_dimensions, input_channel_dim);
+    inner_count =
+        ProductionOfDimensions(input_dimensions + input_channel_dim + 1,
+                               input_dimensions_count - input_channel_dim - 1);
+  }
+  for (int64_t i = 0; i < outer_count; i++) {
+    for (size_t j = 0; j < scale_count; j++) {
+      for (int64_t k = 0; k < inner_count; k++) {
+        auto index = i * scale_count * inner_count + j * inner_count + k;
+        output_data[index] =
+            (static_cast<float>(std::min(
+                 std::max(static_cast<int>(input_data[index]), dtype_min),
+                 dtype_max)) -
+             (input_zero_points ? input_zero_points[j] : 0)) *
+            input_scales[j];
+      }
+    }
+  }
+  return true;
 }
 
 // Convert the symmetric quantization data to the asymmetric quantization data
@@ -264,5 +312,11 @@ std::string GetRealPath(const char* path);
 
 // Check whether the data in the buffer is all zero
 bool IsAllZeros(void* buffer, size_t length);
+
+// Calculate the scale and zero_point for asymmetric quantization
+bool CalcAsymmQuantParams(float min, float max, float* scale, int* zero_point);
+
+// Calculate the scale for symmetric quantization
+bool CalcSymmQuantParams(float min, float max, float* scale);
 
 }  // namespace nnadapter

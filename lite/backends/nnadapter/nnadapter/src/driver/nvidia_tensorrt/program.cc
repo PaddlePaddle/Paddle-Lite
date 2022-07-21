@@ -23,6 +23,8 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/partition_model_into_submodels.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -278,6 +280,8 @@ int TensorrtProgram::BuildFromModel() {
   }
   // 1. Optimize the model_
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model_);
+  FuseConv2DBatchNormIntoConv2D(model_);
+  FuseConv2DAddIntoConv2D(model_);
   UnpackOpFusion(model_);
   RemoveReshapeBeforeFullyConnected(model_);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model_);

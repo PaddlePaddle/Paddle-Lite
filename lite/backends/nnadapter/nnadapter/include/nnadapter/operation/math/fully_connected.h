@@ -28,13 +28,13 @@ namespace operation {
 namespace math {
 
 template <typename T>
-int fully_connected(const T* input_data,
-                    const std::vector<int32_t>& input_shape,
-                    const T* weight_data,
-                    const std::vector<int32_t>& weight_shape,
-                    const T* bias_data,
-                    FuseCode fuse_code,
-                    T* output_data) {
+static int fully_connected(const T* input_data,
+                           const std::vector<int32_t>& input_shape,
+                           const T* weight_data,
+                           const std::vector<int32_t>& weight_shape,
+                           const T* bias_data,
+                           FuseCode fuse_code,
+                           T* output_data) {
   if (!input_data || !weight_data || !output_data) {
     return -1;
   }

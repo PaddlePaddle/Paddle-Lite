@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
@@ -45,39 +46,64 @@ class Converter {
                       int32_t* zero_point = nullptr,
                       uint32_t quant_scale_count = 0,
                       uint32_t quant_channel_dim = 0,
-                      void* buffer = nullptr);
+                      void* buffer = nullptr,
+                      bool copy = true);
   int AddOperation(ANeuralNetworksOperationType type,
                    const std::vector<uint32_t>& input_indexes,
                    const std::vector<uint32_t>& output_indexes);
   uint32_t AddBool8ConstantOperand(bool value);
   uint32_t AddInt32ConstantOperand(int32_t value);
   uint32_t AddFloat32ConstantOperand(float value);
-  uint32_t AddInt32ConstantOperand(int32_t* values, uint32_t num_values);
-  uint32_t AddFloat32ConstantOperand(float* values, uint32_t num_values);
+  uint32_t AddInt32ConstantOperand(int32_t* values,
+                                   uint32_t num_values,
+                                   bool copy = true);
+  uint32_t AddFloat32ConstantOperand(float* values,
+                                     uint32_t num_values,
+                                     bool copy = true);
   uint32_t AddInt32ConstantOperand(int32_t* values,
                                    int32_t* dimensions_data,
-                                   uint32_t dimensions_count);
+                                   uint32_t dimensions_count,
+                                   bool copy = true);
   uint32_t AddFloat32ConstantOperand(float* values,
                                      int32_t* dimensions_data,
-                                     uint32_t dimensions_count);
+                                     uint32_t dimensions_count,
+                                     bool copy = true);
   // Quant8 constant operand with symmetric per-channel quantizion
+  uint32_t AddQuant8ConstantOperand(int8_t* values,
+                                    uint32_t num_values,
+                                    float* quant_scales,
+                                    uint32_t quant_scale_count,
+                                    uint32_t quant_channel_dim = 0,
+                                    bool copy = true);
   uint32_t AddQuant8ConstantOperand(int8_t* values,
                                     int32_t* dimensions_data,
                                     uint32_t dimensions_count,
                                     float* quant_scales,
                                     uint32_t quant_scale_count,
-                                    uint32_t quant_channel_dim = 0);
+                                    uint32_t quant_channel_dim = 0,
+                                    bool copy = true);
   // Quant8 constant operand with asymmetric per-layer quantizion
+  uint32_t AddQuant8ConstantOperand(uint8_t* values,
+                                    uint32_t num_values,
+                                    float quant_scale,
+                                    int32_t zero_point,
+                                    bool copy = true);
   uint32_t AddQuant8ConstantOperand(uint8_t* values,
                                     int32_t* dimensions_data,
                                     uint32_t dimensions_count,
                                     float quant_scale,
-                                    int32_t zero_point);
+                                    int32_t zero_point,
+                                    bool copy = true);
   // Quant32 constant operand with symmetric per-layer quantizion
+  uint32_t AddQuant32ConstantOperand(int32_t* values,
+                                     uint32_t num_values,
+                                     float quant_scale,
+                                     bool copy = true);
   uint32_t AddQuant32ConstantOperand(int32_t* values,
                                      int32_t* dimensions_data,
                                      uint32_t dimensions_count,
-                                     float quant_scale);
+                                     float quant_scale,
+                                     bool copy = true);
   // Float32 variable operand
   uint32_t AddFloat32VariableOperand(int32_t* dimensions_data,
                                      uint32_t dimensions_count);
@@ -94,6 +120,7 @@ class Converter {
   ANeuralNetworksModel* model_{nullptr};
   std::map<core::Operand*, std::vector<uint32_t>>* operand_indexes_{nullptr};
   uint32_t operand_index_{0};
+  std::list<std::vector<uint8_t>> operand_values_;
 };
 
 }  // namespace android_nnapi
