@@ -670,8 +670,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
 
   auto input_var_name = input_var_node->arg()->name;
   auto output_var_name = output_var_node->arg()->name;
-  bool input_var_is_activation = !input_var_node->arg()->is_weight;
-  VLOG(4) << "input_var_is_activation: " << input_var_is_activation;
+  CHECK(!input_var_node->arg()->is_weight);
 
   // 1. Get thresholds and scales
   // The activation only has a scale.
@@ -679,19 +678,10 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   // When the weight is per-channel quantized, the num of scales is equal
   // to the output channel of the weight.
   auto* scope = quant_op_node->stmt()->op()->scope();
-
-  int quant_axis = quant_op_node->stmt()->op_info()->GetAttr<int>("quant_axis");
-  auto* scale_tensor =
-      scope->FindVar(input_scale_node->arg()->name)->GetMutable<lite::Tensor>();
-  std::vector<float> thresholds;
-  if (scale_tensor->dims().size() == 1 && scale_tensor->dims()[0] == 1) {
-    thresholds.push_back(scale_tensor->data<float>()[0]);
-  } else {
-    int64_t num = scale_tensor->numel();
-    thresholds.resize(num);
-    memcpy(thresholds.data(), scale_tensor->data<float>(), num * sizeof(float));
-  }
-
+  auto* scale_tensor = scope->FindMutableTensor(input_scale_node->arg()->name);
+  auto* scale_data = scale_tensor->data<float>();
+  std::vector<float> thresholds(scale_data,
+                                scale_data + scale_tensor->data_size());
   int bit_length = quant_op_node->stmt()->op_info()->GetAttr<int>("bit_length");
   std::vector<float> scales(thresholds.size(), 0);
   std::transform(
@@ -699,32 +689,20 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
       thresholds.end(),
       scales.begin(),
       [&bit_length](float x) { return x / ((1 << (bit_length - 1)) - 1); });
+
   // 2. Update op_info of the quantized op
   for (auto* quantized_node : output_var_node->outlinks) {
-    auto op_info = *quantized_node->stmt()->op_info();
-    op_info.UpdateAllInputs(output_var_name, input_var_name);
-    op_info.SetAttr<int>("bit_length", bit_length);
-    std::string op_type = op_info.Type();
+    auto* op_info = quantized_node->stmt()->mutable_op_info();
+    op_info->UpdateAllInputs(output_var_name, input_var_name);
+    op_info->SetAttr<int>("bit_length", bit_length);
+    std::string op_type = op_info->Type();
 #ifndef LITE_WITH_FPGA
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
-      op_info.SetAttr("enable_int8", true);
+      op_info->SetAttr("enable_int8", true);
     }
 #endif
-    if (input_var_is_activation) {
-      op_info.SetInputScale(input_var_name, scales);
-    } else {
-      // Scales of weights are vector, so expand the scale to vector
-      // the quant axis of conv2d and depthwise_conv2d is 0
-      // the quant axis of conv2d_transpose (consider group), mul and matmul
-      // is 1
-      const int quant_axis_in =
-          (op_type == "conv2d" || op_type == "depthwise_conv2d") ? 0 : 1;
-      CHECK_EQ(quant_axis, quant_axis_in)
-          << "quant_axis must be equal filter_dims out_channel";
-      op_info.SetInputScale(input_var_name, scales);
-    }
-    quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
+    op_info->SetInputScale(input_var_name, scales);
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
@@ -747,10 +725,8 @@ void DequantLinearOpFuser::BuildPattern() {
           ->assert_is_op_input("dequantize_linear", "ZeroPoint");
   auto* dequant_op = OpNode("dequant_op", "dequantize_linear")
                          ->assert_is_op("dequantize_linear");
-  //  ->AsIntermediate();
   auto* dequant_op_out =
       VarNode("dequant_op_out")->assert_is_op_output("dequantize_linear", "Y");
-  //  ->AsIntermediate();
 
   dequant_op
       ->LinksFrom({dequant_op_input, dequant_op_scale, dequant_op_zero_point})
@@ -766,14 +742,12 @@ void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   auto* output_node = matched.at("dequant_op_out");
 
   // obtain scale, save attrs and relink node
+  CHECK(input_node->arg()->is_weight);
   auto* scope = dequant_node->stmt()->op()->scope();
-  auto* scale_tensor =
-      scope->FindVar(input_scale_node->arg()->name)->GetMutable<lite::Tensor>();
+  auto* scale_tensor = scope->FindMutableTensor(input_scale_node->arg()->name);
   float* scale_value = scale_tensor->mutable_data<float>();
-  std::vector<float> weight_scale;
-  for (int i = 0; i < scale_tensor->data_size(); i++) {
-    weight_scale.push_back(scale_value[i]);
-  }
+  std::vector<float> weight_scale(scale_value,
+                                  scale_value + scale_tensor->data_size());
   int bit_length = dequant_node->stmt()->op_info()->GetAttr<int>("bit_length");
   std::vector<float> scales(weight_scale.size(), 0);
   std::transform(
@@ -784,14 +758,11 @@ void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
 
   auto in_name = input_node->arg()->name;
   auto out_name = output_node->arg()->name;
-  auto outlinks = output_node->outlinks;
-  for (auto* quantized_node : outlinks) {
+  for (auto quantized_node : output_node->outlinks) {
     // save input scale in quantized op by input argname + index
-    auto op_desc = *quantized_node->stmt()->mutable_op_info();
-    op_desc.SetInputScale(out_name, scales);
-    op_desc.UpdateAllInputs(out_name, in_name);
-
-    quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
+    auto* op_info = quantized_node->stmt()->mutable_op_info();
+    op_info->UpdateAllInputs(out_name, in_name);
+    op_info->SetInputScale(in_name, scales);
     IR_NODE_LINK_TO(input_node, quantized_node)
   }
 

@@ -15,13 +15,13 @@
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(
-    batch_norm,
-    ConvertBatchNorm,
-    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
-    "timvx,kunlunxin_xtcl,android_nnapi,nvidia_tensorrt,intel_"
-    "openvino,qualcomm_qnn,google_xnnpack,eeasytech_npu");
+REGISTER_CONVERTER(batch_norm,
+                   ConvertBatchNorm,
+                   "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
+                   "huawei_ascend_npu,amlogic_npu,imagination_nna,cambricon_"
+                   "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
+                   "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
+                   "eeasytech_npu");
 REGISTER_CONVERTER(bmm, ConvertBmm, "intel_openvino");
 REGISTER_CONVERTER(cast,
                    ConvertCast,
@@ -59,11 +59,13 @@ REGISTER_CONVERTER(pool2d,
 REGISTER_CONVERTER(matmul,
                    ConvertMatmul,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,"
-                   "verisilicon_timvx,intel_openvino,nvidia_tensorrt");
+                   "verisilicon_timvx,intel_openvino,nvidia_tensorrt,qualcomm_"
+                   "qnn");
 REGISTER_CONVERTER(matmul_v2,
                    ConvertMatmulV2,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,intel_"
-                   "openvino,android_nnapi,nvidia_tensorrt,intel_openvino");
+                   "openvino,android_nnapi,nvidia_tensorrt,intel_openvino,"
+                   "qualcomm_qnn");
 REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
