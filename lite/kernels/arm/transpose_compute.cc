@@ -414,6 +414,7 @@ void transpose_mat(const lite_api::float16_t* din,
 #endif
         ptr_din_row += 4;
       }
+      data_out_ptr0 = ptr_out + size_wh + 4 * height * remain_ww;
       for (int w = 0; w < remain_ww_rem; w++) {
         INIT_PTR_4(lite_api::float16_t, data_out_ptr0, height)
         INIT_PTR_A4(lite_api::float16_t)
