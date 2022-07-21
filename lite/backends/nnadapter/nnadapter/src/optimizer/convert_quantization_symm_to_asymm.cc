@@ -96,7 +96,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_MIN:
       case NNADAPTER_MUL:
       case NNADAPTER_POW:
-      case NNADAPTER_SUB: {
+      case NNADAPTER_SUB:
+      case NNADAPTER_NON_MAX_SUPPRESSION: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
@@ -153,6 +154,12 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         for (uint32_t i = 0; i < output_count; i++) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
+      } break;
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER: {
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(input_operands[2], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       default:
         NNADAPTER_LOG(FATAL) << "Missing the processing of "

@@ -332,12 +332,12 @@ REGISTER_CONVERTER(fill_any_like,
 REGISTER_CONVERTER(fill_constant_batch_size_like,
                    ConvertFillConstantBatchSizeLike,
                    "huawei_ascend_npu,verisilicon_timvx,intel_openvino");
-REGISTER_CONVERTER(
-    concat,
-    ConvertConcat,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-    "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
-    "mlu,android_nnapi,nvidia_tensorrt,intel_openvino,eeasytech_npu");
+REGISTER_CONVERTER(concat,
+                   ConvertConcat,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,verisilicon_timvx,kunlunxin_xtcl,cambricon_"
+                   "mlu,android_nnapi,nvidia_tensorrt,intel_openvino,eeasytech_"
+                   "npu,qualcomm_qnn");
 REGISTER_CONVERTER(
     split,
     ConvertSplit,
@@ -427,7 +427,9 @@ REGISTER_CONVERTER(log_softmax,
                    ConvertLogSoftmax,
                    "huawei_ascend_npu,nvidia_tensorrt");
 REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "cambricon_mlu");
-REGISTER_CONVERTER(multiclass_nms3, ConvertMulticlassNms, "cambricon_mlu");
+REGISTER_CONVERTER(multiclass_nms3,
+                   ConvertMulticlassNms,
+                   "cambricon_mlu,qualcomm_qnn");
 // Custom op
 REGISTER_CONVERTER(__custom__yolo_box_3d,
                    ConvertCustomYoloBox3d,

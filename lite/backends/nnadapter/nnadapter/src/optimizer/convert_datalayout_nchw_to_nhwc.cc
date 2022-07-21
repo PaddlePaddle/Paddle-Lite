@@ -484,6 +484,40 @@ void NCHW2NHWCDataLayoutConverter::ConvertCustomYoloBox3d(
   }
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertCustomYoloBox3dNmsFuser(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 20);
+  NNADAPTER_CHECK_EQ(output_count, 6);
+  // Skip NCHW2NHWC conversion
+  for (size_t i = 0; i < output_count; i++) {
+    auto output_operand = output_operands[i];
+    auto output_dimensions_count = output_operand->type.dimensions.count;
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  }
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertNonMaxSuppression(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 11);
+  NNADAPTER_CHECK_GE(output_count, 2);
+  // Skip NCHW2NHWC conversion
+  for (size_t i = 0; i < output_count; i++) {
+    auto output_operand = output_operands[i];
+    auto output_dimensions_count = output_operand->type.dimensions.count;
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  }
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertLpNormalization(
     core::Operation* operation) {
   auto& input_operands = operation->input_operands;
@@ -836,6 +870,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_MAT_MUL:
         ConvertMatMul(operation);
         break;
+      case NNADAPTER_NON_MAX_SUPPRESSION:
+        ConvertNonMaxSuppression(operation);
+        break;
       case NNADAPTER_POW:
         ConvertPow(operation);
         break;
@@ -881,6 +918,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_CUSTOM_YOLO_BOX_3D:
         ConvertCustomYoloBox3d(operation);
+        break;
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
+        ConvertCustomYoloBox3dNmsFuser(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL)

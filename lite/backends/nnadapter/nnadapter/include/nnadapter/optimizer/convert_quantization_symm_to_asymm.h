@@ -15,6 +15,7 @@
 #pragma once
 
 #include "core/types.h"
+#include "driver/qualcomm_qnn/operation/type.h"
 
 namespace nnadapter {
 

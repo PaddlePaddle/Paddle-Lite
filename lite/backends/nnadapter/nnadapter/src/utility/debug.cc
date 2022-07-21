@@ -17,6 +17,7 @@
 #include <set>
 #include <vector>
 #include "driver/nvidia_tensorrt/operation/type.h"
+#include "driver/qualcomm_qnn/operation/type.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -190,6 +191,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                  Dot::Attr("fillcolor", "yellow")},
                 operation_label);
     std::vector<std::string> input_args, output_args;
+    NNADAPTER_LOG(INFO) << "start visual:" << operation_label;
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
@@ -565,6 +567,17 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         };
         output_args = {"boxes", "scores", "location", "dim", "alpha"};
         break;
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
+        input_args = {
+            "input",
+            "imgsize",
+            "anchors",
+            "class_num",
+            "conf_thresh",
+            "downsample_ratio",
+            "scale_x_y",
+        };
+        output_args = {"boxes", "scores", "location", "dim", "alpha"};
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -685,6 +698,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
   std::string name;
   switch (type) {
     NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_BOX_3D);
+    NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_BOX_3D_NMS_FUSER);
     NNADAPTER_TYPE_TO_STRING(ABS);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);

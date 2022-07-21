@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 #include "core/types.h"
+#include "driver/qualcomm_qnn/operation/type.h"
 
 namespace nnadapter {
 
@@ -63,6 +64,8 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
   void ConvertCustomYoloBox3d(core::Operation* operation);
+  void ConvertNonMaxSuppression(core::Operation* operation);
+  void ConvertCustomYoloBox3dNmsFuser(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};
