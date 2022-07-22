@@ -116,20 +116,20 @@ void ReciprocalCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  float* xpu_factor = nullptr;
-  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  XPUScratchPadGuard xpu_factor_guard =
+      TargetWrapperXPU::MallocScratchPad(sizeof(float));
+  float* xpu_factor_ptr = reinterpret_cast<float*>(xpu_factor_guard->addr_);
   int x_len = param.X->numel();
   int r = 0;
-  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, 1.0f);
+  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor_ptr, 1, 1.0f);
   CHECK_EQ(r, 0);
   r = xdnn::broadcast_div(ctx.GetRawContext(),
-                          xpu_factor,
+                          xpu_factor_ptr,
                           param.X->data<float>(),
                           param.Out->mutable_data<float>(TARGET(kXPU)),
                           {1},
                           {x_len});
   CHECK_EQ(r, 0);
-  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SqrtCompute::Run() {
@@ -158,20 +158,21 @@ void PowCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  float* xpu_factor = nullptr;
-  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  XPUScratchPadGuard xpu_factor_guard =
+      TargetWrapperXPU::MallocScratchPad(sizeof(float));
+  float* xpu_factor_ptr = reinterpret_cast<float*>(xpu_factor_guard->addr_);
   int x_len = param.X->numel();
   int r = 0;
-  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, param.factor);
+  r = xdnn::constant<float>(
+      ctx.GetRawContext(), xpu_factor_ptr, 1, param.factor);
   CHECK_EQ(r, 0);
   r = xdnn::broadcast_pow(ctx.GetRawContext(),
                           param.X->data<float>(),
-                          xpu_factor,
+                          xpu_factor_ptr,
                           param.Out->mutable_data<float>(TARGET(kXPU)),
                           {x_len},
                           {1});
   CHECK_EQ(r, 0);
-  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SignCompute::Run() {
