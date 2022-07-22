@@ -29,44 +29,9 @@ class TestSiluOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=metal_places)
-        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
-        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -80,7 +45,7 @@ class TestSiluOp(AutoScanTest):
                     min_value=1, max_value=64), min_size=1, max_size=4))
 
         def generate_input(*args, **kwargs):
-            return np.random.normal(1.0, 6.0, in_shape).astype(np.float32)
+            return np.random.normal(-1, 1.0, in_shape).astype(np.float32)
 
         ops_config = OpConfig(
             type="silu",
@@ -129,10 +94,7 @@ class TestSiluOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=60)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":
