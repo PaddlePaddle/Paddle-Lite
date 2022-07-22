@@ -126,8 +126,7 @@ class DynamicQuantOpFuser : public FuseBase {
 */
 class QuantDequantLinearOpFuser : public FuseBase {
  public:
-  explicit QuantDequantLinearOpFuser(const std::string& quant_dequant_op_type) {
-  }
+  QuantDequantLinearOpFuser() {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -148,8 +147,7 @@ class QuantDequantLinearOpFuser : public FuseBase {
 */
 class DequantLinearOpFuser : public FuseBase {
  public:
-  explicit DequantLinearOpFuser(const std::string& dequant_op_type)
-      : dequant_op_type_(dequant_op_type) {}
+  DequantLinearOpFuser() {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
