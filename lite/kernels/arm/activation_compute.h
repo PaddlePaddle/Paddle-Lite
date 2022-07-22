@@ -98,6 +98,15 @@ class EluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~EluCompute() = default;
 };
 
+class SiluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SiluCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
