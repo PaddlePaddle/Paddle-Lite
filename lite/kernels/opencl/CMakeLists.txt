@@ -216,6 +216,3 @@ lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
              DEPS kernels core)
-
-lite_cc_test(test_reshape_buffer_opencl SRCS reshape_buffer_compute_test.cc
-             DEPS kernels core)
