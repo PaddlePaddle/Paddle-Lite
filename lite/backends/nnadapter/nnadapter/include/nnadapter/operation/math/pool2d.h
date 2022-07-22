@@ -27,20 +27,20 @@ namespace operation {
 namespace math {
 
 template <typename T>
-int average_pool2d(const T* input_data,
-                   const std::vector<int32_t>& input_shape,
-                   int kernel_height,
-                   int kernel_width,
-                   int pad_height_top,
-                   int pad_height_bottom,
-                   int pad_width_left,
-                   int pad_width_right,
-                   int stride_height,
-                   int stride_width,
-                   bool ceil_mode,
-                   bool count_include_pad,
-                   FuseCode fuse_code,
-                   T* output_data) {
+static int average_pool2d(const T* input_data,
+                          const std::vector<int32_t>& input_shape,
+                          int kernel_height,
+                          int kernel_width,
+                          int pad_height_top,
+                          int pad_height_bottom,
+                          int pad_width_left,
+                          int pad_width_right,
+                          int stride_height,
+                          int stride_width,
+                          bool ceil_mode,
+                          bool count_include_pad,
+                          FuseCode fuse_code,
+                          T* output_data) {
   if (!input_data || !output_data) {
     return -1;
   }

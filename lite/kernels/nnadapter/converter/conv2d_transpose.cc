@@ -23,12 +23,13 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto input_name = op->Input("Input").front();
   auto input_scale_name = "Input0_scale";
-  std::vector<float> input_scales =
-      op->HasInputScale(input_scale_name, true)
-          ? op->GetInputScale(input_scale_name, true)
-          : std::vector<float>();
+  std::vector<float> input_scales;
+  if (op->HasInputScale(input_scale_name, true)) {
+    input_scales = op->GetInputScale(input_scale_name, true);
+  }
   auto input_operand =
       converter->AddInputOperand(scope, input_name, {}, input_scales);
+  CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Filter operand
   auto filter_name = op->Input("Filter").front();
@@ -38,6 +39,9 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> filter_scales;
   if (op->HasInputScale(filter_scale_name, true)) {
     filter_scales = op->GetInputScale(filter_scale_name, true);
+    if (!IsValidSymmPerChannelQuantParams(filter_scales)) {
+      filter_scales = {filter_scales[0]};
+    }
   }
   auto filter_precison = filter_tensor->precision();
   auto filter_dims = filter_tensor->dims();
@@ -69,10 +73,6 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     std::vector<float> quant_scales;
     CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
     CHECK(IsSameSymmQuantParams(input_scales, quant_scales));
-    CHECK_EQ(filter_scales.size(), output_channel_size);
-    if (!IsValidSymmPerChannelQuantParams(filter_scales)) {
-      filter_scales = {filter_scales[0]};
-    }
     filter_operand =
         converter->AddConstantOperand(*filter_tensor, {}, false, filter_scales);
     bias_scales.resize(filter_scales.size());

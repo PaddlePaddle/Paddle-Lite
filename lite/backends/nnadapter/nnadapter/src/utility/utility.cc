@@ -23,6 +23,10 @@
 
 namespace nnadapter {
 
+NNADAPTER_EXPORT bool IsQuantType(NNAdapterOperandPrecisionCode type) {
+  return IsPerLayerQuantType(type) || IsPerChannelQuantType(type);
+}
+
 NNADAPTER_EXPORT bool IsPerLayerQuantType(NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
          type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
@@ -68,6 +72,21 @@ NNADAPTER_EXPORT bool IsSymmPerLayerQuantType(
 NNADAPTER_EXPORT bool IsSymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
   return IsSymmetricQuantType(type) && IsPerChannelQuantType(type);
+}
+
+NNADAPTER_EXPORT bool IsInt8SymmQuantType(NNAdapterOperandPrecisionCode type) {
+  return IsInt8SymmPerLayerQuantType(type) ||
+         IsInt8SymmPerChannelQuantType(type);
+}
+
+NNADAPTER_EXPORT bool IsInt16SymmQuantType(NNAdapterOperandPrecisionCode type) {
+  return IsInt16SymmPerLayerQuantType(type) ||
+         IsInt16SymmPerChannelQuantType(type);
+}
+
+NNADAPTER_EXPORT bool IsInt32SymmQuantType(NNAdapterOperandPrecisionCode type) {
+  return IsInt32SymmPerLayerQuantType(type) ||
+         IsInt32SymmPerChannelQuantType(type);
 }
 
 NNADAPTER_EXPORT bool IsUInt8AsymmPerLayerQuantType(
@@ -183,6 +202,39 @@ GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
   auto production =
       ProductionOfDimensions(type.dimensions.data, type.dimensions.count);
   return GetOperandPrecisionDataLength(type.precision) * production;
+}
+
+NNADAPTER_EXPORT NNAdapterFuseCode
+OperationTypeToFuseCode(NNAdapterOperationType type) {
+  switch (type) {
+    case NNADAPTER_RELU:
+      return NNADAPTER_FUSED_RELU;
+    case NNADAPTER_RELU6:
+      return NNADAPTER_FUSED_RELU6;
+    default:
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter operation type("
+                           << OperationTypeToString(type) << ") to fuse code!";
+      break;
+  }
+  return NNADAPTER_FUSED_NONE;
+}
+
+NNADAPTER_EXPORT bool IsPerLayerQuantModel(core::Model* model) {
+  bool is_per_layer_model = false;
+  for (auto& operand : model->operands) {
+    if (IsPerLayerQuantType(operand.type.precision)) {
+      is_per_layer_model = true;
+      break;
+    }
+  }
+  if (!is_per_layer_model) return false;
+  for (auto& operand : model->operands) {
+    if (IsPerChannelQuantType(operand.type.precision)) {
+      is_per_layer_model = false;
+      break;
+    }
+  }
+  return is_per_layer_model;
 }
 
 NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
@@ -638,6 +690,32 @@ NNADAPTER_EXPORT bool IsAllZeros(void* buffer, size_t length) {
   for (size_t i = 0; i < length; i++) {
     if (values[i] != 0) return false;
   }
+  return true;
+}
+
+NNADAPTER_EXPORT bool CalcAsymmQuantParams(float min,
+                                           float max,
+                                           float* scale,
+                                           int* zero_point) {
+  if (max < min) return false;
+  if (min > 0.f) {
+    *zero_point = 0;
+    *scale = max / 255.f;
+  } else if (max < 0.f) {
+    *zero_point = 255;
+    *scale = -min / 255.f;
+  } else {
+    *scale = (max - min) / 255.f;
+    *zero_point = (0.f - min) / (*scale);
+  }
+  return true;
+}
+
+NNADAPTER_EXPORT bool CalcSymmQuantParams(float min, float max, float* scale) {
+  if (max < min) return false;
+  float abs_min = fabs(min);
+  float abs_max = fabs(max);
+  *scale = (abs_min > abs_max ? abs_min : abs_max) / 127.0f;
   return true;
 }
 
