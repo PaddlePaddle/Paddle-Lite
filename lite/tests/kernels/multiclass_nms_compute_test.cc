@@ -485,6 +485,8 @@ TEST(multiclass_nms, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #else
   return;
 #endif
