@@ -173,8 +173,14 @@ LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
     std::numeric_limits<size_t>::max()};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::local_l3_autotune{true};
-LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{
-    0x4000000};  // 64 * 1024 * 1024
+/*
+  how to set local_gm_size?
+  0. if the value here is 0, use default gm_size in XDNN
+  1. if you want to set local_gm_size, you can
+    1.1 use Lite api, lite_api::set_xpu_gm_workspace_method(gm_size)
+    1.2 use XDNN env, XPUAPI_DEFAULT_SIZE
+*/
+LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{0};
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};
 size_t TargetWrapperXPU::shared_l3_size{0};

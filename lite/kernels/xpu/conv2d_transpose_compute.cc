@@ -111,15 +111,18 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
     int xw = out_dims[3];
     int kh = w_dims[2];
     int kw = w_dims[3];
-    float* x_trans = nullptr;
-    XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&x_trans),
-                        (param.x->numel()) * sizeof(float)));
-    float* x_col_before_concat = nullptr;
-    XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&x_col_before_concat),
-                        (n * yh * yw * kh * kw * xc) * sizeof(float)));
-    float* x_col = nullptr;
-    XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&x_col),
-                        (n * yh * yw * kh * kw * xc) * sizeof(float)));
+
+    XPUScratchPadGuard x_trans_guard =
+        TargetWrapperXPU::MallocScratchPad((param.x->numel()) * sizeof(float));
+    float* x_trans = reinterpret_cast<float*>(x_trans_guard->addr_);
+    XPUScratchPadGuard x_col_before_concat_guard =
+        TargetWrapperXPU::MallocScratchPad((n * yh * yw * kh * kw * xc) *
+                                           sizeof(float));
+    float* x_col_before_concat =
+        reinterpret_cast<float*>(x_col_before_concat_guard->addr_);
+    XPUScratchPadGuard x_col_guard = TargetWrapperXPU::MallocScratchPad(
+        (n * yh * yw * kh * kw * xc) * sizeof(float));
+    float* x_col = reinterpret_cast<float*>(x_col_guard->addr_);
     const float* weight = param.filter->data<float>();
     int ret = xdnn::transpose<float>(ctx.GetRawContext(),
                                      param.x->data<float>(),
@@ -171,9 +174,6 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
                               dilations,
                               true);
     CHECK_EQ(ret, 0);
-    XPU_CALL(xpu_free(x_trans));
-    XPU_CALL(xpu_free(x_col_before_concat));
-    XPU_CALL(xpu_free(x_col));
   }
 }
 

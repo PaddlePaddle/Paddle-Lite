@@ -219,6 +219,24 @@ OperationTypeToFuseCode(NNAdapterOperationType type) {
   return NNADAPTER_FUSED_NONE;
 }
 
+NNADAPTER_EXPORT bool IsPerLayerQuantModel(core::Model* model) {
+  bool is_per_layer_model = false;
+  for (auto& operand : model->operands) {
+    if (IsPerLayerQuantType(operand.type.precision)) {
+      is_per_layer_model = true;
+      break;
+    }
+  }
+  if (!is_per_layer_model) return false;
+  for (auto& operand : model->operands) {
+    if (IsPerChannelQuantType(operand.type.precision)) {
+      is_per_layer_model = false;
+      break;
+    }
+  }
+  return is_per_layer_model;
+}
+
 NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
                                       const NNAdapterOperandType& src_type) {
   NNADAPTER_CHECK(dst_type);

@@ -21,6 +21,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "core/types.h"
 #include "nnadapter.h"  // NOLINT
 #include "utility/logging.h"
 
@@ -54,6 +55,9 @@ bool IsDynamicShapeOperandType(const NNAdapterOperandType& type);
 int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
 int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
 NNAdapterFuseCode OperationTypeToFuseCode(NNAdapterOperationType type);
+
+// Check quant model
+bool IsPerLayerQuantModel(core::Model* model);
 
 // Copy operand type under certain conditions
 void CopyOperandType(NNAdapterOperandType* dst_type,
