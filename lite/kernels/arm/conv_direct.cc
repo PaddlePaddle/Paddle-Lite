@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/conv_direct.h"
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
-#include "lite/backends/arm/math/sve2/conv3x3s2_direct_int8_sve2.h"
+#include "lite/backends/arm/math/sve/conv3x3s2_direct_int8_sve.h"
 #endif
 
 namespace paddle {
