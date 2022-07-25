@@ -22,9 +22,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-void PixelShuffleCompute<T>::Run() {
-  auto& param = Param<operators::PixelShuffleParam>();
+template <typename T, PrecisionType PType>
+void PixelShuffleCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::PixelShuffleParam>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   const T* x_data = param.x->template data<T>();
@@ -50,22 +50,18 @@ void PixelShuffleCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(pixel_shuffle,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::PixelShuffleCompute<float>,
-                     def)
+using pixel_shuffle_float =
+    paddle::lite::kernels::xpu::PixelShuffleCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    pixel_shuffle, kXPU, kFloat, kNCHW, pixel_shuffle_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(pixel_shuffle,
-                     kXPU,
-                     kFP16,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::PixelShuffleCompute<float16>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+using pixel_shuffle_fp16 =
+    paddle::lite::kernels::xpu::PixelShuffleCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(
+    pixel_shuffle, kXPU, kFP16, kNCHW, pixel_shuffle_fp16, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();

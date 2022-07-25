@@ -33,24 +33,26 @@ void ReluCompute<T, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
-void Relu6Compute::Run() {
+template <typename T, PrecisionType PType>
+void Relu6Compute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::relu6(ctx.GetRawContext(),
-                      param.X->data<float>(),
-                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->template data<T>(),
+                      param.Out->template mutable_data<T>(TARGET(kXPU)),
                       param.X->numel());
   CHECK_EQ(r, 0);
 }
 
-void GeluCompute::Run() {
+template <typename T, PrecisionType PType>
+void GeluCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::gelu(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->template data<T>(),
+                     param.Out->template mutable_data<T>(TARGET(kXPU)),
                      param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -303,16 +305,32 @@ REGISTER_LITE_KERNEL(relu, kXPU, kFP16, kNCHW, reluFP16, reluFP16)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    relu6, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::Relu6Compute, def)
+using relu6FP32 =
+    paddle::lite::kernels::xpu::Relu6Compute<float, PRECISION(kFloat)>;
+using relu6FP16 =
+    paddle::lite::kernels::xpu::Relu6Compute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(relu6, kXPU, kFloat, kNCHW, relu6FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+REGISTER_LITE_KERNEL(relu6, kXPU, kFP16, kNCHW, relu6FP16, relu6FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(
-    gelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::GeluCompute, def)
+using geluFP32 =
+    paddle::lite::kernels::xpu::GeluCompute<float, PRECISION(kFloat)>;
+using geluFP16 =
+    paddle::lite::kernels::xpu::GeluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(gelu, kXPU, kFloat, kNCHW, geluFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+using gelu_fp16 =
+    paddle::lite::kernels::xpu::GeluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(gelu, kXPU, kFP16, kNCHW, geluFP16, geluFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 using tanhFP32 =
