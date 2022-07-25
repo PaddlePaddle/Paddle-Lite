@@ -1126,7 +1126,7 @@ void act_silu<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
-  //float32x4_t vzero = vdupq_n_f32(0.f);
+  // float32x4_t vzero = vdupq_n_f32(0.f);
   LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t x_vec = vdupq_n_f32(0.0f);
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
@@ -1156,7 +1156,7 @@ void act_silu<float>(const float* din, float* dout, int size, int threads) {
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] =  ptr_in[0] / (1 + expf(-ptr_in[0]));
+    ptr_out[0] = ptr_in[0] / (1 + expf(-ptr_in[0]));
     ptr_in++;
     ptr_out++;
   }
