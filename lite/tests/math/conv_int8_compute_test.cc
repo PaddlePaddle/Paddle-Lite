@@ -774,9 +774,9 @@ TEST(TestConv3x3s2Int8SVE2, test_conv_3x3s2_sve2) {
     for (auto& cin : {1, 3, 8}) {
       for (auto& cout : {5, 16, 32}) {
         for (auto& pad_top : {1, 0}) {
-          for (auto& pad_bottom : {1, 0}) {
+          for (auto& pad_bottom : {pad_top}) {
             for (auto& pad_left : {1, 0}) {
-              for (auto& pad_right : {1, 0}) {
+              for (auto& pad_right : {pad_left}) {
                 for (auto& flag_bias : {false, true}) {
                   for (auto& flag_act : {0, 1, 2, 4}) {
                     DDim weights_dim({cout, cin, 3, 3});

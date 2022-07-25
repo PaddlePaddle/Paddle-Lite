@@ -29,14 +29,14 @@ namespace math {
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 void pooling_global_avg_sve(const float* din,
-                             float* dout,
-                             int num,
-                             int chout,
-                             int hout,
-                             int wout,
-                             int chin,
-                             int hin,
-                             int win) {
+                            float* dout,
+                            int num,
+                            int chout,
+                            int hout,
+                            int wout,
+                            int chin,
+                            int hin,
+                            int win) {
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
   auto data_in = static_cast<const float*>(din);
@@ -76,14 +76,14 @@ void pooling_global_avg_sve(const float* din,
 }
 
 void pooling_global_avg_fp16_sve(const float16_t* din,
-                                  float16_t* dout,
-                                  int num,
-                                  int chout,
-                                  int hout,
-                                  int wout,
-                                  int chin,
-                                  int hin,
-                                  int win) {
+                                 float16_t* dout,
+                                 int num,
+                                 int chout,
+                                 int hout,
+                                 int wout,
+                                 int chin,
+                                 int hin,
+                                 int win) {
   int size_channel_in = win * hin;
   auto data_out = static_cast<float16_t*>(dout);
   auto data_in = static_cast<const float16_t*>(din);
