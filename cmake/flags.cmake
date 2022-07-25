@@ -142,7 +142,7 @@ set(COMMON_FLAGS
 if (NOT EMSCRIPTEN)
   # disable -Werror for Emscripten
   set(COMMON_FLAGS "${COMMON_FLAGS} -Werror")
-endif(EMSCRIPTEN)
+endif(NOT EMSCRIPTEN)
 
 set(GPU_COMMON_FLAGS
     -fPIC
