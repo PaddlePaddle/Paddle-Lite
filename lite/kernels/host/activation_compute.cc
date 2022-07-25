@@ -446,12 +446,8 @@ REGISTER_LITE_KERNEL(softplus,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
-REGISTER_LITE_KERNEL(silu,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::SiluCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    silu, kHost, kFloat, kNCHW, paddle::lite::kernels::host::SiluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

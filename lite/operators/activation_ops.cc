@@ -101,7 +101,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   } else if (opdesc.Type() == "mish") {
     param_.active_type = lite_api::ActivationType::kMish;
     param_.threshold = opdesc.GetAttr<float>("threshold");
-  } 
+  }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
 

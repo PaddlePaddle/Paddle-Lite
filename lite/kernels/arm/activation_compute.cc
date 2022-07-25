@@ -286,12 +286,8 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-REGISTER_LITE_KERNEL(silu,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SiluCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    silu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SiluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
