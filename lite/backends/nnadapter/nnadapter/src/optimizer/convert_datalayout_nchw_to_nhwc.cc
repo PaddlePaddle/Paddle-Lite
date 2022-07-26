@@ -421,6 +421,31 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
   SetOperationLayout(operation, 3);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertCumSum(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  int axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (axis < 0) {
+    axis += static_cast<int32_t>(input_operand->type.dimensions.count);
+  }
+  for (int i = 0; i < input_permutation.size(); i++) {
+    if (input_permutation[i] == axis) {
+      axis = i;
+      break;
+    }
+  }
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
     core::Operation* operation) {
   auto& input_operands = operation->input_operands;
@@ -962,6 +987,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_CONV_2D_TRANSPOSE:
         ConvertConv2DTranspose(operation);
+        break;
+      case NNADAPTER_CUM_SUM:
+        ConvertCumSum(operation);
         break;
       case NNADAPTER_FILL:
         ConvertFill(operation);
