@@ -14,7 +14,9 @@
 
 #include "operation/elementwise.h"
 #include <algorithm>
+#include <unordered_map>
 #include "core/types.h"
+#include "operation/math/elementwise.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
@@ -74,8 +76,12 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
   }
 }
 
+static std::unordered_map<NNAdapterOperationType, math::ElementwiseTypeCode>
+    kSupportedElementwise = {{NNADAPTER_ADD, math::ADD},
+                             {NNADAPTER_SUB, math::SUB}};
+
 NNADAPTER_EXPORT bool ValidateElementwise(const core::Operation* operation) {
-  return true;
+  return kSupportedElementwise.count(operation->type) > 0;
 }
 
 NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
@@ -109,9 +115,120 @@ NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
 }
 
 NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
-  NNADAPTER_LOG(FATAL) << OperationTypeToString(operation->type)
-                       << " is not implemented!";
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  if (!kSupportedElementwise.count(operation->type))
+    return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  auto eltwise_type = kSupportedElementwise[operation->type];
+
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto& input0_type = input0_operand->type;
+  auto input0_shape = std::vector<int32_t>(
+      input0_type.dimensions.data,
+      input0_type.dimensions.data + input0_type.dimensions.count);
+  const auto input0_buffer = input0_operand->buffer;
+  NNADAPTER_CHECK(input0_buffer);
+  auto& input1_type = input1_operand->type;
+  auto input1_shape = std::vector<int32_t>(
+      input1_type.dimensions.data,
+      input1_type.dimensions.data + input1_type.dimensions.count);
+  const auto input1_buffer = input1_operand->buffer;
+  NNADAPTER_CHECK(input1_buffer);
+  auto& output_type = output_operand->type;
+  auto output_shape = std::vector<int32_t>(
+      output_type.dimensions.data,
+      output_type.dimensions.data + output_type.dimensions.count);
+  auto output_buffer = AllocateOperand(output_operand);
+  if (input0_type.precision == NNADAPTER_FLOAT32 &&
+      input1_type.precision == NNADAPTER_FLOAT32) {
+    const auto input0_data = reinterpret_cast<const float*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const float*>(input1_buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    status = math::elementwise<float>(eltwise_type,
+                                      input0_data,
+                                      input0_shape,
+                                      input1_data,
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      output_data);
+  } else if (input0_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             input1_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    const auto input0_data = reinterpret_cast<const int8_t*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const int8_t*>(input1_buffer);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::elementwise(eltwise_type,
+                               input0_data,
+                               input0_shape,
+                               input0_type.symm_per_layer_params.scale,
+                               input1_data,
+                               input1_shape,
+                               input1_type.symm_per_layer_params.scale,
+                               static_cast<math::FuseCode>(fuse_code),
+                               output_data,
+                               output_type.symm_per_layer_params.scale);
+  } else if (input0_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             input1_type.precision == NNADAPTER_FLOAT32) {
+    const auto input0_data = reinterpret_cast<const int8_t*>(input0_buffer);
+    auto input0_count = math::shape_production(input0_shape);
+    std::vector<float> dequantized_input0_data(input0_count);
+    status = math::dequantize(input0_data,
+                              input0_shape,
+                              input0_type.symm_per_layer_params.scale,
+                              dequantized_input0_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    const auto input1_data = reinterpret_cast<const float*>(input1_buffer);
+    auto output_count = math::shape_production(output_shape);
+    std::vector<float> dequantized_output_data(output_count);
+    status = math::elementwise<float>(eltwise_type,
+                                      dequantized_input0_data.data(),
+                                      input0_shape,
+                                      input1_data,
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      dequantized_output_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::quantize(dequantized_output_data.data(),
+                            output_shape,
+                            output_type.symm_per_layer_params.scale,
+                            output_data);
+  } else if (input0_type.precision == NNADAPTER_FLOAT32 &&
+             input1_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    const auto input1_data = reinterpret_cast<const int8_t*>(input1_buffer);
+    auto input1_count = math::shape_production(input1_shape);
+    std::vector<float> dequantized_input1_data(input1_count);
+    status = math::dequantize(input1_data,
+                              input1_shape,
+                              input1_type.symm_per_layer_params.scale,
+                              dequantized_input1_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    const auto input0_data = reinterpret_cast<const float*>(input0_buffer);
+    auto output_count = math::shape_production(output_shape);
+    std::vector<float> dequantized_output_data(output_count);
+    status = math::elementwise<float>(eltwise_type,
+                                      input0_data,
+                                      input0_shape,
+                                      dequantized_input1_data.data(),
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      dequantized_output_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::quantize(dequantized_output_data.data(),
+                            output_shape,
+                            output_type.symm_per_layer_params.scale,
+                            output_data);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported input0 precision code("
+                         << OperandPrecisionCodeToString(input0_type.precision)
+                         << ") and input1 precision code("
+                         << OperandPrecisionCodeToString(input1_type.precision)
+                         << ") for " << OperationTypeToString(operation->type)
+                         << " is found!";
+  }
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation
