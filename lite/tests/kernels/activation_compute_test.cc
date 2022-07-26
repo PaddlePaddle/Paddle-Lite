@@ -692,33 +692,8 @@ TEST(Activation_silu, precision) {
   float abs_error = 2e-5;
   std::vector<std::vector<int64_t>> test_dims{
       {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 5e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 5e-2;
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-3;
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_error = 2e-5;
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  abs_error = 1e-5;
-  for (auto& dims : test_dims) {
-    if (dims.size() == 1) {
-      dims.push_back(1);
-    }
-  }
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kX86);
 #else
   return;
 #endif
