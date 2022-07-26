@@ -41,6 +41,52 @@ PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code) {
   }
 }
 
+Shape ConvertToOVShape(const NNAdapterOperandDimensionType& dimensions) {
+  std::vector<size_t> ov_shape;
+  int count = dimensions.count;
+  auto data = dimensions.data;
+  for (int i = 0; i < count; i++) {
+    NNADAPTER_CHECK_NE(data[i], NNADAPTER_UNKNOWN);
+    ov_shape.emplace_back(data[i]);
+  }
+  return Shape(ov_shape);
+}
+
+ov::PartialShape ConvertDynamicDimensions(
+    NNAdapterOperandDimensionType* dimensions) {
+  ov::PartialShape partial_shape;
+  int count = dimensions->count;
+  int dynamic_count = dimensions->dynamic_count;
+  auto& dynamic_data = dimensions->dynamic_data;
+  for (int i = 0; i < count; i++) {
+    int min_shape = dynamic_data[0][i];
+    int max_shape = dynamic_data[0][i];
+    bool shape_joined = false;
+    for (int j = 0; j < dynamic_count; j++) {
+      // Number -1 has highest priority.
+      int shape = dynamic_data[j][i];
+      if (shape == -1) {
+        partial_shape.push_back(ov::Dimension());
+        shape_joined = true;
+        break;
+      }
+      if (shape < min_shape) {
+        min_shape = shape;
+      }
+      if (shape > max_shape) {
+        max_shape = shape;
+      }
+    }
+    if (shape_joined) continue;
+    if (min_shape == max_shape) {
+      partial_shape.push_back(ov::Dimension(min_shape));
+    } else {
+      partial_shape.push_back(ov::Dimension(min_shape, max_shape));
+    }
+  }
+  return partial_shape;
+}
+
 ElementType ConvertToOVElementType(
     const NNAdapterOperandPrecisionCode& precision_code) {
   switch (precision_code) {

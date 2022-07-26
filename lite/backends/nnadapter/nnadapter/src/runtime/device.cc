@@ -19,7 +19,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/modeling.h"
 #include "utility/string.h"
@@ -167,7 +171,11 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Cached model:" << std::endl << Visualize(model);
   } else {
     // Build from model
+    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     model_.second = false;
   }
   model_.first = model;

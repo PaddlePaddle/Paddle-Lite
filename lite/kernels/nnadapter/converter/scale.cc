@@ -39,8 +39,8 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   if (!bias_after_scale) {
     bias *= scale;
   }
-  auto has_scale = fabs(scale - 1.0f) > 1e-6f;
-  auto has_bias = fabs(bias) > 1e-6f;
+  auto has_scale = fabs(scale - 1.0f) > 1e-5f;
+  auto has_bias = fabs(bias) > 1e-5f;
 
   // Output
   auto out_name = op->Output("Out").front();

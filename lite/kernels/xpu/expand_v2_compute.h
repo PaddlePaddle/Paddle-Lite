@@ -21,9 +21,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
+template <typename T, PrecisionType PType>
 class ExpandV2Compute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   virtual void Run();
 

@@ -1773,6 +1773,8 @@ struct XPUFcParam : ParamBase {
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
+  bool transpose_x{false};
+  bool transpose_w{true};
 };
 
 struct XPUResNetCbamParam : ParamBase {

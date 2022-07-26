@@ -95,7 +95,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
           (place.precision == kernel.precision() ||
            kernel.precision() == PRECISION(kAny) ||
-           place.precision == PRECISION(kAny))) {
+           place.precision == PRECISION(kAny) ||
+           // fp16 may also pick FP32 kernel preciison
+           (xpu_use_fp16_optimizer_ &&
+            kernel.precision() == PRECISION(kFloat) &&
+            place.precision == PRECISION(kFP16)))) {
         // score skipped, if kernel is int8, but op is not int8
         if (!(kernel.precision() == PRECISION(kInt8) &&
               !instruct.op_info()->HasAttr("enable_int8"))) {
@@ -294,8 +298,9 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
  private:
   core::KernelPickFactor kernel_pick_factors_;
-#ifdef LITE_WITH_XPU
+
   bool xpu_use_fp16_optimizer_{false};
+#ifdef LITE_WITH_XPU
   // TODO(quwei:) addn more op
   const std::set<std::string> PRECISION_INT31_OP_{"__xpu__fc"};
   const std::set<std::string> PRECISION_INT8_OP_{"__xpu__fc"};
@@ -314,7 +319,26 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "gather",
                                               "pool2d",
                                               "concat",
-                                              "calib"};
+                                              "calib",
+                                              "relu",
+                                              "tanh",
+                                              "sigmoid",
+                                              "leaky_relu",
+                                              "conv2d_transpose",
+                                              "elementwise_mul",
+                                              "elementwise_add",
+                                              "elementwise_mod",
+                                              "elementwise_floordiv",
+                                              "reduce_mean",
+                                              "bilinear_interp",
+                                              "bilinear_interp_v2",
+                                              "nearest_interp",
+                                              "nearest_interp_v2",
+                                              "tile",
+                                              "transpose",
+                                              "pixel_shuffle",
+                                              "expand_v2",
+                                              "meshgrid"};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",

@@ -236,6 +236,23 @@ enum {
 };
 
 /**
+ * For {@link ANeuralNetworksModel_setOperandValue}, values with a
+ * length smaller or equal to this will be immediately copied into
+ * the model. The size is in bytes.
+ *
+ * Available since API level 27.
+ */
+enum { ANEURALNETWORKS_MAX_SIZE_OF_IMMEDIATELY_COPIED_VALUES = 128 };
+
+/**
+ * For {@link ANeuralNetworksCompilation_setCaching}, specify the size
+ * of the cache token required from the application. The size is in bytes.
+ *
+ * Available since API level 29.
+ */
+enum { ANEURALNETWORKS_BYTE_SIZE_OF_CACHE_TOKEN = 32 };
+
+/**
  * Relative execution priority.
  *
  * Available since API level 30.

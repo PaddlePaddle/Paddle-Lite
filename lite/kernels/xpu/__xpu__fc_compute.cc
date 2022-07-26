@@ -35,18 +35,18 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   auto w_ptr = param.w->template data<float>();
   auto weight_dims = param.w->dims();
   bool quant_int8 = false;
+  bool w_trans = param.transpose_w;
   if (param.quant_w_max > 0.f) {
     quant_int8 = true;
   }
   // max
   int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
-  param.output_max->Resize({max_ptr_size});
   input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   if (quant_int8) {  // for paddle slim int8 quant
     xpu_quant_weight_ =
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
-            reinterpret_cast<const int8_t*>(w_ptr), weight_dims, true);
+            reinterpret_cast<const int8_t*>(w_ptr), weight_dims, w_trans);
     std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_weight_max_ptr should't be null";
@@ -63,7 +63,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   } else {
     xpu_quant_weight_ =
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-            w_ptr, weight_dims, true);
+            w_ptr, weight_dims, w_trans);
     if (std::is_same<TW, float>::value) {
       VLOG(6)
           << "If fc compute precision is int31,must check weight max should "
@@ -73,6 +73,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
     }
   }
 }
+
 template <typename TGEMM,
           typename TW,
           typename DX,
@@ -83,11 +84,22 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto input_dims = param.input->dims();
+  if (param.in_num_col_dims == -1) {
+    param.in_num_col_dims += input_dims.size();
+  }
   auto in_mat_dims = input_dims.Flatten2D(param.in_num_col_dims);
   int m = in_mat_dims[0];
   int k = in_mat_dims[1];
   int n = param.w->dims()[1];
   bool quant_int8 = param.quant_w_max > 0.f;
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  param.output_max->Resize({max_ptr_size});
+
+  bool x_trans = param.transpose_x;
+  bool w_trans = param.transpose_w;
+  int ldx = (x_trans ? m : k);
+  int ldw = (w_trans ? k : n);
+  int ldy = n;
 
   float* output_max =
       quant_int8 ? nullptr
@@ -115,14 +127,14 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
       m,                                                           // m
       n,                                                           // n
       k,                                                           // k
-      false,                                                       // x_trans
-      true,                                                        // w_trans
+      x_trans,                                                     // x_trans
+      w_trans,                                                     // w_trans
       input_max,                                                   // x_maxptr
       reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
       output_max,                                                  // y_maxptr
-      k,                                                           // ldx
-      k,                                                           // ldw
-      n,                                                           // ldy
+      ldx,                                                         // ldx
+      ldw,                                                         // ldw
+      ldy,                                                         // ldy
       1.0f,                                                        // alpha
       0.0f,                                                        // beta
       bias,                                                        // bias

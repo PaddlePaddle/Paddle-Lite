@@ -37,6 +37,7 @@ class NCHW2NHWCDataLayoutConverter {
  private:
   // Operation converters
   void ConvertAdaptivePool2D(core::Operation* operation);
+  void ConvertBatchNormalization(core::Operation* operation);
   void ConvertCast(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
   void ConvertConv2DTranspose(core::Operation* operation);
@@ -61,6 +62,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertSoftmax(core::Operation* operation);
   void ConvertSplit(core::Operation* operation);
   void ConvertSqueeze(core::Operation* operation);
+  void ConvertStack(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
   void ConvertCustomYoloBox3d(core::Operation* operation);

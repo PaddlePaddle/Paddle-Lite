@@ -77,7 +77,6 @@ USE_MIR_PASS(fp16_attribute_pass);
 USE_MIR_PASS(fpga_concat_fuse_pass);
 USE_MIR_PASS(quantization_parameters_propagation_pass);
 USE_MIR_PASS(quantization_parameters_removal_pass);
-USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass);
 USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
 USE_MIR_PASS(lite_scale_activation_fuse_pass);

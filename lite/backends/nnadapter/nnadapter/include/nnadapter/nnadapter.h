@@ -332,7 +332,7 @@ typedef enum {
    * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
    * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [C].
    * * 3: mean, a NNADAPTER_FLOAT32 tensor of shape [C].
-   * * 4: var, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 4: variance, a NNADAPTER_FLOAT32 tensor of shape [C].
    * * 5: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
    * to the variance to prevent division by zero, defaults to 1e-5.
    *

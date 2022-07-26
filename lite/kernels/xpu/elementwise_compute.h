@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T, class Functor>
-class ElementwiseCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T, class Functor, PrecisionType PType>
+class ElementwiseCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ElementwiseParam;
 
