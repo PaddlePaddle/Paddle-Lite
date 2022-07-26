@@ -48,6 +48,8 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertFlatten(core::Operation* operation);
   void ConvertFullyConnected(core::Operation* operation);
   void ConvertGather(core::Operation* operation);
+  void ConvertGelu(core::Operation* operation);
+  void ConvertLayerNormalization(core::Operation* operation);
   void ConvertLeakyRelu(core::Operation* operation);
   void ConvertLpNormalization(core::Operation* operation);
   void ConvertActivation(core::Operation* operation);
@@ -64,6 +66,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertStack(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
+  void ConvertUnstack(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

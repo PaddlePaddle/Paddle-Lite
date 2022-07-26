@@ -743,10 +743,10 @@ function huawei_ascend_npu_build_and_test() {
 # Qualcomm QNN
 function qualcomm_qnn_build_and_test() {
     # Build and run all of unittests and model tests
-    rm -rf $BUILD_DIR
-    mkdir -p $BUILD_DIR
+    # rm -rf $BUILD_DIR
+    # mkdir -p $BUILD_DIR
     cd $BUILD_DIR
-    prepare_workspace $ROOT_DIR $BUILD_DIR
+    # prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
         sdk_root_dir=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT
@@ -759,23 +759,23 @@ function qualcomm_qnn_build_and_test() {
             exit 1
         fi
 
-        cmake .. \
-            -DLITE_WITH_ARM=$with_arm \
-            -DLITE_WITH_X86=$with_x86 \
-            -DARM_TARGET_ARCH_ABI=$arm_arch \
-            -DARM_TARGET_OS=$arm_target_os \
-            -DARM_TARGET_LANG=$toolchain \
-            -DWITH_PYTHON=OFF \
-            -DWITH_TESTING=ON \
-            -DWITH_GPU=OFF \
-            -DWITH_MKLDNN=OFF \
-            -DWITH_MKL=ON \
-            -DLITE_BUILD_EXTRA=ON \
-            -DLITE_WITH_NNADAPTER=ON \
-            -DNNADAPTER_WITH_QUALCOMM_QNN=ON \
-            -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT="$sdk_root_dir" \
-            -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
-            -DCMAKE_BUILD_TYPE=Release
+        # cmake .. \
+        #     -DLITE_WITH_ARM=$with_arm \
+        #     -DLITE_WITH_X86=$with_x86 \
+        #     -DARM_TARGET_ARCH_ABI=$arm_arch \
+        #     -DARM_TARGET_OS=$arm_target_os \
+        #     -DARM_TARGET_LANG=$toolchain \
+        #     -DWITH_PYTHON=OFF \
+        #     -DWITH_TESTING=ON \
+        #     -DWITH_GPU=OFF \
+        #     -DWITH_MKLDNN=OFF \
+        #     -DWITH_MKL=ON \
+        #     -DLITE_BUILD_EXTRA=ON \
+        #     -DLITE_WITH_NNADAPTER=ON \
+        #     -DNNADAPTER_WITH_QUALCOMM_QNN=ON \
+        #     -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT="$sdk_root_dir" \
+        #     -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
+        #     -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
         local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)

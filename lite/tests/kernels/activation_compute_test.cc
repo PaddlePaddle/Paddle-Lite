@@ -1070,6 +1070,8 @@ TEST(Activation_gelu, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
 #else
   return;
 #endif
