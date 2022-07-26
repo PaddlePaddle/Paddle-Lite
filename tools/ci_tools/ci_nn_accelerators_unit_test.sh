@@ -743,8 +743,8 @@ function huawei_ascend_npu_build_and_test() {
 # Qualcomm QNN
 function qualcomm_qnn_build_and_test() {
     # Build and run all of unittests and model tests
-    rm -rf $BUILD_DIR
-    mkdir -p $BUILD_DIR
+    # rm -rf $BUILD_DIR
+    # mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })

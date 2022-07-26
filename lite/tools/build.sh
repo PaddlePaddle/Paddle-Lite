@@ -134,7 +134,7 @@ function set_android_api_level {
 
 function build_opt {
     cd $workspace
-    prepare_thirdparty
+    # prepare_thirdparty
     mkdir -p build.opt
     cd build.opt
     cmake .. -DWITH_LITE=ON \

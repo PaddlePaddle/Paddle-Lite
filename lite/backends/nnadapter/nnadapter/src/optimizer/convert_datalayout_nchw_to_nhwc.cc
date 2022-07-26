@@ -499,25 +499,6 @@ void NCHW2NHWCDataLayoutConverter::ConvertCustomYoloBox3d(
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 7);
-  NNADAPTER_CHECK_EQ(output_count, 5);
-  // Skip NCHW2NHWC conversion
-  for (size_t i = 0; i < output_count; i++) {
-    auto output_operand = output_operands[i];
-    auto output_dimensions_count = output_operand->type.dimensions.count;
-    SetPermutation(output_operand,
-                   IdentityPermutation(output_dimensions_count));
-  }
-}
-
-void NCHW2NHWCDataLayoutConverter::ConvertCustomYoloBox3dNmsFuser(
-    core::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 20);
-  NNADAPTER_CHECK_EQ(output_count, 6);
   // Skip NCHW2NHWC conversion
   for (size_t i = 0; i < output_count; i++) {
     auto output_operand = output_operands[i];
@@ -1090,11 +1071,11 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
         break;
+      case NNADAPTER_DEQUANTIZE:
+      case NNADAPTER_YOLO_BOX:
       case NNADAPTER_CUSTOM_YOLO_BOX_3D:
-        ConvertCustomYoloBox3d(operation);
-        break;
       case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
-        ConvertCustomYoloBox3dNmsFuser(operation);
+        ConvertCustomYoloBox3d(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL)
