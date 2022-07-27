@@ -63,7 +63,7 @@ with open(kernels_list_path, encoding='utf-8') as f:
                     k.alias, )
                 out_lines.append(key)
 
-with open(faked_kernels_list_path) as f:
+with open(faked_kernels_list_path, encoding="utf-8") as f:
     paths = set([path for path in f])
     for path in paths:
         if (sys.version[0] == '3'):
