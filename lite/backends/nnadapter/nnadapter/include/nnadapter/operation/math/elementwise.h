@@ -48,16 +48,37 @@ static int elementwise(ElementwiseTypeCode eltwise_type,
       input1_data, input1_shape, output_shape, broadcasted_input1_data.data());
   if (eltwise_type == ADD) {
     for (int64_t i = 0; i < output_count; i++) {
-      output_data[i] = broadcasted_input0_data[i] + broadcasted_input1_data[1];
+      output_data[i] = broadcasted_input0_data[i] + broadcasted_input1_data[i];
     }
-    return 0;
   } else if (eltwise_type == SUB) {
     for (int64_t i = 0; i < output_count; i++) {
-      output_data[i] = broadcasted_input0_data[i] - broadcasted_input1_data[1];
+      output_data[i] = broadcasted_input0_data[i] - broadcasted_input1_data[i];
     }
-    return 0;
+  } else {
+    return -1;
   }
-  return -1;
+  if (fuse_code == FUSE_RELU) {
+    for (int64_t i = 0; i < output_count; i++) {
+      auto output_value = output_data[i];
+      output_data[i] = output_value > 0 ? output_value : 0;
+    }
+  } else if (fuse_code == FUSE_RELU1) {
+    for (int64_t i = 0; i < output_count; i++) {
+      auto output_value = output_data[i];
+      output_data[i] = std::min(std::max(static_cast<T>(0), output_value),
+                                static_cast<T>(1));
+    }
+  } else if (fuse_code == FUSE_RELU6) {
+    for (int64_t i = 0; i < output_count; i++) {
+      auto output_value = output_data[i];
+      output_data[i] = std::min(std::max(static_cast<T>(0), output_value),
+                                static_cast<T>(6));
+    }
+  } else if (fuse_code == FUSE_NONE) {
+  } else {
+    return -1;
+  }
+  return 0;
 }
 
 int elementwise(ElementwiseTypeCode eltwise_type,
