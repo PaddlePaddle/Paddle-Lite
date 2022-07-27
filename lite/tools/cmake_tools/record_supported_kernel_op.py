@@ -87,7 +87,7 @@ class TargetType:
 
 
 # record op_info of valid kernels into `valid_ops` according to different target type
-with open(kernels_list_path) as f:
+with open(kernels_list_path, encoding='utf-8') as f:
     paths = set([path for path in f])
     for path in paths:
         with open(path.strip()) as g:
