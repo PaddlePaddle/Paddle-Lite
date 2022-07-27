@@ -62,10 +62,10 @@ void TanhCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = xdnn::tanh(ctx.GetRawContext(),
-                     param.X->template data<T>(),
-                     param.Out->template mutable_data<T>(TARGET(kXPU)),
-                     param.X->numel());
+  int r = xdnn::fast_tanh(ctx.GetRawContext(),
+                          param.X->template data<T>(),
+                          param.Out->template mutable_data<T>(TARGET(kXPU)),
+                          param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -74,10 +74,10 @@ void SigmoidCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = xdnn::sigmoid(ctx.GetRawContext(),
-                        param.X->template data<T>(),
-                        param.Out->template mutable_data<T>(TARGET(kXPU)),
-                        param.X->numel());
+  int r = xdnn::fast_sigmoid(ctx.GetRawContext(),
+                             param.X->template data<T>(),
+                             param.Out->template mutable_data<T>(TARGET(kXPU)),
+                             param.X->numel());
   CHECK_EQ(r, 0);
 }
 
