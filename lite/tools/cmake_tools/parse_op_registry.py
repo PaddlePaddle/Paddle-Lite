@@ -33,7 +33,7 @@ out_lines = [
 ]
 
 paths = set()
-for line in open(ops_list_path):
+for line in open(ops_list_path, encoding="utf-8"):
     paths.add(line.strip())
 
 if tailored == "ON":
