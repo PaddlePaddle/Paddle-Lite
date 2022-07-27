@@ -83,6 +83,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_GATHER:
       case NNADAPTER_MAT_MUL:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
@@ -95,6 +96,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       } break;
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
+      case NNADAPTER_CUM_SUM:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
