@@ -38,7 +38,7 @@ if tailored == "ON":
     with open(minkernels_list_path) as fd:
         for line in fd:
             minlines.add(line.strip())
-with open(kernels_list_path) as f:
+with open(kernels_list_path, encoding='utf-8') as f:
     paths = set([path for path in f])
     for path in paths:
         with open(path.strip()) as g:
