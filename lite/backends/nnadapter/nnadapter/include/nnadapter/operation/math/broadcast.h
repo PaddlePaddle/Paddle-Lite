@@ -37,12 +37,11 @@ static int broadcast(const T* input_data,
   int input_rank = input_shape.size();
   int output_rank = output_shape.size();
   int64_t output_count = shape_production(output_shape);
-  std::vector<int32_t> padded_input_shape(output_rank, 1);
   int distance = output_rank - input_rank;
   auto output_strides = shape_strides(output_shape);
   auto input_strides = shape_strides(input_shape);
   for (int64_t i = 0; i < output_count; i++) {
-    int64_t input_index = 0;
+    int64_t index = 0;
     int64_t remain = i;
     for (int j = 0; j < output_rank; j++) {
       int dimension = remain / output_strides[j];
@@ -51,10 +50,10 @@ static int broadcast(const T* input_data,
         if (dimension >= input_shape[j - distance]) {
           dimension = 0;
         }
-        input_index += dimension * input_strides[j - distance];
+        index += dimension * input_strides[j - distance];
       }
     }
-    output_data[i] = input_data[input_index];
+    output_data[i] = input_data[index];
   }
   return -1;
 }
