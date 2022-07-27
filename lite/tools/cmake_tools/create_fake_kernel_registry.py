@@ -97,7 +97,7 @@ const std::map<std::string, std::string> kernel2path_map{
 
 
 def parse_fake_kernels_from_path(list_path):
-    with open(list_path) as f:
+    with open(list_path, encoding='utf-8') as f:
         paths = set([path for path in f])
         for path in paths:
             if (sys.version[0] == '3'):
