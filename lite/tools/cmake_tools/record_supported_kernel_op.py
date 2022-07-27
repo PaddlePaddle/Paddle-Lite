@@ -127,7 +127,7 @@ for target in valid_targets:
     valid_ops[index] = list(set(valid_ops[index]))
 
 paths = set()
-with open(ops_list_path) as f:
+with open(ops_list_path, encoding='utf-8') as f:
     paths = set([path for path in f])
     for path in paths:
         str_info = open(path.strip()).read()
