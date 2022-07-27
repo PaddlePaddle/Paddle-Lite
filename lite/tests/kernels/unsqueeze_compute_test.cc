@@ -282,6 +282,8 @@ TEST(unsqueeze, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -313,6 +315,8 @@ TEST(unsqueeze2, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #else
   return;
 #endif

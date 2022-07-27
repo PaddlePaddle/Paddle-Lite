@@ -234,6 +234,22 @@ TEST(Compare, precision) {
       place, abs_error, "not_equal", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
   TestCompare<float>(place, abs_error, "not_equal", {2, 3, 4}, {2, 3, 4}, 0);
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
+  for (auto op : std::vector<std::string>{"equal",
+                                          "not_equal",
+                                          "less_than",
+                                          "less_equal",
+                                          "greater_than",
+                                          "greater_equal"}) {
+    TestCompare<float>(place, abs_error, op, {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
+    TestCompare<float>(place, abs_error, op, {2, 3, 4}, {2, 3, 4}, 0);
+  }
+
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {3, 4}, 1);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {4}, 2);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {5}, 3);
+  return;
 #else
   return;
 #endif
