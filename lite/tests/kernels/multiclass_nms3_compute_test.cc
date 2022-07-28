@@ -520,7 +520,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
   }
 };
 
-void TestMulticlassNms(Place place, float abs_error) {
+void TestMulticlassNms(Place place, std::string alias, float abs_error) {
   int N = 3;
   int M = 2500;
   for (int class_num : {2, 4, 10}) {
@@ -529,7 +529,7 @@ void TestMulticlassNms(Place place, float abs_error) {
     std::vector<int64_t> rois_num_shape{2};
     std::unique_ptr<arena::TestCase> tester(
         new MulticlassNmsComputeTester(place,
-                                       "def",
+                                       alias,
                                        DDim(bbox_shape),
                                        DDim(score_shape),
                                        DDim(rois_num_shape)));
@@ -541,6 +541,7 @@ void TestMulticlassNms(Place place, float abs_error) {
 TEST(multiclass_nms, precision) {
   float abs_error = 2e-5;
   Place place;
+  std::string alias = "def";
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_INTEL_OPENVINO)
@@ -548,13 +549,16 @@ TEST(multiclass_nms, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  alias = "DISABLE_XPU2_MulticlassNms3";
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  TestMulticlassNms(place, abs_error);
+  TestMulticlassNms(place, alias, abs_error);
 }
 
 }  // namespace lite

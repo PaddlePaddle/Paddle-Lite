@@ -30,7 +30,8 @@ class ReluCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~ReluCompute() = default;
 };
 
-class Relu6Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class Relu6Compute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -39,7 +40,8 @@ class Relu6Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~Relu6Compute() = default;
 };
 
-class GeluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class GeluCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -202,6 +204,15 @@ class PReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~PReluCompute() = default;
+};
+
+class FloorCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~FloorCompute() = default;
 };
 
 }  // namespace xpu

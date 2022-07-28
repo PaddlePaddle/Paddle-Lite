@@ -34,14 +34,10 @@ int ConvertBatchNormalization(Converter *converter,
   int size = scale_operand->type.dimensions.data[0];
   NNADAPTER_VLOG(5) << "scale_operand->length: " << scale_operand->length
                     << " data[0] " << size;
-  float *scale_data = reinterpret_cast<float *>(scale_operand->buffer);
-  float *bias_data = reinterpret_cast<float *>(bias_operand->buffer);
-  float *mean_data = reinterpret_cast<float *>(mean_operand->buffer);
-  float *var_data = reinterpret_cast<float *>(variance_operand->buffer);
   std::vector<float> new_scale_data;
   std::vector<float> new_bias_data;
   for (int i = 0; i < size; i++) {
-    float denominator = sqrt(pow(var_data[i], 2) + epsilon);
+    float denominator = sqrt(pow(variance_data[i], 2) + epsilon);
     new_scale_data.push_back(scale_data[i] / denominator);
     new_bias_data.push_back(bias_data[i] - mean_data[i] / denominator);
   }

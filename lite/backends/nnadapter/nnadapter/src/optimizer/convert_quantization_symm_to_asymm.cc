@@ -62,18 +62,10 @@ static void PropagateAsymmZeroPoint(core::Operand* reference_operand,
                                     core::Operand* target_operand) {
   auto& reference_type = reference_operand->type;
   auto& target_type = target_operand->type;
-  auto reference_precision = reference_type.precision;
-  auto target_precision = target_type.precision;
-  if (IsAsymmPerLayerQuantType(reference_precision) &&
-      IsAsymmPerLayerQuantType(target_precision)) {
+  if (IsAsymmPerLayerQuantType(reference_type.precision) &&
+      IsAsymmPerLayerQuantType(target_type.precision)) {
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
-  } else {
-    NNADAPTER_LOG(WARNING) << "Unhandled case: reference_precision="
-                           << OperandPrecisionCodeToString(
-                                  reference_type.precision)
-                           << ", target_precision="
-                           << OperandPrecisionCodeToString(target_precision);
   }
 }
 
@@ -91,6 +83,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_GATHER:
       case NNADAPTER_MAT_MUL:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
@@ -103,6 +96,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       } break;
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
+      case NNADAPTER_CUM_SUM:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:

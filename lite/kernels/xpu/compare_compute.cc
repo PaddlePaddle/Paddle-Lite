@@ -58,6 +58,18 @@ struct GreaterThanFunctor {
   }
 };
 
+template <typename T>
+struct GreaterEqualFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        bool* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_greater_equal<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
 template <PrecisionType PType, class T, class Functor>
 void CompareCompute<PType, T, Functor>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
@@ -76,7 +88,6 @@ void CompareCompute<PType, T, Functor>::Run() {
   int axis = (param.axis == -1 ? abs(static_cast<int>(x_dims.size()) -
                                      static_cast<int>(y_dims.size()))
                                : param.axis);
-
   // constrains:
   // 1. X size should be larger than Y
   CHECK_GE(x_size, y_size) << "Input X cannot be smaller than Y";
@@ -297,4 +308,67 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kBool),
                                        DATALAYOUT(kAny))})
     .BindPaddleOpVersion("greater_than", 1)
+    .Finalize();
+
+using greater_equal_float = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    float,
+    paddle::lite::kernels::xpu::GreaterEqualFunctor<float>>;
+REGISTER_LITE_KERNEL(
+    greater_equal, kXPU, kFloat, kAny, greater_equal_float, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("greater_equal", 1)
+    .Finalize();
+
+using greater_equal_int32 = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    int,
+    paddle::lite::kernels::xpu::GreaterEqualFunctor<int>>;
+REGISTER_LITE_KERNEL(
+    greater_equal, kXPU, kFloat, kAny, greater_equal_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("greater_equal", 1)
+    .Finalize();
+
+using greater_equal_int64 = paddle::lite::kernels::xpu::CompareCompute<
+    PRECISION(kFloat),
+    int64_t,
+    paddle::lite::kernels::xpu::GreaterEqualFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(
+    greater_equal, kXPU, kFloat, kAny, greater_equal_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("greater_equal", 1)
     .Finalize();

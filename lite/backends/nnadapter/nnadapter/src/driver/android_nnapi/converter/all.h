@@ -17,6 +17,9 @@
 
 REGISTER_CONVERTER(ADD, ValidateElementwise, ConvertElementwise)
 REGISTER_CONVERTER(AVERAGE_POOL_2D, ValidatePool2D, ConvertPool2D)
+REGISTER_CONVERTER(BATCH_NORMALIZATION,
+                   ValidateBatchNormalization,
+                   ConvertBatchNormalization)
 REGISTER_CONVERTER(CONCAT, ValidateConcat, ConvertConcat)
 REGISTER_CONVERTER(CONV_2D, ValidateConv2D, ConvertConv2D)
 REGISTER_CONVERTER(CONV_2D_TRANSPOSE,

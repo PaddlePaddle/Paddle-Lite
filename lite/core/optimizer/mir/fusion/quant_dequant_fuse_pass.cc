@@ -70,24 +70,12 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // process new quant op pass: quantize_linear and dequantize_linear
-  std::vector<std::string> new_quantized_op_types = {
-      "conv2d",
-      "depthwise_conv2d",
-      "conv2d_transpose",
-      "depthwise_conv2d_transpose",
-      "mul",
-      "matmul",
-      "matmul_v2"};
   // pass1: input+quantize_linear+dequantize_linear --> input
-  for (auto& op_type : new_quantized_op_types) {
-    fusion::QuantDequantLinearOpFuser fuser(op_type);
-    fuser(graph.get());
-  }
+  fusion::QuantDequantLinearOpFuser quant_dequant_linear_fuser;
+  quant_dequant_linear_fuser(graph.get());
   // pass2: weight+dequantize_linear --> weight
-  for (auto& op_type : {"dequantize_linear"}) {
-    fusion::DequantLinearOpFuser fuser(op_type);
-    fuser(graph.get());
-  }
+  fusion::DequantLinearOpFuser dequantize_linear_fuser;
+  dequantize_linear_fuser(graph.get());
 }
 
 }  // namespace mir

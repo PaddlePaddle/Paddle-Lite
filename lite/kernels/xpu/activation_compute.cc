@@ -33,24 +33,26 @@ void ReluCompute<T, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
-void Relu6Compute::Run() {
+template <typename T, PrecisionType PType>
+void Relu6Compute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::relu6(ctx.GetRawContext(),
-                      param.X->data<float>(),
-                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->template data<T>(),
+                      param.Out->template mutable_data<T>(TARGET(kXPU)),
                       param.X->numel());
   CHECK_EQ(r, 0);
 }
 
-void GeluCompute::Run() {
+template <typename T, PrecisionType PType>
+void GeluCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::gelu(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->template data<T>(),
+                     param.Out->template mutable_data<T>(TARGET(kXPU)),
                      param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -60,10 +62,10 @@ void TanhCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = xdnn::tanh(ctx.GetRawContext(),
-                     param.X->template data<T>(),
-                     param.Out->template mutable_data<T>(TARGET(kXPU)),
-                     param.X->numel());
+  int r = xdnn::fast_tanh(ctx.GetRawContext(),
+                          param.X->template data<T>(),
+                          param.Out->template mutable_data<T>(TARGET(kXPU)),
+                          param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -72,10 +74,10 @@ void SigmoidCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = xdnn::sigmoid(ctx.GetRawContext(),
-                        param.X->template data<T>(),
-                        param.Out->template mutable_data<T>(TARGET(kXPU)),
-                        param.X->numel());
+  int r = xdnn::fast_sigmoid(ctx.GetRawContext(),
+                             param.X->template data<T>(),
+                             param.Out->template mutable_data<T>(TARGET(kXPU)),
+                             param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -116,20 +118,20 @@ void ReciprocalCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  float* xpu_factor = nullptr;
-  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  XPUScratchPadGuard xpu_factor_guard =
+      TargetWrapperXPU::MallocScratchPad(sizeof(float));
+  float* xpu_factor_ptr = reinterpret_cast<float*>(xpu_factor_guard->addr_);
   int x_len = param.X->numel();
   int r = 0;
-  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, 1.0f);
+  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor_ptr, 1, 1.0f);
   CHECK_EQ(r, 0);
   r = xdnn::broadcast_div(ctx.GetRawContext(),
-                          xpu_factor,
+                          xpu_factor_ptr,
                           param.X->data<float>(),
                           param.Out->mutable_data<float>(TARGET(kXPU)),
                           {1},
                           {x_len});
   CHECK_EQ(r, 0);
-  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SqrtCompute::Run() {
@@ -158,20 +160,21 @@ void PowCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  float* xpu_factor = nullptr;
-  XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&xpu_factor), sizeof(float)));
+  XPUScratchPadGuard xpu_factor_guard =
+      TargetWrapperXPU::MallocScratchPad(sizeof(float));
+  float* xpu_factor_ptr = reinterpret_cast<float*>(xpu_factor_guard->addr_);
   int x_len = param.X->numel();
   int r = 0;
-  r = xdnn::constant<float>(ctx.GetRawContext(), xpu_factor, 1, param.factor);
+  r = xdnn::constant<float>(
+      ctx.GetRawContext(), xpu_factor_ptr, 1, param.factor);
   CHECK_EQ(r, 0);
   r = xdnn::broadcast_pow(ctx.GetRawContext(),
                           param.X->data<float>(),
-                          xpu_factor,
+                          xpu_factor_ptr,
                           param.Out->mutable_data<float>(TARGET(kXPU)),
                           {x_len},
                           {1});
   CHECK_EQ(r, 0);
-  XPU_CALL(xpu_free(xpu_factor));
 }
 
 void SignCompute::Run() {
@@ -272,6 +275,17 @@ void PReluCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void FloorCompute::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  int r = xdnn::floor(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -291,16 +305,32 @@ REGISTER_LITE_KERNEL(relu, kXPU, kFP16, kNCHW, reluFP16, reluFP16)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    relu6, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::Relu6Compute, def)
+using relu6FP32 =
+    paddle::lite::kernels::xpu::Relu6Compute<float, PRECISION(kFloat)>;
+using relu6FP16 =
+    paddle::lite::kernels::xpu::Relu6Compute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(relu6, kXPU, kFloat, kNCHW, relu6FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+REGISTER_LITE_KERNEL(relu6, kXPU, kFP16, kNCHW, relu6FP16, relu6FP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(
-    gelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::GeluCompute, def)
+using geluFP32 =
+    paddle::lite::kernels::xpu::GeluCompute<float, PRECISION(kFloat)>;
+using geluFP16 =
+    paddle::lite::kernels::xpu::GeluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(gelu, kXPU, kFloat, kNCHW, geluFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+using gelu_fp16 =
+    paddle::lite::kernels::xpu::GeluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(gelu, kXPU, kFP16, kNCHW, geluFP16, geluFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 using tanhFP32 =
@@ -443,5 +473,11 @@ REGISTER_LITE_KERNEL(
     prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    floor, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::FloorCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
