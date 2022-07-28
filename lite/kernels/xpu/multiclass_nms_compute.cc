@@ -50,9 +50,7 @@ void MulticlassNmsCompute::Run() {
   int b = 0;
   int class_num = scores->dims()[1];
   int out_dim = boxes->dims()[2] + 2;
-  CHECK(class_num <= 80)
-      << "xpu MulticlassNms only support class_num <= 80 which is "
-      << class_num;
+  CHECK_LE(class_num, 80);
   int boxes_count = 0;
   std::vector<int> rois_num_vec;
   rois_num_vec.clear();
