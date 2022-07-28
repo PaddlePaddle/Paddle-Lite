@@ -109,7 +109,7 @@ Windows 环境下编译适用于 Windows 的库
    * - use_vs2019
      - 使用 vs2019 构建系统（默认使用 vs2015 的构建方案，添加上此编译选项使用 vs2019 编译构建)
    * - without_avx
-     - 使用 AVX/SSE 指令对 x86 Kernel 进行加速
+     - 不使用 AVX/SSE 指令对 x86 Kernel 进行加速
    * - with_kunlunxin_xpu
      - 使用昆仑芯 XPU kernel 进行加速
    * - kunlunxin_xpu_sdk_root
