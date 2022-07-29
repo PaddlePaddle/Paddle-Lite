@@ -62,9 +62,9 @@ void GenerateProposalsV2Compute::Run() {
   float min_size = param.min_size;
   float eta = param.eta;
   bool pixel_offset = param.pixel_offset;
-  if (std::fabs(eta - 1.0f) > 1e-7) {
-    LOG(FATAL) << "XPU Generate Proposals Don't Support Adaptive NMS.";
-  }
+
+  // XPU Generate Proposals Don't Support Adaptive NMS.
+  CHECK_LT(std::fabs(eta - 1.0f), 1e-7);
 
   auto& scores_dim = scores->dims();
   int num = static_cast<int>(scores_dim[0]);

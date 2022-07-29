@@ -156,18 +156,11 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
   template <typename T, typename IndexT = int>
   void CPUGather(const Tensor& src, const Tensor& index, Tensor* output) {
     if (index.dims().size() == 2) {
-      if (index.dims()[1] != 1) {
-        LOG(FATAL) << "index.dims()[1] should be 1 when index.dims().size() = 2"
-                      "in gather_op, but received value is "
-                   << index.dims()[1];
-      }
-
+      // index.dims()[1] should be 1 when index.dims().size() = 2
+      CHECK_EQ(index.dims()[1], 1);
     } else {
-      if (index.dims().size() != 1) {
-        LOG(FATAL) << "index.dims().size() should be 1 or 2 in gather_op,"
-                      "but received shape's size is "
-                   << index.dims().size();
-      }
+      // index.dims().size() should be 1 or 2 in gather_op
+      CHECK_EQ(index.dims().size(), 1);
     }
     int64_t index_size = index.dims()[0];
 
@@ -702,7 +695,6 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
     SetCommonTensor(Anchors_, anchors.dims(), anchors.data<float>());
 
     // Variances
-
     SetCommonTensor(Variances_, variances.dims(), variances.data<float>());
 
     // Scores
