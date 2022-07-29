@@ -871,6 +871,18 @@ void NCHW2NHWCDataLayoutConverter::ConvertUnstack(core::Operation* operation) {
   if (*axis < 0) {
     *axis += input_dimensions_count;
   }
+  /* Example:                                                        */
+  /*  - Format: NCHW                      Format: NHWC
+      - Dims: {6, 7, 8, 4}       ->       Dims: {6, 8, 4, 7}
+      - Axis : 2                          Aixs: 1
+      - Output: 8 * {6, 7, 4}             Output: 8 * {6, 4, 7} */
+  /* Src format NCHW: Identity permutation: {0, 1, 2, 3}, aixs = 2, output
+   * identity permutation: {0, 1, 3} */
+  /* Dst format NHWC: Input permutation: {0, 2, 3, 1}, axis = 1, output
+   * permutation: {0, 3, 1} */
+  /* We need trans output identity permutation {0, 1, 3} with format NCHW to
+   * output permutation {0, 3, 1} with format NHWC. */
+  /* Set output permutation: {0, 2, 1} */
   std::vector<int32_t> input_identity_permutation =
       IdentityPermutation(input_dimensions_count);
   input_identity_permutation.erase(input_identity_permutation.begin() + *axis);
@@ -888,8 +900,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertUnstack(core::Operation* operation) {
       }
     }
   }
-  bool is_need_transpose =
-      IsIdentityPermutation(output_permutation) ? false : true;
+  bool is_need_transpose = !IsIdentityPermutation(output_permutation);
   for (size_t i = 0; i < output_count; i++) {
     auto output_operand = output_operands[i];
     if (is_need_transpose) {
