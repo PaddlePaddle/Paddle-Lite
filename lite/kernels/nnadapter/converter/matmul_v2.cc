@@ -35,6 +35,9 @@ int ConvertMatmulV2(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> y_scales;
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
+    if (!IsValidSymmPerChannelQuantParams(y_scales)) {
+      y_scales = {y_scales[0]};
+    }
   }
   auto y_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
 

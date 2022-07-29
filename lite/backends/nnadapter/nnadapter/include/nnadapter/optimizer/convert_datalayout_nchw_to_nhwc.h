@@ -39,7 +39,9 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertBatchNormalization(core::Operation* operation);
   void ConvertCast(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
+  void ConvertComparisons(core::Operation* operation);
   void ConvertConv2DTranspose(core::Operation* operation);
+  void ConvertCumSum(core::Operation* operation);
   void ConvertElementwise(core::Operation* operation);
   void ConvertPool2D(core::Operation* operation);
   void ConvertConcat(core::Operation* operation);
@@ -58,12 +60,14 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertResizeNearest(core::Operation* operation);
   void ConvertResizeLinear(core::Operation* operation);
   void ConvertShape(core::Operation* operation);
+  void ConvertSlice(core::Operation* operation);
   void ConvertSoftmax(core::Operation* operation);
   void ConvertSplit(core::Operation* operation);
   void ConvertSqueeze(core::Operation* operation);
   void ConvertStack(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
+  void ConvertUnsqueeze(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

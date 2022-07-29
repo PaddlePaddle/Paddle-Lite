@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,13 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-class ExpandV2Compute
-    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
+class MulticlassNmsCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
+  using param_t = operators::MulticlassNmsParam;
+
   virtual void Run();
 
-  virtual ~ExpandV2Compute() = default;
+  virtual ~MulticlassNmsCompute() = default;
 };
 
 }  // namespace xpu
