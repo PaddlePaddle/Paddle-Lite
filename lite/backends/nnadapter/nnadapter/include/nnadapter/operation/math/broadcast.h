@@ -27,35 +27,36 @@ namespace operation {
 namespace math {
 
 template <typename T>
-static int unary_activations(ActivationTypeCode act_type,
-                             const T* input_data,
-                             const std::vector<int32_t>& input_shape,
-                             T* output_data) {
+static int broadcast(const T* input_data,
+                     const std::vector<int32_t>& input_shape,
+                     const std::vector<int32_t>& output_shape,
+                     T* output_data) {
   if (!input_data || !output_data) {
     return -1;
   }
-  auto input_count = shape_production(input_shape);
-  if (act_type == RELU) {
-    for (int64_t i = 0; i < input_count; i++) {
-      output_data[i] = std::max(static_cast<T>(0), input_data[i]);
+  int input_rank = input_shape.size();
+  int output_rank = output_shape.size();
+  int64_t output_count = shape_production(output_shape);
+  int distance = output_rank - input_rank;
+  auto output_strides = shape_strides(output_shape);
+  auto input_strides = shape_strides(input_shape);
+  for (int64_t i = 0; i < output_count; i++) {
+    int64_t index = 0;
+    int64_t remain = i;
+    for (int j = 0; j < output_rank; j++) {
+      int dimension = remain / output_strides[j];
+      remain = remain % output_strides[j];
+      if (j >= distance) {
+        if (dimension >= input_shape[j - distance]) {
+          dimension = 0;
+        }
+        index += dimension * input_strides[j - distance];
+      }
     }
-    return 0;
-  } else if (act_type == RELU6) {
-    for (int64_t i = 0; i < input_count; i++) {
-      output_data[i] = std::min(static_cast<T>(6),
-                                std::max(static_cast<T>(0), input_data[i]));
-    }
-    return 0;
+    output_data[i] = input_data[index];
   }
   return -1;
 }
-
-int unary_activations(ActivationTypeCode act_type,
-                      const int8_t* input_data,
-                      const std::vector<int32_t>& input_shape,
-                      float input_scale,
-                      int8_t* output_data,
-                      float output_scale);
 
 }  // namespace math
 }  // namespace operation

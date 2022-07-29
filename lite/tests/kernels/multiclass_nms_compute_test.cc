@@ -485,6 +485,10 @@ TEST(multiclass_nms, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+/* The current multiclass_nms2 op in xdnn only support topk_nms <= 512
+   Comment this to avoid yolov3_darknet53_fp32_baidu run error. */
+// #elif defined(LITE_WITH_XPU)
+//   place = TARGET(kXPU);
 #else
   return;
 #endif

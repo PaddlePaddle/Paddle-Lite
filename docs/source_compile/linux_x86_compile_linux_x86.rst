@@ -187,5 +187,3 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
 .. include:: include/multi_device_support/nnadapter_support_introduction.rst
 
 .. include:: include/multi_device_support/nnadapter_support_huawei_ascend_npu.rst
-
-.. include:: include/multi_device_support/nnadapter_support_nvidia_tensorrt.rst

@@ -164,6 +164,10 @@ TEST(cumsum, precision) {
   TestCumsumAxis<int32_t>(place, abs_error);
   TestCumsumAxis<int64_t>(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
+  TestCumsumAxis<float>(place, abs_error);
+  return;
 #else
   return;
 #endif

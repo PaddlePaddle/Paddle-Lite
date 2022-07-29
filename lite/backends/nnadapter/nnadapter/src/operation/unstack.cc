@@ -36,12 +36,20 @@ NNADAPTER_EXPORT int PrepareUnstack(core::Operation* operation) {
 
   // Infer the shape and type of output operands
   std::vector<int32_t> output_dimensions{};
-  std::vector<int32_t> output_dynamic_dimensions{};
   auto& input_dimensions = input_operand->type.dimensions;
   for (int i = 0; i < input_dimensions.count; i++) {
     if (i == axis) continue;
     output_dimensions.push_back(input_dimensions.data[i]);
-    output_dynamic_dimensions.push_back(input_dimensions.dynamic_data[i]);
+  }
+
+  std::vector<std::vector<int32_t>> output_dynamic_dimensions{};
+  for (uint32_t i = 0; i < input_dimensions.dynamic_count; i++) {
+    std::vector<int32_t> dynamic_dimensions{};
+    for (uint32_t j = 0; j < input_dimensions.count; j++) {
+      if (j == axis) continue;
+      dynamic_dimensions.push_back(input_dimensions.dynamic_data[i][j]);
+    }
+    output_dynamic_dimensions.emplace_back(std::move(dynamic_dimensions));
   }
 
   for (size_t i = 0; i < output_count; i++) {
@@ -53,8 +61,8 @@ NNADAPTER_EXPORT int PrepareUnstack(core::Operation* operation) {
       out_dimensions.data[i] = output_dimensions[i];
     }
     for (uint32_t i = 0; i < out_dimensions.dynamic_count; i++) {
-      for (uint32_t j = 0; j < output_dimensions.size(); j++) {
-        out_dimensions.dynamic_data[i][j] = output_dynamic_dimensions[j];
+      for (uint32_t j = 0; j < output_dynamic_dimensions[i].size(); j++) {
+        out_dimensions.dynamic_data[i][j] = output_dynamic_dimensions[i][j];
       }
     }
     NNADAPTER_VLOG(5) << "output" << i << ": "
