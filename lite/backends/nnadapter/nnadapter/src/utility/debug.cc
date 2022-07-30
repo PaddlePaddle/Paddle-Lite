@@ -392,6 +392,13 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
           output_args[i] = string_format("output%d", i);
         }
         break;
+      case NNADAPTER_UNSTACK:
+        input_args = {"input", "axis", "num"};
+        output_args.resize(output_count);
+        for (size_t i = 0; i < output_count; i++) {
+          output_args[i] = string_format("output%d", i);
+        }
+        break;
       case NNADAPTER_TRANSPOSE:
         input_args = {"input", "perm"};
         output_args = {"output"};
@@ -757,6 +764,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(YOLO_BOX);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(UNSTACK);
     NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
       name = type < 0 ? string_format("CUSTOM(type=%d)", type) : "UNKNOWN";

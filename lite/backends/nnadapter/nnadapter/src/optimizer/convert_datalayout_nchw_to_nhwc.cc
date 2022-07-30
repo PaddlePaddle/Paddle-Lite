@@ -576,6 +576,21 @@ void NCHW2NHWCDataLayoutConverter::ConvertLeakyRelu(
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertGelu(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertGather(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -825,6 +840,21 @@ void NCHW2NHWCDataLayoutConverter::ConvertFlatten(core::Operation* operation) {
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertLayerNormalization(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 5);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -941,6 +971,58 @@ void NCHW2NHWCDataLayoutConverter::ConvertSplit(core::Operation* operation) {
     auto output_operand = output_operands[i];
     TransposeOperand(output_operand, input_permutation);
     SetPermutation(output_operand, input_permutation);
+  }
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertUnstack(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_GE(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
+  auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (*axis < 0) {
+    *axis += input_dimensions_count;
+  }
+  /* Example:                                                        */
+  /*  - Format: NCHW                      Format: NHWC
+      - Dims: {6, 7, 8, 4}       ->       Dims: {6, 8, 4, 7}
+      - Axis : 2                          Aixs: 1
+      - Output: 8 * {6, 7, 4}             Output: 8 * {6, 4, 7} */
+  /* Src format NCHW: Identity permutation: {0, 1, 2, 3}, aixs = 2, output
+   * identity permutation: {0, 1, 3} */
+  /* Dst format NHWC: Input permutation: {0, 2, 3, 1}, axis = 1, output
+   * permutation: {0, 3, 1} */
+  /* We need trans output identity permutation {0, 1, 3} with format NCHW to
+   * output permutation {0, 3, 1} with format NHWC. */
+  /* Set output permutation: {0, 2, 1} */
+  std::vector<int32_t> input_identity_permutation =
+      IdentityPermutation(input_dimensions_count);
+  input_identity_permutation.erase(input_identity_permutation.begin() + *axis);
+  auto input_permutation = GetPermutation(input_operand);
+  *axis = TransposeAxis(*axis, input_permutation);
+  input_permutation.erase(input_permutation.begin() + *axis);
+  NNADAPTER_CHECK_EQ(input_identity_permutation.size(),
+                     input_permutation.size());
+  std::vector<int32_t> output_permutation{};
+  for (int i = 0; i < input_permutation.size(); i++) {
+    for (int j = 0; j < input_identity_permutation.size(); j++) {
+      if (input_identity_permutation[j] == input_permutation[i]) {
+        output_permutation.push_back(i);
+        break;
+      }
+    }
+  }
+  bool is_need_transpose = !IsIdentityPermutation(output_permutation);
+  for (size_t i = 0; i < output_count; i++) {
+    auto output_operand = output_operands[i];
+    if (is_need_transpose) {
+      TransposeOperand(output_operand, output_permutation);
+    }
+    SetPermutation(output_operand, output_permutation);
   }
 }
 
@@ -1131,6 +1213,12 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_GATHER:
         ConvertGather(operation);
         break;
+      case NNADAPTER_GELU:
+        ConvertGelu(operation);
+        break;
+      case NNADAPTER_LAYER_NORMALIZATION:
+        ConvertLayerNormalization(operation);
+        break;
       case NNADAPTER_LP_NORMALIZATION:
         ConvertLpNormalization(operation);
         break;
@@ -1192,6 +1280,8 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
         break;
+      case NNADAPTER_UNSTACK:
+        ConvertUnstack(operation);
       case NNADAPTER_UNSQUEEZE:
         ConvertUnsqueeze(operation);
         break;

@@ -2064,6 +2064,25 @@ typedef enum {
   NNADAPTER_UNSQUEEZE,
 
   /**
+   * Unpacks the given axis of a rank-R tensor into rank-(R-1) tensors.
+   *
+   * Inputs:
+   * * 0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the dimension
+   * along which axis to unpack, should be in range [-R, R), where R is the
+   * rank of `input`, negative value works the same way as `axis`+R.
+   * * 2: num, a NNADAPTER_INT32 tensor of shape [1], represents the length of
+   * axis.
+   *
+   * Outputs:
+   * * 0 ~ n-1: output0 ~ outputn-1, one or more outputs forming list of tensors
+   * after unpack, has the same type as the `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_UNSTACK,
+
+  /**
    * Return elements, either from `input0` or `input1`, depending on `condition`
    * (with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html), similar to
