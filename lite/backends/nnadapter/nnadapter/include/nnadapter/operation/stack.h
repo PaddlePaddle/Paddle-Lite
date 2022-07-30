@@ -38,7 +38,7 @@ namespace operation {
   }                                                                   \
   NNADAPTER_VLOG(5) << "axis: " << axis;                              \
   NNADAPTER_CHECK_GE(axis, 0);                                        \
-  NNADAPTER_CHECK_LT(axis, input_operands[0]->type.dimensions.count); \
+  NNADAPTER_CHECK_LE(axis, input_operands[0]->type.dimensions.count); \
   /* Output */                                                        \
   auto output_operand = output_operands[0];                           \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
