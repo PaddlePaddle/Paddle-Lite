@@ -528,6 +528,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
   // Skip NCHW2NHWC conversion
+  // TODO(hong19860320) Transpose weight and output operand according to the
+  // dimorder vector of the input operand
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
@@ -541,6 +543,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertMatMul(core::Operation* operation) {
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
   // Skip NCHW2NHWC conversion
+  // TODO(hong19860320) Transpose x, y and output operand, change transpose_x
+  // and transpose_y according to the dimorder vector of the input operand
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
@@ -601,6 +605,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertGather(core::Operation* operation) {
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
   // Skip NCHW2NHWC conversion
+  // TODO(hong19860320) Change the axis and tranpose the output operand
+  // according to the dimorder vector of the input operand
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
@@ -676,6 +682,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertReduce(core::Operation* operation) {
   *axis = TransposeAxis(*axis, input_permutation);
   auto output_dimensions_count = output_operand->type.dimensions.count;
   // Skip NCHW2NHWC conversion
+  // TODO(hong19860320) Transpose output operand according to the dimorder
+  // vector of the input operand
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
@@ -823,7 +831,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertFlatten(core::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  int input_dimensions_count = input_operand->type.dimensions.count;
+  auto input_dimensions_count = input_operand->type.dimensions.count;
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
   // Force to restore the dimorder vector of the input operand
@@ -849,9 +857,20 @@ void NCHW2NHWCDataLayoutConverter::ConvertLayerNormalization(
   NNADAPTER_CHECK_EQ(input_count, 5);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
+  auto input_dimensions_count = input_operand->type.dimensions.count;
   auto output_operand = output_operands[0];
   auto output_dimensions_count = output_operand->type.dimensions.count;
-  // Skip NCHW2NHWC conversion
+  // Force to restore the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation = InversePermutation(input_permutation);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AppendTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    UpdateOperationInputOperands(
+        {operation}, input_operand, transpose_input_operand);
+    SetPermutation(transpose_input_operand,
+                   IdentityPermutation(input_dimensions_count));
+  }
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
