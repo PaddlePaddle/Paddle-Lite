@@ -17,28 +17,30 @@
 namespace nnadapter {
 namespace operation {
 
-#define STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS                              \
-  auto& input_operands = operation->input_operands;                         \
-  auto& output_operands = operation->output_operands;                       \
-  auto input_count = input_operands.size();                                 \
-  auto output_count = output_operands.size();                               \
-  NNADAPTER_CHECK_GE(input_count, 2);                                       \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                      \
-  /* Inputs */                                                              \
-  for (int i = 0; i < input_count - 1; i++) {                               \
-    NNADAPTER_VLOG(5) << "input" << i << ": "                               \
-                      << OperandToString(input_operands[i]);                \
-  }                                                                         \
-  /* Axis */                                                                \
-  auto axis =                                                               \
-      *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer); \
-  auto input_dimensions_count = input_operands[0]->type.dimensions.count;   \
-  if (axis < 0) axis += (input_dimensions_count + 1);                       \
-  NNADAPTER_CHECK_GE(axis, 0);                                              \
-  NNADAPTER_CHECK_LE(axis, input_dimensions_count);                         \
-  NNADAPTER_VLOG(5) << "axis=" << axis;                                     \
-  /* Output */                                                              \
-  auto output_operand = output_operands[0];                                 \
+#define STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS                        \
+  auto& input_operands = operation->input_operands;                   \
+  auto& output_operands = operation->output_operands;                 \
+  auto input_count = input_operands.size();                           \
+  auto output_count = output_operands.size();                         \
+  NNADAPTER_CHECK_GE(input_count, 2);                                 \
+  NNADAPTER_CHECK_EQ(output_count, 1);                                \
+  /* Inputs */                                                        \
+  for (int i = 0; i < input_count - 1; i++) {                         \
+    NNADAPTER_VLOG(5) << "input" << i << ": "                         \
+                      << OperandToString(input_operands[i]);          \
+  }                                                                   \
+  /* Axis */                                                          \
+  auto axis_operand = input_operands[input_count - 1];                \
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));                   \
+  auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);      \
+  if (axis < 0) {                                                     \
+    axis += input_operands[0]->type.dimensions.count;                 \
+  }                                                                   \
+  NNADAPTER_VLOG(5) << "axis: " << axis;                              \
+  NNADAPTER_CHECK_GE(axis, 0);                                        \
+  NNADAPTER_CHECK_LT(axis, input_operands[0]->type.dimensions.count); \
+  /* Output */                                                        \
+  auto output_operand = output_operands[0];                           \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation
