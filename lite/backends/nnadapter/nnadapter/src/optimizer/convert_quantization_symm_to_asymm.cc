@@ -108,8 +108,10 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CUM_SUM:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
+      case NNADAPTER_GELU:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_LAYER_NORMALIZATION:
       case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
@@ -150,6 +152,13 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 0);
       } break;
       case NNADAPTER_SPLIT: {
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        NNADAPTER_CHECK_GE(output_count, 1);
+        for (uint32_t i = 0; i < output_count; i++) {
+          ConvertOperandSymmToAsymm(output_operands[i], 128);
+        }
+      } break;
+      case NNADAPTER_UNSTACK: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         NNADAPTER_CHECK_GE(output_count, 1);
         for (uint32_t i = 0; i < output_count; i++) {
