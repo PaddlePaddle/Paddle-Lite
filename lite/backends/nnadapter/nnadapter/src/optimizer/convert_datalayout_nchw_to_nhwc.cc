@@ -1301,6 +1301,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_UNSTACK:
         ConvertUnstack(operation);
+        break;
       case NNADAPTER_UNSQUEEZE:
         ConvertUnsqueeze(operation);
         break;
