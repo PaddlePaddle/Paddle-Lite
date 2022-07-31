@@ -131,6 +131,13 @@ typedef enum {
    * Outputs:
    * * 0: output, a tensor of the same shape and type as `input`.
    *
+   * Compatibility:
+   ** ONNX: Abs
+   *
+   ** TensorFlow: abs
+   *
+   ** TensorFlow Lite: abs
+   *
    * Available since version 1.
    */
   NNADAPTER_ABS = 0,
