@@ -32,16 +32,20 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand); \
   /* Axis */                                                        \
   auto axis_operand = input_operands[1];                            \
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));                 \
   auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);    \
   if (axis < 0) {                                                   \
     axis += input_operand->type.dimensions.count;                   \
   }                                                                 \
   NNADAPTER_VLOG(5) << "axis: " << axis;                            \
+  NNADAPTER_CHECK_GE(axis, 0);                                      \
   NNADAPTER_CHECK_LT(axis, input_operand->type.dimensions.count);   \
   /* Num */                                                         \
   auto num_operand = input_operands[2];                             \
+  NNADAPTER_CHECK(IsConstantOperand(num_operand));                  \
   auto num = *reinterpret_cast<int32_t*>(num_operand->buffer);      \
   NNADAPTER_VLOG(5) << "num: " << num;                              \
+  NNADAPTER_CHECK_EQ(num, output_count);                            \
   /* Output */                                                      \
   for (size_t i = 0; i < output_count; i++) {                       \
     NNADAPTER_VLOG(5) << "output" << i << ": "                      \

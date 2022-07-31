@@ -34,23 +34,29 @@ NNADAPTER_EXPORT int PrepareStack(core::Operation* operation) {
   auto input_type = input_operands[0]->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
-
-  output_type.dimensions.count = input_dimensions_count + 1;
-
-  auto infer_output_shape = [&](int32_t* input_dimensions,
-                                int32_t* output_dimensions) {
-    for (uint32_t j = input_dimensions_count; j > axis; j--) {
-      output_dimensions[j] = output_dimensions[j - 1];
+  auto infer_output_shape = [&](const int32_t* input_dimensions_data,
+                                uint32_t input_dimensions_count,
+                                int32_t* output_dimensions_data,
+                                uint32_t* output_dimensions_count) {
+    for (uint32_t i = 0; i < axis; i++) {
+      output_dimensions_data[i] = input_dimensions_data[i];
     }
-    output_dimensions[axis] = input_count - 1;
+    output_dimensions_data[axis] = input_count - 1;
+    for (uint32_t i = axis; i < input_dimensions_count; i++) {
+      output_dimensions_data[i + 1] = input_dimensions_data[i];
+    }
+    *output_dimensions_count = input_dimensions_count + 1;
   };
-
-  infer_output_shape(input_type.dimensions.data, output_type.dimensions.data);
-  for (uint32_t i = 0; i < output_type.dimensions.dynamic_count; i++) {
+  infer_output_shape(input_type.dimensions.data,
+                     input_type.dimensions.count,
+                     output_type.dimensions.data,
+                     &output_type.dimensions.count);
+  for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_type.dimensions.dynamic_data[i],
-                       output_type.dimensions.dynamic_data[i]);
+                       input_type.dimensions.count,
+                       output_type.dimensions.dynamic_data[i],
+                       &output_type.dimensions.count);
   }
-
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

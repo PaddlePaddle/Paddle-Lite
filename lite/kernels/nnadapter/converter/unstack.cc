@@ -28,31 +28,29 @@ int ConvertUnstack(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  auto input_dimensions = converter->GetOperandType(input_operand)->dimensions;
 
   // Axis operand
   int axis = op->GetAttr<int>("axis");
-  if (axis < 0) {
-    axis += input_dimensions.count;
-  }
   auto axis_operand = converter->AddConstantOperand(axis);
-  // Num operand
-  int num = op->GetAttr<int>("num");
-  CHECK_GE(num, 0);
-  auto num_operand = converter->AddConstantOperand(num);
+
   // Output operand
   std::vector<NNAdapterOperand*> output_operands;
-  auto out_names = op->Output("Y");
-  for (size_t i = 0; i < out_names.size(); i++) {
-    auto out_name = out_names[i];
-    auto out_scale_name = "Y" + std::to_string(i) + "_scale";
-    std::vector<float> out_scales;
-    if (op->HasOutputScale(out_scale_name, true)) {
-      out_scales = op->GetOutputScale(out_scale_name, true);
+  auto y_names = op->Output("Y");
+  for (size_t i = 0; i < y_names.size(); i++) {
+    auto y_name = y_names[i];
+    auto y_scale_name = "Y" + std::to_string(i) + "_scale";
+    std::vector<float> y_scales;
+    if (op->HasOutputScale(y_scale_name, true)) {
+      y_scales = op->GetOutputScale(y_scale_name, true);
     }
-    output_operands.push_back(
-        converter->AddOutputOperand(out_name, out_scales));
+    output_operands.push_back(converter->AddOutputOperand(y_name, y_scales));
   }
+
+  // Num operand
+  int num = op->GetAttr<int>("num");
+  CHECK_EQ(num, y_names.size()) << "The num should be " << y_names.size()
+                                << ", but receive " << num << ".";
+  auto num_operand = converter->AddConstantOperand(num);
 
   // Unstack operation
   converter->AddOperation(NNADAPTER_UNSTACK,

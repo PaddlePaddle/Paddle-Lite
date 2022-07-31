@@ -58,7 +58,7 @@ NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
 NNADAPTER_WITH_QUALCOMM_QNN=OFF
 NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
-NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=""
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=""
 NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
@@ -231,7 +231,7 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
                         -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
                         -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
-                        -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
+                        -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
                         -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
@@ -628,8 +628,8 @@ function main {
                 NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
                 shift
                 ;;
-            --nnadapter_qualcomm_hexagon_tools_root=*)
-                NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT="${i#*=}"
+            --nnadapter_qualcomm_hexagon_sdk_root=*)
+                NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_kunlunxin_xtcl=*)

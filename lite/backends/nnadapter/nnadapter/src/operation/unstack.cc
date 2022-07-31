@@ -31,39 +31,32 @@ NNADAPTER_EXPORT bool ValidateUnstack(const core::Operation* operation) {
 
 NNADAPTER_EXPORT int PrepareUnstack(core::Operation* operation) {
   UNSTACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(IsConstantOperand(axis_operand));
-  NNADAPTER_CHECK(IsConstantOperand(num_operand));
 
   // Infer the shape and type of output operands
-  std::vector<int32_t> output_dimensions{};
-  auto& input_dimensions = input_operand->type.dimensions;
-  for (int i = 0; i < input_dimensions.count; i++) {
-    if (i == axis) continue;
-    output_dimensions.push_back(input_dimensions.data[i]);
-  }
-
-  std::vector<std::vector<int32_t>> output_dynamic_dimensions{};
-  for (uint32_t i = 0; i < input_dimensions.dynamic_count; i++) {
-    std::vector<int32_t> dynamic_dimensions{};
-    for (uint32_t j = 0; j < input_dimensions.count; j++) {
-      if (j == axis) continue;
-      dynamic_dimensions.push_back(input_dimensions.dynamic_data[i][j]);
+  auto input_type = input_operand->type;
+  auto infer_output_shape = [&](const int32_t* input_dimensions_data,
+                                uint32_t input_dimensions_count,
+                                int32_t* output_dimensions_data,
+                                uint32_t* output_dimensions_count) {
+    for (uint32_t i = 0; i < axis; i++) {
+      output_dimensions_data[i] = input_dimensions_data[i];
     }
-    output_dynamic_dimensions.emplace_back(std::move(dynamic_dimensions));
-  }
-
+    for (uint32_t i = axis + 1; i < input_dimensions_count; i++) {
+      output_dimensions_data[i - 1] = input_dimensions_data[i];
+    }
+    *output_dimensions_count = input_dimensions_count - 1;
+  };
   for (size_t i = 0; i < output_count; i++) {
-    CopyOperandTypeExceptQuantParams(&output_operands[i]->type,
-                                     input_operand->type);
-    auto& out_dimensions = output_operands[i]->type.dimensions;
-    out_dimensions.count = output_dimensions.size();
-    for (int i = 0; i < output_dimensions.size(); i++) {
-      out_dimensions.data[i] = output_dimensions[i];
-    }
-    for (uint32_t i = 0; i < out_dimensions.dynamic_count; i++) {
-      for (uint32_t j = 0; j < output_dynamic_dimensions[i].size(); j++) {
-        out_dimensions.dynamic_data[i][j] = output_dynamic_dimensions[i][j];
-      }
+    CopyOperandTypeExceptQuantParams(&output_operands[i]->type, input_type);
+    infer_output_shape(input_type.dimensions.data,
+                       input_type.dimensions.count,
+                       output_operands[i]->type.dimensions.data,
+                       &output_operands[i]->type.dimensions.count);
+    for (uint32_t j = 0; j < input_type.dimensions.dynamic_count; j++) {
+      infer_output_shape(input_type.dimensions.dynamic_data[j],
+                         input_type.dimensions.count,
+                         output_operands[i]->type.dimensions.dynamic_data[j],
+                         &output_operands[i]->type.dimensions.count);
     }
     NNADAPTER_VLOG(5) << "output" << i << ": "
                       << OperandToString(output_operands[i]);
