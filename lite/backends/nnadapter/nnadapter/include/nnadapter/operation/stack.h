@@ -34,7 +34,7 @@ namespace operation {
   NNADAPTER_CHECK(IsConstantOperand(axis_operand));                   \
   auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);      \
   if (axis < 0) {                                                     \
-    axis += input_operands[0]->type.dimensions.count;                 \
+    axis += input_operands[0]->type.dimensions.count + 1;             \
   }                                                                   \
   NNADAPTER_VLOG(5) << "axis: " << axis;                              \
   NNADAPTER_CHECK_GE(axis, 0);                                        \
