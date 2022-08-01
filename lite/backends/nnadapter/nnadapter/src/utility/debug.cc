@@ -651,6 +651,7 @@ NNADAPTER_EXPORT std::string OperandLayoutCodeToString(
     NNADAPTER_TYPE_TO_STRING(NCHW);
     NNADAPTER_TYPE_TO_STRING(NHWC);
     NNADAPTER_TYPE_TO_STRING(HWCN);
+    NNADAPTER_TYPE_TO_STRING(HWNC);
     default:
       name = "UNKNOWN";
       break;

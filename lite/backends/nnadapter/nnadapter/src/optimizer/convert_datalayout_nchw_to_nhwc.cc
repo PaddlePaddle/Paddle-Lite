@@ -407,7 +407,6 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
         {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
-  std::vector<int32_t> filter_permutation = {};
   if (is_per_channel) {
     filter_operand->type.symm_per_channel_params.channel_dim = 0;
   }

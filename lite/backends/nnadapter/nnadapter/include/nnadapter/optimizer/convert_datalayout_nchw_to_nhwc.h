@@ -31,6 +31,7 @@ class NCHW2NHWCDataLayoutConverter {
                           const int output_num = 1);
   core::Model* GetModel();
   virtual void ConvertConv2D(core::Operation* operation);
+  virtual void ConvertConv2DTranspose(core::Operation* operation);
   virtual ~NCHW2NHWCDataLayoutConverter() = default;
 
  private:
@@ -40,7 +41,6 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertCast(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
   void ConvertComparisons(core::Operation* operation);
-  void ConvertConv2DTranspose(core::Operation* operation);
   void ConvertCumSum(core::Operation* operation);
   void ConvertElementwise(core::Operation* operation);
   void ConvertPool2D(core::Operation* operation);

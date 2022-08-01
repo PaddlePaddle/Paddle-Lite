@@ -79,7 +79,7 @@ REGISTER_CONVERTER(conv2d_transpose,
                    ConvertConv2dTranspose,
                    "mediatek_apu,huawei_ascend_npu,amlogic_npu,verisilicon_"
                    "timvx,cambricon_mlu,huawei_kirin_npu,android_nnapi,nvidia_"
-                   "tensorrt,intel_openvino");
+                   "tensorrt,intel_openvino,qualcomm_qnn");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
