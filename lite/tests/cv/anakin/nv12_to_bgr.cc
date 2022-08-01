@@ -339,9 +339,11 @@ void nv12_to_bgr(const unsigned char* src,
       g3 = g3 < 0 ? 0 : (g3 > 255) ? 255 : g3;
       b3 = b3 < 0 ? 0 : (b3 > 255) ? 255 : b3;
 
-      *ptr_bgr1++ = b1;
-      *ptr_bgr1++ = g1;
-      *ptr_bgr1++ = r1;
+      if (j + 1 < srcw) {
+        *ptr_bgr1++ = b1;
+        *ptr_bgr1++ = g1;
+        *ptr_bgr1++ = r1;
+      }
 
       *ptr_bgr2++ = b2;
       *ptr_bgr2++ = g2;
@@ -351,9 +353,11 @@ void nv12_to_bgr(const unsigned char* src,
       ptr_y2 += 2;
       ptr_vu += 2;
 
-      *ptr_bgr2++ = b3;
-      *ptr_bgr2++ = g3;
-      *ptr_bgr2++ = r3;
+      if (j + 1 < srcw) {
+        *ptr_bgr2++ = b3;
+        *ptr_bgr2++ = g3;
+        *ptr_bgr2++ = r3;
+      }
     }
   }
 }

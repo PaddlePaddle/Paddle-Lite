@@ -25,45 +25,52 @@ template <typename T>
 void seq_pool_sum(const T* din,
                   T* dout,
                   const std::vector<uint64_t> lod,
-                  int64_t width);
+                  int64_t width,
+                  T pad_value);
 
 template <typename T>
 void seq_pool_average(const T* din,
                       T* dout,
                       const std::vector<uint64_t> lod,
-                      int64_t width);
+                      int64_t width,
+                      T pad_value);
 
 template <typename T>
 void seq_pool_sqrt(const T* din,
                    T* dout,
                    const std::vector<uint64_t> lod,
-                   int64_t width);
+                   int64_t width,
+                   T pad_value);
 
 template <typename T>
 void seq_pool_max(const T* din,
                   T* dout,
                   int64_t* index,
                   const std::vector<uint64_t> lod,
-                  int64_t width);
+                  int64_t width,
+                  T pad_value);
 
 template <typename T>
 void seq_pool_min(const T* din,
                   T* dout,
                   int64_t* index,
                   const std::vector<uint64_t> lod,
-                  int64_t width);
+                  int64_t width,
+                  T pad_value);
 
 template <typename T>
 void seq_pool_first(const T* din,
                     T* dout,
                     const std::vector<uint64_t> lod,
-                    int64_t width);
+                    int64_t width,
+                    T pad_value);
 
 template <typename T>
 void seq_pool_last(const T* din,
                    T* dout,
                    const std::vector<uint64_t> lod,
-                   int64_t width);
+                   int64_t width,
+                   T pad_value);
 
 }  // namespace math
 }  // namespace arm

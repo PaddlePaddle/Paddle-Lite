@@ -152,10 +152,6 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   if (act_param.active_type == lite_api::ActivationType::kRelu6) {
     act_param.Relu_clipped_coef = act_param.Relu_clipped_coef / out_scale;
   }
-  //! update leakyRelu parameter
-  if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
-    act_param.Leaky_relu_alpha = act_param.Leaky_relu_alpha / out_scale;
-  }
   //! update hardswish parameter
   if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
     act_param.hard_swish_scale = act_param.hard_swish_scale / out_scale;
@@ -219,7 +215,7 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<float16_t>();
   auto transed_w_data = wout->mutable_data<float16_t>();
-  if (ic == 3 && stride == 2 && (oc % 4 == 0)) {
+  if (ic == 3 && stride == 2 && (oc % 8 == 0)) {
     // [chout, 3, kh, kw] -> [chout / cblock, kh, kw, 3, cblock]
     lite::arm::math::conv_trans_weights_c4toc12(
         w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
@@ -236,7 +232,7 @@ direct_conv_ptype<PRECISION(kFP16), PRECISION(kFP16)>() {
 #ifdef __aarch64__
   return std::make_pair(8, 8);
 #else
-  retur std::make_pair(8, 4);
+  return std::make_pair(8, 4);
 #endif
 }
 #endif

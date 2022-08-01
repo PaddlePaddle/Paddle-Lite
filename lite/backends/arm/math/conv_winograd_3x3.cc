@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -70,9 +71,8 @@ void conv_winograd3x3(const float* din,
     const float* din_batch = din + i * chin * size_in_channel;
     float* dout_batch = dout + i * chout * size_out_channel;
 
-//! transform input Bt * data * B
-#pragma omp parallel for num_threads(threads)
-    for (int j = 0; j < chin; ++j) {
+    //! transform input Bt * data * B
+    LITE_PARALLEL_BEGIN(j, tid, chin) {
       const float* din_channel = din_batch + j * size_in_channel;
       float* data_trans_channel = tmp_data1 + j * size_trans_channel;
 
@@ -98,13 +98,14 @@ void conv_winograd3x3(const float* din,
         }
       }
     }
+    LITE_PARALLEL_END()
     //! end of transform input
 
     ////////////////////////////////////////////////////////////////////////////////
     //! dot mul
     //! transpose input, convert from ch_in * tile_h * tile_w * 64 to
     //! 64 * ch_in * tile_h * tile_w
-    int hblock = get_hblock(ctx);
+    int hblock = get_hblock(ctx, m);
     int m_round = hblock * ((chout + hblock - 1) / hblock);
     int stride_a = m_round * chin;
     int stride_b = chin * size_tile;
@@ -136,12 +137,11 @@ void conv_winograd3x3(const float* din,
     //! transpose output, convert from 64 * ch_out * tile_h * tile_w to
     //! ch_out * tile_h * tile_w * 64
     transpose(tmp_data2, tmp_data1, stride_c, 64);
-//! end of dot mul
+    //! end of dot mul
 
-///////////////////////////////////////////////////////////////////////////////
-//! transform output
-#pragma omp parallel for
-    for (int i = 0; i < chout; ++i) {
+    ///////////////////////////////////////////////////////////////////////////////
+    //! transform output
+    LITE_PARALLEL_BEGIN(i, tid, chout) {
       float bias_value = flag_bias ? bias[i] : 0.f;
       float* dout_tmp = tmp_data2 + i * size_trans_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
@@ -172,6 +172,7 @@ void conv_winograd3x3(const float* din,
         }
       }
     }
+    LITE_PARALLEL_END()
     //! end of transform output
   }
 }
@@ -190,8 +191,7 @@ void transpose(float* data_out, const float* data_in, int w_in, int h_in) {
 
   float* ptr_out = data_out;
   const float* ptr_in = data_in;
-#pragma omp parallel for
-  for (int h = 0; h < nh; h++) {
+  LITE_PARALLEL_BEGIN(h, tid, nh) {
     const float* ptr_din_row = ptr_in + h * 4 * w_in;
     for (int w = 0; w < nw; w++) {
       float* data_out_ptr = ptr_out + w * 4 * h_in + h * 4;
@@ -269,6 +269,7 @@ void transpose(float* data_out, const float* data_in, int w_in, int h_in) {
       ptr_din_row += 4;
     }
   }
+  LITE_PARALLEL_END()
   // remian
   for (int h = 0; h < h_in; h++) {
     for (int w = nw * 4; w < w_in; w++) {

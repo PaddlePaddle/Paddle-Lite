@@ -44,6 +44,23 @@ class ReverseCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
 #endif
 };
 
+class ReverseArrayCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::ReverseParam;
+
+  void Run() override;
+
+  virtual ~ReverseArrayCompute() = default;
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForReverse"};
+#endif
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

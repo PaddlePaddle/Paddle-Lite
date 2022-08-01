@@ -41,6 +41,15 @@ namespace lite {
 const std::set<std::string> kSubblockUnsupportedPasses(
     {"memory_optimize_pass", "xpu_memory_optimize_pass"});
 
+const std::set<std::string> kSubblockSkippedPasses(
+    {"fill_constant_calc_offline_pass",
+     "scale_calc_offline_pass",
+     "unsqueeze_calc_offline_pass",
+     "range_calc_offline_pass",
+     "assign_value_calc_offline_pass",
+     "ssd_boxes_calc_offline_pass",
+     "p_norm_fill_constant_max_div_fuse_pass"});
+
 /*
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
  * program and export an optimized program.
@@ -92,7 +101,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
     core::KernelPickFactor kernel_pick_factor,
-    const std::vector<std::string>& passes);
-
+    const std::vector<std::string>& passes,
+    const lite_api::CxxConfig& config);
 }  // namespace lite
 }  // namespace paddle

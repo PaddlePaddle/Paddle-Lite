@@ -41,10 +41,14 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   CHECK(graph) << "graph not valid";
 
   // sort kernels by the factors.
-  VLOG(4) << "graph->mutable_nodes().size():" << graph->mutable_nodes().size();
+  VLOG(2) << "graph block_idx: " << graph->blockIdx();
+  VLOG(2) << "graph->mutable_nodes().size(): " << graph->mutable_nodes().size();
+  size_t idx = 0;
   for (auto& node : graph->mutable_nodes()) {
     if (!node.IsStmt()) continue;
     auto& instruct = node.AsStmt();
+    VLOG(2) << "pick kernel for op : " << instruct.op_type() << ", in block "
+            << graph->blockIdx() << ", idx : " << idx++;
 
     std::map<std::string, PrecisionType> in_types;
     std::map<std::string, PrecisionType> out_types;
@@ -66,17 +70,19 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::vector<std::pair<float, std::unique_ptr<KernelBase>>> scored;
     CHECK(!instruct.kernels().empty()) << "No kernels found for "
                                        << instruct.op_type();
-    VLOG(4) << "instruct.kernels().size():" << instruct.kernels().size();
+
+    VLOG(2) << "candidate kernels size:" << instruct.kernels().size();
     for (auto&& kernel : instruct.kernels()) {
-      float score = KernelGrade(instruct,
+      VLOG(2) << "current candidate kernel is: " << kernel->summary();
+      VLOG(2) << "valid_places size is: " << graph->valid_places().size();
+      float score = KernelGrade(&node,
                                 *kernel,
                                 graph->valid_places(),
                                 in_types,
                                 out_types,
                                 instruct.op_info()->input_names(),
                                 instruct.op_info()->output_names());
-      VLOG(4) << "kernel->summary():" << kernel->summary()
-              << " score:" << score;
+
       scored.emplace_back(score, std::move(kernel));
     }
     std::stable_sort(scored.begin(), scored.end(), KernelScoreCmp);
@@ -87,7 +93,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       // Just keep a single best kernel.
       // TODO(Superjomn) reconsider this.
       instruct.kernels().emplace_back(std::move(scored.front().second));
-      VLOG(2) << "pick " << instruct.kernels().front()->summary() << "\n\n";
+      VLOG(2) << "the final pick kernel is "
+              << instruct.kernels().front()->summary() << "\n\n";
 
     } else {
       bool out_type_int8 = true;
@@ -137,7 +144,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         instruct.ResetOp(update_desc, graph->valid_places());
         scored.clear();
         for (auto&& kernel : instruct.kernels()) {
-          float score = KernelGrade(instruct,
+          float score = KernelGrade(&node,
                                     *kernel,
                                     graph->valid_places(),
                                     in_types,
@@ -186,4 +193,5 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(static_kernel_pick_pass,
                   paddle::lite::mir::StaticKernelPickPass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kAny)})
+    .ExcludeTargets({TARGET(kXPU)});

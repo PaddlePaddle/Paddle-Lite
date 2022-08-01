@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void LrnCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
   int batch = x_dims[0];
   int channel = x_dims[1];
@@ -34,17 +34,17 @@ void LrnCompute::Run() {
   float beta = param.beta;
   float k = param.k;
   if (param.norm_region == "AcrossChannels") {
-    int r = xdnn::lrn_fwd(ctx.GetRawContext(),
-                          param.X->data<float>(),
-                          param.Out->mutable_data<float>(TARGET(kXPU)),
-                          batch,
-                          channel,
-                          h,
-                          w,
-                          n,
-                          k,
-                          alpha,
-                          beta);
+    int r = xdnn::lrn(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      batch,
+                      channel,
+                      h,
+                      w,
+                      n,
+                      k,
+                      alpha,
+                      beta);
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "Unsupport Norm Region Type: " << param.norm_region;

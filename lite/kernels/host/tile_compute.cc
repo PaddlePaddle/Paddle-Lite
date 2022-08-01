@@ -29,6 +29,11 @@ void TileCompute<T, PType>::Run() {
     for (int64_t i = 0; i < repeat_times_size; i++) {
       repeat_times.push_back(param.RepeatTimes->template data<int>()[i]);
     }
+  } else if (param.repeat_times_tensor.size() != 0) {
+    for (int i = 0; i < param.repeat_times_tensor.size(); i++) {
+      auto temp = param.repeat_times_tensor[i];
+      repeat_times.push_back(*(temp->template data<int>()));
+    }
   }
   auto in_dims = param.X->dims();
   auto vec_in_dims = in_dims.Vectorize();
@@ -80,9 +85,10 @@ void TileCompute<T, PType>::Run() {
       int dst_stride = in_stride[i + 1] * right;
       for (int m = 0; m < num; m++) {
         for (int j = 0; j < bcast_dims[i]; j++) {
-          std::memcpy(tmp_dst + j * dst_stride / bcast_dims[i] + m * dst_stride,
-                      tmp_src + m * dst_stride / bcast_dims[i],
-                      dst_stride / bcast_dims[i] * sizeof(T));
+          std::memcpy(
+              tmp_dst + j * (dst_stride / bcast_dims[i]) + m * dst_stride,
+              tmp_src + m * (dst_stride / bcast_dims[i]),
+              dst_stride / bcast_dims[i] * sizeof(T));
         }
       }
       tmp_src_tensor.CopyDataFrom(tmp_dst_tensor);
@@ -108,8 +114,8 @@ REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_float, def_float)
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();
 using tile_int32 =
-    paddle::lite::kernels::host::TileCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(tile, kHost, kInt32, kNCHW, tile_int32, def_int32)
+    paddle::lite::kernels::host::TileCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int32, def_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("RepeatTimes",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -119,20 +125,8 @@ REGISTER_LITE_KERNEL(tile, kHost, kInt32, kNCHW, tile_int32, def_int32)
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 using tile_int64 =
-    paddle::lite::kernels::host::TileCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(tile, kHost, kInt64, kNCHW, tile_int64, def_int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindInput("RepeatTimes",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindInput("repeat_times_tensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .Finalize();
-#ifdef LITE_BUILD_EXTRA
-using tile_int64_f =
     paddle::lite::kernels::host::TileCompute<int64_t, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int64_f, def_int64)
+REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int64, def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("RepeatTimes",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -141,10 +135,10 @@ REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int64_f, def_int64)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
-#endif  // LITE_BUILD_EXTRA
+
 using tile_int8 =
-    paddle::lite::kernels::host::TileCompute<int8_t, PRECISION(kInt8)>;
-REGISTER_LITE_KERNEL(tile, kHost, kInt8, kNCHW, tile_int8, def_int8)
+    paddle::lite::kernels::host::TileCompute<int8_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int8, def_int8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
     .BindInput("RepeatTimes",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -107,9 +108,11 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
       int hs = h * 2 /*stride*/ - padh;
       int he = hs + h_kernel * 2 /*stride*/ + 1;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
+        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
+#elif defined(ARM_WITH_OMP)
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -124,17 +127,6 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
         const int8_t* block_inr2 = block_inr1 + in_len;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-          bias_local[4] = bias[c + 4];
-          bias_local[5] = bias[c + 5];
-          bias_local[6] = bias[c + 6];
-          bias_local[7] = bias[c + 7];
-        }
 #ifdef __aarch64__
         int8x8_t vw0 = vld1_s8(weight_c);
         int8x8_t vw1 = vld1_s8(weight_c + 8);
@@ -450,11 +442,12 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
                                           wout,
                                           flag_act,
                                           alpha,
-                                          bias_local,
+                                          bias + c,
                                           flag_bias,
                                           ptr_write,
                                           scale + c);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
@@ -621,23 +614,25 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
 inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
                                                              int w_out,
                                                              uint8_t* vmask) {
-  const uint8_t right_pad_idx[16] = {
-      0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
+  const uint8_t right_pad_idx[8] = {
+      16, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
   uint32_t cnt_col = ((w_out >> 3) - 2);
   uint8_t size_right_remain = static_cast<uint8_t>(w_in - (15 + cnt_col * 16));
   if (size_right_remain >= 17) {
     cnt_col++;
     size_right_remain -= 16;
   }
+  // size_right_remain means what valid data we have when dealing with right
+  // part!
   uint32_t cnt_remain = (size_right_remain == 16 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
-  uint8x8_t vmask_rp1 =
+
+  // we need shift left (8 - cnt_remain) * 2 byte , so valid data growes!
+  size_right_remain = size_right_remain + (8 - cnt_remain) * 2;
+  uint8x8_t vmask_rp3 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
-  uint8x8_t vmask_rp2 =
-      vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx + 8));
-  vst1_u8(vmask, vmask_rp1);
-  vst1_u8(vmask + 8, vmask_rp2);
+  vst1_u8(vmask, vmask_rp3);
   return std::make_pair(cnt_col, cnt_remain);
 }
 // clang-format off
@@ -739,6 +734,10 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
 
 #define RESULT_INT8_S2_RELU6                            \
   "ldr     q14, [%[bias_val], #64]                  \n" \
+  "fmax   v16.4s,  v16.4s, %[vzero].4s              \n" \
+  "fmax   v17.4s,  v17.4s, %[vzero].4s              \n" \
+  "fmax   v18.4s,  v18.4s, %[vzero].4s              \n" \
+  "fmax   v19.4s,  v19.4s, %[vzero].4s              \n" \
   "fmin   v16.4s,  v16.4s, v14.4s                   \n" \
   "fmin   v17.4s,  v17.4s, v14.4s                   \n" \
   "fmin   v18.4s,  v18.4s, v14.4s                   \n" \
@@ -878,21 +877,40 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "bge    2b                                        \n" \
   "1:                                               \n" \
   "cmp    %w[cnt], #1                               \n" \
+  "sub    %[din_ptr0], %[din_ptr0], #16             \n" \
+  "sub    %[din_ptr1], %[din_ptr1], #16             \n" \
+  "sub    %[din_ptr2], %[din_ptr2], #16             \n" \
+  "sub    %[din_ptr3], %[din_ptr3], #16             \n" \
+  "sub    %[din_ptr4], %[din_ptr4], #16             \n" \
   "blt    4f                                        \n" \
   "3:                                               \n" \
-  "ld1    {v12.8b, v13.8b}, [%[vmask]]              \n" \
+  "sub    %[din_ptr0], %[din_ptr0], %[right_pad_num_in]\n"\
+  "sub    %[din_ptr1], %[din_ptr1], %[right_pad_num_in]\n"\
+  "sub    %[din_ptr2], %[din_ptr2], %[right_pad_num_in]\n"\
+  "sub    %[din_ptr3], %[din_ptr3], %[right_pad_num_in]\n"\
+  "sub    %[din_ptr4], %[din_ptr4], %[right_pad_num_in]\n"\
+  "sub    %[ptr_out0], %[ptr_out0], %[right_pad_num_out]\n"\
+  "sub    %[ptr_out1], %[ptr_out1], %[right_pad_num_out]\n"\
+  "ld2    {v0.8b, v1.8b}, [%[din_ptr0]], #16        \n" \
+  "ld2    {v4.8b, v5.8b}, [%[din_ptr2]], #16        \n" \
+  "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n" \
+  "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n" \
+  "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n" \
+  \
+  "ld1    {v12.8b}, [%[vmask]]         \n" \
+  \
   "movi    v18.4s, #0                               \n" \
   "movi    v19.4s, #0                               \n" \
-  "bif    v0.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v1.8b, %[vzero].8b, v13.8b                \n" \
-  "bif    v4.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v5.8b, %[vzero].8b, v13.8b                \n" \
-  "bif    v2.8b, %[vzero].8b, v12.8b                \n" \
-  "bif    v3.8b, %[vzero].8b, v13.8b                \n" \
-  "ext    v10.8b, v0.8b, %[vzero].8b, #1            \n" \
-  "ext    v11.8b, v4.8b, %[vzero].8b, #1            \n" \
-  "bif    v6.16b, %[vzero].16b, v12.16b             \n" \
-  "bif    v7.16b, %[vzero].16b, v13.16b             \n" \
+  \
+  /* generating v10, v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr0]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v10.8b, v0.8b, v13.8b, #1            \n" \
+  "ld1    {v13.8b}, [%[din_ptr2]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v4.8b, v13.8b, #1            \n" \
+  /* generating v10, v11 ends */\
+  \
   "movi    v20.4s, #0                               \n" \
   "movi    v21.4s, #0                               \n" \
   "smull  v14.8h, v0.8b, %[wr00].8b                 \n" \
@@ -906,14 +924,20 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
-  "bif    v8.16b, %[vzero].16b, v12.16b             \n" \
-  "bif    v9.16b, %[vzero].16b, v13.16b             \n" \
   "saddw  v18.4s, v18.4s, v15.4h                    \n" \
   "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
   "smull  v14.8h, v5.8b, %[wr21].8b                 \n" \
   "smull  v15.8h, v11.8b, %[wr22].8b                \n" \
-  "ext    v10.8b, v2.8b, %[vzero].8b, #1            \n" \
-  "ext    v11.8b, v6.8b, %[vzero].8b, #1            \n" \
+  \
+    /* generating v10, v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr1]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v10.8b, v2.8b, v13.8b, #1            \n" \
+  "ld1    {v13.8b}, [%[din_ptr3]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v6.8b, v13.8b, #1            \n" \
+  /* generating v10, v11, according to [vmask] */\
+  \
   /* line 1 */                                          \
   "smlal  v17.8h, v6.8b, %[wr10].8b                 \n" \
   "smlal  v14.8h, v2.8b, %[wr10].8b                 \n" \
@@ -928,7 +952,12 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw  v18.4s, v18.4s, v15.4h                    \n" \
   "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
   /* line 2 */                                          \
-  "ext    v11.8b, v8.8b, %[vzero].8b, #1            \n" \
+  /* generating v11, according to [vmask] */\
+  "ld1    {v13.8b}, [%[din_ptr4]] \n"\
+  "bif v13.8b, %[vzero].8b, v12.8b \n"\
+  "ext    v11.8b, v8.8b, v13.8b, #1            \n" \
+  /* generating v11, according to [vmask] */\
+  \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
   "smull  v17.8h, v8.8b, %[wr20].8b                 \n" \
@@ -944,27 +973,20 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw2 v21.4s, v21.4s, v17.8h                    \n"
 
 #define RIGHT_RESULT_INT8_FP32_S2                       \
-  "ldr     q4, [%[bias_val], #32]                  \n" \
-  "ldp    q12, q13, [%[rmask]]                      \n" \
+  "ldr     q4, [%[bias_val], #32]                   \n" \
   /* int32->fp32 */                                     \
   "ld1    {v16.4s}, [%[bias_val]]                   \n" \
   "ld1    {v17.4s}, [%[bias_val]]                   \n" \
   "scvtf   v14.4s,  v20.4s                          \n" \
-  "ldp    q0, q1,   [%[ptr_out0]]                   \n" \
-  "scvtf   v15.4s, v21.4s                           \n" \
+  "scvtf   v15.4s,  v21.4s                          \n" \
   "ld1    {v18.4s}, [%[bias_val]]                   \n" \
   "ld1    {v19.4s}, [%[bias_val]]                   \n" \
-  "ldp    q2, q3,   [%[ptr_out1]]                   \n" \
   "fmla   v16.4s, v10.4s, v4.4s                     \n" \
   "fmla   v17.4s, v11.4s, v4.4s                     \n" \
   "fmla   v18.4s, v14.4s, v4.4s                     \n" \
   "fmla   v19.4s, v15.4s, v4.4s                     \n"
 
 #define RIGHT_RESULT_INT8_FP32_ST                       \
-  "bif    v16.16b, v0.16b, v12.16b                  \n" \
-  "bif    v17.16b, v1.16b, v13.16b                  \n" \
-  "bif    v18.16b, v2.16b, v12.16b                  \n" \
-  "bif    v19.16b, v3.16b, v13.16b                  \n" \
   "st1    {v16.4s}, [%[ptr_out0]], #16              \n" \
   "st1    {v18.4s}, [%[ptr_out1]], #16              \n" \
   "st1    {v17.4s}, [%[ptr_out0]], #16              \n" \
@@ -1002,23 +1024,35 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "fcvtas  v11.4s, v17.4s                           \n" \
   "fcvtas  v12.4s, v18.4s                           \n" \
   "fcvtas  v13.4s, v19.4s                           \n" \
-  "ld1     {v0.8b}, [%[ptr_out0]]                   \n" \
-  "ld1     {v1.8b}, [%[ptr_out1]]                   \n" \
   /* int32-int16 */                                     \
   "sqxtn   v16.4h, v10.4s                           \n" \
   "sqxtn2  v16.8h, v11.4s                           \n" \
   "sqxtn   v18.4h, v12.4s                           \n" \
   "sqxtn2  v18.8h, v13.4s                           \n" \
-  "ld1    {v12.8b}, [%[rmask]]                      \n" \
   /* int16-int8 */                                      \
   "sqxtn  v17.8b, v16.8h                            \n" \
   "sqxtn  v19.8b, v18.8h                            \n" \
-  "bif    v17.8b, v0.8b, v12.8b                     \n" \
-  "bif    v19.8b, v1.8b, v12.8b                     \n" \
   "st1    {v17.8b}, [%[ptr_out0]]                   \n" \
   "st1    {v19.8b}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
+#define PARAM1 \
+  [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
+  [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), \
+  [din_ptr4] "+r"(din_ptr4), \
+  [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
+
+#define PARAM2 \
+  [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
+  [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
+  [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
+  [vmask] "r" (vmask), [right_pad_num_in] "r"(right_pad_num_in), \
+  [right_pad_num_out] "r"(right_pad_num_out)
+
+#define ASM_PARAM \
+  "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", \
+  "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", \
+  "v17", "v18", "v19", "v20", "v21"
 #else
 #define INIT_INT8_S2                                    \
   "vld1.8    {d0-d1}, [%[wei_ptr]]                  \n" \
@@ -1089,12 +1123,16 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vmax.f32 q11, q11, q0                            \n"
 
 #define RESULT_INT8_S2_RELU6                           \
-  "vld1.32 {d18-d19}, [%[alpha_val]]               \n" \
+  "vldr     d18, [%[bias_val], #48]                \n" \
+  "vldr     d19, [%[bias_val], #56]                \n" \
+  "vmax.f32 q10, q10, q0                           \n" \
+  "vmax.f32 q11, q11, q0                           \n" \
   "vmin.f32 q10, q10, q9                           \n" \
   "vmin.f32 q11, q11, q9                           \n"
 
 #define RESULT_INT8_S2_LEAKY_RELU                      \
-  "vld1.32 {d18-d19}, [%[alpha_val]]               \n" \
+  "vldr     d18, [%[bias_val], #48]                \n" \
+  "vldr     d19, [%[bias_val], #56]                \n" \
   "vcge.f32 q12, q10, q0                           \n" \
   "vmul.f32 q13, q10, q9                           \n" \
   "vcge.f32 q14, q11, q0                           \n" \
@@ -1184,20 +1222,33 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "bge    2b                                        \n" \
   "1:                                               \n" \
   "cmp    %[cnt], #1                                \n" \
+  "sub    %[din_ptr0], #16                          \n" \
+  "sub    %[din_ptr1], #16                          \n" \
+  "sub    %[din_ptr2], #16                          \n" \
   "blt    4f                                        \n" \
   "3:                                               \n" \
-  "vld1.8 {d18-d19}, [%[vmask]]                     \n" \
+  "sub    %[din_ptr0], %[right_pad_num_in]          \n" \
+  "sub    %[din_ptr1], %[right_pad_num_in]          \n" \
+  "sub    %[din_ptr2], %[right_pad_num_in]          \n" \
+  "sub    %[ptr_out0], %[right_pad_num_out]         \n" \
+  "vld2.8    {d12-d13}, [%[din_ptr0]]!               \n" \
+  "vld2.8    {d14-d15}, [%[din_ptr1]]!              \n" \
+  "vld2.8    {d16-d17}, [%[din_ptr2]]!             \n" \
+  \
+  /* below generating d18,d19,d20 according to [vmask] */\
+  "vld1.8 {d18}, [%[vmask]]                     \n" \
+  "vld1.8    {d19}, [%[din_ptr0]]               \n" \
+  "vld1.8    {d28}, [%[din_ptr1]]               \n" \
+  "vld1.8    {d29}, [%[din_ptr2]]               \n" \
+  "vbif      d19, d11, d18                          \n" \
+  "vbif      d28, d11, d18                          \n" \
+  "vbif      d29, d11, d18                          \n" \
+  "vext.8    d18, d12, d19, #1                      \n" \
+  "vext.8    d19, d14, d28, #1                      \n" \
+  "vext.8    d20, d16, d29, #1                      \n" \
+  /* generating d18,d19,d20 ends */\
   "vmov.u32  q14, #0                                \n" \
   "vmov.u32  q15, #0                                \n" \
-  "vbif      d12, d11, d18                          \n" \
-  "vbif      d13, d11, d19                          \n" \
-  "vbif      d14, d11, d18                          \n" \
-  "vbif      d15, d11, d19                          \n" \
-  "vbif      d16, d11, d18                          \n" \
-  "vbif      d17, d11, d19                          \n" \
-  "vext.8    d18, d12, d11, #1                      \n" \
-  "vext.8    d19, d14, d11, #1                      \n" \
-  "vext.8    d20, d16, d11, #1                      \n" \
   /* line 0 */                                          \
   "vmull.s8  q11, d12, d2                           \n" \
   "vmull.s8  q12, d13, d3                           \n" \
@@ -1225,25 +1276,21 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vld1.32 {d24-d25}, [%[scale_val]]               \n"
 
 #define RIGHT_RESULT_INT8_FP32_S2                       \
-  "vld1.32 {d12-d15}, [%[rmask]]                    \n" \
   /* int32->fp32 */                                     \
-  "vcvt.f32.s32   q9, q14                           \n" \
+  "vcvt.f32.s32   q9,  q14                          \n" \
   "vcvt.f32.s32   q13, q15                          \n" \
-  "vld1.32 {d4-d7}, [%[ptr_out0]]                   \n" \
-  "vmla.f32  q10, q9, q12                           \n" \
+  "vmla.f32  q10, q9,  q12                          \n" \
   "vmla.f32  q11, q13, q12                          \n"
 
 #define RIGHT_RESULT_INT8_FP32_ST                       \
-  "vbif   q10, q2, q6                               \n" \
-  "vbif   q11, q3, q7                               \n" \
   "vst1.32 {d20-d23}, [%[ptr_out0]]!                \n" \
   "4:                                               \n"
 
 #define RIGHT_RESULT_INT8_INT8_S2                       \
   /* int32->fp32 */                                     \
-  "vcvt.f32.s32   q9, q14                           \n" \
+  "vcvt.f32.s32   q9,  q14                          \n" \
   "vcvt.f32.s32   q13, q15                          \n" \
-  "vmla.f32  q10, q9, q12                           \n" \
+  "vmla.f32  q10, q9,  q12                          \n" \
   "vmla.f32  q11, q13, q12                          \n"
 
 #define RIGHT_RESULT_INT8_INT8_ST                       \
@@ -1251,16 +1298,14 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vmov.f32 q12, #0.5                               \n" \
   "vmov.f32 q13, #0.5                               \n" \
   "vmov.f32 q14, #-0.5                              \n" \
-  "vcgt.f32 q9, q10, q0                             \n" \
+  "vcgt.f32 q9,  q10, q0                            \n" \
   "vcgt.f32 q15, q11, q0                            \n" \
   "vbif.f32 q12, q14, q9                            \n" \
   "vbif.f32 q13, q14, q15                           \n" \
-  "vld1.8  {d12}, [%[rmask]]                        \n" \
   "vld1.32 {d18-d19}, [%[max_val]]                  \n" \
   "vadd.f32 q10, q10, q12                           \n" \
   "vadd.f32 q11, q11, q13                           \n" \
   /* data >= -127 */                                    \
-  "vld1.8  {d14}, [%[ptr_out0]]                     \n" \
   "vcge.f32 q14, q10, q9                            \n" \
   "vcge.f32 q15, q11, q9                            \n" \
   "vbif     q10, q9, q14                            \n" \
@@ -1273,9 +1318,22 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vqmovn.s32 d21, q13                              \n" \
   /* int16-int8 */                                      \
   "vqmovn.s16 d24, q10                              \n" \
-  "vbif   d24, d14, d12                             \n" \
   "vst1.8 {d24}, [%[ptr_out0]]!                     \n" \
   "4:                                               \n"
+
+#define PARAM1 \
+  [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
+  [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
+
+#define PARAM2 \
+  [bias_val] "r"(v_bias), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
+  [scale_val] "r"(scale_val), [max_val] "r"(max_val), \
+  [right_pad_num_in] "r"(right_pad_num_in), \
+  [right_pad_num_out] "r"(right_pad_num_out)
+
+#define ASM_PARAM \
+  "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
+  "q10", "q11", "q12", "q13", "q14", "q15"
 #endif
 // clang-format on
 
@@ -1294,28 +1352,31 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
                                  int wout,
                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   int8_t* write_ptr =
-      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint8_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint8_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
+
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
-  vst1_u8(rmask, vrmask_rp);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
   float32x4_t vzero = vdupq_n_f32(0);
+#else
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
+
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1332,16 +1393,9 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1351,23 +1405,20 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
         ASSIGN_PTR_3x3_S2_INT8(wout)
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
-        // float* bias_ptr = v_bias;
         asm volatile(
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [max_val] "r"(max_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1386,31 +1437,29 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
                                  int wout,
                                  ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   float* write_ptr =
-      reinterpret_cast<float*>(ctx->workspace_data<float>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint32_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint32_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint32x4_t vrmask_rp1 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
-  uint32x4_t vrmask_rp2 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx + 4));
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  vst1q_u32(rmask, vrmask_rp1);
-  vst1q_u32(rmask + 4, vrmask_rp2);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
+  float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     float* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1427,16 +1476,9 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1451,17 +1493,16 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1480,28 +1521,28 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
                                       int wout,
                                       ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   int8_t* write_ptr =
-      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint8_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint8_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
-  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
-  vst1_u8(rmask, vrmask_rp);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
   float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1518,16 +1559,9 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1541,18 +1575,16 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), \
-              [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val), [max_val] "r"(max_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1571,31 +1603,28 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
                                       int wout,
                                       ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   float* write_ptr =
-      reinterpret_cast<float*>(ctx->workspace_data<float>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint32_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint32_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint32x4_t vrmask_rp1 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
-  uint32x4_t vrmask_rp2 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx + 4));
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  vst1q_u32(rmask, vrmask_rp1);
-  vst1q_u32(rmask + 4, vrmask_rp2);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
+  float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     float* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1612,16 +1641,9 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1636,18 +1658,16 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), \
-              [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1666,28 +1686,29 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
                                        int wout,
                                        ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   int8_t* write_ptr =
-      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint8_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint8_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
-  float32x4_t vzero = vdupq_n_f32(0.f);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
+  float32x4_t vzero = vdupq_n_f32(0);
+#else
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
-  vst1_u8(rmask, vrmask_rp);
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1701,19 +1722,12 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
         asm volatile(
-          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
-          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
-          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
+          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
+          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_INT8_ST
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1724,21 +1738,19 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
         asm volatile(
-          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
-          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
-          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha), [max_val] "r"(max_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
+          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_INT8_S2
+          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_INT8_ST
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1757,31 +1769,29 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
                                        int wout,
                                        ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   float* write_ptr =
-      reinterpret_cast<float*>(ctx->workspace_data<float>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<float*>(ctx->workspace_data<float>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint32_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint32_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint32x4_t vrmask_rp1 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
-  uint32x4_t vrmask_rp2 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx + 4));
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  vst1q_u32(rmask, vrmask_rp1);
-  vst1q_u32(rmask + 4, vrmask_rp2);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
+  float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     float* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1795,19 +1805,12 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
         asm volatile(
-          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
-          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
-          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
+          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
+          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_FP32_ST
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1818,21 +1821,19 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
         asm volatile(
-          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
-          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
-          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
+          MID_COMPUTE_INT8_S2 RESULT_INT8_S2_RELU6 RESULT_INT8_FP32_S2
+          RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_RELU6 RIGHT_RESULT_INT8_FP32_ST
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1851,28 +1852,29 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
                                             int wout,
                                             ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   int8_t* write_ptr =
-      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<int8_t*>(ctx->workspace_data<int8_t>() + win + 18);
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint8_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint8_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
-  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
-  vst1_u8(rmask, vrmask_rp);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
   float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1889,16 +1891,9 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -1912,18 +1907,16 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_INT8_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_INT8_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RIGHT_RESULT_INT8_INT8_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha), [max_val] "r"(max_val)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1942,31 +1935,29 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
                                             int wout,
                                             ARMContext* ctx) {
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
-  memset(zero_ptr, 0, win * sizeof(int8_t));
+  memset(zero_ptr, 0, (win + 18) * sizeof(int8_t));
   float* write_ptr =
-      reinterpret_cast<float*>(ctx->workspace_data<float>() + win);
-  int threads = ctx->threads();
+      reinterpret_cast<float*>(ctx->workspace_data<float>() + (win + 18));
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
-  const uint32_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint8_t vmask[16];
-  uint32_t rmask[8];
+  uint8_t vmask[8];
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
-  uint32x4_t vrmask_rp1 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
-  uint32x4_t vrmask_rp2 =
-      vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx + 4));
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  vst1q_u32(rmask, vrmask_rp1);
-  vst1q_u32(rmask + 4, vrmask_rp2);
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 2);
+
+#ifdef __aarch64__
+  float32x4_t vzero = vdupq_n_f32(0);
+#else
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
+#endif
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     float* dout_batch = dout + n * chin * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < chin; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
@@ -1983,16 +1974,9 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_LEAKY_RELU RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1)
-            : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
-              [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [rmask] "r"(rmask), [vmask] "r" (vmask)
-            : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
-              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
-              "v17", "v18", "v19", "v20", "v21"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += 2 * wout;
       }
@@ -2006,18 +1990,16 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
           INIT_INT8_S2 LEFT_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_FP32_S2
           MID_COMPUTE_INT8_S2 RESULT_INT8_S2_LEAKY_RELU RESULT_INT8_FP32_S2
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_FP32_S2 RESULT_INT8_S2_LEAKY_RELU RIGHT_RESULT_INT8_FP32_ST
-            : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
-              [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
-              "q10", "q11", "q12", "q13", "q14", "q15"
+          : PARAM1
+          : PARAM2
+          : ASM_PARAM
         );
         dout_ptr += wout;
       }
 #endif
       // clang-format on
     }
+    LITE_PARALLEL_END();
   }
 }
 

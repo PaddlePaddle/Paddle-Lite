@@ -53,7 +53,7 @@ class MaxSeqPoolFunctor {
     }
     CHECK_EQ(idx_dims, out_dims);
 
-    auto starts = input.lod()[0];
+    auto starts = input.lod()[input.lod().size() - 1];
     const T* in_data = input.data<T>();
     T* out_data = output->template mutable_data<T>();
     int* max_index = index->mutable_data<int>();
@@ -95,15 +95,19 @@ class MaxSeqPoolFunctor<T, true> {
                   lite::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
+    auto idx_dims = index->dims();
     CHECK_GT(in_dims.size(), 1u);
     CHECK_GT(out_dims.size(), 1u);
     for (size_t i = 1; i < in_dims.size(); ++i) {
       CHECK_EQ(in_dims[i], out_dims[i]);
     }
-
-    auto starts = input.lod()[0];
+    for (size_t i = 0; i < idx_dims.size(); ++i) {
+      CHECK_EQ(idx_dims[i], out_dims[i]);
+    }
+    auto starts = input.lod()[input.lod().size() - 1];
     const T* in_data = input.data<T>();
     T* out_data = output->template mutable_data<T>();
+    int* max_index = index->template mutable_data<int>();
 
     int64_t num_seq = out_dims[0];
     int64_t dim = output->numel() / num_seq;
@@ -111,15 +115,20 @@ class MaxSeqPoolFunctor<T, true> {
       if (starts[i] == starts[i + 1]) {
         for (int64_t k = 0; k < dim; ++k) {
           out_data[i * dim + k] = pad_value;
+          max_index[i * dim + k] = -1;
         }
         continue;
       }
       std::memcpy(
           &out_data[i * dim], &in_data[starts[i] * dim], dim * sizeof(T));
+      for (int64_t k = 0; k < dim; ++k) {
+        max_index[i * dim + k] = starts[i];
+      }
       for (size_t j = starts[i] + 1; j < starts[i + 1]; ++j) {
         for (int64_t k = 0; k < dim; ++k) {
           if (in_data[j * dim + k] > out_data[i * dim + k]) {
             out_data[i * dim + k] = in_data[j * dim + k];
+            max_index[i * dim + k] = j;
           }
         }
       }
@@ -174,7 +183,7 @@ class LastSeqPoolFunctor {
 
     // Calculate the size of each item in sequence
     int64_t item_size = input.numel() / input.dims()[0];
-    auto lod = input.lod()[0];
+    auto lod = input.lod()[input.lod().size() - 1];
     int seq_num = static_cast<int>(lod.size()) - 1;
     for (int i = 0; i < seq_num; ++i) {
       // Calculate the length of each sequence
@@ -207,7 +216,7 @@ class FirstSeqPoolFunctor {
 
     // Calculate the size of each item in sequence
     int64_t item_size = input.numel() / input.dims()[0];
-    auto lod = input.lod()[0];
+    auto lod = input.lod()[input.lod().size() - 1];
     int seq_num = static_cast<int>(lod.size()) - 1;
     for (int i = 0; i < seq_num; ++i) {
       // Calculate the length of each sequence
@@ -285,7 +294,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
       return;
     }
 
-    auto lod = input.lod()[0];
+    auto lod = input.lod()[input.lod().size() - 1];
     if (pooltype == "SUM") {
       const T* src = input.data<T>();
       T* dst = output->template mutable_data<T>(TARGET(kX86));

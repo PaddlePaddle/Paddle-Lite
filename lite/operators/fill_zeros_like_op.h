@@ -29,12 +29,19 @@ class FillZerosLikeOp : public OpLite {
 
   explicit FillZerosLikeOp(const std::string &op_type) : OpLite(op_type) {}
 
+  bool CheckShape() const override;
+
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "fill_zeors_like"; }
+
+  bool InferType() override {
+    param_.Out->set_precision(param_.X->precision());
+    return true;
+  }
 
  private:
   mutable FillAnyLikeParam param_;

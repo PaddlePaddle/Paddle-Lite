@@ -731,14 +731,15 @@ void pack_padding8_m256(lite::Tensor* input,
     }
   }
 }
+
 // input  [bs, ic, ih, iw] => [bs, (ic + 7)/8, ih, iw, 8]
 // filter [oc, 01, ih, iw] => [01, (ic + 7)/8, ih, iw, 8] for depthwise
-void packC8_with_Cleft(const float* din,
-                       float* dout,
-                       const std::vector<int>& pad,
-                       int h_in,
-                       int w_in,
-                       int channel) {
+void packC8_common(const float* din,
+                   float* dout,
+                   const std::vector<int>& pad,
+                   int h_in,
+                   int w_in,
+                   int channel) {
   int top = pad[0];
   int bottom = pad[1];
   int left = pad[2];
@@ -869,11 +870,12 @@ void packC8_with_Cleft(const float* din,
            bottom * w_out * block_channel * sizeof(float));
   }
 }
+
 // output_trans [bs, (oc + 7)/8, oh, ow, 8] => output [bs, oc, oh, ow]
-void unpackC8_with_Cleft(const float* din,
-                         float* dout,
-                         int size_out_channel,
-                         int channel) {
+void unpackC8_common(const float* din,
+                     float* dout,
+                     int size_out_channel,
+                     int channel) {
   int block_channel = 8;
   float* dout_init = dout;
 
@@ -1148,27 +1150,26 @@ void im2col_s1<float>(const float* data_im,
   memset(data_col, 0, mem_size);
 #pragma omp parallel for
   for (int c = 0; c < channels; c++) {
-    unsigned int data_im_z = c * in_channel_size;
-    unsigned int data_col_z1 = c * output_plane_size;
+    unsigned int data_im_z = static_cast<unsigned int>(c * in_channel_size);
+    int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
          ky++, h_offset += dilation_h) {
-      unsigned int data_col_z2 = ky * out_channel_size * kernel_w;
+      int data_col_z2 = ky * out_channel_size * kernel_w;
       for (int kx = 0, w_offset = 0; kx < kernel_w;
            kx++, w_offset += dilation_w) {
-        unsigned int data_col_z3 = kx * out_channel_size;
-        unsigned int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
-        unsigned int oh_begin = std::max(((pad_top - h_offset)), 0);
-        unsigned int oh_end =
-            std::min(((height + pad_bottom - h_offset)), output_h);
+        int data_col_z3 = kx * out_channel_size;
+        unsigned int data_col_z =
+            static_cast<unsigned int>(data_col_z1 + data_col_z2 + data_col_z3);
+        int oh_begin = std::max(((pad_top - h_offset)), 0);  // always >= 0
+        int oh_end = std::min(((height + pad_bottom - h_offset)), output_h);
         oh_end = std::max(oh_begin, oh_end);
-        unsigned int ow_begin = std::max(((pad_left - w_offset)), 0);
-        unsigned int ow_end =
-            std::min(((width + pad_right - w_offset)), output_w);
+        int ow_begin = std::max(((pad_left - w_offset)), 0);
+        int ow_end = std::min(((width + pad_right - w_offset)), output_w);
         ow_end = std::max(ow_begin, ow_end);
-        unsigned int ih = oh_begin - pad_top + h_offset;
+        int ih = oh_begin - pad_top + h_offset;
         for (int oh = oh_begin; oh < oh_end; ++oh, ++ih) {
-          unsigned int iw = ow_begin - pad_left + w_offset;
-          unsigned int ow = ow_begin;
+          int iw = ow_begin - pad_left + w_offset;
+          int ow = ow_begin;
           unsigned int data_im_offset = data_im_z + ih * width;
           unsigned int data_col_offset = data_col_z + oh * output_w;
           const float* data_im_ptr = data_im + data_im_offset;
@@ -1221,27 +1222,28 @@ void im2col_s2<float>(const float* data_im,
   memset(data_col, 0, mem_size);
 #pragma omp parallel for
   for (int c = 0; c < channels; c++) {
-    unsigned int data_im_z = c * in_channel_size;
-    unsigned int data_col_z1 = c * output_plane_size;
+    unsigned int data_im_z = static_cast<unsigned int>(c * in_channel_size);
+    int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
          ky++, h_offset += dilation_h) {
-      unsigned int data_col_z2 = ky * output_h * output_w * kernel_w;
+      int data_col_z2 = ky * output_h * output_w * kernel_w;
       for (int kx = 0, w_offset = 0; kx < kernel_w;
            kx++, w_offset += dilation_w) {
-        unsigned int data_col_z3 = kx * output_h * output_w;
-        unsigned int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
-        unsigned int oh_begin = std::max(((pad_top - h_offset + 1) / 2), 0);
-        unsigned int oh_end =
+        int data_col_z3 = kx * output_h * output_w;
+        unsigned int data_col_z =
+            static_cast<unsigned int>(data_col_z1 + data_col_z2 + data_col_z3);
+        int oh_begin = std::max(((pad_top - h_offset + 1) / 2), 0);
+        int oh_end =
             std::min(((height + pad_bottom - h_offset + 1) / 2), output_h);
         oh_end = std::max(oh_begin, oh_end);
-        unsigned int ow_begin = std::max(((pad_left - w_offset + 1) / 2), 0);
-        unsigned int ow_end =
+        int ow_begin = std::max(((pad_left - w_offset + 1) / 2), 0);
+        int ow_end =
             std::min(((width + pad_right - w_offset + 1) / 2), output_w);
         ow_end = std::max(ow_begin, ow_end);
-        unsigned int ih = oh_begin * 2 - pad_top + h_offset;
+        int ih = oh_begin * 2 - pad_top + h_offset;
         for (int oh = oh_begin; oh < oh_end; ++oh, ih += 2) {
-          unsigned int iw = ow_begin * 2 - pad_left + w_offset;
-          unsigned int ow = ow_begin;
+          int iw = ow_begin * 2 - pad_left + w_offset;
+          int ow = ow_begin;
           unsigned int data_im_offset = data_im_z + ih * width;
           unsigned int data_col_offset = data_col_z + oh * output_w;
           const float* data_im_ptr = data_im + data_im_offset;
@@ -1342,6 +1344,59 @@ void im2col<float>(const float* data_im,
                          data_col);
   }
 }
+
+template <>
+void im2col<int8_t>(const int8_t* data_im,
+                    int channels,
+                    int height,
+                    int width,
+                    int kernel_h,
+                    int kernel_w,
+                    int pad_top,
+                    int pad_bottom,
+                    int pad_left,
+                    int pad_right,
+                    int stride_h,
+                    int stride_w,
+                    int dilation_h,
+                    int dilation_w,
+                    int8_t* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
+          stride_h +
+      1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) /
+          stride_w +
+      1;
+  const int channel_size = height * width;
+  for (int channel = channels; channel--; data_im += channel_size) {
+    for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
+      for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
+        int input_row = -pad_top + kernel_row * dilation_h;
+        for (int output_rows = output_h; output_rows; output_rows--) {
+          if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
+            for (int output_cols = output_w; output_cols; output_cols--) {
+              *(data_col++) = 0;
+            }
+          } else {
+            int input_col = -pad_left + kernel_col * dilation_w;
+            for (int output_col = output_w; output_col; output_col--) {
+              if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
+                *(data_col++) = data_im[input_row * width + input_col];
+              } else {
+                *(data_col++) = 0;
+              }
+              input_col += stride_w;
+            }
+          }
+          input_row += stride_h;
+        }
+      }
+    }
+  }
+}
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

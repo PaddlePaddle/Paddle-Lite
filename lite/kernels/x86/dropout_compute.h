@@ -42,23 +42,35 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* out_data = param.output->template mutable_data<T>();
     if (!param.is_test) {
       auto* mask_data = param.mask->template mutable_data<T>();
-      std::random_device rnd;
+      size_t size = param.mask->dims().production();
+      // Special case when dropout_prob is 1.0
+      if (param.dropout_prob == 1.0f) {
+        std::memset(out_data, 0, size * sizeof(T));   // NOLINT
+        std::memset(mask_data, 0, size * sizeof(T));  // NOLINT
+        return;
+      }
+      // std::minstd_rand engine;
+      // NOTE: fixed seed should only be used in unittest or for debug.
+      // Guarantee to use random seed in training.
+      int seed_data = 0;
+      if (param.seed_tensor->template data<int>()) {
+        seed_data = *(param.seed_tensor->template data<int>());
+      } else {
+        seed_data = param.fix_seed ? param.seed : 0;
+      }
       std::minstd_rand engine;
-      int seed = param.fix_seed ? param.seed : rnd();
-      engine.seed(seed);
+      engine.seed(seed_data);
       std::uniform_real_distribution<float> dist(0, 1);
 
-      size_t size = param.mask->dims().production();
       for (size_t i = 0; i < size; ++i) {
         if (dist(engine) < param.dropout_prob) {
           mask_data[i] = 0;
           out_data[i] = 0;
         } else {
+          mask_data[i] = 1;
           if (param.dropout_implementation == "upscale_in_train") {
-            mask_data[i] = 1.0f / static_cast<T>(1.0f - param.dropout_prob);
             out_data[i] = x_data[i] / static_cast<T>(1.0f - param.dropout_prob);
           } else {
-            mask_data[i] = 1;
             out_data[i] = x_data[i];
           }
         }

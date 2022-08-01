@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -44,6 +45,11 @@ enum class L3CacheSetMethod {
 
 // return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
+
+// return current opencl device type,
+// if opencl not enabled or IsOpenCLBackendValid return false, it will return -1
+// UNKNOWN:0, QUALCOMM_ADRENO:1, ARM_MALI:2, IMAGINATION_POWERVR:3, OTHERS:4,
+LITE_API int GetOpenCLDeviceType();
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
@@ -160,8 +166,13 @@ class LITE_API ConfigBase {
   // The NNAdapter context properties for device configuration, model
   // compilation and execution
   std::string nnadapter_context_properties_{};
+  int (*nnadapter_context_callback_)(int event_id,
+                                     void* user_data){nullptr};  // NOLINT
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
+  // Dynamic shapes of the NNAdapter model
+  std::map<std::string, std::vector<std::vector<int64_t>>>
+      nnadapter_dynamic_shape_info_;
   // The buffers for loading the compiled NNAdapter models from memory.
   std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
   int device_id_{0};
@@ -172,6 +183,8 @@ class LITE_API ConfigBase {
   bool metal_use_aggressive_{false};
   void* metal_device_{nullptr};
   bool metal_use_memory_reuse_{false};
+
+  std::vector<std::string> discarded_passes_{};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -184,6 +197,7 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+
   /// \brief Set path and file name of generated OpenCL compiled kernel binary.
   ///
   /// If you use GPU of specific soc, using OpenCL binary will speed up the
@@ -195,14 +209,41 @@ class LITE_API ConfigBase {
   /// \return void
   void set_opencl_binary_path_name(const std::string& path,
                                    const std::string& name);
-  // set GPU opencl tune
+
+  /// \brief Set path and file name of generated OpenCL algorithm selecting
+  /// file.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// running time in most cases. But the first running for algorithm selecting
+  /// is timg-costing.
+  ///
+  /// \param tune_mode  Set a tune mode:
+  ///        CL_TUNE_NONE: turn off
+  ///        CL_TUNE_RAPID: find the optimal algorithm in a rapid way(less
+  ///        time-cost)
+  ///        CL_TUNE_NORMAL: find the optimal algorithm in a noraml
+  ///        way(suggestion)
+  ///        CL_TUNE_EXHAUSTIVE: find the optimal algorithm in a exhaustive
+  ///        way(most time-costing)
+  /// \param path  Path that OpenCL algorithm selecting file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL algorithm selecting file.
+  /// \param lws_repeats  Repeat number for find the optimal local work size .
+  /// \return void
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
                        const std::string& path = "",
                        const std::string& name = "",
                        size_t lws_repeats = 4);
 
-  // set GPU opencl precision
+  /// \brief Set runtime precision on GPU using OpenCL backend.
+  ///
+  /// \param p
+  ///          CL_PRECISION_AUTO: first fp16 if valid, default
+  ///          CL_PRECISION_FP32: force fp32
+  ///          CL_PRECISION_FP16: force fp16
+  /// \return void
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -236,6 +277,26 @@ class LITE_API ConfigBase {
   const std::string& nnadapter_context_properties() const {
     return nnadapter_context_properties_;
   }
+  // Set nnadapter_context_callback for NNAdapter device to get runtime
+  // parameters.
+  // For example:
+  // cudaStream_t cuda_stream;
+  // cudaStreamCreate(&cuda_stream);
+  // int nnadapter_context_callback(int event_id, void* user_data) {
+  //   if (event_id == 0x0100) {
+  //     *(std::reinterpret_cast<cudaStream_t*>(user_data)) = cuda_stream;
+  //   }
+  //   return 0;
+  // }
+  void set_nnadapter_context_callback(
+      int (*nnadapter_context_callback)(int event_id, void* user_data)) {
+    nnadapter_context_callback_ = nnadapter_context_callback;
+  }
+  int (*nnadapter_context_callback() const)(int event_id,  // NOLINT
+                                            void* user_data) {
+    return nnadapter_context_callback_;
+  }
+
   // Enable caching and set the directory to search and store the compiled
   // NNAdapter models in the file system.
   void set_nnadapter_model_cache_dir(const std::string& model_cache_dir) {
@@ -243,6 +304,16 @@ class LITE_API ConfigBase {
   }
   const std::string& nnadapter_model_cache_dir() const {
     return nnadapter_model_cache_dir_;
+  }
+  // Set dynamic shapes for building models
+  void set_nnadapter_dynamic_shape_info(
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    nnadapter_dynamic_shape_info_ = nnadapter_dynamic_shape_info;
+  }
+  const std::map<std::string, std::vector<std::vector<int64_t>>>&
+  nnadapter_dynamic_shape_info() const {
+    return nnadapter_dynamic_shape_info_;
   }
   // Set the buffers for loading the compiled NNAdapter models from memory.
   void set_nnadapter_model_cache_buffers(
@@ -270,6 +341,11 @@ class LITE_API ConfigBase {
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
   void* metal_device() const { return metal_device_; }
   bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
+
+  void add_discarded_pass(const std::string pass);
+  const std::vector<std::string> get_discarded_passes() const {
+    return discarded_passes_;
+  }
 };
 
 class LITE_API CxxModelBuffer {
@@ -392,6 +468,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
+  void set_xpu_l3_cache_autotune(bool autotune = true);
 
   void set_xpu_gm_workspace_method(size_t gm_size);
 
@@ -402,6 +479,9 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+
+  // XPU set multi_stream
+  void enable_xpu_multi_stream();
 
   // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
@@ -494,6 +574,8 @@ class LITE_API MobileConfig : public ConfigBase {
   // buffer
   void set_model_from_file(const std::string& x);
   void set_model_from_buffer(const std::string& x);
+  void set_model_from_buffer(std::string&& x);
+  void set_model_from_buffer(const char* buffer, size_t length);
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 
@@ -521,6 +603,9 @@ class LITE_API MobileConfig : public ConfigBase {
   void SetArmL3CacheSize(
       L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
       int absolute_val = -1);
+
+  // note: check device support fp16
+  bool check_fp16_valid();
 };
 
 template <typename ConfigT>

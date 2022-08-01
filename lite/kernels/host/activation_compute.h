@@ -194,6 +194,15 @@ class EluCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~EluCompute() = default;
 };
 
+class SoftplusCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SoftplusCompute() = default;
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

@@ -149,7 +149,7 @@ class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     std::vector<std::string> optypes{"lookup_table", "lookup_table_v2"};
-    for (int n_embedding : {4, 3}) {
+    for (int n_embedding : {4, 3, 2}) {
       for (auto& op_type : optypes) {
         fusion::XPUEmbeddingWithEltwiseAddFuser fuser(n_embedding, op_type);
         fuser(graph.get());

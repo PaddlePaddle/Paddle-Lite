@@ -21,8 +21,8 @@
 #include <iomanip>
 #include "lite/utils/env.h"
 
-#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
+#if defined(LITE_WITH_ARM) || defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || \
+    defined(LITE_WITH_PYTHON) || defined(LITE_WITH_XPU)
 #ifdef LITE_WITH_LOG
 
 namespace paddle {
@@ -65,4 +65,4 @@ void gen_log(STL::ostream& log_stream_,
 }  // namespace paddle
 
 #endif  // LITE_WITH_LOG
-#endif  // LITE_WITH_LIGHT_FRAMEWORK
+#endif  // LITE_WITH_ARM

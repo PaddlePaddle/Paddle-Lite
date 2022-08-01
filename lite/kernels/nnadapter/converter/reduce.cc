@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,6 +66,10 @@ int ConvertReduce(Converter* converter, OpInfo* op, Scope* scope) {
   auto op_type = op->Type();
   if (op_type == "reduce_mean") {
     reduce_operation_type = NNADAPTER_REDUCE_MEAN;
+  } else if (op_type == "reduce_max") {
+    reduce_operation_type = NNADAPTER_REDUCE_MAX;
+  } else if (op_type == "reduce_sum") {
+    reduce_operation_type = NNADAPTER_REDUCE_SUM;
   } else {
     LOG(WARNING) << "Unsupported reduce operation type: " << op_type;
     return UNSUPPORTED_FEATURE;

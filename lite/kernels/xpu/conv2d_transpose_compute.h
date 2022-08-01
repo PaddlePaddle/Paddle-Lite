@@ -28,9 +28,11 @@ class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
   using param_t = operators::ConvParam;
 
+  void PrepareForRun() override;
   void Run() override;
 
   virtual ~Conv2dTransposeCompute() = default;
+  uint64_t cur_dev_attr_ = 0;
 };
 
 }  // namespace xpu

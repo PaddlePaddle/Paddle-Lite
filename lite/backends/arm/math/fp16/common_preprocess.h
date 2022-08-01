@@ -26,29 +26,33 @@ namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
-#define PTR_ACQUIRE_PARAM(dtype)                                     \
-  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
-      const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
-      const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
+#define PTR_ACQUIRE_PARAM(dtype)                                        \
+  const dtype *ptr_zero, const dtype **ptr_w0, const dtype **ptr_w1,    \
+      const dtype **ptr_w2, const dtype **ptr_w3, const dtype **ptr_w4, \
+      const dtype **ptr_w5, const dtype **ptr_w6, const dtype **ptr_w7, \
       int remain
 
-#define PTR_ACQUIRE_PARAM_A8(dtype)                                  \
-  const dtype *zerobuff, const dtype *inptr1, const dtype *inptr2,   \
-      const dtype *inptr3, const dtype *inptr4, const dtype *inptr5, \
-      const dtype *inptr6, const dtype *inptr7, int numa, int numb
+#define PTR_ACQUIRE_PARAM_4(dtype)                                   \
+  const dtype *ptr_zero, const dtype **ptr_w0, const dtype **ptr_w1, \
+      const dtype **ptr_w2, const dtype **ptr_w3, int remain
+
+#define PTR_ACQUIRE_PARAM_A8(dtype)                                     \
+  const dtype *zerobuff, const dtype **inptr1, const dtype **inptr2,    \
+      const dtype **inptr3, const dtype **inptr4, const dtype **inptr5, \
+      const dtype **inptr6, const dtype **inptr7, int numa, int numb
 
 #define PTR_ACQUIRE_PARAM_B8(dtype) \
   dtype *bias_local, const dtype *bias, int y, int numa, int numb
 
-#define PTR_ACQUIRE_PARAM_A16(dtype)                                    \
-  const dtype *zerobuff, const dtype *inptr1, const dtype *inptr2,      \
-      const dtype *inptr3, const dtype *inptr4, const dtype *inptr5,    \
-      const dtype *inptr6, const dtype *inptr7, const dtype *inptr8,    \
-      const dtype *inptr9, const dtype *inptr10, const dtype *inptr11,  \
-      const dtype *inptr12, const dtype *inptr13, const dtype *inptr14, \
-      const dtype *inptr15, int numa, int numb
+#define PTR_ACQUIRE_PARAM_A16(dtype)                                       \
+  const dtype *zerobuff, const dtype **inptr1, const dtype **inptr2,       \
+      const dtype **inptr3, const dtype **inptr4, const dtype **inptr5,    \
+      const dtype **inptr6, const dtype **inptr7, const dtype **inptr8,    \
+      const dtype **inptr9, const dtype **inptr10, const dtype **inptr11,  \
+      const dtype **inptr12, const dtype **inptr13, const dtype **inptr14, \
+      const dtype **inptr15, int numa, int numb
 
-#define X_BLOCK_COMPUTE(llc_size, MBLOCK, NBLOCK, KBLOCK, beta)       \
+#define X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK, NBLOCK, KBLOCK, beta)  \
   /* MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2*/          \
   int x_block =                                                       \
       (llc_size - (MBLOCK * K)) / (sizeof(float16_t) * (K + MBLOCK)); \
@@ -164,10 +168,10 @@ typedef __fp16 float16_t;
   }
 
 inline void act_acquire(lite_api::ActivationType act,
-                        int &flag_act,       // NOLINT
-                        float &local_alpha,  // NOLINT
-                        float &offset,       // NOLINT
-                        float &threshold,    // NOLINT
+                        int &flag_act,           // NOLINT
+                        float16_t &local_alpha,  // NOLINT
+                        float16_t &offset,       // NOLINT
+                        float16_t &threshold,    // NOLINT
                         const operators::ActivationParam act_param) {
   switch (act) {
     case lite_api::ActivationType::kRelu:
@@ -175,17 +179,17 @@ inline void act_acquire(lite_api::ActivationType act,
       break;
     case lite_api::ActivationType::kRelu6:
       flag_act = 0x02;
-      local_alpha = act_param.Relu_clipped_coef;
+      local_alpha = static_cast<float16_t>(act_param.Relu_clipped_coef);
       break;
     case lite_api::ActivationType::kLeakyRelu:
       flag_act = 0x03;
-      local_alpha = act_param.Leaky_relu_alpha;
+      local_alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
       break;
     case lite_api::ActivationType::kHardSwish:
       flag_act = 0x04;
-      local_alpha = 1.0 / act_param.hard_swish_scale;
-      offset = act_param.hard_swish_offset;
-      threshold = act_param.hard_swish_threshold;
+      local_alpha = static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
+      offset = static_cast<float16_t>(act_param.hard_swish_offset);
+      threshold = static_cast<float16_t>(act_param.hard_swish_threshold);
       break;
     default:
       break;
@@ -196,25 +200,42 @@ template <typename dtype>
 inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(dtype)) {
   switch (8 - remain) {
     case 7:
-      ptr_w0 = ptr_zero;
+      *ptr_w0 = ptr_zero;
       break;
     case 6:
-      ptr_w1 = ptr_zero;
+      *ptr_w1 = ptr_zero;
       break;
     case 5:
-      ptr_w2 = ptr_zero;
+      *ptr_w2 = ptr_zero;
       break;
     case 4:
-      ptr_w3 = ptr_zero;
+      *ptr_w3 = ptr_zero;
       break;
     case 3:
-      ptr_w4 = ptr_zero;
+      *ptr_w4 = ptr_zero;
       break;
     case 2:
-      ptr_w5 = ptr_zero;
+      *ptr_w5 = ptr_zero;
       break;
     case 1:
-      ptr_w6 = ptr_zero;
+      *ptr_w6 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename dtype>
+inline void ptr_acquire_remain_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      *ptr_w0 = ptr_zero;
+      break;
+    case 2:
+      *ptr_w1 = ptr_zero;
+      break;
+    case 1:
+      *ptr_w2 = ptr_zero;
       break;
     default:
       break;
@@ -225,19 +246,19 @@ template <typename dtype>
 inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
   switch (8 - remain) {
     case 7:
-      ptr_w1 = ptr_zero;
+      *ptr_w1 = ptr_zero;
     case 6:
-      ptr_w2 = ptr_zero;
+      *ptr_w2 = ptr_zero;
     case 5:
-      ptr_w3 = ptr_zero;
+      *ptr_w3 = ptr_zero;
     case 4:
-      ptr_w4 = ptr_zero;
+      *ptr_w4 = ptr_zero;
     case 3:
-      ptr_w5 = ptr_zero;
+      *ptr_w5 = ptr_zero;
     case 2:
-      ptr_w6 = ptr_zero;
+      *ptr_w6 = ptr_zero;
     case 1:
-      ptr_w7 = ptr_zero;
+      *ptr_w7 = ptr_zero;
       break;
     default:
       break;
@@ -245,22 +266,36 @@ inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
 }
 
 template <typename dtype>
+inline void ptr_acquire_norm_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      *ptr_w1 = ptr_zero;
+    case 2:
+      *ptr_w2 = ptr_zero;
+    case 1:
+      *ptr_w3 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+template <typename dtype>
 inline void ptr_acquire_a8(PTR_ACQUIRE_PARAM_A8(dtype)) {
   switch (numa - numb) {
     case 6:
-      inptr1 = zerobuff;
+      *inptr1 = zerobuff;
     case 5:
-      inptr2 = zerobuff;
+      *inptr2 = zerobuff;
     case 4:
-      inptr3 = zerobuff;
+      *inptr3 = zerobuff;
     case 3:
-      inptr4 = zerobuff;
+      *inptr4 = zerobuff;
     case 2:
-      inptr5 = zerobuff;
+      *inptr5 = zerobuff;
     case 1:
-      inptr6 = zerobuff;
+      *inptr6 = zerobuff;
     case 0:
-      inptr7 = zerobuff;
+      *inptr7 = zerobuff;
     default:
       break;
   }
@@ -292,35 +327,35 @@ template <typename dtype>
 inline void ptr_acquire_a16(PTR_ACQUIRE_PARAM_A16(dtype)) {
   switch (numa - numb) {
     case 14:
-      inptr1 = zerobuff;
+      *inptr1 = zerobuff;
     case 13:
-      inptr2 = zerobuff;
+      *inptr2 = zerobuff;
     case 12:
-      inptr3 = zerobuff;
+      *inptr3 = zerobuff;
     case 11:
-      inptr4 = zerobuff;
+      *inptr4 = zerobuff;
     case 10:
-      inptr5 = zerobuff;
+      *inptr5 = zerobuff;
     case 9:
-      inptr6 = zerobuff;
+      *inptr6 = zerobuff;
     case 8:
-      inptr7 = zerobuff;
+      *inptr7 = zerobuff;
     case 7:
-      inptr8 = zerobuff;
+      *inptr8 = zerobuff;
     case 6:
-      inptr9 = zerobuff;
+      *inptr9 = zerobuff;
     case 5:
-      inptr10 = zerobuff;
+      *inptr10 = zerobuff;
     case 4:
-      inptr11 = zerobuff;
+      *inptr11 = zerobuff;
     case 3:
-      inptr12 = zerobuff;
+      *inptr12 = zerobuff;
     case 2:
-      inptr13 = zerobuff;
+      *inptr13 = zerobuff;
     case 1:
-      inptr14 = zerobuff;
+      *inptr14 = zerobuff;
     case 0:
-      inptr15 = zerobuff;
+      *inptr15 = zerobuff;
     default:
       break;
   }

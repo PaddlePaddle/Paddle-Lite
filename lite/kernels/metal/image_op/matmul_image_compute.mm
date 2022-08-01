@@ -58,28 +58,46 @@ void MatMulImageCompute::run_without_mps() {
     [encoder setTexture:input_buffer_x_->image() atIndex:(0)];
     [encoder setTexture:input_buffer_y_->image() atIndex:(1)];
     [encoder setTexture:output_buffer_->image() atIndex:(2)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
 
 void MatMulImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+    bool x_transpose = param.transpose_X;
+    bool y_transpose = param.transpose_Y;
+    bool broadcast = false;
+    auto x_dims = input_buffer_x_->tensor_dim_;
+    auto y_dims = input_buffer_y_->tensor_dim_;
     auto valid = false;
-    if (input_buffer_y_->tensor_dim_.size() == 4) {
-    } else if (input_buffer_y_->tensor_dim_.size() == 3) {
-    } else {
-        // tensor.size = 1, 2
-        if (input_buffer_x_->dim_[0] == 1 && input_buffer_x_->dim_[1] == 1 &&
-            input_buffer_x_->dim_[2] == 1) {
-            valid = true;
-        }
-    }
-    if (!valid) {
-        LOG(FATAL) << "mat_mul: only supports : 1.same shapes 2.by channel.";
+
+    if (x_dims.size() == y_dims.size())
+        valid = true;
+    else {
+        LOG(FATAL) << "mat_mul does not support the current input dimensions.";
     }
 
-    // input y: 4-dims come from last output; 3-dims come from tensor input;
-    function_name_ = "mat_mul";
+    if (x_dims.size() == 4 && y_dims[1] == 1) broadcast = true;
+
+    if (x_dims.size() == 2 && !y_transpose)
+        function_name_ = "mat_mul_2dims";
+    else if (x_dims.size() == 2 && y_transpose)
+        function_name_ = "mat_mul_2dims_trans_y";
+    else if (x_dims.size() == 4 && !x_transpose && y_transpose)
+        function_name_ = "mat_mul_4dim_trans_y";
+    else if (x_dims.size() == 4 && x_transpose && !y_transpose)
+        function_name_ = "mat_mul_4dim_trans_x";
+    else if (x_dims.size() == 4 && x_transpose && y_transpose)
+        function_name_ = "mat_mul_4dim_trans_xy";
+    else if (x_dims.size() == 4 && !x_transpose && !y_transpose)
+        function_name_ = "mat_mul_4dims";
+
+    MatmulMetalParam matmul_params = {x_transpose, y_transpose, broadcast};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(matmul_params), &matmul_params);
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
@@ -115,6 +133,41 @@ REGISTER_LITE_KERNEL(matmul,
     .Finalize();
 
 REGISTER_LITE_KERNEL(matmul,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::MatMulImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+
+REGISTER_LITE_KERNEL(matmul_v2,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::MatMulImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(matmul_v2,
     kMetal,
     kFP16,
     kMetalTexture2DArray,

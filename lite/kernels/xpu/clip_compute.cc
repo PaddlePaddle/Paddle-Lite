@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void ClipCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto min_tensor = param.min_tensor;
   auto max_tensor = param.max_tensor;
   float min = param.min;
@@ -34,12 +34,12 @@ void ClipCompute::Run() {
   if (max_tensor != nullptr) {
     max = max_tensor->data<float>()[0];
   }
-  int r = xdnn::clip(ctx.GetRawContext(),
-                     param.x->data<float>(),
-                     param.out->mutable_data<float>(TARGET(kXPU)),
-                     param.x->numel(),
-                     min,
-                     max);
+  int r = xdnn::clip_v2<float>(ctx.GetRawContext(),
+                               param.x->data<float>(),
+                               param.out->mutable_data<float>(TARGET(kXPU)),
+                               param.x->numel(),
+                               min,
+                               max);
   CHECK_EQ(r, 0);
 }
 

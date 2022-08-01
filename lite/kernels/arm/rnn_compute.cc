@@ -114,7 +114,6 @@ static void preprocess(ARMContext* ctx,
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto input_dims = input->dims();
@@ -140,7 +139,7 @@ static void preprocess(ARMContext* ctx,
                          false,
                          act_param,
                          ctx);
-  lite::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
+  lite::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, nullptr);
 
   if ("GRU" == mode) {
     Tensor bias_tmp_hh;
@@ -152,10 +151,9 @@ static void preprocess(ARMContext* ctx,
     std::memset(
         bias_ptr + bias_offt, 0, (bias_hh.numel() - bias_offt) * sizeof(float));
     lite::arm::math::fill_bias_fc(
-        o_data, bias_tmp_hh.data<float>(), m, n, flag_act);
+        o_data, bias_tmp_hh.data<float>(), m, n, nullptr);
   } else {
-    lite::arm::math::fill_bias_fc(
-        o_data, bias_hh.data<float>(), m, n, flag_act);
+    lite::arm::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, nullptr);
   }
 }
 
@@ -214,7 +212,7 @@ static void postprocess(ARMContext* ctx,
 }
 
 static DDim get_stride(const DDim& ddim) {
-  DDim strides;
+  DDim strides = ddim;
   strides[ddim.size() - 1] = 1;
   for (int i = ddim.size() - 2; i >= 0; --i) {
     strides[i] = strides[i + 1] * ddim[i + 1];
@@ -291,6 +289,7 @@ static void create_mask_matrix(const Tensor* sequence_length,
                 0.f);
     }
   }
+
   mask_matrix->mutable_data<float>();
   std::vector<int> trans_vec;
   trans_vec.emplace_back(1);
@@ -308,7 +307,6 @@ static void lstm_cell(ARMContext* ctx,
                       Tensor* last_c_act,
                       Tensor* output,
                       const Tensor* bias_hh) {
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();
@@ -395,7 +393,6 @@ static void gru_cell(ARMContext* ctx,
                      Tensor* output,
                      const Tensor* bias_hh,
                      Tensor* weight_hh_gru) {
-  bool flag_act = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();
@@ -481,10 +478,9 @@ static void RunRnnLayer(ARMContext* ctx,
              vec[3 + offset * 4],
              mode,
              gate_value);
-
   std::vector<Tensor> input_tensors, output_tensors;
   std::vector<Tensor *> input_tensors_t, output_tensors_t;
-  std::vector<int> stride1, stride2, stride3;
+  std::vector<int> stride1, stride2;
   input_tensors.resize(gate_value->dims()[0]);
   output_tensors.resize(output->dims()[0]);
 
@@ -509,7 +505,6 @@ static void RunRnnLayer(ARMContext* ctx,
       gate_value->data<float>(), input_tensors_t, 0, stride1);
   lite::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float>();
-
   if (is_reverse) {
     // don't need to reverse input_tensors_t becauese of unuseful
     std::reverse(input_tensors.begin(), input_tensors.end());
@@ -520,8 +515,7 @@ static void RunRnnLayer(ARMContext* ctx,
   }
   // unbind
   Tensor mask_matrix;
-  std::vector<Tensor> mask_vec;
-  std::vector<Tensor*> mask_tensor_list;
+  std::vector<Tensor> mask_vec(time_step);
   int mask_min_length = time_step;
 
   /*
@@ -531,15 +525,17 @@ static void RunRnnLayer(ARMContext* ctx,
     mask_matrix.Resize(DDimLite({time_step, input->dims()[1]}));
     create_mask_matrix(
         sequence_length, &mask_matrix, is_reverse, &mask_min_length);
+    auto mask_matrix_ptr = mask_matrix.data<float>();
     for (int i = 0; i < time_step; i++) {
-      stride3.push_back(1);
       DDimLite ddims(std::vector<int64_t>{input->dims()[1]});
       mask_vec[i].Resize(ddims);
-      mask_tensor_list.push_back(&mask_vec[i]);
+      auto tmp_ptr = mask_vec[i].mutable_data<float>();
+      for (int j = 0; j < input->dims()[1]; j++) {
+        tmp_ptr[j] = mask_matrix_ptr[i * input->dims()[1] + j];
+      }
     }
-    lite::host::math::split(
-        mask_matrix.data<float>(), mask_tensor_list, 0, stride3);
   }
+
   if (is_reverse) {
     mask_min_length = mask_min_length - time_step + 1;
   }
@@ -743,10 +739,11 @@ void RnnCompute::Run() {
     last_h_unbind[i].Resize(dims);
     init_h_unbind_t.push_back(&init_h_unbind[i]);
     last_h_unbind_t.push_back(&last_h_unbind[i]);
+    last_h_unbind[i].mutable_data<float>();
   }
+
   lite::host::math::split(
       pre_state[0]->data<float>(), init_h_unbind_t, 0, stride1);
-  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride1);
 
   if ("LSTM" == mode) {
     for (int i = 0; i < pre_state[1]->dims()[0]; i++) {
@@ -758,11 +755,10 @@ void RnnCompute::Run() {
       last_c_unbind[i].Resize(dims);
       init_c_unbind_t.push_back(&init_c_unbind[i]);
       last_c_unbind_t.push_back(&last_c_unbind[i]);
+      last_c_unbind[i].mutable_data<float>();
     }
     lite::host::math::split(
         pre_state[1]->data<float>(), init_c_unbind_t, 0, stride2);
-    lite::host::math::split(
-        state[1]->data<float>(), last_c_unbind_t, 0, stride2);
   }
 
   std::vector<Tensor> output_vec(2);
@@ -801,6 +797,12 @@ void RnnCompute::Run() {
       RUN_RNN_LAYER(i, output_holder, false, 0);
     }
   }
+
+  lite::arm::math::concat_func<float>(last_h_unbind_t, 0, state[0]);
+  if ("LSTM" == mode) {
+    lite::arm::math::concat_func<float>(last_c_unbind_t, 0, state[1]);
+  }
+
   // output_holder != output
   if (num_layers % 2 == 0) {
     output->CopyDataFrom(*output_holder);
@@ -816,7 +818,8 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("SequenceLength", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("SequenceLength",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("DropoutState", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Reserve", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

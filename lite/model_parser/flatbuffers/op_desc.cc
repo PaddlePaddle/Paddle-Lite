@@ -84,20 +84,20 @@ GET_ATTRS_IMPL(std::vector<int64_t>, longs);
 #undef GET_ATTRS_IMPL
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
-#define ATTR_IMPL(T, fb_f__)                                                \
-  template <>                                                               \
-  T OpDesc::GetAttr<T>(const std::string& name) const {                     \
-    return (*GetKeyIterator(name, desc_->attrs))->fb_f__;                   \
-  }                                                                         \
-  template <>                                                               \
-  void OpDesc::SetAttr<T>(const std::string& name, const T& v) {            \
-    auto& p = *InsertPair(name,                                             \
-                          std::move(std::unique_ptr<proto::OpDesc_::AttrT>( \
-                              new proto::OpDesc_::AttrT())),                \
-                          &(desc_->attrs));                                 \
-    p->fb_f__ = v;                                                          \
-    p->type = ConvertAttrType(OpDataTypeTrait<T>::AT);                      \
-    SetKey(name, &p);                                                       \
+#define ATTR_IMPL(T, fb_f__)                                                 \
+  template <>                                                                \
+  T OpDesc::GetAttr<T>(const std::string& name) const {                      \
+    return (*GetKeyIterator(name, desc_->attrs))->fb_f__;                    \
+  }                                                                          \
+  template <>                                                                \
+  void OpDesc::SetAttr<T>(const std::string& name, const T& v) {             \
+    auto& p = *InsertPair(                                                   \
+        name,                                                                \
+        std::unique_ptr<proto::OpDesc_::AttrT>(new proto::OpDesc_::AttrT()), \
+        &(desc_->attrs));                                                    \
+    p->fb_f__ = v;                                                           \
+    p->type = ConvertAttrType(OpDataTypeTrait<T>::AT);                       \
+    SetKey(name, &p);                                                        \
   }
 ATTR_IMPL(int32_t, i);
 ATTR_IMPL(int16_t, block_idx);

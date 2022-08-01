@@ -232,9 +232,9 @@ class SliceComputeTester : public arena::TestCase {
 };
 
 void test_slice(Place place) {
-  std::vector<int> axes({0, 1, 2});
-  std::vector<int> starts({2, 2, 2});
-  std::vector<int> ends({5, 6, 7});
+  std::vector<int> axes({1, 2});
+  std::vector<int> starts({2, 2});
+  std::vector<int> ends({6, 7});
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
@@ -256,10 +256,10 @@ void test_slice_axes(Place place) {
 }
 
 void test_slice_decrease_axis(Place place) {
-  std::vector<int> axes({0});
+  std::vector<int> axes({1});
   std::vector<int> starts({0});
   std::vector<int> ends({1});
-  std::vector<int> decrease_axis({0});
+  std::vector<int> decrease_axis({1});
   DDim dims({2, 3, 4, 5});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
       place, "def", axes, starts, ends, decrease_axis, dims));
@@ -301,27 +301,46 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(Slice, precision) {
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_NNADAPTER)
   Place place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   test_slice(place);
   test_slice_axes(place);
   test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  test_slice(place);
+  test_slice_axes(place);
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#endif
 #elif defined(LITE_WITH_OPENCL)
   Place place = TARGET(kOpenCL);
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  Place place(TARGET(kXPU));
-  test_slice(place);
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   Place place(TARGET(kXPU));
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  Place place = TARGET(kHuaweiAscendNPU);
-  test_slice(place);
 #elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
   test_slice(place);

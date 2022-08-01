@@ -23,24 +23,12 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/math/conv_ut.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
-
-DEFINE_int32(power_mode,
-             0,
-             "power mode: "
-             "0 for POWER_HIGH;"
-             "1 for POWER_LOW;"
-             "2 for POWER_FULL;"
-             "3 for NO_BIND");
-DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
-DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "spmm: M");
 DEFINE_int32(N, 512, "spmm: N");
@@ -52,78 +40,9 @@ DEFINE_bool(traB, false, "spmm: B transpose");
 DEFINE_int32(relu_type,
              0,
              "relu type, 0: no relu; 1: relu; 2: relu6; 3: leaky_relu;");
-DEFINE_bool(flag_bias, false, "with bias");
+DEFINE_bool(flag_semi, false, "with semi");
 
 DEFINE_double(flag_sparsity, 0.8, "with sparsity");
-
-template <typename T>
-int ComputeSparseZeros(const Tensor* weights, const int num) {
-  const T* data = weights->data<T>();
-  int zero_num = 0;
-  for (int i = 0; i < num; ++i) {
-    if (data[i] == static_cast<T>(0)) {
-      ++zero_num;
-    }
-  }
-  return zero_num;
-}
-
-template <typename T>
-int ComputeSparseWeight(const Tensor* w_tensor,
-                        const int M,
-                        const int K,
-                        const int N,
-                        const int num_nonzeroes,
-                        Tensor* nonzero_output_tensor,
-                        Tensor* oc_nonzeros_tensor,
-                        Tensor* diffs_tensor) {
-  const T* weights = w_tensor->data<T>();
-  T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
-  auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
-  auto* diffs = diffs_tensor->mutable_data<int32_t>();
-  int first_ic = 0, last_ic = 0;
-  bool first_nonzero = true;
-  int nonzero_index = 0, diff_index = 0;
-  for (int ocb = 0; ocb < M; ocb++) {
-    oc_nonzeros[ocb] = 0;
-    for (int ic = 0; ic < K; ic++) {
-      if (weights[ocb * K + ic] != static_cast<T>(0)) {
-        nonzero_output[nonzero_index++] = weights[ocb * K + ic];
-        if (first_nonzero) {
-          first_ic = ic;
-        } else {
-          const int diff = (ic - last_ic) * sizeof(T);
-          diffs[diff_index++] = diff * N;
-        }
-        first_nonzero = false;
-        last_ic = ic;
-        oc_nonzeros[ocb] += 1;
-      }
-    }
-    oc_nonzeros[ocb] = nonzero_index;
-  }
-  int tmp_diff = 0;
-  int tmp_ik = 0;
-  for (size_t ocb = 0; ocb < M; ocb++) {
-    if (ocb == 0) {
-      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    } else {
-      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
-        tmp_diff += diffs[tmp_ik++];
-      }
-    }
-    if (tmp_ik != 0) {
-      diffs[tmp_ik - 1] = tmp_diff;
-    }
-  }
-  if (!first_nonzero) {
-    const int diff = (first_ic - last_ic) * sizeof(T);
-    diffs[diff_index++] = diff * N;
-  }
-  return first_ic;
-}
 
 #ifdef LITE_WITH_ARM
 bool test_spmm_int8(bool tra,
@@ -132,6 +51,7 @@ bool test_spmm_int8(bool tra,
                     int n,
                     int k,
                     bool has_bias,
+                    bool has_semi,
                     int relu_type,
                     int cls,
                     int ths,
@@ -165,9 +85,32 @@ bool test_spmm_int8(bool tra,
   fill_tensor_rand(tbias, -1.f, 1.f);
 
   auto da8 = ta.mutable_data<int8_t>();
-  for (int i = 0; i < m * k; i++) {
-    if (((da8[i] + 128) / 255.0f) < sparsity) {
-      da8[i] = 0;
+  if (has_semi) {
+    int para_h = m;
+    int para_w = k;
+    int two_num = para_h / 2 * para_w;
+    int one_num = para_h % 2 * para_w;
+    int sparse_num = two_num * sparsity;
+    for (int i = 0; i < para_h / 2; i++) {
+      for (int j = 0; j < para_w; j++) {
+        if (((da8[i] + 128) / 255.0f) <= sparsity) {
+          da8[i * 2 * para_w + j] = 0;
+          da8[(i * 2 + 1) * para_w + j] = 0;
+        }
+      }
+    }
+    if (one_num > 0) {
+      for (int i = (para_h / 2 * 2) * para_w; i < para_h * para_w; i++) {
+        if (((da8[i] + 128) / 255.0f) <= sparsity) {
+          da8[i] = 0;
+        }
+      }
+    }
+  } else {
+    for (int i = 0; i < m * k; i++) {
+      if (((da8[i] + 128) / 255.0f) < sparsity) {
+        da8[i] = 0;
+      }
     }
   }
 
@@ -206,7 +149,8 @@ bool test_spmm_int8(bool tra,
             << ", transA: " << (tra ? "true" : "false")
             << ", transB: " << (trb ? "true" : "false")
             << ", relu_type: " << relu_type
-            << ", bias: " << (has_bias ? "true" : "false");
+            << ", bias: " << (has_bias ? "true" : "false")
+            << ", semi: " << (has_semi ? "true" : "false");
 
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
@@ -262,12 +206,23 @@ bool test_spmm_int8(bool tra,
                                           1,
                                           tc_basic_fp32.numel());
   }
-  int zero_num;
+  int zero_num = 0;
+  int num_build_nonzeroes = 0;
+  int count_nonzeroes = 0;
+  int count_channels = 0;
+  int count_blocks = 0;
+  int f_semi = 0;
   int ch_out = m;
   int ch_in = k;
   int im_size = n;
   int weight_num = m * k;
-  zero_num = ComputeSparseZeros<int8_t>(&ta, weight_num);
+  zero_num = ComputeSemiSparseZeros<int8_t>(&ta,
+                                            &count_nonzeroes,
+                                            &count_channels,
+                                            &count_blocks,
+                                            &f_semi,
+                                            ch_out,
+                                            ch_in);
   int nonzero_num = weight_num - zero_num;
   if (nonzero_num <= 0) {
     return true;
@@ -275,23 +230,44 @@ bool test_spmm_int8(bool tra,
   Tensor nonzeros_output_t;
   Tensor oc_nonzeros_t;
   Tensor ic_diffs_t;
-  nonzeros_output_t.Resize({nonzero_num});
-  oc_nonzeros_t.Resize({ch_out});
-  ic_diffs_t.Resize({nonzero_num});
-  int first_ic = ComputeSparseWeight<int8_t>(&ta,
-                                             ch_out,
-                                             ch_in,
-                                             im_size,
-                                             nonzero_num,
-                                             &nonzeros_output_t,
-                                             &oc_nonzeros_t,
-                                             &ic_diffs_t);
+  if (f_semi == 1) {
+    nonzeros_output_t.Resize({count_nonzeroes});
+    oc_nonzeros_t.Resize({ch_out});
+    ic_diffs_t.Resize({count_blocks});
+  } else {
+    nonzeros_output_t.Resize({count_nonzeroes});
+    oc_nonzeros_t.Resize({ch_out});
+    ic_diffs_t.Resize({count_nonzeroes});
+  }
+  int first_ic = 0;
+  if (f_semi == 1) {
+    first_ic = ComputeSemiSparseWeight<int8_t>(&ta,
+                                               ch_out,
+                                               ch_in,
+                                               im_size,
+                                               count_nonzeroes,
+                                               count_channels,
+                                               count_blocks,
+                                               &nonzeros_output_t,
+                                               &oc_nonzeros_t,
+                                               &ic_diffs_t);
+  } else {
+    first_ic = ComputeSparseWeight<int8_t>(&ta,
+                                           ch_out,
+                                           ch_in,
+                                           im_size,
+                                           nonzero_num,
+                                           &nonzeros_output_t,
+                                           &oc_nonzeros_t,
+                                           &ic_diffs_t);
+  }
   Timer t0;
   //! compute
   double ops = 2.0 * m * n * k;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  ths = ((f_semi == 1) ? 1 : ths);
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
 
   const int8_t* input = tb.data<int8_t>();
@@ -307,19 +283,35 @@ bool test_spmm_int8(bool tra,
   param.activation_param = act_param;
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sparse_conv_int8_fp32_pipelined(
-        nonzero_weights,
-        din,
-        diffs,
-        oc_nonzeros,
-        bias_f32,
-        scale_merge_fp32.data(),
-        dout_f32,
-        oc,
-        ic,
-        im_size,
-        param,
-        &ctx);
+    if (f_semi == 1) {
+      paddle::lite::arm::math::sparse_semi_conv_int8_fp32_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_f32,
+          scale_merge_fp32.data(),
+          dout_f32,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    } else {
+      paddle::lite::arm::math::sparse_conv_int8_fp32_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_f32,
+          scale_merge_fp32.data(),
+          dout_f32,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    }
   }
 
   /// int8 output compute
@@ -335,19 +327,35 @@ bool test_spmm_int8(bool tra,
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sparse_conv_int8_int8_pipelined(
-        nonzero_weights,
-        din,
-        diffs,
-        oc_nonzeros,
-        bias_int8,
-        scale_merge_int8.data(),
-        dout_int8,
-        oc,
-        ic,
-        im_size,
-        param,
-        &ctx);
+    if (f_semi == 1) {
+      paddle::lite::arm::math::sparse_semi_conv_int8_int8_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_int8,
+          scale_merge_int8.data(),
+          dout_int8,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    } else {
+      paddle::lite::arm::math::sparse_conv_int8_int8_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_int8,
+          scale_merge_int8.data(),
+          dout_int8,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    }
     t0.Stop();
   }
   LOG(INFO) << "spmm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
@@ -363,19 +371,35 @@ bool test_spmm_int8(bool tra,
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sparse_conv_int8_fp32_pipelined(
-        nonzero_weights,
-        din,
-        diffs,
-        oc_nonzeros,
-        bias_f32,
-        scale_merge_fp32.data(),
-        dout_f32,
-        oc,
-        ic,
-        im_size,
-        param,
-        &ctx);
+    if (f_semi == 1) {
+      paddle::lite::arm::math::sparse_semi_conv_int8_fp32_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_f32,
+          scale_merge_fp32.data(),
+          dout_f32,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    } else {
+      paddle::lite::arm::math::sparse_conv_int8_fp32_pipelined(
+          nonzero_weights,
+          din,
+          diffs,
+          oc_nonzeros,
+          bias_f32,
+          scale_merge_fp32.data(),
+          dout_f32,
+          oc,
+          ic,
+          im_size,
+          param,
+          &ctx);
+    }
     t0.Stop();
   }
   LOG(INFO) << "spmm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
@@ -457,6 +481,7 @@ bool test_spmm_int8(bool tra,
                     int n,
                     int k,
                     bool has_bias,
+                    bool has_semi,
                     int relu_type,
                     int cls,
                     int ths,
@@ -476,35 +501,40 @@ TEST(TestLiteSpmmInt8, spmm_prepacked_int8) {
           for (auto& tra : {false}) {
             for (auto& trb : {false}) {
               for (auto& has_bias : {false, true}) {
-                for (auto& relu_type : {0, 1}) {
-                  for (auto& th : {1, 2, 4}) {
-                    for (auto& sp : {0.5, 0.7, 0.8}) {
-                      auto flag = test_spmm_int8(tra,
-                                                 trb,
-                                                 m,
-                                                 n,
-                                                 k,
-                                                 has_bias,
-                                                 relu_type,
-                                                 FLAGS_power_mode,
-                                                 th,
-                                                 sp);
-                      if (flag) {
-                        LOG(INFO) << "test m = " << m << ", n=" << n
+                for (auto& has_semi : {false, true}) {
+                  for (auto& relu_type : {0, 1}) {
+                    for (auto& th : {1, 2, 4}) {
+                      for (auto& sp : {0.5, 0.7, 0.8}) {
+                        auto flag = test_spmm_int8(tra,
+                                                   trb,
+                                                   m,
+                                                   n,
+                                                   k,
+                                                   has_bias,
+                                                   has_semi,
+                                                   relu_type,
+                                                   FLAGS_power_mode,
+                                                   th,
+                                                   sp);
+                        if (flag) {
+                          VLOG(4) << "test m = " << m << ", n=" << n
                                   << ", k=" << k
                                   << ", bias: " << (has_bias ? "true" : "false")
+                                  << ", semi: " << (has_semi ? "true" : "false")
                                   << ", relu: " << relu_type
                                   << ", trans A: " << (tra ? "true" : "false")
                                   << ", trans B: " << (trb ? "true" : "false")
                                   << " passed\n";
-                      } else {
-                        LOG(FATAL)
-                            << "test m = " << m << ", n=" << n << ", k=" << k
-                            << ", bias: " << (has_bias ? "true" : "false")
-                            << ", relu: " << relu_type
-                            << ", trans A: " << (tra ? "true" : "false")
-                            << ", trans B: " << (trb ? "true" : "false")
-                            << " failed\n";
+                        } else {
+                          LOG(FATAL)
+                              << "test m = " << m << ", n=" << n << ", k=" << k
+                              << ", bias: " << (has_bias ? "true" : "false")
+                              << ", semi: " << (has_semi ? "true" : "false")
+                              << ", relu: " << relu_type
+                              << ", trans A: " << (tra ? "true" : "false")
+                              << ", trans B: " << (trb ? "true" : "false")
+                              << " failed\n";
+                        }
                       }
                     }
                   }
@@ -528,6 +558,7 @@ TEST(TestSpmmInt8Custom, spmm_prepacked_int8_custom) {
                              FLAGS_N,
                              FLAGS_K,
                              FLAGS_flag_bias,
+                             FLAGS_flag_semi,
                              FLAGS_relu_type,
                              FLAGS_power_mode,
                              FLAGS_threads,

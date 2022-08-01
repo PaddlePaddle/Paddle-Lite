@@ -27,6 +27,7 @@ workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 IOS_DEPLOYMENT_TARGET=9.0
+BUILD_ARM82_FP16=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -101,6 +102,7 @@ function make_ios {
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+            -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
@@ -194,6 +196,11 @@ function main {
                 ;;
             --with_xcode=*)
                 WITH_XCODE="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             help)

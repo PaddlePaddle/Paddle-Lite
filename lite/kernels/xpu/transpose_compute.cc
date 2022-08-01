@@ -22,9 +22,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void TransposeCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+template <typename T, PrecisionType PType>
+void TransposeCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.x;
   auto& axis = param.axis;
   int ndims = axis.size();
@@ -38,12 +39,13 @@ void TransposeCompute::Run() {
   for (int i = 0; i < ndims; ++i) {
     x_shape_host[i] = x_dims[i];
   }
+
   int r =
-      xdnn::transpose<float>(ctx.GetRawContext(),
-                             x->data<float>(),
-                             param.output->mutable_data<float>(TARGET(kXPU)),
-                             x_shape_host,
-                             axis);
+      xdnn::transpose<T>(ctx.GetRawContext(),
+                         x->template data<T>(),
+                         param.output->template mutable_data<T>(TARGET(kXPU)),
+                         x_shape_host,
+                         axis);
   CHECK_EQ(r, 0);
 }
 
@@ -52,34 +54,52 @@ void TransposeCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(transpose,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
-                     def)
+using transposeFP32 =
+    paddle::lite::kernels::xpu::TransposeCompute<float, PRECISION(kFloat)>;
+using transposeFP16 =
+    paddle::lite::kernels::xpu::TransposeCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(transpose, kXPU, kFloat, kNCHW, transposeFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(transpose2,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
-                     def)
+REGISTER_LITE_KERNEL(transpose, kXPU, kFP16, kNCHW, transposeFP16, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+using transpose2FP32 =
+    paddle::lite::kernels::xpu::TransposeCompute<float, PRECISION(kFloat)>;
+using transpose2Int32 =
+    paddle::lite::kernels::xpu::TransposeCompute<int, PRECISION(kFloat)>;
+using transpose2Int64 =
+    paddle::lite::kernels::xpu::TransposeCompute<int64_t, PRECISION(kFloat)>;
+using transpose2FP16 =
+    paddle::lite::kernels::xpu::TransposeCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(transpose2, kXPU, kFloat, kNCHW, transpose2FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
-REGISTER_LITE_KERNEL(transpose2,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
-                     def_int64)
+
+REGISTER_LITE_KERNEL(
+    transpose2, kXPU, kFloat, kNCHW, transpose2Int32, def_int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    transpose2, kXPU, kFloat, kNCHW, transpose2Int64, def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .BindOutput("XShape",
-                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(transpose2, kXPU, kFP16, kNCHW, transpose2FP16, def_fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

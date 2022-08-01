@@ -38,7 +38,7 @@ void sgemm(bool is_transA,
            ARMContext* ctx) {
   // alpha default is 1;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
-  if (N == 1 && !has_alpha) {
+  if (N == 1 && !has_alpha && ldc == N) {
     sgemv(A, B, C, is_transA, M, K, beta, is_bias, bias, act_param, ctx);
     return;
   }
@@ -52,7 +52,7 @@ void sgemm(bool is_transA,
     sgemv(B, A, C, !is_transB, N, K, beta, is_bias, bias_ptr, act_param, ctx);
     return;
   }
-  int hblock = get_hblock(ctx);
+  int hblock = get_hblock(ctx, M);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
   ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
 

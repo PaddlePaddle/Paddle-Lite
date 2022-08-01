@@ -391,6 +391,7 @@ static void basic_gemv(int m,
  */
 //! for float, dtype1 and type2 is float
 //! for int8, dytpe1 is char, dtype2 is int
+//! attention! you need to clean output memory especially using float type
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -670,7 +671,7 @@ void deconv_basic(const Dtype1* din,
                                  n,
                                  nullptr,
                                  false,
-                                 (!flag_bias && flag_relu));
+                                 false);
     }
 
     if (!flag_1x1s1p1) {
@@ -691,7 +692,7 @@ void deconv_basic(const Dtype1* din,
              dout_batch);
     }
     //! add bias
-    if (flag_bias) {
+    if (flag_bias || flag_relu) {
       fill_bias_relu(
           dout_batch, bias, chout, wout * hout, flag_bias, flag_relu);
     }

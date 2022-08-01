@@ -24,8 +24,8 @@ namespace xpu {
 
 void SequenceUnpadCompute::PrepareForRun() {
   lod_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
-  lod_cpu_.reserve(XPU_MAX_LOD_SIZE);
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE_64 * sizeof(int));
+  lod_cpu_.reserve(XPU_MAX_LOD_SIZE_64);
 }
 
 void SequenceUnpadCompute::Run() {
@@ -63,20 +63,21 @@ void SequenceUnpadCompute::Run() {
         lod_cpu_.back() + static_cast<int>(param.Length->data<int64_t>()[i]);
     lod_cpu_.push_back(offset);
   }
-  lod_xpu_guard_->Reserve((batch_size + 1) * sizeof(int));
-  TargetWrapperXPU::MemcpySync(lod_xpu_guard_->addr_,
-                               lod_cpu_.data(),
-                               (batch_size + 1) * sizeof(int),
-                               IoDirection::HtoD);
+  lod_xpu_addr = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
+  XPU_CALL(xpu_memcpy(lod_xpu_addr,
+                      lod_cpu_.data(),
+                      (batch_size + 1) * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int dim = param.Out->numel() / out_dim0;
-  int r = xdnn::sequence_unpad(
-      ctx.GetRawContext(),                           /* ctx */
-      param.X->data<float>(),                        /* pad_data */
-      param.Out->mutable_data<float>(TARGET(kXPU)),  /* seq_data */
-      reinterpret_cast<int*>(lod_xpu_guard_->addr_), /* sequence */
-      param.X->dims()[1],                            /* pad_seq_len */
-      batch_size,                                    /* batch_size */
+  int r = xdnn::sequence_unpad<float, int>(
+      ctx.GetRawContext(),                          /* ctx */
+      param.X->data<float>(),                       /* pad_data */
+      param.Out->mutable_data<float>(TARGET(kXPU)), /* seq_data */
+      {
+          lod_cpu_.data(), static_cast<int>(lod_cpu_.size()), lod_xpu_addr,
+      },                  /* sequence */
+      param.X->dims()[1], /* pad_seq_len */
       dim /* dim */);
   CHECK_EQ(r, 0);
 }

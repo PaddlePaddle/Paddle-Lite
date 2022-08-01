@@ -119,12 +119,14 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("inplace")) {
     param_.inplace = opdesc.GetAttr<bool>("inplace");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
   return true;
 }
 
 bool Unsqueeze2Op::CheckShape() const {
   UnsqueezeOp::CheckShape();
-  CHECK_OR_FALSE(param_.XShape);
+  // CHECK_OR_FALSE(param_.XShape);
   return true;
 }
 
@@ -135,14 +137,17 @@ bool Unsqueeze2Op::InferShapeImpl() const {
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.XShape->Resize(DDim(xshape_dims));
+  if (param_.XShape) param_.XShape->Resize(DDim(xshape_dims));
   return true;
 }
 
 bool Unsqueeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   UnsqueezeOp::AttachImpl(opdesc, scope);
-  param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
-  CHECK(param_.XShape) << "Output(XShape) of Unsqueeze2Op should not be null.";
+  if (opdesc.HasOutput("XShape")) {
+    param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+    // CHECK(param_.XShape) << "Output(XShape) of Unsqueeze2Op should not be
+    // null.";
+  }
   return true;
 }
 

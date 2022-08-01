@@ -79,6 +79,10 @@ class FillConstantComputeTester : public arena::TestCase {
     } else {
       out_shape = shape_;
     }
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    // Trt out should have batchsize
+    out_shape.insert(out_shape.begin(), 1);
+#endif
     out->Resize(out_shape);
 
     switch (dtype_) {
@@ -272,16 +276,21 @@ TEST(fill_constant, precision) {
   abs_error = 1e-2;
   TestFillConstantShape(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestFillConstantValue(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestFillConstantShape(place, abs_error);
+  TestFillConstantValue(place, abs_error);
+  return;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // use fp16
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
@@ -291,10 +300,8 @@ TEST(fill_constant, precision) {
 
   TestFillConstantShape(place, abs_error);
   TestFillConstantValue(place, abs_error);
-#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestFillConstantShapeTensor(place, abs_error);
   TestFillConstantShapeTensorList(place, abs_error);
-#endif
 }
 
 }  // namespace lite

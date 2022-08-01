@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (NOT EMSCRIPTEN)
 INCLUDE(ExternalProject)
 
-SET(GFLAGS_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/gflags)
+SET(GFLAGS_SOURCES_DIR ${PADDLE_SOURCE_DIR}/third-party/gflags)
 SET(GFLAGS_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gflags)
 SET(GFLAGS_INCLUDE_DIR "${GFLAGS_INSTALL_DIR}/include" CACHE PATH "gflags include directory." FORCE)
 IF(WIN32)
@@ -73,3 +74,12 @@ if (WIN32)
     set_property(GLOBAL PROPERTY OS_DEPENDENCY_MODULES shlwapi.lib)
   endif(HAVE_SHLWAPI)
 endif (WIN32)
+
+else()
+
+option(BUILD_STATIC_LIBS "" ON)
+option(BUILD_TESTING "" OFF)
+set(GFLAGS_NAMESPACE "google;gflags")
+add_subdirectory(${PROJECT_SOURCE_DIR}/third-party/gflags)
+
+endif(NOT EMSCRIPTEN)

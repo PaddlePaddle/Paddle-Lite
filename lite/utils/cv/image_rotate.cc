@@ -15,6 +15,7 @@
 #include "lite/utils/cv/image_rotate.h"
 #include <math.h>
 #include <string.h>
+#include "lite/core/parallel_defines.h"
 #include "lite/utils/cv/bgr_rotate.h"
 namespace paddle {
 namespace lite {
@@ -610,8 +611,7 @@ void rotate_hwc1_90(const uint8_t* src,
   int stride_h_w = 4 * w_in - 8;
   int stride_out = 4 * w_out;
   int ww = w_out - 8;
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * w_in;
     const uint8_t* inptr1 = inptr0 + w_in;
     const uint8_t* inptr2 = inptr1 + w_in;
@@ -691,6 +691,7 @@ void rotate_hwc1_90(const uint8_t* src,
       *outptr++ = *inptr0++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   ww = w_out - 1;
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -719,8 +720,7 @@ void rotate_hwc1_180(const uint8_t* src,
   uint8_t* zerobuff = new uint8_t[w_in];
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 8;
-#pragma omp parallel for
-  for (int i = 0; i < h_in; i += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in, 0, 4) {
     const uint8_t* inptr0 = src + i * w_in;
     const uint8_t* inptr1 = inptr0 + w_in;
     const uint8_t* inptr2 = inptr1 + w_in;
@@ -859,6 +859,7 @@ void rotate_hwc1_180(const uint8_t* src,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuff;
 }
 /*
@@ -883,9 +884,8 @@ void rotate_hwc1_270(const uint8_t* src,
   int stride_out = 4 * w_out;
 
   int i = 0;
-// block 8*8. -- 8*8
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  // block 8*8. -- 8*8
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * w_in;
     const uint8_t* inptr1 = inptr0 + w_in;
     const uint8_t* inptr2 = inptr1 + w_in;
@@ -965,6 +965,7 @@ void rotate_hwc1_270(const uint8_t* src,
       *outptr++ = *inptr7++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * w_in;
     for (int j = 0; j < w_in; j++) {
@@ -989,8 +990,7 @@ void rotate_hwc3_90(const uint8_t* src,
   uint8_t* zerobuff = new uint8_t[8];
   // block 4*8. -- 8*4
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1126,6 +1126,7 @@ void rotate_hwc3_90(const uint8_t* src,
       *outptr++ = *inptr0++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   // remain
   ww = w_out - 1;
   for (; i < h_in; i++) {
@@ -1150,8 +1151,7 @@ void rotate_hwc3_180(const uint8_t* src,
   uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
   int stride_w = 24;
-#pragma omp parallel for
-  for (int i = 0; i < h_in; i += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in, 0, 4) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1391,6 +1391,7 @@ void rotate_hwc3_180(const uint8_t* src,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuff;
   delete[] zerobuff;
 }
@@ -1409,8 +1410,7 @@ void rotate_hwc3_270(const uint8_t* src,
   int hout = h_out - 1;
   // block 8*8. -- 8*8
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1546,6 +1546,7 @@ void rotate_hwc3_270(const uint8_t* src,
       *outptr++ = *inptr7++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * win;
     for (int j = 0; j < w_in; j++) {
@@ -1571,8 +1572,7 @@ void rotate_hwc4_90(const uint8_t* src,
   int ww = w_out - 8;
   // block 8*8. -- 8*8
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1627,6 +1627,7 @@ void rotate_hwc4_90(const uint8_t* src,
       *outptr++ = *inptr0++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   ww = w_out - 1;
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * win;
@@ -1650,8 +1651,7 @@ void rotate_hwc4_180(const uint8_t* src,
   uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
   int stride_w = 32;
-#pragma omp parallel for
-  for (int i = 0; i < h_in; i += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in, 0, 4) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1922,6 +1922,7 @@ void rotate_hwc4_180(const uint8_t* src,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuff;
 }
 
@@ -1939,8 +1940,7 @@ void rotate_hwc4_270(const uint8_t* src,
   int hout = h_out - 1;
   // block 8*8. -- 8*8
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < h_in - 7; i += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, h_in - 7, 0, 8) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
@@ -1994,6 +1994,7 @@ void rotate_hwc4_270(const uint8_t* src,
       *outptr++ = *inptr7++;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   for (; i < h_in; i++) {
     const uint8_t* inptr0 = src + i * win;
     for (int j = 0; j < w_in; j++) {

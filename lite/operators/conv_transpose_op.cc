@@ -77,7 +77,19 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
                                                    paddings[i * 2 + 1],
                                                    param_.strides[i]));
   }
-  if (!param_.output_padding.empty()) {
+  if (!param_.output_size.empty()) {
+    for (size_t i = 0; i < param_.output_size.size(); ++i) {
+      CHECK_LT(param_.output_size[i], output_shape[i + 2] + param_.strides[i])
+          << "set output_size error, the output_size should less than "
+          << output_shape[i + 2] + param_.strides[i] << ", but the value is "
+          << param_.output_size[i];
+      CHECK_GE(param_.output_size[i], output_shape[i + 2])
+          << "set output_size error, the output_size should greater than or "
+          << "equal to " << output_shape[i + 2] << ", but the value is "
+          << param_.output_size[i];
+      output_shape[i + 2] = param_.output_size[i];
+    }
+  } else if (!param_.output_padding.empty()) {
     CHECK_EQ(param_.output_padding.size(), param_.strides.size())
         << "the size of output_padding and the size of stride should be "
            "same, "
@@ -96,19 +108,6 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
     }
     for (int i = 0; i < param_.output_padding.size(); i++) {
       output_shape[i + 2] += param_.output_padding[i];
-    }
-  }
-  if (!param_.output_size.empty()) {
-    for (size_t i = 0; i < param_.output_size.size(); ++i) {
-      CHECK_LT(param_.output_size[i], output_shape[i + 2] + param_.strides[i])
-          << "set output_size error, the output_size should less than "
-          << output_shape[i + 2] + param_.strides[i] << ", but the value is "
-          << param_.output_size[i];
-      CHECK_GE(param_.output_size[i], output_shape[i + 2])
-          << "set output_size error, the output_size should greater than or "
-          << "equal to " << output_shape[i + 2] << ", but the value is "
-          << param_.output_size[i];
-      output_shape[i + 2] = param_.output_size[i];
     }
   }
 
@@ -184,6 +183,20 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
     if (act_type == "relu") {
       param_.activation_param.active_type = lite_api::ActivationType::kRelu;
       param_.fuse_relu = true;
+    } else if (act_type == "sigmoid") {
+      param_.activation_param.active_type = lite_api::ActivationType::kSigmoid;
+      param_.fuse_sigmoid = true;
+    } else if (act_type == "tanh") {
+      param_.activation_param.active_type = lite_api::ActivationType::kTanh;
+      param_.fuse_tanh = true;
+    } else if (act_type == "swish") {
+      param_.activation_param.swish_scale =
+          op_desc.GetAttr<float>("swish_scale");
+      param_.activation_param.active_type = lite_api::ActivationType::kSwish;
+      param_.fuse_swish = true;
+    } else if (act_type == "abs") {
+      param_.activation_param.active_type = lite_api::ActivationType::kAbs;
+      param_.fuse_abs = true;
     } else if (act_type == "relu6") {
       param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
       param_.activation_param.Relu_clipped_coef =

@@ -44,7 +44,7 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "gemm: M");
@@ -132,7 +132,7 @@ bool test_sgemm_fp16(bool tra,
 
   fill_data_rand<float16_t>(db, -1.f, 1.f, size_b);
   // fill_data_const<float16_t>(db, 1.f, size_b);
-  fp16_to_float(db, db_fp32, size_a);
+  fp16_to_float(db, db_fp32, size_b);
 
   fill_data_rand<float16_t>(dbias, -1.f, 1.f, m);
   // fill_data_const<float16_t>(dbias, -1.f, m);
@@ -259,10 +259,13 @@ bool test_sgemm_fp16(bool tra,
     auto ptr = tdiff.mutable_data<float16_t>();
     data_diff(basic_ptr, saber_ptr, ptr, tc_basic.numel(), max_ratio, max_diff);
     print_diff_info(max_diff, max_ratio);
-    if (std::abs(max_ratio) > 1e-3f) {
-      if (max_diff > 1e-1f) {
-        int64_t size = tc_basic.numel();
-        int64_t width = tc_basic.dims()[3];
+    int64_t size = tc_basic.numel();
+    int64_t width = tc_basic.dims()[3];
+    for (int i = 0; i < size; i++) {
+      if (fabs(basic_ptr[i] - saber_ptr[i]) > 1e-1f &&
+          fabs(basic_ptr[i] - saber_ptr[i]) /
+                  (fmax(fabs(basic_ptr[i]), fabs(saber_ptr[i]))) >
+              0.05) {
         print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
         LOG(FATAL) << "fp16 gemm M: " << m << ", N: " << n << ", K: " << k
                    << ", bias: " << (has_bias ? "true" : "false")
@@ -270,7 +273,7 @@ bool test_sgemm_fp16(bool tra,
                    << ", trans A: " << (tra ? "true" : "false")
                    << ", trans B: " << (trb ? "true" : "false")
                    << ", threads: " << ths << ", power_mode: " << cls
-                   << " failed!!\n";
+                   << ", i: " << i << " failed!!\n";
       }
     }
   }

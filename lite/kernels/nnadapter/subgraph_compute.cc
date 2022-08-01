@@ -21,9 +21,17 @@ namespace nnadapter {
 
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
+  CHECK(param.program_desc.get());
+  auto block_count = param.program_desc->BlocksSize();
+  auto block_index = param.block_idx;
+  CHECK_GT(block_count, 0) << "No block found!";
+  CHECK_LT(block_index, block_count) << "Invalid block index, expected [0,"
+                                     << (block_count - 1) << "] but recieved "
+                                     << block_index;
+  auto block_desc = param.program_desc->GetBlock<cpp::BlockDesc>(block_index);
+  CHECK(block_desc);
   engine_.reset(new Engine(ctx_.get(),
-                           param.block_idx,
-                           param.program_desc,
+                           block_desc,
                            param.exec_scope,
                            param.input_data_names,
                            param.output_data_names,
@@ -49,11 +57,11 @@ REGISTER_LITE_KERNEL(subgraph,
                      paddle::lite::kernels::nnadapter::SubgraphCompute,
                      def)
     .BindInput("Inputs",
-               {LiteType::GetTensorTy(TARGET(kHost),
+               {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Outputs",
-                {LiteType::GetTensorTy(TARGET(kHost),
+                {LiteType::GetTensorTy(TARGET(kAny),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();

@@ -50,13 +50,14 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
+  size_t KernelGrade(lite::mir::Node* node,
                      const lite::KernelBase& kernel,
                      const std::vector<Place>& places,
                      const std::map<std::string, PrecisionType>& in_types,
                      const std::map<std::string, PrecisionType>& out_types,
                      const std::vector<std::string>& in_names,
                      const std::vector<std::string>& out_names) {
+    const auto& instruct = node->AsStmt();
     CHECK_GT(places.size(), static_cast<size_t>(0)) << "valid_places is empty.";
     float final_score{-1.};
     Place winner_place{places[0]};
@@ -76,14 +77,19 @@ class StaticKernelPickPass : public mir::StmtPass {
     for (size_t i = 0; i < place_size; ++i) {
       const auto& place = places[i];
       float weight = static_cast<float>(place_size - i) / place_size;
+      VLOG(4) << "current place is " << place.DebugString() << ", idx : " << i
+              << ", weight : " << weight;
       size_t score{};
 
       // The more important factor comes first
       if (kernel_pick_factors_.IsTargetConsidered() &&
           (place.target == kernel.target() || kernel.target() == TARGET(kAny) ||
            place.target == TARGET(kAny))) {
-        score += kMax /
-                 static_cast<int>(core::KernelPickFactor::Factor::TargetFirst);
+        size_t target_score =
+            kMax /
+            static_cast<int>(core::KernelPickFactor::Factor::TargetFirst);
+        score += target_score;
+        VLOG(4) << "[TargetConsidered score]:" << target_score;
       }
       VLOG(4) << "[score s1]:" << score;
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
@@ -93,8 +99,11 @@ class StaticKernelPickPass : public mir::StmtPass {
         // score skipped, if kernel is int8, but op is not int8
         if (!(kernel.precision() == PRECISION(kInt8) &&
               !instruct.op_info()->HasAttr("enable_int8"))) {
-          score += kMax / static_cast<int>(
-                              core::KernelPickFactor::Factor::PrecisionFirst);
+          size_t precision_score =
+              kMax /
+              static_cast<int>(core::KernelPickFactor::Factor::PrecisionFirst);
+          score += precision_score;
+          VLOG(4) << "[PrecisionConsidered score]:" << precision_score;
         }
       }
       VLOG(4) << "[score s2]:" << score;
@@ -102,8 +111,11 @@ class StaticKernelPickPass : public mir::StmtPass {
           (place.layout == kernel.layout() ||
            kernel.layout() == DATALAYOUT(kAny) ||
            place.layout == DATALAYOUT(kAny))) {
-        score += kMax / static_cast<int>(
-                            core::KernelPickFactor::Factor::DataLayoutFirst);
+        size_t datalayout_score =
+            kMax /
+            static_cast<int>(core::KernelPickFactor::Factor::DataLayoutFirst);
+        score += datalayout_score;
+        VLOG(4) << "[DataLayoutConsidered score]:" << datalayout_score;
       }
       VLOG(4) << "[score s3]:" << score;
 
@@ -128,18 +140,90 @@ class StaticKernelPickPass : public mir::StmtPass {
           for (size_t i = 0; i < in_names.size(); ++i) {
             std::string tmp;
             CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-            if (in_types.count(in_names[i]) &&
-                !PrecTypeCompatible(
-                    in_types.at(in_names[i]),
-                    kernel.GetInputDeclType(tmp)->precision())) {
-              type_match = false;
+            if (in_types.count(in_names[i])) {
+              if (!PrecTypeCompatible(
+                      in_types.at(in_names[i]),
+                      kernel.GetInputDeclType(tmp)->precision())) {
+                type_match = false;
+              } else {
+                score += 1;
+              }
             }
           }
         }
         if (type_match) {
           score *= 2;
+          VLOG(4) << "[Input precision compatible]: *2";
         }
         VLOG(4) << "[score s4]:" << score;
+      }
+
+      // add new rules for datatype: When the input types are consistent with
+      // kernel's input types, select the kernel of the datatype.
+      if (instruct.op_info()->Type() != "conditional_block" &&
+          instruct.op_info()->Type() != "while" &&
+          instruct.op_info()->Type() != "subgraph") {
+        bool datatype_match = true;
+        for (auto* in : node->inlinks) {
+          if (!in->IsArg()) continue;
+          if (in->AsArg().name == "feed" || in->AsArg().is_persist) continue;
+          std::string argname;
+          instruct.op_info()->GetInputArgname(in->AsArg().name, &argname);
+          VLOG(5) << "intput var name : " << in->AsArg().name;
+          // only when datatype is LOD_TENSOR, LOD_TENSOR_ARRAY, STEP_SCOPES,
+          // the type pointer is not null;
+          if (in->AsArg().type) {
+            VLOG(5) << "input datatype : "
+                    << static_cast<int>(in->AsArg().type->id());
+            VLOG(5) << "kernel bind datatype : "
+                    << static_cast<int>(kernel.GetInputDeclType(argname)->id());
+            if (static_cast<int>(in->AsArg().type->id()) !=
+                static_cast<int>(kernel.GetInputDeclType(argname)->id()))
+              datatype_match = false;
+          } else {
+            datatype_match = false;
+          }
+        }
+        if (datatype_match) {
+          score *= 2;
+          VLOG(4) << "[Input datatype compatible]: *2";
+        }
+        VLOG(4) << "[score s5]:" << score;
+      }
+
+      if (kernel.place().target == TARGET(kOpenCL)) {
+        if (instruct.op_type() == "matmul" ||
+            instruct.op_type() == "matmul_v2") {
+          bool input_target_match = false;
+          int persistable_weights = 0;
+          int input_match_num = 0;
+          for (auto* in : node->inlinks) {
+            if (!in->IsArg()) continue;
+            if (in->AsArg().name == "feed") continue;
+            VLOG(4) << "persistable attr is: " << in->AsArg().is_persist;
+            VLOG(4) << "is_weight attr is: " << in->AsArg().is_weight;
+            std::string argname;
+            instruct.op_info()->GetInputArgname(in->AsArg().name, &argname);
+            VLOG(4) << "input var name : " << in->AsArg().name;
+            if (in->AsArg().is_weight || in->AsArg().is_persist)
+              persistable_weights++;
+            if (persistable_weights > 0 &&
+                kernel.GetInputDeclType(argname)->target() == TARGET(kHost)) {
+              input_target_match = true;
+            } else if (kernel.GetInputDeclType(argname)->target() ==
+                       TARGET(kOpenCL)) {
+              input_match_num++;
+            }
+          }
+          if (persistable_weights == 0 && input_match_num == 2) {
+            input_target_match = true;
+          }
+          if (input_target_match) {
+            score *= 2;
+            VLOG(4) << "[Input target compatible]: *2";
+          }
+          VLOG(4) << "[score s6]:" << score;
+        }
       }
 
       if (weight * score > final_score) {
@@ -191,9 +275,8 @@ class StaticKernelPickPass : public mir::StmtPass {
       }
     }
 
-    VLOG(4) << "[score(final)]:" << final_score;
-    VLOG(2) << "-------- pick summary for " << instruct.op_type()
-            << " --------";
+    VLOG(2) << "-------- score summary for candidate kernel : "
+            << kernel.summary() << " --------";
     VLOG(2) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
             << " " << DataLayoutToStr(winner_place.layout) << " "
             << TargetToStr(winner_place.target);
@@ -201,11 +284,11 @@ class StaticKernelPickPass : public mir::StmtPass {
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);
-    VLOG(4) << "kernel.op_type():" << kernel.op_type();
-    VLOG(4) << "kernel picker factors:" << kernel_pick_factors_;
-    VLOG(4) << "kernel place:" << kernel.place().DebugString();
-    VLOG(4) << "winner_picker place:" << winner_place.DebugString();
-    VLOG(4) << "------------------------------";
+    VLOG(2) << "kernel.op_type():" << kernel.op_type();
+    VLOG(2) << "kernel picker factors:" << kernel_pick_factors_;
+    VLOG(2) << "winner_picker place:" << winner_place.DebugString();
+    VLOG(2) << "[score(final)]:" << final_score;
+    VLOG(2) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments
     // might have different data layout.

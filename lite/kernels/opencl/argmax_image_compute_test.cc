@@ -62,7 +62,7 @@ void argmax_baseline(const indtype* x_data,
 }
 
 void test(const lite_api::CLPrecisionType p,
-          bool keepdims,
+          const bool keepdims,
           const int axis,
           DDim x_dim) {
   std::unique_ptr<KernelContext> context(new KernelContext);
@@ -82,6 +82,7 @@ void test(const lite_api::CLPrecisionType p,
   param.X = &x;
   param.Out = &out;
   param.Axis = axis;
+  param.keepdims = keepdims;
 
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));
@@ -90,7 +91,8 @@ void test(const lite_api::CLPrecisionType p,
   for (size_t i = 0; i < x_dim.size(); i++) {
     output_shape.push_back(x_dim[i]);
   }
-  output_shape[axis] = 1L;
+  int axis_new = (axis >= 0) ? axis : axis + x_dim.size();
+  output_shape[axis_new] = 1L;
   DDim out_dim(output_shape);
 
   x.Resize(x_dim);
@@ -136,10 +138,10 @@ void test(const lite_api::CLPrecisionType p,
   // run cpu ref
   if (fp16_flag) {
     argmax_baseline<float, float>(
-        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis);
+        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis_new);
   } else {
     argmax_baseline<float, float>(
-        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis);
+        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis_new);
   }
 
   VLOG(4) << "output_data vs output_ref_data";
@@ -173,7 +175,7 @@ void test(const lite_api::CLPrecisionType p,
 
 void test_argmax_opencl_4d() {
   for (bool keepdims : {true}) {
-    for (int axis : {0, 1, 2, 3}) {
+    for (int axis : {-1, 0, 1, 2, 3}) {
       for (int n : {2, 3}) {
         for (int c : {5, 6}) {
           for (int h : {2, 3, 4, 5, 6}) {
@@ -193,7 +195,7 @@ void test_argmax_opencl_4d() {
 
 void test_argmax_opencl_3d() {
   for (bool keepdims : {true}) {
-    for (int axis : {0, 1, 2}) {
+    for (int axis : {-1, 0, 1, 2}) {
       for (int c : {4, 4}) {
         for (int h : {2, 10}) {
           for (int w : {2, 17}) {
@@ -211,7 +213,7 @@ void test_argmax_opencl_3d() {
 
 void test_argmax_opencl_2d() {
   for (bool keepdims : {true}) {
-    for (int axis : {0, 1}) {
+    for (int axis : {-1, 0, 1}) {
       for (int h : {2, 10}) {
         for (int w : {2, 17}) {
           for (const auto precision_type :

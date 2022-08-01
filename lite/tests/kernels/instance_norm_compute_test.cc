@@ -180,6 +180,11 @@ TEST(InstanceNorm, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   ignored_outs = {"saved_mean", "saved_variance"};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  ignored_outs = {"saved_mean", "saved_variance"};
+  // TODO(liusiyuan): support later
+  return;
 #else
   return;
 #endif
@@ -187,6 +192,8 @@ TEST(InstanceNorm, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
   ignored_outs = {"saved_mean", "saved_variance"};
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)

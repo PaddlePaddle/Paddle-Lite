@@ -234,6 +234,10 @@ NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
     const std::string& padding_algorithm);
 // Convert the attribute 'mode' in Pad2d/Pad3d to NNAdapterPadModeCode
 NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode);
+// Convert the attribute 'interpolate mode' in GridSample to
+// NNAdapterInterpolateModeCode
+NNAdapterInterpolateModeCode ConvertInterpolateModeToNNInterpolateModeCode(
+    std::string mode);
 
 // Convert a C/C++ POD types to a PaddleLite precision type
 template <typename T>

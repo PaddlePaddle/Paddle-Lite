@@ -105,6 +105,8 @@ struct FcParam : ParamBase {
   bool padding_weights{false};
   std::string Prelu_mode{
       "channel"};  // prelu param, can be "all", "channel" or "element"
+  std::string op_type{"mul"};
+  float alpha{6.f};
   // for int8
   WITH_INT8_CONFIG
 };
@@ -131,6 +133,7 @@ struct InterpolateParam : ParamBase {
   int out_w{-1};
   bool align_corners{true};
   int align_mode{1};
+  bool version_2{false};
   std::string interp_method{"Nearest"};
   DataLayoutType data_layout{DATALAYOUT(kNCHW)};
 };
@@ -254,6 +257,14 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* output{};
   int axis{-1};
   bool use_cudnn{true};
+  bool eleminate_success{false};
+};
+
+// For LogSoftmax op
+struct LogSoftmaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  int axis{-1};
 };
 
 // For Reshape and Reshape2 Op
@@ -299,6 +310,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_threshold{6.0f};
   float hard_swish_scale{6.0f};
   float hard_swish_offset{3.0f};
+  // swish param
+  float swish_scale{6.0f};
   // thresholded_relu
   float relu_threshold{1.0f};
   // elu
@@ -307,6 +320,9 @@ struct ActivationParam : ParamBase {
   float threshold{6.0f};
   // gelu
   bool gelu_approximate{false};
+  // softplus
+  float softplus_beta{1.0f};
+  float softplus_threshold{20.f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -321,17 +337,18 @@ struct ActivationGradParam : ParamBase {
 struct SparseConvParam : ParamBase {
   const lite::Tensor* x{};
   // An array of float values storing non-zero kernel elements
-  const lite::Tensor* nonzero_weights{};
+  lite::Tensor* nonzero_weights{};
   /* An array of int32_t values storing scaled
    * [by sizeof(input element)] difference  between input channels
    * corresponding to successive non-zero element
    */
-  const lite::Tensor* diffs{};
+  lite::Tensor* diffs{};
   // the number of non-zero kernel elements per each output channel
-  const lite::Tensor* oc_nonzeros{};
-  const lite::Tensor* bias{nullptr};
+  lite::Tensor* oc_nonzeros{};
+  lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
   int first_ic{0};
+  int flag_semi{0};
   std::vector<int> strides{1, 1};
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
@@ -371,6 +388,11 @@ struct ConvParam : ParamBase {
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
   bool fuse_relu{false};  // only used in mkldnn kernel
+  bool fuse_sigmoid{false};
+  bool fuse_tanh{false};
+  bool fuse_swish{false};
+  bool fuse_exp{false};
+  bool fuse_abs{false};
   bool use_quantizer{
       false};  // set true for op that should be quantized, only used for cpu
   bool fuse_residual_connection{false};
@@ -432,6 +454,7 @@ struct BatchNormParam : ParamBase {
 struct PoolParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
+  lite::Tensor* mask{};
   std::string pooling_type{""};
   std::vector<int> ksize{};
   bool global_pooling{
@@ -447,6 +470,7 @@ struct PoolParam : ParamBase {
   bool adaptive{false};
   bool ceil_mode{false};
   bool use_quantizer{false};
+  std::string padding_algorithm{"EXPLICIT"};
   std::string data_format{"AnyLayout"};
   // for int8
   WITH_INT8_CONFIG
@@ -458,6 +482,7 @@ struct PoolParam : ParamBase {
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
+  const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
   float dropout_prob{.5f};
@@ -641,6 +666,15 @@ struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
   int bit_length;
 };
 
+struct QuantizeLinearParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* scale{};
+  const lite::Tensor* zero_point{};
+  lite::Tensor* y{};
+  int quant_axis;
+  int bit_length;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -661,6 +695,15 @@ struct UniformRandomParam : ParamBase {
   int seed{0};
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
+};
+/// ----------------------- unfold operators ----------------------
+struct UnfoldParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<int> kernel_sizes{};
+  std::vector<int> strides{};
+  std::vector<int> paddings{};
+  std::vector<int> dilations{};
+  lite::Tensor* Y{nullptr};
 };
 /// ----------------------- negative operators --------------
 struct NegativeParam : ParamBase {
@@ -726,6 +769,9 @@ struct Index_selectParam : ParamBase {
 struct ReverseParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
+  // for tensor_array
+  std::vector<lite::Tensor>* X_array{nullptr};
+  std::vector<lite::Tensor>* Out_array{nullptr};
   std::vector<int> Axis;
 };
 
@@ -845,6 +891,7 @@ struct PriorBoxParam : ParamBase {
   float step_h{0.f};
   float offset{0.5f};
   int prior_num{0};
+  bool flatten_to_2d{false};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
   bool min_max_aspect_ratios_order{false};
@@ -1038,7 +1085,8 @@ struct SequencePoolParam : ParamBase {
 
 struct SequenceConvParam : ParamBase {
   const lite::Tensor* X{};
-  const lite::Tensor* Filter{};
+  // not const for python unit_test
+  lite::Tensor* Filter{};
   lite::Tensor* Out{};
   int contextStart{0};
   int contextStride{1};
@@ -1280,6 +1328,7 @@ struct GenerateProposalsV2Param : ParamBase {
   float nms_thresh{0.5f};
   float min_size{0.1f};
   float eta{1.0f};
+  bool pixel_offset{true};
 
   // outputs
   lite::Tensor* RpnRois{};
@@ -1343,6 +1392,12 @@ struct MatMulParam : ParamBase {
   WITH_INT8_CONFIG
 };
 
+struct BmmParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+};
+
 struct GatherNdParam : ParamBase {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* index{nullptr};
@@ -1354,6 +1409,7 @@ struct GatherParam : ParamBase {
   const lite::Tensor* Index{};
   const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
+  int axis{-1};
 };
 
 struct GatherTreeParam : ParamBase {
@@ -1375,15 +1431,16 @@ struct AssignParam : ParamBase {
 
 /// ----------------------- roi_align operators -----------------------
 struct RoiAlignParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* ROIs{};
-  lite::Tensor* RoisLod{};
-  lite::Tensor* RoisNum{};
-  lite::Tensor* Out{};
+  lite::Tensor* X{nullptr};
+  lite::Tensor* ROIs{nullptr};
+  lite::Tensor* RoisLod{nullptr};
+  lite::Tensor* RoisNum{nullptr};
+  lite::Tensor* Out{nullptr};
   float spatial_scale{1.0f};
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
+  bool align{false};
 };
 
 /// ----------------------- box_clip operators -----------------------
@@ -1536,6 +1593,7 @@ struct DistributeFpnProposalsParam : ParamBase {
   int max_level{};
   int refer_level{};
   int refer_scale{};
+  bool pixel_offset{true};
 };
 
 /// --------------------- instance_norm operators --------------------
@@ -1681,6 +1739,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int n_layers{};
   int head_num{};
   int size_per_head{};
+  int hidden_dim{};
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
@@ -1714,6 +1773,8 @@ struct XPUFcParam : ParamBase {
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
+  bool transpose_x{false};
+  bool transpose_w{true};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -1994,6 +2055,10 @@ struct TrigonometricParam : ParamBase {
 
 using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
+using TanParam = TrigonometricParam;
+using AsinParam = TrigonometricParam;
+using AcosParam = TrigonometricParam;
+using AtanParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   const lite::Tensor* x{nullptr};
@@ -2082,6 +2147,15 @@ struct CumsumParam : ParamBase {
   bool flatten{false};
   bool exclusive{false};
   bool reverse{false};
+};
+
+struct SamplingIdParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+
+  float min{0.f};
+  float max{1.f};
+  int seed{0};
 };
 
 struct PolygonBoxTransformParam : ParamBase {
@@ -2178,6 +2252,26 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
+
+struct GaussRandomParam : ParamBase {
+  const lite::Tensor* ShapeTensor{nullptr};
+  std::vector<const lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  lite::Tensor* Out{};
+  int seed{0};
+  int dtype{5};
+  float mean{0.f};
+  float gauss_std{0.f};
+};
+
+struct RollParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* ShiftsTensor{};
+  lite::Tensor* Out{};
+  std::vector<int64_t> shifts{};
+  std::vector<int64_t> axis{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

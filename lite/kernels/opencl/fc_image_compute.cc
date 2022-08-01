@@ -27,6 +27,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& param = this->Param<operators::FcParam>();
     const auto x_dims = param.input->dims();
+    const auto out_dims = param.output->dims();
     const auto w_t = param.w;
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
@@ -53,6 +54,13 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     // convert weights from cpu to gpu
     auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    if (x_dims.size() > 2 && x_dims.size() <= 4) {
+      layout_input_image_ = std::unique_ptr<Tensor>(new Tensor);
+    }
+    if (out_dims.size() > 2) {
+      layout_output_image_ = std::unique_ptr<Tensor>(new Tensor);
+    }
+
     const auto w_dims = w_t->dims();
 
     auto w_ext_dims = w_dims;
@@ -134,6 +142,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   void ReInitWhenNeeded() override {
     auto& param = this->Param<operators::FcParam>();
     const auto x_dims = param.input->dims();
+    const auto out_dims = param.output->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
@@ -142,8 +151,9 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       // compute m,n,k
       const auto w_dims = param.w->dims();
       CHECK_GE(x_dims.size(), 2UL);
+      CHECK_LE(x_dims.size(), 4UL);
       CHECK_GE(w_dims.size(), 2UL);
-      CHECK_EQ(param.output->dims().size(), 2UL);
+      CHECK_LE(param.output->dims().size(), 4UL);
 
       m_ = x_dims.Slice(0, param.in_num_col_dims).production();
       k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
@@ -170,22 +180,115 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
+      if (x_dims.size() > 2 && x_dims.size() <= 4) {
+        context.cl_context()->AddKernel(
+            "input_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
+        STL::stringstream kernel_layout_key;
+        kernel_layout_key << "input_layout" << build_options_ << time_stamp_;
+        kernel_input_layout_ =
+            context.cl_context()->GetKernel(kernel_layout_key.str());
+      }
+
+      if (out_dims.size() > 2) {
+        context.cl_context()->AddKernel(
+            "output_layout", "image/fc_kernel.cl", build_options_, time_stamp_);
+        STL::stringstream kernel_output_key;
+        kernel_output_key << "output_layout" << build_options_ << time_stamp_;
+        kernel_output_layout_ =
+            context.cl_context()->GetKernel(kernel_output_key.str());
+      }
+
       SetGlobalLocalWorkSize();
     }
   }
 
   void Run() override {
     auto& param = this->Param<operators::FcParam>();
+    auto x_dims = param.input->dims();
+    auto out_dims = param.output->dims();
+    cl::Image2D* x_img_src = DATA_GPU(param.input);
 
-    x_img_ = DATA_GPU(param.input);
-    out_img_ = MUTABLE_DATA_GPU(param.output, UP_DIV(n_, 4), m_, nullptr);
+    if (x_dims.size() > 2 && x_dims.size() <= 4) {
+      cl::NDRange layout_gws;
+      int in_num_col_dims = param.in_num_col_dims;
+      auto new_dims = Broadcast2GpuShape(x_dims);
+
+      int N = new_dims[0];
+      int C = new_dims[1];
+      int H = new_dims[2];
+      int W = new_dims[3];
+
+      if (x_dims.size() == 3) {
+        in_num_col_dims++;
+      }
+
+      x_img_ =
+          MUTABLE_DATA_GPU(layout_input_image_, UP_DIV(k_, 4), m_, nullptr);
+      int out_stride = 1;
+
+      if (in_num_col_dims == 1) {
+        out_stride = C * H * W;
+        layout_gws = cl::NDRange{static_cast<size_t>((C * H * W + 3) / 4),
+                                 static_cast<size_t>(N)};
+      } else if (in_num_col_dims == 2) {
+        out_stride = H * W;
+        layout_gws = cl::NDRange{static_cast<size_t>((H * W + 3) / 4),
+                                 static_cast<size_t>(N * C)};
+      } else if (in_num_col_dims == 3) {
+        out_stride = W;
+        layout_gws = cl::NDRange{static_cast<size_t>((W + 3) / 4),
+                                 static_cast<size_t>(N * C * H)};
+      } else {
+        LOG(FATAL) << "unsupport in_num_col_dims!";
+      }
+
+      auto& kernel = kernel_input_layout_;
+      cl_int status;
+      int arg_idx = 0;
+      status = kernel.setArg(arg_idx++, *x_img_src);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, *x_img_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, H);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W * H);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W * H * C);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, out_stride);
+      CL_CHECK_FATAL(status);
+
+      auto& context = ctx_->As<OpenCLContext>();
+      CHECK(context.cl_context() != nullptr);
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    layout_gws,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    } else {
+      x_img_ = x_img_src;
+    }
+    if (out_dims.size() == 2) {
+      out_img_src_ = MUTABLE_DATA_GPU(param.output, UP_DIV(n_, 4), m_, nullptr);
+    } else {
+      out_img_src_ =
+          MUTABLE_DATA_GPU(layout_output_image_, UP_DIV(n_, 4), m_, nullptr);
+    }
 
     auto& kernel = kernel_;
     cl_int status;
     int arg_idx = 0;
     status = kernel.setArg(arg_idx++, *x_img_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *out_img_);
+    status = kernel.setArg(arg_idx++, *out_img_src_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *w_buf_);
     CL_CHECK_FATAL(status);
@@ -215,6 +318,66 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
+
+    if (out_dims.size() > 2) {
+      int N, C, H, W;
+      cl::NDRange output_gws;
+
+      if (out_dims.size() == 3) {
+        N = 1;
+        C = out_dims[0];
+        H = out_dims[1];
+        W = out_dims[2];
+      } else {
+        N = out_dims[0];
+        C = out_dims[1];
+        H = out_dims[2];
+        W = out_dims[3];
+      }
+      output_gws = cl::NDRange{static_cast<size_t>((C + 3) / 4),
+                               static_cast<size_t>(W),
+                               static_cast<size_t>(N * H)};
+      out_img_ =
+          MUTABLE_DATA_GPU(param.output, UP_DIV(C, 4) * W, N * H, nullptr);
+
+      auto& kernel = kernel_output_layout_;
+      cl_int status;
+      int arg_idx = 0;
+      status = kernel.setArg(arg_idx++, *out_img_src_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, *out_img_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, H);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, C);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, H);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, H * W);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(arg_idx++, C * H * W);
+      CL_CHECK_FATAL(status);
+
+      auto& context = ctx_->As<OpenCLContext>();
+      CHECK(context.cl_context() != nullptr);
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    output_gws,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    }
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -296,14 +459,19 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   bool has_bias_{false};
 
   cl::Kernel kernel_;
+  cl::Kernel kernel_input_layout_;
+  cl::Kernel kernel_output_layout_;
   cl::NDRange global_work_size_;
   cl::NDRange local_work_size_;
 
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
   std::unique_ptr<Tensor> alpha_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> layout_input_image_{nullptr};
+  std::unique_ptr<Tensor> layout_output_image_{nullptr};
 
   cl::Image2D* x_img_{nullptr};
+  cl::Image2D* out_img_src_{nullptr};
   cl::Image2D* out_img_{nullptr};
   const cl::Buffer* w_buf_{nullptr};
   cl::Image2D* bias_img_{nullptr};

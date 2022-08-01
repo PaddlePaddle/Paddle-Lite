@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
@@ -92,6 +93,8 @@ class QuantDequantOpFuser : public FuseBase {
 
  private:
   std::string quant_dequant_op_type_{};
+  std::vector<std::string> input_activation_quant_op = {
+      "matmul_v2", "matmul", "mul"};
 };
 
 /* DynamicQuantOpFuser is applied for LSTM and GRU for now.
@@ -113,6 +116,43 @@ class DynamicQuantOpFuser : public FuseBase {
  private:
   std::string op_type_{};
   std::string input_argname_{};
+};
+
+/* The pattern like "input_var + quantize_linear_op + dequantize_linear_op +
+ * quantized_op " can be deteted by this fuser.
+ * The fuser sets the input scale for the quantized_op and
+ * deletes the "quantize_linear_op + dequantize_linear_op".
+ * If the input_var is weight, the fuser also quantizes the input_var.
+*/
+class QuantDequantLinearOpFuser : public FuseBase {
+ public:
+  QuantDequantLinearOpFuser() {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  std::vector<std::string> quant_op_types_ = {"conv2d",
+                                              "depthwise_conv2d",
+                                              "conv2d_transpose",
+                                              "depthwise_conv2d_transpose",
+                                              "mul",
+                                              "matmul",
+                                              "matmul_v2"};
+};
+
+/* The pattern like "dequantize_linear_op + quantized_op "
+ *  can be deteted by this fuser.
+ * The fuser sets the weight scale for the quantized_op and
+ * deletes the "dequantize_linear_op".
+*/
+class DequantLinearOpFuser : public FuseBase {
+ public:
+  DequantLinearOpFuser() {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  std::string dequant_op_type_{};
 };
 
 }  // namespace fusion

@@ -304,8 +304,7 @@ void TestPoolStrides(Place place, float abs_error = 2e-5) {
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {2, 2}, {0, 0}, {2, 2});
-#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU) && \
-    !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 2}, {0, 0}, {2, 2});
 #endif
@@ -316,9 +315,7 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
   for (auto pooling_type : {"max", "avg"}) {
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
-#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL) && \
-    !defined(LITE_WITH_HUAWEI_ASCEND_NPU) &&               \
-    !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {1, 1}, {2, 2});
     TestPoolHelper(place,
@@ -356,9 +353,7 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
                      {1, 1},
                      {0, 0},
                      {ksize, ksize});
-#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL) && \
-    !defined(LITE_WITH_HUAWEI_ASCEND_NPU) &&               \
-    !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
       TestPoolHelper(place,
                      abs_error,
                      {2, 3, 6, 7},
@@ -373,9 +368,6 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
 
 void TestPoolCeilMode(Place place, float abs_error = 2e-5) {
   for (auto pooling_type : {"max", "avg"}) {
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-    if (pooling_type == std::string("max")) continue;
-#endif
     TestPoolHelper(place,
                    abs_error,
                    {2, 3, 6, 6},
@@ -396,17 +388,19 @@ TEST(Pool, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  TestPoolGlobal(place, abs_error);
+  TestPoolAlgorithm(place, abs_error);
+  TestPoolStrides(place, abs_error);
+  TestPoolCeilMode(place, abs_error);
+  return;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
 #else
   return;
 #endif

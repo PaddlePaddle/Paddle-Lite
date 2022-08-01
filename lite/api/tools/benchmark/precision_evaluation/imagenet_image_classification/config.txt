@@ -1,0 +1,8 @@
+label_path:/data/local/tmp/benchmark/validation_dataset/ILSVRC2012_1000_cls_label_list.txt
+ground_truth_images_path:/data/local/tmp/benchmark/validation_dataset/ILSVRC2012_1000_cls/val_list_1k.txt
+resize_short_size:256
+crop_size:224
+mean:0.485,0.456,0.406
+scale:1/0.229,1/0.224,1/0.225
+topk:2
+store_result_as_image:1

@@ -45,8 +45,8 @@ REGISTER_LITE_KERNEL(unbind, kHost, kFloat, kNCHW, unbind_float, def)
     .Finalize();
 
 using unbind_int64 =
-    paddle::lite::kernels::host::UnbindCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(unbind, kHost, kInt64, kNCHW, unbind_int64, def)
+    paddle::lite::kernels::host::UnbindCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(unbind, kHost, kFloat, kNCHW, unbind_int64, def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

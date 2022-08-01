@@ -1,26 +1,35 @@
 #----------------------------------------------- NOT CHANGE ---------------------------------------
+find_package(PythonInterp REQUIRED)
 # A trick to generate the paddle_use_kernels.h
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR}/lite/api/)
+    COMMAND ${CMAKE_COMMAND} -E copy ${PADDLE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${PADDLE_BINARY_DIR}/lite/api/)
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
-    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h
     "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
     ${LITE_WITH_ARM82_FP16}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
 # A trick to generate the paddle_use_ops.h
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
     ${ops_src_list}
-    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h
     "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
-    RESULT_VARIABLE result)
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 
 set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc)
@@ -44,14 +53,8 @@ endif()
 if(LITE_WITH_BM)
     set(external_libs_DEPS ${external_libs_DEPS} ${bm_deps})
 endif()
-if(LITE_WITH_RKNPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${rknpu_deps})
-endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
-endif()
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${huawei_ascend_npu_deps})
 endif()
 if(LITE_WITH_NNADAPTER)
     set(external_libs_DEPS ${external_libs_DEPS} ${nnadapter_deps})
@@ -77,6 +80,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
     add_dependencies(paddle_full_api_shared fbs_headers)
     if (LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
+    endif()
+    if(LITE_WITH_METAL)
+        target_link_libraries(paddle_full_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
     endif()
 
 
@@ -141,13 +147,15 @@ else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
         if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
-            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+            if (((ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armmacos") AND LITE_WITH_EXCEPTION) OR ARM_TARGET_OS STREQUAL "qnx")
                 set(TARGET_COMIPILE_FLAGS "")
             else()
                 set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
             endif()
         else()
-            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            if (NOT LITE_WITH_METAL)
+                set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            endif()
         endif()
         #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
@@ -156,20 +164,19 @@ else()
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         #   2.1 link `paddle_light_api_shared` to third-party libs
+        if (LITE_WITH_METAL)
+            target_link_libraries(paddle_light_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
+        endif()
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
-        endif()
-        if (LITE_WITH_RKNPU)
-            # Need to add RKNPU runtime libs dependency
-            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
         endif()
 
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
           set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
+          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PADDLE_BINARY_DIR}/lite/api/android/jni/native)
           if (LITE_WITH_NPU)
               # Need to add HIAI runtime libs (libhiai.so) dependency
               target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
@@ -197,22 +204,23 @@ if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
 endif()
 # python API
-if (LITE_WITH_PYTHON)
+if(LITE_WITH_PYTHON)
     # add library for opt_base
     add_subdirectory(python)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
+    if(LITE_WITH_METAL)
+        target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
+    endif()
 endif()
 
-
-
-# test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
+    # test_model_bin
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
-        DEPS gflags
-        CV_DEPS paddle_cv_arm)
+
+    # benchmark_bin
+    add_subdirectory(tools/benchmark)
 endif()
 
 # opt tool
@@ -220,4 +228,11 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc
         DEPS gflags)
+    if (EMSCRIPTEN)
+        target_link_libraries(opt protobuf)
+        set_target_properties(opt PROPERTIES LINK_FLAGS "-s INITIAL_MEMORY=1000MB -s ALLOW_MEMORY_GROWTH=1 -sASSERTIONS")
+        if (WITH_NODE_RAW_FS)
+            set_target_properties(opt PROPERTIES LINK_FLAGS "-s NODERAWFS=1")
+        endif()
+    endif()
 endif()

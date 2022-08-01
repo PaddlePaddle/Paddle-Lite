@@ -96,6 +96,9 @@ template <class T = float>
 void test_stack(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
   for (float axis : {0, 1, 3, 4}) {
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    if (axis == 0) continue;
+#endif
     std::unique_ptr<arena::TestCase> tester(
         new StackComputeTester<T>(place, "def", axis));
     arena::Arena arena(std::move(tester), place, abs_error);
@@ -110,11 +113,15 @@ TEST(Stack, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-1;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #elif defined(LITE_WITH_X86)

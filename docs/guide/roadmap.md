@@ -1,6 +1,6 @@
 # Road map
 
-这篇文档会介绍 Paddle-Lite 近期对外的开源版本和计划。
+这篇文档会介绍 Paddle Lite 近期对外的开源版本和计划。
 
 其中包含的 feature 为最小集合，按最终发布的版本为准。
 

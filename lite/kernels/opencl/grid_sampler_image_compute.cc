@@ -43,6 +43,28 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void PrepareForRun() override {
+    grid_param_ = param_.get_mutable<param_t>();
+    bool align_corners = grid_param_->align_corners;
+    build_options_ = align_corners ? " -DALIGN_CORNER " : "";
+    std::string padding_mode = grid_param_->padding_mode;
+    std::string mode = grid_param_->mode;
+    if (padding_mode == "zeros") {
+      build_options_ += "";
+    } else if (padding_mode == "border") {
+      build_options_ += " -DBORDER ";
+    } else if (padding_mode == "reflection") {
+      build_options_ += " -DREFLECTION ";
+    } else {
+      LOG(FATAL) << "Unsupported grid sampler with padding mode:"
+                 << padding_mode;
+    }
+    if (mode == "nearest") {
+      build_options_ += " -DNEAREST ";
+    } else if (mode == "bilinear") {
+      build_options_ += " -DBILINEAR ";
+    } else {
+      LOG(FATAL) << "Unsupported grid sampler with interp mode:" << mode;
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/grid_sampler_kernel.cl",
@@ -58,15 +80,6 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void ReInitWhenNeeded() override {
     grid_param_ = param_.get_mutable<param_t>();
-    bool align_corners = grid_param_->align_corners;
-    std::string padding_mode = grid_param_->padding_mode;
-    std::string mode = grid_param_->mode;
-    if (align_corners != true || padding_mode != "zeros" ||
-        mode != "bilinear") {
-      LOG(FATAL) << "Unsupported grid samper with align_corners:"
-                 << align_corners << ", padding_mode:" << padding_mode
-                 << ", mode:" << mode;
-    }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
@@ -84,6 +97,9 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void GetGlobalWorkSize() {
+    auto out_dims = grid_param_->out->dims();
+    int out_N = out_dims[0];
+    int out_H = out_dims[2];
     auto default_work_size =
         DefaultGlobalWorkSize(grid_param_->out->dims(),
                               DDim(std::vector<DDim::value_type>{
@@ -92,7 +108,8 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     global_work_size_ =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[1]),
-                    static_cast<cl::size_type>(default_work_size[2] / 4)};
+                    static_cast<cl::size_type>(out_N * UP_DIV(out_H, 4))};
+
 #ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
@@ -103,15 +120,15 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x = grid_param_->x;
-    //  auto* grid = grid_param_->grid;
+    auto* grid = grid_param_->grid;
     auto* out = grid_param_->out;
-
+    // bool align_corners = grid_param_->align_corners;
     auto out_dims = out->dims();
     int out_height = out_dims[2];
     int out_width = out_dims[3];
 
     auto* x_img = GET_DATA_GPU(x);
-    auto* grid_img = GET_DATA_GPU(x);
+    auto* grid_img = GET_DATA_GPU(grid);
     auto* out_img =
         MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
 
@@ -121,9 +138,6 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "out->target():" << TargetToStr(out->target());
     VLOG(4) << "x->dims():" << in_dims;
     VLOG(4) << "out->dims():" << out_dims;
-    // VLOG(4) << "x_image: " << x_img;
-    // VLOG(4) << "grid_img: " << grid_img;
-    // VLOG(4) << "out_image" << out_img;
     VLOG(4) << "out_img_shape_[w,h]:" << out_img_shape_[0] << " "
             << out_img_shape_[1];
 #endif
@@ -139,6 +153,9 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(3, out_height);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(4, out_width);
+    CL_CHECK_FATAL(status);
+    int h_blks = UP_DIV(out_height, 4);
+    status = kernel.setArg(5, h_blks);
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();

@@ -68,6 +68,9 @@ bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.nms_thresh = op_desc.GetAttr<float>("nms_thresh");
   param_.min_size = op_desc.GetAttr<float>("min_size");
   param_.eta = op_desc.GetAttr<float>("eta");
+  if (op_desc.HasAttr("pixel_offset")) {
+    param_.pixel_offset = op_desc.GetAttr<bool>("pixel_offset");
+  }
 
   // outs
   param_.RpnRois = scope->FindVar(op_desc.Output("RpnRois").front())

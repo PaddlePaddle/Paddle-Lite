@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/subgraph/subgraph_pass.h"
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -62,86 +63,10 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
-void HuaweiAscendNPUSubgraphPass::Apply(
-    const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/huawei_ascend_npu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
-void APUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) \
-  supported_lists.insert(#op_type);          \
-  LOG(INFO) << #op_type
-#include "lite/kernels/apu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
-void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  if (!GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
 void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/bm/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
-void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/rknpu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
@@ -174,31 +99,43 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
+bool NNAdapterSubgraphOpTeller(const std::string& device_name,
+                               SSAGraph* graph,
+                               Node* node,
+                               Scope* scope) {
+  // auto op_info = node->AsStmt().op_info();
+  // auto op_type = op_info->Type();
+  // // Add extra op filter for each device
+  // if (device_name == "nvidia_tensorrt") {
+  //   if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
+  //     auto filter_name = op_info->Input("Filter").front();
+  //     auto filter_tensor = scope->FindMutableTensor(filter_name);
+  //     auto filter_dims = filter_tensor->dims();
+  //     auto filter_width = filter_dims[3];
+  //     auto filter_height = filter_dims[2];
+  //     if (filter_width != filter_height) return false;
+  //     auto output_channel_size = filter_dims[0];
+  //     auto groups = op_info->GetAttr<int>("groups");
+  //     int multiplier = output_channel_size / groups;
+  //     if (groups != 1 && multiplier != 1) return false;
+  //   }
+  // }
+  return true;
+}
+
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  auto has_intersection = [](const std::vector<std::string>& a,
-                             const std::vector<std::string>& b) -> bool {
-    std::set<std::string> a_set(a.begin(), a.end());
-    std::set<std::string> b_set(b.begin(), b.end());
-    std::set<std::string> c_set;
-    std::set_intersection(a_set.begin(),
-                          a_set.end(),
-                          b_set.begin(),
-                          b_set.end(),
-                          std::inserter(c_set, c_set.begin()));
-    return !c_set.empty();
-  };
   // Filter the supported operators for the selected devices according to the
-  // registered op bridges
+  // registered op converters
   std::string subgraph_partition_configs;
   std::vector<std::string> selected_device_names;
-#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
-    defined(LITE_WITH_NNADAPTER)
   Scope* scope = nullptr;
   for (auto& any_op_node : graph->StmtTopologicalOrder()) {
     scope = any_op_node->AsStmt().op()->scope();
     if (scope) break;
   }
   CHECK(scope != nullptr);
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
   selected_device_names =
       Context<TargetType::kNNAdapter>::NNAdapterDeviceNames(scope);
   // Load the partition configurations from APIs
@@ -228,18 +165,19 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (subgraph_partition_configs.empty()) {
     subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
   }
-  std::set<std::string> supported_ops;
-  std::vector<std::string> supported_device_names;
-  std::string device_names;
-
+  std::set<std::string> all_supported_ops;
+  std::map<std::string, std::set<std::string>> device_supported_ops;
 #define REGISTER_CONVERTER(__op_type__, __func_name__, __device_names__) \
-  device_names = __device_names__;                                       \
-  device_names.erase(                                                    \
-      std::remove(device_names.begin(), device_names.end(), ' '),        \
-      device_names.end());                                               \
-  supported_device_names = Split(device_names, ",");                     \
-  if (has_intersection(selected_device_names, supported_device_names)) { \
-    supported_ops.insert(#__op_type__);                                  \
+  {                                                                      \
+    std::string device_names = __device_names__;                         \
+    device_names.erase(                                                  \
+        std::remove(device_names.begin(), device_names.end(), ' '),      \
+        device_names.end());                                             \
+    auto supported_device_names = Split(device_names, ",");              \
+    for (const auto& supported_device_name : supported_device_names) {   \
+      device_supported_ops[supported_device_name].insert(#__op_type__);  \
+    }                                                                    \
+    all_supported_ops.insert(#__op_type__);                              \
   }
 #include "lite/kernels/nnadapter/converter/all.h"
 #undef __NNADAPTER_CONVERTER_ALL_H__
@@ -247,13 +185,31 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_ops.count(stmt.op_type()) != 0;
+    auto op_info = node->AsStmt().op_info();
+    auto op_type = op_info->Type();
+    // As long as a device does not register the supported operators in
+    // lite/kernels/nnadapter/converter/all.h, we assume that all operators are
+    // supported by default, and subgraph partition will be performed online (or
+    // at the execution time).
+    for (const auto& selected_device_name : selected_device_names) {
+      if (!device_supported_ops.count(selected_device_name)) {
+        return all_supported_ops.count(op_type) != 0;
+      }
+    }
+    for (const auto& selected_device_name : selected_device_names) {
+      if (device_supported_ops[selected_device_name].count(op_type) != 0 &&
+          NNAdapterSubgraphOpTeller(
+              selected_device_name, graph.get(), node, scope)) {
+        return true;
+      }
+    }
+    return false;
   };
   SubgraphFuser fuser(graph.get(),
                       teller,
                       1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
+                      subgraph_partition_configs,
+                      true);
   fuser();
 }
 
@@ -263,17 +219,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
     .BindTargets({TARGET(kNPU)});
-REGISTER_MIR_PASS(huawei_ascend_npu_subgraph_pass,
-                  paddle::lite::mir::HuaweiAscendNPUSubgraphPass)
-    .BindTargets({TARGET(kHuaweiAscendNPU)});
-REGISTER_MIR_PASS(apu_subgraph_pass, paddle::lite::mir::APUSubgraphPass)
-    .BindTargets({TARGET(kAPU)});
-REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)
-    .BindTargets({TARGET(kXPU)});
 REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
     .BindTargets({TARGET(kBM)});
-REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
-    .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,

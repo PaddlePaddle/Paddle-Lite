@@ -155,7 +155,8 @@ class FluidModelExecutor(object):
         """
         dot_path = os.path.join([output_path, filename + '.dot'])
         pdf_path = os.path.join([output_path, filename + '.pdf'])
-        debugger.draw_block_graphviz(self.program.global_block(), path=dot_path)
+        debugger.draw_block_graphviz(
+            self.program.global_block(), path=dot_path)
         cmd = ["dot", "-Tpdf", dot_path, "-o", pdf_path]
         subprocess.Popen(
             cmd,
@@ -296,7 +297,9 @@ class Analyser(object):
             self._check_diff_nodes(infer_results)
 
     def _parse_topo_field(self, field):
-        params = [item.split(':')[1].strip() for item in field[1:-1].split(' ')]
+        params = [
+            item.split(':')[1].strip() for item in field[1:-1].split(' ')
+        ]
         params = [item.split('#') for item in params if item != ""]
         return [item for lst in params for item in lst]
 
@@ -379,8 +382,8 @@ class Analyser(object):
                     raise KeyError("%s not in any op's output params, " % var +
                                    "please check your model and input")
                 fd.write(
-                    '>>>>>>>>>>>>>>>>>>DIFF VARIABLE: %s<<<<<<<<<<<<<<<<<<<\n' %
-                    var)
+                    '>>>>>>>>>>>>>>>>>>DIFF VARIABLE: %s<<<<<<<<<<<<<<<<<<<\n'
+                    % var)
                 for idx, (op_type, inputs,
                           outputs) in enumerate(self.topo[var]):
                     op_repr = '\t'.join([op_type, inputs, outputs])

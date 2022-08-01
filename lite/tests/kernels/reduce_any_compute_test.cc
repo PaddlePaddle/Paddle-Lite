@@ -376,7 +376,7 @@ void test_reduce_any(Place place, float abs_err) {
 }
 
 TEST(ReduceAny, precision) {
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   Place place(TARGET(kXPU));
   float abs_err = 2e-5;
   test_reduce_any(place, abs_err);

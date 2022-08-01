@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/test/arena/framework.h"
@@ -195,7 +196,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
   }
 };
 
-void test_squeeze(Place place) {
+void test_squeeze(Place place, float abs_error) {
   for (std::vector<int> axes : {std::vector<int>({}),
                                 std::vector<int>({0}),
                                 std::vector<int>({0, -2})}) {
@@ -206,7 +207,7 @@ void test_squeeze(Place place) {
             for (bool inplace : {true, false}) {
               std::unique_ptr<arena::TestCase> tester(new SqueezeComputeTester(
                   place, "def", axes, DDim({N, C, H, W}), inplace));
-              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena::Arena arena(std::move(tester), place, abs_error);
               arena.TestPrecision();
             }
           }
@@ -216,18 +217,23 @@ void test_squeeze(Place place) {
   }
 }
 
-void test_squeeze2(Place place) {
+void test_squeeze2(Place place, float abs_error) {
   for (std::vector<int> axes : {std::vector<int>({}),
-                                std::vector<int>({0}),
+                                std::vector<int>({2}),
                                 std::vector<int>({0, -2})}) {
     for (int N : {1}) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
             for (bool inplace : {true, false}) {
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+              if (std::find(axes.begin(), axes.end(), 0) != axes.end())
+                continue;
+              if (axes.empty()) continue;
+#endif
               std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
                   place, "def", axes, DDim({N, C, H, W}), inplace));
-              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena::Arena arena(std::move(tester), place, abs_error);
               arena.TestPrecision({"XShape"});
             }
           }
@@ -238,35 +244,75 @@ void test_squeeze2(Place place) {
 }
 
 TEST(squeeze, precision) {
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  Place place(TARGET(kNNAdapter));
-  test_squeeze(place);
-#elif defined(LITE_WITH_OPENCL)
-  Place place(TARGET(kOpenCL));
-  test_squeeze(place);
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  Place place(TARGET(kXPU));
-  test_squeeze(place);
-#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-  test_squeeze(place);
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 5e-2;
+  // TODO(shentanyue): support later
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
+#else
+  return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = TARGET(kOpenCL);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
+  test_squeeze(place, abs_error);
 }
 
 TEST(squeeze2, precision) {
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  Place place(TARGET(kNNAdapter));
-  test_squeeze2(place);
-#elif defined(LITE_WITH_OPENCL)
-  Place place(TARGET(kOpenCL));
-  test_squeeze2(place);
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  Place place(TARGET(kXPU));
-  test_squeeze2(place);
-#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-  test_squeeze2(place);
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 5e-2;
+  // TODO(shentanyue): support later
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
+#else
+  return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = TARGET(kOpenCL);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
+  test_squeeze2(place, abs_error);
 }
 
 }  // namespace lite

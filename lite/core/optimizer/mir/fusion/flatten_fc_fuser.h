@@ -25,12 +25,13 @@ namespace fusion {
 
 class FlattenFcFuser : public FuseBase {
  public:
-  explicit FlattenFcFuser(const std::string& type) {}
+  explicit FlattenFcFuser(const bool has_xshape) : has_xshape_(has_xshape) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  bool has_xshape_;
 };
 
 }  // namespace fusion

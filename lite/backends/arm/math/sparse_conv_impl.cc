@@ -769,6 +769,8 @@ namespace math {
 #define SPARSE_F32_F32_W48_V8_LEAKY_RELU                            \
   /* do relu */                                                     \
   "11: \n"                                                          \
+  "cmp    %w[vflag_act],  #3       \n"                              \
+  "bne    12f                     \n"                               \
   "movi   v0.4s, #0\n"                      /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"             /* leakey relu alpha */ \
   "fcmge  v2.4s,    v20.4s,    v0.4s   \n"  /* vcgeq_f32 */         \
@@ -807,11 +809,13 @@ namespace math {
   "bif    v29.16b,  v9.16b,   v8.16b  \n"   /* choose*/             \
   "bif    v30.16b,  v11.16b,   v10.16b  \n" /* choose*/             \
   "bif    v31.16b,  v13.16b,   v12.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_F32_F32_W32_V8_LEAKY_RELU                           \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp    %w[vflag_act],  #3       \n"                             \
+  "bne    12f                     \n"                              \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -838,11 +842,13 @@ namespace math {
   "bif    v26.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v27.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v28.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_F32_F32_W16_V8_LEAKY_RELU                           \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp    %w[vflag_act],  #3       \n"                             \
+  "bne    12f                     \n"                              \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -857,11 +863,13 @@ namespace math {
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v23.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v24.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_F32_F32_W8_V8_LEAKY_RELU                            \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp    %w[vflag_act],  #3       \n"                             \
+  "bne    12f                     \n"                              \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -870,16 +878,198 @@ namespace math {
   "fmul   v5.4s,    v22.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_F32_F32_W4_V8_LEAKY_RELU                            \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp    %w[vflag_act],  #3       \n"                             \
+  "bne    12f                     \n"                              \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
   "fmul   v3.4s,    v21.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W48_V8_HARD_SWISH                         \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v4.4s,  v20.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v20.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmul   v20.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fadd   v4.4s,  v28.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v29.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v30.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v31.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v28.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v29.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v30.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v31.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmul   v28.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v29.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v30.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v31.4s,  v11.4s, v10.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_F32_F32_W32_V8_HARD_SWISH                         \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fadd   v30.4s,  v28.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmul   v31.4s,  v28.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmax   v30.4s, v30.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmin   v30.4s, v30.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fmul   v28.4s,  v31.4s, v30.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_F32_F32_W16_V8_HARD_SWISH                         \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_F32_F32_W8_V8_HARD_SWISH                          \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "9:\n"
+
+#define SPARSE_F32_F32_W4_V8_HARD_SWISH                          \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
   "9:\n"
 
 /**
@@ -893,6 +1083,7 @@ namespace math {
   SPARSE_F32_F32_W48_V8_RELU            \
   SPARSE_F32_F32_W48_V8_RELU6           \
   SPARSE_F32_F32_W48_V8_LEAKY_RELU      \
+  SPARSE_F32_F32_W48_V8_HARD_SWISH      \
   /* store result */                    \
   "stp   q20, q21,  [%[c_ptr]]\n"       \
   "stp   q22, q23,  [%[c_ptr], #32]\n"  \
@@ -912,6 +1103,7 @@ namespace math {
   SPARSE_F32_F32_W32_V8_RELU           \
   SPARSE_F32_F32_W32_V8_RELU6          \
   SPARSE_F32_F32_W32_V8_LEAKY_RELU     \
+  SPARSE_F32_F32_W32_V8_HARD_SWISH     \
   /* store result */                   \
   "stp   q21, q22,  [%[c_ptr]]\n"      \
   "stp   q23, q24,  [%[c_ptr], #32]\n" \
@@ -929,6 +1121,7 @@ namespace math {
   SPARSE_F32_F32_W16_V8_RELU       \
   SPARSE_F32_F32_W16_V8_RELU6      \
   SPARSE_F32_F32_W16_V8_LEAKY_RELU \
+  SPARSE_F32_F32_W16_V8_HARD_SWISH \
   /* store result */               \
   "stp   q21, q22,  [%[c_ptr]]\n"  \
   "stp   q23, q24,  [%[c_ptr], #32]\n"
@@ -944,6 +1137,7 @@ namespace math {
   SPARSE_F32_F32_W8_V8_RELU       \
   SPARSE_F32_F32_W8_V8_RELU6      \
   SPARSE_F32_F32_W8_V8_LEAKY_RELU \
+  SPARSE_F32_F32_W8_V8_HARD_SWISH \
   /* store result */              \
   "stp   q21, q22,  [%[c_ptr]]\n"
 
@@ -958,6 +1152,7 @@ namespace math {
   SPARSE_F32_F32_W4_V8_RELU       \
   SPARSE_F32_F32_W4_V8_RELU6      \
   SPARSE_F32_F32_W4_V8_LEAKY_RELU \
+  SPARSE_F32_F32_W4_V8_HARD_SWISH \
   /* store result */              \
   "str   q21,  [%[c_ptr]]\n"
 
@@ -998,7 +1193,8 @@ void sparse_conv_fp32_pipelined(const float* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
-  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float hs_param[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3, hard_swish: 4
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 0x01;
@@ -1008,6 +1204,13 @@ void sparse_conv_fp32_pipelined(const float* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        hs_param[i] = act_param.hard_swish_offset;
+        hs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        hs_param[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -1050,10 +1253,11 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
+                "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
       }
@@ -1100,7 +1304,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
@@ -1148,9 +1353,10 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                "v8", "v9", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
+                "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
                 "v24", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -1195,8 +1401,9 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
-              : "v0", "v1", "v2", "v3", "v4", "v5", "v9", "v11", "v12", "v21", 
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v11", "v12", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -1241,8 +1448,9 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
-              : "v0", "v1", "v2", "v3", "v4", "v9", "v11", "v21", 
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v6", "v7", "v9", "v11", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
         }
@@ -1253,77 +1461,143 @@ void sparse_conv_fp32_pipelined(const float* A,
         mc -= 4 * sizeof(float);
       }
 
-      if
-        SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(float)) {
-          int mindex = mc / sizeof(float);
-
-          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
-            const float* cur_w = A;
-            uint32_t nnz = nidx_nnzmap[i];
-            const float* cur_b = B;
-            const int32_t* dmap = widx_dmap;
-            if (i != 0) {
-              int cur_rem = nidx_nnzmap[i - 1] & 3;
-              if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
-              }
-              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-              cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-              cur_b +=
-                  ((nidx_nnzmap[i - 1] == 0)
-                       ? 0
-                       : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-              dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+      output_decrement += 2 * sizeof(float);
+      if (mc & (2 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
-            for (size_t k = 0; k < mindex; k++) {
-              *(cur_output + k) = vbias;
-            }
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mindex; k++) {
-                *(cur_output + k) += (*cur_w) * (*(cur_b + k));
-              }
-              cur_w += 1;
-              intptr_t diff = *dmap++;
-              cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
-            }
-            size_t re = nnz % 4;
-            if (re != 0) {
-              for (int j = 0; j < (4 - re); j++) {
-                cur_w++;
-                dmap++;
-              }
-            }
-            switch (flag_act) {
-              case 0:
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) =
-                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) >= 0
-                                          ? *(cur_output + k)
-                                          : *(cur_output + k) * alpha;
-                }
-                break;
-            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
-          LITE_PARALLEL_COMMON_END();
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else if (flag_act == 3) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);
+            float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale);
+            float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);
+            float32x2_t vset0123 = vadd_f32(vacc01n0, offset);
+            float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale);
+            vset0123 = vmax_f32(vset0123, vzero);
+            vset0123 = vmin_f32(vset0123, thre);
+            vacc01n0 = vmul_f32(vscale0123, vset0123);
+          }
+          vst1_f32(cur_output, vacc01n0);
         }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 2 * sizeof(float));
+        B += 2;
+        mc -= 2 * sizeof(float);
+      }
+
+      output_decrement += 1 * sizeof(float);
+      if (mc & (1 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_dup_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else if (flag_act == 3) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);
+            float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale);
+            float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);
+            float32x2_t vset0123 = vadd_f32(vacc01n0, offset);
+            float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale);
+            vset0123 = vmax_f32(vset0123, vzero);
+            vset0123 = vmin_f32(vset0123, thre);
+            vacc01n0 = vmul_f32(vscale0123, vset0123);
+          }
+          vst1_lane_f32(cur_output, vacc01n0, 0);
+        }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 1 * sizeof(float));
+        B += 1;
+        mc -= 1 * sizeof(float);
+      }
     }
 }
 
@@ -1732,6 +2006,8 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W48_V8_LEAKY_RELU                           \
   /* do relu */                                                     \
   "11: \n"                                                          \
+  "cmp   %w[vflag_act],  #3       \n"       /* check leakey relu */ \
+  "bne   12f                     \n"        /* no act end */        \
   "movi   v0.4s, #0\n"                      /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"             /* leakey relu alpha */ \
   "fcmge  v2.4s,    v20.4s,    v0.4s   \n"  /* vcgeq_f32 */         \
@@ -1770,11 +2046,13 @@ void sparse_conv_fp32_pipelined(const float* A,
   "bif    v29.16b,  v9.16b,   v8.16b  \n"   /* choose*/             \
   "bif    v30.16b,  v11.16b,   v10.16b  \n" /* choose*/             \
   "bif    v31.16b,  v13.16b,   v12.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W32_V8_LEAKY_RELU                          \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -1801,11 +2079,13 @@ void sparse_conv_fp32_pipelined(const float* A,
   "bif    v26.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v27.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v28.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W16_V8_LEAKY_RELU                          \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -1820,11 +2100,13 @@ void sparse_conv_fp32_pipelined(const float* A,
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v23.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v24.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W8_V8_LEAKY_RELU                           \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -1833,16 +2115,198 @@ void sparse_conv_fp32_pipelined(const float* A,
   "fmul   v5.4s,    v22.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W4_V8_LEAKY_RELU                           \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
   "fmul   v3.4s,    v21.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W48_V8_HARD_SWISH                        \
+  /* do relu */                                                  \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v4.4s,  v20.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v20.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmul   v20.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fadd   v4.4s,  v28.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v29.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v30.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v31.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v28.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v29.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v30.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v31.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmul   v28.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v29.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v30.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v31.4s,  v11.4s, v10.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_F32_W32_V8_HARD_SWISH                        \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fadd   v30.4s,  v28.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmul   v31.4s,  v28.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmax   v30.4s, v30.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmin   v30.4s, v30.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fmul   v28.4s,  v31.4s, v30.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_F32_W16_V8_HARD_SWISH                        \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_F32_W8_V8_HARD_SWISH                         \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "9:\n"
+
+#define SPARSE_INT8_F32_W4_V8_HARD_SWISH                         \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
   "9:\n"
 
 /**
@@ -1856,6 +2320,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W48_V8_RELU           \
   SPARSE_INT8_F32_W48_V8_RELU6          \
   SPARSE_INT8_F32_W48_V8_LEAKY_RELU     \
+  SPARSE_INT8_F32_W48_V8_HARD_SWISH     \
   /* store result */                    \
   "stp   q20, q21,  [%[c_ptr]]\n"       \
   "stp   q22, q23,  [%[c_ptr], #32]\n"  \
@@ -1875,6 +2340,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W32_V8_RELU          \
   SPARSE_INT8_F32_W32_V8_RELU6         \
   SPARSE_INT8_F32_W32_V8_LEAKY_RELU    \
+  SPARSE_INT8_F32_W32_V8_HARD_SWISH    \
   /* store result */                   \
   "stp   q21, q22,  [%[c_ptr]]\n"      \
   "stp   q23, q24,  [%[c_ptr], #32]\n" \
@@ -1892,6 +2358,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W16_V8_RELU       \
   SPARSE_INT8_F32_W16_V8_RELU6      \
   SPARSE_INT8_F32_W16_V8_LEAKY_RELU \
+  SPARSE_INT8_F32_W16_V8_HARD_SWISH \
   /* store result */                \
   "stp   q21, q22,  [%[c_ptr]]\n"   \
   "stp   q23, q24,  [%[c_ptr], #32]\n"
@@ -1907,6 +2374,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W8_V8_RELU       \
   SPARSE_INT8_F32_W8_V8_RELU6      \
   SPARSE_INT8_F32_W8_V8_LEAKY_RELU \
+  SPARSE_INT8_F32_W8_V8_HARD_SWISH \
   /* store result */               \
   "stp   q21, q22,  [%[c_ptr]]\n"
 
@@ -1921,6 +2389,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W4_V8_RELU       \
   SPARSE_INT8_F32_W4_V8_RELU6      \
   SPARSE_INT8_F32_W4_V8_LEAKY_RELU \
+  SPARSE_INT8_F32_W4_V8_HARD_SWISH \
   /* store result */               \
   "str   q21,  [%[c_ptr]]\n"
 
@@ -1962,6 +2431,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
+  float hs_param[12] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -1972,6 +2442,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        hs_param[i] = act_param.hard_swish_offset;
+        hs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        hs_param[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -2008,7 +2485,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
             : [vscale] "r"(vsclae),
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
-              [valpha] "r"(alpha)
+              [valpha] "r"(alpha),
+              [hs_param] "r"(hs_param)
             : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
@@ -2051,10 +2529,11 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
+                "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -2093,9 +2572,10 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                  "v8", "v9", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
+                  "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
                   "v24", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -2134,8 +2614,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
-              : "v0", "v1", "v2", "v3", "v4", "v5", "v9", "v11", "v12", "v21", 
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v11", "v12", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -2174,8 +2655,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(alpha)
-              : "v0", "v1", "v2", "v3", "v4", "v9", "v11", "v21", 
+                [valpha] "r"(alpha),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v9", "v11", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
         }
@@ -2191,7 +2673,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           int mindex = mc / sizeof(int8_t);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output =
+            float* out_ptr =
                 reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
@@ -2205,49 +2687,66 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                             : widx_dmap[nidx_nnzmap[i - 1] - 1]);
               dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
             float vscale = scale[i];
-            for (size_t k = 0; k < mc; k++) {
-              *(cur_output + k) = 0;
-            }
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                *(cur_output + k) += (*cur_w) * (*(cur_b + k));
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
+              int8x8_t vw = vld1_dup_s8(cur_w);
               cur_w += 1;
               intptr_t diff = *dmap++;
               cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            switch (flag_act) {
-              case 0:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                }
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) =
-                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) >= 0
-                                          ? *(cur_output + k)
-                                          : *(cur_output + k) * alpha;
-                }
-                break;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else if (flag_act == 3) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
+            } else {
+              float32x4_t offset = vdupq_n_f32(act_param.hard_swish_offset);
+              float32x4_t hs_scale =
+                  vdupq_n_f32(1.0 / act_param.hard_swish_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold);
+              float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
+              float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
+              vset0123 = vmaxq_f32(vset0123, vzero);
+              vset0123 = vminq_f32(vset0123, thre);
+              vaccf0123 = vmulq_f32(vscale0123, vset0123);
+            }
+
+            if (mc == 1) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+            } else if (mc == 2) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+            } else {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();
@@ -2660,6 +3159,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W48_V8_LEAKY_RELU                          \
   /* do relu */                                                     \
   "11: \n"                                                          \
+  "cmp   %w[vflag_act],  #3       \n"       /* check leakey relu */ \
+  "bne   12f                     \n"        /* no act end */        \
   "movi   v0.4s, #0\n"                      /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"             /* leakey relu alpha */ \
   "fcmge  v2.4s,    v20.4s,    v0.4s   \n"  /* vcgeq_f32 */         \
@@ -2698,11 +3199,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "bif    v29.16b,  v9.16b,   v8.16b  \n"   /* choose*/             \
   "bif    v30.16b,  v11.16b,   v10.16b  \n" /* choose*/             \
   "bif    v31.16b,  v13.16b,   v12.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W32_V8_LEAKY_RELU                         \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -2729,11 +3232,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "bif    v26.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v27.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v28.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W16_V8_LEAKY_RELU                         \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -2748,11 +3253,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
   "bif    v23.16b,  v7.16b,   v6.16b  \n"  /* choose*/             \
   "bif    v24.16b,  v9.16b,   v8.16b  \n"  /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W8_V8_LEAKY_RELU                          \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
@@ -2761,16 +3268,198 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "fmul   v5.4s,    v22.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "bif    v22.16b,   v5.16b,   v4.16b  \n" /* choose*/             \
-  "9:\n"
+  "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W4_V8_LEAKY_RELU                          \
   /* do relu */                                                    \
   "11: \n"                                                         \
+  "cmp   %w[vflag_act],  #3       \n"      /* check leakey relu */ \
+  "bne   12f                     \n"       /* no act end */        \
   "movi   v0.4s, #0\n"                     /* for relu6 */         \
   "dup    v1.4s,  %w[valpha]\n"            /* leakey relu alpha */ \
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
   "fmul   v3.4s,    v21.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W48_V8_HARD_SWISH                       \
+  /* do relu */                                                  \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v4.4s,  v20.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v20.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmul   v20.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fadd   v4.4s,  v28.4s, v1.4s        \n"                       \
+  "fadd   v6.4s,  v29.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v30.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v31.4s, v1.4s        \n"                      \
+  "fmul   v5.4s,   v28.4s, v2.4s        \n"                      \
+  "fmul   v7.4s,   v29.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v30.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v31.4s, v2.4s        \n"                      \
+  "fmax   v4.4s,  v4.4s, v0.4s        \n"                        \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmin   v4.4s,  v4.4s, v3.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmul   v28.4s,  v5.4s,  v4.4s        \n"                      \
+  "fmul   v29.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v30.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v31.4s,  v11.4s, v10.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_INT8_W32_V8_HARD_SWISH                       \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fadd   v14.4s,  v25.4s, v1.4s        \n"                      \
+  "fadd   v16.4s,  v26.4s, v1.4s        \n"                      \
+  "fadd   v18.4s,  v27.4s, v1.4s        \n"                      \
+  "fadd   v30.4s,  v28.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmul   v15.4s,  v25.4s, v2.4s        \n"                      \
+  "fmul   v17.4s,  v26.4s, v2.4s        \n"                      \
+  "fmul   v19.4s,  v27.4s, v2.4s        \n"                      \
+  "fmul   v31.4s,  v28.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmax   v14.4s, v14.4s, v0.4s       \n"                        \
+  "fmax   v16.4s, v16.4s, v0.4s       \n"                        \
+  "fmax   v18.4s, v18.4s, v0.4s       \n"                        \
+  "fmax   v30.4s, v30.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmin   v14.4s, v14.4s, v3.4s       \n"                        \
+  "fmin   v16.4s, v16.4s, v3.4s       \n"                        \
+  "fmin   v18.4s, v18.4s, v3.4s       \n"                        \
+  "fmin   v30.4s, v30.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "fmul   v25.4s,  v15.4s, v14.4s        \n"                     \
+  "fmul   v26.4s,  v17.4s, v16.4s        \n"                     \
+  "fmul   v27.4s,  v19.4s, v18.4s        \n"                     \
+  "fmul   v28.4s,  v31.4s, v30.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_INT8_W16_V8_HARD_SWISH                       \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fadd   v10.4s,  v23.4s, v1.4s        \n"                      \
+  "fadd   v12.4s,  v24.4s, v1.4s        \n"                      \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmul   v11.4s,  v23.4s, v2.4s        \n"                      \
+  "fmul   v13.4s,  v24.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmax   v10.4s, v10.4s, v0.4s       \n"                        \
+  "fmax   v12.4s, v12.4s, v0.4s       \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmin   v10.4s, v10.4s, v3.4s       \n"                        \
+  "fmin   v12.4s, v12.4s, v3.4s       \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "fmul   v23.4s,  v11.4s, v10.4s        \n"                     \
+  "fmul   v24.4s,  v13.4s, v12.4s        \n"                     \
+  "9:\n"
+
+#define SPARSE_INT8_INT8_W8_V8_HARD_SWISH                        \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fadd   v8.4s,  v22.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmul   v9.4s,   v22.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmax   v8.4s,  v8.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmin   v8.4s,  v8.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
+  "fmul   v22.4s,  v9.4s,  v8.4s        \n"                      \
+  "9:\n"
+
+#define SPARSE_INT8_INT8_W4_V8_HARD_SWISH                        \
+  /* do hard_swish */                                            \
+  "12: \n"                                                       \
+  "movi   v0.4s,    #0                \n"    /* for hardswish */ \
+  "ldr    q1,  [%[hs_param], #0]         \n" /* offset */        \
+  "ldr    q2,  [%[hs_param], #16]        \n" /* scale */         \
+  "ldr    q3,  [%[hs_param], #32]        \n" /* threshold */     \
+  "fadd   v6.4s,  v21.4s, v1.4s        \n"                       \
+  "fmul   v7.4s,   v21.4s, v2.4s        \n"                      \
+  "fmax   v6.4s,  v6.4s, v0.4s        \n"                        \
+  "fmin   v6.4s,  v6.4s, v3.4s        \n"                        \
+  "fmul   v21.4s,  v7.4s,  v6.4s        \n"                      \
   "9:\n"
 
 /**
@@ -2784,6 +3473,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W48_V8_RELU                                           \
   SPARSE_INT8_INT8_W48_V8_RELU6                                          \
   SPARSE_INT8_INT8_W48_V8_LEAKY_RELU                                     \
+  SPARSE_INT8_INT8_W48_V8_HARD_SWISH                                     \
   /* store result */                                                     \
   "ld1    {v12.4s},   [%[vmax]] \n" /* v8 = -127 */ /* data >= -127 */   \
   "fcmge v0.4s,  v20.4s, v12.4s\n"                                       \
@@ -2854,6 +3544,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W32_V8_RELU                                           \
   SPARSE_INT8_INT8_W32_V8_RELU6                                          \
   SPARSE_INT8_INT8_W32_V8_LEAKY_RELU                                     \
+  SPARSE_INT8_INT8_W32_V8_HARD_SWISH                                     \
   /* store result */                                                     \
   "ld1    {v8.4s},   [%[vmax]] \n" /* v8 = -127 */ /* data >= -127 */    \
   "fcmge v0.4s, v21.4s, v8.4s\n"                                         \
@@ -2905,6 +3596,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W16_V8_RELU                                           \
   SPARSE_INT8_INT8_W16_V8_RELU6                                          \
   SPARSE_INT8_INT8_W16_V8_LEAKY_RELU                                     \
+  SPARSE_INT8_INT8_W16_V8_HARD_SWISH                                     \
   "ld1    {v8.4s},   [%[vmax]] \n" /* v8 = -127 */ /* data >= -127 */    \
   "fcmge v0.4s, v21.4s, v8.4s\n"                                         \
   "fcmge v1.4s, v22.4s, v8.4s\n"                                         \
@@ -2937,6 +3629,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W8_V8_RELU                                                  \
   SPARSE_INT8_INT8_W8_V8_RELU6                                                 \
   SPARSE_INT8_INT8_W8_V8_LEAKY_RELU                                            \
+  SPARSE_INT8_INT8_W8_V8_HARD_SWISH                                            \
   "ld1    {v8.4s},   [%[vmax]] \n" /* v8 = -127 */ /* data >= -127 */          \
   "fcmge v0.4s, v21.4s, v8.4s\n"                                               \
   "fcmge v1.4s, v22.4s, v8.4s\n" /* choose data */                             \
@@ -2960,6 +3653,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W4_V8_RELU                                                 \
   SPARSE_INT8_INT8_W4_V8_RELU6                                                \
   SPARSE_INT8_INT8_W4_V8_LEAKY_RELU                                           \
+  SPARSE_INT8_INT8_W4_V8_HARD_SWISH                                           \
   "ld1    {v8.4s},   [%[vmax]]  \n" /* v8 = -127 */ /* data >= -127 */        \
   "fcmge v0.4s, v21.4s, v8.4s   \n"                 /* choose data */         \
   "bif v21.16b,  v8.16b, v0.16b \n"                                           \
@@ -3006,6 +3700,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
+  float hs_param[12] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -3016,6 +3711,13 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        hs_param[i] = act_param.hard_swish_offset / param.output_scale;
+        hs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        hs_param[i + 8] = act_param.hard_swish_threshold / param.output_scale;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -3054,7 +3756,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
               [valpha] "r"(alpha),
-              [vmax] "r"(vmax)
+              [vmax] "r"(vmax),
+              [hs_param] "r"(hs_param)
             : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
@@ -3099,7 +3802,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha),
-                [vmax] "r"(vmax)
+                [vmax] "r"(vmax),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                 "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
@@ -3142,9 +3846,10 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha),
-                [vmax] "r"(vmax)
+                [vmax] "r"(vmax),
+                [hs_param] "r"(hs_param)
               : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                  "v8", "v9", "v11", "v12", "v13", "v14", "v16", "v17", "v21", "v22", "v23",
+                  "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v16", "v17", "v21", "v22", "v23",
                   "v24", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -3184,8 +3889,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha),
-                [vmax] "r"(vmax)
-              : "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9", "v10", "v11", "v12", "v16", "v21", 
+                [vmax] "r"(vmax),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v16", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
         }
@@ -3225,8 +3931,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha),
-                [vmax] "r"(vmax)
-              : "v0", "v1", "v2", "v3", "v4", "v8", "v9", "v11", "v16", "v21", 
+                [vmax] "r"(vmax),
+                [hs_param] "r"(hs_param)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v11", "v16", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
         }
@@ -3240,8 +3947,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
-                                                           output_stride * i);
+            int8_t* out_ptr = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                        output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
@@ -3254,37 +3961,83 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                             : widx_dmap[nidx_nnzmap[i - 1] - 1]);
               dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
             float vscale = scale[i];
-            std::vector<float> out(mc, 0);
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                out[k] += (*cur_w) * (*(cur_b + k));
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
+              int8x8_t vw = vld1_dup_s8(cur_w);
               cur_w += 1;
               intptr_t diff = *dmap++;
               cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            for (size_t k = 0; k < mc; k++) {
-              out[k] = out[k] * vscale + vbias;
-              switch (flag_act) {
-                case 0:
-                  break;
-                case 1:  // relu
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  break;
-                case 2:  // relu6
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  out[k] = out[k] < alpha ? out[k] : alpha;
-                  break;
-                default:  // leaky_relu
-                  out[k] = out[k] >= 0 ? out[k] : out[k] * alpha;
-                  break;
-              }
-              float vax = out[k] > -127.0 ? out[k] : -127.0;
-              vax = vax >= 0 ? vax + 0.5 : vax - 0.5;
-              int32_t out_val = static_cast<int32_t>(vax);
-              *(cur_output + k) = out_val > 127 ? 127 : out_val;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else if (flag_act == 3) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
+            } else {
+              float32x4_t offset =
+                  vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
+              float32x4_t hs_scale =
+                  vdupq_n_f32(1.0 / act_param.hard_swish_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold /
+                                             param.output_scale);
+              float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
+              float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
+              vset0123 = vmaxq_f32(vset0123, vzero);
+              vset0123 = vminq_f32(vset0123, thre);
+              vaccf0123 = vmulq_f32(vscale0123, vset0123);
+            }
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
+            float32x4_t vpos = vdupq_n_f32(0.5);
+            float32x4_t vneg = vdupq_n_f32(-0.5);
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
+                                  vaddq_f32(vaccf0123, vpos),
+                                  vaddq_f32(vaccf0123, vneg));
+
+            int32x4_t vacci0123 = vcvtq_s32_f32(vaccf0123);
+
+            int16x4_t v16i0123 = vqmovn_s32(vacci0123);
+            int16x4_t v16i4567 = vdup_n_s16(0);
+            int8x8_t v8i01234567 = vqmovn_s16(vcombine_s16(v16i0123, v16i4567));
+
+            if (mc == 1) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+            } else if (mc == 2) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+            } else {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+              vst1_lane_s8(out_ptr + 2, v8i01234567, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();
@@ -3328,8 +4081,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vld1.32  {d2-d5}, [r2]\n"         \
   "vmla.f32    q8,  q1,  q0\n"       \
   "vmla.f32    q9,  q2,  q0\n"       \
-  "ldr   r1, [%[widx_dmap]],   #4\n" \
-  "add   %[b_ptr],  %[b_ptr], r1\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "subs    %[k],   %[k],   #1\n"     \
   "add  r2,  r2,   #32\n"            \
   "vld1.32  {d2-d5}, [r2]\n"         \
@@ -3405,6 +4158,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W48_v7_LEAKY_RELU                       \
   /* do relu */                                                \
   "11: \n"                                                     \
+  "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
+  "bne   12f                     \n"   /* no act end */        \
   "vmov.i32   q0, #0\n"                /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f32   q2,    q4,    q0     \n" /* vcgeq_f32 */         \
@@ -3443,6 +4198,97 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vcge.f32   q2,    q15,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q15,    q1    \n" /* vmulq_f32 */         \
   "vbif       q15,    q3,    q2    \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W48_v7_HARD_SWISH                              \
+  /* do relu */                                                       \
+  "12: \n"                                                            \
+  "vld1.f32   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vadd.f32   q3, q4, q0                \n"                           \
+  "vmul.f32   q4, q4, q1                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q4, q4, q3                \n"                           \
+  "vadd.f32   q3, q5, q0                \n"                           \
+  "vmul.f32   q5, q5, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q5, q5, q3                \n"                           \
+  "vadd.f32   q3, q6, q0                \n"                           \
+  "vmul.f32   q6, q6, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q6, q6, q3                \n"                           \
+  "vadd.f32   q3, q7, q0                \n"                           \
+  "vmul.f32   q7, q7, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q7, q7, q3                \n"                           \
+  "vadd.f32   q3, q8, q0                \n"                           \
+  "vmul.f32   q8, q8, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q8, q8, q3                \n"                           \
+  "vadd.f32   q3, q9, q0                \n"                           \
+  "vmul.f32   q9, q9, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q9, q9, q3                \n"                           \
+  "vadd.f32   q3, q10, q0               \n"                           \
+  "vmul.f32   q10, q10, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q10, q10, q3              \n"                           \
+  "vadd.f32   q3, q11, q0               \n"                           \
+  "vmul.f32   q11, q11, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q11, q11, q3              \n"                           \
+  "vadd.f32   q3, q12, q0               \n"                           \
+  "vmul.f32   q12, q12, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q12, q12, q3              \n"                           \
+  "vadd.f32   q3, q13, q0               \n"                           \
+  "vmul.f32   q13, q13, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q13, q13, q3              \n"                           \
+  "vadd.f32   q3, q14, q0               \n"                           \
+  "vmul.f32   q14, q14, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q14, q14, q3              \n"                           \
+  "vadd.f32   q3, q15, q0               \n"                           \
+  "vmul.f32   q15, q15, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q15, q15, q3              \n"                           \
   "9:\n"
 
 /**
@@ -3454,6 +4300,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W48_v7_OUT                                  \
   SPARSE_F32_F32_W48_v7_KERNEL SPARSE_F32_F32_W48_v7_RELU          \
       SPARSE_F32_F32_W48_v7_RELU6 SPARSE_F32_F32_W48_v7_LEAKY_RELU \
+          SPARSE_F32_F32_W48_v7_HARD_SWISH                         \
       "mov   r2,   %[c_ptr]\n" /* store result */                  \
       "vst1.32   {d8-d11},  [r2]\n"                                \
       "add  r2,  r2,   #32\n"                                      \
@@ -3493,8 +4340,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vmla.f32    q9,   q2,  q0\n"      \
   "vmla.f32    q10,  q3,  q0\n"      \
   "vmla.f32    q11,  q4,  q0\n"      \
-  "ldr   r1, [%[widx_dmap]],   #4\n" \
-  "add   %[b_ptr],  %[b_ptr], r1\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "subs    %[k],   %[k],   #1\n"     \
   "add  r2,  r2,   #32\n"            \
   "vld1.32  {d2-d5}, [r2]\n"         \
@@ -3554,6 +4401,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W32_v7_LEAKY_RELU                      \
   /* do relu */                                               \
   "11: \n"                                                    \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q0, #0\n"               /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f32   q2,    q8,    q0    \n" /* vcgeq_f32 */         \
@@ -3580,6 +4429,54 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vmul.f32   q5,    q15,   q1    \n" /* vmulq_f32 */         \
   "vbif       q14,   q3,    q2    \n"                         \
   "vbif       q15,   q5,    q4    \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W32_v7_HARD_SWISH       \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q8, q1                \n"    \
+  "vadd.f32   q6, q9, q1                \n"    \
+  "vmul.f32   q5, q8, q2                \n"    \
+  "vmul.f32   q7, q9, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q8, q5, q4                \n"    \
+  "vmul.f32   q9, q7, q6                \n"    \
+  "vadd.f32   q4, q10, q1                \n"   \
+  "vadd.f32   q6, q11, q1                \n"   \
+  "vmul.f32   q5, q10, q2                \n"   \
+  "vmul.f32   q7, q11, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q10, q5, q4                \n"   \
+  "vmul.f32   q11, q7, q6                \n"   \
+  "vadd.f32   q4, q12, q1                \n"   \
+  "vadd.f32   q6, q13, q1                \n"   \
+  "vmul.f32   q5, q12, q2                \n"   \
+  "vmul.f32   q7, q13, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q12, q5, q4                \n"   \
+  "vmul.f32   q13, q7, q6                \n"   \
+  "vadd.f32   q4, q14, q1                \n"   \
+  "vadd.f32   q6, q15, q1                \n"   \
+  "vmul.f32   q5, q14, q2                \n"   \
+  "vmul.f32   q7, q15, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q14, q5, q4                \n"   \
+  "vmul.f32   q15, q7, q6                \n"   \
   "9:\n"
 
 /**
@@ -3591,6 +4488,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W32_v7_OUT                                  \
   SPARSE_F32_F32_W32_v7_KERNEL SPARSE_F32_F32_W32_v7_RELU          \
       SPARSE_F32_F32_W32_v7_RELU6 SPARSE_F32_F32_W32_v7_LEAKY_RELU \
+          SPARSE_F32_F32_W32_v7_HARD_SWISH                         \
       "mov   r2,   %[c_ptr]\n" /* store result */                  \
       "vst1.32   {d16-d19},  [r2]\n"                               \
       "add  r2,  r2,   #32\n"                                      \
@@ -3619,8 +4517,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vld1.32  {d2-d5}, [r2]\n"         \
   "add  r2,  r2,   #32\n"            \
   "vld1.32  {d6-d9}, [r2]\n"         \
-  "ldr   r1, [%[widx_dmap]],   #4\n" \
-  "add   %[b_ptr],  %[b_ptr], r1\n"  \
+  "ldr   r0, [%[widx_dmap]],   #4\n" \
+  "add   %[b_ptr],  %[b_ptr], r0\n"  \
   "vmla.f32    q8,   q1,  q0\n"      \
   "vmla.f32    q9,   q2,  q0\n"      \
   "pld  [%[b_ptr], #128]    \n"      \
@@ -3662,6 +4560,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W16_v7_LEAKY_RELU                      \
   /* do relu */                                               \
   "11: \n"                                                    \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q0, #0\n"               /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f32   q2,    q8,    q0   \n"  /* vcgeq_f32 */         \
@@ -3676,6 +4576,34 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */         \
   "vbif       q11,   q3,    q2   \n"  /* vmulq_f32 */         \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W16_v7_HARD_SWISH       \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q8, q1                \n"    \
+  "vadd.f32   q6, q9, q1                \n"    \
+  "vmul.f32   q5, q8, q2                \n"    \
+  "vmul.f32   q7, q9, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q8, q5, q4                \n"    \
+  "vmul.f32   q9, q7, q6                \n"    \
+  "vadd.f32   q4, q10, q1                \n"   \
+  "vadd.f32   q6, q11, q1                \n"   \
+  "vmul.f32   q5, q10, q2                \n"   \
+  "vmul.f32   q7, q11, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q10, q5, q4                \n"   \
+  "vmul.f32   q11, q7, q6                \n"   \
   "9:\n"
 
 /**
@@ -3687,6 +4615,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W16_v7_OUT                                  \
   SPARSE_F32_F32_W16_v7_KERNEL SPARSE_F32_F32_W16_v7_RELU          \
       SPARSE_F32_F32_W16_v7_RELU6 SPARSE_F32_F32_W16_v7_LEAKY_RELU \
+          SPARSE_F32_F32_W16_v7_HARD_SWISH                         \
       "mov   r2,   %[c_ptr]\n" /* store result */                  \
       "vst1.32   {d16-d19},  [r2]\n"                               \
       "add  r2,  r2,   #32\n"                                      \
@@ -3736,6 +4665,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W8_v7_LEAKY_RELU                      \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q5,    q3,    q0   \n" /* vcgeq_f32 */         \
@@ -3744,6 +4675,24 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   "vmul.f32   q8,    q4,    q1   \n" /* vmulq_f32 */         \
   "vbif       q3,    q6,    q5   \n" /* vmulq_f32 */         \
   "vbif       q4,    q8,    q7   \n" /* vmulq_f32 */         \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W8_v7_HARD_SWISH        \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d10-d11}, [%[hs_param]]     \n" \
+  "vadd.f32   q6, q3, q1                \n"    \
+  "vadd.f32   q8, q4, q1                \n"    \
+  "vmul.f32   q7, q3, q2                \n"    \
+  "vmul.f32   q9, q4, q2                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmax.f32   q8, q8, q0                \n"    \
+  "vmin.f32   q6, q6, q5                \n"    \
+  "vmin.f32   q8, q8, q5                \n"    \
+  "vmul.f32   q3, q7, q6                \n"    \
+  "vmul.f32   q4, q9, q8                \n"    \
   "9:\n"
 
 /**
@@ -3756,7 +4705,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   SPARSE_F32_F32_W8_v7_KERNEL SPARSE_F32_F32_W8_v7_RELU      \
       SPARSE_F32_F32_W8_v7_RELU6                             \
           SPARSE_F32_F32_W8_v7_LEAKY_RELU /* store result */ \
-      "vst1.32   {d6-d9},  [%[c_ptr]]\n"
+      SPARSE_F32_F32_W8_v7_HARD_SWISH "vst1.32   {d6-d9},  [%[c_ptr]]\n"
 
 #define SPARSE_F32_F32_W4_v7_KERNEL \
   "vdup.32    q3,   %[vbias]\n"     \
@@ -3797,11 +4746,26 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #define SPARSE_F32_F32_W4_v7_LEAKY_RELU                      \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q4,    q3,    q0   \n" /* vcgeq_f32 */         \
   "vmul.f32   q5,    q3,    q1   \n" /* vmulq_f32 */         \
   "vbif       q3,    q5,    q4   \n" /* vmulq_f32 */         \
+  "b      9f                    \n"
+
+#define SPARSE_F32_F32_W4_v7_HARD_SWISH        \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d10-d11}, [%[hs_param]]     \n" \
+  "vadd.f32   q6, q3, q1                \n"    \
+  "vmul.f32   q7, q3, q2                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q6, q6, q5                \n"    \
+  "vmul.f32   q3, q7, q6                \n"    \
   "9:\n"
 
 /**
@@ -3814,7 +4778,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   SPARSE_F32_F32_W4_v7_KERNEL SPARSE_F32_F32_W4_v7_RELU      \
       SPARSE_F32_F32_W4_v7_RELU6                             \
           SPARSE_F32_F32_W4_v7_LEAKY_RELU /* store result */ \
-      "vst1.32   {d6-d7},  [%[c_ptr]]\n"
+      SPARSE_F32_F32_W4_v7_HARD_SWISH "vst1.32   {d6-d7},  [%[c_ptr]]\n"
 
 /**
  * \brief Sparse calculation implementation of 1x1 convolution, both input and
@@ -3854,6 +4818,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float vhs_param[12] = {0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 0x01;
@@ -3863,6 +4828,13 @@ void sparse_conv_fp32_pipelined(const float* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        vhs_param[i] = act_param.hard_swish_offset;
+        vhs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        vhs_param[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -3894,6 +4866,7 @@ void sparse_conv_fp32_pipelined(const float* A,
         uint32_t pair_num = nnz % 4;
         uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
+        float* hs_param = vhs_param;
         // clang-format off
             asm volatile(SPARSE_F32_F32_W48_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -3902,7 +4875,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -3923,7 +4897,6 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "q14",
                 "q15",
                 "r0",
-                "r1",
                 "r2",
                 "cc",
                 "memory");
@@ -3961,6 +4934,7 @@ void sparse_conv_fp32_pipelined(const float* A,
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W32_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -3969,7 +4943,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -3985,8 +4960,11 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "q9",
                 "q10",
                 "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
                 "r0",
-                "r1",
                 "r2",
                 "cc",
                 "memory");
@@ -4022,6 +5000,7 @@ void sparse_conv_fp32_pipelined(const float* A,
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W16_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -4030,7 +5009,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -4047,7 +5027,6 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "q10",
                 "q11",
                 "r0",
-                "r1",
                 "r2",
                 "cc",
                 "memory");
@@ -4083,6 +5062,7 @@ void sparse_conv_fp32_pipelined(const float* A,
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W8_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -4091,7 +5071,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -4104,6 +5085,7 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "q6",
                 "q7",
                 "q8",
+                "q9",
                 "r0",
                 "r1",
                 "cc",
@@ -4140,6 +5122,7 @@ void sparse_conv_fp32_pipelined(const float* A,
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W4_v7_OUT  
               : [a_ptr] "+r"(cur_w),
@@ -4148,7 +5131,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
                 [valpha] "r"(alpha)
@@ -4157,6 +5141,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "q3",
                 "q4",
                 "q5",
+                "q6",
+                "q7",
                 "r0",
                 "r1",
                 "cc",
@@ -4169,78 +5155,143 @@ void sparse_conv_fp32_pipelined(const float* A,
         B += 4;
         mc -= 4 * sizeof(float);
       }
-
-      if
-        SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(float)) {
-          int mindex = mc / sizeof(float);
-
-          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
-            const float* cur_w = A;
-            uint32_t nnz = nidx_nnzmap[i];
-            const float* cur_b = B;
-            const int32_t* dmap = widx_dmap;
-            if (i != 0) {
-              int cur_rem = nidx_nnzmap[i - 1] & 3;
-              if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
-              }
-              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-              cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-              cur_b +=
-                  ((nidx_nnzmap[i - 1] == 0)
-                       ? 0
-                       : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-              dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+      output_decrement += 2 * sizeof(float);
+      if (mc & (2 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
-            for (size_t k = 0; k < mindex; k++) {
-              *(cur_output + k) = vbias;
-            }
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mindex; k++) {
-                *(cur_output + k) += (*cur_w) * (*(cur_b + k));
-              }
-              cur_w += 1;
-              intptr_t diff = *dmap++;
-              cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
-            }
-            size_t re = nnz % 4;
-            if (re != 0) {
-              for (int j = 0; j < (4 - re); j++) {
-                cur_w++;
-                dmap++;
-              }
-            }
-            switch (flag_act) {
-              case 0:
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) =
-                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) >= 0
-                                          ? *(cur_output + k)
-                                          : *(cur_output + k) * alpha;
-                }
-                break;
-            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
-          LITE_PARALLEL_COMMON_END();
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else if (flag_act == 3) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);
+            float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale);
+            float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);
+            float32x2_t vset0123 = vadd_f32(vacc01n0, offset);
+            float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale);
+            vset0123 = vmax_f32(vset0123, vzero);
+            vset0123 = vmin_f32(vset0123, thre);
+            vacc01n0 = vmul_f32(vscale0123, vset0123);
+          }
+          vst1_f32(cur_output, vacc01n0);
         }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 2 * sizeof(float));
+        B += 2;
+        mc -= 2 * sizeof(float);
+      }
+
+      output_decrement += 1 * sizeof(float);
+      if (mc & (1 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_dup_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else if (flag_act == 3) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t offset = vdup_n_f32(act_param.hard_swish_offset);
+            float32x2_t hs_scale = vdup_n_f32(1.0 / act_param.hard_swish_scale);
+            float32x2_t thre = vdup_n_f32(act_param.hard_swish_threshold);
+            float32x2_t vset0123 = vadd_f32(vacc01n0, offset);
+            float32x2_t vscale0123 = vmul_f32(vacc01n0, hs_scale);
+            vset0123 = vmax_f32(vset0123, vzero);
+            vset0123 = vmin_f32(vset0123, thre);
+            vacc01n0 = vmul_f32(vscale0123, vset0123);
+          }
+          vst1_lane_f32(cur_output, vacc01n0, 0);
+        }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 1 * sizeof(float));
+        B += 1;
+        mc -= 1 * sizeof(float);
+      }
     }
 }
 
@@ -4394,6 +5445,8 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W48_v7_LEAKY_RELU                      \
   /* do relu */                                                \
   "11: \n"                                                     \
+  "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
+  "bne   12f                     \n"   /* no act end */        \
   "vmov.i32   q0, #0\n"                /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f32   q2,    q4,    q0     \n" /* vcgeq_f32 */         \
@@ -4432,6 +5485,97 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vcge.f32   q2,    q15,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q15,    q1    \n" /* vmulq_f32 */         \
   "vbif       q15,    q3,    q2    \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W48_v7_HARD_SWISH                             \
+  /* do relu */                                                       \
+  "12: \n"                                                            \
+  "vld1.f32   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vadd.f32   q3, q4, q0                \n"                           \
+  "vmul.f32   q4, q4, q1                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q4, q4, q3                \n"                           \
+  "vadd.f32   q3, q5, q0                \n"                           \
+  "vmul.f32   q5, q5, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q5, q5, q3                \n"                           \
+  "vadd.f32   q3, q6, q0                \n"                           \
+  "vmul.f32   q6, q6, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q6, q6, q3                \n"                           \
+  "vadd.f32   q3, q7, q0                \n"                           \
+  "vmul.f32   q7, q7, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q7, q7, q3                \n"                           \
+  "vadd.f32   q3, q8, q0                \n"                           \
+  "vmul.f32   q8, q8, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q8, q8, q3                \n"                           \
+  "vadd.f32   q3, q9, q0                \n"                           \
+  "vmul.f32   q9, q9, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q9, q9, q3                \n"                           \
+  "vadd.f32   q3, q10, q0               \n"                           \
+  "vmul.f32   q10, q10, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q10, q10, q3              \n"                           \
+  "vadd.f32   q3, q11, q0               \n"                           \
+  "vmul.f32   q11, q11, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q11, q11, q3              \n"                           \
+  "vadd.f32   q3, q12, q0               \n"                           \
+  "vmul.f32   q12, q12, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q12, q12, q3              \n"                           \
+  "vadd.f32   q3, q13, q0               \n"                           \
+  "vmul.f32   q13, q13, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q13, q13, q3              \n"                           \
+  "vadd.f32   q3, q14, q0               \n"                           \
+  "vmul.f32   q14, q14, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q14, q14, q3              \n"                           \
+  "vadd.f32   q3, q15, q0               \n"                           \
+  "vmul.f32   q15, q15, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q15, q15, q3              \n"                           \
   "9:\n"
 
 /**
@@ -4440,21 +5584,21 @@ void sparse_conv_fp32_pipelined(const float* A,
  * matrix size is MxK, the activation matrix is Kx48, and the required data is
  * MxKxKx48.
  */
-#define SPARSE_INT8_F32_W48_v7_OUT                                     \
-  SPARSE_INT8_F32_W48_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W48_v7 \
-      SPARSE_INT8_F32_W48_v7_RELU SPARSE_INT8_F32_W48_v7_RELU6         \
-          SPARSE_INT8_F32_W48_v7_LEAKY_RELU                            \
-      "mov   r0,   %[c_ptr]\n" /* store result */                      \
-      "vst1.32   {d8-d11},  [r0]\n"                                    \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d12-d15},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d16-d19},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d20-d23},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d24-d27},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
+#define SPARSE_INT8_F32_W48_v7_OUT                                            \
+  SPARSE_INT8_F32_W48_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W48_v7        \
+      SPARSE_INT8_F32_W48_v7_RELU SPARSE_INT8_F32_W48_v7_RELU6                \
+          SPARSE_INT8_F32_W48_v7_LEAKY_RELU SPARSE_INT8_F32_W48_v7_HARD_SWISH \
+      "mov   r0,   %[c_ptr]\n" /* store result */                             \
+      "vst1.32   {d8-d11},  [r0]\n"                                           \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d12-d15},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d16-d19},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d20-d23},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d24-d27},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
       "vst1.32   {d28-d31},  [r0]\n"
 
 #define SPARSE_INT8_F32_W32_v7_KERNEL  \
@@ -4573,6 +5717,8 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W32_v7_LEAKY_RELU                     \
   /* do relu */                                               \
   "11: \n"                                                    \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q8, #0\n"               /* for relu */          \
   "vdup.32    q9,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f32   q10,    q0,    q8   \n" /* vcgeq_f32 */         \
@@ -4599,6 +5745,54 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vmul.f32   q13,    q7,    q9   \n" /* vmulq_f32 */         \
   "vbif       q6,    q11,    q10   \n"                        \
   "vbif       q7,    q13,    q12   \n"                        \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W32_v7_HARD_SWISH        \
+  /* do relu */                                  \
+  "12: \n"                                       \
+  "vmov.u32   q8,   #0                     \n"   \
+  "vld1.f32   {d18-d21}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d22-d23}, [%[hs_param]]       \n" \
+  "vadd.f32   q12, q0, q9                 \n"    \
+  "vadd.f32   q14, q1, q9                 \n"    \
+  "vmul.f32   q13, q0, q10                \n"    \
+  "vmul.f32   q14, q1, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q0,  q13, q12               \n"    \
+  "vmul.f32   q1,  q15, q14               \n"    \
+  "vadd.f32   q12, q2, q9                 \n"    \
+  "vadd.f32   q14, q3, q9                 \n"    \
+  "vmul.f32   q13, q2, q10                \n"    \
+  "vmul.f32   q14, q3, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q2,  q13, q12               \n"    \
+  "vmul.f32   q3,  q15, q14               \n"    \
+  "vadd.f32   q12, q4, q9                 \n"    \
+  "vadd.f32   q14, q5, q9                 \n"    \
+  "vmul.f32   q13, q4, q10                \n"    \
+  "vmul.f32   q14, q5, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q4,  q13, q12               \n"    \
+  "vmul.f32   q5,  q15, q14               \n"    \
+  "vadd.f32   q12, q6, q9                 \n"    \
+  "vadd.f32   q14, q7, q9                 \n"    \
+  "vmul.f32   q13, q6, q10                \n"    \
+  "vmul.f32   q14, q7, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q6,  q13, q12               \n"    \
+  "vmul.f32   q7,  q15, q14               \n"    \
   "9:\n"
 
 /**
@@ -4607,17 +5801,17 @@ void sparse_conv_fp32_pipelined(const float* A,
  * matrix size is MxK, the activation matrix is Kx32, and the required data is
  * MxKxKx32.
  */
-#define SPARSE_INT8_F32_W32_v7_OUT                                     \
-  SPARSE_INT8_F32_W32_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W32_v7 \
-      SPARSE_INT8_F32_W32_v7_RELU SPARSE_INT8_F32_W32_v7_RELU6         \
-          SPARSE_INT8_F32_W32_v7_LEAKY_RELU                            \
-      "mov   r0,   %[c_ptr]\n" /* store result */                      \
-      "vst1.32   {d8-d11},  [r0]\n"                                    \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d12-d15},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
-      "vst1.32   {d0-d3},  [r0]\n"                                     \
-      "add  r0,  r0,   #32\n"                                          \
+#define SPARSE_INT8_F32_W32_v7_OUT                                            \
+  SPARSE_INT8_F32_W32_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W32_v7        \
+      SPARSE_INT8_F32_W32_v7_RELU SPARSE_INT8_F32_W32_v7_RELU6                \
+          SPARSE_INT8_F32_W32_v7_LEAKY_RELU SPARSE_INT8_F32_W32_v7_HARD_SWISH \
+      "mov   r0,   %[c_ptr]\n" /* store result */                             \
+      "vst1.32   {d8-d11},  [r0]\n"                                           \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d12-d15},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
+      "vst1.32   {d0-d3},  [r0]\n"                                            \
+      "add  r0,  r0,   #32\n"                                                 \
       "vst1.32   {d4-d7},  [r0]\n"
 
 #define SPARSE_INT8_F32_W16_v7_KERNEL  \
@@ -4697,6 +5891,8 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W16_v7_LEAKY_RELU                    \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q8,    q0   \n" /* vcgeq_f32 */         \
@@ -4711,6 +5907,34 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */        \
   "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */        \
   "vbif       q11,   q3,    q2   \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W16_v7_HARD_SWISH      \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q8, q1                \n"    \
+  "vadd.f32   q6, q9, q1                \n"    \
+  "vmul.f32   q5, q8, q2                \n"    \
+  "vmul.f32   q7, q9, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q8, q5, q4                \n"    \
+  "vmul.f32   q9, q7, q6                \n"    \
+  "vadd.f32   q4, q10, q1                \n"   \
+  "vadd.f32   q6, q11, q1                \n"   \
+  "vmul.f32   q5, q10, q2                \n"   \
+  "vmul.f32   q7, q11, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q10, q5, q4                \n"   \
+  "vmul.f32   q11, q7, q6                \n"   \
   "9:\n"
 
 /**
@@ -4719,13 +5943,13 @@ void sparse_conv_fp32_pipelined(const float* A,
  * matrix size is MxK, the activation matrix is Kx16, and the required data is
  * MxKxKx16.
  */
-#define SPARSE_INT8_F32_W16_v7_OUT                                     \
-  SPARSE_INT8_F32_W16_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W16_v7 \
-      SPARSE_INT8_F32_W16_v7_RELU SPARSE_INT8_F32_W16_v7_RELU6         \
-          SPARSE_INT8_F32_W16_v7_LEAKY_RELU                            \
-      "mov   r0,   %[c_ptr]\n" /* store result */                      \
-      "vst1.32   {d16-d19},  [r0]\n"                                   \
-      "add  r0,  r0,   #32\n"                                          \
+#define SPARSE_INT8_F32_W16_v7_OUT                                            \
+  SPARSE_INT8_F32_W16_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W16_v7        \
+      SPARSE_INT8_F32_W16_v7_RELU SPARSE_INT8_F32_W16_v7_RELU6                \
+          SPARSE_INT8_F32_W16_v7_LEAKY_RELU SPARSE_INT8_F32_W16_v7_HARD_SWISH \
+      "mov   r0,   %[c_ptr]\n" /* store result */                             \
+      "vst1.32   {d16-d19},  [r0]\n"                                          \
+      "add  r0,  r0,   #32\n"                                                 \
       "vst1.32   {d20-d23},  [r0]\n"
 
 #define SPARSE_INT8_F32_W8_v7_KERNEL   \
@@ -4784,6 +6008,8 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W8_v7_LEAKY_RELU                     \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q6,    q0   \n" /* vcgeq_f32 */         \
@@ -4792,6 +6018,24 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vmul.f32   q5,    q7,    q1   \n" /* vmulq_f32 */         \
   "vbif       q6,    q3,    q2   \n" /* vmulq_f32 */         \
   "vbif       q7,    q5,    q4   \n" /* vmulq_f32 */         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W8_v7_HARD_SWISH       \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q6, q1                \n"    \
+  "vadd.f32   q8, q7, q1                \n"    \
+  "vmul.f32   q5, q6, q2                \n"    \
+  "vmul.f32   q9, q7, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q8, q8, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q8, q8, q3                \n"    \
+  "vmul.f32   q6, q5, q4                \n"    \
+  "vmul.f32   q7, q9, q8                \n"    \
   "9:\n"
 
 /**
@@ -4804,7 +6048,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W8_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W8_v7 \
       SPARSE_INT8_F32_W8_v7_RELU SPARSE_INT8_F32_W8_v7_RELU6         \
           SPARSE_INT8_F32_W8_v7_LEAKY_RELU /* store result */        \
-      "vst1.32   {d12-d15},  [%[c_ptr]]\n"
+      SPARSE_INT8_F32_W8_v7_HARD_SWISH "vst1.32   {d12-d15},  [%[c_ptr]]\n"
 
 #define SPARSE_INT8_F32_W4_v7_KERNEL   \
   "veor   q3,  q0,  q0\n"              \
@@ -4855,11 +6099,26 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W4_v7_LEAKY_RELU                     \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q4,    q0   \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q4,    q1   \n" /* vmulq_f32 */         \
   "vbif       q4,    q3,    q2   \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_F32_W4_v7_HARD_SWISH       \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q5, q4, q1                \n"    \
+  "vmul.f32   q6, q4, q2                \n"    \
+  "vmax.f32   q5, q5, q0                \n"    \
+  "vmin.f32   q5, q5, q3                \n"    \
+  "vmul.f32   q4, q6, q5                \n"    \
   "9:\n"
 
 /**
@@ -4872,7 +6131,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   SPARSE_INT8_F32_W4_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_FP32_W4_v7 \
       SPARSE_INT8_F32_W4_v7_RELU SPARSE_INT8_F32_W4_v7_RELU6         \
           SPARSE_INT8_F32_W4_v7_LEAKY_RELU /* store result */        \
-      "vst1.32   {d8-d9},  [%[c_ptr]]\n"
+      SPARSE_INT8_F32_W4_v7_HARD_SWISH "vst1.32   {d8-d9},  [%[c_ptr]]\n"
 
 /**
  * \brief Sparse calculation implementation of 1x1 convolution, the input-output
@@ -4912,6 +6171,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
+  float vhs_param[12] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -4922,6 +6182,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        vhs_param[i] = act_param.hard_swish_offset;
+        vhs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        vhs_param[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -4949,13 +6216,15 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
+        float* hs_param = vhs_param;
         // clang-format off
           asm volatile(SPARSE_INT8_F32_W48_v7_OUT
             : [a_ptr] "+r"(cur_w),
               [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
-              [widx_dmap] "+r"(dmap)
+              [widx_dmap] "+r"(dmap),
+              [hs_param] "+r"(hs_param)
             : [vscale] "r"(vsclae),
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
@@ -5009,13 +6278,15 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W32_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -5032,6 +6303,10 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "q9",
                 "q10",
                 "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
                 "r0",
                 "r1",
                 "r2",
@@ -5064,13 +6339,15 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W16_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -5119,13 +6396,15 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W8_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -5138,6 +6417,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "q5",
                 "q6",
                 "q7",
+                "q8",
+                "q9",
                 "r0",
                 "r1",
                 "r2",
@@ -5170,13 +6451,15 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W4_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -5186,6 +6469,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "q2",
                 "q3",
                 "q4",
+                "q5",
+                "q6",
                 "r0",
                 "r1",
                 "r2",
@@ -5205,7 +6490,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           int mindex = mc / sizeof(int8_t);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output =
+            float* out_ptr =
                 reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
@@ -5219,49 +6504,66 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                             : widx_dmap[nidx_nnzmap[i - 1] - 1]);
               dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
             float vscale = scale[i];
-            for (size_t k = 0; k < mc; k++) {
-              *(cur_output + k) = 0;
-            }
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                *(cur_output + k) += (*cur_w) * (*(cur_b + k));
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
+              int8x8_t vw = vld1_dup_s8(cur_w);
               cur_w += 1;
               intptr_t diff = *dmap++;
               cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            switch (flag_act) {
-              case 0:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                }
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) =
-                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) =
-                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) >= 0
-                                          ? *(cur_output + k)
-                                          : *(cur_output + k) * alpha;
-                }
-                break;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else if (flag_act == 3) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
+            } else {
+              float32x4_t offset = vdupq_n_f32(act_param.hard_swish_offset);
+              float32x4_t hs_scale =
+                  vdupq_n_f32(1.0 / act_param.hard_swish_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold);
+              float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
+              float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
+              vset0123 = vmaxq_f32(vset0123, vzero);
+              vset0123 = vminq_f32(vset0123, thre);
+              vaccf0123 = vmulq_f32(vscale0123, vset0123);
+            }
+
+            if (mc == 1) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+            } else if (mc == 2) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+            } else {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();
@@ -5290,8 +6592,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "0:\n"                               \
   "ldrsb   r0, [%[a_ptr]], #1\n"       \
   "subs    %[k],   %[k],   #1\n"       \
-  "mov   r2,   %[b_ptr]\n"             \
-  "vld1.8  {d2-d5}, [r2]\n"            \
+  "mov   r1,   %[b_ptr]\n"             \
+  "vld1.8  {d2-d5}, [r1]\n"            \
   "vdup.8    d0,   r0\n"               \
   "vmull.s8    q3,    d2,  d0\n"       \
   "vaddw.s16   q4,    q4,  d6\n"       \
@@ -5304,13 +6606,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vaddw.s16   q8,    q8, d6\n"        \
   "vaddw.s16   q9,    q9, d7\n"        \
   "vmull.s8    q3,    d5,  d0\n"       \
-  "ldr     r1, [%[widx_dmap]],   #4\n" \
-  "add   %[b_ptr],  %[b_ptr], r1\n"    \
+  "ldr     r0, [%[widx_dmap]],   #4\n" \
+  "add   %[b_ptr],  %[b_ptr], r0\n"    \
   "vaddw.s16   q10,   q10, d6\n"       \
   "vaddw.s16   q11,   q11, d7\n"       \
   "pld  [%[b_ptr], #64]    \n"         \
-  "add  r2,  r2,   #32\n"              \
-  "vld1.8  {d2-d3}, [r2]\n"            \
+  "add  r1,  r1,   #32\n"              \
+  "vld1.8  {d2-d3}, [r1]\n"            \
   "vmull.s8    q3,    d2,  d0\n"       \
   "vaddw.s16   q12,   q12,  d6\n"      \
   "pld  [%[a_ptr], #32]    \n"         \
@@ -5419,6 +6721,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W48_v7_LEAKY_RELU                     \
   /* do relu */                                                \
   "11: \n"                                                     \
+  "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
+  "bne   12f                     \n"   /* no act end */        \
   "vmov.i32   q0, #0\n"                /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
   "vcge.f32   q2,    q4,    q0     \n" /* vcgeq_f32 */         \
@@ -5457,6 +6761,97 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vcge.f32   q2,    q15,    q0    \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q15,    q1    \n" /* vmulq_f32 */         \
   "vbif       q15,    q3,    q2    \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W48_v7_HARD_SWISH                            \
+  /* do relu */                                                       \
+  "12: \n"                                                            \
+  "vld1.f32   {d0-d3}, [%[hs_param]]!      @ load hard swish alpha\n" \
+  "vadd.f32   q3, q4, q0                \n"                           \
+  "vmul.f32   q4, q4, q1                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q4, q4, q3                \n"                           \
+  "vadd.f32   q3, q5, q0                \n"                           \
+  "vmul.f32   q5, q5, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q5, q5, q3                \n"                           \
+  "vadd.f32   q3, q6, q0                \n"                           \
+  "vmul.f32   q6, q6, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]       \n"                        \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q6, q6, q3                \n"                           \
+  "vadd.f32   q3, q7, q0                \n"                           \
+  "vmul.f32   q7, q7, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q7, q7, q3                \n"                           \
+  "vadd.f32   q3, q8, q0                \n"                           \
+  "vmul.f32   q8, q8, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q8, q8, q3                \n"                           \
+  "vadd.f32   q3, q9, q0                \n"                           \
+  "vmul.f32   q9, q9, q1                \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q9, q9, q3                \n"                           \
+  "vadd.f32   q3, q10, q0               \n"                           \
+  "vmul.f32   q10, q10, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q10, q10, q3              \n"                           \
+  "vadd.f32   q3, q11, q0               \n"                           \
+  "vmul.f32   q11, q11, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q11, q11, q3              \n"                           \
+  "vadd.f32   q3, q12, q0               \n"                           \
+  "vmul.f32   q12, q12, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q12, q12, q3              \n"                           \
+  "vadd.f32   q3, q13, q0               \n"                           \
+  "vmul.f32   q13, q13, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q13, q13, q3              \n"                           \
+  "vadd.f32   q3, q14, q0               \n"                           \
+  "vmul.f32   q14, q14, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q14, q14, q3              \n"                           \
+  "vadd.f32   q3, q15, q0               \n"                           \
+  "vmul.f32   q15, q15, q1              \n"                           \
+  "vmax.f32   q3, q3, q2                \n"                           \
+  "vld1.f32   {d4-d5}, [%[hs_param]]    \n"                           \
+  "vmin.f32   q3, q3, q2                \n"                           \
+  "vmov.u32   q2,   #0                  @ for hardswish \n"           \
+  "vmul.f32   q15, q15, q3              \n"                           \
   "9:\n"
 
 /**
@@ -5469,6 +6864,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W48_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W48_v7 \
       SPARSE_INT8_INT8_W48_v7_RELU SPARSE_INT8_INT8_W48_v7_RELU6        \
           SPARSE_INT8_INT8_W48_v7_LEAKY_RELU                            \
+              SPARSE_INT8_INT8_W48_v7_HARD_SWISH                        \
       "vmov.f32  q0, #-0.5\n"    /* neg offset */                       \
       "vmov.f32  q1, #0.5\n"     /* pos offset */                       \
       "vcgt.f32  q2, q4, #0\n"   /* get pos mask */                     \
@@ -5696,6 +7092,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W32_v7_LEAKY_RELU                    \
   /* do relu */                                               \
   "11: \n"                                                    \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q8, #0\n"               /* for relu */          \
   "vdup.32    q9,  %[valpha]\n"       /* leakey relu alpha */ \
   "vcge.f32   q10,    q0,    q8   \n" /* vcgeq_f32 */         \
@@ -5722,6 +7120,54 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vmul.f32   q13,    q7,    q9   \n" /* vmulq_f32 */         \
   "vbif       q6,    q11,    q10   \n"                        \
   "vbif       q7,    q13,    q12   \n"                        \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W32_v7_HARD_SWISH       \
+  /* do relu */                                  \
+  "12: \n"                                       \
+  "vmov.u32   q8,   #0                     \n"   \
+  "vld1.f32   {d18-d21}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d22-d23}, [%[hs_param]]       \n" \
+  "vadd.f32   q12, q0, q9                 \n"    \
+  "vadd.f32   q14, q1, q9                 \n"    \
+  "vmul.f32   q13, q0, q10                \n"    \
+  "vmul.f32   q14, q1, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q0,  q13, q12               \n"    \
+  "vmul.f32   q1,  q15, q14               \n"    \
+  "vadd.f32   q12, q2, q9                 \n"    \
+  "vadd.f32   q14, q3, q9                 \n"    \
+  "vmul.f32   q13, q2, q10                \n"    \
+  "vmul.f32   q14, q3, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q2,  q13, q12               \n"    \
+  "vmul.f32   q3,  q15, q14               \n"    \
+  "vadd.f32   q12, q4, q9                 \n"    \
+  "vadd.f32   q14, q5, q9                 \n"    \
+  "vmul.f32   q13, q4, q10                \n"    \
+  "vmul.f32   q14, q5, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q4,  q13, q12               \n"    \
+  "vmul.f32   q5,  q15, q14               \n"    \
+  "vadd.f32   q12, q6, q9                 \n"    \
+  "vadd.f32   q14, q7, q9                 \n"    \
+  "vmul.f32   q13, q6, q10                \n"    \
+  "vmul.f32   q14, q7, q10                \n"    \
+  "vmax.f32   q12, q12, q8                \n"    \
+  "vmax.f32   q14, q14, q8                \n"    \
+  "vmin.f32   q12, q12, q11               \n"    \
+  "vmin.f32   q14, q14, q11               \n"    \
+  "vmul.f32   q6,  q13, q12               \n"    \
+  "vmul.f32   q7,  q15, q14               \n"    \
   "9:\n"
 
 /**
@@ -5734,6 +7180,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W32_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W32_v7        \
       SPARSE_INT8_INT8_W32_v7_RELU SPARSE_INT8_INT8_W32_v7_RELU6               \
           SPARSE_INT8_INT8_W32_v7_LEAKY_RELU                                   \
+              SPARSE_INT8_INT8_W32_v7_HARD_SWISH                               \
       "vmov.f32  q8, #-0.5\n"    /* neg offset */                              \
       "vmov.f32  q10, #0.5\n"    /* pos offset */                              \
       "vmov.f32  q11, #0.5\n"    /* pos offset */                              \
@@ -5886,6 +7333,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W16_v7_LEAKY_RELU                   \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q8,    q0   \n" /* vcgeq_f32 */         \
@@ -5900,6 +7349,34 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */        \
   "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */        \
   "vbif       q11,   q3,    q2   \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W16_v7_HARD_SWISH     \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q8, q1                \n"    \
+  "vadd.f32   q6, q9, q1                \n"    \
+  "vmul.f32   q5, q8, q2                \n"    \
+  "vmul.f32   q7, q9, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q8, q5, q4                \n"    \
+  "vmul.f32   q9, q7, q6                \n"    \
+  "vadd.f32   q4, q10, q1                \n"   \
+  "vadd.f32   q6, q11, q1                \n"   \
+  "vmul.f32   q5, q10, q2                \n"   \
+  "vmul.f32   q7, q11, q2                \n"   \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q6, q6, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q6, q6, q3                \n"    \
+  "vmul.f32   q10, q5, q4                \n"   \
+  "vmul.f32   q11, q7, q6                \n"   \
   "9:\n"
 
 /**
@@ -5912,6 +7389,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   SPARSE_INT8_INT8_W16_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W16_v7      \
       SPARSE_INT8_INT8_W16_v7_RELU SPARSE_INT8_INT8_W16_v7_RELU6             \
           SPARSE_INT8_INT8_W16_v7_LEAKY_RELU                                 \
+              SPARSE_INT8_INT8_W16_v7_HARD_SWISH                             \
       "vmov.f32  q0, #-0.5\n"    /* neg offset */                            \
       "vmov.f32  q1, #0.5\n"     /* pos offset */                            \
       "vmov.f32  q2, #0.5\n"     /* pos offset */                            \
@@ -6006,6 +7484,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W8_v7_LEAKY_RELU                    \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q6,    q0   \n" /* vcgeq_f32 */         \
@@ -6014,6 +7494,24 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vmul.f32   q5,    q7,    q1   \n" /* vmulq_f32 */         \
   "vbif       q6,    q3,    q2   \n"                         \
   "vbif       q7,    q5,    q4   \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W8_v7_HARD_SWISH      \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q4, q6, q1                \n"    \
+  "vadd.f32   q8, q7, q1                \n"    \
+  "vmul.f32   q5, q6, q2                \n"    \
+  "vmul.f32   q9, q7, q2                \n"    \
+  "vmax.f32   q4, q4, q0                \n"    \
+  "vmax.f32   q8, q8, q0                \n"    \
+  "vmin.f32   q4, q4, q3                \n"    \
+  "vmin.f32   q8, q8, q3                \n"    \
+  "vmul.f32   q6, q5, q4                \n"    \
+  "vmul.f32   q7, q9, q8                \n"    \
   "9:\n"
 
 /**
@@ -6022,31 +7520,31 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
  * matrix size is MxK, the activation matrix is Kx8, and the required data is
  * MxKxKx8.
  */
-#define SPARSE_INT8_INT8_W8_v7_OUT                                           \
-  SPARSE_INT8_INT8_W8_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W8_v7        \
-      SPARSE_INT8_INT8_W8_v7_RELU SPARSE_INT8_INT8_W8_v7_RELU6               \
-          SPARSE_INT8_INT8_W8_v7_LEAKY_RELU                                  \
-      "vmov.f32  q8, #-0.5\n"  /* neg offset */                              \
-      "vmov.f32  q0, #0.5\n"   /* pos offset */                              \
-      "vmov.f32  q1, #0.5\n"   /* pos offset */                              \
-      "vmov.f32  q2, #0.5\n"   /* pos offset */                              \
-      "vmov.f32  q3, #0.5\n"   /* pos offset */                              \
-      "vcgt.f32  q4, q6, #0\n" /* get pos mask */                            \
-      "vcgt.f32  q5, q7, #0\n" /* get pos mask */                            \
-      "vbif.f32  q0, q8, q4\n" /* get right offset */                        \
-      "vbif.f32  q1, q8, q5\n" /* get right offset */                        \
-      "vadd.f32  q6, q0, q6\n" /*     add offset */                          \
-      "vadd.f32  q7, q1, q7\n" /*      add offset */                         \
-      "vld1.f32 {d0-d1}, [%[vmax]] \n"                                       \
-      "vcge.f32 q1,  q6,  q0\n"                    /* @ q8 >= -127 \n */     \
-      "vcge.f32 q2,  q7,  q0\n"                    /* @ q9 >= -127 \n */     \
-      "vbif q6, q0, q1\n"                          /* @ choose */            \
-      "vbif q7, q0, q2\n"                          /* @ choose */            \
-      "vcvt.s32.f32   q0, q6\n"                    /*     fp32->int32 */     \
-      "vcvt.s32.f32   q1, q7\n"                    /*      fp32->int32 */    \
-      "vqmovn.s32 d8, q0\n"                        /*     int32 -> int16 */  \
-      "vqmovn.s32 d9, q1\n"                        /*      int32 -> int16 */ \
-      "vqmovn.s16 d0, q4\n" /* 0, int16 -> int8 */ /* store result */        \
+#define SPARSE_INT8_INT8_W8_v7_OUT                                            \
+  SPARSE_INT8_INT8_W8_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W8_v7         \
+      SPARSE_INT8_INT8_W8_v7_RELU SPARSE_INT8_INT8_W8_v7_RELU6                \
+          SPARSE_INT8_INT8_W8_v7_LEAKY_RELU SPARSE_INT8_INT8_W8_v7_HARD_SWISH \
+      "vmov.f32  q8, #-0.5\n"  /* neg offset */                               \
+      "vmov.f32  q0, #0.5\n"   /* pos offset */                               \
+      "vmov.f32  q1, #0.5\n"   /* pos offset */                               \
+      "vmov.f32  q2, #0.5\n"   /* pos offset */                               \
+      "vmov.f32  q3, #0.5\n"   /* pos offset */                               \
+      "vcgt.f32  q4, q6, #0\n" /* get pos mask */                             \
+      "vcgt.f32  q5, q7, #0\n" /* get pos mask */                             \
+      "vbif.f32  q0, q8, q4\n" /* get right offset */                         \
+      "vbif.f32  q1, q8, q5\n" /* get right offset */                         \
+      "vadd.f32  q6, q0, q6\n" /*     add offset */                           \
+      "vadd.f32  q7, q1, q7\n" /*      add offset */                          \
+      "vld1.f32 {d0-d1}, [%[vmax]] \n"                                        \
+      "vcge.f32 q1,  q6,  q0\n"                    /* @ q8 >= -127 \n */      \
+      "vcge.f32 q2,  q7,  q0\n"                    /* @ q9 >= -127 \n */      \
+      "vbif q6, q0, q1\n"                          /* @ choose */             \
+      "vbif q7, q0, q2\n"                          /* @ choose */             \
+      "vcvt.s32.f32   q0, q6\n"                    /*     fp32->int32 */      \
+      "vcvt.s32.f32   q1, q7\n"                    /*      fp32->int32 */     \
+      "vqmovn.s32 d8, q0\n"                        /*     int32 -> int16 */   \
+      "vqmovn.s32 d9, q1\n"                        /*      int32 -> int16 */  \
+      "vqmovn.s16 d0, q4\n" /* 0, int16 -> int8 */ /* store result */         \
       "vst1.32   {d0},  [%[c_ptr]]\n"
 
 #define SPARSE_INT8_INT8_W4_v7_KERNEL  \
@@ -6098,11 +7596,26 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W4_v7_LEAKY_RELU                    \
   /* do relu */                                              \
   "11: \n"                                                   \
+  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "bne   12f                     \n" /* no act end */        \
   "vmov.i32   q0, #0\n"              /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
   "vcge.f32   q2,    q4,    q0   \n" /* vcgeq_f32 */         \
   "vmul.f32   q3,    q4,    q1   \n" /* vmulq_f32 */         \
   "vbif       q4,    q3,    q2   \n"                         \
+  "b      9f                    \n"
+
+#define SPARSE_INT8_INT8_W4_v7_HARD_SWISH      \
+  /* do relu */                                \
+  "12: \n"                                     \
+  "vmov.u32   q0,   #0                     \n" \
+  "vld1.f32   {d2-d5}, [%[hs_param]]!      \n" \
+  "vld1.f32   {d6-d7}, [%[hs_param]]       \n" \
+  "vadd.f32   q5, q4, q1                \n"    \
+  "vmul.f32   q6, q4, q2                \n"    \
+  "vmax.f32   q5, q5, q0                \n"    \
+  "vmin.f32   q5, q5, q3                \n"    \
+  "vmul.f32   q4, q6, q5                \n"    \
   "9:\n"
 
 /**
@@ -6111,21 +7624,21 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
  * matrix size is MxK, the activation matrix is Kx4, and the required data is
  * MxKxKx4.
  */
-#define SPARSE_INT8_INT8_W4_v7_OUT                                          \
-  SPARSE_INT8_INT8_W4_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W4_v7       \
-      SPARSE_INT8_INT8_W4_v7_RELU SPARSE_INT8_INT8_W4_v7_RELU6              \
-          SPARSE_INT8_INT8_W4_v7_LEAKY_RELU                                 \
-      "vmov.f32  q1, #-0.5\n"  /* neg offset */                             \
-      "vmov.f32  q0, #0.5\n"   /* pos offset */                             \
-      "vcgt.f32  q2, q4, #0\n" /* get pos mask */                           \
-      "vbif.f32  q0, q1, q2\n" /* get right offset */                       \
-      "vadd.f32  q4, q0, q4\n" /*     add offset */                         \
-      "vld1.f32 {d0-d1}, [%[vmax]] \n"                                      \
-      "vcge.f32 q1,  q4,  q0\n"                    /* @ q8 >= -127 \n */    \
-      "vbif q4, q0, q1\n"                          /* @ choose */           \
-      "vcvt.s32.f32   q0, q4\n"                    /*     fp32->int32 */    \
-      "vqmovn.s32 d2, q0\n"                        /*     int32 -> int16 */ \
-      "vqmovn.s16 d0, q1\n" /* 0, int16 -> int8 */ /* store result */       \
+#define SPARSE_INT8_INT8_W4_v7_OUT                                            \
+  SPARSE_INT8_INT8_W4_v7_KERNEL SPARSE_INT8_TRANS_INT32_TO_INT8_W4_v7         \
+      SPARSE_INT8_INT8_W4_v7_RELU SPARSE_INT8_INT8_W4_v7_RELU6                \
+          SPARSE_INT8_INT8_W4_v7_LEAKY_RELU SPARSE_INT8_INT8_W4_v7_HARD_SWISH \
+      "vmov.f32  q1, #-0.5\n"  /* neg offset */                               \
+      "vmov.f32  q0, #0.5\n"   /* pos offset */                               \
+      "vcgt.f32  q2, q4, #0\n" /* get pos mask */                             \
+      "vbif.f32  q0, q1, q2\n" /* get right offset */                         \
+      "vadd.f32  q4, q0, q4\n" /*     add offset */                           \
+      "vld1.f32 {d0-d1}, [%[vmax]] \n"                                        \
+      "vcge.f32 q1,  q4,  q0\n"                    /* @ q8 >= -127 \n */      \
+      "vbif q4, q0, q1\n"                          /* @ choose */             \
+      "vcvt.s32.f32   q0, q4\n"                    /*     fp32->int32 */      \
+      "vqmovn.s32 d2, q0\n"                        /*     int32 -> int16 */   \
+      "vqmovn.s16 d0, q1\n" /* 0, int16 -> int8 */ /* store result */         \
       "vst1.32   d0[0],  [%[c_ptr]]\n"
 
 /**
@@ -6167,6 +7680,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   volatile float alpha = 0.f;
+  float vhs_param[12] = {0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -6177,6 +7691,13 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        vhs_param[i] = act_param.hard_swish_offset / param.output_scale;
+        vhs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        vhs_param[i + 8] = act_param.hard_swish_threshold / param.output_scale;
+      }
     }
   }
   int flag_bias = (bias != nullptr) ? 1 : 0;
@@ -6204,13 +7725,15 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
+        float* hs_param = vhs_param;
         // clang-format off
           asm volatile(SPARSE_INT8_INT8_W48_v7_OUT
             : [a_ptr] "+r"(cur_w),
               [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
-              [widx_dmap] "+r"(dmap)
+              [widx_dmap] "+r"(dmap),
+              [hs_param] "+r"(hs_param)
             : [vscale] "r"(vsclae),
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
@@ -6234,7 +7757,6 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               "q15",
               "r0",
               "r1",
-              "r2",
               "cc",
               "memory");
         // clang-format on
@@ -6266,13 +7788,15 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W32_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -6292,6 +7816,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "q11",
                 "q12",
                 "q13",
+                "q14",
+                "q15",
                 "r0",
                 "r1",
                 "cc",
@@ -6323,13 +7849,15 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W16_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -6380,13 +7908,15 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W8_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -6401,6 +7931,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "q6",
                 "q7",
                 "q8",
+                "q9",
                 "r0",
                 "r1",
                 "cc",
@@ -6432,13 +7963,15 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           }
           float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float* hs_param = vhs_param;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W4_v7_OUT
               : [a_ptr] "+r"(cur_w),
                 [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
-                [widx_dmap] "+r"(dmap)
+                [widx_dmap] "+r"(dmap),
+                [hs_param] "+r"(hs_param)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
@@ -6450,6 +7983,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "q3",
                 "q4",
                 "q5",
+                "q6",
                 "r0",
                 "r1",
                 "cc",
@@ -6466,8 +8000,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
-                                                           output_stride * i);
+            int8_t* out_ptr = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                        output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
@@ -6480,37 +8014,83 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                             : widx_dmap[nidx_nnzmap[i - 1] - 1]);
               dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            float vbias = (bias != nullptr) ? bias[i] : 0;
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
             float vscale = scale[i];
-            std::vector<float> out(mc, 0);
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                out[k] += (*cur_w) * (*(cur_b + k));
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
+              int8x8_t vw = vld1_dup_s8(cur_w);
               cur_w += 1;
               intptr_t diff = *dmap++;
               cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            for (size_t k = 0; k < mc; k++) {
-              out[k] = out[k] * vscale + vbias;
-              switch (flag_act) {
-                case 0:
-                  break;
-                case 1:  // relu
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  break;
-                case 2:  // relu6
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  out[k] = out[k] < alpha ? out[k] : alpha;
-                  break;
-                default:  // leaky_relu
-                  out[k] = out[k] >= 0 ? out[k] : out[k] * alpha;
-                  break;
-              }
-              float vax = out[k] > -127.0 ? out[k] : -127.0;
-              vax = vax >= 0 ? vax + 0.5 : vax - 0.5;
-              int32_t out_val = static_cast<int32_t>(vax);
-              *(cur_output + k) = out_val > 127 ? 127 : out_val;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else if (flag_act == 3) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
+            } else {
+              float32x4_t offset =
+                  vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
+              float32x4_t hs_scale =
+                  vdupq_n_f32(1.0 / act_param.hard_swish_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold /
+                                             param.output_scale);
+              float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
+              float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
+              vset0123 = vmaxq_f32(vset0123, vzero);
+              vset0123 = vminq_f32(vset0123, thre);
+              vaccf0123 = vmulq_f32(vscale0123, vset0123);
+            }
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
+            float32x4_t vpos = vdupq_n_f32(0.5);
+            float32x4_t vneg = vdupq_n_f32(-0.5);
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
+                                  vaddq_f32(vaccf0123, vpos),
+                                  vaddq_f32(vaccf0123, vneg));
+
+            int32x4_t vacci0123 = vcvtq_s32_f32(vaccf0123);
+
+            int16x4_t v16i0123 = vqmovn_s32(vacci0123);
+            int16x4_t v16i4567 = vdup_n_s16(0);
+            int8x8_t v8i01234567 = vqmovn_s16(vcombine_s16(v16i0123, v16i4567));
+
+            if (mc == 1) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+            } else if (mc == 2) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+            } else {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+              vst1_lane_s8(out_ptr + 2, v8i01234567, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();

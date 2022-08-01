@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <typename T>
 class NormCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::NormParam;

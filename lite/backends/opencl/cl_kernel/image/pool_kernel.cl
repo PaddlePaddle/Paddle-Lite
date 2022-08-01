@@ -25,20 +25,33 @@ __kernel void pool(__read_only image2d_t input,
                    __private const int stride_h,
                    __private const int stride_w,
                    __private const int pad_top,
-                   __private const int pad_left) {
+                   __private const int pad_left,
+                   __private const int exclusive,
+                   __private const int adaptive) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  int start_h = out_h * stride_h - pad_top;
-  int end_h = min(start_h + ksize_h, in_height);
-  start_h = max(start_h, 0);
-
-  int start_w = out_w * stride_w - pad_left;
-  int end_w = min(start_w + ksize_w, in_width);
-  start_w = max(start_w, 0);
+  int start_h, start_w, end_h, end_w;
+  int pool_size = 1;
+  if (adaptive == 1) {
+    start_h = (out_h * in_height) / out_height;
+    start_w = (out_w * in_width) / out_width;
+    end_h = ((out_h + 1) * in_height + (out_height - 1)) / out_height;
+    end_w = ((out_w + 1) * in_width + (out_width - 1)) / out_width;
+  } else {
+    start_h = out_h * stride_h - pad_top;
+    start_w = out_w * stride_w - pad_left;
+    end_h = min(start_h + ksize_h, in_height + pad_top);
+    end_w = min(start_w + ksize_w, in_width + pad_left);
+    pool_size = (end_h - start_h) * (end_w - start_w);
+    start_h = max(start_h, 0);
+    start_w = max(start_w, 0);
+    end_h = min(end_h, in_height);
+    end_w = min(end_w, in_width);
+  }
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
@@ -46,40 +59,25 @@ __kernel void pool(__read_only image2d_t input,
 
 #ifdef POOL_AVG
 
-  CL_DTYPE4 res = (CL_DTYPE4)(0.0f);
-  int div;
-#ifdef EXCLUSIVE
-  div = (end_h - start_h) * (end_w - start_w);
-#else
-  div = ksize_w * ksize_h;
-#endif  // EXCLUSIVE
-
-#ifdef GLOBAL
-  // pool_avg_global: force to use fp32 to avoid the loss of accuracy
-  float4 res_f32 = 0.f;
+  // force to use fp32 to avoid the loss of accuracy
+  float4 res_fp32 = 0.f;
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
-      res_f32 +=
+      res_fp32 +=
           read_imagef(input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
-  res_f32 /= (float)div;
-#ifdef CL_DTYPE_half
-  res = convert_half4(res_f32);
-#else
-  res = res_f32;
-#endif
 
-#else
-  // pool_avg: use default precision
-  for (int y = start_h; y < end_h; ++y) {
-    for (int x = start_w; x < end_w; ++x) {
-      res += READ_IMG_TYPE(
-          CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
-    }
+  if (exclusive == 1 || adaptive == 1) {
+    pool_size = (end_h - start_h) * (end_w - start_w);
   }
-  res /= (CL_DTYPE)div;
-#endif  // GLOBAL
+
+  res_fp32 = res_fp32 / (float)pool_size;
+#ifdef CL_DTYPE_half
+  CL_DTYPE4 res = convert_half4(res_fp32);
+#else
+  CL_DTYPE4 res = res_fp32;
+#endif
 
 #else
 
@@ -89,7 +87,7 @@ __kernel void pool(__read_only image2d_t input,
     for (int x = start_w; x < end_w; ++x) {
       CL_DTYPE4 tmp = READ_IMG_TYPE(
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
-      res = max(res, tmp);
+      res = fmax(res, tmp);
     }
   }
 
@@ -110,6 +108,8 @@ __kernel void pool_local(__read_only image2d_t input,
                          __private const int stride_w,
                          __private const int pad_top,
                          __private const int pad_left,
+                         __private const int exclusive,
+                         __private const int adaptive,
                          __private const int local_block_size,
                          __private const int2 local_block_size_wh,
                          __private const int2 local_block_count_wh,
@@ -119,7 +119,7 @@ __kernel void pool_local(__read_only image2d_t input,
   const int out_nh = get_global_id(2);
   const int out_n = out_nh / out_height;
   // const int out_h = out_nh % out_height;
-  const int out_h = out_nh - mul24(out_h, out_height);
+  const int out_h = out_nh - mul24(out_n, out_height);
 
   const int local_id = get_local_id(0);
   const int local_width_id = local_id % local_block_size_wh.x;
@@ -131,6 +131,7 @@ __kernel void pool_local(__read_only image2d_t input,
   const int input_width_start = mad24(out_w, stride_w, -pad_left);
 
 #ifdef POOL_AVG
+  // 1. Get data from global memroy to local memory
   __local float4* avg_output = (__local float4*)local_output;
   avg_output[local_id] = (float4)0;
   int pos_h = local_height_id;
@@ -161,6 +162,7 @@ __kernel void pool_local(__read_only image2d_t input,
   }
   barrier(CLK_LOCAL_MEM_FENCE);
 
+  // 2. Reduce in each workgroup
   for (int stride_h = (local_block_size_wh.y >> 1); stride_h > 0;
        stride_h >>= 1) {
     if (local_height_id < stride_h) {
@@ -169,7 +171,6 @@ __kernel void pool_local(__read_only image2d_t input,
     }
     barrier(CLK_LOCAL_MEM_FENCE);
   }
-
   for (int stride_w = (local_block_size_wh.x >> 1); stride_w > 0;
        stride_w >>= 1) {
     if (local_height_id == 0 && local_width_id < stride_w) {
@@ -179,16 +180,18 @@ __kernel void pool_local(__read_only image2d_t input,
   }
 
   if (local_id == 0) {
-    const int kernel_height_start = max(0, input_height_start);
-    const int kernel_width_start = max(0, input_width_start);
-    const int kernel_height_end = min(input_height_start + ksize_h, in_height);
-    const int kernel_width_end = min(input_width_start + ksize_w, in_width);
-#ifdef EXCLUSIVE
-    const int block_size = mul24((kernel_height_end - kernel_height_start),
-                                 (kernel_width_end - kernel_width_start));
-#else
-    const int block_size = ksize_w * ksize_h;
-#endif  // EXCLUSIVE
+    int block_size;
+    if (exclusive == 1 || adaptive == 1) {
+      const int kernel_height_start = max(0, input_height_start);
+      const int kernel_width_start = max(0, input_width_start);
+      const int kernel_height_end =
+          min(input_height_start + ksize_h, in_height);
+      const int kernel_width_end = min(input_width_start + ksize_w, in_width);
+      block_size = mul24((kernel_height_end - kernel_height_start),
+                         (kernel_width_end - kernel_width_start));
+    } else {
+      block_size = ksize_w * ksize_h;
+    }
     avg_output[local_id] = avg_output[local_id] / (float)block_size;
 
     const int output_channel_width_idx = mad24(out_c, out_width, out_w);
@@ -201,6 +204,7 @@ __kernel void pool_local(__read_only image2d_t input,
         CL_DTYPE_CHAR, output, (int2)(output_channel_width_idx, out_nh), res);
   }
 #else
+  // 1. Get data from global memroy to local memory
   local_output[local_id] = (CL_DTYPE4)(-FLT_MAX);
   int pos_h = local_height_id;
 
@@ -236,9 +240,9 @@ __kernel void pool_local(__read_only image2d_t input,
     }
     pos_h += local_block_size_wh.y;
   }
-
   barrier(CLK_LOCAL_MEM_FENCE);
 
+  // 2. Reduce in each workgroup
   for (int stride_h = (local_block_size_wh.y >> 1); stride_h > 0;
        stride_h >>= 1) {
     if (local_height_id < stride_h) {
@@ -248,7 +252,6 @@ __kernel void pool_local(__read_only image2d_t input,
     }
     barrier(CLK_LOCAL_MEM_FENCE);
   }
-
   for (int stride_w = (local_block_size_wh.x >> 1); stride_w > 0;
        stride_w >>= 1) {
     if (local_height_id == 0 && local_width_id < stride_w) {

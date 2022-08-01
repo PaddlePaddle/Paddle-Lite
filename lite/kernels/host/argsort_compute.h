@@ -19,6 +19,7 @@
 
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -48,8 +49,7 @@ class ArgsortCompute
     int axis_size = x_dims[axis];
     int inner_size = x_dims.count(axis + 1, dim_size);
     int sort_size = axis_size * inner_size;
-#pragma omp parallel for
-    for (int n = 0; n < outer_size; n++) {
+    LITE_PARALLEL_BEGIN(n, tid, outer_size) {
       const DataType* in_data = x_data + n * sort_size;
       DataType* out_data = out_val + n * sort_size;
       int64_t* out_ind_data = out_ind + n * sort_size;
@@ -78,6 +78,7 @@ class ArgsortCompute
         }
       }
     }
+    LITE_PARALLEL_END()
   }
 
   virtual ~ArgsortCompute() = default;

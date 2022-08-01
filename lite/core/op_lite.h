@@ -178,18 +178,19 @@ class OpLite : public Registry {
   std::vector<Place> valid_places_;
   Place kernel_place_{TARGET(kHost), PRECISION(kFloat)};
   std::unique_ptr<OpInfo> op_info_;
+  // Infer Shape according to memory, if current input shapes are consistent
+  // with that of previous inputs, output shapes of last time will be reused.
+  std::vector<const Tensor *> input_tensor_ptrs_cache_{};
+  std::vector<Tensor *> output_tensor_ptrs_cache_{};
+
+ private:
   // todo: it's prefered to combine last_input_shapes and
   // last_input_lods into a single hash value to decrease
   // memory usage.
- private:
   std::vector<DDimLite> last_input_shapes_{};
   std::vector<LoD> last_input_lods_{};
   std::vector<DDimLite> last_output_shapes_{};
   std::vector<LoD> last_output_lods_{};
-  std::vector<const Tensor *> input_tensor_ptrs_cache_{};
-  std::vector<Tensor *> output_tensor_ptrs_cache_{};
-  // Infer Shape according to memory, if current input shapes are consistent
-  // with that of previous inputs, output shapes of last time will be reused.
 };
 
 /*

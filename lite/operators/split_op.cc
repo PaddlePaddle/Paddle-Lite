@@ -21,7 +21,6 @@ namespace operators {
 
 bool SplitOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
-  CHECK_GT_OR_FALSE(param_.output.size(), 1UL);
   auto x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
   CHECK_GE(param_.axis, -static_cast<int>(x_rank));
@@ -33,7 +32,7 @@ bool SplitOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
   int num = param_.num;
-  const auto &sections = param_.sections;
+  auto &sections = param_.sections;
 
   int axis = 0;
   if (param_.axis_tensor != nullptr) {
@@ -44,6 +43,16 @@ bool SplitOp::InferShapeImpl() const {
   if (axis < 0) {
     axis += in_dims.size();
   }
+  // update sections
+  int infer_num = std::count(sections.begin(), sections.end(), -1);
+  CHECK_LT(infer_num, 2);
+  for (int i = 0; i < sections.size(); i++) {
+    if (sections[i] == -1) {
+      sections[i] =
+          in_dims[axis] - std::accumulate(sections.begin(), sections.end(), 1);
+    }
+  }
+  // update sections end
 
   const int outs_number = outs.size();
   std::vector<lite::DDim> outs_dims;
@@ -102,7 +111,10 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto outs_name = opdesc.Output("Out");
   for (auto name : outs_name) {
     param_.output.push_back(scope->FindMutableTensor(name));
+    output_tensor_ptrs_cache_.push_back(scope->FindMutableTensor(name));
   }
+  input_tensor_ptrs_cache_.push_back(param_.x);
+
   return true;
 }
 

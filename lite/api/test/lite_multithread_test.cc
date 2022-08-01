@@ -79,7 +79,7 @@ void OutputOptModel(const std::string& load_model_dir,
   LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
 }
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifdef LITE_WITH_ARM
 void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
          const PowerMode power_mode,
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
         FLAGS_model_dir_0, save_optimized_model_dir_0, input_shapes_0);
   }
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifdef LITE_WITH_ARM
   // Run inference using optimized model
   if (FLAGS_test_type == 0) {
     paddle::lite_api::RunTestType_00(

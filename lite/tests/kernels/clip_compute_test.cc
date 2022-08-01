@@ -106,19 +106,33 @@ TEST(Clip, precision) {
   LOG(INFO) << "test clip op";
   Place place;
   float abs_err = 2e-5;
+  std::vector<bool> use_minmax_tensor{false, true};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_err = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_err = 1e-3;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
 #else
   return;
 #endif
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_err = 1e-2;  // Using fp16 in OPENCL
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_err = 1e-2;  // Using fp16 in ASCEND_NPU
+  use_minmax_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM));
 #elif defined(LITE_WITH_X86)
@@ -133,15 +147,11 @@ TEST(Clip, precision) {
     for (int c : {3, 5}) {
       for (int h : {5, 6}) {
         for (int w : {6, 7}) {
-#ifdef LITE_WITH_OPENCL
-          for (bool use_minmax_tensor : {false}) {
-#else
-          for (bool use_minmax_tensor : {true, false}) {
-#endif
+          for (bool is_use_minmax_tensor : use_minmax_tensor) {
             LOG(INFO) << "nchw:" << n << "," << c << "," << h << "," << w
-                      << ",use_minmax:" << use_minmax_tensor;
+                      << ",use_minmax:" << is_use_minmax_tensor;
             std::unique_ptr<arena::TestCase> tester(new ClipComputeTester(
-                place, "def", n, c, h, w, min, max, use_minmax_tensor));
+                place, "def", n, c, h, w, min, max, is_use_minmax_tensor));
             arena::Arena arena(std::move(tester), place, abs_err);
             arena.TestPrecision();
           }

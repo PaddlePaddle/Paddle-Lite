@@ -46,6 +46,7 @@ REGISTER_LITE_KERNEL(dropout,
                      paddle::lite::kernels::arm::DropoutCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Seed", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

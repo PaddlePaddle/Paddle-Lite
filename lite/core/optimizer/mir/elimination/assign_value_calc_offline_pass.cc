@@ -22,6 +22,7 @@
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/ssa_graph_utils.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
@@ -35,7 +36,21 @@ void AssignValueCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "assign_value") continue;
+    if (node->AsStmt().op_type() != "assign_value") continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(
+              graph.get(), out_link->arg()->name, {"assign_value"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "The output var of op is not supported with multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& assign_value_instruct = node->AsStmt();

@@ -105,21 +105,22 @@ void VarConv2DCompute::Run() {
                       (batch + 1) * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
-  int r = xdnn::search_varconv<float, int16_t>(ctx.GetRawContext(),
-                                               batch,
-                                               input_channel,
-                                               output_channel,
-                                               kernel_h,
-                                               kernel_w,
-                                               stride_h,
-                                               stride_w,
-                                               bottom_data,
-                                               w_data,
-                                               offset_x_xpu,
-                                               offset_y_xpu,
-                                               top_data,
-                                               w_max,
-                                               act);
+  int r = xdnn::search_varconv<float, int16_t>(
+      ctx.GetRawContext(),
+      batch,
+      input_channel,
+      output_channel,
+      kernel_h,
+      kernel_w,
+      stride_h,
+      stride_w,
+      bottom_data,
+      w_data,
+      {offset_x_cpu.get(), batch + 1, offset_x_xpu},
+      {offset_y_cpu.get(), batch + 1, offset_y_xpu},
+      top_data,
+      w_max,
+      act);
   CHECK_EQ(r, 0);
 }
 

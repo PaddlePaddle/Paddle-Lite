@@ -1,16 +1,5 @@
 #include <cl_common.h>
 
-inline void elt_fuse_func_wrapper(__read_only image2d_t second_input_image,
-                                  const int2 pos,
-                                  CL_DTYPE4 *value_p) {
-  CL_DTYPE4 second_val =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, pos);
-  *value_p += second_val;
-#ifdef ELT_ACT_FUSE
-  *value_p = fmax(*value_p, (CL_DTYPE4)0);
-#endif
-}
-
 __kernel void conv2d_1x1_opt(
     __private const int global_size_dim0,
     __private const int global_size_dim1,
@@ -56,21 +45,27 @@ __kernel void conv2d_1x1_opt(
 
   int2 stride_xy = (int2)(stride, stride);
 
-  int2 ouput_pos_in_one_block0 = (int2)(out_w0, out_nh);
-  int2 in_pos_in_one_block0 =
-      ouput_pos_in_one_block0 * stride_xy + (int2)(offset, offset);
+  int h_id = out_nh % output_height;
+  int n_id = out_nh / output_height;
+  int2 ouput_pos_in_one_block0 = (int2)(out_w0, h_id);
+  int2 in_pos_in_one_block0 = ouput_pos_in_one_block0 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block1 = (int2)(out_w1, out_nh);
-  int2 in_pos_in_one_block1 =
-      ouput_pos_in_one_block1 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block1 = (int2)(out_w1, h_id);
+  int2 in_pos_in_one_block1 = ouput_pos_in_one_block1 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block2 = (int2)(out_w2, out_nh);
-  int2 in_pos_in_one_block2 =
-      ouput_pos_in_one_block2 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block2 = (int2)(out_w2, h_id);
+  int2 in_pos_in_one_block2 = ouput_pos_in_one_block2 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block3 = (int2)(out_w3, out_nh);
-  int2 in_pos_in_one_block3 =
-      ouput_pos_in_one_block3 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block3 = (int2)(out_w3, h_id);
+  int2 in_pos_in_one_block3 = ouput_pos_in_one_block3 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
 #ifdef BIASE_CH
   CL_DTYPE4 output0 =
@@ -252,16 +247,32 @@ __kernel void conv2d_1x1_opt(
 //}
 #elif defined(PRELU_ELE)  //{
   if (out_w0 < old_w) {
-    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+    alpha0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w0, out_nh % output_height));
   }
   if (out_w1 < old_w) {
-    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos1);
+    alpha1 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w1, out_nh % output_height));
   }
   if (out_w2 < old_w) {
-    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos2);
+    alpha2 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w2, out_nh % output_height));
   }
   if (out_w3 < old_w) {
-    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos3);
+    alpha3 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w3, out_nh % output_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{
@@ -360,21 +371,27 @@ __kernel void conv2d_1x1_h1w4c1(
 
   int2 stride_xy = (int2)(stride, stride);
 
-  int2 ouput_pos_in_one_block0 = (int2)(out_w0, out_nh);
-  int2 in_pos_in_one_block0 =
-      ouput_pos_in_one_block0 * stride_xy + (int2)(offset, offset);
+  int h_id = out_nh % output_height;
+  int n_id = out_nh / output_height;
+  int2 ouput_pos_in_one_block0 = (int2)(out_w0, h_id);
+  int2 in_pos_in_one_block0 = ouput_pos_in_one_block0 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block1 = (int2)(out_w1, out_nh);
-  int2 in_pos_in_one_block1 =
-      ouput_pos_in_one_block1 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block1 = (int2)(out_w1, h_id);
+  int2 in_pos_in_one_block1 = ouput_pos_in_one_block1 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block2 = (int2)(out_w2, out_nh);
-  int2 in_pos_in_one_block2 =
-      ouput_pos_in_one_block2 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block2 = (int2)(out_w2, h_id);
+  int2 in_pos_in_one_block2 = ouput_pos_in_one_block2 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
-  int2 ouput_pos_in_one_block3 = (int2)(out_w3, out_nh);
-  int2 in_pos_in_one_block3 =
-      ouput_pos_in_one_block3 * stride_xy + (int2)(offset, offset);
+  int2 ouput_pos_in_one_block3 = (int2)(out_w3, h_id);
+  int2 in_pos_in_one_block3 = ouput_pos_in_one_block3 * stride_xy +
+                              (int2)(0, n_id * input_height) +
+                              (int2)(offset, offset);
 
 #ifdef BIASE_CH
   CL_DTYPE4 output0 =
@@ -447,16 +464,32 @@ __kernel void conv2d_1x1_h1w4c1(
 //}
 #elif defined(PRELU_ELE)  //{
   if (out_w0 < old_w) {
-    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+    alpha0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w0, out_nh % output_height));
   }
   if (out_w1 < old_w) {
-    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos1);
+    alpha1 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w1, out_nh % output_height));
   }
   if (out_w2 < old_w) {
-    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos2);
+    alpha2 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w2, out_nh % output_height));
   }
   if (out_w3 < old_w) {
-    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos3);
+    alpha3 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      prelu_alpha,
+                      SAMPLER,
+                      (int2)(outpos_main + out_w3, out_nh % output_height));
   }
 //}
 #elif defined(PRELU_ALL)  //{

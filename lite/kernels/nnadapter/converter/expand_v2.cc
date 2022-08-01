@@ -29,26 +29,42 @@ int ConvertExpandV2(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
+  // Output operand
+  auto out_name = op->Output("Out").front();
+  auto output_operand = converter->AddOutputOperand(out_name);
+
   // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
   if (HasInput(op, scope, "Shape")) {
     auto shape_name = op->Input("Shape").front();
     shape_operand = converter->AddInputOperand(scope, shape_name);
-  } else if (HasInput(op, scope, "expand_shapes_tensor")) {
-    LOG(FATAL) << "Not support expand_shapes_tensor now.";
+  } else if (HasInput(op, scope, "expand_shapes_tensor") &&
+             !op->Input("expand_shapes_tensor").empty()) {
+    std::vector<NNAdapterOperand*> expand_shapes_operands;
+    for (auto expand_shapes_tensor_name : op->Input("expand_shapes_tensor")) {
+      auto expand_shapes_tensor_scale_name =
+          expand_shapes_tensor_name + "_scale";
+      std::vector<float> expand_shapes_tensor_scales;
+      if (op->HasInputScale(expand_shapes_tensor_scale_name, true)) {
+        expand_shapes_tensor_scales =
+            op->GetInputScale(expand_shapes_tensor_scale_name, true);
+      }
+      auto expand_shapes_operand = converter->AddInputOperand(
+          scope, expand_shapes_tensor_name, {}, expand_shapes_tensor_scales);
+      expand_shapes_operands.push_back(expand_shapes_operand);
+    }
+    auto axis_operand = converter->AddConstantOperand(0);
+    expand_shapes_operands.push_back(axis_operand);
+    shape_operand = converter->AddOutputOperand(out_name + "/concat");
+    // Concat operation
+    converter->AddOperation(
+        NNADAPTER_CONCAT, expand_shapes_operands, {shape_operand});
   } else {
     auto shape = op->GetAttr<std::vector<int>>("shape");
     shape_operand = converter->AddConstantOperand(shape);
   }
 
-  // Output operand
-  auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
-
   // Expand operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand,
-                                                   shape_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_EXPAND, {input_operand, shape_operand}, {output_operand});
   return NO_ERROR;

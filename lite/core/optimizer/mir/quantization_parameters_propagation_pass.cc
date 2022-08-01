@@ -14,7 +14,9 @@
 
 #include "lite/core/optimizer/mir/quantization_parameters_propagation_pass.h"
 #include <cmath>
+#include <string>
 #include <unordered_set>
+#include <vector>
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
@@ -71,13 +73,21 @@ void QuantizationParametersPropagationPass::Apply(
       CHECK(in_var_node->IsArg());
       auto in_var_name = in_var_node->arg()->name;
       if (!op_info->HasInputScale(in_var_name)) continue;
-      auto in_var_scale = op_info->GetInputScale(in_var_name, false);
+      auto in_var_scale = op_info->GetInputScale(in_var_name);
       for (auto in_op_node : in_var_node->inlinks) {
         if (!in_op_node->IsStmt()) continue;
         auto in_op_info = in_op_node->AsStmt().mutable_op_info();
-        if (HasOutputThreshold(in_op_info, in_var_name, false)) {
+        bool in_op_is_quanted =
+            HasOutputThreshold(in_op_info, in_var_name, false);
+        auto in_op_in_vars = in_op_node->inlinks;
+        for (auto in_op_in_var : in_op_in_vars) {
+          in_op_is_quanted =
+              in_op_is_quanted ||
+              in_op_info->HasInputScale(in_op_in_var->arg()->name);
+        }
+        if (in_op_is_quanted) {
           // Use this input scale to update the output scale of the quantized op
-          in_op_info->SetOutputScale(in_var_name, in_var_scale, false);
+          in_op_info->SetOutputScale(in_var_name, in_var_scale);
         }
       }
     }
@@ -89,7 +99,7 @@ void QuantizationParametersPropagationPass::Apply(
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
       auto out_var_name = out_var_node->arg()->name;
-      if (op_info->HasOutputScale(out_var_name, false))
+      if (op_info->HasOutputScale(out_var_name))
         continue;  // skip if the output scale had been already set
       if (!HasOutputThreshold(op_info, out_var_name, false)) continue;
       // If it's a quantized op, calculate its output scale according to the
@@ -98,7 +108,7 @@ void QuantizationParametersPropagationPass::Apply(
       int range = (1 << (bit_length - 1)) - 1;
       auto out_var_scale = std::vector<float>{
           GetOutputThreshold(op_info, out_var_name, false) / range};
-      op_info->SetOutputScale(out_var_name, out_var_scale, false);
+      op_info->SetOutputScale(out_var_name, out_var_scale);
     }
   }
   // Set the input scale according to the output scale of the previous ops
@@ -113,9 +123,8 @@ void QuantizationParametersPropagationPass::Apply(
       for (auto in_op_node : in_var_node->inlinks) {
         if (!in_op_node->IsStmt()) continue;
         auto in_op_info = in_op_node->AsStmt().mutable_op_info();
-        if (!in_op_info->HasOutputScale(in_var_name, false)) continue;
-        auto candidate_var_scale =
-            in_op_info->GetOutputScale(in_var_name, false);
+        if (!in_op_info->HasOutputScale(in_var_name)) continue;
+        auto candidate_var_scale = in_op_info->GetOutputScale(in_var_name);
         if (!in_var_scale.empty()) {
           auto scale_size = in_var_scale.size();
           CHECK_EQ(scale_size, candidate_var_scale.size());
@@ -127,7 +136,7 @@ void QuantizationParametersPropagationPass::Apply(
         }
       }
       if (!in_var_scale.empty()) {
-        op_info->SetInputScale(in_var_name, in_var_scale, false);
+        op_info->SetInputScale(in_var_name, in_var_scale);
       }
     }
   }

@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void MulCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto& origin_x = *param.x;
   auto& origin_y = *param.y;

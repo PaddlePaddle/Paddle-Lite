@@ -106,7 +106,7 @@ template <typename T>
 void sign(const T* din, T* dout, int size, int threads);
 
 template <typename T>
-void softplus(const T* din, T* dout, int size, int threads);
+void softplus(const T* din, T* dout, int size, float beta, int threads);
 
 template <typename T>
 void mish(const T* din, T* dout, int size, float threshold);

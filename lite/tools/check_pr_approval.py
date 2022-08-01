@@ -22,8 +22,8 @@ def check_approval(count, required_reviewers):
     for line in sys.stdin:
         json_buff = "".join([json_buff, line])
     json_resp = json.loads(json_buff)
-#    print(type(json_resp))
-#    print(json_resp)
+    #    print(type(json_resp))
+    #    print(json_resp)
     approves = 0
     approved_user_ids = []
     for review in json_resp:

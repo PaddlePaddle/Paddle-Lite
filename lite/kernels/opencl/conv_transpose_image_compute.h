@@ -116,6 +116,7 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   int filter_image_h_{-1};
   int filter_image_w_{-1};
 
+  bool is_group_conv_{false};
   DDim last_input_dims_{};
   bool is_first_epoch_for_run_{true};
 

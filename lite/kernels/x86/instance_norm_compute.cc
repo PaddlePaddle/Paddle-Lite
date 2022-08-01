@@ -42,6 +42,9 @@ void InstanceNormCompute::Run() {
   int c = param.x->dims()[1];
   int height = param.x->dims()[2];
   int width = param.x->dims()[3];
+  if (param.x->dims().size() == 5) {
+    width = param.x->dims()[3] * param.x->dims()[4];
+  }
 
   lite::x86::math::instance_norm(in,
                                  out,

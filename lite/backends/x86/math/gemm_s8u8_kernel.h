@@ -14,8 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef __AVX2__
-
 #include <stdint.h>
 
 namespace paddle {
@@ -51,5 +49,3 @@ void gemm_kernel_loop_int8(int M,
 }  // namespace x86
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // __AVX2__

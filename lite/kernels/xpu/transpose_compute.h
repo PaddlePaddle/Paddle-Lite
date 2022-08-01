@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class TransposeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class TransposeCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::TransposeParam;
 

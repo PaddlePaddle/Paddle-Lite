@@ -882,18 +882,16 @@ void sign(const T* din, T* dout, int size, int threads) {
 template void sign<float>(const float* din, float* dout, int size, int threads);
 
 template <typename T>
-void softplus(const T* din, T* dout, int size, int threads) {
+void softplus(const T* din, T* dout, int size, float beta, int threads) {
   for (int i = 0; i < size; ++i) {
-    dout[0] = log((T)1. + exp(din[0]));
+    dout[0] = 1. / beta * log((T)1. + exp(din[0] * beta));
     din++;
     dout++;
   }
 }
 
-template void softplus<float>(const float* din,
-                              float* dout,
-                              int size,
-                              int threads);
+template void softplus<float>(
+    const float* din, float* dout, int size, float beta, int threads);
 
 template <>
 void act_thresholded_relu<float>(
@@ -926,14 +924,16 @@ void act_elu<float>(
       float32x4_t vb = vld1q_f32(ptr_in_thread + 4);
       float32x4_t vc = vld1q_f32(ptr_in_thread + 8);
       float32x4_t vd = vld1q_f32(ptr_in_thread + 12);
+
+      uint32x4_t gt_a = vcgtq_f32(va, vzero);
+      uint32x4_t gt_b = vcgtq_f32(vb, vzero);
+      uint32x4_t gt_c = vcgtq_f32(vc, vzero);
+      uint32x4_t gt_d = vcgtq_f32(vd, vzero);
+
       float32x4_t va_exp = exp_ps(va);
-      float32x4_t va_max = vmaxq_f32(va, vzero);
       float32x4_t vb_exp = exp_ps(vb);
-      float32x4_t vb_max = vmaxq_f32(vb, vzero);
       float32x4_t vc_exp = exp_ps(vc);
-      float32x4_t vc_max = vmaxq_f32(vc, vzero);
       float32x4_t vd_exp = exp_ps(vd);
-      float32x4_t vd_max = vmaxq_f32(vd, vzero);
       float32x4_t va_sub = vsubq_f32(va_exp, vone);
       float32x4_t vb_sub = vsubq_f32(vb_exp, vone);
       float32x4_t vc_sub = vsubq_f32(vc_exp, vone);
@@ -942,14 +942,12 @@ void act_elu<float>(
       vb_sub = vmulq_f32(vb_sub, valpha);
       vc_sub = vmulq_f32(vc_sub, valpha);
       vd_sub = vmulq_f32(vd_sub, valpha);
-      float32x4_t va_min = vminq_f32(va_sub, vzero);
-      float32x4_t vb_min = vminq_f32(vb_sub, vzero);
-      float32x4_t vc_min = vminq_f32(vc_sub, vzero);
-      float32x4_t vd_min = vminq_f32(vd_sub, vzero);
-      float32x4_t va_rst = vaddq_f32(va_max, va_min);
-      float32x4_t vb_rst = vaddq_f32(vb_max, vb_min);
-      float32x4_t vc_rst = vaddq_f32(vc_max, vc_min);
-      float32x4_t vd_rst = vaddq_f32(vd_max, vd_min);
+
+      float32x4_t va_rst = vbslq_f32(gt_a, va, va_sub);
+      float32x4_t vb_rst = vbslq_f32(gt_b, vb, vb_sub);
+      float32x4_t vc_rst = vbslq_f32(gt_c, vc, vc_sub);
+      float32x4_t vd_rst = vbslq_f32(gt_d, vd, vd_sub);
+
       vst1q_f32(ptr_out_thread, va_rst);
       vst1q_f32(ptr_out_thread + 4, vb_rst);
       vst1q_f32(ptr_out_thread + 8, vc_rst);
@@ -959,21 +957,21 @@ void act_elu<float>(
     }
     for (int j = 0; j < cnt; j++) {
       float32x4_t va = vld1q_f32(ptr_in_thread);
+      uint32x4_t gt_0 = vcgtq_f32(va, vzero);
+
       float32x4_t va_exp = exp_ps(va);
-      float32x4_t va_max = vmaxq_f32(va, vzero);
       float32x4_t va_sub = vsubq_f32(va_exp, vone);
       va_sub = vmulq_f32(va_sub, valpha);
-      float32x4_t va_min = vminq_f32(va_sub, vzero);
-      float32x4_t va_rst = vaddq_f32(va_max, va_min);
+
+      float32x4_t va_rst = vbslq_f32(gt_0, va, va_sub);
       vst1q_f32(ptr_out_thread, va_rst);
       ptr_out_thread += 4;
       ptr_in_thread += 4;
     }
     for (int j = 0; j < remain; j++) {
-      float beta = alpha * (expf(ptr_in_thread[0]) - 1);
-      float max = ptr_in_thread[0] >= 0.f ? ptr_in_thread[0] : 0.f;
-      float min = beta <= 0.f ? beta : 0.f;
-      ptr_out_thread[0] = min + max;
+      ptr_out_thread[0] = ptr_in_thread[0] > 0.f
+                              ? ptr_in_thread[0]
+                              : (alpha * (expf(ptr_in_thread[0]) - 1));
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -982,10 +980,7 @@ void act_elu<float>(
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < thread_remain; j++) {
-    float beta = alpha * (expf(ptr_in[0]) - 1);
-    float max = ptr_in[0] >= 0.f ? ptr_in[0] : 0.f;
-    float min = beta <= 0.f ? beta : 0.f;
-    ptr_out[0] = max + min;
+    ptr_out[0] = ptr_in[0] > 0.f ? ptr_in[0] : (alpha * (expf(ptr_in[0]) - 1));
     ptr_in++;
     ptr_out++;
   }

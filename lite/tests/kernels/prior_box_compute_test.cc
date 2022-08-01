@@ -729,14 +729,19 @@ void test_prior_box(Place place) {
 
 TEST(PriorBox, precision) {
   Place place(TARGET(kHost));
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#else
+  return;
+#endif
+#endif
   test_prior_box(place);
 }
 
 TEST(DensityPriorBox, precision) {
   Place place;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-#elif defined(LITE_WITH_X86)
+#if defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);

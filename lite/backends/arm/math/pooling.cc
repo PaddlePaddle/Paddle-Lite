@@ -147,22 +147,22 @@ void pooling_basic(const float* din,
                 int bh = kernel_h;
                 int bw = kernel_w;
                 if (ew == win) {
-                  bw = (sw + kernel_w) >= (win + paddings[3])
-                           ? (win + paddings[3])
+                  bw = (sw + kernel_w) >= (win + paddings[2])
+                           ? (win + paddings[2])
                            : (sw + kernel_w);
                   bw -= sw;
                   if ((sw - pad_w) < 0 &&
-                      (sw + kernel_w) > (win + paddings[3])) {
+                      (sw + kernel_w) > (win + paddings[2])) {
                     bw += pad_w;
                   }
                 }
                 if (eh == hin) {
-                  bh = (sh + kernel_h) >= (hin + paddings[1])
-                           ? (hin + paddings[1])
+                  bh = (sh + kernel_h) >= (hin + paddings[0])
+                           ? (hin + paddings[0])
                            : (sh + kernel_h);
                   bh -= sh;
                   if ((sh - pad_h) < 0 &&
-                      (sh + kernel_h) > (hin + paddings[1])) {
+                      (sh + kernel_h) > (hin + paddings[0])) {
                     bh += pad_h;
                   }
                 }

@@ -46,13 +46,33 @@ int ConvertReshape(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  if (is_quant_mode) {
+    CHECK(IsNNInt8SymmPerLayerQuantType(*input_type));
+    std::vector<float> quant_scales;
+    CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
+    CHECK(IsSameSymmQuantParams(x_scales, quant_scales));
+  }
   // Shape operand
   // "ShapeTensor"(input) > "Shape"(input) > "shape"(attr)
   NNAdapterOperand* shape_operand = nullptr;
   if (HasInput(op, scope, "ShapeTensor")) {
-    // TODO(zhupengyang): apply concat
-    LOG(WARNING) << "Not support ShapeTensor!";
-    return UNSUPPORTED_FEATURE;
+    std::vector<NNAdapterOperand*> shapes_operands;
+    for (auto shapes_tensor_name : op->Input("ShapeTensor")) {
+      auto shapes_tensor_scale_name = shapes_tensor_name + "_scale";
+      std::vector<float> shapes_tensor_scales;
+      if (op->HasInputScale(shapes_tensor_scale_name, true)) {
+        shapes_tensor_scales =
+            op->GetInputScale(shapes_tensor_scale_name, true);
+      }
+      auto shapes_operand = converter->AddInputOperand(
+          scope, shapes_tensor_name, {}, shapes_tensor_scales);
+      shapes_operands.push_back(shapes_operand);
+    }
+    auto axis_operand = converter->AddConstantOperand(0);
+    shapes_operands.push_back(axis_operand);
+    shape_operand = converter->AddOutputOperand(out_name + "/concat");
+    // Concat operation
+    converter->AddOperation(NNADAPTER_CONCAT, shapes_operands, {shape_operand});
   } else if (HasInput(op, scope, "Shape")) {
     auto shape_name = op->Input("Shape").front();
     shape_operand = converter->AddInputOperand(scope, shape_name);
@@ -61,29 +81,6 @@ int ConvertReshape(Converter* converter, OpInfo* op, Scope* scope) {
     shape_operand = converter->AddConstantOperand(shape);
   }
   // Output operand
-  if (is_quant_mode) {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      std::vector<float> quant_scales;
-      CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
-      CHECK(IsSameSymmQuantParams(x_scales, quant_scales));
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT and NNADAPTER_QUANT
-      // operation to
-      // make the quant params obtained from a operand consistent with those
-      // obtained from op_desc
-    } else {
-      // TODO(hong19860320) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT operation to
-      // convert any type to int8 symm per-layer quant operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
-  } else {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT to dequantize the input
-      // operand to a float type operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
-  }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Reshape operation
   converter->AddOperation(

@@ -65,20 +65,31 @@ void Pad3dCompute::Run() {
     out_width = out_dims[3];
   }
 
-  if (mode_ == 2) {
-    CHECK_LE(pad_depth_[0], in_depth - 1)
-        << "pad front size must <= inputs depth - 1";
-    CHECK_LE(pad_depth_[1], in_depth - 1)
-        << "pad back size must <= inputs depth - 1";
-    CHECK_LE(pad_h_[0], in_height - 1)
-        << "pad bottom size must <= inputs height - 1";
-    CHECK_LE(pad_h_[1], in_height - 1)
-        << "pad bottom size must <= inputs height - 1";
-    CHECK_LE(pad_w_[0], in_width - 1)
-        << "pad left size must <= inputs width - 1";
-    CHECK_LE(pad_w_[1], in_width - 1)
-        << "pad right size must  <= inputs width - 1";
+  if (param.mode == "reflect") {
+    CHECK_GT(in_depth, param.paddings[4])
+        << "The depth of Input(X)'s dimension should be "
+           "greater than pad_front";
+    CHECK_GT(in_depth, param.paddings[5])
+        << "The depth of Input(X)'s dimension should be "
+           "greater than pad_back";
+    CHECK_GT(in_height, param.paddings[2])
+        << "The height of Input(X)'s dimension should be "
+           "greater than pad_top";
+    CHECK_GT(in_height, param.paddings[3])
+        << "The height of Input(X)'s dimension should be "
+           "greater than pad_bottom";
+    CHECK_GT(in_width, param.paddings[0])
+        << "The width of Input(X)'s dimension should be "
+           "greater than pad_left";
+    CHECK_GT(in_width, param.paddings[1])
+        << "The width of Input(X)'s dimension should be "
+           "greater than pad_right";
+  } else if (param.mode == "circular" || param.mode == "replicate") {
+    CHECK_NE(in_depth * in_height * in_width, 0)
+        << "The input tensor size can not be 0 for circular "
+           "or replicate padding mode.";
   }
+
   if (data_format_ == "NCDHW") {
     lite::host::math::pad3d_ncdhw_func(inputs,
                                        out,

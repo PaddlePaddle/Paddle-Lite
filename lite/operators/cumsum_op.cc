@@ -50,9 +50,6 @@ bool CumsumOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     param_.flatten = op_desc.GetAttr<bool>("flatten");
   }
 
-  // TODO(zhupengyang): support exclusive==true, reverse==true
-  CHECK(!param_.reverse) << "not support reverse=True now";
-
   return true;
 }
 

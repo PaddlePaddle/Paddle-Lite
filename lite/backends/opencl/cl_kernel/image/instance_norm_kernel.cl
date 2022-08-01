@@ -33,26 +33,27 @@ __kernel void instance_norm(__private const int in_width,
   const int local_total_size = local_work_size_x * local_work_size_y;
 
 #ifdef LOCAL_MEM_128
-  __local float4 shared_mem[128];
+  __local CL_COMPUTE_DTYPE4 shared_mem[128];
 #elif defined(LOCAL_MEM_64)
-  __local float4 shared_mem[64];
+  __local CL_COMPUTE_DTYPE4 shared_mem[64];
 #else
-  __local float4 shared_mem[256];
+  __local CL_COMPUTE_DTYPE4 shared_mem[256];
 #endif
 
   int xOffset = c * in_width;
   int yOffset = n * in_height;
-  float4 sum = 0.0f;
+
+  CL_COMPUTE_DTYPE4 sum = (CL_COMPUTE_DTYPE4)(0.0f);
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += read_imagef(
-          input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex));
+      sum += READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR,
+                           input,
+                           SAMPLER,
+                           (int2)(xOffset + xIndex, yOffset + yIndex));
     }
   }
   shared_mem[local_id] = sum;
-
   barrier(CLK_LOCAL_MEM_FENCE);
-
   sum = 0.0f;
   if (local_id < 32) {
     for (int i = local_id + 32; i < local_total_size; i += 32) {
@@ -74,16 +75,18 @@ __kernel void instance_norm(__private const int in_width,
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  const float4 mean_val = shared_mem[0];
+  const CL_COMPUTE_DTYPE4 mean_val = shared_mem[0];
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
   sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      float4 temp =
-          read_imagef(
-              input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex)) -
+      CL_COMPUTE_DTYPE4 temp =
+          READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR,
+                        input,
+                        SAMPLER,
+                        (int2)(xOffset + xIndex, yOffset + yIndex)) -
           mean_val;
       sum += temp * temp;
     }
@@ -113,22 +116,33 @@ __kernel void instance_norm(__private const int in_width,
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  const float4 sigma = sqrt(shared_mem[0] + (float4)(epsilon));
+  const CL_COMPUTE_DTYPE4 sigma =
+      sqrt(shared_mem[0] + (CL_COMPUTE_DTYPE4)(epsilon));
 
-  float4 s = 1 / sigma;
-  float4 vscale = read_imagef(scale, SAMPLER, (int2)(c, n * in_c_group));
-  float4 vbias = read_imagef(bias, SAMPLER, (int2)(c, n * in_c_group));
+  CL_COMPUTE_DTYPE4 s = 1 / sigma;
+
+  CL_COMPUTE_DTYPE4 vscale =
+      READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, scale, SAMPLER, (int2)(c, n));
+  CL_COMPUTE_DTYPE4 vbias =
+      READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, bias, SAMPLER, (int2)(c, n));
+
   vscale *= s;
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
       int2 intout_pos = (int2)(xOffset + xIndex, yOffset + yIndex);
-      float4 in_val = read_imagef(input, SAMPLER, intout_pos);
-      half4 out_val = convert_half4((in_val - mean_val) * vscale + vbias);
+      CL_COMPUTE_DTYPE4 in_val =
+          READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, intout_pos);
+      CL_COMPUTE_DTYPE4 output0 = (in_val - mean_val) * vscale + vbias;
+      CL_DTYPE4 out_val;
+      out_val.x = CONVERT_TYPE_TO(output0.x, CL_DTYPE);
+      out_val.y = CONVERT_TYPE_TO(output0.y, CL_DTYPE);
+      out_val.z = CONVERT_TYPE_TO(output0.z, CL_DTYPE);
+      out_val.w = CONVERT_TYPE_TO(output0.w, CL_DTYPE);
 #ifdef RELU
-      out_val = max((half4)(0.0f, 0.0f, 0.0f, 0.0f), out_val);
+      out_val = max((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), out_val);
 #endif
-      write_imageh(output, intout_pos, out_val);
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, intout_pos, out_val);
     }
   }
 }

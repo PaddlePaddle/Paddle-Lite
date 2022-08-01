@@ -53,6 +53,7 @@ void CrfDecodingCompute::Run() {
                     *transition_weights,
                     &decoded_path_one_seq);
     }
+    decoded_path->Resize({in_dims[0], in_dims[1]});
     if (label != nullptr) {
       const int64_t* label_value = label->data<int64_t>();
       for (int64_t i = 0; i < seq_num; ++i) {

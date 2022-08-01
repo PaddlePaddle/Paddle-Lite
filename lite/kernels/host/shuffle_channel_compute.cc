@@ -17,61 +17,25 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
-void shuffle_kernel(
-    float* output, const float* input, int group_row, int group_col, int len) {
-  for (int i = 0; i < group_row; ++i) {
-    for (int j = 0; j < group_col; ++j) {
-      const float* p_i = input + (i * group_col + j) * len;
-      float* p_o = output + (j * group_row + i) * len;
-      memcpy(p_o, p_i, len * sizeof(float));
-    }
-  }
-}
-
-void shuffle_channel(const float* inputs,
-                     float* outputs,
-                     int group,
-                     int num,
-                     int channel,
-                     int height,
-                     int width) {
-  int fea_size = channel * height * width;
-  int spatial_size = height * width;
-  int group_row = group;
-  int group_col = channel / group;
-  for (int i = 0; i < num; ++i) {
-    shuffle_kernel(outputs + i * fea_size,
-                   inputs + i * fea_size,
-                   group_row,
-                   group_col,
-                   spatial_size);
-  }
-}
-void ShuffleChannelCompute::Run() {
-  auto& param = Param<operators::ShuffleChannelParam>();
-  const float* x_data = param.X->data<float>();
-  float* output_data = param.Out->mutable_data<float>();
-  DDim x_dims = param.X->dims();
-  int group = param.group;
-  int num = param.X->dims()[0];
-  int channel = param.X->dims()[1];
-  int height = param.X->dims()[2];
-  int width = param.X->dims()[3];
-  shuffle_channel(x_data, output_data, group, num, channel, height, width);
-}
-
-}  // namespace host
+namespace host {}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(shuffle_channel,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::ShuffleChannelCompute,
-                     def)
+#ifdef ENABLE_ARM_FP16
+REGISTER_LITE_KERNEL(
+    shuffle_channel, kARM, kFP16, kNCHW, shufflechannelfp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
+using shufflechannelfp32 =
+    paddle::lite::kernels::host::ShuffleChannelCompute<float,
+                                                       TARGET(kHost),
+                                                       PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    shuffle_channel, kHost, kFloat, kNCHW, shufflechannelfp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

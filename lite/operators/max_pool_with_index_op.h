@@ -50,7 +50,7 @@ class MaxPoolWithIndexOpLite : public OpLite {
     CHECK(scope->FindVar(mask));
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
     param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
-
+    param_.mask = scope->FindVar(mask)->GetMutable<lite::Tensor>();
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");

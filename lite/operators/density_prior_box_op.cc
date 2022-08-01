@@ -83,6 +83,9 @@ bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   if (opdesc.HasAttr("order")) {
     param_.order = opdesc.GetAttr<std::vector<std::string>>("order");
   }
+  if (opdesc.HasAttr("flatten_to_2d")) {
+    param_.flatten_to_2d = opdesc.GetAttr<bool>("flatten_to_2d");
+  }
   return true;
 }
 

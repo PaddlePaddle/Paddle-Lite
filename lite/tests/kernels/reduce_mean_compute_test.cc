@@ -316,14 +316,16 @@ class ReduceMeanComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_mean(Place place, float abs_err) {
+void test_reduce_mean(Place place,
+                      float abs_err,
+                      const std::vector<bool>& keep_dim_vec) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
     for (auto c : {1, 2}) {
       for (auto h : {1, 3}) {
         for (auto w : {1, 3}) {
-          for (bool keep_dim : {false, true}) {
+          for (bool keep_dim : keep_dim_vec) {
             for (auto dim : reduce_dim) {
               DDim x_dims;
               for (auto dims : {2, 3, 4}) {
@@ -347,15 +349,6 @@ void test_reduce_mean(Place place, float abs_err) {
                   if (last_dim < 1) continue;
                 }
                 if (last_dim > x_dims.size() - 1) continue;
-
-#ifdef LITE_WITH_OPENCL
-                // fixme: currently utest will fail when keep_dim == false on
-                // same case(such as nchw{1,2,1,1}, dim{2}). Not that the kernel
-                // is right on this case but the utest will fail because cannot
-                // get the padded dims of output tensor in framework.cc
-                keep_dim = true;
-#endif
-
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceMeanComputeTester(
                         place, "def", dim, keep_dim, x_dims));
@@ -373,6 +366,7 @@ void test_reduce_mean(Place place, float abs_err) {
 TEST(ReduceMean, precision) {
   Place place;
   float abs_err = 2e-5;
+  std::vector<bool> keep_dim_vec{false, true};
 #ifdef LITE_WITH_X86
   place = Place(TARGET(kX86));
 #endif
@@ -382,19 +376,31 @@ TEST(ReduceMean, precision) {
 #ifdef LITE_WITH_OPENCL
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_err = 2e-2;  // opencl fp16 torlerance
+  // fixme: currently utest will fail when keep_dim == false on
+  // same case(such as nchw{1,2,1,1}, dim{2}). Not that the kernel
+  // is right on this case but the utest will fail because cannot
+  // get the padded dims of output tensor in framework.cc
+  keep_dim_vec = std::vector<bool>{true};
 #endif
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   place = Place(TARGET(kXPU));
 #endif
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_err = 1e-1;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_err = 1e-1;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_err = 1e-3;
+  keep_dim_vec = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_err = 1e-3;
 #else
   return;
 #endif
 #endif
-  test_reduce_mean(place, abs_err);
+  test_reduce_mean(place, abs_err, keep_dim_vec);
 }
 
 }  // namespace lite

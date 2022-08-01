@@ -28,7 +28,9 @@ bool OneHotV2Op::InferShapeImpl() const {
   // Set output dims
   auto in_dims = param_.X->dims();
   std::vector<int64_t> out_dims;
-  out_dims.push_back(in_dims[0]);
+  for (int i = 0; i < in_dims.size(); i++) {
+    out_dims.push_back(in_dims[i]);
+  }
   out_dims.push_back(param_.depth);
   param_.Out->Resize(DDim(out_dims));
   param_.Out->set_lod(param_.X->lod());
@@ -49,7 +51,6 @@ bool OneHotV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
       !op_desc.Input("depth_tensor").empty()) {
     auto depth_tensor = op_desc.Input("depth_tensor").front();
     param_.depth_tensor = scope->FindVar(depth_tensor)->GetMutable<Tensor>();
-    param_.depth = param_.depth_tensor->data<int32_t>()[0];
   }
 
   if (op_desc.HasAttr("allow_out_of_range")) {

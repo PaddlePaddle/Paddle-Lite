@@ -17,6 +17,7 @@
 #include <limits>
 #include <memory>
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -50,8 +51,8 @@ void pad_constant_fp16(const float16_t* din,
   float16x4_t vpad_value_low = vdup_n_f16(pad_value);
   int bottom_loop = (w * pad_bottom) >> 3;
   int bottom_loop_remain = (w * pad_bottom) & 7;
-#pragma omp parallel for
-  for (int s = 0; s < num; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
     // process top
@@ -92,6 +93,7 @@ void pad_constant_fp16(const float16_t* din,
       *dout_s++ = pad_value;
     }
   }
+  LITE_PARALLEL_END()
 }
 
 void pad_edge_fp16(const float16_t* din,
@@ -118,8 +120,8 @@ void pad_edge_fp16(const float16_t* din,
   int right_loop_remain = pad_right & 3;
   int med_rem_cnt = med_loop_remain >> 2;
   int med_rem_rem = med_loop_remain & 3;
-#pragma omp parallel for
-  for (int s = 0; s < num; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
     float16_t* dout_med = dout_s + w * pad_top;
@@ -181,6 +183,7 @@ void pad_edge_fp16(const float16_t* din,
       dout_top += w;
     }
   }
+  LITE_PARALLEL_END()
 }
 
 void pad_reflect_fp16(const float16_t* din,
@@ -207,8 +210,8 @@ void pad_reflect_fp16(const float16_t* din,
   int right_loop_remain = pad_right & 3;
   int med_rem_cnt = med_loop_remain >> 2;
   int med_rem_rem = med_loop_remain & 3;
-#pragma omp parallel for
-  for (int s = 0; s < num; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
 
@@ -219,12 +222,7 @@ void pad_reflect_fp16(const float16_t* din,
         float16x4_t val =
             vld1_f16(din_s + left_loop_remain + ((left_loop - i - 1) << 2) + 1);
         val = vrev64_f16(val);
-        float16x4_t rst;
-        rst[0] = val[2];
-        rst[1] = val[3];
-        rst[2] = val[0];
-        rst[3] = val[1];
-        vst1_f16(dout_med, rst);
+        vst1_f16(dout_med, val);
         dout_med += 4;
       }
       for (int i = 0; i < left_loop_remain; ++i) {
@@ -253,13 +251,8 @@ void pad_reflect_fp16(const float16_t* din,
       }
       for (int i = 0; i < right_loop; ++i) {
         float16x4_t val = vld1_f16(din_s - ((i + 1) << 2) - 1);
-        val = vrev64_f16(val);
-        float16x4_t rst;
-        rst[0] = val[2];
-        rst[1] = val[3];
-        rst[2] = val[0];
-        rst[3] = val[1];
-        vst1_f16(dout_med, rst);
+        val = vrev64_f16(val);  // different from vrev64_f32
+        vst1_f16(dout_med, val);
         dout_med += 4;
       }
       const float16_t* remain = din_s - (right_loop << 2) - 2;
@@ -285,6 +278,7 @@ void pad_reflect_fp16(const float16_t* din,
       dout_top_reflect -= w;
     }
   }
+  LITE_PARALLEL_END()
 }
 
 void pad2d_func_fp16(const lite::Tensor* input,

@@ -540,6 +540,10 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
     unary_act_op_code = NNADAPTER_ABS;
   } else if (unary_act_op_type == "exp") {
     unary_act_op_code = NNADAPTER_EXP;
+  } else if (unary_act_op_type == "floor") {
+    unary_act_op_code = NNADAPTER_FLOOR;
+  } else if (unary_act_op_type == "square") {
+    unary_act_op_code = NNADAPTER_SQUARE;
   } else {
     LOG(WARNING) << "Unable to convert a unary activation type("
                  << unary_act_op_type << ") to a NNAdapter operation type!";
@@ -563,7 +567,7 @@ NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
 }
 
 NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode) {
-  if (mode == "constant") {
+  if (mode == "constant" || mode == "zeros") {
     return NNADAPTER_PAD_MODE_CONSTANT;
   }
   if (mode == "reflect") {
@@ -572,11 +576,23 @@ NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode) {
   if (mode == "replicate") {
     return NNADAPTER_PAD_MODE_REPLICATE;
   }
-  if (mode == "edge") {
+  if (mode == "edge" || mode == "border") {
     return NNADAPTER_PAD_MODE_EDGE;
   }
-  LOG(FATAL) << "Unsupported mode type: " << mode;
+  LOG(WARNING) << "Unsupported mode type: " << mode;
   return NNADAPTER_PAD_MODE_NONE;
+}
+
+NNAdapterInterpolateModeCode ConvertInterpolateModeToNNInterpolateModeCode(
+    std::string mode) {
+  if (mode == "bilinear") {
+    return NNADAPTER_INTERPOLATE_MODE_BILINEAR;
+  }
+  if (mode == "nearest") {
+    return NNADAPTER_INTERPOLATE_MODE_NEAREST;
+  }
+  LOG(WARNING) << "Unsupported mode type: " << mode;
+  return NNADAPTER_INTERPOLATE_MODE_NONE;
 }
 
 template <>
@@ -671,7 +687,6 @@ void ConvertDDimToNNDimensions(const DDim& input_dimensions,
   if (output_dimension_count) {
     *output_dimension_count = input_dimensions.size();
   }
-  *output_dimension_count = input_dimensions.size();
   for (size_t i = 0; i < input_dimensions.size(); i++) {
     output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
   }

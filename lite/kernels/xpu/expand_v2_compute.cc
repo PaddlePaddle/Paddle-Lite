@@ -22,10 +22,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-void ExpandV2Compute<T>::Run() {
+template <typename T, PrecisionType PType>
+void ExpandV2Compute<T, PType>::Run() {
   auto& param = this->template Param<operators::ExpandV2Param>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   const auto* x = param.X;
   auto* out = param.Out;
   std::vector<int64_t> x_shape = x->dims().Vectorize();
@@ -47,7 +47,8 @@ void ExpandV2Compute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using expand_v2_xpu_float = paddle::lite::kernels::xpu::ExpandV2Compute<float>;
+using expand_v2_xpu_float =
+    paddle::lite::kernels::xpu::ExpandV2Compute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(expand_v2, kXPU, kFloat, kAny, expand_v2_xpu_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
@@ -64,5 +65,26 @@ REGISTER_LITE_KERNEL(expand_v2, kXPU, kFloat, kAny, expand_v2_xpu_float, def)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using expand_v2_xpu_fp16 =
+    paddle::lite::kernels::xpu::ExpandV2Compute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(expand_v2, kXPU, kFP16, kAny, expand_v2_xpu_fp16, fp16)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_shapes_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kFP16),
                                        DATALAYOUT(kAny))})
     .Finalize();

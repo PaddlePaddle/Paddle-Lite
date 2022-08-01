@@ -58,6 +58,10 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "act: " << act_t;
       if (act_t == "relu") {
         build_options_ += " -DRELU";
+      } else if (act_t == "relu6") {
+        build_options_ += " -DRELU6";
+      } else if (act_t == "gelu") {
+        build_options_ += " -DGELU";
       } else {
         LOG(FATAL) << "Unsupported Activation type: " << act_t;
       }
@@ -71,6 +75,9 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
     axis_ = ele_param_->axis;
     out_nchw_ = out_dims.Vectorize();
 
+    if (x_dims_ == y_dims_) {
+      axis_ = -1;
+    }
     host::fix_x_y_dims<int64_t>(
         x, y, ele_param_->Out, axis_, &x_nchw_, &y_nchw_);
 
@@ -112,7 +119,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       }
       if ((y_dims_.size() == 1) &&
           (axis_ != -1) &&  // x{n,c,h,w} && y{h} || x{c,h,w} && y{h}
-          (axis_ == x_dims_.size() - 2)) {
+          (axis_ == x_dims_.size() - 2 || axis_ == x_dims_.size() - 4)) {
         image_folder_flag_y_ = 2;
       }
       if ((y_dims_.size() == 2) &&
@@ -134,7 +141,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
         image_folder_flag_x_ = 1;
       }
       if ((x_dims_.size() == 1) && (axis_ != -1) &&
-          (axis_ == y_dims_.size() - 2)) {
+          (axis_ == y_dims_.size() - 2 || axis_ == y_dims_.size() - 4)) {
         image_folder_flag_x_ = 2;
       }
       if ((x_dims_.size() == 2) && (axis_ != -1) &&
@@ -155,27 +162,31 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
 
     if (y_dims_ == x_dims_) {
       kernel_func_name_ = "elementwise_compute";
+      kernel_func_paths_ = "image/elementwise_kernel.cl";
     } else if (broadcast_elementwise_common_flag == 0) {
       kernel_func_name_ = "broadcast_elementwise_basic";
+      kernel_func_paths_ = "image/elementwise_kernel.cl";
     } else {
       kernel_func_name_ = "broadcast_elementwise_common";
-    }
-
-    if (broadcast_elementwise_common_flag == 1) {
       kernel_func_paths_ = "image/elementwise_broadcast_kernel.cl";
-    } else {
-      kernel_func_paths_ = "image/elementwise_kernel.cl";
     }
 
     // op_type
     auto elementwise_compute_type = op_type();
-    if (elementwise_compute_type == "elementwise_div") {
+    if (elementwise_compute_type == "elementwise_div" ||
+        elementwise_compute_type == "fusion_elementwise_div_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in/bias) ";
-    } else if (elementwise_compute_type == "elementwise_add") {
+    } else if (elementwise_compute_type == "elementwise_add" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_add_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in+bias) ";
-    } else if (elementwise_compute_type == "elementwise_sub") {
+    } else if (elementwise_compute_type == "elementwise_sub" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_sub_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in-bias) ";
-    } else if (elementwise_compute_type == "elementwise_mul") {
+    } else if (elementwise_compute_type == "elementwise_mul" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_mul_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in*bias) ";
     } else if (elementwise_compute_type == "elementwise_max") {
       build_options_ += " -DOPERATOR(in,bias)=fmax(in,bias) ";
@@ -185,6 +196,8 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       build_options_ += " -DOPERATOR(in,bias)=pow(in,bias) ";
     } else if (elementwise_compute_type == "elementwise_mod") {
       build_options_ += " -DOPERATOR(in,bias)=fmod(in,bias) ";
+    } else if (elementwise_compute_type == "elementwise_floordiv") {
+      build_options_ += " -DOPERATOR(in,bias)=(int4)(in/bias) ";
     }
 
     if (ele_param_->fuse_scale) {
@@ -569,6 +582,25 @@ REGISTER_LITE_KERNEL(fusion_elementwise_mul_activation,
     .Finalize();
 
 REGISTER_LITE_KERNEL(fusion_elementwise_div_activation,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     ocl::ElementwiseImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+REGISTER_LITE_KERNEL(elementwise_floordiv,
                      kOpenCL,
                      kFP16,
                      kImageDefault,

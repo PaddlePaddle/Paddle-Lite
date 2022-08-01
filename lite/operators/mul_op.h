@@ -58,6 +58,24 @@ class MulOpLite : public OpLite {
     param_.output = var->GetMutable<Tensor>();
     param_.x_num_col_dims = op_desc.GetAttr<int>("x_num_col_dims");
     param_.y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
+
+    const OpInfo *op_info = static_cast<const OpInfo *>(&op_desc);
+    if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+      param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+      auto input_scale_name = "X0_scale";
+      auto weight_scale_name = "Y0_scale";
+      auto out_scale_name = "Out0_scale";
+      if (op_info->HasInputScale(input_scale_name, true))
+        param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+      if (op_info->HasInputScale(weight_scale_name, true))
+        param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+      if (op_info->HasOutputScale(out_scale_name, true))
+        param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
+    }
+    input_tensor_ptrs_cache_.push_back(param_.x);
+    input_tensor_ptrs_cache_.push_back(param_.y);
+    output_tensor_ptrs_cache_.push_back(param_.output);
+
     return true;
   }
 

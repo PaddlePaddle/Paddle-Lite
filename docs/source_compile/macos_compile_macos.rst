@@ -25,7 +25,7 @@ macOS 环境下编译适用于 macOS 的库
      - x86/ARM 架构 :raw-html-m2r:`<br>`
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
+[1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
 
    **说明：**
 
@@ -41,13 +41,13 @@ macOS 环境下编译适用于 macOS 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
 
-* gcc、g++（推荐版本为 8.2.0）
+* gcc、g++ == 8.2.0
+* CMake >=3.15
 * git、make、wget
-* CMake（请使用 3.15 或以上版本）
 
 
 环境安装命令

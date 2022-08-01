@@ -73,7 +73,7 @@ bool ElementwiseOp::InferShapeImpl() const {
     }
     for (size_t i = 0; i < max_dim; i++) {
       if (x_dims_array[i] == -1 || y_dims_array[i] == -1) {
-        out_dims_array[i] = -1;
+        out_dims_array[i] = 1;
       } else {
         out_dims_array[i] = (std::max)(x_dims_array[i], y_dims_array[i]);
       }
@@ -91,8 +91,8 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto Y_name = opdesc.Input("Y").front();
   auto Out_name = opdesc.Output("Out").front();
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Y = GetVar<lite::Tensor>(scope, Y_name);
+  param_.X = GetMutableVar<lite::Tensor>(scope, X_name);
+  param_.Y = GetMutableVar<lite::Tensor>(scope, Y_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   if (opdesc.HasAttr("fuse_scale")) {
@@ -101,6 +101,9 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.alpha = opdesc.GetAttr<float>("alpha");
     param_.bias = opdesc.GetAttr<float>("bias");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  input_tensor_ptrs_cache_.push_back(param_.Y);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
 
   return true;
 }

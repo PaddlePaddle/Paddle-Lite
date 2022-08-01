@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Name: ast.py
 Usage: parser kernel registries from .cc source files into python struct `KernelRegistry`,
@@ -19,6 +18,7 @@ Usage: parser kernel registries from .cc source files into python struct `Kernel
 """
 import logging
 import sys
+
 
 class SyntaxParser(object):
     def __init__(self, str):
@@ -35,8 +35,8 @@ class SyntaxParser(object):
         "xx"
         '''
         self.token = ''
-        assert self.cur == '"';
-        self.cur_pos += 1;
+        assert self.cur == '"'
+        self.cur_pos += 1
 
         assert self.cur_pos < self.N
         while self.cur != '"':
@@ -50,7 +50,9 @@ class SyntaxParser(object):
     def eat_word(self):
         self.token = ''
         str = ''
-        while self.cur.isalnum() or self.cur in ('_', ':',):
+        while self.cur.isalnum() or self.cur in (
+                '_',
+                ':', ):
             self.token += self.cur
             self.forward()
 
@@ -176,12 +178,11 @@ class KernelRegistry:
 
     def __repr__(self):
         str = "Kernel({op_type}, {target}, {precision}, {data_layout}, {alias}):".format(
-            op_type = self.op_type,
-            target = self.target,
-            precision = self.precision,
-            data_layout = self.data_layout,
-            alias = self.alias,
-        )
+            op_type=self.op_type,
+            target=self.target,
+            precision=self.precision,
+            data_layout=self.data_layout,
+            alias=self.alias, )
 
         str += '\n' + '\n'.join(repr(io) for io in self.inputs)
         str += '\n' + '\n'.join(repr(io) for io in self.outputs)
@@ -215,13 +216,14 @@ class RegisterLiteKernelParser(SyntaxParser):
         while tmp_pos < len(self.str):
             start = self.str.find("#ifdef LITE_BUILD_EXTRA", tmp_pos)
             if start != -1:
-               tmp_pos = start
-               end = self.str.find("#endif  // LITE_BUILD_EXTRA", tmp_pos)
-               if end != -1:
-                   extra_command += extra_command + list(range(start, end + 1))
-                   tmp_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
-               else:
-                   break
+                tmp_pos = start
+                end = self.str.find("#endif  // LITE_BUILD_EXTRA", tmp_pos)
+                if end != -1:
+                    extra_command += extra_command + list(
+                        range(start, end + 1))
+                    tmp_pos = end + len("#endif  // LITE_BUILD_EXTRA") - 1
+                else:
+                    break
             else:
                 break
         # Get the code location of arm_fp16 kernels registry
@@ -231,13 +233,14 @@ class RegisterLiteKernelParser(SyntaxParser):
         while tmp_pos < len(self.str):
             start = self.str.find("#ifdef ENABLE_ARM_FP16", tmp_pos)
             if start != -1:
-               tmp_pos = start
-               end = self.str.find("#endif  // ENABLE_ARM_FP16", tmp_pos)
-               if end != -1:
-                   arm_fp16_command += arm_fp16_command + list(range(start, end + 1))
-                   tmp_pos = end + len("#endif  // ENABLE_ARM_FP16") -1
-               else:
-                   break
+                tmp_pos = start
+                end = self.str.find("#endif  // ENABLE_ARM_FP16", tmp_pos)
+                if end != -1:
+                    arm_fp16_command += arm_fp16_command + list(
+                        range(start, end + 1))
+                    tmp_pos = end + len("#endif  // ENABLE_ARM_FP16") - 1
+                else:
+                    break
             else:
                 break
         self.cur_pos = 0
@@ -245,19 +248,20 @@ class RegisterLiteKernelParser(SyntaxParser):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
                 #print 'str ', start, self.str[start-2: start]
-                if start != 0 and '/' in self.str[start-2: start]:
+                if start != 0 and '/' in self.str[start - 2:start]:
                     '''
                     skip commented code
                     '''
                     self.cur_pos = start + 1
                     continue
                 # if with_extra == "OFF", extra kernels will not be parsed
-                if with_extra.upper() != "ON"  and start in extra_command:
-                    self.cur_pos = start + len(self.KEYWORD) -1
+                if with_extra.upper() != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) - 1
                     continue
                 # if enable_arm_fp16 == "OFF", arm_fp16 kernels will not be parsed
-                if enable_arm_fp16.upper() != "ON" and start in arm_fp16_command:
-                    self.cur_pos = start + len(self.KEYWORD) -1
+                if enable_arm_fp16.upper(
+                ) != "ON" and start in arm_fp16_command:
+                    self.cur_pos = start + len(self.KEYWORD) - 1
                     continue
                 self.cur_pos = start
                 k = KernelRegistry()
@@ -265,7 +269,8 @@ class RegisterLiteKernelParser(SyntaxParser):
             else:
                 break
 
-    def pick_kernel_class(self, op_name, device_target, data_type, layout_type, alias_name, first_flag, file_path):
+    def pick_kernel_class(self, op_name, device_target, data_type, layout_type,
+                          alias_name, first_flag, file_path):
         """pick the actual used kernel on the basis of kernel attribute information.
 
         self.str() stores the original source content. Kernel attributes include op_name,
@@ -301,14 +306,14 @@ class RegisterLiteKernelParser(SyntaxParser):
             else:
                 sys.exit(-1)
         if first_flag == "True":
-            res_str += self.str[: main_idx] + "\n"
+            res_str += self.str[:main_idx] + "\n"
             self.cur_pos = main_idx + 1
             while self.cur_pos < len(self.str):
                 start = self.str.find("typedef", self.cur_pos)
                 if start != -1:
                     end = self.str.find(";", start)
                     if end != -1:
-                        res_str += self.str[start: end + len(";")] + "\n"
+                        res_str += self.str[start:end + len(";")] + "\n"
                         self.cur_pos = end + len(";")
                     else:
                         break
@@ -320,7 +325,7 @@ class RegisterLiteKernelParser(SyntaxParser):
                 if start != -1:
                     end = self.str.find(";", start)
                     if end != -1:
-                        res_str += self.str[start: end + len(";")] + "\n"
+                        res_str += self.str[start:end + len(";")] + "\n"
                         self.cur_pos = end + len(";")
                     else:
                         break
@@ -347,7 +352,8 @@ class RegisterLiteKernelParser(SyntaxParser):
                         break
                     pos += 1
                 right_brace = pos
-                kernel_attr = self.str[left_brace + 1 : right_brace].replace('\n', '').replace(' ', '').split(",")
+                kernel_attr = self.str[left_brace + 1:right_brace].replace(
+                    '\n', '').replace(' ', '').split(",")
                 if len(kernel_attr) != 6:
                     sys.exit(1)
                 op_name_ = kernel_attr[0]
@@ -355,10 +361,12 @@ class RegisterLiteKernelParser(SyntaxParser):
                 data_type_ = kernel_attr[2]
                 layout_type_ = kernel_attr[3]
                 alias_name_ = kernel_attr[5]
-                if ((op_name_ == op_name) and (device_target_ == device_target) and
-                    (data_type_ == data_type) and (layout_type_ == layout_type) and
-                    (alias_name_ == alias_name)) :
-                    res_str += self.str[start: end] + "\n\n"
+                if ((op_name_ == op_name) and
+                    (device_target_ == device_target) and
+                    (data_type_ == data_type) and
+                    (layout_type_ == layout_type) and
+                    (alias_name_ == alias_name)):
+                    res_str += self.str[start:end] + "\n\n"
                 self.cur_pos = end + 1
             else:
                 break
@@ -382,7 +390,6 @@ class RegisterLiteKernelParser(SyntaxParser):
                 self.forward()
         self.token = self.str[start:self.cur_pos]
 
-
     def parse_register(self, k):
 
         self.eat_word()
@@ -396,7 +403,6 @@ class RegisterLiteKernelParser(SyntaxParser):
         k.op_type = self.token
         self.eat_comma()
         self.eat_spaces()
-
 
         self.eat_word()
         k.target = self.token
@@ -425,7 +431,6 @@ class RegisterLiteKernelParser(SyntaxParser):
         self.eat_right_parentheses()
         self.eat_spaces()
 
-
         def eat_io(is_input, io):
             self.eat_left_parentheses()
             self.eat_str()
@@ -451,12 +456,14 @@ class RegisterLiteKernelParser(SyntaxParser):
             io.version = self.token
             self.eat_right_parentheses()
             self.eat_spaces()
+
         # eat input and output
         while self.cur_pos < len(self.str):
             self.eat_point()
             self.eat_spaces()
             self.eat_word()
-            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'BindPaddleOpVersion', 'Finalize')
+            assert self.token in ('BindInput', 'BindOutput', 'SetVersion',
+                                  'BindPaddleOpVersion', 'Finalize')
             io = IO()
 
             if self.token == 'BindInput':
@@ -499,10 +506,12 @@ class RegisterLiteOpParser(SyntaxParser):
             start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
             if start != -1:
                 self.cur_pos = start
-                end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+                end = self.str.find("#endif  // LITE_BUILD_EXTRA",
+                                    self.cur_pos)
                 if end != -1:
-                    extra_command += extra_command + list(range(start, end + 1))
-                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                    extra_command += extra_command + list(
+                        range(start, end + 1))
+                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") - 1
                 else:
                     break
             else:
@@ -512,7 +521,7 @@ class RegisterLiteOpParser(SyntaxParser):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
                 #print 'str ', start, self.str[start-2: start]
-                if start != 0 and '/' in self.str[start-2: start]:
+                if start != 0 and '/' in self.str[start - 2:start]:
                     '''
                     skip commented code
                     '''
@@ -520,7 +529,7 @@ class RegisterLiteOpParser(SyntaxParser):
                     continue
                 # if with_extra == "OFF", extra kernels will not be parsed
                 if with_extra != "ON" and start in extra_command:
-                    self.cur_pos = start + len(self.KEYWORD) -1
+                    self.cur_pos = start + len(self.KEYWORD) - 1
                     continue
                 self.cur_pos = start
                 self.ops.append(self.__parse_register())
@@ -535,7 +544,7 @@ class RegisterLiteOpParser(SyntaxParser):
 
         self.eat_left_parentheses()
         self.eat_spaces()
-        
+
         self.eat_word()
         return self.token
 
@@ -553,7 +562,7 @@ class RegisterSubgraphBridgeParser(SyntaxParser):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
                 #print 'str ', start, self.str[start-2: start]
-                if start != 0 and '/' in self.str[start-2: start]:
+                if start != 0 and '/' in self.str[start - 2:start]:
                     '''
                     skip commented code
                     '''
@@ -592,14 +601,14 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
     def __init__(self, str):
         super(RegisterNNadapterBridgeParser, self).__init__(str)
         self.subgraph_bridge = []
-    
+
     def parse(self):
         self.cur_pos = 0
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
                 #print 'str ', start, self.str[start-2: start]
-                if start != 0 and '/' in self.str[start-2: start]:
+                if start != 0 and '/' in self.str[start - 2:start]:
                     '''
                     skip commented code
                     '''
@@ -613,7 +622,7 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
 
     def parse_register(self):
 
-        ks = list() 
+        ks = list()
 
         self.eat_word()
         assert self.token == self.KEYWORD
@@ -630,18 +639,16 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
         self.eat_word()
         self.eat_comma()
         self.eat_spaces()
-
-        
         '''
         "xx, yy"
         '''
         self.token = ''
-        assert self.cur == '"';
-        self.cur_pos += 1;
+        assert self.cur == '"'
+        self.cur_pos += 1
 
         assert self.cur_pos < self.N
         while self.cur != ')':
-            if(self.cur == ','):
+            if (self.cur == ','):
                 temp = SubgraphBridgeRegistry()
                 temp.op_type = op_type
                 temp.target = self.token
@@ -649,7 +656,7 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
                 self.token = ''
                 self.cur_pos += 1
             else:
-                if(self.cur != '"' and self.cur != ' ' and self.cur != '\n'):
+                if (self.cur != '"' and self.cur != ' ' and self.cur != '\n'):
                     self.token += self.cur
                 self.cur_pos += 1
             assert self.cur_pos < self.N
@@ -670,5 +677,6 @@ if __name__ == '__main__':
     with open('/Paddle-Lite/lite/kernels/arm/conv_compute.cc') as f:
         c = f.read()
         kernel_parser = RegisterLiteKernelParser(c)
-        kernel_parser.pick_kernel_class("conv2d", "kARM", "kFloat", "kNCHW", "def", "True",
-                            "/Paddle-Lite/build.lite.android.armv8.clang/conv_compute.cc")
+        kernel_parser.pick_kernel_class(
+            "conv2d", "kARM", "kFloat", "kNCHW", "def", "True",
+            "/Paddle-Lite/build.lite.android.armv8.clang/conv_compute.cc")

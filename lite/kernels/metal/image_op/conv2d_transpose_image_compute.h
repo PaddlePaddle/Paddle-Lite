@@ -27,6 +27,8 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/mps_conv_datasource.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -42,15 +44,24 @@ class Conv2dTransposeImageCompute
     void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
+        MetalDebug::SaveOutput(
+            (use_mps_ ? "MPS_conv2d_transpose" : function_name_), output_buffer_);
     };
+    virtual ~Conv2dTransposeImageCompute();
 
    private:
     bool use_mps_{false};
+    void* mps_conv_trans_op_{nullptr};
+    void* mps_conv_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_output_image_{nullptr};
 
     void init_for_run();
+    void init_attention();
     void init_memory();
     void release_memory();
+    void release_mps_memory();
+    void release_intermediate();
 
     void setup_with_mps();
     void setup_without_mps();
@@ -58,24 +69,41 @@ class Conv2dTransposeImageCompute
     void run_with_mps();
     void run_without_mps();
 
-    MetalImage* output_buffer_{nullptr};
-    MetalImage* blank_buffer_{nullptr};
-    const MetalImage* bias_buffer_;
-    const MetalImage* input_buffer_;
+    void run_2x2();
+    void run_3x3();
+    void run_4x4();
 
-    std::shared_ptr<MetalBuffer> param_buffer_;
-    std::shared_ptr<MetalBuffer> params_buffer_;
-    std::shared_ptr<MetalBuffer> filter_buffer_;
+    bool canAddUseMPS();
+    bool canMPSAddByChannel();
+    bool canMPSAddByElement();
 
-    std::string function_name_;
+    std::string KernelFunctionName(const param_t& param);
+    static bool HasPrefix(const std::string& function_name, const std::string& prefix_name);
+    static bool HasSuffix(const std::string& function_name, const std::string& suffix);
+
+   private:
     int16_t activate_type_ = 0;
     int16_t relu6_thredhold_ = 6;
 
-    MetalContext* metal_context_;
     id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
     DDim last_input_dims_{};
-    static std::string KernelFunctionName(const param_t& param);
-    static bool HasPrefix(const std::string& function_name, const std::string& prefix_name);
+
+    MetalImage* output_buffer_{nullptr};
+    const MetalImage* input_buffer_;
+    const MetalImage* bias_buffer_;
+    MetalImage* blank_buffer_{nullptr};
+    std::shared_ptr<MetalBuffer> filter_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    DDim filter_metal_dims_{};
+    MetalImage* intermediate_shift_left_{nullptr};
+    MetalImage* intermediate_shift_right_{nullptr};
+    MetalImage* intermediate_bias_relu_output_{nullptr};
+    id<MTLComputePipelineState> pipline_shift_left_;
+    id<MTLComputePipelineState> pipline_shift_right_;
+    id<MTLComputePipelineState> pipline_bias_relu_output_;
 };
 
 }  // namespace metal

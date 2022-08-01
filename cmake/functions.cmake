@@ -1,4 +1,4 @@
-set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
+set(ops_src_list "${PADDLE_BINARY_DIR}/ops_src_list.txt")
 set(OPS_SRC CACHE INTERNAL "")
 file(WRITE ${ops_src_list} "") # clean
 if(LITE_BUILD_TAILOR)
@@ -36,11 +36,11 @@ function(add_operator TARGET level)
 endfunction()
 
 
-set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
+set(kernels_src_list "${PADDLE_BINARY_DIR}/kernels_src_list.txt")
 file(WRITE ${kernels_src_list} "") # clean
 
 # file to record faked kernels for opt python lib
-set(fake_kernels_src_list "${CMAKE_BINARY_DIR}/fake_kernels_src_list.txt")
+set(fake_kernels_src_list "${PADDLE_BINARY_DIR}/fake_kernels_src_list.txt")
 file(WRITE ${fake_kernels_src_list} "") # clean
 
 # add a kernel for some specific device
@@ -73,7 +73,7 @@ function(add_kernel TARGET device level)
       foreach(src ${args_SRCS})
         string(TOLOWER "${device}" device_name) # ARM => arm, Host => host
         get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
-        set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+        set(kernel_tailor_src_dir "${PADDLE_BINARY_DIR}/kernel_tailor_src_dir")
         set(suffix "for_strip")
         set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
         if("${device}" STREQUAL "METAL")
@@ -114,24 +114,8 @@ function(add_kernel TARGET device level)
 
 endfunction()
 
-function(cc_binary TARGET_NAME)
-  set(options "")
-  set(oneValueArgs "")
-  set(multiValueArgs SRCS DEPS)
-  cmake_parse_arguments(cc_binary "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  add_executable(${TARGET_NAME} ${cc_binary_SRCS})
-  if(cc_binary_DEPS)
-    target_link_libraries(${TARGET_NAME} ${cc_binary_DEPS})
-    add_dependencies(${TARGET_NAME} ${cc_binary_DEPS})
-    common_link(${TARGET_NAME})
-  endif()
-  get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-  target_link_libraries(${TARGET_NAME} ${os_dependency_modules})
-  find_fluid_modules(${TARGET_NAME})
-endfunction(cc_binary)
-
 # Add a unit-test name to file for latter offline manual test.
-set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
+set(offline_test_registry_file "${PADDLE_BINARY_DIR}/lite_tests.txt")
 file(WRITE ${offline_test_registry_file} "") # clean
 
 function(lite_cc_test TARGET)
@@ -172,7 +156,7 @@ function(lite_cc_test TARGET)
             MLU_DEPS ${args_MLU_DEPS}
             HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
-  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if(LITE_WITH_ARM)
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest)
   else()
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest glog)
@@ -180,9 +164,9 @@ function(lite_cc_test TARGET)
   file(APPEND ${offline_test_registry_file} "${TARGET}\n")
   add_dependencies(${TARGET} bundle_full_api)
   if(NOT WIN32)
-    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+    target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a)
   else()
-    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+    target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
   endif()
   # windows
   if(NOT WIN32)
@@ -197,12 +181,6 @@ function(lite_cc_test TARGET)
   if(LITE_WITH_XPU)
       target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
   endif()
-  if(LITE_WITH_RKNPU)
-      target_link_libraries(${TARGET} ${rknpu_runtime_libs})
-  endif()
-  if(LITE_WITH_HUAWEI_ASCEND_NPU)
-      target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
-  endif()
   if(LITE_WITH_NPU)
       target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
   endif()
@@ -216,7 +194,7 @@ function(lite_cc_test TARGET)
           COMMAND ${TARGET} ${args_ARGS}
           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   # No unit test should exceed 10 minutes.
-  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
+  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 1200)
 
 endfunction()
 

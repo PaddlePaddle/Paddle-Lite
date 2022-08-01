@@ -32,10 +32,12 @@ void FlattenFcFuser::BuildPattern() {
   PMNode* out = VarNode("output")
                     ->assert_is_op_output("flatten_contiguous_range", "Out")
                     ->AsIntermediate();
-  PMNode* xshape =
-      VarNode("xshape")
-          ->assert_is_op_output("flatten_contiguous_range", "XShape")
-          ->AsIntermediate();
+  PMNode* xshape;
+  if (has_xshape_) {
+    xshape = VarNode("xshape")
+                 ->assert_is_op_output("flatten_contiguous_range", "XShape")
+                 ->AsIntermediate();
+  }
 
   // fc
   // PMNode* input   = VarNode("input")->assert_is_op_input("fc",
@@ -50,16 +52,34 @@ void FlattenFcFuser::BuildPattern() {
   // create topology.
   std::vector<PMNode*> fc_inputs{bias, weights, out};
   *x >> *flatten_contiguous_range >> *out;
-  *flatten_contiguous_range >> *xshape;
+  if (has_xshape_) {
+    *flatten_contiguous_range >> *xshape;
+  }
   fc_inputs >> *fc >> *fc_out;
 }
 
 void FlattenFcFuser::InsertNewNode(SSAGraph* graph,
                                    const key2nodes_t& matched) {
+  auto flatten = matched.at("flatten_contiguous_range")->stmt()->op();
+  auto* scope = flatten->scope();
+  auto flatten_input = scope->FindVar(matched.at("x")->arg()->name);
+  auto flatten_input_dims = flatten_input->Get<lite::Tensor>().dims();
+  auto flatten_desc = matched.at("flatten_contiguous_range")->stmt()->op_info();
+  auto start_axis = flatten_desc->GetAttr<int>("start_axis");
+  auto fc_desc = matched.at("fc")->stmt()->op_info();
+  auto in_mum_col_dims = fc_desc->GetAttr<int>("in_num_col_dims");
+  int real_start_axis = start_axis;
+  if (start_axis < 0) {
+    real_start_axis = start_axis + flatten_input_dims.size();
+  }
+  if (in_mum_col_dims >= real_start_axis + 1) {
+    nodes_.erase(nodes_.begin(), nodes_.end());
+    LOG(WARNING) << "in_mum_col_dims_old >= real_start_axis + 1, fuse failed";
+    return;
+  }
   auto op_desc = GenOpDesc(matched);
   auto fc_op = LiteOpRegistry::Global().Create("fc");
   auto fc_old = matched.at("fc")->stmt()->op();
-  auto* scope = fc_old->scope();
   auto& valid_places = fc_old->valid_places();
   fc_op->Attach(op_desc, scope);
 
@@ -75,8 +95,10 @@ cpp::OpDesc FlattenFcFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("fc")->stmt()->op_info();
   op_desc.SetInput("Input", {matched.at("x")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("fc_out")->arg()->name});
-  int in_num_col_dim = 1;
+  auto in_num_col_dim = op_desc.GetAttr<int>("in_num_col_dims");
   op_desc.SetAttr("in_num_col_dims", in_num_col_dim);
+  std::string op_type = "mul";
+  op_desc.SetAttr("op_type", op_type);
   return op_desc;
 }
 

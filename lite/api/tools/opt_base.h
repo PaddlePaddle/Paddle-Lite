@@ -20,6 +20,7 @@
 #define PADDLE_LITE_OPT_H_
 #include <algorithm>
 #include <iomanip>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -42,7 +43,7 @@ namespace lite_api {
 /// predictors.
 class LITE_API OptBase {
  public:
-  OptBase() { InitSupportedOpInfo(); };
+  OptBase() { InitSupportedOpInfo(); }
   void SetModelSetDir(const std::string &model_set_path);
   void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
@@ -93,6 +94,10 @@ class LITE_API OptBase {
                          "huawei_kirin_npu",
                          "imagination_nna",
                          "amlogic_npu",
+                         "verisilicon_timvx",
+                         "eeasytech_npu",
+                         "android_nnapi",
+                         "qualcomm_qnn",
                          "kUnK"});  // print supported ops on target_types
   void PrintAllOps();               // print all ops
   void PrintSupportedOps();         // print ops supported on valid_places_

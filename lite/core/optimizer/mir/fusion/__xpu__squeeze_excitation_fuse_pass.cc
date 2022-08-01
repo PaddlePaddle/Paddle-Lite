@@ -201,7 +201,7 @@ class XPUSqueezeExcitationFuser_DEPREC : public FuseBase {
     new_filter_node->arg()->is_weight = true;
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_filter_t = scope->NewTensor(new_filter_name);
+    auto* new_filter_t = scope->MutableParent()->NewTensor(new_filter_name);
     new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
     new_filter_t->set_persistable(true);
     new_filter_t->Resize({mul_1_w_len + mul_2_w_len});
@@ -481,7 +481,7 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     new_filter_node->arg()->is_weight = true;
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_filter_t = scope->NewTensor(new_filter_name);
+    auto* new_filter_t = scope->MutableParent()->NewTensor(new_filter_name);
     new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
     new_filter_t->set_persistable(true);
     new_filter_t->Resize({mul_1_w_len + mul_2_w_len});
@@ -496,7 +496,7 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     new_bias_node->arg()->is_weight = true;
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_bias_t = scope->NewTensor(new_bias_name);
+    auto* new_bias_t = scope->MutableParent()->NewTensor(new_bias_name);
     new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
     new_bias_t->set_persistable(true);
     if (with_bias_) {

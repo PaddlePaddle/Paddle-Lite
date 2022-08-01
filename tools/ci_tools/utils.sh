@@ -9,6 +9,45 @@ BLUE_COLOR='\E[1;34m'  # blue
 PINK='\E[1;35m'        # pink
 OFF_COLOR='\E[0m'      # off color
 
+# URL that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+
+# wget wrapper for download file from Baidu bcebos
+function wget_wrapper() {
+  local url=$1
+  local bak_http_proxy=""
+  local bak_https_proxy=""
+  if [ $http_proxy ]; then
+    bak_http_proxy=$http_proxy
+    bak_https_proxy=$https_proxy
+    unset http_proxy
+    unset https_proxy
+  fi
+
+  wget $url
+
+  if [ $bak_http_proxy ]; then
+    export http_proxy=$bak_http_proxy
+    export https_proxy=$bak_https_proxy
+  fi
+}
+
+function prepare_thirdparty() {
+    local workspace=$1
+    cd $workspace
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget_wrapper $THIRDPARTY_URL/$THIRDPARTY_TAR
+        fi
+        tar xzf $THIRDPARTY_TAR
+    else
+        git submodule update --init --recursive
+    fi
+    cd -
+}
 
 # Download models into user specific directory
 function prepare_models {
@@ -22,7 +61,7 @@ function prepare_models {
   rm -rf $model_zoo_dir && mkdir $model_zoo_dir && cd $model_zoo_dir
   # download compressed model recorded in $MODELS_URL
   for url in ${MODELS_URL[@]}; do
-    wget $url
+    wget_wrapper $url
   done
 
   compressed_models=$(ls)
@@ -191,4 +230,37 @@ function android_prepare_device() {
   if [[ -n "$model_dir" ]]; then
     $remote_device_run $remote_device_name push $model_dir $remote_device_work_dir
   fi
+}
+
+# Generate `__generated_code__.cc`, which is dependended by some targets in cmake.
+# here we fake an empty file to make cmake works.
+function prepare_workspace() {
+    local root_dir=$1
+    local build_dir=$2
+
+    # 1. Prepare gen_code file
+    local GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
+    mkdir -p ${GEN_CODE_PATH_PREFIX}
+    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+
+    # 2.Prepare debug tool
+    local DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
+    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
+    cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
+
+    prepare_thirdparty $root_dir
+}
+
+# Prepare source code of opencl lib
+# here we bundle all cl files into a cc file to bundle all opencl kernels into a single lib
+function prepare_opencl_source_code() {
+    local root_dir=$1
+    # in build directory
+    # Prepare opencl_kernels_source.cc file
+    GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
+    rm -f GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
+    mkdir -p ${GEN_CODE_PATH_OPENCL}
+    touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }

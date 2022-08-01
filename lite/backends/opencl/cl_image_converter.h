@@ -143,6 +143,17 @@ class CLImageConverterNBlock : public CLImageConverterBase {
                    const DDim &tensor_dim) override;
 };
 
+class CLImageConverterNBlockGroup : public CLImageConverterBase {
+ public:
+  DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
+                   float *tensor,
+                   const DDim &image_dim,
+                   const DDim &tensor_dim) override;
+  int groups{-1};
+};
+
 class CLImageConverterN2Block : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;

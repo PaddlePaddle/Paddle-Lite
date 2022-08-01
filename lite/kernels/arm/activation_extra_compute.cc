@@ -236,8 +236,9 @@ void SoftPlusCompute<T>::Run() {
   auto x_data = param.X->template data<T>();
   auto output_data = param.Out->template mutable_data<T>();
   float alpha = param.Elu_alpha;
+  float beta = param.softplus_beta;
   lite::arm::math::softplus<T>(
-      x_data, output_data, x_dims.production(), ctx.threads());
+      x_data, output_data, x_dims.production(), beta, ctx.threads());
 }
 template class SoftPlusCompute<float>;
 

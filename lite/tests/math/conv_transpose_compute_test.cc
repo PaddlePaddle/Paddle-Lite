@@ -39,7 +39,12 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+
+#if defined(LITE_WITH_ARM)
+DEFINE_bool(basic_test, true, "do all tests");
+#else
 DEFINE_bool(basic_test, false, "do all tests");
+#endif
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -145,8 +150,22 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+
+      for (auto& dim_in : input_dims) {
+        param.x->Resize(dim_in);
+        DDim dim_out = compute_out_dim(dim_in, param);
+        if (dim_out[2] < 1 || dim_out[3] < 1) {
+          continue;
+        }
+        param.output->Resize(dim_out);
+        break;
+      }
+
       conv_t.SetParam(param);
       conv_t.SetContext(std::move(ctx1));
+      // prepare for run
+      conv_t.PrepareForRun();
+
       for (auto& dim_in : input_dims) {
         CHECK_EQ(weight_dim[0], dim_in[1])
             << "input channel must equal to weights channel";
@@ -157,8 +176,6 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
         param.filter->CopyDataFrom(tmp_weights);
-        // prepare for run
-        conv_t.PrepareForRun();
         paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
         // paddle::lite::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
@@ -495,12 +512,13 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                         for (auto& dila : {1, 2}) {
                           for (auto& flag_bias : {false, true}) {
                             for (auto& flag_relu : {false, true}) {
-                              if (cin % g != 0 || cout % g != 0) {
+                              if (cin % g != 0 || cout % g != 0 ||
+                                  pad_h1 != pad_h0 || pad_w0 != pad_w1) {
                                 continue;
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cin, cout / g, kh, kw});
-                              for (auto& batch : {1, 2}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32, 28}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
@@ -514,7 +532,7 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
-                                  {1, 4},
+                                  {4},
                                   {FLAGS_power_mode});
                             }
                           }
@@ -535,8 +553,8 @@ TEST(TestConvRand, test_conv_transpose_rand) {
 #ifdef ENABLE_ARM_FP16
 TEST(TestConvRand, test_conv_transpose_fp16_rand) {
   if (FLAGS_basic_test) {
-    for (auto& cin : {1, 3, 8, 16}) {
-      for (auto& cout : {1, 5, 8, 16}) {
+    for (auto& cin : {1, 3, 8}) {
+      for (auto& cout : {1, 5, 8}) {
         for (auto& g : {1, 2}) {
           for (auto& kw : {1, 2, 3}) {
             for (auto& kh : {1, 2, 3}) {
@@ -553,7 +571,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cin, cout / g, kh, kw});
-                              for (auto& batch : {1, 2}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32, 28}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
@@ -567,7 +585,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
-                                  {1, 4},
+                                  {4},
                                   {FLAGS_power_mode});
                             }
                           }

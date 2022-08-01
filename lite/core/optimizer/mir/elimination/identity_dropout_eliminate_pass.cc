@@ -91,4 +91,5 @@ class IdentityDropoutEliminatePass : public ProgramPass {
 
 REGISTER_MIR_PASS(identity_dropout_eliminate_pass,
                   paddle::lite::mir::IdentityDropoutEliminatePass)
-    .BindTargets({TARGET(kXPU), TARGET(kNNAdapter)});
+    .BindTargets(
+        {TARGET(kARM), TARGET(kX86), TARGET(kXPU), TARGET(kNNAdapter)});

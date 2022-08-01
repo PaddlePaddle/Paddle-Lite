@@ -135,7 +135,7 @@ void detect_object(const float* dout,
   }
   fclose(fp);
 }
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifdef LITE_WITH_ARM
 void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const std::string& model_dir,
          const PowerMode power_mode,
@@ -335,7 +335,7 @@ int main(int argc, char** argv) {
         FLAGS_model_dir, save_optimized_model_dir, input_shapes);
   }
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifdef LITE_WITH_ARM
   // Run inference using optimized model
   paddle::lite_api::Run(
       input_shapes,

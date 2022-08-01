@@ -16,15 +16,15 @@ set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
 set WITH_AVX=ON
-set WITH_BAIDU_XPU_XTCL=OFF
-set WITH_BAIDU_XPU=OFF
+set WITH_KUNLUNXIN_XPU=OFF
+set KUNLUNXIN_XPU_SDK_ROOT=""
 set BUILD_TYPE=Release
 set CMAKE_GENERATOR=Visual Studio 14 2015
 set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
-set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
-set BAIDU_XPU_SDK_ROOT=""
+set THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+set THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -60,12 +60,10 @@ if /I "%1"=="with_extra" (
     set WITH_OPENCL=ON
 ) else if /I  "%1"=="without_avx" (
     set WITH_AVX=OFF
-) else if /I  "%1"=="with_baidu_xpu" (
-    set WITH_BAIDU_XPU=ON
-) else if /I  "%1"=="with_baidu_xpu_xtcl" (
-    set WITH_BAIDU_XPU_XTCL=ON
-) else if /I  "%1"=="baidu_xpu_sdk_root" (
-    set BAIDU_XPU_SDK_ROOT="%2"
+) else if /I  "%1"=="with_kunlunxin_xpu" (
+    set WITH_KUNLUNXIN_XPU=ON
+) else if /I  "%1"=="kunlunxin_xpu_sdk_root" (
+    set KUNLUNXIN_XPU_SDK_ROOT="%2"
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -101,9 +99,8 @@ echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                      
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
 echo "|  WITH_AVX=%WITH_AVX%                                                                                |"
-echo "|  WITH_BAIDU_XPU=%WITH_BAIDU_XPU%                                                                    |"
-echo "|  WITH_BAIDU_XPU_XTCL=%WITH_BAIDU_XPU_XTCL%                                                          |"
-echo "|  BAIDU_XPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%                                                            |"
+echo "|  WITH_KUNLUNXIN_XPU=%WITH_KUNLUNXIN_XPU%                                                            |"
+echo "|  KUNLUNXIN_XPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%                                                    |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -175,9 +172,8 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
-            -DLITE_WITH_XPU=%WITH_BAIDU_XPU% ^
-            -DLITE_WITH_XTCL=%WITH_BAIDU_XPU_XTCL% ^
-            -DXPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%  ^
+            -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
+            -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
@@ -213,7 +209,7 @@ goto:eof
         call "%vcvarsall_dir%" x86
         set ARCH="i386"
     )
- 
+
     cmake %root_dir%  -G Ninja -DARCH=%ARCH% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
@@ -223,9 +219,8 @@ goto:eof
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
-            -DLITE_WITH_XPU=%WITH_BAIDU_XPU% ^
-            -DLITE_WITH_XTCL=%WITH_BAIDU_XPU_XTCL% ^
-            -DXPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%  ^
+            -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
+            -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
             -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
             -DTHIRD_PARTY_BUILD_TYPE=Release ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
@@ -247,36 +242,36 @@ goto:eof
 
 :prepare_thirdparty
     if  EXIST "%workspace%\third-party" (
-        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
-            echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
+        if NOT EXIST "%workspace%\%THIRDPARTY_TAR%" (
+            echo "The directory of third_party exists, %THIRDPARTY_TAR% not exists."
             git submodule update --init --recursive
             call:rm_rebuild_dir "%workspace%\third-party\glog\src\extern_glog-build"
             call:rm_rebuild_dir "%workspace%\third-party\protobuf-host\src\extern_protobuf-build"
 
         ) else (
-               echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
+               echo "The directory of third_party exists, the %THIRDPARTY_TAR% exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
         )
     ) else (
-        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
-            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz not exists."
+        if NOT EXIST "%workspace%\%THIRDPARTY_TAR%" (
+            echo "The directory of third_party not exists, the %THIRDPARTY_TAR% not exists."
             call:download_third_party
-            if EXIST "%workspace%\third-party-ea5576.tar.gz" (
-                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+            if EXIST "%workspace%\%THIRDPARTY_TAR%" (
+                !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
             ) else (
-                echo "------------Can't download the third-party-ea5576.tar.gz!------"
+                echo "------------Can't download the %THIRDPARTY_TAR%!------"
             )
         ) else (
-            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
-            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+            echo "The directory of third_party not exists, the %THIRDPARTY_TAR% exists."
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
         )
     )
 goto:eof
 
 :download_third_party
 powershell.exe (new-object System.Net.WebClient).DownloadFile('%THIRDPARTY_TAR%', ^
-'%workspace%\third-party-ea5576.tar.gz')
+'%workspace%\%THIRDPARTY_TAR%')
 goto:eof
 
 :prepare_opencl_source_code

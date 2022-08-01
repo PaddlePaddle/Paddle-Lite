@@ -14,6 +14,7 @@
 
 #include "lite/utils/cv/image2tensor.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -113,8 +114,7 @@ void gray_to_tensor(const uint8_t* src,
 
   float32x4_t vmean = vdupq_n_f32(mean_val);
   float32x4_t vscale = vdupq_n_f32(scale_val);
-#pragma omp parallel for
-  for (int i = 0; i < height; i += 1) {
+  LITE_PARALLEL_BEGIN(i, tid, height) {
     const uint8_t* din_ptr = src + i * width;
     float* ptr_h = output + i * width;
     int cnt = dim16;
@@ -236,6 +236,7 @@ void gray_to_tensor(const uint8_t* src,
       din_ptr++;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void bgr_to_tensor_chw(const uint8_t* src,
@@ -265,8 +266,7 @@ void bgr_to_tensor_chw(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-#pragma omp parallel for
-  for (int i = 0; i < height; i += 1) {
+  LITE_PARALLEL_BEGIN(i, tid, height) {
     const uint8_t* din_ptr = src + i * 3 * width;
     float* ptr_b_h = ptr_b + i * width;
     float* ptr_g_h = ptr_g + i * width;
@@ -440,6 +440,7 @@ void bgr_to_tensor_chw(const uint8_t* src,
       din_ptr++;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void bgra_to_tensor_chw(const uint8_t* src,
@@ -469,8 +470,7 @@ void bgra_to_tensor_chw(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-#pragma omp parallel for
-  for (int i = 0; i < height; i += 1) {
+  LITE_PARALLEL_BEGIN(i, tid, height) {
     const uint8_t* din_ptr = src + i * 4 * width;
     float* ptr_b_h = ptr_b + i * width;
     float* ptr_g_h = ptr_g + i * width;
@@ -540,6 +540,7 @@ void bgra_to_tensor_chw(const uint8_t* src,
       din_ptr++;  // a
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void bgr_to_tensor_hwc(const uint8_t* src,
@@ -567,8 +568,7 @@ void bgr_to_tensor_hwc(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-#pragma omp parallel for
-  for (int i = 0; i < height; i += 1) {
+  LITE_PARALLEL_BEGIN(i, tid, height) {
     const uint8_t* din_ptr = src + i * 3 * width;
     float* dout_ptr = dout + i * 3 * width;
 
@@ -639,6 +639,7 @@ void bgr_to_tensor_hwc(const uint8_t* src,
       din_ptr++;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void bgra_to_tensor_hwc(const uint8_t* src,
@@ -666,8 +667,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
   float32x4_t vbscale = vdupq_n_f32(b_scales);
   float32x4_t vgscale = vdupq_n_f32(g_scales);
   float32x4_t vrscale = vdupq_n_f32(r_scales);
-#pragma omp parallel for
-  for (int i = 0; i < height; i += 1) {
+  LITE_PARALLEL_BEGIN(i, tid, height) {
     const uint8_t* din_ptr = src + i * 4 * width;
     float* dout_ptr = dout + i * 3 * width;
 
@@ -742,6 +742,7 @@ void bgra_to_tensor_hwc(const uint8_t* src,
       // *dout_ptr++ = 255;
     }
   }
+  LITE_PARALLEL_END();
 }
 }  // namespace cv
 }  // namespace utils

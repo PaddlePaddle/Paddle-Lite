@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/fp16/activation_fp16.h"
 #include <algorithm>
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -35,8 +36,8 @@ void act_relu<float16_t>(const float16_t* din,
   int neon_loop_rem_rem = neon_loop_rem & 7;
   int stride = neon_loop_rem_cnt << 3;
   float16x8_t vzero = vdupq_n_f16(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float16_t* ptr_in_thread = din + i * nums_per_thread;
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
     for (int j = 0; j < neon_loop_cnt; j++) {
@@ -63,6 +64,7 @@ void act_relu<float16_t>(const float16_t* din,
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END()
   float16_t* out_ptr_remain = dout + threads * nums_per_thread;
   const float16_t* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -217,8 +219,8 @@ void act_prelu<float16_t>(const float16_t* din,
     for (int n = 0; n < outer_size; n++) {
       const float16_t* data_in_batch = din + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+
+      LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float16_t* data_in_c = data_in_batch + c * inner_size;
         float16_t* data_out_c = data_out_batch + c * inner_size;
 
@@ -258,14 +260,15 @@ void act_prelu<float16_t>(const float16_t* din,
           data_in_c++;
         }
       }
+      LITE_PARALLEL_END()
     }
   } else {  // mode = element
     for (int n = 0; n < outer_size; n++) {
       const float16_t* data_in_batch = din + n * stride_size;
       const float16_t* data_alpha_batch = alpha_data + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+
+      LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float16_t* data_in_c = data_in_batch + c * inner_size;
         const float16_t* data_alpha_c = data_alpha_batch + c * inner_size;
         float16_t* data_out_c = data_out_batch + c * inner_size;
@@ -312,10 +315,56 @@ void act_prelu<float16_t>(const float16_t* din,
           data_out_c++;
         }
       }
+      LITE_PARALLEL_END()
     }
   }
 }
 
+// tanh : (exp(x) - exp(-x)) / (exp(x) + exp(-x))
+template <>
+void act_tanh<float16_t>(const float16_t* din,
+                         float16_t* dout,
+                         int size,
+                         int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim8 = nums_per_thread >> 3;
+  int neon_loop_remain_dim8 = nums_per_thread - (neon_loop_cnt_dim8 << 3);
+  float16x8_t vmax_f16 = vdupq_n_f16(70.00008f);
+  float16x8_t vmin_f16 = vdupq_n_f16(-70.00008f);
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
+    const float16_t* ptr_in_thread = din + i * nums_per_thread;
+    float16_t* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim8; ++k) {
+      float16x8_t data = vld1q_f16(ptr_in_thread);
+      data = vminq_f16(data, vmax_f16);
+      data = vmaxq_f16(data, vmin_f16);
+      float16x8_t exp_plus_vec = expq_ps_f16(data);
+      float16x8_t exp_minus_vec = expq_ps_f16(vnegq_f16(data));
+      float16x8_t exp_sum_vec = vaddq_f16(exp_plus_vec, exp_minus_vec);
+      float16x8_t exp_diff_vec = vsubq_f16(exp_plus_vec, exp_minus_vec);
+      float16x8_t recip = divq_ps_f16(exp_diff_vec, exp_sum_vec);
+      vst1q_f16(ptr_out_thread, recip);
+      ptr_out_thread += 8;
+      ptr_in_thread += 8;
+    }
+    for (int j = 0; j < neon_loop_remain_dim8; ++j) {
+      ptr_out_thread[0] = (expf(ptr_in_thread[0]) - expf(-ptr_in_thread[0])) /
+                          (expf(ptr_in_thread[0]) + expf(-ptr_in_thread[0]));
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  LITE_PARALLEL_END();
+  float16_t* ptr_out = dout + threads * nums_per_thread;
+  const float16_t* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = (expf(ptr_in[0]) - expf(-ptr_in[0])) /
+                 (expf(ptr_in[0]) + expf(-ptr_in[0]));
+    ptr_in++;
+    ptr_out++;
+  }
+}
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

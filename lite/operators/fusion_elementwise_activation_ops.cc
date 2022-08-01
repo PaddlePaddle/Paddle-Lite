@@ -28,14 +28,61 @@ bool FusionElementwiseActivationOp::CheckShape() const {
 }
 
 bool FusionElementwiseActivationOp::InferShapeImpl() const {
-  size_t x_size = param_.X->dims().size();
-  size_t y_size = param_.Y->dims().size();
-  param_.Out->set_lod(param_.X->lod());
-  if (x_size >= y_size) {
-    param_.Out->Resize(param_.X->dims());
+  auto x_dim = param_.X->dims();
+  auto y_dim = param_.Y->dims();
+  if (x_dim == y_dim) {
+    param_.Out->Resize(x_dim);
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = param_.X->lod();
   } else {
-    param_.Out->Resize(param_.Y->dims());
+    size_t max_dim =
+        (x_dim.size() > y_dim.size() ? x_dim.size() : y_dim.size());
+    int axis = param_.axis;
+    axis = (axis == -1 ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                       : axis);
+    std::vector<int64_t> x_dims_array(max_dim);
+    std::vector<int64_t> y_dims_array(max_dim);
+    std::vector<int64_t> out_dims_array(max_dim);
+
+    if (x_dim.size() > y_dim.size()) {
+      for (int i = 0; i < axis; ++i) {
+        y_dims_array[i] = 1;
+      }
+      if (axis + y_dim.size() < max_dim) {
+        for (size_t i = axis + y_dim.size(); i < max_dim; ++i) {
+          y_dims_array[i] = 1;
+        }
+      }
+      x_dims_array = x_dim.Vectorize();
+      for (size_t i = 0; i < y_dim.size(); ++i) {
+        y_dims_array[i + axis] = y_dim[i];
+      }
+    } else {
+      for (int i = 0; i < axis; ++i) {
+        x_dims_array[i] = 1;
+      }
+      if (axis + x_dim.size() < max_dim) {
+        for (size_t i = axis + x_dim.size(); i < max_dim; ++i) {
+          x_dims_array[i] = 1;
+        }
+      }
+      y_dims_array = y_dim.Vectorize();
+      for (size_t i = 0; i < x_dim.size(); ++i) {
+        x_dims_array[i + axis] = x_dim[i];
+      }
+    }
+    for (size_t i = 0; i < max_dim; i++) {
+      if (x_dims_array[i] == -1 || y_dims_array[i] == -1) {
+        out_dims_array[i] = 1;
+      } else {
+        out_dims_array[i] = (std::max)(x_dims_array[i], y_dims_array[i]);
+      }
+    }
+    param_.Out->Resize(DDim(out_dims_array));
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = param_.X->lod();
   }
+
   return true;
 }
 

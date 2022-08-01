@@ -278,5 +278,9 @@ bool CLContext::IsArmMali() {
   return CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI;
 }
 
+bool CLContext::IsAppleM1() {
+  return CLRuntime::Global()->GetGpuType() == GpuType::APPLE_M1;
+}
+
 }  // namespace lite
 }  // namespace paddle

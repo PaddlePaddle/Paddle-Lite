@@ -41,48 +41,51 @@ void SequenceArithmeticCompute::Run() {
   switch (op_type) {
     case 1:  // addition: top[0] = bottom[0] + bottom[1]
       if (len1 > len2) {
-        r = xdnn::elementwise_add(
+        r = xdnn::add<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
-        r = xdnn::elementwise_add(
+        r = xdnn::add<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
         CHECK_EQ(r, 0);
       }
       break;
     case 2:  // substraction: top[0] = bottom[0] - bottom[1]
       if (len1 > len2) {
-        r = xdnn::elementwise_sub(
+        r = xdnn::sub<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
-        r = xdnn::elementwise_sub(
+        r = xdnn::sub<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
         CHECK_EQ(r, 0);
       }
       break;
     case 3:  // multiplication: top[0] = bottom[0] * bottom[1]
       if (len1 > len2) {
-        r = xdnn::elementwise_mul(
+        r = xdnn::mul<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len2);
         CHECK_EQ(r, 0);
-        r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                &top_data[len2],
-                                &bottom_data0[len2],
-                                (len1 - len2) * sizeof(float));
+        r = xdnn::copy<float>(
+            ctx.GetRawContext(),
+            reinterpret_cast<const float*>(&bottom_data0[len2]),
+            reinterpret_cast<float*>(&top_data[len2]),
+            len1 - len2);
         CHECK_EQ(r, 0);
       } else {
-        r = xdnn::elementwise_mul(
+        r = xdnn::mul<float>(
             ctx.GetRawContext(), bottom_data0, bottom_data1, top_data, len1);
         CHECK_EQ(r, 0);
       }

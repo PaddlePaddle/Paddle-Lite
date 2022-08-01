@@ -28,7 +28,7 @@ Linux x86 环境下编译适用于 ARM Linux 的库
    * - Host 环境
      - 目标硬件环境
    * - x86 Linux
-     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_hardware.html>`_\ 章节。
+     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
@@ -36,16 +36,20 @@ Linux x86 环境下编译适用于 ARM Linux 的库
 适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
 因为本教程使用 Host 环境为 x86 架构，因此下面仅介绍交叉编译 ARM Linux 方式。
 
-环境要求
+推荐环境
 ^^^^^^^^
 
-* gcc、g++、git、make、wget、python、scp
-* cmake（建议使用 3.10 或以上版本）
+* Ubuntu == 16.04
+* aarch64-xxxx-gcc、aarch64-xxxx-g++ == 5.4.0
+* python == 3.7
+* cmake >= 3.10
+* git、make、wget、scp
+
 
 环境安装命令
 ^^^^^^^^^^^^
 
- 以 Ubuntu 为例介绍安装命令。其它 Linux 发行版安装步骤类似，在此不再赘述。
+ 以 Ubuntu16.04 为例介绍安装命令。其它 Linux 发行版安装步骤类似，在此不再赘述。
  注意需要 root 用户权限执行如下命令。
 
 .. code-block:: shell
@@ -175,7 +179,7 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 
 .. include:: include/multi_device_support/intel_fpga.rst
 
-.. include:: include/multi_device_support/baidu_xpu.rst
+.. include:: include/multi_device_support/kunlunxin_xpu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_introduction.rst
 
@@ -186,3 +190,5 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_rockchip_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst

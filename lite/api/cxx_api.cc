@@ -42,6 +42,8 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
       "fake_quantize_dequantize_abs_max",
       "fake_quantize_dequantize_moving_average_abs_max",
       "fake_channel_wise_quantize_dequantize_abs_max",
+      "quantize_linear",
+      "dequantize_linear",
   };
   const std::vector<std::string> dynamic_quant_op = {"lstm", "gru"};
   bool is_quantized_model = false;
@@ -74,7 +76,6 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
@@ -175,7 +176,7 @@ lite::Tensor *Predictor::GetInput(size_t offset) {
       << "The network has " << input_names_.size() << " inputs"
       << ", the offset should be less than this.";
   auto *in_var = exec_scope_->FindVar(input_names_[offset]);
-  CHECK(in_var) << "no fatch variable " << input_names_[offset]
+  CHECK(in_var) << "no feed variable " << input_names_[offset]
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
@@ -248,7 +249,7 @@ const lite::Tensor *Predictor::GetOutput(size_t offset) const {
       << ", the offset should be less than this.";
   const std::string name = output_names_.at(offset);
   auto *out_var = exec_scope_->FindVar(name);
-  CHECK(out_var) << "no fatch variable " << name << " in exec_scope";
+  CHECK(out_var) << "no fetch variable " << name << " in exec_scope";
   return out_var->GetMutable<lite::Tensor>();
 }
 
@@ -264,7 +265,7 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 #else
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
   auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return &fetch_list.at(offset);
@@ -272,7 +273,7 @@ const lite::Tensor *Predictor::GetOutput(size_t offset) const {
 
 std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
-  CHECK(_fetch_list) << "no fatch variable in exec_scope";
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
   auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
 
   std::vector<const lite::Tensor *> outputs;
@@ -301,6 +302,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           valid_places,
           passes,
           model_type,
+          config,
           config.get_model_buffer());
   } else {
     LOG(INFO) << "Load model from file.";
@@ -309,7 +311,8 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           config.param_file(),
           valid_places,
           passes,
-          model_type);
+          model_type,
+          config);
   }
 }
 void Predictor::Build(const std::string &model_path,
@@ -318,6 +321,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
+                      const lite_api::CxxConfig &config,
                       const lite_api::CxxModelBuffer &model_buffer) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
@@ -342,12 +346,13 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, valid_places, passes);
+  Build(program_desc_, valid_places, passes, config);
 }
 
 void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                       const std::vector<Place> &valid_places,
-                      const std::vector<std::string> &passes) {
+                      const std::vector<std::string> &passes,
+                      const lite_api::CxxConfig &config) {
   program_desc_ = program_desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
@@ -363,6 +368,10 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kARM), PRECISION(kInt8)});
       }
+      if (valid_place.target == TARGET(kX86)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kX86), PRECISION(kInt8)});
+      }
     }
   }
 
@@ -376,8 +385,8 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   exec_scope_ = program.exec_scope();
 
-  program_ =
-      RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
+  program_ = RunDefaultOptimizer(
+      std::move(program), inner_places, factor, passes, config);
 
   if (program_desc->HasVersion())
     program_->set_version(program_desc->Version());
@@ -386,6 +395,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   // Verify if the ops version of current runtime program is
   // the same with that in models.
   CheckPaddleOpVersions(program_desc);
+
+  // Update the runtime program to program_desc only once
+  program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
 }
 
 void Predictor::GenRuntimeProgram() {

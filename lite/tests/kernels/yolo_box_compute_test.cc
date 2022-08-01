@@ -275,8 +275,6 @@ TEST(YoloBox, precision) {
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL));
   abs_error = 2e-2;
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else

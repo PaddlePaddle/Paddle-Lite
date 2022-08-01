@@ -23,8 +23,11 @@ __kernel void scale(__read_only image2d_t input,
   const int y = get_global_id(1);  // image_height
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  in = CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
-
+  float4 in_f32 = convert_float4(in) * scale + bias;
+  in.x = (CL_DTYPE)(in_f32.x);
+  in.y = (CL_DTYPE)(in_f32.y);
+  in.z = (CL_DTYPE)(in_f32.z);
+  in.w = (CL_DTYPE)(in_f32.w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 

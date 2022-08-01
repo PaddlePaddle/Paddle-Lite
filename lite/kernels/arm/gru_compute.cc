@@ -54,15 +54,24 @@ void GRUComputeRun(const operators::GRUParam& param,
   auto h0 = param.h0;
   auto weight = param.weight;
   auto bias = param.bias;
+
   // outputs
   auto batch_gate = param.batch_gate;
   auto batch_reset_hidden_prev = param.batch_reset_hidden_prev;
   auto batch_hidden = param.batch_hidden;
   auto hidden = param.hidden;
-
   auto hidden_dims = hidden->dims();
   int frame_size = hidden_dims[1];
   auto batch_size = input->dims()[0];
+
+  // memory
+  batch_reset_hidden_prev->Resize(hidden_dims);
+  batch_hidden->Resize(hidden_dims);
+  float* batch_gate_data = batch_gate->mutable_data<float>();
+  batch_reset_hidden_prev->mutable_data<float>();
+  batch_hidden->mutable_data<float>();
+  hidden->mutable_data<float>();
+  memset(batch_gate_data, 0, batch_gate->numel() * sizeof(float));
 
   std::vector<float> weight_scale{};
   int bit_length{};
@@ -77,7 +86,6 @@ void GRUComputeRun(const operators::GRUParam& param,
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
-  float* batch_gate_data = batch_gate->mutable_data<float>();
   if (bias) {
     auto bias_data = bias->data<float>();
     lite::arm::math::gru_add_with_bias(batch_gate_data,
@@ -104,12 +112,13 @@ void GRUComputeRun(const operators::GRUParam& param,
     gru_value.state_weight =
         const_cast<float*>(weight_data + 2 * frame_size * frame_size);
   }
+
+  Tensor ordered_h0;
+  std::vector<uint64_t> order(batch_gate->lod()[2]);
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
-    Tensor ordered_h0;
-    std::vector<uint64_t> order(batch_gate->lod()[2]);
     lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
   } else {
@@ -153,12 +162,10 @@ void GRUComputeRun(const operators::GRUParam& param,
                                                       param.origin_mode,
                                                       ctx);
     }
-
     gru_value.prev_out_value = gru_value.output_value;
   }
   lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
-  batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
 }
 
@@ -191,15 +198,22 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
   auto batch_reset_hidden_prev = param.batch_reset_hidden_prev;
   auto batch_hidden = param.batch_hidden;
   auto hidden = param.hidden;
-
   auto hidden_dims = hidden->dims();
   int frame_size = hidden_dims[1];
   auto batch_size = input->dims()[0];
 
+  // memory
+  batch_reset_hidden_prev->Resize(hidden_dims);
+  batch_hidden->Resize(hidden_dims);
+  float16_t* batch_gate_data = batch_gate->mutable_data<float16_t>();
+  batch_reset_hidden_prev->mutable_data<float16_t>();
+  batch_hidden->mutable_data<float16_t>();
+  hidden->mutable_data<float16_t>();
+  memset(batch_gate_data, 0, batch_gate->numel() * sizeof(float16_t));
+
   lite::arm::math::LoDTensor2BatchFunctor<float16_t> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
-  float16_t* batch_gate_data = batch_gate->mutable_data<float16_t>();
   if (bias) {
     auto bias_data = bias->data<float16_t>();
     lite::arm::math::fp16::gru_add_with_bias(batch_gate_data,
@@ -208,18 +222,17 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
                                              batch_size,
                                              frame_size * 3);
   }
-
   lite::arm::math::fp16::GRUMetaValue<float16_t> gru_value;
   const float16_t* weight_data = weight->data<float16_t>();
   gru_value.gate_weight = const_cast<float16_t*>(weight_data);
   gru_value.state_weight =
       const_cast<float16_t*>(weight_data + 2 * frame_size * frame_size);
+  Tensor ordered_h0;
+  std::vector<uint64_t> order(batch_gate->lod()[2]);
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
-    Tensor ordered_h0;
-    std::vector<uint64_t> order(batch_gate->lod()[2]);
     lite::arm::math::ReorderInitState<float16_t>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.mutable_data<float16_t>();
   } else {
@@ -256,7 +269,6 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
   }
   lite::arm::math::Batch2LoDTensorFunctor<float16_t> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
-  batch_hidden->mutable_data<float16_t>();
   to_seq(*batch_hidden, hidden);
 }
 #endif

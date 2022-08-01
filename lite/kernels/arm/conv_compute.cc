@@ -93,11 +93,11 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
-             no_dilation && pads_equal && !ctx.has_dot()) {
+             no_dilation && pads_equal && ks_equal && !ctx.has_dot()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal && !ctx.has_dot()) {
+             pads_equal && ks_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -118,11 +118,11 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
-             no_dilation && pads_equal && !ctx.has_dot()) {
+             no_dilation && pads_equal && ks_equal && !ctx.has_dot()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal && !ctx.has_dot()) {
+             pads_equal && ks_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -144,13 +144,13 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
   bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
-  bool conv_3x3_wino = (ic < 8) || (oc < 8);
+  bool conv_3x3_wino = (ic <= 8) || (oc <= 8);
   bool stride_less = (sw == 1) || (sw == 2);
   if (param.groups == ic && ic == oc && no_dilation && stride_less &&
       ((flag_dw_5x5 && ks_equal) || (flag_dw_3x3 && kps_equal && pads_less))) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
-             ks_equal) {
+             chin * chout < 4 * hin * win && ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
              ks_equal) {
@@ -161,6 +161,18 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
     }
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
+  }
+  // when running op python unit_test, the weight dtype is float
+  auto filter_tensor = param.filter;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);

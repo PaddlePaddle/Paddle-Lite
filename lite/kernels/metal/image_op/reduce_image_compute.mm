@@ -42,15 +42,24 @@ void ReduceImageCompute::PrepareForRun() {
 
     // use mps or not
     bool should_use_mps = false;
-    if (@available(iOS 11.3, *)) {
+    auto reduce_type_ = KernelBase::op_type();
+
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
-            should_use_mps = true;
+            if (input_buffer_->tensor_dim_[1] >= 4 && param.dim.size() == 1) should_use_mps = true;
         }
     }
-
     use_mps_ = should_use_mps;
     if (use_mps_) {
-        setup_with_mps();
+        if (reduce_type_ == ("reduce_max")) {
+            setup_with_mps<MPSNNReduceFeatureChannelsMax>();
+        } else if (reduce_type_ == ("reduce_min")) {
+            setup_with_mps<MPSNNReduceFeatureChannelsMin>();
+        } else if (reduce_type_ == ("reduce_mean")) {
+            setup_with_mps<MPSNNReduceFeatureChannelsMean>();
+        } else if (reduce_type_ == ("reduce_sum")) {
+            setup_with_mps<MPSNNReduceFeatureChannelsSum>();
+        }
     } else {
         setup_without_mps();
     }
@@ -58,8 +67,17 @@ void ReduceImageCompute::PrepareForRun() {
 
 void ReduceImageCompute::Run() {
     @autoreleasepool {
+        auto reduce_type_ = KernelBase::op_type();
         if (use_mps_) {
-            run_with_mps();
+            if (reduce_type_ == ("reduce_max")) {
+                run_with_mps<MPSNNReduceFeatureChannelsMax>();
+            } else if (reduce_type_ == ("reduce_min")) {
+                run_with_mps<MPSNNReduceFeatureChannelsMin>();
+            } else if (reduce_type_ == ("reduce_mean")) {
+                run_with_mps<MPSNNReduceFeatureChannelsMean>();
+            } else if (reduce_type_ == ("reduce_sum")) {
+                run_with_mps<MPSNNReduceFeatureChannelsSum>();
+            }
         } else {
             run_without_mps();
         }
@@ -83,14 +101,17 @@ void ReduceImageCompute::run_without_mps() {
 void ReduceImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
+    auto reduce_type_ = KernelBase::op_type();
 
     // only support reduce_max by channel
     if (param.dim.size() == 1 && param.dim[0] == 1 && param.keep_dim == true && irank == 4) {
+        function_name_ = reduce_type_ + "_c";
+    } else if (param.dim.size() == 2 && param.dim[0] == 2 && param.dim[1] == 3) {
+        function_name_ = reduce_type_ + "_hw";
     } else {
         LOG(FATAL) << "reduce: only support max by channel";
     }
 
-    function_name_ = "reduce_max_c";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
@@ -98,15 +119,15 @@ void ReduceImageCompute::setup_without_mps() {
 
 #pragma mark - MPS
 
+template <typename T>
 void ReduceImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_op_) {
-        if (@available(iOS 11.3, *)) {
-            [((__bridge MPSNNReduceFeatureChannelsMax*)mps_op_)
-                encodeToCommandBuffer:cmdbuf
-                          sourceImage:(__bridge MPSImage*)mps_input_image_
-                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
+            [((__bridge T*)mps_op_) encodeToCommandBuffer:cmdbuf
+                                              sourceImage:(__bridge MPSImage*)mps_input_image_
+                                         destinationImage:(__bridge MPSImage*)mps_output_image_];
         }
     }
     [backend commit:cmdbuf];
@@ -127,7 +148,9 @@ void ReduceImageCompute::run_with_mps() {
     }
 }
 
+template <typename T>
 void ReduceImageCompute::setup_with_mps() {
+    auto reduce_type_ = KernelBase::op_type();
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
     auto orank = output_buffer_->tensor_dim_.size();
@@ -139,9 +162,8 @@ void ReduceImageCompute::setup_with_mps() {
     }
 
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    if (@available(iOS 11.3, *)) {
-        mps_op_ = (__bridge_retained void*)[[MPSNNReduceFeatureChannelsMax alloc]
-            initWithDevice:backend.device];
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
+        mps_op_ = (__bridge_retained void*)[[T alloc] initWithDevice:backend.device];
         // MPS input and output
         auto input_c = MAX(4, static_cast<int>(input_buffer_->tensor_dim_[1]));
         mps_input_image_ =
@@ -204,6 +226,54 @@ REGISTER_LITE_KERNEL(max,
     .Finalize();
 
 REGISTER_LITE_KERNEL(reduce_max,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReduceImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_min,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReduceImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_sum,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReduceImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_mean,
     kMetal,
     kFloat,
     kMetalTexture2DArray,

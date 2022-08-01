@@ -38,16 +38,23 @@ using L3CacheSetMethod = lite_api::L3CacheSetMethod;
 
 typedef enum {
   kAPPLE = 0,
+  kX1 = 1,
+  kX2 = 2,
   kA35 = 35,
   kA53 = 53,
   kA55 = 55,
   kA57 = 57,
+  kA510 = 60,
   kA72 = 72,
   kA73 = 73,
   kA75 = 75,
   kA76 = 76,
   kA77 = 77,
   kA78 = 78,
+  kGold = 79,
+  kGold_Prime = 80,
+  kSilver = 81,
+  kA710 = 82,
   kARMArch_UNKOWN = -1
 } ARMArch;
 
@@ -65,6 +72,9 @@ class DeviceInfo {
 
   int Setup();
   bool set_a53_valid();
+  bool has_sve2();
+  bool has_sve2_f32mm();
+  bool has_sve2_i8mm();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
@@ -116,12 +126,39 @@ class DeviceInfo {
 
   inline bool has_dot() const {
 #ifdef WITH_ARM_DOTPROD
-    return dot_[active_ids_[0]];
+    std::vector<ARMArch> int8_arch = {
+        kX1, kX2, kA55, kA76, kA77, kA78, kGold, kGold_Prime, kSilver, kA710};
+    for (int i = 0; i < core_num_; ++i) {
+      auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
+      if (iter != std::end(int8_arch)) {
+        return true;
+      }
+    }
+    return false;
 #else
     return false;
 #endif
   }
-  bool has_fp16() const { return fp16_[active_ids_[0]]; }
+  bool has_fp16() const {
+    std::vector<ARMArch> fp16_arch = {kX1,
+                                      kX2,
+                                      kA55,
+                                      kA75,
+                                      kA76,
+                                      kA77,
+                                      kA78,
+                                      kGold,
+                                      kGold_Prime,
+                                      kSilver,
+                                      kA710};
+    for (int i = 0; i < core_num_; ++i) {
+      auto iter = std::find(fp16_arch.begin(), fp16_arch.end(), archs_[i]);
+      if (iter != std::end(fp16_arch)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   template <typename T>
   T* workspace_data() {
@@ -147,6 +184,9 @@ class DeviceInfo {
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
   bool has_a53_valid_;
+  bool has_sve2_;
+  bool has_sve2_i8mm_;
+  bool has_sve2_f32mm_;
 
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,

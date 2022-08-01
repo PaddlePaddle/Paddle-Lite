@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void TopkCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   DDim x_dims = param.X->dims();
   int K = param.K;
   int dim_size = x_dims.size();
@@ -47,7 +47,7 @@ void TopkCompute::Run() {
                             K);
   CHECK_EQ(r, 0);
 
-  r = xdnn::cast<int, int64_t>(
+  r = xdnn::cast_v2<int, int64_t>(
       ctx.GetRawContext(), indices_int32_device, indices_int64_device, m * K);
 
   CHECK_EQ(r, 0);

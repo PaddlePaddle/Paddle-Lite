@@ -26,10 +26,6 @@ bool Index_selectOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Out);
   CHECK_OR_FALSE(param_.dim >= static_cast<int>(-(param_.X)->dims().size()));
   CHECK_OR_FALSE(param_.dim < static_cast<int>((param_.X)->dims().size()));
-  for (auto val : param_.Index->dims().Vectorize()) {
-    CHECK_OR_FALSE(val >= 0);
-    CHECK_OR_FALSE(val < (param_.X)->dims()[param_.dim]);
-  }
   return true;
 }
 

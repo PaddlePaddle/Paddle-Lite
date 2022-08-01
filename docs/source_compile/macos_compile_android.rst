@@ -37,17 +37,27 @@ macOS 环境下编译适用于 Android 的库
      - arm64-v8a/armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL[^1] :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/support_hardware.html>`_\ 章节。
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
+[1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
 
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
-* gcc、git、make、curl、unzip、java
-* CMake（请使用 3.10 或以上版本）
-* 编译 Android: Android NDK (支持 ndk-r17c 及之后的所有 ndk 版本)
+C++ 环境
+""""""""
+* gcc、g++ == 8.2.0
+* CMake >= 3.10
+* Android NDK >= r17c
+* git、make、curl、unzip、java
+
+java 环境
+""""""""
+
+* OpenJDK == 1.8.0
+* Gradle == 4.1.2
+* Android SDK >= 21
 
 环境安装命令
 ^^^^^^^^^^^^
@@ -181,7 +191,7 @@ Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 3. 编译 Paddle-Lite Android 预测库
+   # 3. 编译 Paddle Lite Android 预测库
    ./lite/tools/build_android.sh
 
 ..

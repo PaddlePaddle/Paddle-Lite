@@ -166,6 +166,7 @@ void QuantizationParametersRemovalPass::ClearQuantInfo(
     paddle::lite::mir::Node* node) {
   if (node->IsArg()) return;
   auto op_desc = node->AsStmt().mutable_op_info();
+  VLOG(5) << "remove " << op_desc->Type() << " quant info.";
   op_desc->DeleteAttr("bit_length");
   op_desc->DeleteAttr("enable_int8");
 

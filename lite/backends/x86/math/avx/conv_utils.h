@@ -85,17 +85,17 @@ __m128 activation4_m128(__m128 input,
 float activation1_float(float input,
                         const lite_api::ActivationType act_type,
                         const operators::ActivationParam act_param);
-void packC8_with_Cleft(const float* din,
-                       float* dout,
-                       const std::vector<int>& pad,
-                       int h_in,
-                       int w_in,
-                       int channel);
+void packC8_common(const float* din,
+                   float* dout,
+                   const std::vector<int>& pad,
+                   int h_in,
+                   int w_in,
+                   int channel);
 
-void unpackC8_with_Cleft(const float* din,
-                         float* dout,
-                         int size_out_channel,
-                         int channel);
+void unpackC8_common(const float* din,
+                     float* dout,
+                     int size_out_channel,
+                     int channel);
 
 template <typename Dtype>
 void im2col(const Dtype* data_im,

@@ -39,15 +39,21 @@ if (NOT XPU_SDK_ENV)
   endif ()
 endif ()
 
-macro (prepare_xpu_sdk sdk)
-  set (xpu_${sdk}_url "${XPU_SDK_URL}/${sdk}-${XPU_SDK_ENV}.tar.gz")
-  message (STATUS "xpu_${sdk}_url: ${xpu_${sdk}_url}")
+if (NOT XPU_XDNN_URL)
+  set (XPU_XDNN_URL "${XPU_SDK_URL}/xdnn-${XPU_SDK_ENV}.tar.gz")
+endif ()
+message (STATUS "XPU_XDNN_URL: ${XPU_XDNN_URL}")
+if (NOT XPU_XRE_URL)
+  set (XPU_XRE_URL "${XPU_SDK_URL}/xre-${XPU_SDK_ENV}.tar.gz")
+endif ()
+message (STATUS "XPU_XRE_URL: ${XPU_XRE_URL}")
 
+macro (prepare_xpu_sdk sdk sdk_url)
   ExternalProject_Add (
     extern_xpu_${sdk}
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
-    DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${xpu_${sdk}_url} && tar xf ${sdk}-${XPU_SDK_ENV}.tar.gz
+    DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${sdk_url} -O ${sdk}.tar.gz && tar xf ${sdk}.tar.gz
     CONFIGURE_COMMAND       ""
     BUILD_COMMAND           ""
     UPDATE_COMMAND          ""
@@ -56,7 +62,6 @@ macro (prepare_xpu_sdk sdk)
 
   set (xpu_${sdk}_root        "${XPU_INSTALL_DIR}/xpu/${sdk}"  CACHE PATH "xpu ${sdk} include directory" FORCE)
   set (xpu_${sdk}_include_dir "${xpu_${sdk}_root}/include" CACHE PATH "xpu ${sdk} include directory" FORCE)
-
   include_directories (${xpu_${sdk}_include_dir})
 
   foreach (lib ${ARGN})
@@ -68,18 +73,10 @@ macro (prepare_xpu_sdk sdk)
 endmacro ()
 
 if (NOT XPU_SDK_ROOT)
-  prepare_xpu_sdk (xdnn xpuapi)
-  prepare_xpu_sdk (xre xpurt)
+  prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
+  prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
   set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
   set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
-
-  if (LITE_WITH_XTCL)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
-    prepare_xpu_sdk (xtcl tvm xtcl)
-    prepare_xpu_sdk (xtdk xpujitc LLVM-10)
-    set (xpu_runtime_libs xpurt LLVM-10 xpujitc CACHE INTERNAL "xpu runtime libs")
-    set (xpu_builder_libs xtcl tvm xpuapi CACHE INTERNAL "xpu builder libs")
-  endif ()
   return ()
 endif ()
 
@@ -114,43 +111,3 @@ set_property (TARGET xpurt PROPERTY IMPORTED_LOCATION ${XPURT_LIB})
 
 set (xpu_runtime_libs xpuapi xpurt CACHE INTERNAL "xpu runtime libs")
 set (xpu_builder_libs xpuapi xpurt CACHE INTERNAL "xpu builder libs")
-
-if (LITE_WITH_XTCL)
-  if (MSVC)
-    set (XTCL_LIB              "${XPU_SDK_ROOT}/XTCL/lib/xtcl.lib" CACHE FILEPATH "xtcl.lib" FORCE)
-    set (TVM_LIB               "${XPU_SDK_ROOT}/XTCL/lib/tvm.lib" CACHE FILEPATH "tvm.lib" FORCE)
-  else ()
-    set (XTCL_LIB              "${XPU_SDK_ROOT}/XTCL/shlib/libxtcl.so" CACHE FILEPATH "libxtcl.a" FORCE)
-    set (TVM_LIB               "${XPU_SDK_ROOT}/XTCL/shlib/libtvm.so" CACHE FILEPATH "libtvm.so" FORCE)
-    set (LLVM_10_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libLLVM-10.so" CACHE FILEPATH "libLLVM-10.so" FORCE)
-    set (XPUJITC_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libxpujitc.so" CACHE FILEPATH "libxpujitc.so" FORCE)
-    add_library (llvm_10 SHARED IMPORTED GLOBAL)
-    set_property (TARGET llvm_10 PROPERTY IMPORTED_LOCATION ${LLVM_10_LIB})
-    add_library(xpujitc SHARED IMPORTED GLOBAL)
-    set_property(TARGET xpujitc PROPERTY IMPORTED_LOCATION ${XPUJITC_LIB})
-  endif()
-  
-  if (MSVC)
-    add_library (xtcl STATIC IMPORTED GLOBAL)
-  else ()
-    add_library (xtcl SHARED IMPORTED GLOBAL)
-  endif ()
-  set_property (TARGET xtcl PROPERTY IMPORTED_LOCATION ${XTCL_LIB})
-  
-  if (MSVC)
-    add_library (tvm STATIC IMPORTED GLOBAL)
-  else ()
-    add_library (tvm SHARED IMPORTED GLOBAL)
-  endif ()
-  set_property (TARGET tvm PROPERTY IMPORTED_LOCATION ${TVM_LIB})
-
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
-
-  if (MSVC)
-    set (xpu_runtime_libs xtcl tvm xpuapi xpurt CACHE INTERNAL "xpu runtime libs")
-    set (xpu_builder_libs xtcl tvm xpuapi xpurt CACHE INTERNAL "xpu builder libs")
-  else ()
-    set (xpu_runtime_libs xtcl tvm xpuapi xpurt llvm_10 xpujitc CACHE INTERNAL "xpu runtime libs")
-    set (xpu_builder_libs xtcl tvm xpuapi xpurt llvm_10 xpujitc CACHE INTERNAL "xpu builder libs")
-  endif ()
-endif ()

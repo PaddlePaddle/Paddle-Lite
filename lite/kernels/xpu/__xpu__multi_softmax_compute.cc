@@ -24,22 +24,22 @@ namespace kernels {
 namespace xpu {
 
 void MultiSoftmaxCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   xpu_lod_guard_ =
       TargetWrapperXPU::MallocScratchPad(param.lod.size() * sizeof(int));
   XPU_CALL(xpu_memcpy(reinterpret_cast<int*>(xpu_lod_guard_->addr_),
                       param.lod.data(),
                       param.lod.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   query_lod = {param.lod.data(),
                static_cast<int>(param.lod.size()),
                reinterpret_cast<int*>(xpu_lod_guard_->addr_)};
 }
 
 void MultiSoftmaxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto lod = param.lod;
   CHECK(param.concat_output != nullptr);
   auto in_dim = param.input->dims();

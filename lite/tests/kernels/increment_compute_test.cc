@@ -86,7 +86,7 @@ TEST(Increment, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   abs_error = 1e-2;
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)

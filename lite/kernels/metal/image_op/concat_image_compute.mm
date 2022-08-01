@@ -184,7 +184,7 @@ REGISTER_LITE_KERNEL(concat,
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",
-        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -200,7 +200,7 @@ REGISTER_LITE_KERNEL(concat,
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",
-        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

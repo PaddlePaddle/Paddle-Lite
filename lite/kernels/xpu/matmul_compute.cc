@@ -25,13 +25,16 @@ namespace xpu {
 namespace math = paddle::lite::xpu::math;
 
 void MatMulCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* x = param.X;
   auto* y = param.Y;
   auto* out = param.Out;
 
+  if (param.enable_int8) {
+    LOG(FATAL) << "xpu don't support matmul int8 outside encoder";
+  }
   auto& x_dims = x->dims();
   auto& y_dims = y->dims();
   auto mat_dim_a = math::CreateMatrixDescriptor(
@@ -39,7 +42,7 @@ void MatMulCompute::Run() {
   auto mat_dim_b = math::CreateMatrixDescriptor(
       math::ColumnMatrixFromVector(y_dims), 0, param.transpose_Y);
 
-  if (x_dims.size() == 3 && y_dims.size() <= 2) {
+  if (x_dims.size() >= 3 && y_dims.size() <= 2) {
     if (!param.transpose_X) {
       mat_dim_a.height_ *= mat_dim_a.batch_size_;
       mat_dim_a.batch_size_ = 0;
@@ -47,7 +50,7 @@ void MatMulCompute::Run() {
       mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
       mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
     }
-  } else if (x_dims.size() <= 2 && y_dims.size() == 3) {
+  } else if (x_dims.size() <= 2 && y_dims.size() >= 3) {
     if (!param.transpose_Y) {
       mat_dim_b.height_ *= mat_dim_b.batch_size_;
       mat_dim_b.batch_size_ = 0;
@@ -86,28 +89,26 @@ void MatMulCompute::Run() {
         0.0f,                                    // beta
         nullptr,                                 // bias
         xdnn::Activation_t::LINEAR);             // act
-
   } else {
     // batch matmul
-    r = xdnn::gemm_strided_batched_int16<float, float, float>(
+    r = xdnn::fc_batched<float, float, float, int16_t>(
         ctx.GetRawContext(),                    /* context */
+        mat_dim_a.batch_size_,                  /* batch_size */
         mat_dim_a.trans_,                       /* TransA */
         mat_dim_b.trans_,                       /* TransB */
-        mat_dim_a.batch_size_,                  /* batch_size */
         mat_dim_a.height_,                      /* M */
         mat_dim_b.width_,                       /* N */
         mat_dim_a.width_,                       /* K */
         param.alpha,                            /* alpha */
         x->data<float>(),                       /* A */
-        lda,                                    /* lda */
         mat_dim_a.stride_,                      /* stride_a */
         y->data<float>(),                       /* B */
-        ldb,                                    /* ldb */
         mat_dim_b.stride_,                      /* stride_b */
         0.0f,                                   /* beta */
         out->mutable_data<float>(TARGET(kXPU)), /* C */
-        ldc,                                    /* ldc */
-        mat_dim_a.height_ * mat_dim_b.width_ /* stride_c */);
+        mat_dim_a.height_ * mat_dim_b.width_,   /* stride_c */
+        nullptr,                                /* x_maxptr */
+        nullptr /* w_maxptr */);
   }
   CHECK_EQ(r, 0);
 }

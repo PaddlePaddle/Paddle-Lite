@@ -19,6 +19,7 @@
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
 
@@ -97,8 +98,8 @@ void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float16_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -139,6 +140,7 @@ void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
       }
     }
   }
+  LITE_PARALLEL_END()
 }
 
 void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
@@ -152,8 +154,8 @@ void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float16_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -196,6 +198,7 @@ void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
       }
     }
   }
+  LITE_PARALLEL_END()
 }
 /**
  * \brief normal im2col function for gemm conv
@@ -324,7 +327,11 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float16_t* bias_ptr = new float16_t[n];
+#else
         float16_t bias_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -343,6 +350,9 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param.has_active,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         gemm_prepack_fp16(false,
                           m,
@@ -432,7 +442,11 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float16_t* bias_ptr = new float16_t[n];
+#else
         float16_t bias_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -451,6 +465,9 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param.has_active,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         gemm_prepack_fp16(false,
                           m,
@@ -503,14 +520,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
     switch (act_type) {
       case lite_api::ActivationType::kRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -538,14 +555,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
         break;
       case lite_api::ActivationType::kRelu6:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_relu6_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -573,14 +590,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
         break;
       case lite_api::ActivationType::kLeakyRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_leaky_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -613,14 +630,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
     }
   } else {
     if (stride == 1 && pad_h == 1 && pad_w == 1) {
-      if (win <= 8)
+      if (ow <= 8)
         conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
       else
         conv_depthwise_3x3s1p1_bias_noact_common_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-      if (win <= 9)
+      if (ow <= 8)
         conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
       else

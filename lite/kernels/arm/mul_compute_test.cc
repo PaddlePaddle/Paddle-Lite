@@ -77,7 +77,7 @@ TEST(mul_arm, retrive_op) {
 }
 
 TEST(mul_arm, init) {
-  MulCompute mul;
+  MulCompute<PRECISION(kFloat), PRECISION(kFloat)> mul;
   ASSERT_EQ(mul.precision(), PRECISION(kFloat));
   ASSERT_EQ(mul.target(), TARGET(kARM));
 }
@@ -105,7 +105,7 @@ TEST(mul_arm, compare_test) {
         FillData<T>(out_data, out.dims().production(), 0, 0);
         FillData<T>(ref_data, ref.dims().production(), 0, 0);
 
-        MulCompute mul;
+        MulCompute<PRECISION(kFloat), PRECISION(kFloat)> mul;
         operators::MulParam param;
 
         param.x = &x;
@@ -150,7 +150,7 @@ TEST(mul_arm, num_col_dims) {
   FillData<T>(out_data, out.dims().production());
   FillData<T>(ref_data, out.dims().production());
 
-  MulCompute mul;
+  MulCompute<PRECISION(kFloat), PRECISION(kFloat)> mul;
   operators::MulParam param;
 
   param.x = &x;

@@ -43,7 +43,7 @@ void convert_fp32_to_int8(int m,
                           float *input,
                           float scale,
                           int8_t *output,
-                          bool is_relu = false,
+                          int relu,
                           const float *bias = nullptr) {
   int tmp = 0;
   float tmpf = 0.f;
@@ -52,13 +52,16 @@ void convert_fp32_to_int8(int m,
       int offt = i * n + j;
       tmpf = input[offt];
       if (bias != nullptr) tmpf += bias[i];
-      tmpf = tmpf * scale;
+      if (relu == 1) {
+        tmpf = tmpf < 0 ? 0 : tmpf;
+      } else if (relu == 2) {
+        tmpf = tmpf < 0 ? 0 : tmpf;
+        tmpf = tmpf > 6.f ? 6.f : tmpf;
+      }
+      tmpf = tmpf / scale;
       tmpf = (tmpf >= 0.f) ? (tmpf + 0.5f) : (tmpf - 0.5f);
       tmp = static_cast<int>(tmpf);
-      if (is_relu)
-        tmp = std::min(std::max(tmp, 0), 127);
-      else
-        tmp = std::min(std::max(tmp, -127), 127);
+      tmp = std::min(std::max(tmp, -127), 127);
       output[offt] = static_cast<int8_t>(tmp);
     }
   }
@@ -134,9 +137,9 @@ bool test_gemm_s8u8s8(
 
   // Scale
   auto sa_ptr = Sa.mutable_data<float>();
-  for (int i = 0; i < m; i++) sa_ptr[i] = 64.f;
-  float Sb = 127.f;
-  float Sc = 127.f;
+  for (int i = 0; i < m; i++) sa_ptr[i] = 1 / 63.f;
+  float Sb = 1 / 127.f;
+  float Sc = 1 / 127.f;
 
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
@@ -147,12 +150,11 @@ bool test_gemm_s8u8s8(
     float ssa = sa_ptr[i];
     for (int j = 0; j < k; j++) {
       int offt = tra ? (j * m + i) : (i * k + j);
-      a_ptr_f32[offt] = (ta.data<int8_t>())[offt] * 1.f / ssa;
+      a_ptr_f32[offt] = (ta.data<int8_t>())[offt] * ssa;
     }
   }
   auto b_ptr_f32 = tb_f32.mutable_data<float>();
-  for (int i = 0; i < n * k; i++)
-    b_ptr_f32[i] = (tb.data<int8_t>())[i] * 1.f / Sb;
+  for (int i = 0; i < n * k; i++) b_ptr_f32[i] = (tb.data<int8_t>())[i] * Sb;
 
   auto c_ptr_test = tc.mutable_data<int8_t>();
   auto c_ptr_basic = tc_basic_s8.mutable_data<int8_t>();
@@ -180,6 +182,7 @@ bool test_gemm_s8u8s8(
         tra, trb, m, n, k, a_ptr_f32, lda, b_ptr_f32, ldb, c_ptr_basic_f, ldc);
     memset(c_ptr_basic_f, 0, m * n * 4);
   }
+  int relu_type = has_relu ? 2 : 0;
 
   // base_line
   for (int i = 0; i < repeat; i++) {
@@ -189,28 +192,14 @@ bool test_gemm_s8u8s8(
         tra, trb, m, n, k, a_ptr_f32, lda, b_ptr_f32, ldb, c_ptr_basic_f, ldc);
     t0.Stop();
   }
-  convert_fp32_to_int8(m, n, c_ptr_basic_f, Sc, c_ptr_basic, has_relu, bbias);
+  convert_fp32_to_int8(m, n, c_ptr_basic_f, Sc, c_ptr_basic, relu_type, bbias);
 
   // test
-  int relu_type = has_relu ? 1 : 0;
-  paddle::lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t> gemm(tra,
-                                                                    trb,
-                                                                    m,
-                                                                    n,
-                                                                    k,
-                                                                    tad,
-                                                                    tbd,
-                                                                    c_ptr_test,
-                                                                    n,
-                                                                    sa_ptr,
-                                                                    Sb,
-                                                                    Sc,
-                                                                    bbias,
-                                                                    relu_type,
-                                                                    1.f);
+  paddle::lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t> gemm(
+      tra, trb, m, n, k, tad, n, sa_ptr, Sb, Sc, bbias, relu_type, 6.f / Sc);
   for (int i = 0; i < repeat; i++) {
     t1.Start();
-    gemm.compute();
+    gemm.compute(tad, tbd, c_ptr_test);
     t1.Stop();
   }
 
@@ -272,9 +261,9 @@ bool test_gemm_s8u8f32(
 
   // Scale
   auto sa_ptr = Sa.mutable_data<float>();
-  for (int i = 0; i < m; i++) sa_ptr[i] = 64.f;
-  float Sb = 127.f;
-  float Sc = 127.f;
+  for (int i = 0; i < m; i++) sa_ptr[i] = 1 / 64.f;
+  float Sb = 1 / 127.f;
+  float Sc = 1 / 127.f;
 
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
@@ -285,12 +274,11 @@ bool test_gemm_s8u8f32(
     float ssa = sa_ptr[i];
     for (int j = 0; j < k; j++) {
       int offt = tra ? (j * m + i) : (i * k + j);
-      a_ptr_f32[offt] = (ta.data<int8_t>())[offt] * 1.f / ssa;
+      a_ptr_f32[offt] = (ta.data<int8_t>())[offt] * ssa;
     }
   }
   auto b_ptr_f32 = tb_f32.mutable_data<float>();
-  for (int i = 0; i < n * k; i++)
-    b_ptr_f32[i] = (tb.data<int8_t>())[i] * 1.f / Sb;
+  for (int i = 0; i < n * k; i++) b_ptr_f32[i] = (tb.data<int8_t>())[i] * Sb;
 
   auto c_ptr_test = tc.mutable_data<float>();
   auto c_ptr_basic_f = tc_basic_f32.mutable_data<float>();
@@ -330,24 +318,11 @@ bool test_gemm_s8u8f32(
 
   // test
   int relu_type = has_relu ? 1 : 0;
-  paddle::lite::x86::math::generate_gemm_s8u8_x86_kern<float> gemm(tra,
-                                                                   trb,
-                                                                   m,
-                                                                   n,
-                                                                   k,
-                                                                   tad,
-                                                                   tbd,
-                                                                   c_ptr_test,
-                                                                   n,
-                                                                   sa_ptr,
-                                                                   Sb,
-                                                                   Sc,
-                                                                   bbias,
-                                                                   relu_type,
-                                                                   1.f);
+  paddle::lite::x86::math::generate_gemm_s8u8_x86_kern<float> gemm(
+      tra, trb, m, n, k, tad, n, sa_ptr, Sb, Sc, bbias, relu_type, 1.f);
   for (int i = 0; i < repeat; i++) {
     t1.Start();
-    gemm.compute();
+    gemm.compute(tad, tbd, c_ptr_test);
     t1.Stop();
   }
 
@@ -397,7 +372,8 @@ TEST(TestX86LiteGemmInt8, gemm_s8u8_compute) {
             for (auto &bias : {true, false}) {
               for (auto &relu : {true, false}) {
                 auto flag = test_gemm_s8u8s8(ta, tb, mm, nn, kk, bias, relu);
-                if (!flag) LOG(FATAL) << "precision check failed (diff > 1)!";
+                if (!flag)
+                  LOG(FATAL) << "int8 precision check failed (diff > 1)!";
               }
             }
           }
@@ -426,7 +402,8 @@ TEST(TestX86LiteGemmInt8f32, gemm_s8u8f32_compute) {
             for (auto &bias : {true, false}) {
               for (auto &relu : {true, false}) {
                 auto flag = test_gemm_s8u8f32(ta, tb, mm, nn, kk, bias, relu);
-                if (!flag) LOG(FATAL) << "precision check failed (diff > 0.1)!";
+                if (!flag)
+                  LOG(FATAL) << "float precision check failed (diff > 0.001)!";
               }
             }
           }

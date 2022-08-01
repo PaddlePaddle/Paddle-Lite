@@ -80,12 +80,11 @@ TEST(Pow, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-1;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-#elif LITE_WITH_HUAWEI_ASCEND_NPU
-  abs_error = 1e-1;
-  place = TARGET(kHuaweiAscendNPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)

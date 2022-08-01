@@ -29,7 +29,11 @@ class SplitTester : public arena::TestCase {
   std::string axis_tensor_;
   std::vector<std::string> sections_tensor_list_;
   DDim x_dims_;
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  int axis_ = 1;
+#else
   int axis_ = 0;
+#endif
   int num_ = 1;
   std::vector<int> sections_;
 
@@ -206,6 +210,11 @@ void TestSplitAxis(Place place,
           axis < -static_cast<int>(x_shape.size())) {
         continue;
       }
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+      if (x_shape.size() == 1 || axis == 0 || axis + x_shape.size() == 0) {
+        continue;
+      }
+#endif
       TestSplit<T>(place, abs_error, alias, DDim(x_shape), axis);
     }
   }
@@ -251,12 +260,50 @@ void TestSplitSectionsTensorList(Place place,
 }
 
 TEST(Split_test, precision) {
-  float abs_error = 2e-5;
+  float abs_error;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
+  abs_error = 2e-5;
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-5;
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);
@@ -266,15 +313,6 @@ TEST(Split_test, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
-  TestSplitBase<float>(place, abs_error);
-  TestSplitBase<int>(place, abs_error);
-  TestSplitBase<int64_t>(place, abs_error);
-  TestSplitAxis(place, abs_error);
-  TestSplitNum(place, abs_error);
-  TestSplitSections(place, abs_error);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
   abs_error = 1e-5;

@@ -33,6 +33,8 @@ WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -44,11 +46,10 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+WITH_NODE_RAW_FS=OFF
 # min android api level
 MIN_ANDROID_API_LEVEL_ARMV7=16
 MIN_ANDROID_API_LEVEL_ARMV8=21
@@ -56,7 +57,9 @@ MIN_ANDROID_API_LEVEL_ARMV8=21
 ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -100,13 +103,13 @@ function prepare_opencl_source_code {
 }
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -142,6 +145,33 @@ function build_opt {
     make opt -j$NUM_PROC
 }
 
+function build_opt_wasm {
+    cd $workspace
+    prepare_thirdparty
+    cd third-party/protobuf-host
+    git apply $workspace/cmake/protobuf-host-patch || true
+    cd $workspace
+    mkdir -p build-protoc
+    cd build-protoc
+    cmake -Dprotobuf_BUILD_TESTS=OFF ../third-party/protobuf-host/cmake
+    make protoc -j$NUM_PROC
+    cd ..
+    mkdir -p build.opt.wasm
+    cd build.opt.wasm
+    emcmake cmake .. -DWITH_LITE=ON \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF \
+      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_OPENMP=OFF \
+      -DPROTOBUF_PROTOC_EXECUTABLE=`pwd`/../build-protoc/protoc \
+      -DWITH_NODE_RAW_FS=$1
+    emmake make opt -j$NUM_PROC
+    cd ../third-party/protobuf-host
+    git reset --hard HEAD
+}
+
 function make_tiny_publish_so {
   local os=$1
   local abi=$2
@@ -152,6 +182,14 @@ function make_tiny_publish_so {
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ ! -d third-party ]; then
     git checkout third-party
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv8_sve2"
   fi
 
   if [ -d $build_dir ]
@@ -197,6 +235,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DLITE_THREAD_POOL=$BUILD_THREAD_POOL \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -262,6 +301,14 @@ function make_full_publish_so {
 
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
 
   if [ -d $build_directory ]
   then
@@ -310,6 +357,7 @@ function make_full_publish_so {
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -338,9 +386,22 @@ function make_all_tests {
   prepare_thirdparty
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  if [ $4 == "benchmark" ]; then
+    set_benchmark_options
+    build_directory=$build_directory".benchmark"
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
   mkdir -p $build_directory
 
@@ -348,10 +409,6 @@ function make_all_tests {
   if [ ${os} == "android" ]; then
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
-  fi
-
-  if [ $4 == "benchmark" ]; then
-    set_benchmark_options
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -378,6 +435,7 @@ function make_all_tests {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -475,11 +533,6 @@ function make_x86 {
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.x86
 
-  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=g++ # Huawei Ascend NPU need g++
-    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
-  fi
-
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -524,8 +577,6 @@ function make_x86 {
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DXPU_SDK_URL=$XPU_SDK_URL \
             -DXPU_SDK_ENV=$XPU_SDK_ENV \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -547,11 +598,6 @@ function make_x86_tests {
       # Linux. Otherwise opencl is not supported on Linux.
       WITH_OPENCL=OFF
     fi
-  fi
-
-  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=g++ # Huawei Ascend NPU need g++
-    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
 
   if [ ${WITH_OPENCL} == "ON" ]; then
@@ -598,8 +644,6 @@ function make_x86_tests {
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DXPU_SDK_URL=$XPU_SDK_URL \
             -DXPU_SDK_ENV=$XPU_SDK_ENV \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Debug \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -646,6 +690,8 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -771,6 +817,10 @@ function main {
                 BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
+            --build_arm8_sve2=*)
+                 WITH_ARM8_SVE2="${i#*=}"
+                 shift
+                 ;;
             --build_arm82_int8_sdot=*)
                 BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
@@ -834,16 +884,12 @@ function main {
                 RKNPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
-            --with_huawei_ascend_npu=*)
-                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_ascend_npu_ddk_root=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+            --with_node_raw_fs=*)
+                WITH_NODE_RAW_FS="${i#*=}"
                 shift
                 ;;
             tiny_publish)
@@ -868,6 +914,10 @@ function main {
                 ;;
             build_optimize_tool)
                 build_opt
+                shift
+                ;;
+            build_optimize_tool_wasm)
+                build_opt_wasm $WITH_NODE_RAW_FS
                 shift
                 ;;
             opencl)

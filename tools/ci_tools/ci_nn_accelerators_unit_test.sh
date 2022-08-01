@@ -6,7 +6,9 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -35,26 +37,45 @@ REMOTE_DEVICE_TYPE=0
 REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 # Work directory of the remote devices for running the unit tests
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
-# Xpu sdk option
-XPU_SDK_URL=""
-XPU_SDK_ENV=""
-XPU_SDK_ROOT=""
-
+# Kunlunxin XPU options
+KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_SDK_ENV=""
+KUNLUNXIN_XPU_SDK_ROOT=""
+# TIM-VX options
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
+# Huawei Ascend NPU options
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=""
+# Kunlunxin XTCL options
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
+NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
+# bdcentos_x86_64, ubuntu_x86_64 or kylin_aarch64
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
+# Nvidia TensorRT options
+NNADAPTER_NVIDIA_CUDA_SDK_ROOT="/usr/local/cuda"
+NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="/usr/local/tensorrt"
+# Intel OpenVINO options
+NNADAPTER_INTEL_OPENVINO_SDK_ROOT="/opt/intel/openvino_2022"
+# Qualcomm QNN options
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=""
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
 if [ ${os_name} == "Darwin" ]; then
     ulimit -n 1024
 fi
 
-function prepare_thirdparty() {
+function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -253,33 +274,36 @@ function run_unit_test_on_remote_device() {
     $remote_device_run $remote_device_name shell "rm -f $remote_device_work_dir/$target_name"
     $remote_device_run $remote_device_name push "$target_path" "$remote_device_work_dir"
 
-    local command_line="./$target_name"
+    local test_cmd_line="./$target_name"
+    local clean_cmd_line="rm -rf ./$target_name"
     # Copy the model files to the remote device
     if [[ -n "$model_dir" ]]; then
         local model_name=$(basename $model_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$model_name"
         $remote_device_run $remote_device_name push "$model_dir" "$remote_device_work_dir"
-        command_line="$command_line --model_dir ./$model_name"
+        test_cmd_line="$test_cmd_line --model_dir ./$model_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$model_name"
     fi
 
     # Copy the test data files to the remote device
     if [[ -n "$data_dir" ]]; then
         local data_name=$(basename $data_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$data_name"
         $remote_device_run $remote_device_name push "$data_dir" "$remote_device_work_dir"
-        command_line="$command_line --data_dir ./$data_name"
+        test_cmd_line="$test_cmd_line --data_dir ./$data_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$data_name"
     fi
 
     # Copy the config files to the remote device
     if [[ -n "$config_dir" ]]; then
         local config_name=$(basename $config_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$config_name"
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
-        command_line="$command_line --config_dir ./$config_name"
+        test_cmd_line="$test_cmd_line --config_dir ./$config_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$config_name"
     fi
 
-    # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    # Run the test on the remote device
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $test_cmd_line"
+    # Clean the resources on the remote device, such as model and test data
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; $clean_cmd_line"
 }
 
 function build_and_test_on_remote_device() {
@@ -405,12 +429,10 @@ function android_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -466,12 +488,10 @@ function armlinux_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -481,6 +501,69 @@ function armlinux_cpu_build_target() {
 
 function armlinux_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
+# Built-in Device
+function builtin_device_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+}
+
+function builtin_device_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function builtin_device_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE builtin_device_build_target builtin_device_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # Huawei Kirin NPU
@@ -554,12 +637,10 @@ function huawei_kirin_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -584,18 +665,17 @@ function huawei_ascend_npu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
-        sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
+        sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT
+        sdk_version=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
-            with_light_weight_framework=OFF
         elif [ "${arch}" == "armv8" ]; then
             with_arm=ON
             with_x86=OFF
             arm_arch=armv8
             arm_target_os=armlinux
             toolchain=gcc
-            with_light_weight_framework=ON
         else
             echo "$arch isn't supported by Ascend NPU DDK!"
             exit 1
@@ -607,8 +687,6 @@ function huawei_ascend_npu_build_and_test() {
             -DARM_TARGET_ARCH_ABI=$arm_arch \
             -DARM_TARGET_OS=$arm_target_os \
             -DARM_TARGET_LANG=$toolchain \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
-            -DWITH_LITE=ON \
             -DWITH_PYTHON=OFF \
             -DWITH_TESTING=ON \
             -DWITH_GPU=OFF \
@@ -618,6 +696,7 @@ function huawei_ascend_npu_build_and_test() {
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
             -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="$sdk_version" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -627,7 +706,7 @@ function huawei_ascend_npu_build_and_test() {
         local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
         export PYTHONPATH="$PYTHONPATH:$sdk_root_dir/fwkacllib/python/site-packages:$sdk_root_dir/acllib/python/site-packages:$sdk_root_dir/toolkit/python/site-packages:$sdk_root_dir/atc/python/site-packages:$sdk_root_dir/pyACL/python/site-packages/acl"
         export PATH="$PATH:$sdk_root_dir/atc/ccec_compiler/bin:$sdk_root_dir/acllib/bin:$sdk_root_dir/atc/bin"
@@ -636,6 +715,218 @@ function huawei_ascend_npu_build_and_test() {
         export TOOLCHAIN_HOME="$sdk_root_dir/toolkit"
         export ASCEND_SLOG_PRINT_TO_STDOUT=0
         export ASCEND_GLOBAL_LOG_LEVEL=1
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
+# Qualcomm QNN
+function qualcomm_qnn_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        sdk_root_dir=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+            toolchain=clang
+        else
+            echo "$arch isn't supported by Qualcomm QNN DDK!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_QUALCOMM_QNN=ON \
+            -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn.so)
+        local nnadapter_qnn_cpu_custom_op_package_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn_cpu_custom_op_package.so)
+        local nnadapter_qnn_htp_custom_op_package_path=$(find $BUILD_DIR/lite -name libqualcomm_qnn_htp_custom_op_package.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        local nnadapter_qnn_cpu_custom_op_package_dir=${nnadapter_qnn_cpu_custom_op_package_path%/*}
+        local nnadapter_qnn_htp_custom_op_package_dir=${nnadapter_qnn_htp_custom_op_package_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir:$nnadapter_qnn_cpu_custom_op_package_dir:$nnadapter_qnn_htp_custom_op_package_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
+# Nvidia TensorRT 
+function nvidia_tensorrt_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+        elif [ "${arch}" == "armv8" ]; then
+            with_arm=ON
+            with_x86=OFF
+            arm_arch=armv8
+            arm_target_os=armlinux
+            toolchain=gcc
+        else
+            echo "$arch isn't supported by Nvidia TensorRT DDK!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_NVIDIA_TENSORRT=ON \
+            -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT \
+            -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libnvidia_tensorrt.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
+# Intel OpenVINO 
+function intel_openvino_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+        else
+            echo "$arch isn't supported by Intel OpenVINO!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_INTEL_OPENVINO=ON \
+            -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libintel_openvino.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
         export GLOG_v=$UNIT_TEST_LOG_LEVEL
         local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
         for test_name in $(cat $TESTS_FILE); do
@@ -724,12 +1015,10 @@ function rockchip_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -812,12 +1101,10 @@ function mediatek_apu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -888,12 +1175,10 @@ function imagination_nna_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -971,12 +1256,10 @@ function amlogic_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -991,13 +1274,211 @@ function amlogic_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE amlogic_npu_build_target amlogic_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./amlnpu_ddk)"
 }
 
-# Baidu XPU
-function baidu_xpu_build_and_test() {
-    local with_xtcl=$1
-    if [[ -z "$with_xtcl" ]]; then
-        with_xtcl=OFF
+# Verisilicon TIM-VX
+function verisilicon_timvx_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
     fi
 
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime, device HAL and TIM-VX libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libverisilicon_timvx.so)
+    local verisilicon_timvx_lib_path=$(find $BUILD_DIR/lite -name libtim-vx.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$verisilicon_timvx_lib_path" "$remote_device_work_dir"
+}
+
+function verisilicon_timvx_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_VERISILICON_TIMVX=ON \
+        -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function verisilicon_timvx_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE verisilicon_timvx_build_target verisilicon_timvx_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
+# Cambricon MLU
+function cambricon_mlu_build_and_test() {
+    local sdk_root_dir="/usr/local/neuware"
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DWITH_MKL=ON \
+        -DWITH_PYTHON=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_ARM_DOTPROD=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=OFF \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_CAMBRICON_MLU=ON \
+        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir" \
+        -DCMAKE_BUILD_TYPE=Release
+
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/neuware/lib64"
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+    local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_matched=0
+        for unit_test_check_item in ${unit_test_check_items[@]}; do
+            if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                echo "$test_name on the checklist."
+                is_matched=1
+                break
+            fi
+        done
+        # black list
+        if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+            continue
+        fi
+        # white list
+        if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+}
+
+# Kunlunxin XTCL
+function kunlunxin_xtcl_build_and_test() {
+    # Build and run all of unittests and model tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    local archs=(${ARCH_LIST//,/ })
+    for arch in ${archs[@]}; do
+        if [ "${arch}" == "x86" ]; then
+            with_x86=ON
+            with_arm=OFF
+        elif [ "${arch}" == "armv8" ]; then
+            with_arm=ON
+            with_x86=OFF
+            arm_arch=armv8
+            arm_target_os=armlinux
+            toolchain=gcc
+        else
+            echo "$arch isn't supported by Kunlunxin XTCL!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_NNADAPTER=ON \
+            -DNNADAPTER_WITH_KUNLUNXIN_XTCL=ON \
+            -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
+            -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
+            -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libkunlunxin_xtcl.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+        export GLOG_v=$UNIT_TEST_LOG_LEVEL
+        local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+        for test_name in $(cat $TESTS_FILE); do
+            local is_matched=0
+            for unit_test_check_item in ${unit_test_check_items[@]}; do
+                if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                    echo "$test_name on the checklist."
+                    is_matched=1
+                    break
+                fi
+            done
+            # black list
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+                continue
+            fi
+            # white list
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+                continue
+            fi
+            ctest -V -R ^$test_name$
+        done
+        cd - >/dev/null
+    done
+}
+
+# Kunlunxin XPU
+function kunlunxin_xpu_build_and_test() {
     # Build and run all of unittests and model tests
     rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR
@@ -1005,8 +1486,6 @@ function baidu_xpu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
 
     cmake .. \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \
@@ -1017,10 +1496,9 @@ function baidu_xpu_build_and_test() {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
         -DLITE_WITH_LTO=OFF \
-        -DXPU_SDK_URL=$XPU_SDK_URL \
-        -DXPU_SDK_ENV=$XPU_SDK_ENV \
-        -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-        -DLITE_WITH_XTCL=$with_xtcl
+        -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+        -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
+        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -1047,6 +1525,138 @@ function baidu_xpu_build_and_test() {
         fi
         ctest -V -R ^$test_name$
     done
+}
+
+# Android NNAPI
+function android_nnapi_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libandroid_nnapi.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
+}
+
+function android_nnapi_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_ANDROID_NNAPI=ON \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function android_nnapi_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE android_nnapi_build_target android_nnapi_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
+# Google XNNPACK
+function google_xnnpack_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libgoogle_xnnpack.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+}
+
+function google_xnnpack_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_GOOGLE_XNNPACK=ON \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function google_xnnpack_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE google_xnnpack_build_target google_xnnpack_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 function main() {
@@ -1089,16 +1699,68 @@ function main() {
             REMOTE_DEVICE_WORK_DIR="${i#*=}"
             shift
             ;;
-        --xpu_sdk_url=*)
-            XPU_SDK_URL="${i#*=}"
+        --kunlunxin_xpu_sdk_url=*)
+            KUNLUNXIN_XPU_SDK_URL="${i#*=}"
             shift
             ;;
-        --xpu_sdk_env=*)
-            XPU_SDK_ENV="${i#*=}"
+        --kunlunxin_xpu_sdk_env=*)
+            KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
             shift
             ;;
-        --xpu_sdk_root=*)
-            XPU_SDK_ROOT="${i#*=}"
+        --kunlunxin_xpu_sdk_root=*)
+            KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_src_git_tag=*)
+            NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_root=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_version=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
+            shift
+            ;;
+        --nnadapter_kunlunxin_xtcl_sdk_root=*)
+            NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_kunlunxin_xtcl_sdk_url=*)
+            NNADAPTER_KUNLUNXIN_XTCL_SDK_URL="${i#*=}"
+            shift
+            ;;
+        --nnadapter_kunlunxin_xtcl_sdk_env=*)
+            NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV="${i#*=}"
+            shift
+            ;;
+        --nnadapter_nvidia_cuda_sdk_root=*)
+            NNADAPTER_NVIDIA_CUDA_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_nvidia_tensorrt_sdk_root=*)
+            NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_intel_openvino_sdk_root=*)
+            NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_qualcomm_qnn_sdk_root=*)
+            NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_qualcomm_hexagon_sdk_root=*)
+            NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
             shift
             ;;
         android_cpu_build_and_test)
@@ -1109,12 +1771,20 @@ function main() {
             armlinux_cpu_build_and_test
             shift
             ;;
+        builtin_device_build_and_test)
+            builtin_device_build_and_test
+            shift
+            ;;
         huawei_kirin_npu_build_and_test)
             huawei_kirin_npu_build_and_test
             shift
             ;;
         huawei_ascend_npu_build_and_test)
             huawei_ascend_npu_build_and_test
+            shift
+            ;;
+        qualcomm_qnn_build_and_test)
+            qualcomm_qnn_build_and_test
             shift
             ;;
         rockchip_npu_build_and_test)
@@ -1133,12 +1803,36 @@ function main() {
             amlogic_npu_build_and_test
             shift
             ;;
-        baidu_xpu_disable_xtcl_build_and_test)
-            baidu_xpu_build_and_test OFF
+        verisilicon_timvx_build_and_test)
+            verisilicon_timvx_build_and_test
             shift
             ;;
-        baidu_xpu_enable_xtcl_build_and_test)
-            baidu_xpu_build_and_test ON
+        cambricon_mlu_build_and_test)
+            cambricon_mlu_build_and_test
+            shift
+            ;;
+        kunlunxin_xtcl_build_and_test)
+            kunlunxin_xtcl_build_and_test
+            shift
+            ;;
+        kunlunxin_xpu_build_and_test)
+            kunlunxin_xpu_build_and_test
+            shift
+            ;;
+        android_nnapi_build_and_test)
+            android_nnapi_build_and_test
+            shift
+            ;;
+        nvidia_tensorrt_build_and_test)
+            nvidia_tensorrt_build_and_test
+            shift
+            ;;
+        google_xnnpack_build_and_test)
+            google_xnnpack_build_and_test
+            shift
+            ;;
+        intel_openvino_build_and_test)
+            intel_openvino_build_and_test
             shift
             ;;
         *)

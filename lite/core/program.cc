@@ -87,6 +87,18 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
+  // Move the persistable var from exec scope to the root scope
+  auto root_scope = scope->MutableParent();
+  if (tensor->persistable() && root_scope != scope &&
+      !root_scope->FindLocalVar(var_name)) {
+    // Find or create new var in root scope
+    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+    if (root_tensor != tensor) {
+      root_tensor->CopyDataFrom(*tensor);
+      scope->DeleteLocalVar(var_name);
+    }
+  }
+
   if (var_name != "feed" && var_name != "fetch") {
     var->SetShape(tensor->dims().data());
     auto precision = tensor->precision();
@@ -260,16 +272,6 @@ RuntimeProgram::RuntimeProgram(
     Scope* exec_scope,
     int block_idx)
     : exec_scope_(exec_scope) {
-#ifdef LITE_WITH_OPENCL
-  bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
-                      paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
-                      CLRuntime::Global()->OpenCLAvaliableForDevice();
-  using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
-  if (opencl_valid) {
-    unique_opencl_ctx->As<OpenCLContext>().InitOnce();
-  }
-#endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size) << "No block found!";
@@ -377,41 +379,6 @@ RuntimeProgram::RuntimeProgram(
         LOG(WARNING) << "No kernels found for " << op_type;
       }
     }
-#ifdef LITE_WITH_OPENCL
-    if (kernel->target() == TARGET(kOpenCL)) {
-      if (opencl_valid) {
-        std::unique_ptr<KernelContext> ctx(new KernelContext());
-        (*unique_opencl_ctx)
-            .As<OpenCLContext>()
-            .CopySharedTo(&ctx->As<OpenCLContext>());
-        kernel->SetContext(std::move(ctx));
-      } else {
-        // if gpu not support , fatal when user init gpu model.
-        LOG(FATAL) << "opencl_valid:" << opencl_valid;
-      }
-    } else {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#elif LITE_WITH_METAL
-    if (kernel->target() == TARGET(kMetal)) {
-      if (!metal_ctx_) {
-        metal_ctx_ = std::make_unique<KernelContext>();
-        (*metal_ctx_).As<MTLContext>().InitOnce();
-      }
-      std::unique_ptr<KernelContext> ctx(new KernelContext());
-      (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
-      kernel->SetContext(std::move(ctx));
-    } else {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#else
-    if (kernel != nullptr) {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#endif
     instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }
   Init();
@@ -624,8 +591,7 @@ void Program::PrepareWorkspace(
 #if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       }
 #endif
-
-      // Create tensors or wights from variable description.
+      // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
@@ -648,9 +614,12 @@ void Program::PrepareWorkspace(
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
           tensor->set_precision(var_data_type);
+          tensor->set_persistable(var_desc->Persistable());
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+          auto* tensor_array = var->GetMutable<std::vector<lite::Tensor>>();
+          tensor_array->resize(0);
         } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
           var->GetMutable<std::vector<lite::Scope*>>();
         }

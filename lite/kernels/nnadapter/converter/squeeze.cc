@@ -35,8 +35,13 @@ int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
   }
   // Output
   auto out_name = op->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
   // Add squeeze operation
-  converter->AddSqueezeOperation(input_operand, axes, out_name);
+  converter->AddSqueezeOperation(input_operand, axes, out_name, out_scales);
   return NO_ERROR;
 }
 

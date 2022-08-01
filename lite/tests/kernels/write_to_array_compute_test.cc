@@ -84,7 +84,7 @@ void TestWriteToArray(Place place, float abs_error) {
 TEST(WriteToArray, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);

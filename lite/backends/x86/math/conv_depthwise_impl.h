@@ -79,6 +79,11 @@ void conv_depthwise_5x5s2(const float* din,
                           int pad,
                           bool flag_bias,
                           const operators::ActivationParam act_param);
+void conv_depthwise_3x3_pack(const operators::ConvParam& param,
+                             lite::Tensor* input_padding_,
+                             lite::Tensor* input_pack_,
+                             lite::Tensor* filter_pack_,
+                             lite::Tensor* output_pack_);
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

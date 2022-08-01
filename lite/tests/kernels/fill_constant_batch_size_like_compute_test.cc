@@ -132,7 +132,25 @@ TEST(fill_constant_batch_size_like, precision) {
   LOG(INFO) << "test fill_constant_batch_size_like op";
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+  TestFillConstantBatchSizeLike(place, abs_error);
+  TestFillConstantBatchSizeLikeValue(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestFillConstantBatchSizeLike(place, abs_error);
+  TestFillConstantBatchSizeLikeValue(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-1;
+  TestFillConstantBatchSizeLike(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

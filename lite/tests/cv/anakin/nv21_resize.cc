@@ -220,7 +220,9 @@ void resize_one_channel(const uint8_t* src,
       rows1p += 8;
     }
 #else
-#pragma omp parallel for
+#pragma omp parallel for  // TODO(chenjiaoAngel): asm is not right , 1 only use
+    // rows0p; 2 can
+    // not parallel because address(rows0p) depend
     if (cnt > 0) {
       asm volatile(
           "mov        r4, #2          \n"
@@ -274,7 +276,7 @@ void resize_one_channel(const uint8_t* src,
           :
           : "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12");
     }
-#endif  // __aarch64__
+#endif                    // __aarch64__
     for (; remain; --remain) {
       //             D[x] = (rows0[x]*b0 + rows1[x]*b1) >>
       //             INTER_RESIZE_COEF_BITS;

@@ -15,22 +15,32 @@
 #include "lite/core/optimizer/mir/fusion/inplace_fuser.h"
 #include <memory>
 #include <vector>
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
 
-void InplaceFuser::BuildPattern() { OpNode("inplace", type_); }
+void InplaceFuser::BuildPattern() {
+  auto* input = VarNode("input")
+                    ->assert_is_op_input(type_, "X")
+                    ->assert_only_one_output()
+                    ->assert_var_not_persistable()
+                    ->AsInput();
+
+  auto* op_node = OpNode("inplace", type_)->assert_is_op(type_);
+
+  auto* output = VarNode("output")
+                     ->assert_is_op_output(type_, "Out")
+                     ->assert_only_one_output()
+                     ->AsOutput();
+
+  *input >> *op_node >> *output;
+}
 
 void InplaceFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto out_var_nodes = matched.at("inplace")->outlinks;
   bool inplace = true;
-  for (auto& out_var_node : out_var_nodes) {
-    if (out_var_node->outlinks.size() > 1) {
-      inplace = false;
-    }
-  }
   auto* stmt = matched.at("inplace")->stmt();
   auto op = stmt->op();
   cpp::OpDesc* op_desc = op->mutable_op_info();

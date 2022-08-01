@@ -46,18 +46,26 @@ void TopkV2Compute::Run() {
   int out_sum_size = k * inner_size;
 
   for (int i = 0; i < outer_size; i++) {
-    int glb_in_off = i * sum_size;
-    int glb_out_off = i * out_sum_size;
-    std::vector<std::pair<float, int>> vec;
-    for (int j = 0; j < axis_size; j++) {
-      vec.push_back(std::make_pair(x_data[glb_in_off + j * inner_size], j));
-    }
-    std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
-    for (int j = 0; j < k; j++) {
-      for (int k = 0; k < inner_size; k++) {
-        int cur_off = glb_in_off + vec[j].second * inner_size + k;
-        out_val[glb_out_off + j * inner_size + k] = x_data[cur_off];
-        out_ind[glb_out_off + j * inner_size + k] = vec[j].second;
+    for (int tmp_j = 0; tmp_j < inner_size; tmp_j++) {
+      // we need sort outer_size * inner_size times
+      // and every times we need sort `axis_size` float
+
+      // we should start from here and pick
+      // `axis_size` float strided by inner_size
+      int glb_in_off = i * sum_size + tmp_j;
+      std::vector<std::pair<float, int>> vec;
+      for (int j = 0; j < axis_size; j++) {
+        vec.push_back(std::make_pair(x_data[glb_in_off + j * inner_size], j));
+      }
+      std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
+
+      // we should start from here and put
+      // `k` float from here  strided by inner_size
+      int glb_out_off = i * out_sum_size + tmp_j;
+
+      for (int j = 0; j < k; j++) {
+        out_val[glb_out_off + j * inner_size] = vec[j].first;
+        out_ind[glb_out_off + j * inner_size] = vec[j].second;
       }
     }
   }
@@ -75,7 +83,7 @@ REGISTER_LITE_KERNEL(top_k_v2,
                      paddle::lite::kernels::host::TopkV2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Indices",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

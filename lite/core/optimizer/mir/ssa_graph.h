@@ -30,6 +30,17 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+struct NodeCompV2 {
+  bool operator()(mir::Node *const &node1, mir::Node *const &node2) const {
+    return node1 < node2;
+  }
+};
+struct NodeComp {
+  bool operator()(mir::Node *const &node1, mir::Node *const &node2) const {
+    return node1->get_id() < node2->get_id();
+  }
+};
+
 // An Graph for MIR. It is built from a list of Op and a scope.
 class GraphBase {};
 
@@ -80,6 +91,8 @@ class SSAGraph : GraphBase {
 
   int blockIdx() { return block_idx_; }
 
+  std::string dump();
+
  private:
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.
@@ -95,21 +108,26 @@ class SSAGraph : GraphBase {
   }
 
   // Build operator inlink edge table.
-  std::map<mir::Node *, std::set<mir::Node *>> BuildOperationAdjList();
+  std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+  BuildOperationAdjList();
 
   // Build node inlink edge table.
-  std::map<mir::Node *, std::set<mir::Node *>> BuildNodeAdjList();
+  std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+  BuildNodeAdjList();
 
-  void SortHelper(const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
-                  mir::Node *node,
-                  std::set<mir::Node *> *visited,
-                  std::vector<mir::Node *> *ret);
+  void SortHelper(
+      const std::map<mir::Node *, std::set<mir::Node *, NodeComp>, NodeComp>
+          &adj_list,
+      mir::Node *node,
+      std::set<mir::Node *, NodeComp> *visited,
+      std::vector<mir::Node *> *ret);
 
  private:
   std::list<mir::Node> node_storage_;
   std::map<std::string, mir::Node *> arguments_;
   std::vector<Place> valid_places_;
   int block_idx_ = kRootBlockIdx;
+  int num_node_created_ = 0;
 };
 
 // Remove the link between a -> b.

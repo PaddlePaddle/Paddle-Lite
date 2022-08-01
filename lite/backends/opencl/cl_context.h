@@ -84,6 +84,7 @@ class CLContext {
   std::set<cl::NDRange, CompareByRange> GenerateLocalWorkSizes(
       cl::NDRange global_work_size, size_t max_work_size);
   bool IsArmMali();
+  bool IsAppleM1();
 
  private:
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;

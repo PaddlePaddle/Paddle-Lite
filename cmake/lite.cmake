@@ -1,22 +1,37 @@
 set(LITE_URL "http://paddle-inference-dist.bj.bcebos.com" CACHE STRING "inference download url")
 
 function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
-    message(STATUS "Download inference test stuff: ${FILENAME}")
-    string(REGEX REPLACE "[-%.]" "_" FILENAME_EX ${FILENAME})
-    set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
-    set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
-    ExternalProject_Add(
+  set(options "")
+  set(oneValueArgs MODEL_PATH)
+  set(multiValueArgs "")
+  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  if(DEFINED args_MODEL_PATH)
+    set(FILE_PATH ${args_MODEL_PATH}/${FILENAME})
+    set(PREFIX ${INSTALL_DIR}/${args_MODEL_PATH})
+    set(DOWNLOAD_DIR ${INSTALL_DIR}/${args_MODEL_PATH})
+  else()
+    set(FILE_PATH ${FILENAME})
+    set(PREFIX ${INSTALL_DIR})
+    set(DOWNLOAD_DIR ${INSTALL_DIR})
+  endif()
+
+  message(STATUS "Download inference test stuff: ${FILE_PATH}")
+  string(REGEX REPLACE "[-%./]" "_" FILENAME_EX ${FILE_PATH})
+  set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
+  set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
+  ExternalProject_Add(
             ${EXTERNAL_PROJECT_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
-            PREFIX                ${INSTALL_DIR}
-            DOWNLOAD_COMMAND      wget --no-check-certificate -q -O ${INSTALL_DIR}/${FILENAME} ${URL}/${FILENAME} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${FILENAME}
-            DOWNLOAD_DIR          ${INSTALL_DIR}
+            PREFIX                ${PREFIX}
+            DOWNLOAD_COMMAND      wget --no-check-certificate -q -O ${INSTALL_DIR}/${FILE_PATH} ${URL}/${FILE_PATH} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${FILE_PATH} && rm -f ${INSTALL_DIR}/${FILE_PATH}
+            DOWNLOAD_DIR          ${DOWNLOAD_DIR}
             DOWNLOAD_NO_PROGRESS  1
             CONFIGURE_COMMAND     ""
             BUILD_COMMAND         ""
             UPDATE_COMMAND        ""
             INSTALL_COMMAND       ""
-    )
+  )
 endfunction()
 
 function (lite_deps TARGET)
@@ -56,15 +71,13 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if(LITE_WITH_ARM)
     foreach(var ${lite_deps_LIGHT_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
 
-
-
-  if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if (NOT LITE_WITH_ARM)
     foreach(var ${lite_deps_HVY_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
@@ -87,7 +100,7 @@ function (lite_deps TARGET)
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
-  
+
   if (LITE_WITH_INTEL_FPGA)
     foreach(var ${lite_deps_INTEL_FPGA_DEPS})
       set(deps ${deps} ${var})
@@ -96,18 +109,6 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_NPU)
     foreach(var ${lite_deps_NPU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_APU)
-    foreach(var ${lite_deps_APU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_RKNPU)
-    foreach(var ${lite_deps_RKNPU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -132,12 +133,6 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_NNADAPTER)
     foreach(var ${lite_deps_NNADAPTER_DEPS})
-	    set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_HUAWEI_ASCEND_NPU)
-    foreach(var ${lite_deps_HUAWEI_ASCEND_NPU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -151,7 +146,7 @@ add_custom_target(lite_compile_deps COMMAND echo 1)
 
 # Add names for lite libraries for latter compile. We use this name list to avoid compiling
 # the whole fluid project to accelerate the compile speed.
-set(offline_lib_registry_file "${CMAKE_BINARY_DIR}/lite_libs.txt")
+set(offline_lib_registry_file "${PADDLE_BINARY_DIR}/lite_libs.txt")
 file(WRITE ${offline_lib_registry_file} "") # clean
 
 # cc_library with branch support.
@@ -160,8 +155,6 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 #  CUDA_DEPS:     LITE_WITH_CUDA
 #  ARM_DEPS:      LITE_WITH_ARM
 #  PROFILE_DEPS:  LITE_WITH_PROFILE
-#  LIGHT_DEPS:    LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-#  HVY_DEPS:      NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #  EXCLUDE_COMPILE_DEPS: TARGET will not be included in lite_compile_deps if this is not None
 #  CV_DEPS:       LITE_WITH_CV
 function(lite_cc_library TARGET)
@@ -255,19 +248,16 @@ function(lite_cc_binary TARGET)
     # link to paddle-lite static lib automatically
     add_dependencies(${TARGET} bundle_full_api)
 
-
-
     if(NOT WIN32)
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
       # openmp dynamic lib is required for mkl
       if(WITH_STATIC_MKL)
         target_link_libraries(${TARGET} -L${MKLML_LIB_DIR} -liomp5)
       endif()
     else()
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
-
 
     # link to dynamic runtime lib
     if(LITE_WITH_METAL)
@@ -275,12 +265,6 @@ function(lite_cc_binary TARGET)
     endif()
     if(LITE_WITH_XPU)
         target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
-    endif()
-    if(LITE_WITH_RKNPU)
-        target_link_libraries(${TARGET} ${rknpu_runtime_libs})
-    endif()
-    if(LITE_WITH_HUAWEI_ASCEND_NPU)
-        target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
     endif()
     if(LITE_WITH_NPU)
         target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
@@ -293,7 +277,7 @@ function(lite_cc_binary TARGET)
         target_link_libraries(${TARGET} ${intel_fpga_deps})
     endif()
 
-    if (NOT APPLE AND NOT WIN32)
+    if (NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -308,7 +292,7 @@ function(lite_cc_binary TARGET)
     endif()
 endfunction()
 
-#only for windows 
+#only for windows
 function(create_static_lib TARGET_NAME)
   set(libs ${ARGN})
   list(REMOVE_DUPLICATES libs)
@@ -372,16 +356,16 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   list(REMOVE_DUPLICATES static_libs)
 
   set(bundled_tgt_full_name
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-  message(STATUS "bundled_tgt_full_name:  ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  
+  message(STATUS "bundled_tgt_full_name:  ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
   if(WIN32)
     set(dummy_tgt_name dummy_${bundled_tgt_name})
     create_static_lib(${bundled_tgt_name} ${static_libs})
     add_custom_target(${fake_target} ALL DEPENDS ${bundled_tgt_name})
     add_dependencies(${fake_target} ${tgt_name})
-  
+
     add_library(${dummy_tgt_name} STATIC IMPORTED)
     set_target_properties(${dummy_tgt_name}
       PROPERTIES
@@ -395,20 +379,20 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   add_dependencies(${fake_target} ${tgt_name})
 
   if(NOT IOS AND NOT APPLE)
-    file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+    file(WRITE ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 
     foreach(tgt IN LISTS static_libs)
-      file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+      file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
         "ADDLIB $<TARGET_FILE:${tgt}>\n")
     endforeach()
 
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
 
     file(GENERATE
-      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+      OUTPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
+      INPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
 
     set(ar_tool ${CMAKE_AR})
     if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
@@ -418,7 +402,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     add_custom_command(
       TARGET ${fake_target} PRE_BUILD
       COMMAND rm -f ${bundled_tgt_full_name}
-      COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      COMMAND ${ar_tool} -M < ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
       COMMENT "Bundling ${bundled_tgt_name}"
       DEPENDS ${tgt_name}
       VERBATIM)

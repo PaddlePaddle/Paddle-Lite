@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lite/core/parallel_defines.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
@@ -552,8 +553,7 @@ void image_resize_basic(const uint8_t* in_data,
                ialpha1,
                ibeta + orih * 2);
   }
-#pragma omp parallel for
-  for (int dy = 0; dy < dsth; dy++) {
+  LITE_PARALLEL_BEGIN(dy, tid, dsth) {
     uint8_t* out_ptr = out_data + dy * w_out;
     int y_in_start = yofs[dy];
     int y_flag = 0;
@@ -610,6 +610,7 @@ void image_resize_basic(const uint8_t* in_data,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void rotate90_basic(const uint8_t* in_data,

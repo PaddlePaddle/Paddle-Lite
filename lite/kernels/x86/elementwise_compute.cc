@@ -262,12 +262,6 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
     fast_bcast_fn(
         x_data, y_data, out_data, pre, n, post, has_active, act_type, true);
   } else {
-    if (has_active)
-      LOG(FATAL) << "elementwise can't fuse active in this shape "
-                 << "with input1:[" << x_dims[0] << "," << x_dims[1] << ","
-                 << x_dims[2] << "," << x_dims[3] << "],"
-                 << "input2:[" << y_dims[0] << "," << y_dims[1] << ","
-                 << y_dims[2] << "," << y_dims[3] << "]";
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
     X86CommonElementWise<T, int64_t, X86Config>::Run(batch_arg, op);

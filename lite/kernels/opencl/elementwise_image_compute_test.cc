@@ -660,10 +660,28 @@ void test_elementwise_broadcast_all_op() {
           RunElementwiseBroadcast<float>(
               TARGET(kOpenCL),
               dim_size,
+              true,
+              precision_type,
+              "def",
+              "fusion_elementwise_add_activation",
+              "",
+              [](float l, float r) { return l + r; });
+          RunElementwiseBroadcast<float>(
+              TARGET(kOpenCL),
+              dim_size,
               fuse_act,
               precision_type,
               "def",
               "elementwise_sub",
+              "",
+              [](float l, float r) { return l - r; });
+          RunElementwiseBroadcast<float>(
+              TARGET(kOpenCL),
+              dim_size,
+              true,
+              precision_type,
+              "def",
+              "fusion_elementwise_sub_activation",
               "",
               [](float l, float r) { return l - r; });
           RunElementwiseBroadcast<float>(
@@ -678,10 +696,28 @@ void test_elementwise_broadcast_all_op() {
           RunElementwiseBroadcast<float>(
               TARGET(kOpenCL),
               dim_size,
+              true,
+              precision_type,
+              "def",
+              "fusion_elementwise_mul_activation",
+              "",
+              [](float l, float r) { return l * r; });
+          RunElementwiseBroadcast<float>(
+              TARGET(kOpenCL),
+              dim_size,
               fuse_act,
               precision_type,
               "def",
               "elementwise_div",
+              "",
+              [](float l, float r) { return l / r; });
+          RunElementwiseBroadcast<float>(
+              TARGET(kOpenCL),
+              dim_size,
+              true,
+              precision_type,
+              "def",
+              "fusion_elementwise_div_activation",
               "",
               [](float l, float r) { return l / r; });
           RunElementwiseBroadcast<float>(

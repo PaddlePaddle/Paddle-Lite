@@ -12,15 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include(driver/configuration.cmake)
-
-include_directories(.)
-
-add_subdirectory(core)
-add_subdirectory(utility)
-add_subdirectory(optimizer)
-add_subdirectory(runtime)
-add_subdirectory(driver)
-
-add_library(nnadapter SHARED nnadapter.cc)
-target_link_libraries(nnadapter "-Wl,--start-group" ${NNADAPTER_UTILITIES} ${NNADAPTER_OPTIMIZERS} ${NNADAPTER_CORE} ${NNADAPTER_RUNTIME} "-Wl,--end-group")
+cmake_minimum_required(VERSION 3.0)
+include_directories(include/nnadapter)
+include_directories(src)
+add_subdirectory(src)

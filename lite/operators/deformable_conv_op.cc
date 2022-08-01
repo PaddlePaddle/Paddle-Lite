@@ -43,15 +43,10 @@ bool DeformableConvOpLite::CheckShape() const {
   return true;
 }
 
-inline int DeformableConvOutputSize(int input_size,
-                                    int filter_size,
-                                    int dilation,
-                                    int pad_left,
-                                    int pad_right,
-                                    int stride) {
+inline int DeformableConvOutputSize(
+    int input_size, int filter_size, int dilation, int padding, int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size =
-      (input_size + (pad_left + pad_right) - dkernel) / stride + 1;
+  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
 
   return output_size;
 }
@@ -67,8 +62,7 @@ bool DeformableConvOpLite::InferShapeImpl() const {
         DeformableConvOutputSize(in_dims[i + 2],
                                  filter_dims[i + 2],
                                  dilations[i],
-                                 paddings[2 * i],
-                                 paddings[2 * i + 1],
+                                 paddings[i],
                                  param_.conv_param.strides[i]));
   }
 

@@ -102,7 +102,10 @@ bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
                                           lite::Scope *scope) {
   param_.x = scope->FindTensor(opdesc.Input("X").front());
   param_.out = scope->FindMutableTensor(opdesc.Output("Out").front());
-  param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+
+  if (opdesc.HasOutput("XShape")) {
+    param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+  }
   param_.start_axis = opdesc.GetAttr<int>("start_axis");
   param_.stop_axis = opdesc.GetAttr<int>("stop_axis");
   return true;

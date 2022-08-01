@@ -31,7 +31,7 @@ DEFINE_string(optimized_model, "", "");
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifndef LITE_WITH_ARM
 TEST(CXXApi, test) {
   const lite::Tensor* out = RunHvyModel();
   LOG(INFO) << out << " memory size " << out->data_size();
@@ -132,7 +132,7 @@ TEST(CXXApi, clone_predictor) {
 
   exe.Run();
 }*/
-#endif  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#endif
 
 #ifdef LITE_WITH_ARM
 TEST(CXXApi, save_model) {

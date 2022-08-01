@@ -71,12 +71,14 @@ extern NSString* cString2NSString(std::string cStr) {
 
 - (void)setMetalPath:(std::string)path {
     NSString* pathStr = cString2NSString(path);
+    NSError* libraryErr = nil;
     if (pathStr) {
         self.libPath = pathStr;
-        self.library = [self.device newLibraryWithFile:pathStr error:NULL];
+        self.library = [self.device newLibraryWithFile:pathStr error:&libraryErr];
     }
     if (nil == _library) {
-        LOG(INFO) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+        LOG(ERROR) << "Can't load metallib: "
+                   << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
     }
 }
 
@@ -224,7 +226,7 @@ extern NSString* cString2NSString(std::string cStr) {
              outTexture:(id<MTLTexture>)outTexture
               quadruple:(bool)quadruple {
     if (!pipline) {
-        LOG(FATAL) << "[meta] invalid param, MTL Compute Pipeline is nil!";
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
         return;
     }
     NSUInteger slices = (outTexture.arrayLength * 4 + 3) / 4;
@@ -247,9 +249,9 @@ extern NSString* cString2NSString(std::string cStr) {
     MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
     MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
-        VLOG(4) << "[METAL]: "
-                << "dispatch thread groups 1.{" << groups.width << "," << groups.height << ","
-                << groups.depth << "}";
+        LOG(ERROR) << "[METAL]: "
+                   << "dispatch thread groups 1.{" << groups.width << "," << groups.height << ","
+                   << groups.depth << "}";
         return;
     }
     [encoder setComputePipelineState:pipline];
@@ -257,14 +259,45 @@ extern NSString* cString2NSString(std::string cStr) {
     [encoder endEncoding];
 }
 
+// threadsShape: [n, h, w]
+- (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
+                pipline:(id<MTLComputePipelineState>)pipline
+           threadsShape:(NSArray<NSNumber*>*)threadsShape {
+    if ([threadsShape count] != 3) {
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
+        return;
+    }
+
+    NSUInteger tZ = threadsShape[0].integerValue;
+    NSUInteger tH = threadsShape[1].integerValue;
+    NSUInteger tW = threadsShape[2].integerValue;
+
+    NSUInteger slices = (tZ + 3) / 4;
+    NSUInteger width = 0, height = 0;
+    width = MIN(pipline.threadExecutionWidth, tW);
+    height = MIN(pipline.maxTotalThreadsPerThreadgroup / width, tH);
+    MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
+
+    NSUInteger groupWidth = 0, groupHeight = 0;
+    groupWidth = (tW + width - 1) / width;
+    groupHeight = (tH + height - 1) / height;
+    MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
+
+    [self dispatchEncoder:encoder pipline:pipline threadsPerGroup:threadsPerGroup groups:groups];
+}
+
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
                 pipline:(id<MTLComputePipelineState>)pipline
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups {
+    if (!pipline) {
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
+        return;
+    }
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
-        VLOG(4) << "[METAL]: "
-                << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
-                << groups.depth << "}";
+        LOG(ERROR) << "[METAL]: "
+                   << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
+                   << groups.depth << "}";
         return;
     }
     [encoder setComputePipelineState:pipline];
@@ -306,7 +339,7 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)setHeap:(id<MTLHeap>)heap key:(std::string)ptr API_AVAILABLE(ios(10.0)) {
     NSString* ptrStr = cString2NSString(ptr);
     if (!ptrStr) {
-        LOG(WARN) << "heap key is nil";
+        LOG(INFO) << "heap key is nil";
         return;
     }
     [self.memoryReuseHeaps setObject:heap forKey:ptrStr];

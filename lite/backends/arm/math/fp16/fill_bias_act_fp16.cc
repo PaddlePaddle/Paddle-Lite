@@ -322,8 +322,8 @@ void fill_bias_act_fp16<float16_t>(
         vscale = vdupq_n_f16(1.0 / act_param->hard_swish_scale);
         {
 #ifdef __aarch64__
-          float32x4_t voffset = vdupq_n_f16(act_param->hard_swish_offset);
-          float32x4_t vthreshold = vdupq_n_f16(act_param->hard_swish_threshold);
+          float16x8_t voffset = vdupq_n_f16(act_param->hard_swish_offset);
+          float16x8_t vthreshold = vdupq_n_f16(act_param->hard_swish_threshold);
 #else
           float voffset[4] = {act_param->hard_swish_offset,
                               act_param->hard_swish_offset,

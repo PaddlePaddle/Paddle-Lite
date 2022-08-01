@@ -91,6 +91,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         raw_predictor_->scope(), config.nnadapter_device_names());
     Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
         raw_predictor_->scope(), config.nnadapter_context_properties());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextCallback(
+        raw_predictor_->scope(), config.nnadapter_context_callback());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
         raw_predictor_->scope(), config.nnadapter_model_cache_dir());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
@@ -109,6 +111,8 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
         SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
             raw_predictor_->scope(),
             config.nnadapter_mixed_precision_quantization_config_buffer());
+    Context<TargetType::kNNAdapter>::SetNNAdapterDynamicShapeInfo(
+        raw_predictor_->scope(), config.nnadapter_dynamic_shape_info());
 #endif
 
     auto use_layout_preprocess_pass =
@@ -146,6 +150,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
 
+#ifdef LITE_WITH_METAL
+  raw_predictor_->ConfigMetalContext(config);
+#endif
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -153,28 +161,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
-#ifdef LITE_WITH_APU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kAPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-#endif
-
-#ifdef LITE_WITH_RKNPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
-      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
-#endif
-
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-  Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
-      config.get_device_id());
-  Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
-#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_num_threads();

@@ -21,7 +21,10 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
 
-#define FP16_MAX_DIFF (5e-1)
+#define FP16_RELATIVE_DIFF (5e-2)
+#define FP16_ABS_DIFF (5e-2)
+#define FP32_RELATIVE_DIFF (1e-3)
+#define FP32_ABS_DIFF (5e-4)
 
 namespace paddle {
 namespace lite {
@@ -100,7 +103,7 @@ void gird_sampler_ref(const float* din,
 }
 // #define GRID_FP16_LOOP_TEST
 // #define GRID_FP16_PRINT_RESULT
-TEST(grid_samler_image2d, compute) {
+void test_precision(const lite_api::CLPrecisionType p) {
 #ifdef GRID_FP16_LOOP_TEST
   for (bool align_corners : {true, false}) {
     for (const std::string& mode : {"bilinear", "nearest"}) {
@@ -111,18 +114,21 @@ TEST(grid_samler_image2d, compute) {
             for (int h = 12; h <= 100; h += 13) {
               for (int w = 12; w <= 100; w += 25) {
 #else
-  const std::string& mode = "bilienar";
+  const std::string& mode = "bilinear";
   const std::string& padding_mode = "zeros";
   bool align_corners = true;
   const int n = 1;
   const int c = 2;
-  const int h = 4;
+  const int h = 5;
   const int w = 4;
 #endif  // GRID_FP16_LOOP_TEST
                 LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c
                           << " " << h << " " << w << " , mode:" << mode
                           << ", padding_mode:" << padding_mode
                           << ", align_corners:" << align_corners << " ========";
+                CLRuntime::Global()->set_precision(p);
+                const bool fp16_flag =
+                    (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
                 auto kernels =
                     KernelRegistry::Global().Create("grid_sampler",
                                                     TARGET(kOpenCL),
@@ -166,6 +172,7 @@ TEST(grid_samler_image2d, compute) {
                 int sum2 = n * h * w * 2;
                 std::vector<float> input_v(sum);
                 std::vector<float> grid_v(sum2);
+                std::vector<float> output_v(out_dim.production());
                 for (auto& i : input_v) {
                   i = dist(engine);
                 }
@@ -180,63 +187,67 @@ TEST(grid_samler_image2d, compute) {
                     default_converter->InitImageDimInfoWith(in_dim);
                 LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
                           << x_image_shape[1];
-                std::vector<half_t> x_image_data(x_image_shape.production() *
-                                                 4);  // 4 : RGBA
+                const size_t dtype_size =
+                    fp16_flag ? sizeof(half_t) : sizeof(float);
+                std::vector<char> x_image_data(x_image_shape.production() * 4 *
+                                               dtype_size);  // 4 : RGBA
                 default_converter->NCHWToImage(
                     input_v.data(), x_image_data.data(), in_dim);
-                auto* x_image = x.mutable_data<half_t, cl::Image2D>(
-                    x_image_shape[0], x_image_shape[1], x_image_data.data());
-                // LOG(INFO) << "x_image:" << x_image;
+                MUTABLE_DATA_GPU(&x,
+                                 x_image_shape[0],
+                                 x_image_shape[1],
+                                 x_image_data.data());
 
                 DDim grid_image_shape =
                     default_converter->InitImageDimInfoWith(grid_dim);
                 LOG(INFO) << "grid_image_shape = " << grid_image_shape[0] << " "
                           << grid_image_shape[1];
-                std::vector<half_t> grid_image_data(
-                    grid_image_shape.production() * 4);  // 4 : RGBA
+                std::vector<char> grid_image_data(
+                    grid_image_shape.production() * 4 *
+                    dtype_size);  // 4 : RGBA
                 default_converter->NCHWToImage(
                     grid_v.data(), grid_image_data.data(), grid_dim);
-                auto* grid_image = grid.mutable_data<half_t, cl::Image2D>(
-                    grid_image_shape[0],
-                    grid_image_shape[1],
-                    grid_image_data.data());
-                // LOG(INFO) << "grid_image:" << grid_image;
+                MUTABLE_DATA_GPU(&grid,
+                                 grid_image_shape[0],
+                                 grid_image_shape[1],
+                                 grid_image_data.data());
 
                 DDim out_image_shape =
                     default_converter->InitImageDimInfoWith(out_dim);
                 LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
                           << out_image_shape[1];
-                auto* out_image = out.mutable_data<half_t, cl::Image2D>(
-                    out_image_shape[0], out_image_shape[1]);
-                // LOG(INFO) << "out_image:" << out_image;
+                auto* out_image = MUTABLE_DATA_GPU(
+                    &out, out_image_shape[0], out_image_shape[1], nullptr);
+
                 kernel->Launch();
 
                 CLRuntime::Global()->command_queue().finish();
 
-                std::unique_ptr<float[]> out_ref(
-                    new float[out_dim.production()]);
+                std::vector<float> out_ref(out_dim.production());
+                auto* out_ref_data = out_ref.data();
                 gird_sampler_ref(input_v.data(),
                                  in_dim,
                                  grid_v.data(),
-                                 out_ref.get(),
+                                 out_ref_data,
                                  mode,
                                  padding_mode,
                                  align_corners);
 
                 const size_t cl_image2d_row_pitch{0};
                 const size_t cl_image2d_slice_pitch{0};
-                half_t* out_image_data = reinterpret_cast<half_t*>(
-                    malloc(out_image_shape.production() * sizeof(half_t)));
-                TargetWrapperCL::ImgcpySync(out_image_data,
+                std::vector<char> out_image_data(out_image_shape.production() *
+                                                 4 * dtype_size);  // 4 : RGBA
+                TargetWrapperCL::ImgcpySync(out_image_data.data(),
                                             out_image,
                                             out_image_shape[0],
                                             out_image_shape[1],
                                             cl_image2d_row_pitch,
                                             cl_image2d_slice_pitch,
                                             IoDirection::DtoH);
-                float* out_data = new float[out_image_shape.production() * 4];
-                default_converter->ImageToNCHW(
-                    out_image_data, out_data, out_image_shape, out_dim);
+                default_converter->ImageToNCHW(out_image_data.data(),
+                                               output_v.data(),
+                                               out_image_shape,
+                                               out_dim);
 // result
 #ifdef GRID_FP16_PRINT_RESULT
                 LOG(INFO) << "---- print kernel result (input -> output) ----";
@@ -245,24 +256,26 @@ TEST(grid_samler_image2d, compute) {
                             << "\n";
                 }
 #endif  // GRID_FP16_PRINT_RESULT
+                uint32_t diff_cnt = 0;
+                auto relative_diff_thres =
+                    fp16_flag ? FP16_RELATIVE_DIFF : FP32_RELATIVE_DIFF;
+                auto abs_diff_thres = fp16_flag ? FP16_ABS_DIFF : FP32_ABS_DIFF;
                 for (int i = 0; i < out_dim.production(); i++) {
-                  auto abs_diff = abs(out_data[i] - out_ref[i]);
+                  auto abs_diff = abs(output_v[i] - out_ref_data[i]);
                   auto relative_diff =
-                      COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
-
-#if 0
-            EXPECT_EQ(
-                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
-                true);
-            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
-              LOG(ERROR) << "error idx:" << i << " out_data[" << i
-                         << "]:" << out_data[i] << " "
-                                                   "out_ref["
-                         << i << "]:" << out_ref[i] << " abs_diff:" << abs_diff
-                         << " relative_diff:" << relative_diff
-                         << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
-            }
-#endif
+                      COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
+                  EXPECT_FALSE(relative_diff > relative_diff_thres &&
+                               abs_diff > abs_diff_thres);
+                  if ((relative_diff > relative_diff_thres) &&
+                      (abs_diff > abs_diff_thres)) {
+                    LOG(WARNING) << i << ": \t out_ins: " << output_v[i]
+                                 << "\t out_ref: " << out_ref_data[i];
+                    diff_cnt++;
+                  }
+                }
+                if (diff_cnt != 0) {
+                  LOG(FATAL) << "Err num " << diff_cnt << "/"
+                             << out_dim.production();
                 }
 #ifdef GRID_FP16_LOOP_TEST
               }  // w
@@ -275,6 +288,13 @@ TEST(grid_samler_image2d, compute) {
 #else
 // nothing to do.
 #endif
+}
+
+TEST(grid_sampler, compute_basic) {
+  for (auto p : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+                 lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    test_precision(p);
+  }
 }
 
 }  // namespace lite

@@ -60,9 +60,6 @@ bool InterpolateOp::InferShapeImpl() const {
     auto OutSize_data = OutSize->data<int>();
     out_h = OutSize_data[0];
     out_w = OutSize_data[1];
-  } else if (param_.out_h > 0 && param_.out_w > 0) {
-    out_h = param_.out_h;
-    out_w = param_.out_w;
   } else {
     float scale = -1.f;
     if (Scale) {
@@ -72,9 +69,14 @@ bool InterpolateOp::InferShapeImpl() const {
     } else {
       scale = param_.scale;
     }
-    CHECK(scale > 0) << "scale must large than 0.";
-    out_h = static_cast<int>(h * scale);
-    out_w = static_cast<int>(w * scale);
+
+    if (scale > 0) {
+      out_h = static_cast<int>(h * scale);
+      out_w = static_cast<int>(w * scale);
+    } else {
+      out_h = param_.out_h;
+      out_w = param_.out_w;
+    }
   }
 
   auto out_lod = param_.Out->mutable_lod();

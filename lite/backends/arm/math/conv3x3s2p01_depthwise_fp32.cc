@@ -15,6 +15,7 @@
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -577,31 +578,49 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "cmp %w[remain], #1                           \n"        \
   "blt 4f                                     \n"          \
   "3:                                         \n"          \
-  "bif  v0.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v1.16b, %[vzero].16b, %[mask2].16b    \n"          \
+  \
+  /* Avoid thread write conflicts */ \
+  "sub %[inptr0], %[inptr0], #32 \n"                         \
+  "sub %[inptr1], %[inptr1], #32 \n"                         \
+  "sub %[inptr2], %[inptr2], #32 \n"                         \
+  "sub %[inptr3], %[inptr3], #32 \n"                         \
+  "sub %[inptr4], %[inptr4], #32 \n"                         \
+  "sub %[inptr0], %[inptr0], %[right_pad_num_in] \n"               \
+  "sub %[inptr1], %[inptr1], %[right_pad_num_in] \n"            \
+  "sub %[inptr2], %[inptr2], %[right_pad_num_in] \n"               \
+  "sub %[inptr3], %[inptr3], %[right_pad_num_in] \n"                  \
+  "sub %[inptr4], %[inptr4], %[right_pad_num_in] \n"                \
+  "ld2  {v0.4s, v1.4s}, [%[inptr0]], #32 \n"\
+  "ld2  {v2.4s, v3.4s}, [%[inptr1]], #32 \n"\
+  "ld2  {v4.4s, v5.4s}, [%[inptr2]], #32 \n"\
+  "ld2  {v6.4s, v7.4s}, [%[inptr3]], #32 \n"\
+  "ld2  {v8.4s, v9.4s}, [%[inptr4]], #32 \n"\
+  "ld1 {v15.4s}, [%[inptr0]] \n"\
+  "ld1 {v18.4s}, [%[inptr1]] \n"\
+  "ld1 {v19.4s}, [%[inptr2]] \n"\
+  "ld1 {v20.4s}, [%[inptr3]] \n"\
+  "ld1 {v21.4s}, [%[inptr4]] \n"\
+  "bif  v15.16b, %[vzero].16b, %[mask3].16b    \n"          \
+  "bif  v18.16b, %[vzero].16b, %[mask3].16b    \n"          \
+  "bif  v19.16b, %[vzero].16b, %[mask3].16b    \n"          \
+  "bif  v20.16b, %[vzero].16b, %[mask3].16b    \n"          \
+  "bif  v21.16b, %[vzero].16b, %[mask3].16b    \n"          \
+  "sub %[outptr0], %[outptr0], %[right_pad_num_out] \n"  \
+  "sub %[outptr1], %[outptr1], %[right_pad_num_out] \n"  \
+  /* conflicts ends */ \
                                                            \
-  "bif  v2.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v3.16b, %[vzero].16b, %[mask2].16b    \n"          \
+  "ext  v10.16b, v0.16b, v15.16b, #4     \n"          \
                                                            \
-  "bif  v4.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v5.16b, %[vzero].16b, %[mask2].16b    \n"          \
-                                                           \
-  "ext  v10.16b, v0.16b, %[vzero].16b, #4     \n"          \
-                                                           \
-  "bif  v6.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v7.16b, %[vzero].16b, %[mask2].16b    \n" /* r0 */ \
   "fmul v11.4s, v0.4s, %[w0].s[0]            \n"           \
   "fmul v12.4s, v1.4s, %[w0].s[1]            \n"           \
   "fmla v16.4s, v10.4s, %[w0].s[2]            \n"          \
                                                            \
-  "ext  v10.16b, v2.16b, %[vzero].16b, #4     \n"          \
-  "bif  v8.16b, %[vzero].16b, %[mask1].16b    \n"          \
-  "bif  v9.16b, %[vzero].16b, %[mask2].16b    \n" /* r1 */ \
+  "ext  v10.16b, v2.16b, v18.16b, #4     \n"          \
   "fmla v11.4s, v2.4s, %[w1].s[0]            \n"           \
   "fmla v12.4s, v3.4s, %[w1].s[1]            \n"           \
   "fmla v16.4s, v10.4s, %[w1].s[2]            \n"          \
                                                            \
-  "ext  v10.16b, v4.16b, %[vzero].16b, #4     \n" /* r2 */ \
+  "ext  v10.16b, v4.16b, v19.16b, #4     \n" /* r2 */ \
   "fmul v13.4s, v4.4s, %[w0].s[0]            \n"           \
   "fmla v11.4s, v4.4s, %[w2].s[0]            \n"           \
                                                            \
@@ -611,12 +630,12 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "fmla v17.4s, v10.4s, %[w0].s[2]            \n"          \
   "fmla v16.4s, v10.4s, %[w2].s[2]            \n"          \
                                                            \
-  "ext  v10.16b, v6.16b, %[vzero].16b, #4     \n" /* r3 */ \
+  "ext  v10.16b, v6.16b, v20.16b, #4     \n" /* r3 */ \
   "fmla v13.4s, v6.4s, %[w1].s[0]            \n"           \
   "fmla v14.4s, v7.4s, %[w1].s[1]            \n"           \
   "fmla v17.4s, v10.4s, %[w1].s[2]            \n"          \
                                                            \
-  "ext  v10.16b, v8.16b, %[vzero].16b, #4     \n"          \
+  "ext  v10.16b, v8.16b, v21.16b, #4     \n"          \
   "ld1 {v0.4s}, [%[outptr0]]                  \n"          \
                                                            \
   "fadd v16.4s, v16.4s, v11.4s                  \n"        \
@@ -627,15 +646,12 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "fmla v17.4s, v10.4s, %[w2].s[2]            \n"
 
 #define RIGHT_RESULT_S2                             \
-  "bif  v16.16b, v0.16b, %[wmask].16b    \n"        \
                                                     \
   "fadd v17.4s, v17.4s, v13.4s                  \n" \
                                                     \
   "st1 {v16.4s}, [%[outptr0]], #16              \n" \
                                                     \
   "fadd v17.4s, v17.4s, v14.4s                  \n" \
-                                                    \
-  "bif  v17.16b, v1.16b, %[wmask].16b    \n"        \
                                                     \
   "st1 {v17.4s}, [%[outptr1]], #16              \n" \
   "4:                                          \n"
@@ -837,15 +853,11 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                               \
   "fadd v17.4s, v17.4s, v13.4s                  \n"           \
                                                               \
-  "bif  v16.16b, v0.16b, %[wmask].16b    \n"                  \
-                                                              \
   "fadd v17.4s, v17.4s, v14.4s                  \n"           \
                                                               \
   "st1 {v16.4s}, [%[outptr0]], #16              \n"           \
                                                               \
   "fmax v17.4s, v17.4s, %[vzero].4s            \n" /* relu */ \
-                                                              \
-  "bif  v17.16b, v1.16b, %[wmask].16b    \n"                  \
                                                               \
   "st1 {v17.4s}, [%[outptr1]], #16              \n"           \
   "4:                                          \n"
@@ -859,13 +871,10 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                               \
   "fadd v17.4s, v17.4s, v14.4s                  \n"           \
                                                               \
-  "bif  v16.16b, v0.16b, %[wmask].16b    \n"                  \
-                                                              \
   "fmax v17.4s, v17.4s, %[vzero].4s            \n" /* relu */ \
                                                               \
   "st1 {v16.4s}, [%[outptr0]], #16              \n"           \
   "fmin v17.4s, v17.4s, v22.4s                  \n"           \
-  "bif  v17.16b, v1.16b, %[wmask].16b    \n"                  \
                                                               \
   "st1 {v17.4s}, [%[outptr1]], #16              \n"           \
   "4:                                          \n"
@@ -879,14 +888,11 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                           \
   "fadd v17.4s, v17.4s, v14.4s                  \n"       \
                                                           \
-  "bif  v16.16b, v0.16b, %[wmask].16b    \n"              \
-                                                          \
   "fcmge v11.4s, v17.4s,  %[vzero].4s \n" /* vcgeq_u32 */ \
   "fmul v12.4s, v17.4s, v22.4s                  \n"       \
                                                           \
   "st1 {v16.4s}, [%[outptr0]], #16              \n"       \
   "bif  v17.16b, v12.16b, v11.16b \n" /* choose*/         \
-  "bif  v17.16b, v1.16b, %[wmask].16b    \n"              \
                                                           \
   "st1 {v17.4s}, [%[outptr1]], #16              \n"       \
   "4:                                          \n"
@@ -996,6 +1002,29 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "bif  v4.16b, v12.16b, v11.16b \n" /* choose*/      \
   "st1 {v4.4s}, [%[out]]                          \n"
 
+#define PARAM1 \
+[inptr0] "+r"(din0_ptr), [inptr1] "+r"(din1_ptr), \
+[inptr2] "+r"(din2_ptr), [inptr3] "+r"(din3_ptr), \
+[inptr4] "+r"(din4_ptr), \
+[outptr0] "+r"(doutr0_ptr), [outptr1] "+r"(doutr1_ptr), \
+[cnt] "+r"(cnt)
+
+#define PARAM2 \
+[vzero] "w"(vzero), \
+[w0] "w"(wr0), [w1] "w"(wr1), [w2] "w"(wr2), \
+[remain] "r"(cnt_remain),  \
+[mask3] "w"(vmask_rp3), \
+[vbias] "w"(wbias), \
+  [right_pad_num_in] "r"(right_pad_num_in), \
+  [right_pad_num_out] "r"(right_pad_num_out)
+
+
+#define ASM_PARAM \
+"cc", "memory", \
+"v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", \
+"v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20", "v21", "v22"
+
+
 #else
 #define INIT_S2                                                     \
   "vmov.u32 q9, #0                                \n"               \
@@ -1083,38 +1112,56 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "1:                                             \n"                       \
   "cmp %[remain], #1                              \n"                       \
   "blt 3f                                         \n"                       \
-                                                                            \
-  "vld1.f32   {d12-d15}, [%[mask_ptr]]!           @ load mask\n"            \
+  \
+  /* Avoid thread write conflicts */ \
+  "subs %[din0_ptr], #32 \n"                               \
+  "subs %[din1_ptr], #32 \n"                               \
+  "subs %[din2_ptr], #32 \n"                               \
+  "subs %[din0_ptr], %[right_pad_num_in] \n"                               \
+  "subs %[din1_ptr], %[right_pad_num_in] \n"                               \
+  "subs %[din2_ptr], %[right_pad_num_in] \n"                               \
+  \
+  /* q10:[0,2,4,6] q11:[1,3,5,7] */     \
+  /* q12:[0,2,4,6] q13:[1,3,5,7] */     \
+  /* q14:[0,2,4,6] q15:[1,3,5,7] */     \
+  "vld2.32  {d20-d23}, [%[din0_ptr]]!            \n"        \
+  "vld2.32  {d24-d27}, [%[din1_ptr]]!             \n"        \
+  "vld2.32  {d28-d31}, [%[din2_ptr]]!             \n"        \
+  \
+  /* make outut pointer smaller */ \
+  "subs %[outptr], %[right_pad_num_out] \n"        \
+  /* conflicts ends */ \
+  \
+  \
   "vdup.32  q3, %[bias]                           @ and \n"                 \
-                                                                            \
-  "vbif q10, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q11, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q12, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q13, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q14, q9, q6                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-  "vbif q15, q9, q7                               @ bit select, deal with " \
-  "right pad\n"                                                             \
-                                                                            \
+  \
+    /* generate q6, i.e. [2,4,6,8] */                               \
+  "vld1.f32   {d8-d9}, [%[mask_ptr]]          \n"        \
+  "vld1.32  {d16-d17}, [%[din0_ptr]]                \n"       \
+  "vbit q9, q8, q4                               \n"                        \
   "vext.32 q6, q10, q9, #1                        @ shift left 1 \n"        \
+  \
+  /* generate q7, i.e. [2,4,6,8] */ \
+  "vld1.32  {d16-d17}, [%[din1_ptr]]                  @ load din r0\n"        \
+  "vbit q9, q8, q4                               \n"                        \
   "vext.32 q7, q12, q9, #1                        @ shift left 1 \n"        \
-                                                                            \
+  \
   "vmul.f32 q4, q10, %e[wr0][0]                   @ mul weight 0, out0\n"   \
   "vmul.f32 q5, q11, %e[wr0][1]                   @ mul weight 0, out0\n"   \
   "vmla.f32 q3,  q6, %f[wr0][0]                   @ mul weight 0, out0\n"   \
-                                                                            \
+            \
+  /* generate q6, i.e. [2,4,6,8] */      \
+  /* q4 has been occupied. I have to reload [mask_ptr] to q11 */ \
+  /* remember zero q9!!!!!!!!!!!!!!!!!! */                                   \
+  "vld1.f32   {d22-d23}, [%[mask_ptr]]           @ load mask\n"            \
+  "vld1.32  {d16-d17}, [%[din2_ptr]]                  @ load din r0\n"        \
+  "vbit q9, q8, q11                               \n"                        \
   "vext.32 q6, q14, q9, #1                        @ shift left 1 \n"        \
-  "vld1.f32   {d20-d21}, [%[outptr]]              @ load output\n"          \
+  "vmov.u32 q9, #0                                \n"               \
                                                                             \
   "vmla.f32 q4, q12, %e[wr1][0]                   @ mul weight 1, out0\n"   \
   "vmla.f32 q5, q13, %e[wr1][1]                   @ mul weight 1, out0\n"   \
   "vmla.f32 q3,  q7, %f[wr1][0]                   @ mul weight 1, out0\n"   \
-                                                                            \
-  "vld1.f32   {d22-d23}, [%[mask_ptr]]            @ load mask\n"            \
                                                                             \
   "vmla.f32 q4, q14, %e[wr2][0]                   @ mul weight 2, out0\n"   \
   "vmla.f32 q5, q15, %e[wr2][1]                   @ mul weight 2, out0\n"   \
@@ -1123,7 +1170,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
 #define RIGHT_RESULT_S2                                           \
   "vadd.f32 q3, q3, q4                            @ add \n"       \
   "vadd.f32 q3, q3, q5                            @ add \n"       \
-  "vbif.f32 q3, q10, q11                          @ write mask\n" \
                                                                   \
   "vst1.32 {d6-d7}, [%[outptr]]!                  \n"             \
   "3:                                             \n"
@@ -1189,7 +1235,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vadd.f32 q3, q3, q4                         @ add \n"\
   "vadd.f32 q3, q3, q5                         @ add \n"\
   "vmax.f32 q3, q3, q9                         @ relu\n"\
-  "vbif.f32 q3, q10, q11                 @ write mask\n"\
                                                         \
   "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
   "3:                                                 \n"
@@ -1201,8 +1246,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vmax.f32 q3, q3, q9                         @ relu\n"\
   "vmin.f32 q3, q3, q6                        @ relu \n"\
                                                         \
-  "vbif.f32 q3, q10, q11                 @ write mask\n"\
-                                                        \
   "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
   "3:                                                 \n"
 #define RIGHT_RESULT_S2_LEAKY_RELU                      \
@@ -1212,7 +1255,6 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vcge.f32 q7, q3, q9                               \n"\
   "vmul.f32 q8, q3, q6                               \n"\
   "vbif q3, q8, q7 @ choose                          \n"\
-  "vbif.f32 q3, q10, q11                 @ write mask\n"\
                                                         \
   "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
   "3:                                                 \n"
@@ -1344,8 +1386,68 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vmul.f32 q8, q3, q6                                  \n" \
   "vbif q3, q8, q7 @ choose                             \n" \
   "vst1.32 {d6-d7}, [%[out]]                            \n"
+
+
+#define PARAM1 \
+[din0_ptr] "+r"(din0_ptr), [din1_ptr] "+r"(din1_ptr), \
+[din2_ptr] "+r"(din2_ptr), \
+[outptr] "+r"(doutr0_ptr), \
+[cnt] "+r"(cnt), [mask_ptr] "+r"(mask_ptr)
+
+#define PARAM2 \
+[remain] "r"(cnt_remain), \
+[wr0] "w"(wr0), [wr1] "w"(wr1), \
+[wr2] "w"(wr2),  \
+[bias] "r"(bias_c), \
+  [right_pad_num_in] "r"(right_pad_num_in), \
+  [right_pad_num_out] "r"(right_pad_num_out)
+
+#define ASM_PARAM \
+"cc", "memory", \
+"q3", "q4", "q5", "q6", \
+"q7", "q8", "q9", "q10", \
+"q11", "q12", "q13", "q14", "q15"
+
 #endif
 // clang-format on
+
+inline std::pair<uint32_t, uint32_t> right_mask_3x3s2_fp32(
+    int w_in, int w_out, int left_padding, uint32x4_t* vmask_rp3) {
+  int right_pad_idx[4] = {8, 0xffff, 0xffff, 0xffff};
+
+  int cnt_col;
+  int tile_w = w_out >> 2;
+  int size_right_remain;
+  // size_right_remain: When we process the last cnt_remain([1,4]) outputs, the
+  // number of valid data
+  // Obviously, it should be within (0, 8]!
+  // attention : size_right_remain's meaning is different in
+  // right_mask_3x3s1_fp32
+  int cnt_remain;
+  if (left_padding > 0) {
+    cnt_col = tile_w - 2;
+    size_right_remain = w_in - ((8 - left_padding) + cnt_col * 8);
+  } else {
+    cnt_col = tile_w - 1;
+    size_right_remain = w_in - (cnt_col * 8);
+  }
+
+  if (size_right_remain >= 9) {
+    cnt_col++;
+    size_right_remain -= 8;
+  }
+  // This judgment statement is not good.
+  // Change it later
+  cnt_remain = (size_right_remain == 8 && w_out % 4 == 0) ? 4 : (w_out % 4);
+
+  // make size_right_remain larger
+  size_right_remain += (4 - cnt_remain) * 2;
+
+  *vmask_rp3 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                         vld1q_s32(right_pad_idx));  // 8!
+
+  return std::make_pair(cnt_col, cnt_remain);
+}
 
 /**
  * \brief depthwise convolution kernel 3x3, stride 2
@@ -1364,46 +1466,28 @@ void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
                                        const int h_out,
                                        const int w_out,
                                        ARMContext* ctx) {
-  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
-  int out_pad_idx[4] = {0, 1, 2, 3};
-  int size_pad_bottom = h_out * 2 - h_in;
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp3);
+  int cnt_col = res.first;
+  int cnt_remain = res.second;
 
-  int tile_w = w_out >> 2;
-  int cnt_remain = w_out % 4;
-  unsigned int size_right_remain = (unsigned int)(7 + (tile_w << 3) - w_in);
-  size_right_remain = 8 - size_right_remain;
+  uint32_t right_pad_num_in = (4 - cnt_remain) * sizeof(float) * 2;
+  uint32_t right_pad_num_out = (4 - cnt_remain) * sizeof(float);
 
-  if (cnt_remain == 0 && size_right_remain == 0) {
-    cnt_remain = 4;
-    tile_w -= 1;
-    size_right_remain = 8;
-  }
-  int cnt_col = tile_w - 1;
-
-  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
-  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
-  uint32x4_t wmask =
-      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-
   float* zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float* write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
+  float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, wmask);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1493,49 +1577,9 @@ void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
         asm volatile(
             INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU6 MID_COMPUTE_S2
                 MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU6
-            : [inptr0] "+r"(din0_ptr),
-              [inptr1] "+r"(din1_ptr),
-              [inptr2] "+r"(din2_ptr),
-              [inptr3] "+r"(din3_ptr),
-              [inptr4] "+r"(din4_ptr),
-              [outptr0] "+r"(doutr0_ptr),
-              [outptr1] "+r"(doutr1_ptr),
-              [cnt] "+r"(cnt)
-            : [vzero] "w"(vzero),
-              [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [remain] "r"(cnt_remain),
-              [six_ptr] "r"(six),
-              [mask1] "w"(vmask_rp1),
-              [mask2] "w"(vmask_rp2),
-              [wmask] "w"(wmask),
-              [vbias] "w"(wbias)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22");
+            : PARAM1
+            : PARAM2, [six_ptr] "r"(six)
+            : ASM_PARAM);
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1575,37 +1619,14 @@ void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
         asm volatile(
             INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU6 MID_COMPUTE_S2
                 MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU6
-            : [din0_ptr] "+r"(din0_ptr),
-              [din1_ptr] "+r"(din1_ptr),
-              [din2_ptr] "+r"(din2_ptr),
-              [outptr] "+r"(doutr0_ptr),
-              [cnt] "+r"(cnt),
-              [mask_ptr] "+r"(mask_ptr)
-            : [remain] "r"(cnt_remain),
-              [wr0] "w"(wr0),
-              [wr1] "w"(wr1),
-              [wr2] "w"(wr2),
-              [six_ptr] "r"(six),
-              [bias] "r"(bias_c)
-            : "cc",
-              "memory",
-              "q3",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15");
+            : PARAM1
+            : PARAM2, [six_ptr] "r"(six)
+            : ASM_PARAM);
         doutr0 = doutr0 + w_out;
       }
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
@@ -1621,46 +1642,28 @@ void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
                                            const int h_out,
                                            const int w_out,
                                            ARMContext* ctx) {
-  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
-  int out_pad_idx[4] = {0, 1, 2, 3};
-  int size_pad_bottom = h_out * 2 - h_in;
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 1, &vmask_rp3);
+  int cnt_col = res.first;
+  int cnt_remain = res.second;
 
-  int tile_w = w_out >> 2;
-  int cnt_remain = w_out % 4;
-  unsigned int size_right_remain = (unsigned int)(7 + (tile_w << 3) - w_in);
-  size_right_remain = 8 - size_right_remain;
+  uint32_t right_pad_num_in = (4 - cnt_remain) * sizeof(float) * 2;
+  uint32_t right_pad_num_out = (4 - cnt_remain) * sizeof(float);
 
-  if (cnt_remain == 0 && size_right_remain == 0) {
-    cnt_remain = 4;
-    tile_w -= 1;
-    size_right_remain = 8;
-  }
-  int cnt_col = tile_w - 1;
-
-  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
-  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
-  uint32x4_t wmask =
-      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-
   float* zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float* write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
+  float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, wmask);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1750,49 +1753,9 @@ void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
         asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_LEAKY_RELU
                          MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
                              RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
-                     : [inptr0] "+r"(din0_ptr),
-                       [inptr1] "+r"(din1_ptr),
-                       [inptr2] "+r"(din2_ptr),
-                       [inptr3] "+r"(din3_ptr),
-                       [inptr4] "+r"(din4_ptr),
-                       [outptr0] "+r"(doutr0_ptr),
-                       [outptr1] "+r"(doutr1_ptr),
-                       [cnt] "+r"(cnt)
-                     : [vzero] "w"(vzero),
-                       [w0] "w"(wr0),
-                       [w1] "w"(wr1),
-                       [w2] "w"(wr2),
-                       [remain] "r"(cnt_remain),
-                       [scale_ptr] "r"(scale),
-                       [mask1] "w"(vmask_rp1),
-                       [mask2] "w"(vmask_rp2),
-                       [wmask] "w"(wmask),
-                       [vbias] "w"(wbias)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22");
+                     : PARAM1
+                     : PARAM2, [scale_ptr] "r"(scale)
+                     : ASM_PARAM);
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1832,37 +1795,14 @@ void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
         asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_LEAKY_RELU
                          MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
                              RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
-                     : [din0_ptr] "+r"(din0_ptr),
-                       [din1_ptr] "+r"(din1_ptr),
-                       [din2_ptr] "+r"(din2_ptr),
-                       [outptr] "+r"(doutr0_ptr),
-                       [cnt] "+r"(cnt),
-                       [mask_ptr] "+r"(mask_ptr)
-                     : [remain] "r"(cnt_remain),
-                       [wr0] "w"(wr0),
-                       [wr1] "w"(wr1),
-                       [wr2] "w"(wr2),
-                       [scale_ptr] "r"(scale),
-                       [bias] "r"(bias_c)
-                     : "cc",
-                       "memory",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2, [scale_ptr] "r"(scale)
+                     : ASM_PARAM);
         doutr0 = doutr0 + w_out;
       }
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1903,8 +1843,8 @@ void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1996,6 +1936,7 @@ void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
         he += 2;
       }
     }
+    LITE_PARALLEL_END()
   }
 }
 void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
@@ -2033,8 +1974,8 @@ void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2127,6 +2068,7 @@ void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
         he += 2;
       }
     }
+    LITE_PARALLEL_END()
   }
 }
 /**
@@ -2146,45 +2088,28 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
                                        const int h_out,
                                        const int w_out,
                                        ARMContext* ctx) {
-  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
-  int out_pad_idx[4] = {0, 1, 2, 3};
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp3);
+  int cnt_col = res.first;
+  int cnt_remain = res.second;
 
-  int tile_w = w_out >> 2;
-  int cnt_remain = w_out % 4;
+  uint32_t right_pad_num_in = (4 - cnt_remain) * sizeof(float) * 2;
+  uint32_t right_pad_num_out = (4 - cnt_remain) * sizeof(float);
 
-  unsigned int size_right_remain = (unsigned int)(8 + (tile_w << 3) - w_in);
-  size_right_remain = 8 - size_right_remain;
-
-  if (cnt_remain == 0 && size_right_remain == 0) {
-    cnt_remain = 4;
-    tile_w -= 1;
-    size_right_remain = 8;
-  }
-
-  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
-  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
-  uint32x4_t wmask =
-      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-
   float* zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float* write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
+  float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, wmask);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2263,7 +2188,7 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
         if (i + 2 > h_out) {
           doutr1_ptr = write_ptr;
         }
-        int cnt = tile_w;
+        int cnt = cnt_col;
         asm volatile(
             INIT_S2
             "ld1 {v15.4s}, [%[inptr0]]                 \n"
@@ -2278,49 +2203,9 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
             "blt 4f                                     \n" RIGHT_COMPUTE_S2
                 RIGHT_RESULT_S2_RELU6
             "4:                                          \n"
-            : [inptr0] "+r"(din0_ptr),
-              [inptr1] "+r"(din1_ptr),
-              [inptr2] "+r"(din2_ptr),
-              [inptr3] "+r"(din3_ptr),
-              [inptr4] "+r"(din4_ptr),
-              [outptr0] "+r"(doutr0_ptr),
-              [outptr1] "+r"(doutr1_ptr),
-              [cnt] "+r"(cnt)
-            : [vzero] "w"(vzero),
-              [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [remain] "r"(cnt_remain),
-              [six_ptr] "r"(six),
-              [mask1] "w"(vmask_rp1),
-              [mask2] "w"(vmask_rp2),
-              [wmask] "w"(wmask),
-              [vbias] "w"(wbias)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22");
+            : PARAM1
+            : PARAM2, [six_ptr] "r"(six)
+            : ASM_PARAM);
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -2346,41 +2231,18 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
               break;
           }
         }
-        int cnt = tile_w;
+        int cnt = cnt_col;
         unsigned int* mask_ptr = dmask;
         asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2
                          RIGHT_RESULT_S2_RELU6
-                     : [din0_ptr] "+r"(din0_ptr),
-                       [din1_ptr] "+r"(din1_ptr),
-                       [din2_ptr] "+r"(din2_ptr),
-                       [outptr] "+r"(doutr0_ptr),
-                       [cnt] "+r"(cnt),
-                       [mask_ptr] "+r"(mask_ptr)
-                     : [remain] "r"(cnt_remain),
-                       [six_ptr] "r"(six),
-                       [wr0] "w"(wr0),
-                       [wr1] "w"(wr1),
-                       [wr2] "w"(wr2),
-                       [bias] "r"(bias_c)
-                     : "cc",
-                       "memory",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2, [six_ptr] "r"(six)
+                     : ASM_PARAM);
         doutr0 = doutr0 + w_out;
       }
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 
@@ -2397,45 +2259,28 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
                                            const int h_out,
                                            const int w_out,
                                            ARMContext* ctx) {
-  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
-  int out_pad_idx[4] = {0, 1, 2, 3};
+  uint32x4_t vmask_rp3;
+  auto&& res = right_mask_3x3s2_fp32(w_in, w_out, 0, &vmask_rp3);
+  int cnt_col = res.first;
+  int cnt_remain = res.second;
 
-  int tile_w = w_out >> 2;
-  int cnt_remain = w_out % 4;
+  uint32_t right_pad_num_in = (4 - cnt_remain) * sizeof(float) * 2;
+  uint32_t right_pad_num_out = (4 - cnt_remain) * sizeof(float);
 
-  unsigned int size_right_remain = (unsigned int)(8 + (tile_w << 3) - w_in);
-  size_right_remain = 8 - size_right_remain;
-
-  if (cnt_remain == 0 && size_right_remain == 0) {
-    cnt_remain = 4;
-    tile_w -= 1;
-    size_right_remain = 8;
-  }
-
-  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
-  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
-                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
-  uint32x4_t wmask =
-      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-
   float* zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float* write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 9) * sizeof(float));
+  float* write_ptr = zero_ptr + (w_in + 9);
 
-  unsigned int dmask[12];
-
-  vst1q_u32(dmask, vmask_rp1);
-  vst1q_u32(dmask + 4, vmask_rp2);
-  vst1q_u32(dmask + 8, wmask);
+  unsigned int dmask[4];
+  vst1q_u32(dmask, vmask_rp3);
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2514,7 +2359,7 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
         if (i + 2 > h_out) {
           doutr1_ptr = write_ptr;
         }
-        int cnt = tile_w;
+        int cnt = cnt_col;
         asm volatile(
             INIT_S2
             "ld1 {v15.4s}, [%[inptr0]]                 \n"
@@ -2529,49 +2374,9 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
             "blt 4f                                     \n" RIGHT_COMPUTE_S2
                 RIGHT_RESULT_S2_LEAKY_RELU
             "4:                                          \n"
-            : [inptr0] "+r"(din0_ptr),
-              [inptr1] "+r"(din1_ptr),
-              [inptr2] "+r"(din2_ptr),
-              [inptr3] "+r"(din3_ptr),
-              [inptr4] "+r"(din4_ptr),
-              [outptr0] "+r"(doutr0_ptr),
-              [outptr1] "+r"(doutr1_ptr),
-              [cnt] "+r"(cnt)
-            : [vzero] "w"(vzero),
-              [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [remain] "r"(cnt_remain),
-              [scale_ptr] "r"(scale),
-              [mask1] "w"(vmask_rp1),
-              [mask2] "w"(vmask_rp2),
-              [wmask] "w"(wmask),
-              [vbias] "w"(wbias)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22");
+            : PARAM1
+            : PARAM2, [scale_ptr] "r"(scale)
+            : ASM_PARAM);
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -2597,41 +2402,18 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
               break;
           }
         }
-        int cnt = tile_w;
+        int cnt = cnt_col;
         unsigned int* mask_ptr = dmask;
         asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
                          RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
-                     : [din0_ptr] "+r"(din0_ptr),
-                       [din1_ptr] "+r"(din1_ptr),
-                       [din2_ptr] "+r"(din2_ptr),
-                       [outptr] "+r"(doutr0_ptr),
-                       [cnt] "+r"(cnt),
-                       [mask_ptr] "+r"(mask_ptr)
-                     : [remain] "r"(cnt_remain),
-                       [scale_ptr] "r"(scale),
-                       [wr0] "w"(wr0),
-                       [wr1] "w"(wr1),
-                       [wr2] "w"(wr2),
-                       [bias] "r"(bias_c)
-                     : "cc",
-                       "memory",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2, [scale_ptr] "r"(scale)
+                     : ASM_PARAM);
         doutr0 = doutr0 + w_out;
       }
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 
@@ -2675,8 +2457,8 @@ void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2776,6 +2558,7 @@ void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
         }
       }
     }
+    LITE_PARALLEL_END()
   }
 }
 void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
@@ -2815,8 +2598,8 @@ void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2915,6 +2698,7 @@ void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
         }
       }
     }
+    LITE_PARALLEL_END()
   }
 }
 }  // namespace math

@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class PowCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class PowCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
 

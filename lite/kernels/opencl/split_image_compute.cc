@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,42 +31,65 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-/* Pick kernel and assign width & flag */
 static void HelperFunc(const DDimLite& in_dims,
                        const int axis,
                        std::string* kernel_func_name,
-                       int* width,
-                       int* flag) {
+                       int* height) {
   if (in_dims.size() < 4) {
-    if (in_dims.size() - axis == 1) {
-      *width = in_dims[1];
-      *flag = 3;
+    if (in_dims.size() == 3) {
+      switch (axis) {
+        case 0:
+          *kernel_func_name = "SplitChannel";
+          break;
+        case 1:
+          *kernel_func_name = "SplitHeight";
+          break;
+        case 2:
+          *kernel_func_name = "SplitWidth";
+          break;
+        default:
+          LOG(FATAL) << "Unsupported axis: " << axis << " for this dimension";
+      }
+      *height = in_dims[1];
+    } else if (in_dims.size() == 2) {
+      switch (axis) {
+        case 0:
+          *kernel_func_name = "SplitHeight";
+          break;
+        case 1:
+          *kernel_func_name = "SplitWidth";
+          break;
+        default:
+          LOG(FATAL) << "Unsupported axis: " << axis << " for this dimension";
+      }
+      *height = in_dims[0];
     } else {
-      *width = in_dims[0];
-      *flag = 2;
+      switch (axis) {
+        case 0:
+          *kernel_func_name = "SplitWidth";
+          break;
+        default:
+          LOG(FATAL) << "Unsupported axis: " << axis << " for this dimension";
+      }
     }
   } else {
     switch (axis) {
       case 0:
         *kernel_func_name = "SplitBatch";
-        *width = in_dims[2];
         break;
       case 1:
         *kernel_func_name = "SplitChannel";
-        *width = in_dims[3];
         break;
       case 2:
         *kernel_func_name = "SplitHeight";
-        *width = in_dims[0];
         break;
       case 3:
         *kernel_func_name = "SplitWidth";
-        *width = in_dims[1];
         break;
       default:
-        LOG(FATAL) << "Unsupported axis: " << axis;
+        LOG(FATAL) << "Unsupported axis: " << axis << " for this dimension";
     }
-    *flag = axis;
+    *height = in_dims[2];
   }
 }
 
@@ -87,11 +110,14 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
     if (axis_ < 0) {
       axis_ += x_dims.size();
     }
-
+    VLOG(4) << "axis: " << axis_;
+    VLOG(4) << "x_dims: " << x_dims;
+    VLOG(4) << "outs.size(): " << outs.size();
+    VLOG(4) << "num: " << split_param_->num;
     if (outs.size() != 2) {
       LOG(FATAL) << "NOT imple yet!";
     }
-    HelperFunc(x_dims, axis_, &kernel_func_name_, &width_, &flag_);
+    HelperFunc(x_dims, axis_, &kernel_func_name_, &height_);
 
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -123,8 +149,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
       gws_ = cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                          static_cast<cl::size_type>(default_work_size[1]),
                          static_cast<cl::size_type>(default_work_size[2])};
-
-      HelperFunc(x_dims, axis_, &kernel_func_name_, &width_, &flag_);
+      VLOG(4) << "gws: " << gws_[0] << ", " << gws_[1] << ", " << gws_[2];
     }
   }
 
@@ -141,8 +166,11 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                     image_shape["width"],
                                     image_shape["height"],
                                     nullptr);
+      VLOG(4) << "out_dims: " << split_param_->output[i]->dims();
+      VLOG(4) << "out_img[w, h]: " << image_shape["width"] << ", "
+              << image_shape["height"];
     }
-
+    VLOG(4) << "out0_dims_axis: " << out0_dims_axis;
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
@@ -155,16 +183,15 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, *(out_img[1]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, flag_);
-      CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, out0_dims_axis);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, static_cast<int>(x_dims[1]));
-      CL_CHECK_FATAL(status);
+      if (kernel_func_name_ == "SplitBatch" ||
+          kernel_func_name_ == "SplitHeight") {
+        status = kernel_.setArg(arg_idx++, height_);
+        CL_CHECK_FATAL(status);
+      }
       status = kernel_.setArg(arg_idx++,
                               static_cast<int>(x_dims[x_dims.size() - 1]));
-      CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, width_);
       CL_CHECK_FATAL(status);
 
       status = EnqueueNDRangeKernel(context,
@@ -190,8 +217,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
  private:
   int axis_{-1};
-  int flag_{-1};   // the axis after expanding input tensor to 4 dims
-  int width_{-1};  // this var and `flag_` form the one OpenCL image dim
+  int height_{-1};
   param_t* split_param_{nullptr};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;

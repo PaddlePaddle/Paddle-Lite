@@ -30,7 +30,8 @@ CLRuntime* CLRuntime::Global() {
 }
 
 void CLRuntime::Flush(const int index) {
-  if (is_cl_runtime_initialized_ && index % opencl_flush_period_ == 0) {
+  if (is_cl_runtime_initialized_ && index % opencl_flush_period_ == 0 &&
+      command_queue_ != nullptr) {
     command_queue_->flush();
   }
 }
@@ -208,6 +209,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
   // find binary
   std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+  std::string precision_option = (precision_ == lite_api::CL_PRECISION_FP16)
+                                     ? "Precision: FP16; "
+                                     : "Precision: FP32; ";
 
   if (programs_.empty()) {
     // Check whether binary exist.
@@ -245,12 +249,12 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         del_tune_bin_flag_ = true;
         // Jump to build from source
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
-                              GetSN(build_option).data(),
-                              GetSN(build_option).length())) {
+                              GetSN(precision_option).data(),
+                              GetSN(precision_option).length())) {
         std::string sn_str(reinterpret_cast<char*>((sn_iter->second)[0].data()),
                            (sn_iter->second)[0].size());
-        LOG(INFO) << "\nSN required: " << GetSN(build_option)
-                  << "\tsize: " << GetSN(build_option).length()
+        LOG(INFO) << "\nSN required: " << GetSN(precision_option)
+                  << "\tsize: " << GetSN(precision_option).length()
                   << "\nSN in bin file: " << sn_str
                   << "\tsize: " << ((sn_iter->second)[0]).size();
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
@@ -320,34 +324,6 @@ bool CLRuntime::CheckFromSource(const std::string& file_name,
           << " --- ";
 #endif
   BuildProgram(program, build_option);
-
-  // Keep built program binary
-  if (binary_path_name_.size() == 2) {
-    cl_int status{CL_SUCCESS};
-    // 1. Query binary (PTX file) size
-    size_t bin_size;
-    status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
-    CL_CHECK_FATAL_SOLID(status);
-    // 2. Read binary (PTX file) to memory buffer
-    cl::Program::Binaries binary;
-    binary.resize(1);
-    binary[0].resize(bin_size);
-    auto buf = binary[0].data();
-    status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
-    CL_CHECK_FATAL_SOLID(status);
-    programs_precompiled_binary_[program_key] = binary;
-#ifdef LITE_WITH_LOG
-    VLOG(3) << " --- binary size: " << bin_size << " ---";
-#endif
-    if (programs_precompiled_binary_.find(sn_key_) ==
-        programs_precompiled_binary_.end()) {
-      // add identifier
-      std::string sn = GetSN(build_option);
-      std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
-      programs_precompiled_binary_[sn_key_] = {sn_info};
-    }
-  }
-
   programs_[program_key] = std::move(ptr);
 
   return true;
@@ -392,6 +368,38 @@ void CLRuntime::SaveProgram() {
   if (IsFileExists(binary_file)) {
     LOG(INFO) << "OpenCL Program existed:" << binary_file;
   } else {
+    for (auto& program_id : programs_) {
+      // Keep built program binary
+      if (binary_path_name_.size() == 2) {
+        cl_int status{CL_SUCCESS};
+        // 1. Query binary (PTX file) size
+        size_t bin_size;
+        cl::Program program = *(program_id.second);
+        status = program.getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
+        CL_CHECK_FATAL_SOLID(status);
+        // 2. Read binary (PTX file) to memory buffer
+        cl::Program::Binaries binary;
+        binary.resize(1);
+        binary[0].resize(bin_size);
+        auto buf = binary[0].data();
+        status = program.getInfo(CL_PROGRAM_BINARIES, &buf);
+        CL_CHECK_FATAL_SOLID(status);
+        programs_precompiled_binary_[program_id.first] = binary;
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- binary size: " << bin_size << " ---";
+#endif
+        if (programs_precompiled_binary_.find(sn_key_) ==
+            programs_precompiled_binary_.end()) {
+          // add identifier
+          std::string precision_option =
+              (precision_ == lite_api::CL_PRECISION_FP16) ? "Precision: FP16; "
+                                                          : "Precision: FP32; ";
+          std::string sn = GetSN(precision_option);
+          std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+          programs_precompiled_binary_[sn_key_] = {sn_info};
+        }
+      }
+    }
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
     if (!ret) {
       LOG(WARNING) << "Serialize failed for opencl binary_file:" << binary_file;
@@ -555,6 +563,7 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   const std::string kMALI_PATTERN_STR = "Mali";
   const std::string kADRENO_PATTERN_STR = "QUALCOMM Adreno(TM)";
   const std::string kPOWERVR_PATTERN_STR = "PowerVR";
+  const std::string kAPPLE_M1_PATTERN_STR = "Apple M1";
   std::string gpu_type_str = "";
 
   if (device_name == kADRENO_PATTERN_STR) {
@@ -566,6 +575,9 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   } else if (device_name.find(kPOWERVR_PATTERN_STR) != std::string::npos) {
     gpu_type_str = "powerVR gpu";
     return GpuType::IMAGINATION_POWERVR;
+  } else if (device_name.find(kAPPLE_M1_PATTERN_STR) != std::string::npos) {
+    gpu_type_str = "appleM1 gpu";
+    return GpuType::APPLE_M1;
   } else {
     gpu_type_str = "others gpu";
     return GpuType::UNKNOWN;

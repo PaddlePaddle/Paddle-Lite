@@ -18,16 +18,16 @@ endif()
 
 include(ExternalProject)
 
-set(PYBIND_SOURCE_DIR ${THIRD_PARTY_PATH}/pybind)
+set(PYBIND_SOURCE_DIR ${PADDLE_SOURCE_DIR}/third-party/pybind)
 
-include_directories(${PYBIND_SOURCE_DIR}/src/extern_pybind/include)
+include_directories(${PYBIND_SOURCE_DIR}/include)
 
 ExternalProject_Add(
         extern_pybind
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        GIT_REPOSITORY  "https://github.com/pybind/pybind11.git"
-        GIT_TAG         "v2.6.0"
-        PREFIX          ${PYBIND_SOURCE_DIR}
+        GIT_REPOSITORY  ""
+        GIT_TAG         8de7772cc72daca8e947b79b83fea46214931604
+        SOURCE_DIR      ${PYBIND_SOURCE_DIR}
         UPDATE_COMMAND  ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND     ""

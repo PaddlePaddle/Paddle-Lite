@@ -73,9 +73,9 @@ void ScaleImageCompute::setup_without_mps() {
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
     if (param.bias_after_scale) {
-        function_name_ = "scale_after_bias";
+        function_name_ = "bias_after_scale";
     } else {
-        function_name_ = "scale_before_bias";
+        function_name_ = "bias_before_scale";
     }
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

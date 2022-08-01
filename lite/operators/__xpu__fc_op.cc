@@ -40,6 +40,9 @@ bool XPUFcOp::CheckShape() const {
       CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
+  if (param_.in_num_col_dims == -1) {
+    param_.in_num_col_dims += input_dims.size();
+  }
 
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
@@ -88,7 +91,8 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.act_param = op_desc.GetAttr<float>("act_param");
   param_.has_bias = op_desc.GetAttr<bool>("has_bias");
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
-
+  param_.transpose_x = op_desc.GetAttr<bool>("transpose_x");
+  param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
@@ -107,12 +111,8 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.input_max =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
-  if (op_desc.HasAttr("precision")) {
-    param_.precision = op_desc.GetAttr<std::string>("precision");
-  }
+
   if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
-    CHECK(param_.precision == "int8") << "enable_int8 precison:"
-                                      << param_.precision;
     param_.quant_input_max =
         127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
     param_.quant_w_max =

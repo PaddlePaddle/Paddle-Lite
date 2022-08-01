@@ -23,6 +23,7 @@
 #include "lite/core/profile/profiler.h"
 #endif
 #include "lite/backends/opencl/cl_utility.h"
+#include "lite/backends/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -39,43 +40,41 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
     axis_ = concat_param_->axis;
+    auto* axis_tensor = concat_param_->axis_tensor;
+    if (axis_tensor != nullptr) {
+      auto* axis_tensor_data = axis_tensor->data<int>();
+      axis_ = axis_tensor_data[0];
+    }
+    /*
+        if (axis_tensor != nullptr) {
+          auto* d_image = DATA_GPU(axis_tensor);
+          cl::Image2D* cl_image = static_cast<cl::Image2D*>(d_image);
+          size_t cl_image2d_width, cl_image2d_height;
+          cl_image->getImageInfo(CL_IMAGE_WIDTH, &cl_image2d_width);
+          cl_image->getImageInfo(CL_IMAGE_HEIGHT, &cl_image2d_height);
+
+          const bool fp16_support =
+              CLRuntime::Global()->get_precision() ==
+       lite_api::CL_PRECISION_FP16;
+          if (fp16_support) {
+            auto* h_image = static_cast<half_t*>(TargetWrapperCL::MapImage(
+                d_image, cl_image2d_width, cl_image2d_height, 0, 0));
+            axis_ = Half2Float(h_image[0]);
+            TargetWrapperCL::Unmap(d_image, h_image);
+          } else {
+            auto* h_image = static_cast<float*>(TargetWrapperCL::MapImage(
+                d_image, cl_image2d_width, cl_image2d_height, 0, 0));
+            axis_ = h_image[0];
+            TargetWrapperCL::Unmap(d_image, h_image);
+          }
+        }
+    */
     axis_ = axis_ >= 0 ? axis_ : axis_ + concat_param_->x[0]->dims().size();
 
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
-
-    if (output_tensor_dims.size() < 4) {
-      if (output_tensor_dims.size() - axis_ == 1) {
-        // width
-        width_ = output_tensor_dims[1];  // c
-        flag_ = 3;
-      } else {
-        // height
-        width_ = output_tensor_dims[0];  // n
-        flag_ = 2;
-      }
-    } else {
-      switch (axis_) {
-        case 0:
-          width_ = output_tensor_dims[2];  // h
-          flag_ = 0;
-          break;
-        case 1:                            // channel
-          width_ = output_tensor_dims[3];  // w
-          flag_ = 1;
-          break;
-        case 2:                            // height
-          width_ = output_tensor_dims[0];  // n
-          flag_ = 2;
-          break;
-        case 3:                            // width
-          width_ = output_tensor_dims[1];  // c
-          flag_ = 3;
-          break;
-        default:
-          LOG(FATAL) << "Unsupported axis:" << axis_;
-      }
-    }
+    auto new_dims = Broadcast2GpuShape(output_tensor_dims);
+    flag_ = 4 - output_tensor_dims.size() + axis_;
 
     for (auto& input : inputs) {
       cl_int4 in_shape = {1, 1, 1, 1};
@@ -90,15 +89,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
       kernel_func_name_ = "Concat" + std::to_string(inputs.size()) +
                           "InputAxis" + std::to_string(flag_);
-    } else if (inputs.size() == 2) {
-      kernel_func_name_ = "concat2";
+    } else if (inputs.size() == 2 && flag_ == 1) {
+      kernel_func_name_ = "Concat2InputAxis1Common";
     } else if (inputs.size() == 3 && axis_ == 1 &&
                output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith3Inputs";
     } else if (inputs.size() == 4 && axis_ == 1 &&
                output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith4Inputs";
-      "InputAxis" + std::to_string(flag_);
     } else {
       // note: do layout transform between image and buffer,
       // before and after concat(buffer impl.)
@@ -138,8 +136,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     }
 
     std::string kernel_file;
-    if (kernel_func_name_ == "concat2" ||
-        kernel_func_name_ == "Concat2InputAxis1") {
+    if (kernel_func_name_ == "concat_mul_buffer") {
+      kernel_file = "buffer/concat_kernel.cl";
+    } else if (kernel_func_name_ == "Concat2InputAxis1" ||
+               kernel_func_name_ == "Concat2InputAxis1Common") {
       kernel_file = "image/concat_default_kernel.cl";
     } else {
       kernel_file = "image/concat_kernel.cl";
@@ -147,18 +147,15 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    (kernel_func_name_ == "concat_mul_buffer")
-                                        ? "buffer/concat_kernel.cl"
-                                        : kernel_file,
-                                    build_options_,
-                                    time_stamp_);
+    context.cl_context()->AddKernel(
+        kernel_func_name_, kernel_file, build_options_, time_stamp_);
   }
 
   void Run() override {
     const auto& output_tensor_dims = concat_param_->output->dims();
-    int output_tensor_w = output_tensor_dims[output_tensor_dims.size() - 1];
-    int output_tensor_c = output_tensor_dims[1];
+    auto new_dim = Broadcast2GpuShape(output_tensor_dims);
+    int output_tensor_w = new_dim[3];
+    int output_tensor_c = new_dim[1];
     auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
     auto* output_image_p = MUTABLE_DATA_GPU(concat_param_->output,
                                             output_image_shape["width"],
@@ -200,7 +197,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "output_image_shape(w,h): " << output_image_shape["width"] << " "
             << output_image_shape["height"];
     VLOG(4) << "output_tensor_w: " << output_tensor_w;
-    VLOG(4) << "width_: " << width_;
     VLOG(4) << "global_work_size: " << global_work_size[0] << "  "
             << global_work_size[1] << "  " << global_work_size[2];
     VLOG(4) << "kernel_func_name: " << kernel_func_name_;
@@ -248,25 +244,19 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
-    } else if (kernel_func_name_ == "concat2") {
+    } else if (kernel_func_name_ == "Concat2InputAxis1Common") {
       auto* input0_image_p = GET_DATA_GPU(inputs[0]);
       auto* input1_image_p = GET_DATA_GPU(inputs[1]);
-      int input0_axis_dims = inputs[0]->dims()[axis_];
+      int input0_dims_axis = inputs[0]->dims()[axis_];
       cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(1, *input1_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(2, *output_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, flag_);
+      status = kernel.setArg(3, input0_dims_axis);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(4, input0_axis_dims);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(5, output_tensor_c);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(6, output_tensor_w);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(7, width_);
+      status = kernel.setArg(4, output_tensor_w);
       CL_CHECK_FATAL(status);
 
       status = EnqueueNDRangeKernel(context,
@@ -343,7 +333,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
-    } else if (kernel_func_name_ == "concat_mul_buffer") {  // inputs.size() > 4
+    } else if (kernel_func_name_ == "concat_mul_buffer") {
       // note: do image layout transform: image to buffer
       size_t inputs_num = inputs.size();
       std::vector<const cl::Image2D*> inputs_image_pointers(inputs_num);
@@ -447,7 +437,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
  private:
   int axis_ = 1;
   int flag_ = 1;
-  int width_ = 1;
   int pre_size_ = 1;
   int post_size_ = 1;
   int align_{true};
@@ -473,9 +462,7 @@ REGISTER_LITE_KERNEL(
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kImageDefault))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

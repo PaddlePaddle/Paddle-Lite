@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 usage: gcda_clean.py pull_id
 """
@@ -11,6 +10,7 @@ import sys
 from github import Github
 
 token = os.getenv('GITHUB_API_TOKEN')
+
 
 def get_pull(pull_id):
     """

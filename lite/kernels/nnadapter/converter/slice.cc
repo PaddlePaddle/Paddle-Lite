@@ -59,11 +59,16 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
       input_operand, axes, starts, ends, steps, out_name);
 
   // Use squeeze to process decrease_axis(attr)
-  if (!decrease_axis.empty()) {
+  if (!decrease_axis.empty() &&
+      decrease_axis.size() != input_type->dimensions.count) {
     // Squeeze operation
     converter->AddSqueezeOperation(slice_operand, decrease_axis, out_name);
   }
-
+  if (decrease_axis.size() == input_type->dimensions.count &&
+      decrease_axis.size() > 1) {
+    std::vector<int> shape = {1};
+    converter->AddReshapeOperation(slice_operand, shape, out_name);
+  }
   return NO_ERROR;
 }
 

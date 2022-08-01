@@ -61,31 +61,37 @@ using stack_float =
     paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Y",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 using stack_int32 =
     paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int32, int32_def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Y",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 using stack_int64 =
     paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int64, int64_def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Y",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
     .Finalize();

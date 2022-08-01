@@ -44,7 +44,7 @@ void CompareImageCompute::PrepareForRun() {
     bool should_use_mps = false;
     if (@available(iOS 12.1, *)) {
         if (metal_context_->use_mps()) {
-            should_use_mps = true;
+            if (input_buffer_x_->tensor_dim_[0] == 1) should_use_mps = true;
         }
     }
 

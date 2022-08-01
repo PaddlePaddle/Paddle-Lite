@@ -5,7 +5,7 @@ set -ex
 ARM_OS="armlinux"                    # android only yet
 ARM_ABI="armv8"                     # armv8, armv7
 ARM_LANG="gcc"                      # gcc only yet
-DDK_ROOT="$(pwd)/rknpu"       
+DDK_ROOT="$(pwd)/rknpu"
 TARGET_NAME="test_subgraph_pass"    # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_TESTING=ON     	            # ON/OFF
@@ -25,7 +25,7 @@ function print_usage {
     echo
 }
 
-# for code gen, a source file is generated after a test, 
+# for code gen, a source file is generated after a test,
 # but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace {
@@ -42,16 +42,18 @@ function prepare_workspace {
 }
 
 function prepare_thirdparty {
-    readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+    # url that stores third-party tar.gz file to accelerate third-party lib installation
+    readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+    readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 
     readonly workspace=$PWD
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-         if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi

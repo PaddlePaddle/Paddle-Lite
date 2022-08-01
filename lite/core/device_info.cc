@@ -46,7 +46,13 @@
  */
 
 #ifdef LITE_WITH_LINUX
+
+#ifdef LITE_WITH_QNX
+#include <sys/neutrino.h>
+#else
 #include <sys/syscall.h>
+#endif
+
 #include <unistd.h>
 #endif
 #ifdef LITE_WITH_ANDROID
@@ -79,6 +85,44 @@
 
 namespace paddle {
 namespace lite {
+// http://elixir.free-electrons.com/linux/latest/source/arch/arm64/include/uapi/asm/hwcap.h
+#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
+#include <asm/hwcap.h> /* Get HWCAP bits from asm/hwcap.h */
+#include <sys/auxv.h>
+#define AARCH64_HWCAP_SVE (1UL << 22)
+#define AARCH64_HWCAP2_SVE2 (1UL << 1)
+#define AARCH64_HWCAP2_SVEAES (1UL << 2)
+#define AARCH64_HWCAP2_SVEPMULL (1UL << 3)
+#define AARCH64_HWCAP2_SVEBITPERM (1UL << 4)
+#define AARCH64_HWCAP2_SVESHA3 (1UL << 5)
+#define AARCH64_HWCAP2_SVESM4 (1UL << 6)
+#define AARCH64_HWCAP2_SVEI8MM (1UL << 9)
+#define AARCH64_HWCAP2_SVEF32MM (1UL << 10)
+#define AARCH64_HWCAP2_SVEF64MM (1UL << 11)
+#define AARCH64_HWCAP2_SVEBF16 (1UL << 12)
+#define AARCH64_HWCAP2_I8MM (1UL << 13)
+#define AARCH64_HWCAP2_BF16 (1UL << 14)
+#define AT_HWCAP 16
+#define AT_HWCAP2 26
+
+bool check_sve2_valid() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
+  if (mask & AARCH64_HWCAP2_SVE2) return true;
+  return false;
+}
+
+bool check_sve2_i8mm_vaild() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
+  if (mask & AARCH64_HWCAP2_SVEI8MM) return true;
+  return false;
+}
+
+bool check_sve2_f32mm_vaild() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
+  if (mask & AARCH64_HWCAP2_SVEF32MM) return true;
+  return false;
+}
+#endif
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;
@@ -92,6 +136,10 @@ LITE_THREAD_LOCAL int64_t DeviceInfo::count_ = 0;
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 2048 * 1024;
 const int DEFAULT_L3_CACHE_SIZE = 0;
+#elif defined(LITE_WITH_M1)
+const int DEFAULT_L1_CACHE_SIZE = 128 * 1024;
+const int DEFAULT_L2_CACHE_SIZE = 4096 * 1024;
+const int DEFAULT_L3_CACHE_SIZE = 0;
 #else
 const int DEFAULT_L1_CACHE_SIZE = 32 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 512 * 1024;
@@ -101,11 +149,11 @@ const int DEFAULT_L3_CACHE_SIZE = 0;
 int get_cpu_num() {
 #ifdef LITE_WITH_LINUX
   // get cpu count from /sys/devices/system/cpu/cpunum/uevent
-  int max_cpu_num = 128;
   int cpu_num = 0;
-  for (int i = 0; i < max_cpu_num; ++i) {
+  while (true) {
     char path[256];
-    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/uevent", i);
+    snprintf(
+        path, sizeof(path), "/sys/devices/system/cpu/cpu%d/uevent", cpu_num);
     FILE* fp = fopen(path, "rb");
     if (!fp) {
       break;
@@ -117,7 +165,7 @@ int get_cpu_num() {
     cpu_num = 1;
   }
   return cpu_num;
-#elif defined(TARGET_IOS)
+#elif defined(TARGET_IOS) || defined(LITE_WITH_M1)
   int cpu_num = 0;
   size_t len = sizeof(cpu_num);
   sysctlbyname("hw.ncpu", &cpu_num, &len, NULL, 0);
@@ -148,7 +196,7 @@ size_t get_mem_size() {
   }
   fclose(fp);
   return memsize;
-#elif defined(TARGET_IOS)
+#elif defined(TARGET_IOS) || defined(LITE_WITH_M1)
   // to be implemented
   printf("not implemented, set to default 4GB\n");
   return 4096 * 1024;
@@ -185,6 +233,8 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd04:
           arch_type = kA35;
           break;
+        case 0x803:
+        case 0x805:
         case 0xd05:
           arch_type = kA55;
           break;
@@ -192,47 +242,41 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
           arch_type = kA57;
           break;
         case 0xd08:
+        case 0x205:
           arch_type = kA72;
           break;
+        case 0x800:
+        case 0x801:
         case 0xd09:
           arch_type = kA73;
           break;
+        case 0x802:
         case 0xd0a:
           arch_type = kA75;
+          break;
+        case 0x804:
+        case 0xd40:
+          arch_type = kA76;
           break;
         case 0xd0d:
           arch_type = kA77;
           break;
-        case 0xd40:
-          arch_type = kA76;
+        case 0xd41:
+          // 888
+          arch_type = kA78;
           break;
-        case 0x804:
-          // 855
-          arch_type = kA76;
+        case 0xd44:
+          // 888
+          arch_type = kX1;
           break;
-        case 0x805:
-          // 855
-          arch_type = kA55;
+        case 0xd46:
+          arch_type = kA510;
           break;
-        case 0x802:
-          // 845
-          arch_type = kA75;
+        case 0xd47:
+          arch_type = kA710;
           break;
-        case 0x803:
-          // 845
-          arch_type = kA55;
-          break;
-        case 0x801:
-          // 835
-          arch_type = kA73;
-          break;
-        case 0x800:
-          // 835
-          arch_type = kA73;
-          break;
-        case 0x205:
-          // 820
-          arch_type = kA72;
+        case 0xd48:
+          arch_type = kX2;
           break;
         default:
           LOG(ERROR) << "Unknow cpu arch: " << arch_id;
@@ -248,6 +292,10 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
 #elif defined(TARGET_IOS)
   for (int i = 0; i < cpu_num; ++i) {
     archs->at(i) = kAPPLE;
+  }
+#elif defined(LITE_WITH_M1)
+  for (int i = 0; i < cpu_num; ++i) {
+    archs->at(i) = kX1;
   }
 #endif
 }
@@ -470,12 +518,16 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
 }
 
 int set_sched_affinity(const std::vector<int>& cpu_ids) {
-// #define CPU_SETSIZE 1024
-// #define __NCPUBITS  (8 * sizeof (unsigned long))
-// typedef struct
-// {
-//    unsigned long __bits[CPU_SETSIZE / __NCPUBITS];
-// } cpu_set_t;
+#define PD_CPU_SETSIZE 1024
+#define PD__NCPUBITS (8 * sizeof(unsigned long))  // NOLINT
+  typedef struct {
+    unsigned long __bits[PD_CPU_SETSIZE / PD__NCPUBITS];  // NOLINT
+  } cpu_set_t;
+
+#define PD_CPU_SET(cpu, cpusetp) \
+  ((cpusetp)->__bits[(cpu) / PD__NCPUBITS] |= (1UL << ((cpu) % PD__NCPUBITS)))
+
+#define PD_CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
 
 // set affinity for thread
 #ifdef __GLIBC__
@@ -484,11 +536,20 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
   pid_t pid = gettid();
 #endif
   cpu_set_t mask;
-  CPU_ZERO(&mask);
+  PD_CPU_ZERO(&mask);
+  unsigned int Runmask = 0;
   for (int i = 0; i < cpu_ids.size(); ++i) {
-    CPU_SET(cpu_ids[i], &mask);
+#ifdef LITE_WITH_QNX
+    RMSK_SET(cpu_ids[i], &Runmask);  // set CPU
+#else
+    PD_CPU_SET(cpu_ids[i], &mask);
+#endif
   }
+#ifdef LITE_WITH_QNX
+  int syscallret = ThreadCtl(_NTO_TCTL_RUNMASK, (unsigned int*)Runmask);
+#else
   int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
+#endif
   if (syscallret) {
     return -1;
   }
@@ -499,10 +560,7 @@ bool bind_threads(const std::vector<int> cpu_ids) {
 #ifdef ARM_WITH_OMP
   int thread_num = cpu_ids.size();
   omp_set_num_threads(thread_num);
-  std::vector<int> ssarets;
-  for (int i = 0; i < thread_num; ++i) {
-    ssarets.push_back(0);
-  }
+  std::vector<int> ssarets(thread_num, 0);
 #pragma omp parallel for
   for (int i = 0; i < thread_num; i++) {
     ssarets[i] = set_sched_affinity(cpu_ids);
@@ -623,13 +681,26 @@ void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
     for (int i = 0; i < core_num_; ++i) {
       (*cache)[i] = cache_size;
     }
-  } else {
+  } else if (argc == 2) {
     int big_core_num = big_core_ids_.size();
     int little_core_num = little_core_ids_.size();
     int big_core_cache_size = va_arg(arg_ptr, int);
     int little_core_cache_size = va_arg(arg_ptr, int);
     for (int i = 0; i < big_core_num; ++i) {
       (*cache)[big_core_ids_[i]] = big_core_cache_size;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      (*cache)[little_core_ids_[i]] = little_core_cache_size;
+    }
+  } else if (argc == 3) {
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    int big_core_cache_size0 = va_arg(arg_ptr, int);
+    int big_core_cache_size1 = va_arg(arg_ptr, int);
+    int little_core_cache_size = va_arg(arg_ptr, int);
+    (*cache)[big_core_ids_[big_core_num - 1]] = big_core_cache_size0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
+      (*cache)[big_core_ids_[i]] = big_core_cache_size1;
     }
     for (int i = 0; i < little_core_num; ++i) {
       (*cache)[little_core_ids_[i]] = little_core_cache_size;
@@ -647,7 +718,7 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
     for (int i = 0; i < core_num_; ++i) {
       archs_[i] = arch;
     }
-  } else {
+  } else if (argc == 2) {
     ARMArch big_core_arch = (ARMArch)va_arg(arg_ptr, int);
     ARMArch little_core_arch = (ARMArch)va_arg(arg_ptr, int);
     int big_core_num = big_core_ids_.size();
@@ -658,13 +729,66 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
     for (int i = 0; i < little_core_num; ++i) {
       archs_[little_core_ids_[i]] = little_core_arch;
     }
+  } else if (argc == 3) {
+    // 888
+    ARMArch big_core_arch0 = (ARMArch)va_arg(arg_ptr, int);
+    ARMArch big_core_arch1 = (ARMArch)va_arg(arg_ptr, int);
+    ARMArch little_core_arch = (ARMArch)va_arg(arg_ptr, int);
+    int big_core_num = big_core_ids_.size();
+    int little_core_num = little_core_ids_.size();
+    archs_[big_core_ids_[big_core_num - 1]] = big_core_arch0;
+    for (int i = 0; i < big_core_num - 1; ++i) {
+      archs_[big_core_ids_[i]] = big_core_arch1;
+    }
+    for (int i = 0; i < little_core_num; ++i) {
+      archs_[little_core_ids_[i]] = little_core_arch;
+    }
   }
   va_end(arg_ptr);
 }
 
 bool DeviceInfo::SetCPUInfoByName() {
   /* Snapdragon */
-  if (dev_name_.find("KONA") != std::string::npos) {  // 865
+  if (dev_name_.find("SM8350") != std::string::npos) {  // 888
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(3, kX1, kA78, kA55);
+    SetCacheInfo(0, 3, 512 * 1024, 192 * 1024, 256 * 1024);
+    SetCacheInfo(1, 3, 1024 * 1024, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  } else if (dev_name_.find("SA8155") != std::string::npos) {  // sa8155
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(3, kGold_Prime, kGold, kSilver);
+    SetCacheInfo(0, 3, 512 * 1024, 256 * 1024, 128 * 1024);
+    SetCacheInfo(1, 3, 512 * 1024, 256 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 2 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  } else if (dev_name_.find("SA8195") != std::string::npos) {  // sa8195
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kGold_Prime, kSilver);
+    SetCacheInfo(0, 2, 512 * 1024, 128 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  } else if (dev_name_.find("KONA") != std::string::npos) {  // 865
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
     big_core_ids_ = {4, 5, 6, 7};
@@ -677,8 +801,7 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetFP16Info(1, 1);
     SetDotInfo(2, 1, 1);
     return true;
-  }
-  if (dev_name_.find("SM8150") != std::string::npos) {  // 855
+  } else if (dev_name_.find("SM8150") != std::string::npos) {  // 855
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
     big_core_ids_ = {4, 5, 6, 7};
@@ -781,6 +904,19 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(1, 2, 512 * 1024, 256 * 1024);
     return true;
     /* MediaTek */
+  } else if (dev_name_.find("MT6891") != std::string::npos) {  // Dimensity 1100
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kA78, kA55);
+    SetCacheInfo(0, 2, 64 * 1024, 64 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
   } else if (dev_name_.find("MT6797") !=
              std::string::npos) {  // X20/X23/X25/X27
     core_num_ = 10;
@@ -1064,6 +1200,12 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 
 bool DeviceInfo::set_a53_valid() { return has_a53_valid_; }
 
+bool DeviceInfo::has_sve2() { return has_sve2_; }
+
+bool DeviceInfo::has_sve2_f32mm() { return has_sve2_f32mm_; }
+
+bool DeviceInfo::has_sve2_i8mm() { return has_sve2_i8mm_; }
+
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
   mem_size_ = get_mem_size();
@@ -1093,6 +1235,10 @@ int DeviceInfo::Setup() {
 #else
 #ifdef TARGET_IOS
   dev_name_ = "Apple";
+#elif defined(LITE_WITH_M1)
+  dev_name_ = "M1";
+  SetDotInfo(1, 1);
+  SetFP16Info(1, 1);
 #else
   dev_name_ = "Unknown";
 #endif
@@ -1114,6 +1260,17 @@ int DeviceInfo::Setup() {
   } else {
     has_a53_valid_ = true;
   }
+
+  // SVE2
+  has_sve2_ = false;
+  has_sve2_i8mm_ = false;
+  has_sve2_f32mm_ = false;
+#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
+  has_sve2_ = check_sve2_valid();
+  has_sve2_f32mm_ = has_sve2_ && check_sve2_f32mm_vaild();
+  has_sve2_i8mm_ = has_sve2_ && check_sve2_i8mm_vaild();
+#endif
+
   // output info
   LOG(INFO) << "ARM multiprocessors name: " << dev_name_;
   LOG(INFO) << "ARM multiprocessors number: " << core_num_;
@@ -1137,6 +1294,9 @@ int DeviceInfo::Setup() {
     LOG(INFO) << L3_cache_[i] / 1024 << " KB";
   }
   LOG(INFO) << "Total memory: " << mem_size_ << "KB";
+  LOG(INFO) << "SVE2 support: " << has_sve2_;
+  LOG(INFO) << "SVE2 f32mm support: " << has_sve2_f32mm_;
+  LOG(INFO) << "SVE2 i8mm support: " << has_sve2_i8mm_;
   // set default run mode
   SetRunMode(lite_api::PowerMode::LITE_POWER_NO_BIND,
              1);  // use single thread by default
@@ -1448,6 +1608,24 @@ FMAType device_fma_level() {
     return FMAType::FMA_NONE;
 }
 
+#endif
+
+#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
+#undef AARCH64_HWCAP_SVE
+#undef AARCH64_HWCAP2_SVE2
+#undef AARCH64_HWCAP2_SVEAES
+#undef AARCH64_HWCAP2_SVEPMULL
+#undef AARCH64_HWCAP2_SVEBITPERM
+#undef AARCH64_HWCAP2_SVESHA3
+#undef AARCH64_HWCAP2_SVESM4
+#undef AARCH64_HWCAP2_SVEI8MM
+#undef AARCH64_HWCAP2_SVEF32MM
+#undef AARCH64_HWCAP2_SVEF64MM
+#undef AARCH64_HWCAP2_SVEBF16
+#undef AARCH64_HWCAP2_I8MM
+#undef AARCH64_HWCAP2_BF16
+#undef AT_HWCAP
+#undef AT_HWCAP2
 #endif
 
 }  // namespace lite

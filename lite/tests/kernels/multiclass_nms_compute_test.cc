@@ -354,11 +354,6 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     if (std::is_same<T, float>()) {
       outs->set_precision(PRECISION(kFloat));
     }
-#ifdef ENABALE_ARM_FP16
-    if (std::is_same<T, lite_api::float16_t>()) {
-      outs->set_precision(PRECISION(kFP16));
-    }
-#endif
 
     auto score_size = scores_dims_.size();
     std::vector<std::map<int, std::vector<int>>> all_indices;
@@ -490,23 +485,16 @@ TEST(multiclass_nms, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+/* The current multiclass_nms2 op in xdnn only support topk_nms <= 512
+   Comment this to avoid yolov3_darknet53_fp32_baidu run error. */
+// #elif defined(LITE_WITH_XPU)
+//   place = TARGET(kXPU);
 #else
   return;
 #endif
 
   TestMulticlassNms<float>(place, abs_error);
 }
-
-#if defined(ENABLE_ARM_FP16)
-TEST(multiclass_nmmsFP16, precison) {
-  float abs_error = 2e-5;
-  Place place;
-
-  place = Place(TARGET(kARM), PRECISION(kFP16));
-  using float16_t = __fp16;
-  TestMulticlassNms<float16_t>(place, abs_error);
-}
-#endif
 
 }  // namespace lite
 }  // namespace paddle

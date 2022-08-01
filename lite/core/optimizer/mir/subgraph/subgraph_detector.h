@@ -99,18 +99,20 @@ class SubgraphFuser {
   SubgraphFuser(SSAGraph* graph,
                 const SubgraphTeller& teller,
                 int min_subgraph_size,
-                const std::string& subgraph_partition_configs = "")
+                const std::string& subgraph_partition_configs = "",
+                bool support_mixed_precision = false)
       : graph_(graph),
         teller_(teller),
         min_subgraph_size_{min_subgraph_size},
-        subgraph_partition_configs_(subgraph_partition_configs) {}
+        subgraph_partition_configs_(subgraph_partition_configs),
+        support_mixed_precision_(support_mixed_precision) {}
   void operator()();
 
   // Remove the op nodes of the subgraphs and replace with the subgraph ops.
-  void ReplaceNodesWithSubgraphs(SSAGraph* graph,
-                                 const SubgraphTeller& teller,
-                                 int min_subgraph_size,
-                                 const std::string& subgraph_partition_configs);
+  void ReplaceNodesWithSubgraphs(
+      SSAGraph* graph,
+      const std::vector<std::vector<Node*>>& subgraphs,
+      int min_subgraph_size);
   // Create a subgraph node with a block desc to wrap the original op nodes of
   // the subgraph
   void InsertNewNode(SSAGraph* graph,
@@ -122,6 +124,35 @@ class SubgraphFuser {
   SubgraphTeller teller_;
   int min_subgraph_size_;
   const std::string& subgraph_partition_configs_;
+  bool support_mixed_precision_{false};
+};
+
+class MixedPrecisionAutoInsertCalibFuser {
+ public:
+  MixedPrecisionAutoInsertCalibFuser(SSAGraph* graph,
+                                     std::vector<std::vector<Node*>>* subgraphs)
+      : graph_(graph), subgraphs_(subgraphs) {}
+
+  void operator()();
+
+  // Quant ops' out precision should be int8
+  void UpdateQuantOpOut(const std::vector<Node*>& nodes);
+
+  // before:
+  //    non_quant_op -> var0 -> quant_op
+  // after:
+  //    non_quant_op -> var0 -> calib -> var1 -> quant_op
+  void InsertQuantCalib(SSAGraph* graph, std::vector<Node*>* nodes);
+
+  // before:
+  //    quant_op -> var0 -> non_quant_op
+  // after:
+  //    quant_op -> var0 -> calib -> var1 -> non_quant_op
+  void InsertDeQuantCalib(SSAGraph* graph, std::vector<Node*>* nodes);
+
+ private:
+  SSAGraph* graph_{nullptr};
+  std::vector<std::vector<Node*>>* subgraphs_{nullptr};
 };
 
 void ExtractInputsOutputs(const std::vector<Node*>& op_nodes,

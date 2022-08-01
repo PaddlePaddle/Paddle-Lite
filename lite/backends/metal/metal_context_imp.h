@@ -61,6 +61,10 @@ extern NSString* cString2NSString(std::string cStr);
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups;
 
+- (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
+                pipline:(id<MTLComputePipelineState>)pipline
+           threadsShape:(NSArray<NSNumber*>*)threadsShape;
+
 // pre-process
 - (MPSImageLanczosScale*)lanczosScalePtrCreate;
 - (id<MTLTexture>)lanczosTextureCreate:(NSArray*)dims;

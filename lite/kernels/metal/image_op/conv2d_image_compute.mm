@@ -102,7 +102,6 @@ void Conv2dImageCompute::init_memory() {
 
 void Conv2dImageCompute::init_for_run() {
     const auto& param = this->Param<param_t>();
-
     function_name_ =
         KernelFunctionName(param, metal_context_->use_winograde(), metal_context_->use_quadruple());
     // use mps or not
@@ -111,17 +110,20 @@ void Conv2dImageCompute::init_for_run() {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
             int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-            // intput & output C channel must >=3
+            // input channel must >=3
             // attention: should be >=4, texture data layout is RGBA
-            if (input_c >= 3 && output_c >= 3) {
-                should_use_mps = true;
+            if (is_depthwise_) {
+                if (input_c >= 3 && output_c >= 3) {
+                    should_use_mps = true;
+                }
+            } else {
+                if (input_c >= 3) {
+                    should_use_mps = true;
+                }
             }
         }
     }
     if (IsWinoGrad(function_name_) || IsQuadruple(function_name_)) {
-        should_use_mps = false;
-    }
-    if (!is_depthwise_ && param.groups > 1) {
         should_use_mps = false;
     }
     if (param.bias) {
@@ -130,12 +132,18 @@ void Conv2dImageCompute::init_for_run() {
         }
     }
 
-    // MPS don't support relu6
+    // MPS don't support LeakyRelu and HardSwish
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
             break;
         case lite_api::ActivationType::kRelu6:
+            break;
+        case lite_api::ActivationType::kHardSigmoid:
+            break;
+        case lite_api::ActivationType::kPRelu:
+            break;
+        case lite_api::ActivationType::kHardSwish:
         case lite_api::ActivationType::kLeakyRelu:
             should_use_mps = NO;
             break;
@@ -249,8 +257,10 @@ std::string Conv2dImageCompute::KernelFunctionName(const param_t& param,
                 }
 #endif
                 return "conv_3x3";
-            } else {
+            } else if ((input_c == (filter_c * param.groups)) && filter_n == input_c) {
                 return "group_conv_3x3";
+            } else {
+                return "depthwise_conv_3x3_unequal";
             }
         } else if (filter_w == 1 && filter_h == 5) {
             return "conv_5x1";
@@ -341,11 +351,15 @@ void Conv2dImageCompute::setup_without_mps() {
             case lite_api::ActivationType::kLeakyRelu: {
                 activate_type = (uint16_t)param.activation_param.active_type;
             } break;
+            case lite_api::ActivationType::kHardSwish: {
+                activate_type = (uint16_t)param.activation_param.active_type;
+
+            } break;
             default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
         }
     }
     // relu
-    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0};
+    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0, 0.0};
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
@@ -355,6 +369,11 @@ void Conv2dImageCompute::setup_without_mps() {
         } break;
         case lite_api::ActivationType::kLeakyRelu: {
             activation_params.alpha = param.activation_param.Leaky_relu_alpha;
+        } break;
+        case lite_api::ActivationType::kHardSwish: {
+            activation_params.threshold = param.activation_param.hard_swish_threshold;
+            activation_params.offset = param.activation_param.hard_swish_offset;
+            activation_params.scale = param.activation_param.hard_swish_scale;
         } break;
         default:
             break;
@@ -410,7 +429,10 @@ void Conv2dImageCompute::setup_without_mps() {
         bool pad_when_one_ch =
             !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
         filter_buffer_ = std::make_shared<MetalBuffer>(metal_context_, param.filter->dims());
-        filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
+        if (param.groups != 1 && param.filter->dims()[0] != param.x->dims()[1]) {
+            filter_buffer_->pad_when_one_channel_ = false;
+        } else
+            filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
         filter_buffer_->CopyFromNCHW<float>(filter);
     }
 
@@ -453,7 +475,7 @@ void Conv2dImageCompute::setup_with_mps() {
         auto filter_h = static_cast<int>(param.filter->dims()[2]);
         auto filter_w = static_cast<int>(param.filter->dims()[3]);
         auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+        auto output_c = fmax(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
         MPSCNNConvolutionDescriptor* description = nil;
         if (is_depthwise_) {
             description = [MPSCNNDepthWiseConvolutionDescriptor
@@ -472,11 +494,28 @@ void Conv2dImageCompute::setup_with_mps() {
         description.strideInPixelsY = param.strides[1];
         description.dilationRateX = (*param.dilations)[0];
         description.dilationRateY = (*param.dilations)[1];
+        if (!is_depthwise_) description.groups = param.groups;
         // active function
         switch (param.activation_param.active_type) {
             case lite_api::ActivationType::kRelu: {
                 description.fusedNeuronDescriptor =
                     [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLU a:0.0];
+            } break;
+            case lite_api::ActivationType::kRelu6: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLUN
+                                              a:0.0
+                                              b:param.activation_param.threshold];
+            } break;
+            case lite_api::ActivationType::kHardSigmoid: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeHardSigmoid
+                                              a:param.activation_param.hard_sigmoid_slope
+                                              b:param.activation_param.hard_sigmoid_offset];
+            } break;
+            case lite_api::ActivationType::kPRelu: {
+                description.fusedNeuronDescriptor =
+                    [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypePReLU a:0.0];
             } break;
             default:
                 break;

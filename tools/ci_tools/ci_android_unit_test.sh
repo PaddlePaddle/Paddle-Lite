@@ -15,7 +15,7 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
             "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" \
             "test_paddle_api" "test_cxx_api" "test_gen_code" \
             "test_mobilenetv1_int8" "test_subgraph_pass" \
-            "test_transformer_with_mask_fp32_arm" \
+            "test_transformer_with_mask_fp32_arm" "test_mobilenet_v1_int8_per_layer_arm" \
             "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" \
             "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" \
             "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" \
@@ -31,7 +31,7 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 1024
+   ulimit -n 10240
 fi
 
 ####################################################################################################
@@ -91,12 +91,10 @@ function build_android {
   cmake .. \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_TRAIN=ON \
@@ -121,6 +119,7 @@ function build_test_android {
   toolchain=$2
   adb_device=$3
   adb_workdir=$4
+  is_fp16=$5
 
   build_android android $arch $toolchain
 
@@ -133,19 +132,30 @@ function build_test_android {
   test_arm_api ${adb_devices[0]} $adb_work_dir
 
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
-  for _test in $(cat $TESTS_FILE); do
-      local to_skip=0
-      for skip_name in ${skip_list[@]}; do
-          if [ $skip_name = $_test ]; then
-              echo "to skip " $skip_name
-              to_skip=1
+  if [ $arch == "armv7" ] && [ $toolchain == "clang" ] ; then
+     return
+  else
+      for _test in $(cat $TESTS_FILE); do
+          local to_skip=0
+          for skip_name in ${skip_list[@]}; do
+              if [ $skip_name == $_test ]; then
+                 echo "to skip " $skip_name
+                 to_skip=1
+              fi
+          done
+          if [ $is_fp16 == "enable_fp16" ] && [ $arch == "armv7" ]; then
+             # v7 fp16 this case supporting
+             for $_test in {"conv_fp16_compute_test", "gemm_fp16_compute_test", "fc_fp16_compute_test", "pool_fp16_compute_test"}; do
+                 echo "to skip " $_test
+                 to_skip=1
+             done
           fi
-      done
 
-      if [[ $to_skip -eq 0 ]]; then
-          test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
-      fi
-  done
+          if [[ $to_skip -eq 0 ]]; then
+             test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
+          fi
+    done
+  fi
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 
@@ -161,10 +171,13 @@ fi
 
 if [ $# -eq 3 ] && [ $3 == "enable_fp16" ] ; then
     BUILD_ARM82_FP16=ON
-    build_test_android armv8 clang $1 $2
+    build_test_android armv8 clang $1 $2 $3
+    build_test_android armv7 clang $1 $2 $3
 else
     # $1 adb_device index. eg. 1
     # $2 workspace name on adb.  eg. work_tmp1
-    build_test_android armv7 gcc $1 $2
-    build_test_android armv8 gcc $1 $2
+    build_test_android armv7 gcc $1 $2 ""
+    # only test build
+    build_test_android armv7 clang $1 $2 ""
+    build_test_android armv8 clang $1 $2 ""
 fi

@@ -44,6 +44,8 @@ void PreCalcForBilinearInterpolate(const int height,
   int pre_calc_index = 0;
   int* pre_pos_data = pre_pos->mutable_data<int>();
   T* pre_w_data = pre_w->mutable_data<T>();
+  memset(pre_pos_data, 0, pre_pos->numel() * sizeof(int));
+  memset(pre_w_data, 0, pre_w->numel() * sizeof(T));
   for (int ph = 0; ph < pooled_height; ph++) {
     for (int pw = 0; pw < pooled_width; pw++) {
       for (int iy = 0; iy < iy_upper; iy++) {
@@ -110,17 +112,17 @@ void RoiAlignCompute::Run() {
   int pooled_height = param.pooled_height;
   int pooled_width = param.pooled_width;
   int sampling_ratio = param.sampling_ratio;
-
+  bool align = param.align;
   auto in_dims = in->dims();
+  int batch_size = in_dims[0];
   int channels = in_dims[1];
   int height = in_dims[2];
   int width = in_dims[3];
   auto rois_dims = rois->dims();
   int rois_num = rois_dims[0];
   auto out_dims = out->dims();
-  if (rois_num == 0) {
-    return;
-  }
+  auto* output_data = out->mutable_data<float>();
+  memset(output_data, 0, out->numel() * sizeof(float));
 
   DDim in_stride({static_cast<int>(in_dims[1] * in_dims[2] * in_dims[3]),
                   static_cast<int>(in_dims[2] * in_dims[3]),
@@ -132,23 +134,28 @@ void RoiAlignCompute::Run() {
                    static_cast<int>(out_dims[3]),
                    1});
 
+  int rois_batch_size = 0;
   auto* input_data = in->data<float>();
+  auto* rois_num_t = param.RoisNum;
+  const int* rois_num_data = nullptr;
+
+  if (param.RoisNum != nullptr) {
+    rois_num_data = rois_num_t->data<int>();
+    int sum_roi_num = 0;
+    for (int i = 0; i < rois_num_t->numel(); i++) {
+      sum_roi_num += rois_num_data[i];
+    }
+    CHECK_EQ(sum_roi_num, rois_num);
+  }
+
   Tensor roi_batch_id_list;
   roi_batch_id_list.Resize({rois_num});
   int* roi_batch_id_data = roi_batch_id_list.mutable_data<int>();
+  memset(roi_batch_id_data, 0, roi_batch_id_list.numel() * sizeof(int));
 
-  if (param.RoisLod != nullptr) {
-    int rois_batch_size = param.RoisLod->numel();
-    auto* rois_lod = param.RoisLod->data<int64_t>();
-    for (int n = 0; n < rois_batch_size - 1; ++n) {
-      for (int i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
-        roi_batch_id_data[i] = n;
-      }
-    }
-  } else if (param.RoisNum != nullptr) {
-    auto* rois_num_t = param.RoisNum;
-    auto rois_batch_size = rois_num_t->numel();
-    auto* rois_num_data = rois_num_t->data<int>();
+  if (param.RoisNum != nullptr) {
+    rois_batch_size = rois_num_t->numel();
+    CHECK_EQ(rois_batch_size, batch_size);
     int start = 0;
     for (int n = 0; n < rois_batch_size; ++n) {
       for (int i = start; i < start + rois_num_data[n]; ++i) {
@@ -157,8 +164,13 @@ void RoiAlignCompute::Run() {
       start += rois_num_data[n];
     }
   } else {
+    auto lod = rois->lod();
+    CHECK_EQ(lod.empty(), false);
     auto rois_lod = rois->lod().back();
     int rois_batch_size = rois_lod.size() - 1;
+    CHECK_EQ(rois_batch_size, batch_size);
+    int rois_num_with_lod = rois_lod[rois_batch_size];
+    CHECK_EQ(rois_num, rois_num_with_lod);
     for (int n = 0; n < rois_batch_size; ++n) {
       for (size_t i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
         roi_batch_id_data[i] = n;
@@ -166,32 +178,36 @@ void RoiAlignCompute::Run() {
     }
   }
 
-  auto* output_data = out->mutable_data<float>();
   auto* rois_data = rois->data<float>();
+  float roi_offset = align ? 0.5f : 0.f;
   for (int n = 0; n < rois_num; ++n) {
     int roi_batch_id = roi_batch_id_data[n];
-    float roi_xmin = rois_data[0] * spatial_scale;
-    float roi_ymin = rois_data[1] * spatial_scale;
-    float roi_xmax = rois_data[2] * spatial_scale;
-    float roi_ymax = rois_data[3] * spatial_scale;
+    float roi_xmin = rois_data[0] * spatial_scale - roi_offset;
+    float roi_ymin = rois_data[1] * spatial_scale - roi_offset;
+    float roi_xmax = rois_data[2] * spatial_scale - roi_offset;
+    float roi_ymax = rois_data[3] * spatial_scale - roi_offset;
+    float roi_width = roi_xmax - roi_xmin;
+    float roi_height = roi_ymax - roi_ymin;
+    if (!align) {
+      roi_width = std::max(roi_width, 1.f);
+      roi_height = std::max(roi_height, 1.f);
+    }
 
-    float roi_width = std::max(roi_xmax - roi_xmin, 1.0f);
-    float roi_height = std::max(roi_ymax - roi_ymin, 1.0f);
     float bin_size_h = roi_height / pooled_height;
     float bin_size_w = roi_width / pooled_width;
     const float* batch_data = input_data + roi_batch_id * in_stride[0];
-
     int roi_bin_grid_h = (sampling_ratio > 0)
                              ? sampling_ratio
                              : ceil(roi_height / pooled_height);
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
-    const float count = roi_bin_grid_h * roi_bin_grid_w;
+    const int count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1);
     Tensor pre_pos;
     Tensor pre_w;
     int pre_size = count * out_stride[1];
     pre_pos.Resize({pre_size, kROISize});
     pre_w.Resize({pre_size, kROISize});
+
     PreCalcForBilinearInterpolate<float>(height,
                                          width,
                                          pooled_height,
@@ -249,8 +265,6 @@ REGISTER_LITE_KERNEL(roi_align,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("RoisLod",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("RoisNum",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

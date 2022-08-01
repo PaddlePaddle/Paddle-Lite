@@ -171,21 +171,20 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 };
 
-void TestArgmax(const Place& place) {
+void TestArgmax(const Place& place,
+                std::vector<std::string> aliases,
+                std::vector<int> dtype_list) {
   for (int axis : {-1, -2, 0, 2}) {
     for (bool keepdims : {false, true}) {
-      for (int dtype : {-1, 2, 3}) {
+      for (int dtype : dtype_list) {
         for (auto x_shape :
              std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4, 5}}) {
           int x_size = x_shape.size();
           if (axis < -x_size || axis >= x_size) continue;
-#if defined(LITE_WITH_NNADAPTER)
-          std::vector<std::string> alias_vec{"def"};
-#else
-          std::vector<std::string> alias_vec{
-              "fp32", "int64", "int32", "int16", "uint8"};
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+          if (axis == 0 || axis == -static_cast<int>(x_shape.size())) continue;
 #endif
-          for (std::string alias : alias_vec) {
+          for (std::string alias : aliases) {
             std::unique_ptr<arena::TestCase> tester(new ArgmaxComputeTester(
                 place, alias, axis, keepdims, dtype, DDim(x_shape)));
             arena::Arena arena(std::move(tester), place, 2e-5);
@@ -199,8 +198,26 @@ void TestArgmax(const Place& place) {
 
 TEST(Argmax, precision) {
   Place place;
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  std::vector<std::string> aliases{"fp32", "int64", "int32", "int16", "uint8"};
+#if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
+  aliases = {"def"};
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  TestArgmax(place, aliases, {2});
+  return;
+#else
+  return;
+#endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -209,7 +226,7 @@ TEST(Argmax, precision) {
   return;
 #endif
 
-  TestArgmax(place);
+  TestArgmax(place, aliases, {-1, 2, 3});
 }
 
 }  // namespace lite

@@ -87,6 +87,12 @@ struct Program {
     return var_type_map_;
   }
 
+  std::vector<std::string> getBlockOpsOrder(int block_idx) {
+    std::vector<std::string> ret;
+    for (auto& it : ops_[block_idx]) ret.push_back(it->op_info()->Type());
+    return ret;
+  }
+
  private:
   // Build from a program and scope.
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc);
@@ -234,6 +240,50 @@ class LITE_API RuntimeProgram {
     }
     register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
+
+#ifdef LITE_WITH_OPENCL
+    bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
+                        paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
+                        CLRuntime::Global()->OpenCLAvaliableForDevice();
+    using OpenCLContext = Context<TargetType::kOpenCL>;
+    std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
+    if (opencl_valid) {
+      unique_opencl_ctx->As<OpenCLContext>().InitOnce();
+    }
+#endif
+
+    for (auto& inst : instructions_[kRootBlockIdx]) {
+      KernelBase* kernel = inst.mutable_kernel();
+      if (kernel->target() == TARGET(kOpenCL)) {
+#if defined(LITE_WITH_OPENCL)
+        if (opencl_valid) {
+          std::unique_ptr<KernelContext> ctx(new KernelContext());
+          (*unique_opencl_ctx)
+              .As<OpenCLContext>()
+              .CopySharedTo(&ctx->As<OpenCLContext>());
+          kernel->SetContext(std::move(ctx));
+        } else {
+          // if gpu not support , fatal when user init gpu model.
+          LOG(FATAL) << "opencl_valid:" << opencl_valid;
+        }
+#endif
+      } else if (kernel->target() == TARGET(kMetal)) {
+#if defined(LITE_WITH_METAL)
+        if (!metal_ctx_) {
+          metal_ctx_ = std::make_unique<KernelContext>();
+          (*metal_ctx_).As<MTLContext>().InitOnce();
+        }
+        std::unique_ptr<KernelContext> ctx(new KernelContext());
+        (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+        kernel->SetContext(std::move(ctx));
+#endif
+      } else {
+        if (kernel != nullptr) {
+          kernel->SetContext(
+              ContextScheduler::Global().NewContext(kernel->target()));
+        }
+      }
+    }
   }
 
   void Run();

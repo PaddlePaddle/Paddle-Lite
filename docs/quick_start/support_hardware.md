@@ -75,15 +75,15 @@ Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
 - 英特尔 (Intel) FPGA: [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
 
 
-## 百度 (Baidu) XPU
+## 昆仑芯 (kunlunxin) XPU
 
-Paddle Lite 支持百度 XPU，支持列表如下：
-- 百度昆仑 818-100 芯片
-- 百度昆仑 818-300 芯片
+Paddle Lite 支持昆仑芯 XPU，支持列表如下：
+- 昆仑芯 818-100 芯片
+- 昆仑芯 818-300 芯片
 
-### 百度 (Baidu) XPU 环境准备及示例程序
+### 昆仑芯 (kunlunxin) XPU 环境准备及示例程序
 
-- [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
 
 ## 华为 (Huawei) 麒麟 NPU
 
@@ -104,11 +104,17 @@ Paddle Lite 支持华为达芬奇架构麒麟 NPU，支持列表如下：
 
 ## 华为 (Huawei) 昇腾 NPU
 
-Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上进行预测部署
-- 支持设备：
-  * Ascend 310：Atlas 300I 推理卡（型号：3000/3010)
-  * Atlas 200 DK 开发者套件
-  * Atlas 800 推理服务器（型号：3000/3010）
+Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署
+- 支持芯片
+  * Ascend 310 （CANN Version ≥  3.3.0）
+  * Ascend 710 （CANN Version ≥  5.0.2.alpha005)
+  * Ascend 910 （CANN Version ≥  5.0.2.alpha005)
+- 已验证的支持设备
+  * Atlas 300I 推理卡（型号：3000/3010)（CANN Version ≥  3.3.0）
+  * Atlas 200 DK 开发者套件（CANN Version ≥  3.3.0）
+  * Atlas 800 推理服务器（型号：3000/3010）（CANN Version ≥  3.3.0）
+  * Atlas 300I Pro（CANN Version ≥ 5.0.2.alpha005)
+  * Atlas 300T 训练卡（CANN Version ≥  5.0.2.alpha005)
 
 ### 华为 (Huawei) 昇腾 NPU 环境准备及示例程序
 
@@ -124,6 +130,25 @@ Paddle Lite 支持 瑞芯微 (Rockchip) NPU，支持列表如下：
 
 - [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
 
+## 英特尔 (Intel) OpenVINO
+
+Paddle Lite 支持英特尔 OpenVINO 预测部署
+- 支持设备:
+  - CPU, CPU 型号可查看 OpenVINO [官方数据](https://github.com/openvinotoolkit/openvino#supported-hardware-matrix)
+
+### 英特尔 (Intel) OpenVINO 示例程序
+
+- [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)
+
+## Android NNAPI
+
+Paddle Lite 支持 Android NNAPI，支持列表如下：
+- 支持设备：Android 8.1(Oreo) 及以上的终端设备（Android SDK version 需在 27 及以上）
+
+### Android NNAPI 环境准备及示例程序
+
+- [Paddle Lite 使用 Android NNAPI 预测部署](../demo_guides/android_nnapi)
+
 ## 联发科 (MediaTek) APU
 
 Paddle Lite 支持 联发科 (MediaTek) APU，支持列表如下：
@@ -133,6 +158,15 @@ Paddle Lite 支持 联发科 (MediaTek) APU，支持列表如下：
 ### 联发科 (MediaTek) APU 环境准备及示例程序
 
 - [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)
+
+## 芯原 TIM-VX
+
+Paddle Lite 支持 芯原 TIM-VX，支持列表如下：
+- 支持芯片：搭载了芯原 NPU 的 SoC，驱动版本需为 6.4.4.3
+
+### 芯原 TIM-VX 环境准备及示例程序
+
+- [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
 
 ## 晶晨（Amlogic）NPU
 

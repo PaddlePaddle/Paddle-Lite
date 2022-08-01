@@ -62,7 +62,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   for (int32_t i = 0; i < remain; i++) {
     axes.push_back(max_rank - remain + i);
   }
-  // If persistable, set matcjed dims.
+  // If persistable, set matched dims.
   // If not persistable, add unsqueeze to match shape.
   if (x_rank > y_rank) {
     if (y_persistable) {

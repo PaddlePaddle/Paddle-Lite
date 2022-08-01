@@ -49,7 +49,10 @@ class Scope final {
 
   Variable* FindLocalVar(const std::string& name) const;
 
+  void DeleteLocalVar(const std::string& name);
+
   const Scope* parent() const { return parent_; }
+  Scope* MutableParent() { return const_cast<Scope*>(parent_); }
 
   // Get attribute params stored in parent scopes.
   std::vector<std::string> AttributeVarNames() const;

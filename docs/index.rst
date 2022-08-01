@@ -18,15 +18,6 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: 性能
-  :name: sec-benchmark
-  
-  benchmark/best_practices
-  benchmark/benchmark_tools
-  benchmark/benchmark
-
-.. toctree::
-  :maxdepth: 1
   :caption: 快速开始
   :name: sec-quick-start
 
@@ -37,45 +28,6 @@ Welcome to Paddle-Lite's documentation!
   quick_start/support_model_list
   quick_start/support_operation_list
   quick_start/faq
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 程序开发
-  :name: program-development
-
-  user_guides/cpp_demo
-  user_guides/java_demo
-  user_guides/python_demo
-  user_guides/quant_post_dynamic_demo
-  user_guides/development_overview
-  user_guides/model_optimize_tool
-  user_guides/quant_aware
-  user_guides/quant_post_dynamic
-  user_guides/quant_post_static
-  user_guides/model_visualization
-  user_guides/profiler
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 部署示例
-  :name: sec-demo_guides
-
-  demo_guides/android_app_demo
-  demo_guides/ios_app_demo
-  demo_guides/linux_arm_demo
-  demo_guides/arm_cpu
-  demo_guides/x86
-  demo_guides/opencl
-  demo_guides/fpga
-  demo_guides/huawei_kirin_npu
-  demo_guides/huawei_ascend_npu
-  demo_guides/baidu_xpu
-  demo_guides/rockchip_npu
-  demo_guides/amlogic_npu
-  demo_guides/mediatek_apu
-  demo_guides/imagination_nna
-  demo_guides/bitmain
-  demo_guides/intel_fpga
 
 .. toctree::
   :maxdepth: 1
@@ -97,6 +49,70 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
+  :caption: 程序开发
+  :name: program-development
+
+  user_guides/cpp_demo
+  user_guides/java_demo
+  user_guides/python_demo
+  user_guides/development_overview
+  user_guides/model_optimize_tool
+  user_guides/quant_aware
+  user_guides/model_visualization
+  user_guides/profiler
+  user_guides/sparse
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 多硬件部署示例
+  :name: sec-demo_guides
+
+  demo_guides/android_app_demo
+  demo_guides/ios_app_demo
+  demo_guides/linux_arm_demo
+  demo_guides/arm_cpu
+  demo_guides/x86
+  demo_guides/opencl
+  demo_guides/metal
+  demo_guides/fpga
+  demo_guides/huawei_kirin_npu
+  demo_guides/huawei_ascend_npu
+  demo_guides/kunlunxin_xpu
+  demo_guides/rockchip_npu
+  demo_guides/amlogic_npu
+  demo_guides/verisilicon_timvx
+  demo_guides/android_nnapi
+  demo_guides/mediatek_apu
+  demo_guides/imagination_nna
+  demo_guides/bitmain
+  demo_guides/intel_fpga
+  demo_guides/intel_openvino
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 性能优化
+  :name: sec-performance
+  
+  performance/best_practices
+  performance/benchmark_tools
+  performance/benchmark
+  performance/gpu
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 开发者贡献
+
+  develop_guides/for-developer
+  develop_guides/architecture-intro
+  develop_guides/add_operation
+  develop_guides/add_unit_test
+  develop_guides/add_layout
+  develop_guides/add_new_pass
+  develop_guides/add_hardware
+  develop_guides/nnadapter
+
+.. toctree::
+  :maxdepth: 1
   :caption: 训练示例（预览）
   :name: sec-train_demo_guides
 
@@ -110,18 +126,6 @@ Welcome to Paddle-Lite's documentation!
   api_reference/java_api_doc
   api_reference/python_api_doc
   api_reference/cv
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 开发者贡献
-
-  develop_guides/for-developer
-  develop_guides/architecture-intro
-  develop_guides/add_operation
-  develop_guides/add_layout
-  develop_guides/add_new_pass
-  develop_guides/add_hardware
-  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1

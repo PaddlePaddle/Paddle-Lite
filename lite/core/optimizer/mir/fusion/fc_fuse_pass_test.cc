@@ -65,7 +65,7 @@ TEST(fc_fuse_pass, fuse_test) {
   CHECK_EQ(out->dims()[1], 500);
 }
 
-#ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifndef LITE_WITH_ARM
 TEST(fc_fuse_pass, save_model_test) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
@@ -78,7 +78,7 @@ TEST(fc_fuse_pass, save_model_test) {
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model);
 }
-#endif  // LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#endif
 
 }  // namespace mir
 }  // namespace lite

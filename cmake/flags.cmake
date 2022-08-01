@@ -119,7 +119,6 @@ if (NOT WIN32)
 set(COMMON_FLAGS
     -fPIC
     -fno-omit-frame-pointer
-    -Werror
     -Wall
     -Wextra
     -Wnon-virtual-dtor
@@ -140,6 +139,11 @@ set(COMMON_FLAGS
     -Wno-error=maybe-uninitialized # Warning in boost gcc 7.2
 )
 
+if (NOT EMSCRIPTEN)
+  # disable -Werror for Emscripten
+  set(COMMON_FLAGS "${COMMON_FLAGS} -Werror")
+endif(NOT EMSCRIPTEN)
+
 set(GPU_COMMON_FLAGS
     -fPIC
     -fno-omit-frame-pointer
@@ -154,7 +158,7 @@ set(GPU_COMMON_FLAGS
     -Wno-error=array-bounds # Warnings in Eigen::array
     -gencode arch=compute_62,code=sm_62
 )
-if(NOT LITE_WITH_CUDA AND NOT LITE_WITH_SW)
+if(NOT LITE_WITH_CUDA AND NOT LITE_WITH_SW AND NOT EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 endif()
 endif(NOT WIN32)

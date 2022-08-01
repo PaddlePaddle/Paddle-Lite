@@ -25,7 +25,8 @@ void UniformRandomKernelFunctor(Tensor* out, float min, float max, int seed) {
   int64_t size = out->numel();
   memset(p_out_data, 0, size * sizeof(T));
   unsigned int out_seed = static_cast<unsigned int>(seed);
-  std::minstd_rand engine;
+  // std::minstd_rand engine;
+  std::mt19937_64 engine;
   if (out_seed == 0) {
     out_seed = std::random_device()();
   }

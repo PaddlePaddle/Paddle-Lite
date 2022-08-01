@@ -72,7 +72,8 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
 #ifdef LITE_WITH_LOG
     VLOG(4) << "x->target(): " << TargetToStr(x->target());
     VLOG(4) << "out->target(): " << TargetToStr(out->target());
-    VLOG(4) << "x->dims(): " << in_dims;
+    VLOG(4) << "in->dims(): " << in_dims;
+    VLOG(4) << "out->dims(): " << out_dims;
     VLOG(4) << "lrn param: ";
     VLOG(4) << "n: " << n_;
     VLOG(4) << "k: " << k_;
@@ -108,7 +109,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
             static_cast<int64_t>(out_image_shape["height"])}));
 #ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
-            << default_work_size[1] << ", " << default_work_size[3];
+            << default_work_size[1] << ", " << default_work_size[2];
 #endif
     cl_int status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
@@ -178,8 +179,9 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindOutput("Output",
+    .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindOutput("MidOut", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

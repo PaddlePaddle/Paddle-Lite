@@ -18,6 +18,7 @@
 #include <cmath>
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -45,8 +46,7 @@ void loadb_6x8(
   uint32x4_t vmask2 =
       vcltq_u32(vld1q_u32(mask_buffer + 4), vdupq_n_u32(right_remain));
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const uint32_t *ptr0 = inptr + y * ldin;
     const uint32_t *ptr1 = ptr0 + ldin;
     const uint32_t *ptr2 = ptr1 + ldin;
@@ -125,8 +125,8 @@ void loadb_6x8(
           : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "cc", "memory");
     }
   }
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_END()
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 6;
     int i = 0;
@@ -155,6 +155,7 @@ void loadb_6x8(
           : "v0", "v1", "cc", "memory");
     }
   }
+  LITE_PARALLEL_COMMON_END()
 }
 // loadb_trans: 8x6 b=6
 void loadb_trans_6x8(
@@ -387,8 +388,8 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
     } else {
       loadb_6x8(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK) {
       unsigned int ymax = y + MBLOCK;
       if (ymax > M) {
         ymax = M;
@@ -510,7 +511,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "dup v31.2s, v3.s[3]\n"
             "blt 0f\n" /* check beta == 0? */
             /* process beta */
-            "dup v7.4s, %w[beta]\n"
+            "dup v7.2s, %w[beta]\n"
             "ld1 {v0.2s, v1.2s, v2.2s}, [%[c_ptr0]]\n"
             "ld1 {v3.2s, v4.2s, v5.2s}, [%[c_ptr1]]\n"
             "fmla v8.2s, v0.2s, v7.2s\n"
@@ -762,7 +763,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v9.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v12.2s, v0.2s\n"
             "fmul v5.2s, v12.2s, v1.2s\n"
-            "bif v10.16b, v6.16b, v7.16b\n"
+            "bif v10.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v13.2s, v0.2s\n"
             "fmul v7.2s, v13.2s, v1.2s\n"
             "bif v11.16b, v3.16b, v2.16b\n"
@@ -771,7 +772,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v12.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v15.2s, v0.2s\n"
             "fmul v5.2s, v15.2s, v1.2s\n"
-            "bif v13.16b, v6.16b, v7.16b\n"
+            "bif v13.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v16.2s, v0.2s\n"
             "fmul v7.2s, v16.2s, v1.2s\n"
             "bif v14.16b, v3.16b, v2.16b\n"
@@ -780,7 +781,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v15.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v18.2s, v0.2s\n"
             "fmul v5.2s, v18.2s, v1.2s\n"
-            "bif v16.16b, v6.16b, v7.16b\n"
+            "bif v16.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v19.2s, v0.2s\n"
             "fmul v7.2s, v19.2s, v1.2s\n"
             "bif v17.16b, v3.16b, v2.16b\n"
@@ -789,7 +790,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v18.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v21.2s, v0.2s\n"
             "fmul v5.2s, v21.2s, v1.2s\n"
-            "bif v19.16b, v6.16b, v7.16b\n"
+            "bif v19.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v22.2s, v0.2s\n"
             "fmul v7.2s, v22.2s, v1.2s\n"
             "bif v20.16b, v3.16b, v2.16b\n"
@@ -798,7 +799,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v21.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v24.2s, v0.2s\n"
             "fmul v5.2s, v24.2s, v1.2s\n"
-            "bif v22.16b, v6.16b, v7.16b\n"
+            "bif v22.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v25.2s, v0.2s\n"
             "fmul v7.2s, v25.2s, v1.2s\n"
             "bif v23.16b, v3.16b, v2.16b\n"
@@ -807,7 +808,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v24.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v27.2s, v0.2s\n"
             "fmul v5.2s, v27.2s, v1.2s\n"
-            "bif v25.16b, v6.16b, v7.16b\n"
+            "bif v25.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v28.2s, v0.2s\n"
             "fmul v7.2s, v28.2s, v1.2s\n"
             "bif v26.16b, v3.16b, v2.16b\n"
@@ -816,7 +817,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "bif v27.16b, v5.16b, v4.16b\n"
             "fcmge v4.2s, v30.2s, v0.2s\n"
             "fmul v5.2s, v30.2s, v1.2s\n"
-            "bif v28.16b, v6.16b, v7.16b\n"
+            "bif v28.16b, v7.16b, v6.16b\n"
             "fcmge v6.2s, v31.2s, v0.2s\n"
             "fmul v7.2s, v31.2s, v1.2s\n"
             "bif v29.16b, v3.16b, v2.16b\n"
@@ -965,6 +966,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END()
   }
 }
 #undef FMLA_N8X6
@@ -1049,8 +1051,8 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_A73) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_A73) {
       unsigned int ymax = y + MBLOCK_A73;
       if (ymax > M) {
         ymax = M;
@@ -1155,8 +1157,8 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32   q13, q1, q4\n"         
             "vmla.f32   q14, q2, q4\n"        
             "vmla.f32   q15, q3, q4\n"
-            "vld1.32	{d0-d1}, [%[a_ptr] :128]   @ load a0~a3\n"
-            "vld1.32   {d4-d5}, [%[b_ptr] :128]  @ load b1\n"
+            "vld1.32	  {d0-d1}, [%[a_ptr] :128]   @ load a0~a3\n"
+            "vld1.32    {d4-d5}, [%[b_ptr] :128]  @ load b1\n"
             "11: \n"                            /* check loop count */
             "cmp %[k], #0                         @ check k==0 \n"
             "beq 0f                               @ jump to tail\n"
@@ -1212,12 +1214,11 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "add  %[a_ptr], %[a_ptr], #0x20       \n"
             "bne		1b                            @ jump to main loop\n"
             "0:                                   @ process tail\n"
-            "sub		%[tails], %[tails], #5        @ tail--\n"
-            "cmp    %[tails], #5                  @ cmp with act bits\n"
+            "cmp    %[tails], #10                  @ cmp with act bits\n"
             "blt		3f                            @ jump to tail = 1\n"
             /* Unroll 0*/
             "vldr d6, [%[b_ptr], #0x10]           \n"
-            "vmla.f32 q8, q2, d0[0]\n"
+            "vmla.f32 q8,  q2, d0[0]\n"
             "ldr  r0, [%[b_ptr], #0x18]           \n"
             "vmla.f32 q10, q2, d0[1]\n"
             "ldr  r1, [%[b_ptr], #0x1c]           \n"
@@ -1227,7 +1228,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32 q14, q2, d1[1]\n"
             "ldr  r0, [%[a_ptr], #0x18]           \n"
 
-            "vmla.f32 q9, q3, d0[0]\n"
+            "vmla.f32 q9,  q3, d0[0]\n"
             "ldr  r1, [%[a_ptr], #0x1c]           \n"
             "vmla.f32 q11, q3, d0[1]\n"
             "vldr d8, [%[b_ptr], #0x20]           \n"
@@ -1239,16 +1240,16 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vldr d10, [%[b_ptr], #0x30]          \n"
             "vmov d9, r0, r1                      \n"
             /* Unroll 1 */
-            "vmla.f32 q8, q4, d2[0]\n"
+            "vmla.f32 q8,  q4, d2[0]\n"
             "ldr  r0, [%[b_ptr], #0x38]           \n"
             "vmla.f32 q10, q4, d2[1]\n"
             "ldr  r1, [%[b_ptr], #0x3c]           \n"
             "vmla.f32 q12, q4, d3[0]\n"
             "vmov d11, r0, r1                     \n"
             "vmla.f32 q14, q4, d3[1]\n"
-            "sub		%[tails], %[tails], #5        @ tail--\n"
+            "sub		%[tails], %[tails], #10       @ tail--\n"
 
-            "vmla.f32 q9, q5, d2[0]\n"
+            "vmla.f32 q9,  q5, d2[0]\n"
             "add  %[b_ptr], %[b_ptr], #0x40       \n"
             "vmla.f32 q11, q5, d2[1]\n"
             "vmla.f32 q13, q5, d3[0]\n"
@@ -1266,8 +1267,9 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32 q14, q2, d1[1]\n"
             "vmov d7, r0, r1                      \n"
             "add  %[a_ptr], %[a_ptr], #0x10       \n"
+            "sub	%[tails], %[tails], #5       @ tail--\n"
 
-            "vmla.f32 q9, q3, d0[0]\n"
+            "vmla.f32 q9,  q3, d0[0]\n"
             "vmla.f32 q11, q3, d0[1]\n"
             "add  %[b_ptr], %[b_ptr], #0x20       \n"
             "vmla.f32 q13, q3, d1[0]\n"
@@ -1419,6 +1421,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END()
   }
 }
 #endif

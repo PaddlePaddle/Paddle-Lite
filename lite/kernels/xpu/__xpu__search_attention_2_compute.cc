@@ -24,22 +24,27 @@ namespace kernels {
 namespace xpu {
 
 void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
-  input_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  weight_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  output_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int maxptr_size = ctx.GetRawContext()->max_ptr_size();
+  input_max_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
+  weight_max_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
+  output_max_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
+  auto& param = this->template Param<param_t>();
   float W_max = param.W_max;
-  float weight_max_cpu[4] = {W_max, W_max, W_max, W_max};
+  float weight_max_cpu[maxptr_size] = {W_max};
   XPU_CALL(xpu_memcpy(weight_max_xpu_guard_->addr_,
                       weight_max_cpu,
-                      4 * sizeof(float),
+                      maxptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   dim_ = (param.W)->dims()[0];
 }
 
 void XPUMmdnnSearchAttention2Compute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto* input = param.X;
   auto* weight = param.W;
@@ -102,24 +107,28 @@ void XPUMmdnnSearchAttention2Compute::Run() {
 
   int r = 0;
   r = xdnn::findmax<float>(
-      ctx.GetRawContext(), input_data, seqlen_sum * dim_, input_max_data);
+      ctx.GetRawContext(), input_data, input_max_data, seqlen_sum * dim_);
   CHECK_EQ(r, 0);
-  r = xdnn::fc_int16(ctx.GetRawContext(),
-                     false,
-                     true,
-                     seqlen_sum,
-                     dim_,
-                     dim_,
-                     1.0f,
-                     input_data,
-                     input_max_data,
-                     weight_data,
-                     weight_max_data,
-                     0.0f,
-                     fc_out,
-                     output_max_data,
-                     bias_data,
-                     xdnn::Activation_t::LINEAR);
+  r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+      ctx.GetRawContext(), /* context */
+      input_data,          /* x */
+      weight_data,
+      fc_out,                      /* y */
+      seqlen_sum,                  /* m */
+      dim_,                        /* n */
+      dim_,                        /* k */
+      false,                       /* x_trans */
+      true,                        /* w_trans */
+      input_max_data,              /* x_max */
+      weight_max_data,             /* w_max */
+      output_max_data,             /* y_max */
+      dim_,                        /* ldx */
+      dim_,                        /* ldw */
+      dim_,                        /* ldy */
+      1.0f,                        /* alpha */
+      0.0f,                        /* beta */
+      bias_data,                   /* bias */
+      xdnn::Activation_t::LINEAR); /* act_type */
   CHECK_EQ(r, 0);
 
   r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(

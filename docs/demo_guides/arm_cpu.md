@@ -193,6 +193,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/mobilenetv1_fp32/; \
 
  - 在编译预测库时，需要添加 `with_arm82_fp16=ON` 选项进行编译；
  - OPT 模型转换时，需要添加 `--enable_fp16=1` 选项，完成 FP16 模型转换
+ - 只能在**V8.2 架构以上的手机**执行，即高端手机，如小米9，华为 P30 等
  - 推理执行过程同上
 
 ### 2.2 运行示例2: `test_model_bin` 单元测试

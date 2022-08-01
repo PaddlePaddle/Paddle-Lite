@@ -186,12 +186,12 @@ bool test_sgemm_c8(
   int k_round = (k + 7) / 8 * 8;
   int size_a = m * k;
   int size_b = n * k;
-  int size_a_c4 = m_round * k_round;
+  int size_a_c8 = m_round * k_round;
   int size_b_c8 = k_round * n;
 
   Tensor ta;
   Tensor tb;
-  Tensor ta_c4;
+  Tensor ta_c8;
   Tensor tb_c8;
   Tensor tc;
   Tensor tc_basic;
@@ -200,15 +200,17 @@ bool test_sgemm_c8(
 
   ta.Resize({size_a});
   tb.Resize({size_b});
-  ta_c4.Resize({size_a_c4});
-  tb_c8.Resize({size_b_c8});
+  ta_c8.Resize({size_a_c8});
+  // B is read by the stride of 8 * n,
+  // so allocate one more step
+  tb_c8.Resize({size_b_c8 + 8 * n});
   tc.Resize({m_round * n});
   tc_basic.Resize({m_round * n});
   tbias.Resize({m});
 
   ta.set_precision(PRECISION(kInt16));
   tb.set_precision(PRECISION(kInt16));
-  ta_c4.set_precision(PRECISION(kInt16));
+  ta_c8.set_precision(PRECISION(kInt16));
   tb_c8.set_precision(PRECISION(kInt16));
   tc.set_precision(PRECISION(kInt32));
   tc_basic.set_precision(PRECISION(kInt32));
@@ -221,13 +223,13 @@ bool test_sgemm_c8(
 
   auto da = ta.mutable_data<int16_t>();
   auto db = tb.mutable_data<int16_t>();
-  auto da_c4 = ta_c4.mutable_data<int16_t>();
+  auto da_c8 = ta_c8.mutable_data<int16_t>();
   auto db_c8 = tb_c8.mutable_data<int16_t>();
   auto dc_basic = tc_basic.mutable_data<int32_t>();
   auto dbias = tbias.mutable_data<int32_t>();
 
   // trans A, B to c4
-  basic_trans_mat_to_c8(da, da_c4, k, m, k, true);
+  basic_trans_mat_to_c8(da, da_c8, k, m, k, true);
   basic_trans_mat_to_c8(db, db_c8, n, k, n, false);
 
   LOG(INFO) << "sgemm_c8 M: " << m << ", N: " << n << ", K: " << k
@@ -264,14 +266,14 @@ bool test_sgemm_c8(
   auto dc = tc.mutable_data<int32_t>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite::arm::math::sgemm_prepack_c8_int16_small(
-        m, n, k, da_c4, db_c8, dc, &ctx);
+        m, n, k, da_c8, db_c8, dc, &ctx);
   }
   LOG(INFO) << "basic test end";
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
     paddle::lite::arm::math::sgemm_prepack_c8_int16_small(
-        m, n, k, da_c4, db_c8, dc, &ctx);
+        m, n, k, da_c8, db_c8, dc, &ctx);
     t0.Stop();
   }
   LOG(INFO) << "basic test end";
@@ -298,7 +300,7 @@ bool test_sgemm_c8(
       LOG(INFO) << "a: ";
       print_tensor(ta);
       LOG(INFO) << "a_c8: ";
-      print_tensor(ta_c4);
+      print_tensor(ta_c8);
       LOG(INFO) << "b: ";
       print_tensor(tb);
       LOG(INFO) << "b_c8: ";

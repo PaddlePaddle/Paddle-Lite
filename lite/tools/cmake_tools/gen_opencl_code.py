@@ -17,8 +17,9 @@ import os
 import sys
 import logging
 
-opencl_kernel_path=""
-opencl_dest_path=""
+opencl_kernel_path = ""
+opencl_dest_path = ""
+
 
 def gen_opencl_kernels():
     source = """
@@ -38,9 +39,11 @@ namespace lite {
 #endif
     """
 
-
     def clean_source(content):
-        new_content = re.sub(r"/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/", "", content, flags=re.DOTALL)
+        new_content = re.sub(r"/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/",
+                             "",
+                             content,
+                             flags=re.DOTALL)
         lines = new_content.split("\n")
         new_lines = []
         for i in range(len(lines)):
@@ -53,7 +56,7 @@ namespace lite {
         new_content = "\n".join(new_lines)
         return new_content
 
-    infile = open(opencl_kernel_path+"/cl_common.h", "r")
+    infile = open(opencl_kernel_path + "/cl_common.h", "r")
     common_content = infile.read()
     infile.close()
     common_content = clean_source(common_content)
@@ -67,6 +70,7 @@ namespace lite {
             new_lines.append(line)
         header = "\n".join(new_lines)
         return header
+
     common_header = get_header_raw(common_content)
 
     def get_header(content):
@@ -77,41 +81,37 @@ namespace lite {
                 break
             new_lines.append(line)
         for i in range(len(lines)):
-            if "#include \"cl_common.h\"" in lines[i] or "#include <cl_common.h>" in lines[i]:
+            if "#include \"cl_common.h\"" in lines[
+                    i] or "#include <cl_common.h>" in lines[i]:
                 lines[i] = common_header
         header = "\n".join(lines)
         return header
 
-
-    filenames = os.listdir(opencl_kernel_path+"/buffer")
+    filenames = os.listdir(opencl_kernel_path + "/buffer")
     file_count = len(filenames)
 
     headers = {}
     funcs = {}
     for i in range(file_count):
         filename = filenames[i]
-        infile = open(opencl_kernel_path+"/buffer/" + filename, "r")
+        infile = open(opencl_kernel_path + "/buffer/" + filename, "r")
         content = infile.read()
         infile.close()
         content = clean_source(content)
         header = get_header(content)
         headers["buffer/" + filename] = header
 
-
-    image_filenames = os.listdir(opencl_kernel_path+"/image")
+    image_filenames = os.listdir(opencl_kernel_path + "/image")
     image_file_count = len(image_filenames)
 
     for i in range(image_file_count):
         filename = image_filenames[i]
-        infile = open(opencl_kernel_path+"/image/" + filename, "r")
+        infile = open(opencl_kernel_path + "/image/" + filename, "r")
         content = infile.read()
         infile.close()
         content = clean_source(content)
         header = get_header(content)
         headers["image/" + filename] = header
-
-
-
 
     core1 = ""
     for i in range(len(headers)):
@@ -125,15 +125,17 @@ namespace lite {
         core = "        {\"%s\", {" % file_name
         for item in hexes:
             core += str(item) + ", "
-        core = core[: -2]
+        core = core[:-2]
         core += "}}"
         if i != len(headers) - 1:
             core += ",\n"
         core1 += core
     source = source % (core1)
     with open(opencl_dest_path, 'w') as f:
-        logging.info("write opencl kernels source files to %s" % opencl_dest_path)
+        logging.info("write opencl kernels source files to %s" %
+                     opencl_dest_path)
         f.write(source)
+
 
 def gen_empty_opencl_kernels():
     source = """

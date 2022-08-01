@@ -14,6 +14,9 @@
 
 #include "lite/core/optimizer/optimizer.h"
 #include <fstream>
+#ifdef LITE_WITH_XPU
+#include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
+#endif
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
@@ -49,7 +52,6 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
     graph->SetValidPlaces(valid_places_);
     graphs_.emplace_back(std::move(graph));
   }
-
   SpecifyKernelPickTactic(kernel_pick_factor_);
   InitTargetTypeTransformPass();
   InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
@@ -63,8 +65,12 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
 }
 
 void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
+  std::string static_pick_name = "static_kernel_pick_pass";
+#ifdef LITE_WITH_XPU
+  static_pick_name = "__xpu__static_kernel_pick_pass";
+#endif
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
-      "static_kernel_pick_pass");
+      static_pick_name);
   CHECK(pass);
 
   *pass->mutable_kernel_pick_factors() = factor;
@@ -113,7 +119,8 @@ void Optimizer::ApplyPasses(
                 << " because the target or kernel does not match.";
     } else {
       // Check the pass whether it is supported for processing subblocks
-      if (kSubblockUnsupportedPasses.count(pass->name())) {
+      if (kSubblockUnsupportedPasses.count(pass->name()) ||
+          kSubblockSkippedPasses.count(pass->name())) {
         pass->Apply((*graphes)[kRootBlockIdx]);
       } else {
         for (auto& graph : *graphes) {
@@ -129,16 +136,40 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
     core::KernelPickFactor kernel_pick_factor,
-    const std::vector<std::string>& passes) {
+    const std::vector<std::string>& passes,
+    const lite_api::CxxConfig& config) {
   Optimizer optim(valid_places, kernel_pick_factor);
 
   std::vector<std::string> passes_local{
-      {"lite_quant_dequant_fuse_pass",             //
-       "weight_quantization_preprocess_pass",      //
-       "op_transformation_pass",                   //
-       "remove_scale1_pass",                       //
+      {"lite_quant_dequant_fuse_pass",
+       "weight_quantization_preprocess_pass",
+       "op_transformation_pass",
+       "assign_value_calc_offline_pass",
+       "p_norm_fill_constant_max_div_fuse_pass",
+       "fill_constant_calc_offline_pass",
+       "range_calc_offline_pass",
+       "scale_calc_offline_pass",
+       "unsqueeze_calc_offline_pass",
+       "reshape_calc_offline_pass",
+       "ssd_boxes_calc_offline_pass",
+       // A minimal set of op fusion pass.
+       "op_fusion_minimal_set_pass",
+       // For the fully quantization model, the quantization parameters of the
+       // quantized ops are inferred by the propagation method according to the
+       // input scales and out_threashold.
+       "quantization_parameters_propagation_pass",
+       // Based on the custom mixed precision configuration information, remove
+       // the quantization parameters of some quantized ops to force them to run
+       // at fp32 precision.
+       "quantization_parameters_removal_pass",
+       // Subgraph partition based on operator support information defined in
+       // lite/kernels/nnadapter/converter/all.h
+       "nnadapter_subgraph_pass",
+       // Please notify @hong19860320 and @zhupengyang for code review if you
+       // want to insert a pass in the above passes.
+       "remove_scale1_pass",
        "adaptive_1x1_pool2d_convert_global_pass",  //
-
+       "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",
        "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
        "lite_conv_bn_fuse_pass",           //
        "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
@@ -172,19 +203,15 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_elementwise_tree_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
        "fill_range_fuse_pass",
-       "range_calc_offline_pass",
        "identity_dropout_eliminate_pass",
-       "p_norm_fill_constant_max_div_fuse_pass",
        "sparse_conv_detect_pass",
+       "keepdims_convert_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
-       "__xpu__resnet_cbam_fuse_pass",
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
-       "__xpu__sfa_head_meanstd_fuse_pass",
-       "__xpu__sfa_head_moment_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
        "__xpu__multi_encoder_fuse_pass",
@@ -199,28 +226,15 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
-       "ssd_boxes_calc_offline_pass",
-       "assign_value_calc_offline_pass",
-       // Only for fully quantized model, infer the output scale and fix the
-       // attribute 'enable_int8' for all of the quantized ops.
-       "quantized_op_attributes_inference_pass",
-       "quantization_parameters_propagation_pass",
-       // Apply the constraints for the quantized ops(such as concat) that the
-       // inputs and outputs must have the same scale.
-       "restrict_quantized_op_with_same_input_output_scale_pass",
-       "quantization_parameters_removal_pass",
-       "mixed_precision_auto_insert_calib_op_pass",
-       "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
-       "huawei_ascend_npu_subgraph_pass",
-       "xpu_subgraph_pass",
        "bm_subgraph_pass",
-       "apu_subgraph_pass",
-       "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
+#ifdef LITE_WITH_XPU
+       "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
+#endif
 
        "remove_tf_redundant_ops_pass",
        "variable_place_inference_pass",  // inference arg/var's
@@ -270,6 +284,20 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
 #endif
       }};
 
+  // skip the discarded pass
+  const std::vector<std::string> discarded_passes =
+      config.get_discarded_passes();
+  for (auto& pass : discarded_passes) {
+    auto iterator = std::find(passes_local.begin(), passes_local.end(), pass);
+    if (iterator != passes_local.end()) {
+      LOG(INFO) << "discarded pass : " << pass;
+      passes_local.erase(iterator);
+    } else {
+      LOG(INFO) << "the pass : " << pass
+                << " dont't exit or has already discarded";
+    }
+  }
+
   // It's just a workaround to avoid repeated op fusion if the filter weights
   // are shared among sub-blocks
   if (program.block_size() > 1) {
@@ -295,7 +323,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   const std::string pqd_pass{"post_quant_dynamic_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
-  const std::string x86_int8_pass{"x86_int8_attribute_pass"};
 
   for (const std::string& pass : passes) {
     if (pass == msa_pass) {
@@ -307,7 +334,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       auto iter =
           std::find(passes_local.begin(), passes_local.end(), pqd_depend_pass);
       CHECK(iter != passes_local.end()) << "No find " << pqd_depend_pass;
-      passes_local.insert(iter + 1, pqd_pass);
+      passes_local.push_back(pass);
     } else {
       passes_local.push_back(pass);
     }
@@ -321,16 +348,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
       }
     }
   }
-
-  for (auto place : valid_places) {
-    if (place.target == TARGET(kX86)) {
-      if (place.precision == PRECISION(kInt8)) {
-        passes_local.push_back(x86_int8_pass);
-        break;
-      }
-    }
-  }
-
   for (auto& pass_name : passes_local) {
     optim.AddPass(pass_name);
   }

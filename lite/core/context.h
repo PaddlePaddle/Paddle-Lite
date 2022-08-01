@@ -39,6 +39,7 @@
 #include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #endif
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -63,14 +64,11 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
-using APUContext = Context<TargetType::kAPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
-using RKNPUContext = Context<TargetType::kRKNPU>;
-using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -113,65 +111,6 @@ class Context<TargetType::kNPU> {
 };
 #endif
 
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-template <>
-class Context<TargetType::kHuaweiAscendNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(HuaweiAscendNPUContext* ctx) {}
-
-  HuaweiAscendNPUContext& operator=(const HuaweiAscendNPUContext& ctx) {
-    return *this;
-  }
-  std::string name() const { return "HuaweiAscendNPUContext"; }
-
-  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
-  }
-  static std::string SubgraphModelCacheDir() {
-    return subgraph_model_cache_dir_;
-  }
-
-  static void SetHuaweiAscendDeviceID(int huawei_ascend_device_id) {
-    huawei_ascend_device_id_ = huawei_ascend_device_id;
-  }
-  static int HuaweiAscendDeviceID() { return huawei_ascend_device_id_; }
-
- private:
-  static LITE_THREAD_LOCAL std::string subgraph_model_cache_dir_;
-  static LITE_THREAD_LOCAL int huawei_ascend_device_id_;
-};
-#endif
-
-#ifdef LITE_WITH_APU
-template <>
-class Context<TargetType::kAPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(APUContext* ctx) {}
-
-  APUContext& operator=(const APUContext& ctx) {}
-  std::string name() const { return "APUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-};
-#endif
-
 #ifdef LITE_WITH_BM
 template <>
 class Context<TargetType::kBM> {
@@ -182,70 +121,6 @@ class Context<TargetType::kBM> {
   void* GetHandle() { return TargetWrapperBM::GetHandle(); }
 
   std::string name() const { return "BMContext"; }
-};
-#endif
-
-#ifdef LITE_WITH_RKNPU
-template <>
-class Context<TargetType::kRKNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(RKNPUContext* ctx) {}
-
-  RKNPUContext& operator=(const RKNPUContext& ctx) {}
-  std::string name() const { return "RKNPUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-
-  static void SetSubgraphModelCacheBuffers(
-      Scope* scope,
-      const std::map<std::string,
-                     std::pair<std::vector<char>, std::vector<char>>>&
-          subgraph_model_cache_buffers) {
-    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
-      auto& key = subgraph_model_cache_buffer.first;
-      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
-      CHECK(var);
-      auto data =
-          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
-      CHECK(data);
-      *data = subgraph_model_cache_buffer.second;
-    }
-  }
-
-  static bool SubgraphModelCacheBuffers(Scope* scope,
-                                        const std::string& key,
-                                        std::vector<char>* cfg,
-                                        std::vector<char>* bin) {
-    CHECK(cfg);
-    CHECK(bin);
-    cfg->clear();
-    bin->clear();
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
-    if (!var) return false;
-    auto data =
-        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
-    *cfg = data->first;
-    *bin = data->second;
-    // Reset to reduce memory consumption
-    std::vector<char>().swap(data->first);
-    std::vector<char>().swap(data->second);
-    return true;
-  }
 };
 #endif
 
@@ -273,6 +148,25 @@ class Context<TargetType::kNNAdapter> {
     auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_DIR");
     if (!var) return "";
     return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterDynamicShapeInfo(
+      Scope* scope,
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    auto var = scope->Var("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    CHECK(var);
+    auto data = var->GetMutable<
+        std::map<std::string, std::vector<std::vector<int64_t>>>>();
+    CHECK(data);
+    *data = nnadapter_dynamic_shape_info;
+  }
+
+  static std::map<std::string, std::vector<std::vector<int64_t>>>
+  NNAdapterDynamicShapeInfo(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    if (!var) return std::map<std::string, std::vector<std::vector<int64_t>>>();
+    return var->Get<std::map<std::string, std::vector<std::vector<int64_t>>>>();
   }
 
   static void SetNNAdapterModelCacheBuffers(
@@ -344,6 +238,22 @@ class Context<TargetType::kNNAdapter> {
     auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
     if (!var) return "";
     return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterContextCallback(
+      Scope* scope, int (*context_callback)(int event_id, void* user_data)) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_CALLBACK");
+    CHECK(var);
+    auto data = var->GetMutable<int (*)(int event_id, void* user_data)>();
+    CHECK(data);
+    *data = context_callback;
+  }
+
+  static int (*NNAdapterContextCallback(Scope* scope))(int event_id,  // NOLINT
+                                                       void* user_data) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_CALLBACK");
+    if (!var) return nullptr;
+    return var->Get<int (*)(int event_id, void* user_data)>();
   }
 
   static void SetNNAdapterSubgraphPartitionConfigPath(
@@ -460,6 +370,7 @@ class Context<TargetType::kARM> {
   bool has_dot() const { return DeviceInfo::Global().has_dot(); }
   bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
   bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
+  bool has_sve2() const { return DeviceInfo::Global().has_sve2(); }
 
   template <typename T>
   T* workspace_data() {
@@ -710,25 +621,6 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-      case TARGET(kHuaweiAscendNPU):
-        kernel_contexts_[TargetType::kHuaweiAscendNPU]
-            .As<HuaweiAscendNPUContext>()
-            .CopySharedTo(&ctx->As<HuaweiAscendNPUContext>());
-        break;
-#endif
-#ifdef LITE_WITH_APU
-      case TARGET(kAPU):
-        kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
-            &ctx->As<APUContext>());
-        break;
-#endif
-#ifdef LITE_WITH_RKNPU
-      case TARGET(kRKNPU):
-        kernel_contexts_[TargetType::kRKNPU].As<RKNPUContext>().CopySharedTo(
-            &ctx->As<RKNPUContext>());
-        break;
-#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -824,15 +716,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
-#endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-    InitContext<TargetType::kHuaweiAscendNPU, HuaweiAscendNPUContext>();
-#endif
-#ifdef LITE_WITH_APU
-    InitContext<TargetType::kAPU, APUContext>();
-#endif
-#ifdef LITE_WITH_RKNPU
-    InitContext<TargetType::kRKNPU, RKNPUContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

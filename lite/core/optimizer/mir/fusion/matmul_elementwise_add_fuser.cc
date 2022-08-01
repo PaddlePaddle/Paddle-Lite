@@ -61,8 +61,7 @@ void MatmulElementwiseAddFuser::CreatePattern() {
 
 void MatmulElementwiseAddFuser::BuildPattern() {
   for (auto& node : graph_->StmtTopologicalOrder()) {
-    if (node->IsStmt() &&
-        node->AsStmt().picked_kernel().op_type() == "matmul") {
+    if (node->IsStmt() && node->AsStmt().op_type() == "matmul") {
       auto* scope = node->stmt()->op()->scope();
       auto op_desc = node->stmt()->mutable_op_info();
 

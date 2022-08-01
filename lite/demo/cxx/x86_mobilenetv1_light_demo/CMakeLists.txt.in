@@ -22,6 +22,14 @@ if (WIN32)
   endif(MSVC_STATIC_CRT)
 endif()
 
+if (APPLE AND METAL)
+  message(STATUS "set METAL=ON")
+  add_definitions("-DMETAL")
+  find_library(METAL_LIBRARY Metal REQUIRED)
+  find_library(GRAPHIC CoreGraphics REQUIRED)
+  find_library(MPS_LIBRARY MetalPerformanceShaders REQUIRED)
+endif()
+
 # 2. link mklml and Paddle-Lite directory
 link_directories(${LITE_DIR}/lib ${MKLML_DIR}/lib)
 include_directories(${LITE_DIR}/include/ ${MKLML_DIR}/include)
@@ -48,15 +56,18 @@ if (WIN32)
   target_link_libraries(${TARGET} ${MATH_LIB})
 
   add_custom_command(TARGET ${TARGET} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/libiomp5md.dll ${CMAKE_BINARY_DIR}/Release
+      COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/libiomp5md.dll ${PADDLE_BINARY_DIR}/Release
   )
   if(NOT WITH_STATIC_MKL)
     add_custom_command(TARGET ${TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/mklml.dll ${CMAKE_BINARY_DIR}/Release
+        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/mklml.dll ${PADDLE_BINARY_DIR}/Release
     )
   endif()
 else()
-    target_link_libraries(${TARGET} -lpaddle_light_api_shared)
-    target_link_libraries(${TARGET} -liomp5)
-    target_link_libraries(${TARGET} -ldl)
+  if (APPLE AND METAL)
+    target_link_libraries(${TARGET} ${METAL_LIBRARY} ${GRAPHIC} ${MPS_LIBRARY})
+  endif()
+  target_link_libraries(${TARGET} -lpaddle_light_api_shared)
+  target_link_libraries(${TARGET} -liomp5)
+  target_link_libraries(${TARGET} -ldl)
 endif()

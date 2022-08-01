@@ -28,7 +28,7 @@ class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::MatMulParam;
 
-  void PrepareForRun() override;
+  void PrepareForRun() { auto& ctx = this->ctx_->template As<ARMContext>(); }
 
   void ReInitWhenNeeded() override;
 
@@ -37,9 +37,16 @@ class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
   virtual ~MatMulCompute() = default;
 
  private:
-  int m_, n_, k_;
+  int m_{1};
+  int n_{1};
+  int k_{1};
+  int lda_{1};
+  int ldb_{1};
+  int ldc_{1};
   std::vector<float> scale_;
   std::vector<float> scale_one;
+  DDim last_x_shape_;
+  DDim last_y_shape_;
 };
 
 }  // namespace arm

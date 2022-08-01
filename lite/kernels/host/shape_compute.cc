@@ -36,9 +36,11 @@ void ShapeCompute::Run() {
 REGISTER_LITE_KERNEL(
     shape, kHost, kAny, kAny, paddle::lite::kernels::host::ShapeCompute, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
     .Finalize();

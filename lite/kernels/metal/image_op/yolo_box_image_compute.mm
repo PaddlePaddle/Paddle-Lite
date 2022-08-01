@@ -105,7 +105,7 @@ void YoloBoxImageCompute::run_yolo_box() {
 }
 
 void YoloBoxImageCompute::run_buf_to_tex_boxes() {
-    auto pipline = pipline_tex_to_buf;
+    auto pipline = pipline_buf_to_tex;
     auto outTexture = output_boxes_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
@@ -117,7 +117,7 @@ void YoloBoxImageCompute::run_buf_to_tex_boxes() {
 }
 
 void YoloBoxImageCompute::run_buf_to_tex_scores() {
-    auto pipline = pipline_tex_to_buf;
+    auto pipline = pipline_buf_to_tex;
     auto outTexture = output_scores_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 

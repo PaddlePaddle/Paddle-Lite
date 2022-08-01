@@ -103,14 +103,14 @@ class GridSamplerComputeTest : public arena::TestCase {
             if (align_corners_) {
               // x
               float double_range_x = (width - 1) * 2;
-              float grid_x_abs = abs(xwf);
+              float grid_x_abs = std::abs(xwf);
               float extra_x = grid_x_abs -
                               static_cast<int>(grid_x_abs / double_range_x) *
                                   double_range_x;
               xwf = fmin(extra_x, double_range_x - extra_x);
               // y
               float double_range_y = (height - 1) * 2;
-              float grid_y_abs = abs(ynf);
+              float grid_y_abs = std::abs(ynf);
               float extra_y = grid_y_abs -
                               static_cast<int>(grid_y_abs / double_range_y) *
                                   double_range_y;
@@ -118,7 +118,7 @@ class GridSamplerComputeTest : public arena::TestCase {
             } else {
               // x
               float double_range_x = (width - 1 + 1) * 2;
-              float grid_x_abs = abs(xwf + 0.5);
+              float grid_x_abs = std::abs(xwf + 0.5);
               float extra_x = grid_x_abs -
                               static_cast<int>(grid_x_abs / double_range_x) *
                                   double_range_x;
@@ -126,7 +126,7 @@ class GridSamplerComputeTest : public arena::TestCase {
               xwf = fmin(fmax(xwf, 0), width - 1);
               // y
               float double_range_y = (height - 1 + 1) * 2;
-              float grid_y_abs = abs(ynf + 0.5);
+              float grid_y_abs = std::abs(ynf + 0.5);
               float extra_y = grid_y_abs -
                               static_cast<int>(grid_y_abs / double_range_y) *
                                   double_range_y;

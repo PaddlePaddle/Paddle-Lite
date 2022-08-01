@@ -82,6 +82,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto fc_op = fc_node->data<ge::op::FullConnection>();
   fc_op->set_input_x(*reshaped_input_node->data());
   fc_op->set_input_w(*trans_w_node->data());
+  fc_op->set_attr_num_output(n);
 
   // Add bias node if bias tensor exists
   if (HasInputArg(op_info, scope, "Bias")) {

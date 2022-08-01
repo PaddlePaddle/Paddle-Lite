@@ -65,7 +65,6 @@ void DealTensorArray(const operators::SliceParam& param,
 inline std::vector<int64_t> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
-
   std::vector<int64_t> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
     auto tensor = list_new_data_tensor[i];
@@ -112,12 +111,6 @@ template <typename T, PrecisionType PType>
 void SliceCompute<T, PType>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->template Param<operators::SliceParam>();
-
-  auto in = param.X;
-  auto in_dims = in->dims();
-  auto out = param.Out;
-  auto out_dims = out->dims();
-
   std::vector<int> axes = param.axes;
   std::vector<int32_t> starts_int = param.starts;
   std::vector<int32_t> ends_int = param.ends;
@@ -128,7 +121,6 @@ void SliceCompute<T, PType>::Run() {
 
   auto list_new_ends_tensor = param.EndsTensorList;
   auto list_new_starts_tensor = param.StartsTensorList;
-
   bool need_infer = false;
   if (param.StartsTensor || param.EndsTensor) {
     need_infer = true;
@@ -136,7 +128,6 @@ void SliceCompute<T, PType>::Run() {
   if (list_new_starts_tensor.size() > 0 || list_new_ends_tensor.size() > 0) {
     need_infer = true;
   }
-
   if (need_infer) {
     if (param.StartsTensor) {
       starts = get_new_data_from_tensor(param.StartsTensor);
@@ -150,95 +141,71 @@ void SliceCompute<T, PType>::Run() {
     } else if (list_new_ends_tensor.size() > 0) {
       ends = get_new_data_from_tensorlist(list_new_ends_tensor);
     }
-
     CHECK_EQ(ends.size(), axes.size())
         << "The size of ends must be equal to the size of axes.";
-    out_dims = in_dims;
-    int64_t dim_value, start, end;
-    if (param.X == nullptr && param.XTensorList != nullptr) {
-      DealTensorArray(param,
-                      starts,
-                      ends,
-                      (param.Out == nullptr && param.OutTensorList != nullptr));
-    }
-
-    for (size_t i = 0; i < axes.size(); ++i) {
-      dim_value = out_dims[axes[i]];
-      if (dim_value > 0) {
-        // when end = start+1 and start == -1
-        if (starts[i] == -1 && ends[i] == 0 && infer_flags[i] == -1) {
-          auto ret =
-              std::find(decrease_axis.begin(), decrease_axis.end(), axes[i]);
-          if (ret != decrease_axis.end()) {
-            ends[i] = 10000000;
-          }
-        }
-
-        start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
-        end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, static_cast<int64_t>(0));
-        end = std::max(end, static_cast<int64_t>(0));
-        end = std::min(end, dim_value);
-        CHECK_GT(end, start) << "end should greater than start";
-        out_dims[axes[i]] = end - start;
-      }
-    }
-
-    out->Resize(out_dims);
-    // generate new shape
-    if (decrease_axis.size() > 0) {
-      std::vector<int64_t> new_out_shape;
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
-        out_dims[decrease_axis[i]] = 0;
-      }
-
-      for (int i = 0; i < out_dims.size(); ++i) {
-        if (out_dims[i] != 0) {
-          new_out_shape.push_back(out_dims[i]);
+  }
+  // if slice input is tensor_array
+  if (param.X == nullptr && param.XTensorList != nullptr) {
+    DealTensorArray(param,
+                    starts,
+                    ends,
+                    (param.Out == nullptr && param.OutTensorList != nullptr));
+    return;
+  }
+  int64_t dim_value, start, end;
+  auto in = param.X;
+  auto in_dims = in->dims();
+  auto out = param.Out;
+  auto out_dims = out->dims();
+  out_dims = in_dims;
+  for (size_t i = 0; i < axes.size(); ++i) {
+    dim_value = out_dims[axes[i]];
+    if (dim_value > 0) {
+      // when end = start+1 and start == -1
+      if (starts[i] == -1 && ends[i] == 0 && infer_flags[i] == -1) {
+        auto ret =
+            std::find(decrease_axis.begin(), decrease_axis.end(), axes[i]);
+        if (ret != decrease_axis.end()) {
+          ends[i] = 10000000;
         }
       }
-      if (new_out_shape.size() == 0) {
-        new_out_shape.push_back(1);
-      }
-      DDim new_dims;
-      new_dims.ConstructFrom(new_out_shape);
-      out_dims = new_dims;
+
+      start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+      end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      start = std::max(start, static_cast<int64_t>(0));
+      end = std::max(end, static_cast<int64_t>(0));
+      end = std::min(end, dim_value);
+      CHECK_GT(end, start) << "end should greater than start";
+      out_dims[axes[i]] = end - start;
     }
   }
-
-  // resize out dims
+  // generate new shape
   if (decrease_axis.size() > 0) {
-    if (decrease_axis.size() == static_cast<size_t>(in_dims.size())) {
-      std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
-      out->Resize(DDim(vec_origin_out_shape));
-    } else {
-      std::vector<int64_t> vec_origin_out_shape(
-          out_dims.size() + decrease_axis.size(), -1);
-
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        vec_origin_out_shape[decrease_axis[i]] = 1;
-      }
-
-      int index = 0;
-      for (size_t i = 0; i < vec_origin_out_shape.size(); ++i) {
-        if (vec_origin_out_shape[i] == -1) {
-          vec_origin_out_shape[i] = out_dims[index];
-          ++index;
-        }
-      }
-
-      out->Resize(DDim(vec_origin_out_shape));
+    std::vector<int64_t> new_out_shape;
+    for (size_t i = 0; i < decrease_axis.size(); ++i) {
+      CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
+      out_dims[decrease_axis[i]] = 0;
     }
+
+    for (int i = 0; i < out_dims.size(); ++i) {
+      if (out_dims[i] != 0) {
+        new_out_shape.push_back(out_dims[i]);
+      }
+    }
+    if (new_out_shape.size() == 0) {
+      new_out_shape.push_back(1);
+    }
+    DDim new_dims;
+    new_dims.ConstructFrom(new_out_shape);
+    out_dims = new_dims;
   }
-  auto new_out_dims = out->dims();
+  out->Resize(out_dims);
   const auto* x_data = in->template data<T>();
   auto* o_data = out->template mutable_data<T>();
   std::vector<int32_t> starts_final(starts.begin(), starts.end());
   std::vector<int32_t> ends_final(ends.begin(), ends.end());
   lite::arm::math::slice(
       x_data, in_dims.data(), axes, starts_final, ends_final, o_data, &ctx);
-  param.Out->Resize(out_dims);
 }
 
 }  // namespace arm
@@ -256,9 +223,23 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindInput("EndsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, array_def)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
@@ -271,9 +252,24 @@ REGISTER_LITE_KERNEL(
     .BindInput("EndsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    slice, kARM, kFloat, kNCHW, slice_float, array_float_i64_starts_ends)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
@@ -286,9 +282,24 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
     .BindInput("EndsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    slice, kARM, kFloat, kNCHW, slice_boolean, array_bool_slice)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kBool))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .Finalize();
 
@@ -302,9 +313,23 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .BindInput("EndsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, array_int32_slice)
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
@@ -319,8 +344,22 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("EndsTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, array_def_int64)
+    .BindInput("Input",
                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

@@ -21,6 +21,7 @@
 namespace paddle {
 namespace lite {
 
+template <typename T>
 class ShuffleChannelComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -39,10 +40,10 @@ class ShuffleChannelComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
-    auto* out_data = out->mutable_data<float>();
+    auto* out_data = out->template mutable_data<T>();
 
     auto* x = scope->FindTensor(input_);
-    const auto* in_data = x->data<float>();
+    const auto* in_data = x->template data<T>();
 
     int num = dims_[0];
     int channel = dims_[1];
@@ -55,9 +56,9 @@ class ShuffleChannelComputeTester : public arena::TestCase {
     for (int n = 0; n < num; n++) {
       for (int i = 0; i < group_num; ++i) {
         for (int j = 0; j < group_size; ++j) {
-          const float* p_i = in_data + (i * group_size + j) * spatial_size;
-          float* p_o = out_data + (j * group_num + i) * spatial_size;
-          memcpy(p_o, p_i, spatial_size * sizeof(float));
+          const T* p_i = in_data + (i * group_size + j) * spatial_size;
+          T* p_o = out_data + (j * group_num + i) * spatial_size;
+          memcpy(p_o, p_i, spatial_size * sizeof(T));
         }
       }
       in_data += feather_size;
@@ -73,16 +74,17 @@ class ShuffleChannelComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> din(dims_.production());
-    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    std::vector<T> din(dims_.production());
+    fill_data_rand<T>(din.data(), -1.0, 1.0, dims_.production());
     SetCommonTensor(input_, dims_, din.data());
   }
 };
 
+template <typename T>
 void test_shuffle_channel(Place place, float abs_error = 2e-5) {
   for (int group : {2, 4, 8}) {
     std::unique_ptr<arena::TestCase> tester(
-        new ShuffleChannelComputeTester(place, "def", group));
+        new ShuffleChannelComputeTester<T>(place, "def", group));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -91,18 +93,39 @@ void test_shuffle_channel(Place place, float abs_error = 2e-5) {
 TEST(ShuffleChannel, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif
 
-  test_shuffle_channel(place, abs_error);
+  test_shuffle_channel<float>(place, abs_error);
 }
+
+#ifdef ENABLE_ARM_FP16
+TEST(ShuffleChannelFP16, precision) {
+  Place place;
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+  test_shuffle_channel<lite_api::float16_t>(place, 1e-4);
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

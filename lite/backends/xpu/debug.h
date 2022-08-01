@@ -83,9 +83,8 @@ void DumpXPUMem(const T* ptr,
   size_t after_stride_len = (len + stride - 1) / stride;
   std::unique_ptr<T[]> cpu_mem(new T[len]);
   // TODO(weihaoji): remove xpu_wait
-  XPU_CALL(xpu_wait());
-  XPU_CALL(xpu_memcpy(
-      cpu_mem.get(), ptr, len * sizeof(T), XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+  TargetWrapperXPU::MemcpySync(
+      cpu_mem.get(), ptr, len * sizeof(T), IoDirection::DtoH);
   std::unique_ptr<T[]> after_stride(new T[after_stride_len]);
   for (size_t i = 0; i < after_stride_len; ++i) {
     after_stride[i] = cpu_mem[i * stride];

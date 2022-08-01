@@ -269,10 +269,23 @@ void EluCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   float alpha = param.Elu_alpha;
   for (int i = 0; i < x_dims.production(); i++) {
-    float beta = alpha * (std::exp(x_data[i]) - 1);
-    float max = x_data[i] >= 0.f ? x_data[i] : 0.f;
-    float min = beta <= 0.f ? beta : 0.f;
-    output_data[i] = max + min;
+    output_data[i] =
+        (x_data[i] < 0) ? (alpha * (std::exp(x_data[i]) - 1)) : x_data[i];
+  }
+}
+
+void SoftplusCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  float beta = param.softplus_beta;
+  float threshold = param.softplus_threshold;
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = x_data[i] * beta > threshold
+                         ? x_data[i]
+                         : std::log(1 + std::exp(x_data[i] * beta)) / beta;
   }
 }
 
@@ -410,6 +423,15 @@ REGISTER_LITE_KERNEL(thresholded_relu,
     .Finalize();
 REGISTER_LITE_KERNEL(
     elu, kHost, kFloat, kNCHW, paddle::lite::kernels::host::EluCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(softplus,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::SoftplusCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

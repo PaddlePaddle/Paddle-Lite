@@ -35,6 +35,7 @@ class SequenceUnpadCompute
 
  private:
   XPUScratchPadGuard lod_xpu_guard_;
+  int* lod_xpu_addr;
   std::vector<int> lod_cpu_;
 };
 

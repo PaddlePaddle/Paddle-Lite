@@ -47,12 +47,8 @@ void ElementwiseActivationFusePass::Apply(
 
   bool has_opencl = has_target(TARGET(kOpenCL));
   if (has_opencl) {
-    act_types.push_back("relu");
-  }
-  bool has_x86 = has_target(TARGET(kX86));
-  if (has_x86 && !has_opencl) {
-    LOG(INFO) << "skipped when x86 target only.";
-    return;
+    act_types.push_back("relu6");
+    act_types.push_back("gelu");
   }
 
   // start fuse using params
@@ -73,8 +69,6 @@ REGISTER_MIR_PASS(lite_elementwise_activation_fuse_pass,
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kBM)})
-    .ExcludeTargets({TARGET(kX86)})
-    .ExcludeTargets({TARGET(kRKNPU)})
     .ExcludeTargets({TARGET(kNNAdapter)})
     .BindKernel("fusion_elementwise_add_activation")
     .BindKernel("fusion_elementwise_sub_activation");

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/gather_compute.h"
+
 #include <vector>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -22,8 +24,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename DataType, typename IndexType>
-void GatherCompute<DataType, IndexType>::Run() {
+template <typename DataType, typename IndexType, PrecisionType PType>
+void GatherCompute<DataType, IndexType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -69,10 +71,21 @@ REGISTER_LITE_KERNEL(gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt32, def)
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt64, gather_float_i64)
+    gather, kXPU, kFP16, kNCHW, GatherXPUkFP16Int32, gather_FP16_Int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Axis",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt64, gather_FP32_INT64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -81,7 +94,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt32Int32, gather_i32_i32)
+    gather, kXPU, kInt32, kNCHW, GatherXPUInt32Int32, gather_INT32_INT32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
@@ -90,11 +103,20 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt32Int64, gather_i32_i64)
+    gather, kXPU, kInt32, kNCHW, GatherXPUInt32Int64, gather_INT32_INT64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    gather, kXPU, kInt64, kNCHW, GatherXPUInt64Int32, gather_INT64_INT32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Axis",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();

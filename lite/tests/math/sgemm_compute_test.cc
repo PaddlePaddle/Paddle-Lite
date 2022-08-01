@@ -24,6 +24,9 @@
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
+#ifdef LITE_WITH_ARM8_SVE2
+#include "lite/backends/arm/math/sve/funcs_sve.h"
+#endif
 
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
@@ -89,6 +92,7 @@ bool test_sgemm(bool tra,
   Tensor ta;
   Tensor tb;
   Tensor tc;
+  Tensor tc_sve;
   Tensor tc_basic;
   Tensor tc_backup;
   Tensor tbias;
@@ -96,6 +100,7 @@ bool test_sgemm(bool tra,
   ta.Resize({size_a});
   tb.Resize({size_b});
   tc.Resize({m * ldc});
+  tc_sve.Resize({m * ldc});
   tc_basic.Resize({m * ldc});
   tc_backup.Resize({m * ldc});
   tbias.Resize({m});
@@ -103,6 +108,7 @@ bool test_sgemm(bool tra,
   ta.set_precision(PRECISION(kFloat));
   tb.set_precision(PRECISION(kFloat));
   tc.set_precision(PRECISION(kFloat));
+  tc_sve.set_precision(PRECISION(kFloat));
   tc_basic.set_precision(PRECISION(kFloat));
   tc_backup.set_precision(PRECISION(kFloat));
   tbias.set_precision(PRECISION(kFloat));
@@ -111,10 +117,12 @@ bool test_sgemm(bool tra,
   fill_tensor_rand(tb, -1.f, 1.f);
   fill_tensor_rand(tbias, -1.f, 1.f);
   fill_tensor_rand(tc, -1.f, 1.f);
+  fill_tensor_rand(tc_sve, -1.f, 1.f);
 
   auto da = ta.mutable_data<float>();
   auto db = tb.mutable_data<float>();
   auto dc = tc.mutable_data<float>();
+  auto dc_sve = tc_sve.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
   auto dc_backup = tc_backup.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
@@ -181,7 +189,7 @@ bool test_sgemm(bool tra,
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::get_hblock(&ctx);
+  int hblock = paddle::lite::arm::math::get_hblock(&ctx, m);
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
   tpackedA.Resize({round_up_a * k});
   paddle::lite::arm::math::prepackA(
@@ -202,6 +210,41 @@ bool test_sgemm(bool tra,
                                            act_param,
                                            &ctx);
   }
+#ifdef LITE_WITH_ARM8_SVE2
+  // sve
+  Timer t1;
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    if (i == FLAGS_repeats - 1) {
+      memcpy(dc, dc_backup, sizeof(float) * m * ldc);
+    }
+    t1.Start();
+    paddle::lite::arm::math::sve::sgemm_prepack_sve<float>(
+        false,
+        m,
+        n,
+        k,
+        tpackedA.data<float>(),
+        k,
+        db,
+        n,
+        0.f,
+        dc_sve,
+        n,
+        dbias,
+        has_bias,
+        act_param,
+        &ctx);
+    t1.Stop();
+  }
+  LOG(INFO) << "sve M: " << m << ", N: " << n << ", K: " << k
+            << ", power_mode: " << cls << ", threads: " << ths
+            << ", GOPS: " << ops * 1e-9f
+            << " GOPS, avg time: " << t1.LapTimes().Avg()
+            << " ms, min time: " << t1.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t1.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t1.LapTimes().Min()
+            << " GOPs";
+#endif
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     if (i == FLAGS_repeats - 1) {
@@ -258,6 +301,30 @@ bool test_sgemm(bool tra,
       print_tensor(tdiff);
       return false;
     }
+#ifdef LITE_WITH_ARM8_SVE2
+    tensor_cmp_host(tc_basic, tc_sve, max_ratio, max_diff);
+    LOG(INFO) << "sve compare result, max diff: " << max_diff
+              << ", max ratio: " << max_ratio;
+    if (std::abs(max_ratio) > 1e-4f && std::abs(max_diff) > 5e-5f) {
+      Tensor tdiff;
+      tdiff.set_precision(PRECISION(kFloat));
+      tdiff.Resize(tc.dims());
+      tensor_diff(tc_basic, tc_sve, tdiff);
+      LOG(INFO) << "a: ";
+      print_tensor(ta);
+      LOG(INFO) << "b: ";
+      print_tensor(tb);
+      LOG(INFO) << "c: ";
+      print_tensor(tc_backup);
+      LOG(INFO) << "basic result: ";
+      print_tensor(tc_basic);
+      LOG(INFO) << "lite result: ";
+      print_tensor(tc_sve);
+      LOG(INFO) << "diff result: ";
+      print_tensor(tdiff);
+      return false;
+    }
+#endif
   }
 #endif
   return true;
@@ -290,7 +357,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                           }
                           int ldc = n + offset;
                           float six = 6.f;
-                          float scale = 8.88f;
+                          float scale = 4.88f;
                           auto flag = test_sgemm(tra,
                                                  trb,
                                                  m,

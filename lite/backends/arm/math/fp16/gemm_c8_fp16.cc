@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -43,8 +44,7 @@ void loadb_c8(float16_t* out,
   const int kloop = k_round >> 3;
   in += xstart * 8;
   if (xloop > 0) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float16_t* out_ptr = out + 8 * NBLOCK_C8 * i;
       const float16_t* in_ptr = in + i * 8 * n;
       for (int j = 0; j < xloop; ++j) {
@@ -61,12 +61,12 @@ void loadb_c8(float16_t* out,
         out_p += 64;
       }
     }
+    LITE_PARALLEL_END();
   }
   float16_t* out_remain4 = out + xloop * k_round * NBLOCK_C8;
   const float16_t* in_remain4 = in + xloop * NBLOCK_C8 * 8;
   if (remain4) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float16_t* out_ptr = out_remain4 + 32 * i;
       const float16_t* in_ptr = in_remain4 + i * 8 * n;
       vst1q_f16(out_ptr, vld1q_f16(in_ptr));
@@ -75,12 +75,12 @@ void loadb_c8(float16_t* out,
       vst1q_f16(out_ptr + 24, vld1q_f16(in_ptr + 24));
       in_ptr += 32;
     }
+    LITE_PARALLEL_END();
   }
   float16_t* out_remain1 = out_remain4 + remain4 * k_round * 4;
   const float16_t* in_remain1 = in_remain4 + remain4 * 32;
   if (remain1) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float16_t* out_ptr = out_remain1 + 4 * remain1 * i;
       const float16_t* in_ptr = in_remain1 + i * 8 * n;
       for (int j = 0; j < remain1; ++j) {
@@ -90,6 +90,7 @@ void loadb_c8(float16_t* out,
         out_ptr += 8;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -138,8 +139,7 @@ void gemm_prepack_c8_fp16_common(int M,
     loadb_c8(bchunk, B, x_start, x_end, k_round, N);
     float16_t* cchunk = c + n * bchunk_w * 8;
     int has_remain = (n == bchunk_loop - 1) && flag_remain;
-#pragma omp parallel for num_threads(threads)
-    for (int h = 0; h < h_loop; ++h) {
+    LITE_PARALLEL_BEGIN(h, tid, h_loop) {
       const float16_t* ablock = A_packed + h * lda;
       const float16_t* bblock = bchunk;
       float16_t* cblock = cchunk + h * ldc;
@@ -820,6 +820,7 @@ void gemm_prepack_c8_fp16_common(int M,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1060,8 +1061,6 @@ void gemm_prepack_c8_fp16_small(int M,
         "ldp  q18, q19, [%[a]], #32\n"
         "fmul v8.8h,  v16.8h, v0.h[0] \n"
         "fmul v9.8h,  v16.8h, v1.h[0] \n"
-        /* load b6, b7 */
-        "ldp  q6,  q7,  [%[b]], #32\n"
         "fmul v10.8h, v16.8h, v2.h[0] \n"
         "fmul v11.8h, v16.8h, v3.h[0] \n"
         "sub  %[b],   %[b],   #64     \n"
@@ -1358,7 +1357,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "vmla.f16 q9,  q7, d2[3]\n"
         "vmla.f16 q10, q7, d4[3]\n"
         "vmla.f16 q11, q7, d6[3]\n"
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "add  %[b_ptr], %[ldb]\n"
         "vmla.f16 q12, q7, d1[3]\n"
         "vmla.f16 q13, q7, d3[3]\n"
@@ -1446,7 +1445,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "vmla.f16 q9,  q6, d3[2]\n"
         "vmla.f16 q10, q6, d5[2]\n"
         "vmla.f16 q11, q6, d7[2]\n"
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "add  %[b_ptr], %[ldb]\n"
 
         "vmla.f16 q8,  q7, d1[3]\n"
@@ -1500,7 +1499,7 @@ void gemm_prepack_c8_fp16_small(int M,
         "add  %[b_ptr], %[ldb]\n"
         "vld1.16 {d12-d15}, [%[a_ptr]]!\n"
 
-        "sub %[cnt], #1\n"
+        "subs %[cnt], #1\n"
         "vmla.f16 q8,  q4, d1[0]\n"
         "vmla.f16 q9,  q5, d1[1]\n"
         "vmla.f16 q10, q6, d1[2]\n"

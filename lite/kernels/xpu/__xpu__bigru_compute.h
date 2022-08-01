@@ -66,12 +66,7 @@ class XPUBiGRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   XPUScratchPadGuard bw_bias_guard_;
 
   float fw_mul_weight_abs_max_;
-  XPUScratchPadGuard fw_mul_weight_max_guard_;
-  XPUScratchPadGuard fw_mul_quant_weight_guard_;
-
   float bw_mul_weight_abs_max_;
-  XPUScratchPadGuard bw_mul_weight_max_guard_;
-  XPUScratchPadGuard bw_mul_quant_weight_guard_;
 
   float fw_gru_weight_s1_abs_max_;
   float fw_gru_weight_s2_abs_max_;
@@ -82,6 +77,9 @@ class XPUBiGRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   float bw_gru_weight_s2_abs_max_;
   XPUScratchPadGuard bw_gru_weight_max_guard_;
   XPUScratchPadGuard bw_gru_quant_weight_guard_;
+
+  XPUQuantData fw_mul_quant_weight_;
+  XPUQuantData bw_mul_quant_weight_;
 };
 
 }  // namespace xpu

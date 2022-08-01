@@ -22,15 +22,37 @@ namespace kernels {
 namespace xpu {
 
 void InstanceNormCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.x->dims();
-  CHECK_EQ(x_dims.size(), 4);
+  CHECK(x_dims.size() == 4 || x_dims.size() == 5)
+      << "Not support x_dims_rank = " << x_dims.size();
+
   int n = x_dims[0];
   int c = x_dims[1];
   int h = x_dims[2];
   int w = x_dims[3];
+  if (x_dims.size() == 5) {
+    h = x_dims[2] * x_dims[3];
+    w = x_dims[4];
+  }
 
+  float* xpu_scale = nullptr;
+  XPUScratchPadGuard xpu_scale_guard =
+      TargetWrapperXPU::MallocScratchPad(c * sizeof(float));
+  if (param.scale == nullptr) {
+    xpu_scale = reinterpret_cast<float*>(xpu_scale_guard->addr_);
+    int ret = xdnn::constant<float>(ctx.GetRawContext(), xpu_scale, c, 1.0f);
+    CHECK_EQ(ret, 0);
+  }
+  float* xpu_bias = nullptr;
+  XPUScratchPadGuard xpu_bias_guard =
+      TargetWrapperXPU::MallocScratchPad(c * sizeof(float));
+  if (param.bias == nullptr) {
+    xpu_bias = reinterpret_cast<float*>(xpu_bias_guard->addr_);
+    int ret = xdnn::constant<float>(ctx.GetRawContext(), xpu_bias, c, 0.0f);
+    CHECK_EQ(ret, 0);
+  }
   int ret = xdnn::instance_norm<float>(
       ctx.GetRawContext(),
       param.x->data<float>(),
@@ -40,12 +62,11 @@ void InstanceNormCompute::Run() {
       h,
       w,
       param.epsilon,
-      param.scale->data<float>(),
-      param.bias->data<float>(),
+      (param.scale == nullptr) ? xpu_scale : param.scale->data<float>(),
+      (param.bias == nullptr) ? xpu_bias : param.bias->data<float>(),
       param.saved_mean->mutable_data<float>(TARGET(kXPU)),
       param.saved_variance->mutable_data<float>(TARGET(kXPU)),
       true);
-
   CHECK_EQ(ret, 0);
 }
 

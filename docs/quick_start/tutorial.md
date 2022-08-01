@@ -51,7 +51,7 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 - [ OpenCL 示例](../demo_guides/opencl)
 - [ FPGA 示例](../demo_guides/fpga)
 - [华为 NPU 示例](../demo_guides/huawei_kirin_npu)
-- [百度 XPU 示例](../demo_guides/baidu_xpu)
+- [昆仑芯 XPU 示例](../demo_guides/kunlunxin_xpu)
 - [瑞芯微 NPU 示例](../demo_guides/rockchip_npu)
 - [晶晨 NPU 示例](../demo_guides/amlogic_npu)
 - [联发科 APU 示例](../demo_guides/mediatek_apu)

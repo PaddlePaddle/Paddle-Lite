@@ -47,6 +47,8 @@ void nv12_to_bgra(const unsigned char* src,
   int16x8_t zero = vdupq_n_s16(0);
   int16x8_t max = vdupq_n_s16(255);
   uint8x8_t a_8 = vdup_n_u8(255);
+  uint8_t* zerobuf = new uint8_t[srcw];
+  uint8_t* writebuf = new uint8_t[wout];
 
   for (int i = 0; i < y_h; i += 2) {
     const unsigned char* ptr_y1 = y + i * srcw;
@@ -54,6 +56,10 @@ void nv12_to_bgra(const unsigned char* src,
     const unsigned char* ptr_vu = vu + (i / 2) * srcw;
     unsigned char* ptr_bgr1 = dst + i * wout;
     unsigned char* ptr_bgr2 = ptr_bgr1 + wout;
+    if (i + 2 > y_h) {
+      ptr_y2 = zerobuf;
+      ptr_bgr2 = writebuf;
+    }
 // 2*16
 #ifdef __aarch64__
     asm volatile(
@@ -339,10 +345,12 @@ void nv12_to_bgra(const unsigned char* src,
       g3 = g3 < 0 ? 0 : (g3 > 255) ? 255 : g3;
       b3 = b3 < 0 ? 0 : (b3 > 255) ? 255 : b3;
 
-      *ptr_bgr1++ = b1;
-      *ptr_bgr1++ = g1;
-      *ptr_bgr1++ = r1;
-      *ptr_bgr1++ = 255;
+      if (j + 1 < srcw) {
+        *ptr_bgr1++ = b1;
+        *ptr_bgr1++ = g1;
+        *ptr_bgr1++ = r1;
+        *ptr_bgr1++ = 255;
+      }
 
       *ptr_bgr2++ = b2;
       *ptr_bgr2++ = g2;
@@ -353,10 +361,12 @@ void nv12_to_bgra(const unsigned char* src,
       ptr_y2 += 2;
       ptr_vu += 2;
 
-      *ptr_bgr2++ = b3;
-      *ptr_bgr2++ = g3;
-      *ptr_bgr2++ = r3;
-      *ptr_bgr2++ = 255;
+      if (j + 1 < srcw) {
+        *ptr_bgr2++ = b3;
+        *ptr_bgr2++ = g3;
+        *ptr_bgr2++ = r3;
+        *ptr_bgr2++ = 255;
+      }
     }
   }
 }

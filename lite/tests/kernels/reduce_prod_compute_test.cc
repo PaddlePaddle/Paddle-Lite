@@ -333,7 +333,7 @@ void test_reduce_prod(Place place) {
 
 TEST(ReduceProd, precision) {
   Place place;
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);

@@ -29,6 +29,7 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -60,6 +61,8 @@ class SplitImageCompute
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+    std::string split_v_;
+    SplitMetalParam metal_param_;
 };
 
 }  // namespace metal

@@ -62,12 +62,14 @@ void BatchNormImageCompute::run_without_mps() {
 
 void BatchNormImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
+    auto input_num = input_buffer_->tensor_dim_[0];
     auto bias_dims = param.bias->dims();
     auto scale_dims = param.scale->dims();
     auto count = param.variance->dims().production();
-
-    CHECK_EQ(bias_dims.production(), count) << "batchnorm: param error";
-    CHECK_EQ(scale_dims.production(), count) << "batchnorm: param error";
+    bias_dims[0] = bias_dims[0] * input_num;
+    scale_dims[0] = scale_dims[0] * input_num;
+    CHECK_EQ(bias_dims.production(), count * input_num) << "batchnorm: param error";
+    CHECK_EQ(scale_dims.production(), count * input_num) << "batchnorm: param error";
 
     auto mean_raw_ptr = param.mean->template data<float>();
     auto bias_raw_ptr = param.bias->template data<float>();
@@ -79,12 +81,13 @@ void BatchNormImageCompute::setup_without_mps() {
     scale_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, scale_dims, METAL_PRECISION_TYPE::HALF);
 
-    auto scale_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
-    auto bias_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
-    for (int i = 0; i < count; i++) {
-        auto inv_std = 1.0f / std::sqrt(variance_raw_ptr[i] + param.epsilon);
-        bias_ptr[i] = bias_raw_ptr[i] - mean_raw_ptr[i] * inv_std * scale_raw_ptr[i];
-        scale_ptr[i] = inv_std * scale_raw_ptr[i];
+    auto scale_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * input_num * count);
+    auto bias_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * input_num * count);
+    for (int i = 0; i < input_num * count; i++) {
+        int j = i % count;
+        auto inv_std = 1.0f / std::sqrt(variance_raw_ptr[j] + param.epsilon);
+        bias_ptr[i] = bias_raw_ptr[j] - mean_raw_ptr[j] * inv_std * scale_raw_ptr[j];
+        scale_ptr[i] = inv_std * scale_raw_ptr[j];
     }
     bias_buffer_->CopyFromNCHW<float>(bias_ptr);
     scale_buffer_->CopyFromNCHW<float>(scale_ptr);

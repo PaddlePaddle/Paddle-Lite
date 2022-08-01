@@ -70,6 +70,8 @@ bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   if (op_desc.HasAttr("data_format")) {
     param_.data_format = op_desc.GetAttr<std::string>("data_format");
   }
+  input_tensor_ptrs_cache_.push_back(param_.x);
+  output_tensor_ptrs_cache_.push_back(param_.output);
   return true;
 }
 
@@ -110,9 +112,12 @@ bool Transpose2Op::InferShapeImpl() const {
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.xshape->Resize(xshape_dims);
-  auto xshape_lod = param_.xshape->mutable_lod();
-  *xshape_lod = param_.x->lod();
+
+  if (param_.xshape) {
+    param_.xshape->Resize(xshape_dims);
+    auto xshape_lod = param_.xshape->mutable_lod();
+    *xshape_lod = param_.x->lod();
+  }
 
   return true;
 }

@@ -266,6 +266,8 @@ class MobileConfig;
 
 ```c++
 MobileConfig config;
+// 判断设备是否支持 FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)
+bool suppor_fp16 = config.check_fp16_valid();
 // 设置 NaiveBuffer 格式模型目录，从文件加载模型时使用
 config.set_model_from_file(<your_model_path>);
 // 设置工作线程数
@@ -276,6 +278,14 @@ config.set_power_mode(LITE_POWER_HIGH);
 // 根据 MobileConfig 创建 PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
+
+### `check_fp16_valid`
+
+```c++
+bool check_fp16_valid();
+```
+
+判断当前设备是否支持FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)，且该方法仅对 **arm CPU** 有效
 
 ### `set_model_from_file`
 
@@ -499,7 +509,7 @@ bool metal_use_mps() const;
 class PaddlePredictor;
 ```
 
-`PaddlePredictor` 是 Paddle-Lite 的预测器，由 `CreatePaddlePredictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
+`PaddlePredictor` 是 Paddle Lite 的预测器，由 `CreatePaddlePredictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
 
 示例：
 
@@ -762,7 +772,7 @@ PowerMode详细说明如下：
 struct Tensor
 ```
 
-Tensor 是 Paddle-Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置 Shape、数据、LoD 信息等。
+Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置 Shape、数据、LoD 信息等。
 
 *注意：用户应使用 `PaddlePredictor` 的 `GetInput` 和 `GetOuput` 接口获取输入 / 输出的 `Tensor`。*
 

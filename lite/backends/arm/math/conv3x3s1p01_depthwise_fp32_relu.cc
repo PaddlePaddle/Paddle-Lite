@@ -15,6 +15,7 @@
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_depthwise.h"
 
+#include "lite/core/parallel_defines.h"
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -276,34 +277,48 @@ namespace math {
 
 #define RIGHT_COMPUTE_S1                                                  \
   "3:                             \n"                                     \
-  "ld1 {v18.4s, v19.4s}, [%[vmask]]         \n"                           \
-  "ld1 {v22.4s}, [%[doutr0]]         \n"                                  \
-  "ld1 {v23.4s}, [%[doutr1]]         \n"                                  \
-  "ld1 {v24.4s}, [%[doutr2]]         \n"                                  \
-  "ld1 {v25.4s}, [%[doutr3]]         \n"                                  \
                                                                           \
-  "bif v0.16b, %[vzero].16b, v18.16b \n"                                  \
+  "sub %[din_ptr0], %[din_ptr0], #16 \n"                                  \
+  "sub %[din_ptr1], %[din_ptr1], #16 \n"                                  \
+  "sub %[din_ptr2], %[din_ptr2], #16 \n"                                  \
+  "sub %[din_ptr3], %[din_ptr3], #16 \n"                                  \
+  "sub %[din_ptr4], %[din_ptr4], #16 \n"                                  \
+  "sub %[din_ptr5], %[din_ptr5], #16 \n"                                  \
+  "sub %[din_ptr0], %[din_ptr0], %[right_pad_num] \n"                     \
+  "sub %[din_ptr1], %[din_ptr1], %[right_pad_num] \n"                     \
+  "sub %[din_ptr2], %[din_ptr2], %[right_pad_num] \n"                     \
+  "sub %[din_ptr3], %[din_ptr3], %[right_pad_num] \n"                     \
+  "sub %[din_ptr4], %[din_ptr4], %[right_pad_num] \n"                     \
+  "sub %[din_ptr5], %[din_ptr5], %[right_pad_num] \n"                     \
+                                                                          \
+  "ld1 {v0.4s, v1.4s}, [%[din_ptr0]] \n"                                  \
+  "ld1 {v2.4s, v3.4s}, [%[din_ptr1]] \n"                                  \
+  "ld1 {v4.4s, v5.4s}, [%[din_ptr2]] \n"                                  \
+  "ld1 {v6.4s, v7.4s}, [%[din_ptr3]] \n"                                  \
+  "ld1 {v8.4s, v9.4s}, [%[din_ptr4]] \n"                                  \
+  "ld1 {v10.4s, v11.4s}, [%[din_ptr5]] \n"                                \
+                                                                          \
+  "ld1 {v19.4s}, [%[vmask]]         \n"                                   \
+                                                                          \
+  "sub %[doutr0], %[doutr0], %[right_pad_num] \n"                         \
+  "sub %[doutr1], %[doutr1], %[right_pad_num] \n"                         \
+  "sub %[doutr2], %[doutr2], %[right_pad_num] \n"                         \
+  "sub %[doutr3], %[doutr3], %[right_pad_num] \n"                         \
+                                                                          \
   "bif v1.16b, %[vzero].16b, v19.16b \n"                                  \
-  "bif v2.16b, %[vzero].16b, v18.16b \n"                                  \
   "bif v3.16b, %[vzero].16b, v19.16b \n"                                  \
                                                                           \
-  "bif v4.16b, %[vzero].16b, v18.16b \n"                                  \
   "bif v5.16b, %[vzero].16b, v19.16b \n"                                  \
-  "bif v6.16b, %[vzero].16b, v18.16b \n"                                  \
   "bif v7.16b, %[vzero].16b, v19.16b \n"                                  \
                                                                           \
   "ext  v16.16b, v0.16b, v1.16b, #4 \n"                  /* v16 = 1234*/  \
   "ext  v17.16b, v0.16b, v1.16b, #8 \n" /* v16 = 2345 */ /* r0 */         \
   "fmla v12.4s,  v0.4s,  %[w0].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
                                                                           \
-  "bif v8.16b, %[vzero].16b, v18.16b \n"                                  \
   "bif v9.16b, %[vzero].16b, v19.16b \n"                                  \
-  "bif v10.16b, %[vzero].16b, v18.16b \n"                                 \
   "bif v11.16b, %[vzero].16b, v19.16b \n"                                 \
                                                                           \
   "fmla v12.4s,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
-                                                                          \
-  "ld1 {v18.4s}, [%[rmask]]         \n"                                   \
                                                                           \
   "fmla v12.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/ \
                                                                           \
@@ -341,8 +356,6 @@ namespace math {
   "fmla v14.4s ,  v6.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
   "fmla v13.4s ,  v6.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
                                                                            \
-  "bif v12.16b, v22.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w0].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
@@ -358,8 +371,6 @@ namespace math {
   "fmla v15.4s ,  v8.4s,  %[w1].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
   "fmla v14.4s ,  v8.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/   \
                                                                            \
-  "bif v13.16b, v23.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
                                                                            \
@@ -372,15 +383,11 @@ namespace math {
   "ext  v17.16b, v10.16b, v11.16b, #8 \n" /* v16 = 2345 */ /* r3 */        \
   "fmla v15.4s ,  v10.4s,  %[w2].s[0]\n" /* outr00 += din0_0123 * w0[0]*/  \
                                                                            \
-  "bif v14.16b, v24.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
                                                                            \
   "st1 {v14.4s}, [%[doutr2]], #16     \n"                                  \
                                                                            \
   "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
-                                                                           \
-  "bif v15.16b, v25.16b, v18.16b \n"                                       \
                                                                            \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
@@ -517,8 +524,6 @@ namespace math {
   "fmla v14.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v13.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
                                                                            \
-  "bif v12.16b, v22.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v17.4s,  %[w0].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
   "fmla v14.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
   "fmla v13.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
@@ -534,8 +539,6 @@ namespace math {
   "fmla v15.4s ,  v16.4s,  %[w1].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
   "fmla v14.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
                                                                            \
-  "bif v13.16b, v23.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v17.4s,  %[w1].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
   "fmla v14.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
                                                                            \
@@ -549,15 +552,11 @@ namespace math {
                                                                            \
   "fmla v15.4s ,  v16.4s,  %[w2].s[1]\n" /* outr00 += din0_1234 * w0[1]*/  \
                                                                            \
-  "bif v14.16b, v24.16b, v18.16b \n"                                       \
-                                                                           \
   "fmla v15.4s ,  v17.4s,  %[w2].s[2]\n" /* outr00 += din0_2345 * w0[2]*/  \
                                                                            \
   "st1 {v14.4s}, [%[doutr2]], #16     \n"                                  \
                                                                            \
   "fmax v15.4s, v15.4s, %[vzero].4s \n" /*relu*/                           \
-                                                                           \
-  "bif v15.16b, v25.16b, v18.16b \n"                                       \
                                                                            \
   "st1 {v15.4s}, [%[doutr3]], #16     \n"
 
@@ -714,6 +713,22 @@ namespace math {
                     // "st1 {v12.4s}, [%[out1]]\n" \
                     // "st1 {v13.4s}, [%[out2]]\n" \
 
+#define PARAM1                                                             \
+  [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1),   \
+      [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3),                \
+      [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),                \
+      [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [doutr2] "+r"(doutr2), \
+      [doutr3] "+r"(doutr3)
+
+#define PARAM2                                                        \
+  [w0] "w"(wr0), [w1] "w"(wr1), [w2] "w"(wr2), [bias_val] "r"(vbias), \
+      [vmask] "r"(vmask), [vzero] "w"(vzero),                         \
+      [right_pad_num] "r"(right_pad_num)
+
+#define ASM_PARAM                                                             \
+  "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", \
+      "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",   \
+      "v20", "v21", "v22", "v23", "v24", "v25"
 
 #else
 #define INIT_S1                                                    \
@@ -886,85 +901,81 @@ namespace math {
                                                                          \
   "bne    1b                             @ jump to main loop start point\n"
 
-#define RIGHT_COMPUTE_S1                                                      \
-  "3:                                    @ right pad entry\n"                 \
-  "vld1.32  {d19}, [%[vmask]]!    @ load din r0\n"                            \
-  "vld1.32  {d23}, [%[vmask]]!    @ load din r0\n"                            \
-                                                                              \
-  "vld1.32  {d27}, [%[vmask]]!    @ load din r0\n"                            \
-  "vld1.32  {d31}, [%[vmask]]!    @ load din r0\n"                            \
-                                                                              \
-  "vbif d16, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d17, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d18, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vbif d20, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d21, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d22, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vext.32  q6, q8, q9, #1     @ 1234\n"                                      \
-  "vext.32  q7, q8, q9, #2     @ 2345\n" /* r0 */                             \
-  "vmla.f32 q4, q8, %e[wr0][0]  @ q4 += 0123 * wr0[0]\n"                      \
-                                                                              \
-  "vbif d24, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d25, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d26, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vmla.f32 q4, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vbif d28, %e[vzero], d19              @ bit select, deal with right pad\n" \
-  "vbif d29, %e[vzero], d23              @ bit select, deal with right pad\n" \
-  "vbif d30, %e[vzero], d27             @ bit select, deal with right pad\n"  \
-                                                                              \
-  "vmla.f32 q4, q7, %f[wr0][0]  @ q4 += 2345 * wr0[2]\n"                      \
-                                                                              \
-  "vext.32  q6, q10, q11, #1     @ 1234\n"                                    \
-  "vext.32  q7, q10, q11, #2     @ 2345\n" /* r1 */                           \
-  "vmla.f32 q5, q10, %e[wr0][0]  @ q4 += 1234 * wr0[0]\n"                     \
-  "vmla.f32 q4, q10, %e[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
-                                                                              \
-  "vld1.32  {d19}, [%[rmask]]!    @ load din r0\n"                            \
-  "vld1.32  {d23}, [%[rmask]]!    @ load din r0\n"                            \
-                                                                              \
-  "vmla.f32 q5, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vld1.32  {d16-d17}, [%[dout_ptr1]]    @ load din r0\n"                     \
-  "vld1.32  {d20-d21}, [%[dout_ptr2]]    @ load din r0\n"                     \
-                                                                              \
-  "vmla.f32 q5, q7, %f[wr0][0]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vext.32  q6, q12, q13, #1     @ 1234\n"                                    \
-  "vext.32  q7, q12, q13, #2     @ 2345\n" /* r2 */                           \
-  "vmla.f32 q5, q12, %e[wr1][0]  @ q4 += 1234 * wr0[0]\n"                     \
-  "vmla.f32 q4, q12, %e[wr2][0]  @ q4 += 1234 * wr0[1]\n"                     \
-                                                                              \
-  "vmla.f32 q5, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vmla.f32 q5, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                      \
-  "vmla.f32 q4, q7, %f[wr2][0]  @ q4 += 1234 * wr0[1]\n"                      \
-                                                                              \
-  "vext.32  q6, q14, q15, #1     @ 1234\n"                                    \
+#define RIGHT_COMPUTE_S1                                                     \
+  "3:                                    @ right pad entry\n"                \
+                                                                             \
+  "subs %[din0_ptr], #16 \n"                                                 \
+  "subs %[din1_ptr], #16 \n"                                                 \
+  "subs %[din2_ptr], #16 \n"                                                 \
+  "subs %[din3_ptr], #16 \n"                                                 \
+  "subs %[din0_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din1_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din2_ptr], %[right_pad_num] \n"                                    \
+  "subs %[din3_ptr], %[right_pad_num] \n"                                    \
+  "subs %[dout_ptr1], %[right_pad_num] \n"                                   \
+  "subs %[dout_ptr2], %[right_pad_num] \n"                                   \
+                                                                             \
+  "vld1.32  {d16-d18}, [%[din0_ptr]]    \n"                                  \
+  "vld1.32  {d20-d22}, [%[din1_ptr]]   \n"                                   \
+  "vld1.32  {d24-d26}, [%[din2_ptr]]    \n"                                  \
+  "vld1.32  {d28-d30}, [%[din3_ptr]]    \n"                                  \
+                                                                             \
+  "vld1.32  {d27}, [%[vmask]]!    @ load din r0\n"                           \
+                                                                             \
+  "vbif d18, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vbif d22, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vext.32  q6, q8, q9, #1     @ 1234\n"                                     \
+  "vext.32  q7, q8, q9, #2     @ 2345\n" /* r0 */                            \
+  "vmla.f32 q4, q8, %e[wr0][0]  @ q4 += 0123 * wr0[0]\n"                     \
+                                                                             \
+  "vbif d26, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vmla.f32 q4, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vbif d30, %e[vzero], d27             @ bit select, deal with right pad\n" \
+                                                                             \
+  "vmla.f32 q4, q7, %f[wr0][0]  @ q4 += 2345 * wr0[2]\n"                     \
+                                                                             \
+  "vext.32  q6, q10, q11, #1     @ 1234\n"                                   \
+  "vext.32  q7, q10, q11, #2     @ 2345\n" /* r1 */                          \
+  "vmla.f32 q5, q10, %e[wr0][0]  @ q4 += 1234 * wr0[0]\n"                    \
+  "vmla.f32 q4, q10, %e[wr1][0]  @ q4 += 1234 * wr0[1]\n"                    \
+                                                                             \
+  "vmla.f32 q5, q6, %e[wr0][1]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vld1.32  {d16-d17}, [%[dout_ptr1]]    @ load din r0\n"                    \
+  "vld1.32  {d20-d21}, [%[dout_ptr2]]    @ load din r0\n"                    \
+                                                                             \
+  "vmla.f32 q5, q7, %f[wr0][0]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vext.32  q6, q12, q13, #1     @ 1234\n"                                   \
+  "vext.32  q7, q12, q13, #2     @ 2345\n" /* r2 */                          \
+  "vmla.f32 q5, q12, %e[wr1][0]  @ q4 += 1234 * wr0[0]\n"                    \
+  "vmla.f32 q4, q12, %e[wr2][0]  @ q4 += 1234 * wr0[1]\n"                    \
+                                                                             \
+  "vmla.f32 q5, q6, %e[wr1][1]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vmla.f32 q5, q7, %f[wr1][0]  @ q4 += 1234 * wr0[1]\n"                     \
+  "vmla.f32 q4, q7, %f[wr2][0]  @ q4 += 1234 * wr0[1]\n"                     \
+                                                                             \
+  "vext.32  q6, q14, q15, #1     @ 1234\n"                                   \
   "vext.32  q7, q14, q15, #2     @ 2345\n"
 
-#define RIGHT_RESULT_S1                                                 \
-  /* r3 */                                                              \
-  "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"               \
-                                                                        \
-  "vbif d8, d16, d19              @ bit select, deal with right pad\n"  \
-  "vbif d9, d17, d23              @ bit select, deal with right pad\n"  \
-                                                                        \
-  "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                \
-                                                                        \
-  "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n"  \
-                                                                        \
-  "vmla.f32 q5, q7, %f[wr2][0]  @ q4 += 2345 * wr0[2]\n"                \
-                                                                        \
-  "vbif d10, d20, d19              @ bit select, deal with right pad\n" \
-  "vbif d11, d21, d23              @ bit select, deal with right pad\n" \
-                                                                        \
+#define RIGHT_RESULT_S1                                                \
+  /* r3 */                                                             \
+  "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"              \
+                                                                       \
+  "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"               \
+                                                                       \
+  "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n" \
+                                                                       \
+  "vmla.f32 q5, q7, %f[wr2][0]  @ q4 += 2345 * wr0[2]\n"               \
+                                                                       \
   "vst1.32  {d10-d11},   [%[dout_ptr2]]!  @ store result, add pointer\n"
 
 #define LEFT_RESULT_S1_RELU                                                   \
@@ -1022,25 +1033,19 @@ namespace math {
                                                                          \
   "bne    1b                             @ jump to main loop start point\n"
 
-#define RIGHT_RESULT_S1_RELU                                            \
-  /* r3 */                                                              \
-  "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"               \
-                                                                        \
-  "vmax.f32  q4, q4, %q[vzero]  @ relu \n"                              \
-                                                                        \
-  "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"                \
-                                                                        \
-  "vbif d8, d16, d19              @ bit select, deal with right pad\n"  \
-  "vbif d9, d17, d23              @ bit select, deal with right pad\n"  \
-                                                                        \
-  "vmla.f32 q5, q7, %f[wr2][0]  @ q4 += 2345 * wr0[2]\n"                \
-  "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n"  \
-                                                                        \
-  "vmax.f32  q5, q5, %q[vzero]  @ relu \n"                              \
-                                                                        \
-  "vbif d10, d20, d19              @ bit select, deal with right pad\n" \
-  "vbif d11, d21, d23              @ bit select, deal with right pad\n" \
-                                                                        \
+#define RIGHT_RESULT_S1_RELU                                           \
+  /* r3 */                                                             \
+  "vmla.f32 q5, q14, %e[wr2][0]  @ q4 += 0123 * wr0[0]\n"              \
+                                                                       \
+  "vmax.f32  q4, q4, %q[vzero]  @ relu \n"                             \
+                                                                       \
+  "vmla.f32 q5, q6, %e[wr2][1]  @ q4 += 1234 * wr0[1]\n"               \
+                                                                       \
+  "vmla.f32 q5, q7, %f[wr2][0]  @ q4 += 2345 * wr0[2]\n"               \
+  "vst1.32  {d8-d9},   [%[dout_ptr1]]!  @ store result, add pointer\n" \
+                                                                       \
+  "vmax.f32  q5, q5, %q[vzero]  @ relu \n"                             \
+                                                                       \
   "vst1.32  {d10-d11},   [%[dout_ptr2]]!  @ store result, add pointer\n"
 
 #define COMPUTE_S_S1                 \
@@ -1197,7 +1202,55 @@ namespace math {
   "vadd.f32 q5, q5, q8         @ q4 += q10 \n"                                \
   "vadd.f32 q15, q5, q9         @ q4 += q10 \n"
 
+#define PARAM1                                                               \
+  [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1),                        \
+      [din0_ptr] "+r"(din_ptr0), [din1_ptr] "+r"(din_ptr1),                  \
+      [din2_ptr] "+r"(din_ptr2), [din3_ptr] "+r"(din_ptr3), [cnt] "+r"(cnt), \
+      [vmask] "+r"(vmask_ptr)
+
+#define PARAM2                                                              \
+  [wr0] "w"(wr0), [wr1] "w"(wr1), [wr2] "w"(wr2), [bias_val] "r"(bias_val), \
+      [vzero] "w"(vzero), [right_pad_num] "r"(right_pad_num)
+
+#define ASM_PARAM                                                          \
+  "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", \
+      "q13", "q14", "q15"
+
 #endif
+
+inline std::pair<uint32_t, uint32_t> right_mask_3x3s1_fp32(
+    int w_in, int w_out, int left_padding, unsigned int *vmask) {
+  //! for 4x6 convolution window
+  const unsigned int right_pad_idx[4] = {1, 0};
+
+  int tile_w = w_out >> 2;
+  int remain = w_out % 4;
+  int cnt_col;
+  if (left_padding > 0)
+    cnt_col = tile_w - 1;
+  else
+    cnt_col = tile_w;
+  unsigned int size_pad_right =
+      (unsigned int)((6 - left_padding) + (tile_w << 2) - w_in);
+
+  // Determine whether the last 4 outputs are related to right padding
+  if (remain == 0 && w_out + 2 > w_in + left_padding) {
+    size_pad_right = 6 - size_pad_right;
+    remain = 4;
+    cnt_col--;
+  }
+
+  // at the beginning vmask[5,4,...,size_pad_right] = 0xffffffff！
+  // Now the sliding window needs to move left 4-remain
+  // so the valid data grows! i.e. size_pad_right decrease!
+  size_pad_right -= (4 - remain);
+
+  uint32x4_t vmask_rp2 =
+      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+  vst1q_u32(vmask, vmask_rp2);
+  return std::make_pair(cnt_col, remain);
+}
+
 /**
  * \brief depthwise convolution, kernel size 3x3, stride 1, pad 1, with bias,
  * width > 4
@@ -1217,55 +1270,28 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
                                          ARMContext *ctx) {
   //! pad is done implicit
   const float zero[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
 
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float *write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 6) * sizeof(float));
+  float *write_ptr = zero_ptr + (w_in + 6);
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = w_out >> 2;
-  int remain = w_out % 4;
-  int cnt_col = tile_w - 1;
-
-  unsigned int size_pad_right = (unsigned int)(5 + (tile_w << 2) - w_in);
-  const unsigned int remian_idx[4] = {0, 1, 2, 3};
-
-  if (remain == 0 && size_pad_right == 5) {
-    size_pad_right = 1;
-    cnt_col -= 1;
-    remain = 4;
-  } else if (remain == 0 && size_pad_right == 6) {
-    size_pad_right = 2;
-    cnt_col -= 1;
-    remain = 4;
-  }
-
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_result =
-      vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(remian_idx));
-
-  unsigned int vmask[8];
-  vst1q_u32(vmask, vmask_rp1);
-  vst1q_u32(vmask + 4, vmask_rp2);
-
-  unsigned int rmask[4];
-  vst1q_u32(rmask, vmask_result);
+  unsigned int vmask[4];
+  auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 1, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+  uint32_t right_pad_num = (4 - cnt_remain) * 4;
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -1299,7 +1325,7 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
       const float *din_ptr5 = dr5;
       float *ptr_zero = const_cast<float *>(zero);
 #ifdef __aarch64__
-      for (int i = 0; i < h_in; i += 4) {
+      for (int i = 0; i < h_out; i += 4) {
         //! process top pad pad_h = 1
         din_ptr0 = dr0;
         din_ptr1 = dr1;
@@ -1365,52 +1391,9 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
         int cnt = cnt_col;
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1 MID_COMPUTE_S1
                          MID_RESULT_S1 RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
-                     : [cnt] "+r"(cnt),
-                       [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [din_ptr4] "+r"(din_ptr4),
-                       [din_ptr5] "+r"(din_ptr5),
-                       [doutr0] "+r"(doutr0),
-                       [doutr1] "+r"(doutr1),
-                       [doutr2] "+r"(doutr2),
-                       [doutr3] "+r"(doutr3)
-                     : [w0] "w"(wr0),
-                       [w1] "w"(wr1),
-                       [w2] "w"(wr2),
-                       [bias_val] "r"(vbias),
-                       [vmask] "r"(vmask),
-                       [rmask] "r"(rmask),
-                       [vzero] "w"(vzero)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22",
-                       "v23",
-                       "v24",
-                       "v25");
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
@@ -1458,42 +1441,18 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
           doutr1 = write_ptr;
         }
         int cnt = cnt_col;
-        unsigned int *rmask_ptr = rmask;
+
         unsigned int *vmask_ptr = vmask;
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1 MID_COMPUTE_S1
                          MID_RESULT_S1 RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
-                     : [dout_ptr1] "+r"(doutr0),
-                       [dout_ptr2] "+r"(doutr1),
-                       [din0_ptr] "+r"(din_ptr0),
-                       [din1_ptr] "+r"(din_ptr1),
-                       [din2_ptr] "+r"(din_ptr2),
-                       [din3_ptr] "+r"(din_ptr3),
-                       [cnt] "+r"(cnt),
-                       [rmask] "+r"(rmask_ptr),
-                       [vmask] "+r"(vmask_ptr)
-                     : [wr0] "w"(wr0),
-                       [wr1] "w"(wr1),
-                       [wr2] "w"(wr2),
-                       [bias_val] "r"(bias_val),
-                       [vzero] "w"(vzero)
-                     : "cc",
-                       "memory",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
         dout_ptr += 2 * w_out;
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1512,55 +1471,28 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
                                       ARMContext *ctx) {
   //! pad is done implicit
   const float zero[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
 
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float *write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 6) * sizeof(float));
+  float *write_ptr = zero_ptr + (w_in + 6);
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = w_out >> 2;
-  int remain = w_out % 4;
-  int cnt_col = tile_w - 1;
-
-  unsigned int size_pad_right = (unsigned int)(5 + (tile_w << 2) - w_in);
-  const unsigned int remian_idx[4] = {0, 1, 2, 3};
-
-  if (remain == 0 && size_pad_right == 5) {
-    size_pad_right = 1;
-    cnt_col -= 1;
-    remain = 4;
-  } else if (remain == 0 && size_pad_right == 6) {
-    size_pad_right = 2;
-    cnt_col -= 1;
-    remain = 4;
-  }
-
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_result =
-      vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(remian_idx));
-
-  unsigned int vmask[8];
-  vst1q_u32(vmask, vmask_rp1);
-  vst1q_u32(vmask + 4, vmask_rp2);
-
-  unsigned int rmask[4];
-  vst1q_u32(rmask, vmask_result);
+  unsigned int vmask[4];
+  auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 1, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+  uint32_t right_pad_num = (4 - cnt_remain) * 4;
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -1593,8 +1525,9 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
       const float *din_ptr4 = dr4;
       const float *din_ptr5 = dr5;
       float *ptr_zero = const_cast<float *>(zero);
+
 #ifdef __aarch64__
-      for (int i = 0; i < h_in; i += 4) {
+      for (int i = 0; i < h_out; i += 4) {
         //! process top pad pad_h = 1
         din_ptr0 = dr0;
         din_ptr1 = dr1;
@@ -1661,56 +1594,13 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
         asm volatile(
             INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU MID_COMPUTE_S1
                 MID_RESULT_S1_RELU RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [din_ptr4] "+r"(din_ptr4),
-              [din_ptr5] "+r"(din_ptr5),
-              [doutr0] "+r"(doutr0),
-              [doutr1] "+r"(doutr1),
-              [doutr2] "+r"(doutr2),
-              [doutr3] "+r"(doutr3)
-            : [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [bias_val] "r"(vbias),
-              [vmask] "r"(vmask),
-              [rmask] "r"(rmask),
-              [vzero] "w"(vzero)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22",
-              "v23",
-              "v24",
-              "v25");
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
-      for (int i = 0; i < h_in; i += 2) {
+      for (int i = 0; i < h_out; i += 2) {
         //! process top pad pad_h = 1
         din_ptr0 = dr0;
         din_ptr1 = dr1;
@@ -1754,43 +1644,20 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
           doutr1 = write_ptr;
         }
         int cnt = cnt_col;
-        unsigned int *rmask_ptr = rmask;
+
         unsigned int *vmask_ptr = vmask;
         asm volatile(
             INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU MID_COMPUTE_S1
                 MID_RESULT_S1_RELU RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
-            : [dout_ptr1] "+r"(doutr0),
-              [dout_ptr2] "+r"(doutr1),
-              [din0_ptr] "+r"(din_ptr0),
-              [din1_ptr] "+r"(din_ptr1),
-              [din2_ptr] "+r"(din_ptr2),
-              [din3_ptr] "+r"(din_ptr3),
-              [cnt] "+r"(cnt),
-              [rmask] "+r"(rmask_ptr),
-              [vmask] "+r"(vmask_ptr)
-            : [wr0] "w"(wr0),
-              [wr1] "w"(wr1),
-              [wr2] "w"(wr2),
-              [bias_val] "r"(bias_val),
-              [vzero] "w"(vzero)
-            : "cc",
-              "memory",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15");
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
         dout_ptr += 2 * w_out;
       }  //! end of processing mid rows
 #endif
     }
+
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1825,8 +1692,8 @@ void conv_depthwise_3x3s1p1_bias_s_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -1939,7 +1806,8 @@ void conv_depthwise_3x3s1p1_bias_s_no_relu(float *dout,
         he += 2;
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END()
+  }  // end of processing batchs
 }
 void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
                                         const float *din,
@@ -1968,8 +1836,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2082,7 +1950,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
         he += 2;
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END()
+  }  // end of processing batchs
 }
 
 /**
@@ -2104,44 +1973,27 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
                                          ARMContext *ctx) {
   //! pad is done implicit
   const float zero[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
 
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float *write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 6) * sizeof(float));
+  float *write_ptr = zero_ptr + (w_in + 6);
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = w_out >> 2;
-  int remain = w_out % 4;
-
-  unsigned int size_pad_right = (unsigned int)(6 + (tile_w << 2) - w_in);
-  const int remian_idx[4] = {0, 1, 2, 3};
-
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_result =
-      vcgtq_s32(vdupq_n_s32(remain), vld1q_s32(remian_idx));
-
-  unsigned int vmask[8];
-  vst1q_u32(vmask, vmask_rp1);
-  vst1q_u32(vmask + 4, vmask_rp2);
-
-  unsigned int rmask[4];
-  vst1q_u32(rmask, vmask_result);
+  unsigned int vmask[4];
+  auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 0, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t remain = res.second;
+  uint32_t right_pad_num = (4 - remain) * 4;
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -2228,7 +2080,7 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
           }
         }
 
-        int cnt = tile_w;
+        int cnt = cnt_col;
         asm volatile(
             INIT_S1
             "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"  /*vld1q_f32(din_ptr0)*/
@@ -2241,53 +2093,9 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
             "cmp  %w[remain], #1             \n"
             "blt 0f                         \n" RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
             "0: \n"
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [din_ptr4] "+r"(din_ptr4),
-              [din_ptr5] "+r"(din_ptr5),
-              [doutr0] "+r"(doutr0),
-              [doutr1] "+r"(doutr1),
-              [doutr2] "+r"(doutr2),
-              [doutr3] "+r"(doutr3)
-            : [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [bias_val] "r"(vbias),
-              [vmask] "r"(vmask),
-              [rmask] "r"(rmask),
-              [vzero] "w"(vzero),
-              [remain] "r"(remain)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22",
-              "v23",
-              "v24",
-              "v25");
+            : PARAM1
+            : PARAM2, [remain] "r"(remain)
+            : ASM_PARAM);
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
@@ -2321,8 +2129,8 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
         if (i + 2 > h_out) {
           doutr1 = write_ptr;
         }
-        int cnt = tile_w;
-        unsigned int *rmask_ptr = rmask;
+        int cnt = cnt_col;
+
         unsigned int *vmask_ptr = vmask;
         asm volatile(
             INIT_S1
@@ -2335,39 +2143,14 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
             "cmp  %[remain], #1             \n"
             "blt 0f                         \n" RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
             "0:                         \n"
-            : [dout_ptr1] "+r"(doutr0),
-              [dout_ptr2] "+r"(doutr1),
-              [din0_ptr] "+r"(din_ptr0),
-              [din1_ptr] "+r"(din_ptr1),
-              [din2_ptr] "+r"(din_ptr2),
-              [din3_ptr] "+r"(din_ptr3),
-              [cnt] "+r"(cnt),
-              [rmask] "+r"(rmask_ptr),
-              [vmask] "+r"(vmask_ptr)
-            : [wr0] "w"(wr0),
-              [wr1] "w"(wr1),
-              [wr2] "w"(wr2),
-              [bias_val] "r"(bias_val),
-              [vzero] "w"(vzero),
-              [remain] "r"(remain)
-            : "cc",
-              "memory",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15");
+            : PARAM1
+            : PARAM2, [remain] "r"(remain)
+            : ASM_PARAM);
         dout_ptr += 2 * w_out;
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 
@@ -2386,44 +2169,28 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
                                       ARMContext *ctx) {
   //! pad is done implicit
   const float zero[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
 
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, w_in * sizeof(float));
-  float *write_ptr = zero_ptr + w_in;
+  memset(zero_ptr, 0, (w_in + 6) * sizeof(float));
+  float *write_ptr = zero_ptr + (w_in + 6);
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
-  int tile_w = w_out >> 2;
-  int remain = w_out % 4;
-
-  unsigned int size_pad_right = (unsigned int)(6 + (tile_w << 2) - w_in);
-  const int remian_idx[4] = {0, 1, 2, 3};
-
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_result =
-      vcgtq_s32(vdupq_n_s32(remain), vld1q_s32(remian_idx));
-
-  unsigned int vmask[8];
-  vst1q_u32(vmask, vmask_rp1);
-  vst1q_u32(vmask + 4, vmask_rp2);
-
-  unsigned int rmask[4];
-  vst1q_u32(rmask, vmask_result);
+  unsigned int vmask[4];
+  auto &&res = right_mask_3x3s1_fp32(w_in, w_out, 0, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t remain = res.second;
+  uint32_t right_pad_num = (4 - remain) * 4;
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -2510,7 +2277,7 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
           }
         }
 
-        int cnt = tile_w;
+        int cnt = cnt_col;
         asm volatile(
             INIT_S1
             "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"  /*vld1q_f32(din_ptr0)*/
@@ -2523,53 +2290,9 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
             "cmp  %w[remain], #1             \n"
             "blt 0f                         \n" RIGHT_COMPUTE_S1
                 RIGHT_RESULT_S1_RELU "0: \n"
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [din_ptr4] "+r"(din_ptr4),
-              [din_ptr5] "+r"(din_ptr5),
-              [doutr0] "+r"(doutr0),
-              [doutr1] "+r"(doutr1),
-              [doutr2] "+r"(doutr2),
-              [doutr3] "+r"(doutr3)
-            : [w0] "w"(wr0),
-              [w1] "w"(wr1),
-              [w2] "w"(wr2),
-              [bias_val] "r"(vbias),
-              [vmask] "r"(vmask),
-              [rmask] "r"(rmask),
-              [vzero] "w"(vzero),
-              [remain] "r"(remain)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v20",
-              "v21",
-              "v22",
-              "v23",
-              "v24",
-              "v25");
+            : PARAM1
+            : PARAM2, [remain] "r"(remain)
+            : ASM_PARAM);
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
@@ -2603,8 +2326,8 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
         if (i + 2 > h_out) {
           doutr1 = write_ptr;
         }
-        int cnt = tile_w;
-        unsigned int *rmask_ptr = rmask;
+        int cnt = cnt_col;
+
         unsigned int *vmask_ptr = vmask;
         asm volatile(INIT_S1
                      "sub %[din0_ptr], #8 @ 0pad + 2 float data overlap\n"
@@ -2617,39 +2340,14 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
                      "cmp  %[remain], #1             \n"
                      "blt 0f                         \n" RIGHT_COMPUTE_S1
                          RIGHT_RESULT_S1_RELU "0:                         \n"
-                     : [dout_ptr1] "+r"(doutr0),
-                       [dout_ptr2] "+r"(doutr1),
-                       [din0_ptr] "+r"(din_ptr0),
-                       [din1_ptr] "+r"(din_ptr1),
-                       [din2_ptr] "+r"(din_ptr2),
-                       [din3_ptr] "+r"(din_ptr3),
-                       [cnt] "+r"(cnt),
-                       [rmask] "+r"(rmask_ptr),
-                       [vmask] "+r"(vmask_ptr)
-                     : [wr0] "w"(wr0),
-                       [wr1] "w"(wr1),
-                       [wr2] "w"(wr2),
-                       [bias_val] "r"(bias_val),
-                       [vzero] "w"(vzero),
-                       [remain] "r"(remain)
-                     : "cc",
-                       "memory",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2, [remain] "r"(remain)
+                     : ASM_PARAM);
         dout_ptr += 2 * w_out;
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END()
   }
 }
 /**
@@ -2690,8 +2388,8 @@ void conv_depthwise_3x3s1p0_bias_s_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2810,7 +2508,8 @@ void conv_depthwise_3x3s1p0_bias_s_no_relu(float *dout,
         }
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END()
+  }  // end of processing batchs
 }
 
 void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
@@ -2847,8 +2546,8 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2967,7 +2666,8 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
         }
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END()
+  }  // end of processing batchs
 }
 }  // namespace math
 }  // namespace arm

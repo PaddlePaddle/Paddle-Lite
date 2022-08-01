@@ -39,7 +39,7 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
 - 嵌入式 Linux：请浏览 [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
 - windows、macOS、Linux 等 x86 架构的 CPU 主机： 请浏览 [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
 - FPGA：对于百度自研的 [EdgeBoard 开发板](https://ai.baidu.com/tech/hardware/deepkit)请浏览 [使用 EdgeBoard FPGA 预测部署](../demo_guides/fpga)，对于英特尔 FPGA 平台请浏览 [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
-- 百度 XPU（昆仑 AI 加速芯片）：请浏览 [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- 昆仑芯 XPU（昆仑 AI 加速芯片）：请浏览 [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
 - AI 加速芯片： 对于 华为麒麟 NPU 请浏览 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)， 对于瑞芯微 NPU 请浏览 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)，对于联发科 APU 请浏览 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)，对于颖脉 NNA 请浏览 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)，对于比特大陆的算丰（SOPHON）AI 芯片 请浏览 [Paddle Lite 使用 Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
 
 ## 技术路线

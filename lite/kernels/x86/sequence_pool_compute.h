@@ -35,19 +35,34 @@ class SequencePoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* out = param.Out;
     auto dims = param.X->dims();
     auto lod = param.X->lod();
-    CHECK_EQ(lod.size(), 1UL);
-    CHECK_GE(dims[0], static_cast<int64_t>(lod[0].size() - 1));
+    auto* index = param.MaxIndex;
+    CHECK_LE(lod.size(), 2UL);
+    CHECK_GE(dims[0], static_cast<int64_t>(lod[lod.size() - 1].size() - 1));
 
-    dims[0] = lod[0].size() - 1;
+    dims[0] = lod[lod.size() - 1].size() - 1;
     out->Resize({dims});
     out->template mutable_data<T>();
-    lite::Tensor* index = nullptr;
 
     const bool is_test = true;
-    float pad_value = 0.0;
+    float pad_value = param.pad_value;
 
     lite::x86::math::SequencePoolFunctor<lite::TargetType::kX86, T> pool;
     pool(context, param.pool_type, pad_value, *param.X, out, is_test, index);
+
+    int batch_size = lod.size() - 1;
+    std::vector<uint64_t> offset_new;
+    if (param.X->lod().size() == 2) {
+      offset_new.resize(param.X->lod()[0].size());
+      offset_new = param.X->lod()[0];
+    } else {
+      offset_new.resize(batch_size + 1);
+      for (int i = 0; i <= batch_size; i++) {
+        offset_new[i] = i;
+      }
+    }
+
+    out->mutable_lod()->clear();
+    out->mutable_lod()->push_back(offset_new);
   }
 
   virtual ~SequencePoolCompute() = default;

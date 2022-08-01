@@ -1,8 +1,11 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -58,96 +61,67 @@ limitations under the License. */
 // axis = 1
 CONCAT2(2Input, Axis1)
 
-__kernel void concat2(__read_only image2d_t input0,
-                      __read_only image2d_t input1,
-                      __write_only image2d_t output,
-                      int flag,
-                      int C_0,
-                      int out_C,
-                      int out_W,
-                      int width) {
-  const int out_w = get_global_id(0);   // image_width cxw/4
-  const int out_c = get_global_id(1);   // image_width cxw/4
-  const int out_nh = get_global_id(2);  // image_height nxh
+__kernel void Concat2InputAxis1Common(__read_only image2d_t input0,
+                                      __read_only image2d_t input1,
+                                      __write_only image2d_t output,
+                                      __private const int in0_dims_axis,
+                                      __private const int out_dims_last) {
+  const int width_idx = get_global_id(0);
+  const int channel_blk_idx = get_global_id(1);
+  const int hb_idx = get_global_id(2);
+  const int c = channel_blk_idx * 4;
 
-  if (flag == 1) {  // by channel
-    int c_in = out_c;
-    int2 output_pos;
-    output_pos.x = out_c * out_W + out_w;
-    output_pos.y = out_nh;
-    CL_DTYPE4 output_data;
-    for (int i = 0; i < 4; i++) {
-      int c = out_c * 4 + i;
-      if (c >= out_C) {
-        break;
-      }
-      int c_in;
-      CL_DTYPE4 input_data;
-      if (c < C_0) {
-        c_in = c;
-        int2 input_pos;
-        input_pos.x = (c_in / 4) * out_W + out_w;
-        input_pos.y = out_nh;
-        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
+  const int2 pos = (int2)(channel_blk_idx * out_dims_last + width_idx, hb_idx);
+  CL_DTYPE4 in0_data = (CL_DTYPE4)0;
+
+  // write all input0 data to output directly
+  if (c < in0_dims_axis) {
+    in0_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, pos);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, pos, in0_data);
+  }
+
+  // deal with output1
+  int channel_remain = in0_dims_axis % 4;
+  if (c + channel_remain >= in0_dims_axis) {
+    // only theads for output1 hit this
+    const int2 in1_pos = (int2)(
+        (channel_blk_idx - in0_dims_axis / 4) * out_dims_last + width_idx,
+        hb_idx);
+    CL_DTYPE4 in1_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, in1_pos);
+    if (channel_remain == 0) {
+      // write all input1 data to output directly
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, pos, in1_data);
+    } else {
+      CL_DTYPE4 remain, combined_val;
+      if (in1_pos.x - out_dims_last < 0) {
+        // combine input0 & input1
+        remain = in0_data;
+        if (channel_remain == 1) {
+          combined_val =
+              (CL_DTYPE4)(remain.x, in1_data.x, in1_data.y, in1_data.z);
+        } else if (channel_remain == 2) {
+          combined_val =
+              (CL_DTYPE4)(remain.x, remain.y, in1_data.x, in1_data.y);
+        } else if (channel_remain == 3) {
+          combined_val = (CL_DTYPE4)(remain.x, remain.y, remain.z, in1_data.x);
+        }
       } else {
-        c_in = c - C_0;
-        int2 input_pos;
-        input_pos.x = (c_in / 4) * out_W + out_w;
-        input_pos.y = out_nh;
-        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
+        // only deal with input1
+        remain = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                               input1,
+                               SAMPLER,
+                               (int2)(in1_pos.x - out_dims_last, in1_pos.y));
+        if (channel_remain == 1) {
+          combined_val =
+              (CL_DTYPE4)(remain.w, in1_data.x, in1_data.y, in1_data.z);
+        } else if (channel_remain == 2) {
+          combined_val =
+              (CL_DTYPE4)(remain.z, remain.w, in1_data.x, in1_data.y);
+        } else if (channel_remain == 3) {
+          combined_val = (CL_DTYPE4)(remain.y, remain.z, remain.w, in1_data.x);
+        }
       }
-      int value_offset = c_in % 4;
-      CL_DTYPE value;
-      if (value_offset == 0) {
-        value = input_data.x;
-      } else if (value_offset == 1) {
-        value = input_data.y;
-      } else if (value_offset == 2) {
-        value = input_data.z;
-      } else if (value_offset == 3) {
-        value = input_data.w;
-      }
-      if (i == 0) {
-        output_data.x = value;
-      } else if (i == 1) {
-        output_data.y = value;
-      } else if (i == 2) {
-        output_data.z = value;
-      } else if (i == 3) {
-        output_data.w = value;
-      }
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, pos, combined_val);
     }
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
-  } else if (flag == 2) {  // by height,  width == n
-    int2 input_pos;
-    input_pos.x = out_c * out_W + out_w;
-    int h = out_nh / width;
-    CL_DTYPE4 input;
-    if (h < C_0) {
-      input_pos.y = out_nh;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
-    } else {
-      input_pos.y = (h - C_0) * width;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
-    }
-    int2 output_pos;
-    output_pos.x = out_c * out_W + out_w;
-    output_pos.y = out_nh;
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input);
-  } else if (flag == 3) {  // by width, width == C
-    int2 input_pos;
-    input_pos.y = out_nh;
-    CL_DTYPE4 input;
-    if (out_w < C_0) {
-      input_pos.x = out_c * out_W + out_w;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
-    } else {
-      input_pos.x = out_c * out_W + (out_w - C_0);
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
-    }
-    int2 output_pos;
-    output_pos.x = out_c * out_W + out_w;
-    output_pos.y = out_nh;
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, input);
   }
 }

@@ -477,14 +477,18 @@ class MulticlassNmsComputeTester : public arena::TestCase {
 
     LoD lod;
     lod.emplace_back(batch_starts);
+#if !defined(LITE_WITH_NNADAPTER)
     outs->set_lod(lod);
+#endif
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType(type_);
     op_desc->SetInput("BBoxes", {bboxes_});
     op_desc->SetInput("Scores", {scores_});
+#if !defined(LITE_WITH_NNADAPTER)
     op_desc->SetInput("RoisNum", {rois_num_});
+#endif
     op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("NmsRoisNum", {nms_rois_num_});
     op_desc->SetAttr("keep_top_k", keep_top_k_);
@@ -516,7 +520,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
   }
 };
 
-void TestMulticlassNms(Place place, float abs_error) {
+void TestMulticlassNms(Place place, std::string alias, float abs_error) {
   int N = 3;
   int M = 2500;
   for (int class_num : {2, 4, 10}) {
@@ -525,7 +529,7 @@ void TestMulticlassNms(Place place, float abs_error) {
     std::vector<int64_t> rois_num_shape{2};
     std::unique_ptr<arena::TestCase> tester(
         new MulticlassNmsComputeTester(place,
-                                       "def",
+                                       alias,
                                        DDim(bbox_shape),
                                        DDim(score_shape),
                                        DDim(rois_num_shape)));
@@ -537,13 +541,24 @@ void TestMulticlassNms(Place place, float abs_error) {
 TEST(multiclass_nms, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+  std::string alias = "def";
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  alias = "DISABLE_XPU2_MulticlassNms3";
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  TestMulticlassNms(place, abs_error);
+  TestMulticlassNms(place, alias, abs_error);
 }
 
 }  // namespace lite

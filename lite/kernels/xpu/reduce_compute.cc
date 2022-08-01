@@ -107,8 +107,8 @@ struct ReduceAnyFunctor {
   }
 };
 
-template <class T, class Functor>
-void ReduceCompute<T, Functor>::Run() {
+template <class T, class Functor, PrecisionType PType>
+void ReduceCompute<T, Functor, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
@@ -150,18 +150,35 @@ void ReduceCompute<T, Functor>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using ReduceAll = xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>>;
-using ReduceAny = xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>>;
+using ReduceAll =
+    xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>, PRECISION(kFloat)>;
+using ReduceAny =
+    xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>, PRECISION(kFloat)>;
 using ReduceMeanFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMeanFunctor<float>>;
+    xpu::ReduceCompute<float, xpu::ReduceMeanFunctor<float>, PRECISION(kFloat)>;
+using ReduceMeanFloat16 = xpu::ReduceCompute<float16,
+                                             xpu::ReduceMeanFunctor<float16>,
+                                             PRECISION(kFP16)>;
 using ReduceSumFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceSumFunctor<float>>;
+    xpu::ReduceCompute<float, xpu::ReduceSumFunctor<float>, PRECISION(kFloat)>;
+using ReduceSumFloat16 = xpu::ReduceCompute<float16,
+                                            xpu::ReduceSumFunctor<float16>,
+                                            PRECISION(kFP16)>;
 using ReduceProdFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceProdFunctor<float>>;
+    xpu::ReduceCompute<float, xpu::ReduceProdFunctor<float>, PRECISION(kFloat)>;
+using ReduceProdFloat16 = xpu::ReduceCompute<float16,
+                                             xpu::ReduceProdFunctor<float16>,
+                                             PRECISION(kFP16)>;
 using ReduceMaxFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMaxFunctor<float>>;
+    xpu::ReduceCompute<float, xpu::ReduceMaxFunctor<float>, PRECISION(kFloat)>;
+using ReduceMaxFloat16 = xpu::ReduceCompute<float16,
+                                            xpu::ReduceMaxFunctor<float16>,
+                                            PRECISION(kFP16)>;
 using ReduceMinFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMinFunctor<float>>;
+    xpu::ReduceCompute<float, xpu::ReduceMinFunctor<float>, PRECISION(kFloat)>;
+using ReduceMinFloat16 = xpu::ReduceCompute<float16,
+                                            xpu::ReduceMinFunctor<float16>,
+                                            PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(reduce_all, kXPU, kFloat, kNCHW, ReduceAll, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kBool))})
@@ -178,9 +195,29 @@ REGISTER_LITE_KERNEL(reduce_mean, kXPU, kFloat, kNCHW, ReduceMeanFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(reduce_mean,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     ReduceMeanFloat16,
+                     DISABLE_XPU1_ReduceMeanFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(reduce_sum, kXPU, kFloat, kNCHW, ReduceSumFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_sum,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     ReduceSumFloat16,
+                     DISABLE_XPU1_ReduceSumFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reduce_prod, kXPU, kFloat, kNCHW, ReduceProdFloat32, def)
@@ -188,12 +225,42 @@ REGISTER_LITE_KERNEL(reduce_prod, kXPU, kFloat, kNCHW, ReduceProdFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(reduce_prod,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     ReduceProdFloat16,
+                     DISABLE_XPU1_ReduceProdFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(reduce_max, kXPU, kFloat, kNCHW, ReduceMaxFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(reduce_max,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     ReduceMaxFloat16,
+                     DISABLE_XPU1_ReduceMaxFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(reduce_min, kXPU, kFloat, kNCHW, ReduceMinFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_min,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     ReduceMinFloat16,
+                     DISABLE_XPU1_ReduceMinFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();

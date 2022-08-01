@@ -116,8 +116,8 @@ void runLSTMLayer(xdnn::Context* ctx,
 }
 
 void RnnCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = this->Param<operators::RnnParam>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<operators::RnnParam>();
   // INPUT
   auto input = param.Input;
   auto pre_state = param.PreState;
@@ -158,18 +158,20 @@ void RnnCompute::Run() {
   }
   float* output_ptr = output->mutable_data<float>(TARGET(kXPU));
 
-  Tensor internal_output_1_tensor, internal_output_2_tensor;
+  XPUScratchPadGuard internal_output_1_guard, internal_output_2_guard;
   float* internal_output_1_ptr = nullptr;
   float* internal_output_2_ptr = nullptr;
   if (num_layers >= 2) {
-    internal_output_1_tensor.Resize(output->dims());
+    internal_output_1_guard =
+        TargetWrapperXPU::MallocScratchPad(output->numel() * sizeof(float));
     internal_output_1_ptr =
-        internal_output_1_tensor.mutable_data<float>(TARGET(kXPU));
+        reinterpret_cast<float*>(internal_output_1_guard->addr_);
   }
   if (num_layers >= 3) {
-    internal_output_2_tensor.Resize(output->dims());
+    internal_output_2_guard =
+        TargetWrapperXPU::MallocScratchPad(output->numel() * sizeof(float));
     internal_output_2_ptr =
-        internal_output_2_tensor.mutable_data<float>(TARGET(kXPU));
+        reinterpret_cast<float*>(internal_output_2_guard->addr_);
   }
   // PreState and State
   const float* init_h_ptr = pre_state[0]->data<float>();
@@ -203,11 +205,12 @@ void RnnCompute::Run() {
     }
 
     if (is_bidirec) {
-      std::vector<Tensor> output_vec(2);
+      std::vector<XPUScratchPadGuard> output_vec(2);
       std::vector<float*> output_ptr_vec(2);
       for (int i = 0; i < 2; ++i) {
-        output_vec[i].Resize({seq_len, batch_size, hdim});
-        output_ptr_vec[i] = output_vec[i].mutable_data<float>(TARGET(kXPU));
+        output_vec[i] = TargetWrapperXPU::MallocScratchPad(
+            seq_len * batch_size * hdim * sizeof(float));
+        output_ptr_vec[i] = reinterpret_cast<float*>(output_vec[i]->addr_);
       }
 
       runLSTMLayer(ctx.GetRawContext(),
@@ -246,16 +249,9 @@ void RnnCompute::Run() {
                    i,
                    1);
       // concat
-      std::vector<const float*> x_list;
-      std::vector<std::vector<int>> xdims_list;
-      for (int i = 0; i < 2; i++) {
-        auto& x = output_vec[i];
-        x_list.push_back(output_ptr_vec[i]);
-        xdims_list.push_back(std::vector<int>());
-        for (int j = 0; j < static_cast<int>(x.dims().size()); j++) {
-          xdims_list[i].push_back(x.dims()[j]);
-        }
-      }
+      std::vector<const float*> x_list{output_ptr_vec[0], output_ptr_vec[1]};
+      std::vector<std::vector<int>> xdims_list{{seq_len, batch_size, hdim},
+                                               {seq_len, batch_size, hdim}};
 
       int r = xdnn::concat<float>(
           ctx.GetRawContext(), x_list, cur_output_ptr, xdims_list, 2);

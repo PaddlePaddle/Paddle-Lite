@@ -40,24 +40,32 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     expand_param_ = param_.get_mutable<param_t>();
-    auto expand_times = expand_param_->expand_times;
+
+    std::vector<int> expand_times;
+    if (expand_param_->ExpandTimes != nullptr) {
+      auto expand_times_data = expand_param_->ExpandTimes->template data<int>();
+      for (int64_t i = 0; i < expand_param_->ExpandTimes->numel(); i++) {
+        expand_times.push_back(expand_times_data[i]);
+      }
+    } else if (!expand_param_->expand_times_tensor.empty()) {
+      for (size_t i = 0; i < expand_param_->expand_times_tensor.size(); i++) {
+        expand_times.push_back(
+            expand_param_->expand_times_tensor[i]->template data<int>()[0]);
+      }
+    } else {
+      expand_times = expand_param_->expand_times;
+    }
     auto in_dims = expand_param_->X->dims();
     CHECK(in_dims.size() == 4) << "expand image now only support indims size 4";
     CHECK(expand_times.size() == 4)
         << "expand image now only support in_expand_timesdims size 4";
-    CHECK(expand_times[1] == 1) << "expand image do not support expend c now";
+    kernel_func_name_ = "expend_cn0";
 
-    // do not confuse with these cases.it is use to support expend c in future
-    if (in_dims[1] == 1) {
-      kernel_func_name_ = "expend_c1";
-    } else if (in_dims[1] == 2) {
-      kernel_func_name_ = "expend_c2";
-    } else if (in_dims[1] == 3) {
-      kernel_func_name_ = "expend_c3";
-    } else if (in_dims[1] == 4) {
-      kernel_func_name_ = "expend_c4";
+    // if in_c divide 4 exactly we use expand_cn0
+    if (in_dims[1] % 4 == 0 || expand_times[1] == 1) {
+      kernel_func_name_ = "expand_cn0";
     } else {
-      kernel_func_name_ = "expend_cn";
+      kernel_func_name_ = "expand_cn1";
     }
 
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -87,6 +95,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
+
       // compute image shape
       paddle::lite::CLImageConverterDefault default_convertor;
       out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
@@ -126,11 +135,6 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int in_c_block = in_image_width / x_dims[3];
     int in_nh = x_dims[0] * x_dims[2];
 
-    int expand_times_n = expand_times[0];
-    int expand_times_c = expand_times[1];
-    int expand_times_h = expand_times[2];
-    int expand_times_w = expand_times[3];
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
@@ -160,14 +164,9 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(11, *out_img);
     CL_CHECK_FATAL(status);
-
-    status = kernel.setArg(12, expand_times_n);
+    status = kernel.setArg(12, static_cast<int>(x_dims[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, expand_times_c);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(14, expand_times_h);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(15, expand_times_w);
+    status = kernel.setArg(13, static_cast<int>(out_dims[1]));
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -217,6 +216,14 @@ REGISTER_LITE_KERNEL(expand,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

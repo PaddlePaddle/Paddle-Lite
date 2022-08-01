@@ -1,8 +1,8 @@
 # 瑞芯微 NPU 部署示例
 
-Paddle Lite 已支持 Rockchip NPU 的预测部署。
+Paddle Lite 已支持 Rockchip 1代 NPU 的预测部署。
 其接入原理是与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 Rockchip NPU 组网 API 进行网络构建，在线生成并执行模型。
-
+- **请注意**：本文介绍的是 Paddle Lite 基于 RK DDK 来调用瑞芯微 SoC 的 NPU 算力，考虑到算子以及模型支持的广度，如果需要在瑞芯微 SoC 上部署较为复杂的模型，我们强烈建议您参考[芯原 TIM-VX 部署示例](./verisilicon_timvx)，同样能调用晶晨 SoC 的 NPU 算力，且支持场景更多。
 ## 支持现状
 
 ### 已支持的芯片
@@ -83,6 +83,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
   - 由于 RK1808 EVB 在刷 firmware 后，只是一个纯净的 Linux 系统，无法像 Ubuntu 那样使用 `apt-get` 命令方便的安装软件，因此，示例程序和 Paddle Lite 库的编译均采用交叉编译方式；
   - 将 `MicroUSB` 线插入到设备的 `MicroUSB OTG` 口，就可以使用 Android 的 `adb` 命令进行设备的交互，再也不用配置网络使用 `ssh` 或者通过串口的方式访问设备了，这个设计非常赞！
   - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [   15.978465] Galcore version 6.4.0.227915
+    ```
 
 - TB-RK1808S0 AI 计算棒
 
@@ -96,7 +101,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
     toybrick-server-1.4.1-2.rk1808.fc28.aarch64
     ```
     - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-
+    - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    7.919345] Galcore version 6.4.0.227915
+    ```
 - RV1126 EVB
 
    - 需要升级 1.51 的 firmware（下载和烧录方法请联系RK相关同学），可通过以下命令确认 librknn_runtime.so 的版本：
@@ -108,7 +117,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 
    - 示例程序和 Paddle Lite 库的编译需要采用交叉编译方式，通过 `adb` 进行设备的交互和示例程序的运行。
    - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-   
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    5.809874] Galcore version 6.4.0.227915
+    ```
 
 ### 准备交叉编译环境
 
@@ -195,6 +208,7 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
   3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
   4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip 地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
 
   在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell

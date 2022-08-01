@@ -34,15 +34,15 @@ Windows 环境下编译适用于 Windows 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^^^^^
 
 
 * Windows 10 专业版
-* CMake（请使用 3.15 或以上版本）
-* Python 版本 2.7/3.5.1+
-* pip 或 pip3 版本 9.0.1+
-* Microsoft Visual Studio（2015 及以上版本）
+* CMake >= 3.15
+* Python == 2.7/3.5.1+
+* pip/pip3 >= 9.0.1
+* Microsoft Visual Studio >= 2015版本
 
 环境配置步骤
 ^^^^^^^^^^^^^^^^
@@ -110,12 +110,10 @@ Windows 环境下编译适用于 Windows 的库
      - 使用 vs2019 构建系统（默认使用 vs2015 的构建方案，添加上此编译选项使用 vs2019 编译构建)
    * - without_avx
      - 使用 AVX/SSE 指令对 x86 Kernel 进行加速
-   * - with_baidu_xpu
-     - 使用 XPU kernel 进行加速
-   * - with_baidu_xpu_xtcl
-     - 使用 XTCL 对 XPU kernel进行加速（默认不使用，添加此编译选项需同时开启 with_baidu_xpu）
-   * - baidu_xpu_sdk_root
-     - 启用 with_baidu_xpu 或者 with_baidu_xpu_xtcl 时，需要添加 XPU 的 Windows 产出包的相关路径
+   * - with_kunlunxin_xpu
+     - 使用昆仑芯 XPU kernel 进行加速
+   * - kunlunxin_xpu_sdk_root
+     - 启用 with_kunlunxin_xpu 时，需要添加昆仑芯 XPU 的 Windows 产出包的相关路径
 
 
 编译脚本使用示例

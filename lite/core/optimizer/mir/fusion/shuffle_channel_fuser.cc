@@ -100,6 +100,12 @@ cpp::OpDesc ShuffleChannelFuser::GenOpDesc(const key2nodes_t& matched) {
                       ->stmt()
                       ->op_info()
                       ->GetAttr<std::vector<int>>("shape")[1]);
+  cpp::OpDesc reshape = *matched.at("reshape2")->stmt()->op_info();
+  if (reshape.HasAttr("out_threshold")) {
+    float out_threshold = reshape.GetAttr<float>("out_threshold");
+    op_desc.SetAttr("out_threshold", out_threshold);
+    VLOG(4) << "shuffle_channel fusion,out_threshold:" << out_threshold;
+  }
   return op_desc;
 }
 

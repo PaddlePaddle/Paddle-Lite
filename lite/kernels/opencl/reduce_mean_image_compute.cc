@@ -39,6 +39,10 @@ class ReduceMeanComputeImage2D : public KernelLite<TARGET(kOpenCL),
     reduce_mean_param_ = param_.get_mutable<param_t>();
     auto& x_dims = reduce_mean_param_->X->dims();
     auto& dim = reduce_mean_param_->dim;
+    bool keep_dim = reduce_mean_param_->keep_dim;
+    CHECK(keep_dim) << "OpenCL reduce kernel only support keep_dim=true. "
+                       "keep_dim=false case will be converted by "
+                       "keepdims_convert_pass.";
 
     // padding to 4-dims
     in_nchw_ = x_dims.Vectorize();

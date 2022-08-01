@@ -385,12 +385,12 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
 
     if (return_rois_num) {
       auto* nms_rois_num = param.nms_rois_num;
-      nms_rois_num->template mutable_data<int>();
+      nms_rois_num->Resize({n});
       int* num_data = nms_rois_num->template mutable_data<int>();
+
       for (int i = 1; i <= n; i++) {
         num_data[i - 1] = batch_starts[i] - batch_starts[i - 1];
       }
-      nms_rois_num->Resize({n});
     }
 
     LoD lod;
@@ -408,12 +408,3 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-#ifdef ENABLE_ARM_FP16
-using float16_t = __fp16;
-
-using nmsfp16 =
-    paddle::lite::kernels::host::MulticlassNmsCompute<float16_t,
-                                                      TARGET(kARM),
-                                                      PRECISION(kFP16)>;
-#endif  // ENABLE_ARM_FP16

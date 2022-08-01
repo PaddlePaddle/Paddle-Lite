@@ -75,10 +75,6 @@ inline std::string TensorDTypeToPyDTypeStr(PrecisionType type) {
 ////////////////////////////////////////////////////////////////
 inline py::array TensorToPyArray(const Tensor &tensor,
                                  bool need_deep_copy = false) {
-  if (!tensor.IsInitialized()) {
-    return py::array();
-  }
-
   const auto &tensor_dims = tensor.shape();
   auto tensor_dtype = tensor.precision();
   size_t sizeof_dtype = lite_api::PrecisionTypeLength(tensor_dtype);
@@ -91,9 +87,13 @@ inline py::array TensorToPyArray(const Tensor &tensor,
     py_strides[i] = sizeof_dtype * numel;
     numel *= py_dims[i];
   }
+  std::string py_dtype_str = TensorDTypeToPyDTypeStr(tensor.precision());
+
+  if (!tensor.IsInitialized()) {
+    return py::array(py::dtype(py_dtype_str.c_str()), py_dims);
+  }
 
   const void *tensor_buf_ptr = static_cast<const void *>(tensor.data<int8_t>());
-  std::string py_dtype_str = TensorDTypeToPyDTypeStr(tensor.precision());
   auto base = py::cast(std::move(tensor));
   return py::array(py::dtype(py_dtype_str.c_str()),
                    py_dims,

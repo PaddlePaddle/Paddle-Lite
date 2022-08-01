@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,31 +48,15 @@ int ConvertGelu(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  if (is_quant_mode) {
+    CHECK(IsNNInt8SymmPerLayerQuantType(*input_type));
+    std::vector<float> quant_scales;
+    CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
+    CHECK(IsSameSymmQuantParams(x_scales, quant_scales));
+  }
   // Approximate operand
   auto approximate_operand = converter->AddConstantOperand(approximate);
   // Output operand
-  if (is_quant_mode) {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      std::vector<float> quant_scales;
-      CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
-      CHECK(IsSameSymmQuantParams(x_scales, quant_scales));
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT operation to
-      // make the quant params obtained from a operand consistent with those
-      // obtained from op_desc
-    } else {
-      // TODO(hong19860320) Add a NNADAPTER_QUANT/NNADAPTER_DEQUANT operation to
-      // convert any type to int8 symm per-layer quant operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
-  } else {
-    if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT to dequantize the input
-      // operand to a float type operand
-      LOG(FATAL) << "Mixed precision will be supported in future!";
-      return UNSUPPORTED_FEATURE;
-    }
-  }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // GELU operation
   converter->AddOperation(

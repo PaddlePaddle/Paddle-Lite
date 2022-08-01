@@ -31,11 +31,16 @@ bool Pad2dOpLite::CheckShape() const {
 }
 
 bool Pad2dOpLite::InferShapeImpl() const {
-  // nchw
   auto x_dims = param_.X->dims();
-  int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
-  int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
-  param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_h, out_w}));
+  if (param_.data_format == "NCHW") {
+    int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
+    int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
+    param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_h, out_w}));
+  } else if (param_.data_format == "NHWC") {
+    int out_h = x_dims[1] + param_.paddings[0] + param_.paddings[1];
+    int out_w = x_dims[2] + param_.paddings[2] + param_.paddings[3];
+    param_.Out->Resize(lite::DDim({x_dims[0], out_h, out_w, x_dims[3]}));
+  }
   return true;
 }
 

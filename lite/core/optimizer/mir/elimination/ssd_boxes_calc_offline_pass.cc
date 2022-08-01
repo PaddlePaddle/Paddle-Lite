@@ -22,6 +22,7 @@
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/ssa_graph_utils.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
@@ -41,6 +42,21 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     if (node->AsStmt().op_type() != "prior_box" &&
         node->AsStmt().op_type() != "density_prior_box")
       continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(graph.get(),
+                            out_link->arg()->name,
+                            {"prior_box", "density_prior_box"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "Unsupported for op output var containing multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& priorbox_instruct = node->AsStmt();
@@ -721,8 +737,5 @@ void SSDBoxesCalcOfflinePass::ComputeConcat(
 
 REGISTER_MIR_PASS(ssd_boxes_calc_offline_pass,
                   paddle::lite::mir::SSDBoxesCalcOfflinePass)
-    .BindTargets({TARGET(kRKNPU),
-                  TARGET(kNPU),
-                  TARGET(kOpenCL),
-                  TARGET(kMetal),
-                  TARGET(kNNAdapter)});
+    .BindTargets(
+        {TARGET(kNPU), TARGET(kOpenCL), TARGET(kMetal), TARGET(kNNAdapter)});

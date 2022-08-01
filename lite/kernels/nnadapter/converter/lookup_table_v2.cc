@@ -45,16 +45,18 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Padding_idx
   if (op->HasAttr("padding_idx")) {
+    auto padding_idx = op->GetAttr<int64_t>("padding_idx");
     // TODO(zhupengyang): support padding_idx later.
-    CHECK_EQ(op->GetAttr<int64_t>("padding_idx"), -1L)
-        << "Only support padding_idx = -1";
+    if (padding_idx != -1 && padding_idx != 0) {
+      LOG(FATAL) << "Only support padding_idx = -1 or 0";
+    }
   }
 
   // Output operand
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
 
-  // Mat_mul operation
+  // Gather operation
   converter->AddOperation(NNADAPTER_GATHER,
                           {input_operand, indices_operand, axis_operand},
                           {output_operand});

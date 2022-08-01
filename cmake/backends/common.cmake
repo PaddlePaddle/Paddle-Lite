@@ -16,10 +16,6 @@ if(LITE_WITH_OPENCL)
   include(backends/opencl)
 endif()
 
-if(LITE_WITH_RKNPU)
-  include(backends/rknpu)
-endif()
-
 if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()
@@ -30,14 +26,6 @@ endif()
 
 if(LITE_WITH_XPU)
   include(backends/xpu)
-endif()
-
-if(LITE_WITH_APU)
-  include(backends/apu)
-endif()
-
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-  include(backends/huawei_ascend_npu)
 endif()
 
 if(LITE_WITH_MLU)
@@ -57,7 +45,7 @@ include(backends/x86)
 # Add dependencies
 include(generic)                # simplify cmake module
 include(configure)              # add paddle env configuration
-if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(LITE_WITH_ARM)
   message(STATUS "Building the mobile framework")
   include(postproject)
   if(NOT LITE_ON_TINY_PUBLISH)

@@ -22,6 +22,7 @@
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/ssa_graph_utils.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
@@ -42,7 +43,20 @@ void RangeCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void RangeCalcOfflinePass::RemoveRangePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "range") continue;
+    if (node->AsStmt().op_type() != "range") continue;
+    auto outlinks = node->outlinks;
+    bool has_extra_producers = false;
+    for (auto& out_link : outlinks) {
+      if (HasExtraProducers(graph.get(), out_link->arg()->name, {"range"})) {
+        has_extra_producers = true;
+        break;
+      }
+    }
+    if (has_extra_producers) {
+      LOG(WARNING)
+          << "Unsupported for op output var containing multiple producers";
+      continue;
+    }
 
     std::set<const Node*> nodes2rm_;
     auto& range_instruct = node->AsStmt();
@@ -59,8 +73,8 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     if (!start_t->persistable() || !end_t->persistable() ||
         !step_t->persistable()) {
       LOG(WARNING) << "RangeCalcOfflinePass does not support input that is not "
-                      "persistent";
-      return;
+                      "persistable";
+      continue;
     }
     auto start = start_t->mutable_data<float>()[0];
     auto end = end_t->mutable_data<float>()[0];

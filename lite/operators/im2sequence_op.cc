@@ -41,9 +41,10 @@ bool Im2SequenceOp::InferShapeImpl() const {
       std::vector<int64_t>({1, img_channels * kernels[0] * kernels[1]}));
 
   int output_height = Im2SeqOutputSize(
-      img_height, kernels[0], paddings[0], paddings[2], strides[0]);
+      img_height, kernels[0], paddings[0], paddings[1], strides[0]);
   int output_width = Im2SeqOutputSize(
-      img_width, kernels[1], paddings[1], paddings[3], strides[1]);
+      img_width, kernels[1], paddings[2], paddings[3], strides[1]);
+
   out_dims[0] = img_num * output_height * output_width;
   param_.Out->Resize(out_dims);
 
@@ -63,7 +64,14 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   CHECK(param_.Out);
   param_.strides = opdesc.GetAttr<std::vector<int>>("strides");
-  param_.paddings = opdesc.GetAttr<std::vector<int>>("paddings");
+
+  // same with paddle: pad[top, left, down, right]-->[top, down, left, right]
+  std::vector<int> tmp = opdesc.GetAttr<std::vector<int>>("paddings");
+  param_.paddings[0] = tmp[0];
+  param_.paddings[1] = tmp[2];
+  param_.paddings[2] = tmp[1];
+  param_.paddings[3] = tmp[3];
+
   param_.kernels = opdesc.GetAttr<std::vector<int>>("kernels");
   if (opdesc.HasAttr("out_stride")) {
     param_.out_strides = opdesc.GetAttr<std::vector<int>>("out_stride");

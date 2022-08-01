@@ -253,7 +253,7 @@ class ConvComputeTester : public arena::TestCase {
     if (with_bias_) {
       DDim bias_dims(std::vector<int64_t>{out_channels_});
       std::vector<float> dbias(bias_dims.production());
-      fill_data_rand(din.data(), -1.f, 1.f, bias_dims.production());
+      fill_data_rand(dbias.data(), -1.f, 1.f, bias_dims.production());
       SetCommonTensor(bias_, bias_dims, dbias.data(), {}, true);
     }
   }
@@ -278,8 +278,11 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU) || \
-    (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_NPU) || defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU) ||                            \
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT) ||                             \
+    defined(NNADAPTER_WITH_INTEL_OPENVINO) ||                              \
+    defined(NNADAPTER_WITH_QUALCOMM_QNN)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -408,7 +411,9 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
                                 "relu"));
       arena::Arena arena0(std::move(tester0), place, abs_error);
       arena0.TestPrecision();
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_NVIDIA_TENSORRT) ||   \
+    defined(NNADAPTER_WITH_QUALCOMM_QNN)
       continue;
 #endif
       std::unique_ptr<arena::TestCase> tester1(
@@ -445,6 +450,18 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
             for (auto pad : {0, 1}) {
               for (auto bias : {false, true}) {
                 for (auto act : {"hard_swish", "relu", "relu6", "leaky_relu"}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+                  if (strcmp(act, "hard_swish") || strcmp(act, "leaky_relu"))
+                    continue;
+#endif
+#if defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+                  if (act == "hard_swish") continue;
+#endif
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+                  if (strcmp(act, "hard_swish") || strcmp(act, "leaky_relu") ||
+                      strcmp(act, "relu6"))
+                    continue;
+#endif
                   std::unique_ptr<arena::TestCase> tester(
                       new ConvComputeTester(place,
                                             "def",
@@ -469,6 +486,21 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
       }
     }
   }
+  for (auto pad : {0, 1, 2}) {
+    for (auto stride : {1, 2}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new ConvComputeTester(place,
+                                "def",
+                                DDim({1, 16, 16, 25}),
+                                16,
+                                3,
+                                {stride, stride},
+                                {pad, pad},
+                                16));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
   std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
       place, "def", DDim({1, 40, 16, 50}), 40, 3, {2, 1}, {1, 1}, 40));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -482,20 +514,34 @@ TEST(Conv2d, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-1;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 5e-2;
+  TestConvKsize(place, abs_error);
+  TestConvDilations(place, abs_error);
+  TestConvStrides(place, abs_error);
+  TestConvPaddings(place, abs_error);
+  TestConvBias(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestConvKsize(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 2e-5;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 5e-2;  // precision_mode default is force_fp16
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-  abs_error = 1e-2;
-  // TODO(shentanyue): enable later
-  return;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
   TestConvKsize(place, abs_error);
@@ -504,7 +550,6 @@ TEST(Conv2d, precision) {
 #else
   return;
 #endif
-
   TestConvKsize(place, abs_error);
   TestConvGroups(place, abs_error);
   TestConvDilations(place, abs_error);
@@ -513,7 +558,8 @@ TEST(Conv2d, precision) {
   TestConvPaddingAlgorithm(place, abs_error);
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
-#ifndef NNADAPTER_WITH_HUAWEI_ASCEND_NPU
+#if !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) && \
+    !defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   TestConvDepthwise(place, abs_error);
 #endif
 }

@@ -20,8 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
-  // Use "shape" + "fill" to implement "fill_any_like"
-  // Shape operand
+  // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
@@ -29,7 +28,6 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  auto shape_operand = converter->AddShapeOperation(input_operand);
 
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
@@ -46,6 +44,9 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
         break;
       case NNADAPTER_INT64:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
+        break;
+      case NNADAPTER_INT8:
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
         break;
       default:
         LOG(FATAL) << "Not supported x dtype: "
@@ -65,6 +66,10 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
       value_operand =
           converter->AddConstantOperand(static_cast<int64_t>(value));
       break;
+    case static_cast<int32_t>(lite::core::FluidType::INT8):
+      value_operand =
+          converter->AddConstantOperand(static_cast<int8_t>(value), x_scales);
+      break;
     default:
       LOG(FATAL) << "Not supported dtype: " << dtype;
       break;
@@ -72,11 +77,17 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  NNAdapterOperand* output_operand =
+      converter->AddOutputOperand(out_name, out_scales);
 
   // Fill operation
   converter->AddOperation(
-      NNADAPTER_FILL, {shape_operand, value_operand}, {output_operand});
+      NNADAPTER_FILL_LIKE, {input_operand, value_operand}, {output_operand});
   return NO_ERROR;
 }
 

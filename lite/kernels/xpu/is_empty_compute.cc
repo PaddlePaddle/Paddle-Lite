@@ -25,10 +25,10 @@ namespace kernels {
 namespace xpu {
 
 void IsEmptyCompute::Run() {
-  auto& param = this->Param<operators::IsEmptyParam>();
+  auto& param = this->template Param<operators::IsEmptyParam>();
   const size_t count = param.X->numel();
   auto out = param.Out->mutable_data<bool>(TARGET(kXPU));
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int ret = xdnn::constant<bool>(ctx.GetRawContext(), out, 1, count == 0);
   CHECK_EQ(ret, 0);
 }

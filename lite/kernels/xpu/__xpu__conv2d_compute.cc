@@ -22,67 +22,30 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-bool QuantFilter(const float* filter_on_host,
-                 T* quant_res,
-                 float max,
-                 int64_t len) {
-  return false;
-}
-
-template <>
-bool QuantFilter<int16_t>(const float* filter_on_host,
-                          int16_t* quant_res,
-                          float max,
-                          int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt16(
-      filter_on_host, quant_res, max, len);
-  return true;
-}
-
-template <>
-bool QuantFilter<int8_t>(const float* filter_on_host,
-                         int8_t* quant_res,
-                         float max,
-                         int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt8(
-      filter_on_host, quant_res, max, len);
-  return true;
-}
-
-template <typename T, PrecisionType PType>
-void XPUConv2dCompute<T, PType>::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<XPUContext>();
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
+void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  param.output_max->Resize({max_ptr_size});
   auto filter_ptr = param.filter->template data<float>();
-  auto filter_len = param.filter->numel();
-  // max
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
-  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
-  std::vector<float> max_f_v(max_ptr_size, max_f);
-  filter_max_guard_ =
-      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
-  filter_max_ = reinterpret_cast<float*>(filter_max_guard_->addr_);
-  XPU_CALL(xpu_memcpy(filter_max_,
-                      max_f_v.data(),
-                      max_ptr_size * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  // quant
-  quant_filter_guard_ =
-      TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(T));
-  quant_filter_ = reinterpret_cast<T*>(quant_filter_guard_->addr_);
-  std::vector<T> quant_filter_cpu(filter_len, 0);
-  bool ret =
-      QuantFilter<T>(filter_ptr, quant_filter_cpu.data(), max_f, filter_len);
-  CHECK_EQ(ret, true);
-  XPU_CALL(xpu_memcpy(quant_filter_,
-                      quant_filter_cpu.data(),
-                      filter_len * sizeof(T),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  auto filter_dims = param.filter->dims();
+
+  xpu_quant_filter_ =
+      TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
+          filter_ptr, filter_dims, false);
 }
 
-template <typename T, PrecisionType PType>
-void XPUConv2dCompute<T, PType>::Run() {
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
+void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -103,8 +66,8 @@ void XPUConv2dCompute<T, PType>::Run() {
       param.output_max->template mutable_data<float>(TARGET(kXPU));
   const auto* bias =
       param.has_bias ? param.bias->template data<float>() : nullptr;
-  const float* branch =
-      param.has_branch ? param.branch->template data<float>() : nullptr;
+  const DY* branch =
+      param.has_branch ? param.branch->template data<DY>() : nullptr;
   const float* input_max =
       param.input_max ? param.input_max->template data<float>() : nullptr;
   xdnn::Activation_t act((xdnn::Activation_t::act_enum)act_type);
@@ -118,15 +81,15 @@ void XPUConv2dCompute<T, PType>::Run() {
     CHECK_EQ(act_type, 0);
     if (branch_broadcast_guard_.get() == nullptr) {
       branch_broadcast_guard_ = TargetWrapperXPU::MallocScratchPad(
-          param.output->numel() * sizeof(float));
+          param.output->numel() * sizeof(DY));
     } else {
-      branch_broadcast_guard_->Reserve(param.output->numel() * sizeof(float));
+      branch_broadcast_guard_->Reserve(param.output->numel() * sizeof(DY));
     }
-    int r = xdnn::conv2d_fusion<float, T, float, T>(
+    int r = xdnn::conv2d_fusion<DX, TW, DY, TGEMM>(
         ctx.GetRawContext(),
-        param.input->template data<float>(),
-        quant_filter_,
-        reinterpret_cast<float*>(branch_broadcast_guard_->addr_),
+        param.input->template data<DX>(),
+        reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
+        reinterpret_cast<DY*>(branch_broadcast_guard_->addr_),
         batch,
         img_c,
         img_h,
@@ -138,7 +101,7 @@ void XPUConv2dCompute<T, PType>::Run() {
         dilations,
         groups,
         input_max,
-        filter_max_,
+        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
         output_max,
         true,
         bias,
@@ -156,21 +119,21 @@ void XPUConv2dCompute<T, PType>::Run() {
     if (branch_shape > conv_out_shape) {
       param.output->Resize(lite::DDim(branch_shape));
     }
-    float* output = param.output->template mutable_data<float>(TARGET(kXPU));
-    r = xdnn::broadcast_add<float>(
+    DY* output = param.output->template mutable_data<DY>(TARGET(kXPU));
+    r = xdnn::broadcast_add<DY>(
         ctx.GetRawContext(),
-        reinterpret_cast<float*>(branch_broadcast_guard_->addr_),
+        reinterpret_cast<DY*>(branch_broadcast_guard_->addr_),
         branch,
         output,
         xshape,
         yshape);
     CHECK_EQ(r, 0);
   } else {
-    float* output = param.output->template mutable_data<float>(TARGET(kXPU));
-    int r = xdnn::conv2d_fusion<float, T, float, T>(
+    DY* output = param.output->template mutable_data<DY>(TARGET(kXPU));
+    int r = xdnn::conv2d_fusion<DX, TW, DY, TGEMM>(
         ctx.GetRawContext(),
-        param.input->template data<float>(),
-        quant_filter_,
+        param.input->template data<DX>(),
+        reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
         output,
         batch,
         img_c,
@@ -183,7 +146,7 @@ void XPUConv2dCompute<T, PType>::Run() {
         dilations,
         groups,
         input_max,
-        filter_max_,
+        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
         output_max,
         true,
         bias,
@@ -199,11 +162,27 @@ void XPUConv2dCompute<T, PType>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using XPUConv2dFp32 = xpu::XPUConv2dCompute<int16_t, PRECISION(kFloat)>;
 
-using XPUConv2dInt8 = xpu::XPUConv2dCompute<int8_t, PRECISION(kInt8)>;
+using XPUConv2dFP32 =
+    xpu::XPUConv2dCompute<int, float, float, float, PRECISION(kFloat)>;
 
-REGISTER_LITE_KERNEL(__xpu__conv2d, kXPU, kFloat, kNCHW, XPUConv2dFp32, def)
+using XPUConv2d_FP16_FP32_FP32 =
+    xpu::XPUConv2dCompute<int16_t, int16_t, float, float, PRECISION(kFloat)>;
+
+using XPUConv2dFp16 =
+    xpu::XPUConv2dCompute<int16_t, int16_t, float16, float16, PRECISION(kFP16)>;
+
+using XPUConv2d_FP16_FP16_FP32 =
+    xpu::XPUConv2dCompute<int16_t, int16_t, float16, float, PRECISION(kFP16)>;
+
+using XPUConv2d_FP16_FP32_FP16 =
+    xpu::XPUConv2dCompute<int16_t, int16_t, float, float16, PRECISION(kFP16)>;
+
+using XPUConv2dInt8_FP32_FP32 =
+    xpu::XPUConv2dCompute<int8_t, int8_t, float, float, PRECISION(kInt8)>;
+
+REGISTER_LITE_KERNEL(
+    __xpu__conv2d, kXPU, kFloat, kNCHW, XPUConv2d_FP16_FP32_FP32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -213,7 +192,71 @@ REGISTER_LITE_KERNEL(__xpu__conv2d, kXPU, kFloat, kNCHW, XPUConv2dFp32, def)
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(__xpu__conv2d, kXPU, kInt8, kNCHW, XPUConv2dInt8, def)
+REGISTER_LITE_KERNEL(
+    __xpu__conv2d, kXPU, kFloat, kNCHW, XPUConv2dFP32, XPU_Real_kFloat)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Branch", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    __xpu__conv2d, kXPU, kFP16, kNCHW, XPUConv2dFp16, XPU_FP16_FP16__FP16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Branch",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__conv2d,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     XPUConv2d_FP16_FP16_FP32,
+                     XPU_FP16_FP16__FP32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Branch",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__conv2d,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     XPUConv2d_FP16_FP32_FP16,
+                     XPU_FP16_FP32__FP16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Branch",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__conv2d,
+                     kXPU,
+                     kInt8,
+                     kNCHW,
+                     XPUConv2dInt8_FP32_FP32,
+                     XPU_Int8_FP32_FP32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})

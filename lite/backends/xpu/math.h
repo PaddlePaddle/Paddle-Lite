@@ -202,6 +202,7 @@ struct MatDescriptor {
 static MatDescriptor CreateMatrixDescriptor(const lite::DDimLite &tensor_dim,
                                             int num_flatten_cols,
                                             bool trans) {
+  CHECK_GT(tensor_dim.size(), 1u);
   MatDescriptor retv;
   if (num_flatten_cols > 1) {
     auto flatten_dim = tensor_dim.Flatten2D(num_flatten_cols);

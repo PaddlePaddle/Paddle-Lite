@@ -72,6 +72,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
   void Conv2dCommon();
+  void Conv2dCommonMulGroup();
   void Conv2d1x1Mali();
   void Conv2d1x1FC();
   void OIHW2OHWIO4I4(
@@ -98,6 +99,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   // block, second 4 elements is the second row of the block, etc. Subsequent
   // blocks contain elements of the same 4 columns.
   void OI2IOO4I4(void* src, void* dst, size_t O, size_t I);
+  void NCHW2IMG4(void* src, void* dst, size_t oc, size_t ic, size_t index);
   void AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p, Tensor* tensor_gpu_p);
   bool UseFcReplaceConv();
 
@@ -110,6 +112,10 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
 
   std::unique_ptr<Tensor> filter_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image0_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image1_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image2_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image3_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
   std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_filter_image_{nullptr};
@@ -118,11 +124,18 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> bias_gpu_buffer_{nullptr};
   std::unique_ptr<Tensor> wino_m_gpu_image_{nullptr};
   std::unique_ptr<Tensor> wino_v_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> mulgroups_in_fill_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> mulgroups_out_cut_gpu_image_{nullptr};
+
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange global_work_size_wino1_ =
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange global_work_size_wino2_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_fill0_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_cut0_ =
       cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   // opencl kernel args
   int c_blk_ = 1;
@@ -132,11 +145,17 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
+  const cl::Image2D* filter_image_p0_{nullptr};
+  const cl::Image2D* filter_image_p1_{nullptr};
+  const cl::Image2D* filter_image_p2_{nullptr};
+  const cl::Image2D* filter_image_p3_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
   const cl::Image2D* wino_v_image_p_{nullptr};
   const cl::Image2D* wino_m_image_p_{nullptr};
+  const cl::Image2D* mulgroups_input_fill0_image_p_{nullptr};
+  const cl::Image2D* mulgroups_output_cut0_image_p_{nullptr};
 
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
@@ -161,9 +180,11 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int groups_{-1};
   std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
+  bool sigmoid_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
   bool is_wino_{false};
+  bool is_conv_mulgroup_{false};
 
   int input_tensor_n_{-1};
   int input_tensor_c_{-1};
@@ -201,12 +222,18 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::Kernel kernel_inner_product_;
   cl::Kernel kernel_output_trans_;
+  cl::Kernel kernel_input_fill0_;
+  cl::Kernel kernel_output_cut0_;
   cl_int status_;
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange local_work_size_wino1_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   cl::NDRange local_work_size_wino2_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_fill0_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_cut0_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
 };

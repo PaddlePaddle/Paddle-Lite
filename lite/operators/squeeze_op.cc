@@ -95,6 +95,8 @@ bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("inplace")) {
     param_.inplace = opdesc.GetAttr<bool>("inplace");
   }
+  input_tensor_ptrs_cache_.push_back(param_.X);
+  output_tensor_ptrs_cache_.push_back(param_.Out);
   return true;
 }
 

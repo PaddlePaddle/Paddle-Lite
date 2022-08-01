@@ -25,13 +25,17 @@ void ReshapeCompute::Run() {
   auto output = param.output;
   auto output_dims = output->dims();
   auto output_lod = output->lod();
+  // printf("param.inplace: %d \n", param.inplace);
   if (param.inplace) {
     output->ShareDataWith(*x);
   } else {
     output->CopyDataFrom(*x);
   }
+  // printf("output_dims: %d\n", output_dims.size());
   output->Resize(output_dims);
+  // printf("resize end\n");
   output->set_lod(output_lod);
+  // printf("lod end\n");
 }
 
 }  // namespace host

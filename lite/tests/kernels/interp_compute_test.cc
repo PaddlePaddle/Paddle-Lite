@@ -334,6 +334,18 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (int out_h : {6, 8, 12}) {
         for (int out_w : {6, 9, 12}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+          std::unique_ptr<arena::TestCase> tester(
+              new NearestInterpComputeTester(place,
+                                             "def",
+                                             DDim(x_dims),
+                                             interp_method,
+                                             -1.f,
+                                             out_h,
+                                             out_w,
+                                             false,
+                                             0));
+#else
           std::unique_ptr<arena::TestCase> tester(
               new NearestInterpComputeTester(place,
                                              "def",
@@ -342,6 +354,7 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
                                              -1.f,
                                              out_h,
                                              out_w));
+#endif
           arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
@@ -354,8 +367,21 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (float scale : {0.3f, 1.f, 1.7f}) {
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+        std::unique_ptr<arena::TestCase> tester(
+            new NearestInterpComputeTester(place,
+                                           "def",
+                                           DDim(x_dims),
+                                           interp_method,
+                                           scale,
+                                           -1,
+                                           -1,
+                                           false,
+                                           0));
+#else
         std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
             place, "def", DDim(x_dims), interp_method, scale));
+#endif
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
@@ -448,11 +474,6 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
         if (place == TARGET(kARM) && align_mode == 1 && !align_corners) {
           continue;
         }
-        // Ascend NPU DDK
-        if (place == TARGET(kHuaweiAscendNPU) && align_mode == 0 &&
-            !align_corners) {
-          continue;
-        }
 #if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (align_mode == 0 && align_corners) continue;
 #endif
@@ -516,15 +537,55 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  // TestInterpAlignMode(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  // TestInterpSizetensor(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  return;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #ifdef ENABLE_ARM_FP16

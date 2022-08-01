@@ -19,6 +19,7 @@
 #include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/conv_bias.h"
+#include "lite/backends/x86/math/gemm_s8u8_compute.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
@@ -70,6 +71,10 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
     if (impl_ != nullptr) {
       delete impl_;
     }
+    for (int i = 0; i < gemm_s8_ptr_float_.size(); i++)
+      delete gemm_s8_ptr_float_[i];
+    for (int i = 0; i < gemm_s8_ptr_int8_.size(); i++)
+      delete gemm_s8_ptr_int8_[i];
   }
 
  private:
@@ -81,6 +86,10 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
   std::vector<float> w_scale_;
   Tensor weights_;
   Tensor bias_;
+  std::vector<lite::x86::math::generate_gemm_s8u8_x86_kern<float>*>
+      gemm_s8_ptr_float_{};
+  std::vector<lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t>*>
+      gemm_s8_ptr_int8_{};
 };
 
 }  // namespace x86

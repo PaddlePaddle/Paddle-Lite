@@ -29,6 +29,94 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+static bool IsQuantInstNode(Node *node) {
+  CHECK(node->IsStmt());
+  auto op_info = node->AsStmt().op_info();
+
+  bool has_input_scale = false;
+  for (auto in_node : node->inlinks) {
+    auto input_name = in_node->AsArg().name;
+    std::string arg_name;
+    int idx = -1;
+    CHECK(op_info->GetInputArgname(input_name, &arg_name));
+    CHECK(op_info->GetInputIndex(input_name, &idx));
+    std::string scale_name = arg_name + std::to_string(idx) + "_scale";
+    if (op_info->HasAttr(scale_name)) {
+      has_input_scale = true;
+      break;
+    }
+  }
+
+  bool has_output_scale = false;
+  for (auto out_node : node->outlinks) {
+    auto output_name = out_node->AsArg().name;
+    std::string arg_name;
+    int idx = -1;
+    CHECK(op_info->GetOutputArgname(output_name, &arg_name));
+    CHECK(op_info->GetOutputIndex(output_name, &idx));
+    std::string scale_name = arg_name + std::to_string(idx) + "_scale";
+    if (op_info->HasAttr(scale_name)) {
+      has_output_scale = true;
+      break;
+    }
+  }
+
+  return has_input_scale && has_output_scale;
+}
+
+template <typename T>
+static bool HasItem(const std::vector<T> &items, T item) {
+  return std::find(items.begin(), items.end(), item) != items.end();
+}
+
+// Update the input variable names from 'from' to 'to' for the target Op
+static void UpdateInputs(const std::shared_ptr<paddle::lite::OpLite> &op,
+                         const std::string &from,
+                         const std::string &to) {
+  auto *op_desc = op->mutable_op_info();
+  auto op_type = op_desc->Type();
+  for (auto &op_input : *op_desc->mutable_inputs()) {
+    for (auto &var_name : op_input.second) {
+      if (var_name == from) {
+        var_name = to;
+      }
+    }
+  }
+}
+
+static Node *CreateArgNode(SSAGraph *graph,
+                           Scope *scope,
+                           std::string arg_name,
+                           lite_api::TargetType target,
+                           lite_api::PrecisionType precision,
+                           lite_api::DataLayoutType layout) {
+  auto arg_node = graph->NewArgumentNode(arg_name);
+  arg_node->AsArg().type = LiteType::GetTensorTy(target, precision, layout);
+  scope->Var(arg_name)->GetMutable<Tensor>()->set_precision(precision);
+  return arg_node;
+}
+
+static Node *CreateCalibNode(SSAGraph *graph,
+                             Scope *scope,
+                             std::string in_arg_name,
+                             std::string out_arg_name,
+                             float scale) {
+  auto calib_inst = graph->NewInstructNode();
+  std::string calib_type{"calib"};
+  auto calib_op = LiteOpRegistry::Global().Create(calib_type);
+  CHECK(calib_op) << "create op [" << calib_op << "] failed";
+  cpp::OpDesc op_desc;
+  op_desc.SetType(calib_type);
+  op_desc.SetInput("Input", {in_arg_name});
+  op_desc.SetOutput("Out", {out_arg_name});
+  op_desc.SetAttr("scale", scale);
+  calib_op->Attach(op_desc, scope);
+  calib_op->SetValidPlaces(graph->valid_places());
+  auto kernels = calib_op->CreateKernels(graph->valid_places());
+  calib_inst->AsStmt(calib_type, std::move(kernels), calib_op);
+  return calib_inst;
+}
+
 std::string SubgraphVisualizer::operator()() {
   // Print all of operators for the custom configuration for partitioning a
   // graph into some subgraphs
@@ -430,8 +518,6 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
   int sub_block_idx = 0;
   auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
-  sub_block_desc->ClearOps();
-  sub_block_desc->ClearVars();
   for (auto &op_node : subgraph_nodes) {
     auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
     *sub_op_desc = *op_node->AsStmt().op_info();
@@ -545,23 +631,182 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
 
 void SubgraphFuser::ReplaceNodesWithSubgraphs(
     SSAGraph *graph,
-    const SubgraphTeller &teller,
-    int min_subgraph_size,
-    const std::string &subgraph_partition_configs) {
-  std::vector<std::vector<Node *>> subgraphs =
-      SubgraphDetector(graph, teller, subgraph_partition_configs)();
-  SubgraphVisualizer(graph, subgraphs)();
+    const std::vector<std::vector<Node *>> &subgraphs,
+    int min_subgraph_size) {
   for (size_t subgraph_idx = 0; subgraph_idx < subgraphs.size();
        subgraph_idx++) {
-    if (subgraphs[subgraph_idx].size() >= min_subgraph_size) {
+    if (static_cast<int>(subgraphs[subgraph_idx].size()) >= min_subgraph_size) {
       InsertNewNode(graph, subgraph_idx, subgraphs[subgraph_idx]);
     }
   }
 }
 
 void SubgraphFuser::operator()() {
-  ReplaceNodesWithSubgraphs(
-      graph_, teller_, min_subgraph_size_, subgraph_partition_configs_);
+  std::vector<std::vector<Node *>> subgraphs =
+      SubgraphDetector(graph_, teller_, subgraph_partition_configs_)();
+  if (support_mixed_precision_) {
+    MixedPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
+        graph_, &subgraphs);
+    mixed_precision_auto_insert_calib_fuser();
+  }
+  SubgraphVisualizer(graph_, subgraphs)();
+  ReplaceNodesWithSubgraphs(graph_, subgraphs, min_subgraph_size_);
+}
+
+void MixedPrecisionAutoInsertCalibFuser::UpdateQuantOpOut(
+    const std::vector<Node *> &nodes) {
+  for (auto node : nodes) {
+    if (!node->IsStmt() || !IsQuantInstNode(node)) continue;
+    for (auto out_node : node->outlinks) {
+      auto &out_type = out_node->AsArg().type;
+      // TODO(zhupengyang): Only support trans to int8.
+      // Uint8 should be considered.
+      out_type = LiteType::GetTensorTy(
+          out_type->target(), PRECISION(kInt8), out_type->layout());
+    }
+  }
+}
+
+void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
+    SSAGraph *graph, std::vector<Node *> *nodes) {
+  // Record arg nodes to reuse if other inst nodes need the same arg node
+  std::map<std::string, Node *> transed_arg_nodes;
+  // Skip if pre op is calib, ...
+  std::vector<std::string> skip_pre_ops{"calib"};
+
+  std::vector<Node *> nodes_org = *nodes;
+  for (auto node : nodes_org) {
+    if (!IsQuantInstNode(node)) continue;
+    auto in_nodes = node->inlinks;
+    for (auto pre_arg_node : in_nodes) {
+      if (pre_arg_node->inlinks.empty()) continue;
+      auto pre_inst_node = pre_arg_node->inlinks.front();
+      auto pre_op_type = pre_inst_node->AsStmt().op_type();
+      if (!HasItem(nodes_org, pre_inst_node) ||
+          IsQuantInstNode(pre_inst_node) ||
+          HasItem(skip_pre_ops, pre_op_type)) {
+        continue;
+      }
+      VLOG(3) << "insert calib before " << node->AsStmt().op_type()
+              << " to quant input tensor.";
+
+      std::string calib_in_name = pre_arg_node->AsArg().name;
+      std::string calib_out_name = calib_in_name + "/quant";
+      if (transed_arg_nodes.count(calib_in_name) > 0) {
+        // Shared the exist quant arg node
+        RemoveDirectedLink(pre_arg_node, node);
+        DirectedLink(transed_arg_nodes[calib_in_name], node);
+      } else {
+        // Insert a new calib inst node and out arg node
+        // Creat calib out node
+        auto pre_arg_type = pre_arg_node->AsArg().type;
+        auto scope = node->AsStmt().op()->scope();
+        auto calib_out_arg = CreateArgNode(graph,
+                                           scope,
+                                           calib_out_name,
+                                           pre_arg_type->target(),
+                                           PRECISION(kInt8),
+                                           pre_arg_type->layout());
+        transed_arg_nodes[calib_in_name] = calib_out_arg;
+
+        // Create calib node
+        auto op_info = node->AsStmt().op_info();
+        CHECK(op_info->HasInputScale(calib_in_name));
+        auto scales = op_info->GetInputScale(calib_in_name);
+        CHECK_EQ(scales.size(), 1UL);
+        auto calib_inst = CreateCalibNode(
+            graph, scope, calib_in_name, calib_out_name, scales[0]);
+
+        // Create topology
+        RemoveDirectedLink(pre_arg_node, node);
+        DirectedLink(pre_arg_node, calib_inst);
+        DirectedLink(calib_inst, calib_out_arg);
+        DirectedLink(calib_out_arg, node);
+
+        auto insert_position = std::find(nodes->begin(), nodes->end(), node);
+        nodes->insert(insert_position, calib_inst);
+      }
+
+      UpdateInputs(node->AsStmt().op(), calib_in_name, calib_out_name);
+      auto updated_op_info = *node->AsStmt().mutable_op_info();
+      node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
+    }
+  }
+}
+
+void MixedPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
+    SSAGraph *graph, std::vector<Node *> *nodes) {
+  // Record arg nodes to reuse if other inst nodes need the same arg node
+  std::map<std::string, Node *> transed_arg_nodes;
+  // Skip if pre op is calib, ...
+  std::vector<std::string> skip_pre_ops{"calib"};
+
+  std::vector<Node *> nodes_org = *nodes;
+  for (auto node : nodes_org) {
+    if (IsQuantInstNode(node)) continue;
+    auto in_nodes = node->inlinks;
+    for (auto pre_arg_node : in_nodes) {
+      if (pre_arg_node->inlinks.empty()) continue;
+      auto pre_inst_node = pre_arg_node->inlinks.front();
+      auto pre_op_type = pre_inst_node->AsStmt().op_type();
+      if (!HasItem(nodes_org, pre_inst_node) ||
+          !IsQuantInstNode(pre_inst_node) ||
+          HasItem(skip_pre_ops, pre_op_type)) {
+        continue;
+      }
+      VLOG(3) << "insert calib before " << node->AsStmt().op_type()
+              << " to dequant input tensor.";
+
+      std::string calib_in_name = pre_arg_node->AsArg().name;
+      std::string calib_out_name = calib_in_name + "/dequant";
+      if (transed_arg_nodes.count(calib_in_name) > 0) {
+        // Shared the exist dequant arg node
+        RemoveDirectedLink(pre_arg_node, node);
+        DirectedLink(transed_arg_nodes[calib_in_name], node);
+      } else {
+        // Insert a new calib inst node and out arg node
+        // Creat calib out node
+        auto pre_arg_type = pre_arg_node->AsArg().type;
+        auto scope = node->AsStmt().op()->scope();
+        auto calib_out_arg = CreateArgNode(graph,
+                                           scope,
+                                           calib_out_name,
+                                           pre_arg_type->target(),
+                                           PRECISION(kFloat),
+                                           pre_arg_type->layout());
+        transed_arg_nodes[calib_in_name] = calib_out_arg;
+
+        // Create calib node
+        auto op_info = pre_inst_node->AsStmt().op_info();
+        CHECK(op_info->HasOutputScale(calib_in_name));
+        auto scales = op_info->GetOutputScale(calib_in_name);
+        CHECK_EQ(scales.size(), 1UL);
+        auto calib_inst = CreateCalibNode(
+            graph, scope, calib_in_name, calib_out_name, scales[0]);
+
+        // Create topology
+        RemoveDirectedLink(pre_arg_node, node);
+        DirectedLink(pre_arg_node, calib_inst);
+        DirectedLink(calib_inst, calib_out_arg);
+        DirectedLink(calib_out_arg, node);
+
+        auto insert_position = std::find(nodes->begin(), nodes->end(), node);
+        nodes->insert(insert_position, calib_inst);
+      }
+
+      UpdateInputs(node->AsStmt().op(), calib_in_name, calib_out_name);
+      auto updated_op_info = *node->AsStmt().mutable_op_info();
+      node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
+    }
+  }
+}
+
+void MixedPrecisionAutoInsertCalibFuser::operator()() {
+  for (auto &nodes : *subgraphs_) {
+    UpdateQuantOpOut(nodes);
+    InsertQuantCalib(graph_, &nodes);
+    InsertDeQuantCalib(graph_, &nodes);
+  }
 }
 
 void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,

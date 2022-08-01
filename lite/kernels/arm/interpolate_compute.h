@@ -37,6 +37,14 @@ class NearestInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
   virtual ~NearestInterpCompute() = default;
 };
 
+template <PrecisionType Ptype>
+class NearestInterpComputeV2 : public KernelLite<TARGET(kARM), Ptype> {
+ public:
+  void Run() override;
+
+  virtual ~NearestInterpComputeV2() = default;
+};
+
 } /* namespace arm */
 } /* namespace kernels */
 } /* namespace lite */

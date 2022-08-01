@@ -17,8 +17,17 @@ example:
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./lite/tools/build.sh build_optimize_tool
-# 如果在arm64架构的MacOS下编译Opt工具失败，试着将上一条指令改为
-#"arch -x86_64 ./lite/tools/build.sh build_optimize_tool"
+# 如果在 arm64 架构的 MacOS 下编译 opt 工具失败
+# - 方法1: 试着删除 third-party 目录并重新`git # checkout third-party`，然后将上一条指令改为:
+# ```shell
+# arch -x86_64 ./lite/tools/build.sh # build_optimize_tool
+# ```
+#  该命令会编译 x86 格式的 opt 工具，但是不会影响工具的正常使用，编译成功后，在./build.opt/lite/api目录下，生成了可执行文件 opt
+#- 方法2: 使用 `build_macos.sh` 脚本进行编译
+#```shell
+#./lite/tools/build_macos.sh build_optimize_tool
+#```
+
 ./build.opt/lite/api/opt
 --optimize_out_type=naive_buffer 
 --optimize_out=model_dir 
