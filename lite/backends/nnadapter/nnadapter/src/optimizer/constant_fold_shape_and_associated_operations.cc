@@ -14,6 +14,7 @@
 
 #include "optimizer/constant_fold_shape_and_associated_operations.h"
 #include <set>
+#include "optimizer/pattern_matcher.h"
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
@@ -130,6 +131,113 @@ NNADAPTER_EXPORT void ConstantFoldShapeAndAssociatedOperations(
                       << OperationTypeToString(remove_operation->type)
                       << " is deleted!";
   }
+}
+
+/*
+before:
+  shape    fill_like    fill_like
+    |          |            |
+  slice        |            |
+    \----------|------------/
+            concat
+               |
+             tile
+
+after:
+   tile
+*/
+class FoldShapeSliceConcatTileFuser : public PatternMatcher {
+ public:
+  FoldShapeSliceConcatTileFuser() {}
+  void BuildPattern() override;
+  bool HandleMatchedResults(
+      core::Model *model, const std::map<std::string, Node *> &nodes) override;
+};
+
+void FoldShapeSliceConcatTileFuser::BuildPattern() {
+  // Create patterns
+  auto shape_in =
+      CreatePattern("shape_in")->IsOperationInputOperand(NNADAPTER_SHAPE, 0);
+  auto shape_dtype = CreatePattern("shape_dtype")
+                         ->IsOperationInputOperand(NNADAPTER_SHAPE, 1)
+                         ->IsIntermediate();
+  auto shape = CreatePattern("shape", NNADAPTER_SHAPE)->IsIntermediate();
+  auto shape_out = CreatePattern("shape_out")
+                       ->IsOperationOutputOperand(NNADAPTER_SHAPE, 0)
+                       ->IsOperationInputOperand(NNADAPTER_SLICE, 0)
+                       ->IsIntermediate();
+
+  auto slice_axes = CreatePattern("slice_axes")
+                        ->IsOperationInputOperand(NNADAPTER_SLICE, 1)
+                        ->IsIntermediate();
+  auto slice_starts = CreatePattern("slice_starts")
+                          ->IsOperationInputOperand(NNADAPTER_SLICE, 2)
+                          ->IsIntermediate();
+  auto slice_ends = CreatePattern("slice_ends")
+                        ->IsOperationInputOperand(NNADAPTER_SLICE, 3)
+                        ->IsIntermediate();
+  auto slice_steps = CreatePattern("slice_steps")
+                         ->IsOperationInputOperand(NNADAPTER_SLICE, 4)
+                         ->IsIntermediate();
+  auto slice = CreatePattern("slice", NNADAPTER_SLICE)->IsIntermediate();
+  auto slice_out = CreatePattern("slice_out")
+                       ->IsOperationOutputOperand(NNADAPTER_SLICE, 0)
+                       ->IsOperationInputOperand(NNADAPTER_CONCAT, 1)
+                       ->IsIntermediate();
+
+  auto concat_in0 = CreatePattern("concat_in0")
+                        ->IsConstantOperand()
+                        ->IsOperationInputOperand(NNADAPTER_CONCAT, 0)
+                        ->IsIntermediate();
+  auto concat_in2 = CreatePattern("concat_in2")
+                        ->IsConstantOperand()
+                        ->IsOperationInputOperand(NNADAPTER_CONCAT, 2)
+                        ->IsIntermediate();
+  auto concat_axis = CreatePattern("concat_axis")
+                         ->IsOperationInputOperand(NNADAPTER_CONCAT, 3)
+                         ->IsIntermediate();
+  auto concat = CreatePattern("concat", NNADAPTER_CONCAT)->IsIntermediate();
+  auto concat_out = CreatePattern("concat_out")
+                        ->IsOperationOutputOperand(NNADAPTER_CONCAT, 0)
+                        ->IsOperationInputOperand(NNADAPTER_TILE, 1)
+                        ->IsIntermediate();
+
+  auto tile = CreatePattern("tile", NNADAPTER_TILE);
+
+  // Create the topological connections for the above patterns
+  std::vector<Pattern *> shape_ins{shape_in, shape_dtype};
+  shape_ins >> *shape >> *shape_out;
+  std::vector<Pattern *> slice_ins{
+      shape_out, slice_axes, slice_starts, slice_ends, slice_steps};
+  slice_ins >> *slice >> *slice_out;
+  std::vector<Pattern *> concat_ins{
+      concat_in0, slice_out, concat_in2, concat_axis};
+  concat_ins >> *concat >> *concat_out >> *tile;
+}
+
+bool FoldShapeSliceConcatTileFuser::HandleMatchedResults(
+    core::Model *model, const std::map<std::string, Node *> &nodes) {
+  auto shape_in_data = nodes.at("shape_in")->operand->type.dimensions.data;
+  auto start_index = *reinterpret_cast<int32_t *>(
+      nodes.at("slice")->operation->input_operands[2]->buffer);
+  std::vector<int32_t> repeat_times{
+      *reinterpret_cast<int32_t *>(nodes.at("concat_in0")->operand->buffer),
+      shape_in_data[start_index],
+      *reinterpret_cast<int32_t *>(nodes.at("concat_in2")->operand->buffer),
+  };
+  std::vector<int32_t> dims{3};
+  auto tile_in1 = AddInt32ConstantOperand(model, repeat_times.data(), dims);
+  nodes.at("tile")->operation->input_operands[1] = tile_in1;
+  return true;
+}
+
+NNADAPTER_EXPORT void FoldShapeSliceConcatTile(core::Model *model) {
+  NNADAPTER_VLOG(5) << "Apply FoldShapeSliceConcatTileFuser";
+  bool stop;
+  do {
+    FoldShapeSliceConcatTileFuser fold_shape_slice_concat_tile_fuser;
+    stop = fold_shape_slice_concat_tile_fuser.Apply(model) == 0;
+  } while (!stop);
 }
 
 }  // namespace nnadapter
