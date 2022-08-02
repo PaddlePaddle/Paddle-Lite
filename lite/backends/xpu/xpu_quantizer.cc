@@ -178,7 +178,7 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
   }
   // copy to XPU
   XPUScratchPadGuard weight_max_guard(new XPUScratchPad(nullptr, 0));
-  if (std::is_same<T, int8_t>::value) {
+  if (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value) {
     // prepare max_w space for slim int8 quant
     weight_max_guard =
         std::move(XPUMemory::MallocScratchPad(max_ptr_size * sizeof(float)));
@@ -228,5 +228,9 @@ template XPUQuantData XPUQuantizer::quant<float, int8_t>(const float*,
 template XPUQuantData XPUQuantizer::quant<int8_t, int8_t>(const int8_t*,
                                                           const DDimLite&,
                                                           bool);
+template XPUQuantData XPUQuantizer::quant<int16_t, int16_t>(const int16_t*,
+                                                            const DDimLite&,
+                                                            bool);
+
 }  // namespace lite
 }  // namespace paddle

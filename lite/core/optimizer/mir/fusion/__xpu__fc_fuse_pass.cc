@@ -153,6 +153,45 @@ class XPUFcFuser : public FuseBase {
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
+    // conv2d int8
+    if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int8")) {
+      if (matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int8")) {
+        op_desc.SetAttr<bool>("enable_int8", true);
+        op_desc.SetAttr<std::vector<float>>(
+            "Input0_scale",
+            {127 *
+             matched.at("mul")->stmt()->op_info()->GetInputScale(
+                 matched.at("x")->arg()->name)[0]});
+
+        op_desc.SetAttr<std::vector<float>>(
+            "Filter0_scale",
+            {127 *
+             matched.at("mul")->stmt()->op_info()->GetInputScale(
+                 matched.at("W")->arg()->name)[0]});
+        op_desc.SetAttr<std::vector<float>>(
+            "Output0_scale",
+            {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
+                "out_threshold")});
+      }
+    }
+
+    // conv2d int16
+    if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int16") &&
+        matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {
+      op_desc.SetAttr<bool>("enable_int16", true);
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("x")->arg()->name)[0]});
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Filter0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("W")->arg()->name)[0]});
+    }
+
     auto fc_op = LiteOpRegistry::Global().Create("__xpu__fc");
     auto& valid_places = mul->valid_places();
     fc_op->Attach(op_desc, scope);

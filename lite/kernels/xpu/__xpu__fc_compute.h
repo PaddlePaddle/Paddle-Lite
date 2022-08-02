@@ -37,6 +37,7 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PType> {
 
  private:
   XPUScratchPadGuard input_max_guard_;
+  XPUScratchPadGuard output_max_guard_;
   XPUQuantData xpu_quant_weight_;
 };
 

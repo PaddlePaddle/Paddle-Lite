@@ -155,7 +155,9 @@ TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
     const int8_t*, const DDimLite&, bool);
-
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
+    const int16_t*, const DDimLite&, bool);
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
     nullptr};

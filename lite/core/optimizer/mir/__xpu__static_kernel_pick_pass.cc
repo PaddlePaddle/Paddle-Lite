@@ -43,12 +43,16 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 // Collect input data precision for each node in the graph
 #ifdef LITE_WITH_XPU
-  DicideUseFP16Optimizer(graph);
+  DataPrecisionDicide(graph);
   GetXPUDeviceType();
-  if (xpu_use_fp16_optimizer_) {
+  if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
     for (auto& node : graph->StmtTopologicalOrder()) {
       if (!node->IsStmt()) continue;
-      if (xpu_special_op_.count(node->AsStmt().op_type())) {
+
+      if ((xpu_use_fp16_optimizer_ &&
+           xpu_special_op_.count(node->AsStmt().op_type())) ||
+          (xpu_use_int8_optimizer_ &&
+           xpu_int8_special_op_.count(node->AsStmt().op_type()))) {
         SpecialNodeInputPrecision(node);
         continue;
       }
@@ -107,6 +111,16 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto&& kernel : instruct.kernels()) {
       VLOG(2) << "current candidate kernel is: " << kernel->summary();
       VLOG(2) << "valid_places size is: " << graph->valid_places().size();
+      if (xpu_use_int8_optimizer_ &&
+          xpu_int8_special_op_.count(instruct.op_type()) &&
+          kernel->precision() != PrecisionType::kInt8) {
+        continue;
+      }
+
+      if (xpu_use_fp16_optimizer_ &&
+          kernel->precision() == PrecisionType::kInt8) {
+        continue;
+      }
 
       float score = KernelGrade(node,
                                 *kernel,
@@ -121,26 +135,47 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::stable_sort(scored.begin(), scored.end(), XPUKernelScoreCmp);
     instruct.kernels().clear();
 
-    if (!instruct.op_info()->HasAttr("enable_int8")) {
 #ifdef LITE_WITH_XPU
-      if (xpu_use_fp16_optimizer_) {
-        if (xpu_special_op_.count(node->AsStmt().op_type())) {
-          SpecialNodeOutputPrecision(graph, node, scored.front().second);
-        } else if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
-          InplaceNodeOutputPrecision(node->AsStmt(),
-                                     instruct.op_info()->input_names(),
-                                     instruct.op_info()->output_names());
-        } else {
-          NodeOutputPrecision(graph, node);
-        }
+    if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
+      if ((xpu_use_fp16_optimizer_ &&
+           xpu_special_op_.count(node->AsStmt().op_type())) ||
+          (xpu_use_int8_optimizer_ &&
+           xpu_int8_special_op_.count(node->AsStmt().op_type()))) {
+        SpecialNodeOutputPrecision(graph, node, scored.front().second);
+      } else if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
+        InplaceNodeOutputPrecision(node->AsStmt(),
+                                   instruct.op_info()->input_names(),
+                                   instruct.op_info()->output_names());
+      } else {
+        NodeOutputPrecision(graph, node);
       }
+
+      if (instruct.op_info()->HasAttr("enable_int8")) {
+        // auto it = instruct.op_info()->inputs().find("Input");
+        // CHECK(it != instruct.op_info()->inputs().end());
+        // std::string input_name = it->second.front();
+        // CHECK(instruct.op_info()->HasInputScale(input_name));
+
+        // auto output_inter = instruct.op_info()->outputs().find("Output");
+        // CHECK(output_inter != instruct.op_info()->inputs().end());
+        // std::string output_name = output_inter->second.front();
+
+        instruct.kernels().emplace_back(std::move(scored.front().second));
+        VLOG(2) << "the final pick kernel is "
+                << instruct.kernels().front()->summary() << "\n\n";
+        instruct.mutable_op_info()->SetAttr<std::string>(
+            "kernel_summary", instruct.kernels().front()->summary());
+        continue;
+      }
+    }
 #endif
 
+    // FP32 pick copy from lite.
+    if (!instruct.op_info()->HasAttr("enable_int8")) {
       instruct.kernels().emplace_back(std::move(scored.front().second));
       VLOG(2) << "the final pick kernel is "
               << instruct.kernels().front()->summary() << "\n\n";
     } else {
-      // TODO(quwei): consider XPU int8 data precision
       bool out_type_int8 = true;
       // Quantized lstm has fp32 output
       if (instruct.op_type() == "lstm" || instruct.op_type() == "gru" ||
@@ -233,7 +268,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 #ifdef LITE_WITH_XPU
-void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
+void XPUStaticKernelPickPass::DataPrecisionDicide(
     const std::unique_ptr<SSAGraph>& graph) {
   if (GetStringFromEnv("XPUForceUseFP16", "false") == "true") {
     xpu_use_fp16_optimizer_ = false;
@@ -244,6 +279,14 @@ void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
   if (graph->valid_places()[0].precision == PrecisionType::kFP16) {
     xpu_use_fp16_optimizer_ = true;
     VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16 ";
+    return;
+  }
+
+  if (graph->valid_places()[0].precision == PrecisionType::kInt8 &&
+      graph->valid_places()[0].target == TargetType::kXPU) {
+    xpu_use_int8_optimizer_ = true;
+    VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16/INT8 ";
+    return;
   }
 }
 
@@ -321,7 +364,9 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
 
 void XPUStaticKernelPickPass::GetScore(PrecisionType precision,
                                        size_t* score_tmp) {
-  if (precision == PrecisionType::kInt16) {
+  if (precision == PrecisionType::kInt8) {
+    *score_tmp = *score_tmp > 11 ? *score_tmp : 11;
+  } else if (precision == PrecisionType::kInt16) {
     *score_tmp = *score_tmp > 9 ? *score_tmp : 9;
   } else if (precision == PrecisionType::kFP16) {
     *score_tmp = *score_tmp > 7 ? *score_tmp : 7;
@@ -433,6 +478,16 @@ void XPUStaticKernelPickPass::SpecialNodeInputPrecision(lite::mir::Node* node) {
 
     std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
     for (auto&& kernel : inst.kernels()) {
+      if (xpu_use_int8_optimizer_ &&
+          kernel->precision() != PrecisionType::kInt8) {
+        continue;
+      }
+
+      if (xpu_use_fp16_optimizer_ &&
+          kernel->precision() == PrecisionType::kInt8) {
+        continue;
+      }
+
       if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
         VLOG(6) << " ignore collect current kernel:" << kernel->summary();
         continue;
@@ -599,7 +654,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(
   bool intput_match = true;
   bool output_match = true;
   bool consider_cpu = false;
-  // delete??
+
   if (consider_cpu_op_.count(instruct.op_type())) {
     consider_cpu = true;
   }
@@ -613,6 +668,10 @@ void XPUStaticKernelPickPass::SpecialOpScore(
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
     if (input_parameter_name_.count(tmp) == 0) {
+      continue;
+    }
+
+    if (tmp == "Branch") {
       continue;
     }
 
