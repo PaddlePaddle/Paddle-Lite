@@ -20,6 +20,7 @@
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 
@@ -156,8 +157,13 @@ class FoldShapeSliceConcatTileFuser : public PatternMatcher {
 
 void FoldShapeSliceConcatTileFuser::BuildPattern() {
   // Create patterns
-  auto shape_in =
-      CreatePattern("shape_in")->IsOperationInputOperand(NNADAPTER_SHAPE, 0);
+  auto shape_in = CreatePattern("shape_in")
+                      ->IsOperationInputOperand(NNADAPTER_SHAPE, 0)
+                      ->MatchCondition([](const Node *node) -> bool {
+                        auto operand = node->operand;
+                        return operand != nullptr &&
+                               !IsDynamicShapeOperandType(operand->type);
+                      });
   auto shape_dtype = CreatePattern("shape_dtype")
                          ->IsOperationInputOperand(NNADAPTER_SHAPE, 1)
                          ->IsIntermediate();
