@@ -181,7 +181,8 @@ PatternMatcher::Pattern::IsOperationOutputOperand(NNAdapterOperationType type,
 NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
     NNAdapterOperationType type) {
   conditions.emplace_back([type](const Node *node) {
-    return node && node->IsOperation() && node->operation->type == type;
+    return node && node->IsOperation() &&
+           (node->operation->type == type || type == NNADAPTER_UNKNOWN);
   });
   return this;
 }
@@ -214,8 +215,11 @@ NNADAPTER_EXPORT size_t PatternMatcher::Apply(core::Model *model) {
     return 0;
   }
   auto subgraphs = DetectPatterns();
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs detected!";
   UniquePatterns(&subgraphs);
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs unique!";
   ValidatePatterns(&subgraphs);
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs valid!";
   RemoveOverlappedPatterns(&subgraphs);
   NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs matched!";
   // Notify to handle the matched subgraphs, and collect the intermediate

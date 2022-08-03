@@ -123,6 +123,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_SQUEEZE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
+      case NNADAPTER_TILE:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_UNSQUEEZE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);

@@ -815,6 +815,8 @@ TEST(Activation_relu6, precision) {
       dims.push_back(1);
     }
   }
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #else
   return;
 #endif
