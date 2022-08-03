@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,24 @@
 
 #pragma once
 
-#include "core/types.h"
+#include "lite/core/kernel.h"
 
-namespace nnadapter {
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace xpu {
 
-void ConstantFoldShapeAndAssociatedOperations(core::Model* model);
+class MulticlassNmsCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MulticlassNmsParam;
 
-void FoldShapeSliceConcatTile(core::Model* model);
+  virtual void Run();
 
-}  // namespace nnadapter
+  virtual ~MulticlassNmsCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

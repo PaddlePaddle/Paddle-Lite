@@ -18,8 +18,6 @@
 
 namespace nnadapter {
 
-void ConstantFoldShapeAndAssociatedOperations(core::Model* model);
-
-void FoldShapeSliceConcatTile(core::Model* model);
+void ConstantFoldGatherAndAssociatedOperations(core::Model* model);
 
 }  // namespace nnadapter

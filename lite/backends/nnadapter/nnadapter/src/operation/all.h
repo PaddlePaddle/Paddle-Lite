@@ -249,6 +249,7 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ValidateUnsqueeze,
                    PrepareUnsqueeze,
                    ExecuteUnsqueeze)
+REGISTER_OPERATION(UNSTACK, ValidateUnstack, PrepareUnstack, ExecuteUnstack)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
 REGISTER_OPERATION(NON_MAX_SUPPRESSION,

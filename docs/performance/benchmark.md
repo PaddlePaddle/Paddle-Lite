@@ -186,8 +186,5 @@
 ## 颖脉 NNA 的性能数据
 请参考 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)的最新性能数据
 
-## 英伟达 TensorRT 的性能数据
-请参考 [Paddle Lite 使用英伟达 TensorRT 预测部署](../demo_guides/nvidia_tensorrt)的最新性能数据
-
 ## 英特尔 OpenVINO 的性能数据
 请参考 [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)的最新性能数据

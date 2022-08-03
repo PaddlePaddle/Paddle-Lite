@@ -60,7 +60,7 @@ NNADAPTER_NVIDIA_TENSORRT_SDK_ROOT="/usr/local/tensorrt"
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="/opt/intel/openvino_2022"
 # Qualcomm QNN options
 NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
-NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=""
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=""
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
 if [ ${os_name} == "Darwin" ]; then
@@ -774,7 +774,7 @@ function qualcomm_qnn_build_and_test() {
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_QUALCOMM_QNN=ON \
             -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT="$sdk_root_dir" \
-            -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
+            -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -1759,8 +1759,8 @@ function main() {
             NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
             shift
             ;;
-        --nnadapter_qualcomm_hexagon_tools_root=*)
-            NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT="${i#*=}"
+        --nnadapter_qualcomm_hexagon_sdk_root=*)
+            NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
             shift
             ;;
         android_cpu_build_and_test)

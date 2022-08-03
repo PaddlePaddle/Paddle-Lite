@@ -697,6 +697,8 @@ TEST(Activation_tanh, precision) {
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
   for (auto& dims : test_dims) {
@@ -813,6 +815,8 @@ TEST(Activation_relu6, precision) {
       dims.push_back(1);
     }
   }
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -1069,6 +1073,8 @@ TEST(Activation_gelu, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-5;
 #else
   return;

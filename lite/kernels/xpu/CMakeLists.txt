@@ -98,6 +98,7 @@ add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc)
 add_kernel(is_empty_compute_xpu XPU extra SRCS is_empty_compute.cc)
 add_kernel(shape_compute_xpu XPU extra SRCS shape_compute.cc)
 add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.cc)
+add_kernel(multiclass_nms_compute_xpu XPU extra SRCS multiclass_nms_compute.cc)
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)

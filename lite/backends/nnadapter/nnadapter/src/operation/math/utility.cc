@@ -38,6 +38,33 @@ int64_t shape_production(const std::vector<int32_t>& input_shape) {
   return production;
 }
 
+std::vector<int32_t> shape_broadcast(const std::vector<int32_t>& input0_shape,
+                                     const std::vector<int32_t>& input1_shape) {
+  int input0_rank = input0_shape.size();
+  int input1_rank = input1_shape.size();
+  int output_rank = input0_rank > input1_rank ? input0_rank : input1_rank;
+  std::vector<int32_t> output_shape(output_rank, 0);
+  for (int i = 0; i < output_rank; i++) {
+    int input0_idx = i - output_rank + input0_rank;
+    int input0_dim = input0_idx < 0 ? 1 : input0_shape[input0_idx];
+    int input1_idx = i - output_rank + input1_rank;
+    int input1_dim = input1_idx < 0 ? 1 : input1_shape[input1_idx];
+    if (input0_dim != 1 && input1_dim != 1 && input0_dim != input1_dim) break;
+    output_shape[i] = input0_dim > input1_dim ? input0_dim : input1_dim;
+  }
+  return output_shape;
+}
+
+std::vector<int64_t> shape_strides(const std::vector<int32_t>& input_shape) {
+  int64_t input_rank = input_shape.size();
+  std::vector<int64_t> input_strides(input_rank);
+  input_strides[input_rank - 1] = 1;
+  for (int64_t i = input_rank - 2; i >= 0; i--) {
+    input_strides[i] = input_strides[i + 1] * input_shape[i + 1];
+  }
+  return input_strides;
+}
+
 }  // namespace math
 }  // namespace operation
 }  // namespace nnadapter

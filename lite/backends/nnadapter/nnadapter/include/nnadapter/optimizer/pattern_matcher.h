@@ -87,7 +87,7 @@ class PatternMatcher {
     bool MatchAllConditions(const Node* node) const;
     // Utility conditions
     Pattern* IsOperand();
-    Pattern* IsOperation(NNAdapterOperationType type);
+    Pattern* IsOperation(NNAdapterOperationType type = NNADAPTER_UNKNOWN);
     Pattern* IsConstantOperand();
     Pattern* IsVariableOperand();
     Pattern* IsConstantCopyOperand();

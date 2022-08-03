@@ -31,7 +31,9 @@ WITH_OPENCL=OFF
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_QUALCOMM_QNN=OFF
 NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
-NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=
+NNADAPTER_WITH_FAKE_DEVICE=OFF
+NNADAPTER_FAKE_DEVICE_SDK_ROOT=""
 
 # options of adding training ops
 WITH_TRAIN=OFF
@@ -64,9 +66,9 @@ readonly workspace=$PWD/$(dirname $0)/../../
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKL=OFF \
-			    -DWITH_MKLDNN=OFF \
+                            -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF \
-			    -DLITE_WITH_OPENMP=OFF"
+                            -DLITE_WITH_OPENMP=OFF"
 
 # function of set options for benchmark
 function set_benchmark_options {
@@ -141,7 +143,9 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
                         -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
-                        -DNNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT \
+                        -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
+                        -DNNADAPTER_WITH_FAKE_DEVICE=$NNADAPTER_WITH_FAKE_DEVICE \
+                        -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
@@ -367,13 +371,21 @@ function main {
             --nnadapter_with_qualcomm_qnn=*)
                 NNADAPTER_WITH_QUALCOMM_QNN="${i#*=}"
                 shift
-		;;
+                ;;
             --nnadapter_qualcomm_qnn_sdk_root=*)
                 NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
                 shift
                 ;;
-            --nnadapter_qualcomm_hexagon_tools_root=*)
-                NNADAPTER_QUALCOMM_HEXAGON_TOOLS_ROOT="${i#*=}"
+            --nnadapter_qualcomm_hexagon_sdk_root=*)
+                NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_fake_device=*)
+                NNADAPTER_WITH_FAKE_DEVICE="${i#*=}"
+                shift
+                ;;
+            --nnadapter_fake_device_sdk_root=*)
+                NNADAPTER_FAKE_DEVICE_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

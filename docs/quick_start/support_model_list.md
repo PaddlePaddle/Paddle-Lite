@@ -20,7 +20,7 @@
 | CV | 分类 | RegNetX_4GF | ARM, X86 |
 | CV | 分类 | Xception41 | ARM, X86 |
 | CV | 分类 | [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX, AndroidNNAPI |
-| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX, AndroidNNAPI, NVIDIATensorRT, IntelOpenVINO|
+| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU, VerisiliconTIMVX, AndroidNNAPI, IntelOpenVINO|
 | CV | 分类 | [ResNet101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz) | ARM, X86, HuaweiKirinNPU, RockchipNPU, KunlunxinXPU, HuaweiAscendNPU |
 | CV | 分类 | [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz) | ARM, X86, HuaweiAscendNPU, HuaweiKirinNPU |
 | CV | 分类 | [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz)| ARM, HuaweiKirinNPU, HuaweiAscendNPU |
@@ -35,7 +35,7 @@
 | CV | 检测 | [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU*, VerisiliconTIMVX, AndroidNNAPI |
 | CV | 检测 | [SSD-MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz) | ARM, X86, GPU(OPENCL,METAL),HuaweiAscendNPU* |
 | CV | 检测 | [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz) | ARM, X86, HuaweiAscendNPU* |
-| CV | 检测 | [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz) | ARM, X86, HuaweiAscendNPU* , NVIDIATensorRT|
+| CV | 检测 | [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz) | ARM, X86, HuaweiAscendNPU* |
 | CV | 检测 | [YOLOv3-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v1_270e_coco.tgz) | ARM, X86, HuaweiAscendNPU*, HuaweiKirinNPU |
 | CV | 检测 | [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz) | ARM, X86, HuaweiAscendNPU*, HuaweiKirinNPU |
 | CV | 检测 | [yolov3_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU*, HuaweiKirinNPU |
