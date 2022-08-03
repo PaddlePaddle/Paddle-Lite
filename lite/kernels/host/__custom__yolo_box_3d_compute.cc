@@ -80,7 +80,7 @@ inline void CalcDetectionBox(T* boxes_data,
 }
 
 template <typename T>
-std::vector<T> softmax(std::vector<T> input) {
+std::vector<T> Softmax(std::vector<T> input) {
   T total = 0;
   auto max_value = *std::max_element(input.begin(), input.end());
   for (auto x : input) {
@@ -105,7 +105,7 @@ inline void CalcLabelScore(T* scores,
   for (int i = 0; i < class_num; i++) {
     softmax_inputs.push_back(input[score_input_idx + i * stride]);
   }
-  auto softmax_result = softmax(softmax_inputs);
+  auto softmax_result = Softmax(softmax_inputs);
   for (int i = 0; i < class_num; i++) {
     scores[score_output_idx + i] = conf * softmax_result[i];
   }

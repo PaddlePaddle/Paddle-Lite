@@ -71,11 +71,9 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertTile(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
-  void ConvertCustomYoloBox3d(core::Operation* operation);
-  void ConvertNonMaxSuppression(core::Operation* operation);
-  void ConvertCustomYoloBox3dNmsFuser(core::Operation* operation);
   void ConvertUnsqueeze(core::Operation* operation);
   void ConvertUnstack(core::Operation* operation);
+  void SkipConversion(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

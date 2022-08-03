@@ -339,9 +339,9 @@ function make_publish_so {
         build_dir=${build_dir}.kunlunxin_xpu
     fi
 
-    # if [ -d $build_dir ]; then
-    #     rm -rf $build_dir
-    # fi
+    if [ -d $build_dir ]; then
+        rm -rf $build_dir
+    fi
     mkdir -p $build_dir
     cd $build_dir
 

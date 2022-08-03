@@ -191,7 +191,6 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                  Dot::Attr("fillcolor", "yellow")},
                 operation_label);
     std::vector<std::string> input_args, output_args;
-    NNADAPTER_LOG(INFO) << "start visual:" << operation_label;
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
@@ -575,15 +574,26 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"boxes", "scores", "location", "dim", "alpha"};
         break;
       case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
-        input_args = {
-            "input",
-            "imgsize",
-            "anchors",
-            "class_num",
-            "conf_thresh",
-            "downsample_ratio",
-            "scale_x_y",
-        };
+        input_args = {"input0",
+                      "input1",
+                      "input2",
+                      "imgsize",
+                      "anchors0",
+                      "anchors1",
+                      "anchors2",
+                      "class_num",
+                      "conf_thresh",
+                      "downsample_ratio0",
+                      "downsample_ratio1",
+                      "downsample_ratio2",
+                      "scale_x_y",
+                      "background_label",
+                      "keep_top_k",
+                      "nms_eta",
+                      "nms_threshold",
+                      "nms_top_k",
+                      "normalized",
+                      "score_threshold"};
         output_args = {"boxes", "scores", "location", "dim", "alpha"};
       default:
         if (operation->type < 0) {

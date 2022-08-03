@@ -117,6 +117,8 @@ add_kernel(merge_lod_tensor_compute Host extra SRCS merge_lod_tensor_compute.cc)
 add_kernel(im2sequence_compute Host extra SRCS im2sequence_compute.cc)
 add_kernel(log_softmax_compute Host extra SRCS log_softmax_compute.cc)
 add_kernel(roll_compute Host extra SRCS roll_compute.cc)
+
+# custom kernels
 add_kernel(__custom__yolo_box_3d_compute Host basic SRCS __custom__yolo_box_3d_compute.cc)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
