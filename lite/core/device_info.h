@@ -130,11 +130,11 @@ class DeviceInfo {
         kX1, kX2, kA55, kA76, kA77, kA78, kGold, kGold_Prime, kSilver, kA710};
     for (int i = 0; i < core_num_; ++i) {
       auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
-      if (iter != std::end(int8_arch)) {
-        return true;
+      if (iter == std::end(int8_arch)) {
+        return false;
       }
     }
-    return false;
+    return true;
 #else
     return false;
 #endif
