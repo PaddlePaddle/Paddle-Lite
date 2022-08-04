@@ -120,6 +120,7 @@ add_kernel(roll_compute Host extra SRCS roll_compute.cc)
 
 # custom kernels
 add_kernel(__custom__yolo_box_3d_compute Host basic SRCS __custom__yolo_box_3d_compute.cc)
+add_kernel(__custom__yolo_det_compute Host basic SRCS __custom__yolo_det_compute.cc)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)

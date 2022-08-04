@@ -2290,6 +2290,22 @@ struct CustomYoloBox3dParam : ParamBase {
   float scale_x_y{1.0f};
 };
 
+// For yolo_det
+struct CustomYoloDetParam : ParamBase {
+  lite::Tensor* X0{};
+  lite::Tensor* X1{};
+  lite::Tensor* X2{};
+  lite::Tensor* ImgSize{};
+  lite::Tensor* Output{};
+
+  std::vector<int> anchors{};
+  std::vector<int> downsample_ratios{};
+  int class_num{0};
+  float conf_thresh{0.f};
+  int keep_top_k{};
+  float nms_threshold;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
