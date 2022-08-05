@@ -21,8 +21,8 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 ### 已支持的 Paddle 模型
 
 #### 模型
-- [mobilenet_v1_int8_log2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_log2.tar.gz)
-- [mobilenet_v2_int8_log2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_int8_log2.tar.gz)
+- [mobilenet_v1_int8_per_layer_log2](https://paddlelite-demo.bj.bcebos.com/devices/generic/models/mobilenet_v1_int8_per_layer_log2.tar.gz)
+- [mobilenet_v2_int8_per_layer_log2](https://paddlelite-demo.bj.bcebos.com/devices/generic/models/mobilenet_v2_int8_per_layer_log2.tar.gz)
 
 #### 性能
 - 测试环境
@@ -44,8 +44,8 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
   |模型 |SH506||
   |---|---|---|
   |  |CPU(ms) | NPU(ms) |
-  |mobilenet_v1_int8_log2|  672.450012|  47.832000|
-  |mobilenet_v2_int8_log2|  518.518982|  53.127300|
+  |mobilenet_v1_int8_per_layer_log2|  672.450012|  47.832000|
+  |mobilenet_v2_int8_per_layer_log2|  518.518982|  53.127300|
 
 
 ### 已支持（或部分支持）NNAdapter 的 Paddle 算子
@@ -76,7 +76,7 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
           - labels
             - synset_words.txt # 1000 分类 label 文件
           - models
-            - mobilenet_v1_int8_log2
+            - mobilenet_v1_int8_per_layer_log2
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
               — conv1_weights # Paddle fluid 模型参数文件
               - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid 模型量化参数文件
@@ -101,8 +101,8 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
                 - eeasytech_npu # 亿智 NPU DDK、NNAdapter 运行时库、device HAL 库
-                	- libnnadapter.so # NNAdapter 运行时库
-                	- libeeasytech_npu.so.so # NNAdapter device HAL 库
+                  - libnnadapter.so # NNAdapter 运行时库
+                  - libeeasytech_npu.so.so # NNAdapter device HAL 库
                   - libeznpu_ddk.so.so # 亿智 NPU DDK
                   - libnn.so # 亿智 DDK
                   - libopenvx-nn.so # 亿智 DDK
@@ -127,11 +127,11 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
   5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip 地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
   6）下述命令行示例中涉及的具体IP、SSH账号密码、设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
 
-  在 ARM CPU 上运行 mobilenet_v1_int8_log2 全量化模型
+  在 ARM CPU 上运行 mobilenet_v1_int8_per_layer_log2 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For SH506 CPU
-  $ ./run_with_adb.sh mobilenet_v1_int8_log2 linux armhf cpu adb设备号
+  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 linux armhf cpu adb设备号
     (RK1808 EVB)
     warmup: 1 repeat: 5, average: 517.333008 ms, max: 519.331000 ms, min: 516.848999 ms
     results: 3
@@ -144,11 +144,11 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 
   ------------------------------
 
-  在 EEASYTECH NPU 上运行 mobilenet_v1_int8_log2 全量化模型
+  在 EEASYTECH NPU 上运行 mobilenet_v1_int8_per_layer_log2 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For SH506 NPU
-  $ ./run_with_adb.sh mobilenet_v1_int8_log2 linux armhf eeasytech_npu adb设备号
+  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 linux armhf eeasytech_npu adb设备号
     (SH596)
     warmup: 1 repeat: 5, average: 52.715000 ms, max: 54.652100 ms, min: 51.233000 ms
     results: 3
@@ -191,7 +191,7 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 - 请注意，亿智 NPU 所使用的量化方式与其他芯片不同，scale 需要符合 power(2) 的限制，因此需要对 PaddleSlim 的 python 包做小幅修改。
  - 在完成 PaddlePaddle 和 PaddleSlim 的安装后，命令行输出 `python -c "import paddle; print(paddle)"` 找到 PaddlePaddle 的 python 包，例如 '/usr/local/lib/python3.7/site-packages/paddle/__init__.py'，既 PaddlePaddle 的 python 包路径为 '/usr/local/lib/python3.7/site-packages/paddle/'，进入该目录，并找到文件fluid/contrib/slim/quantization/post_training_quantization.py，备份
  - 下载符合亿智 NPU 量化限制的 [post_training_quantization.py](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-log2-quant/post_training_quantization.py)，替换原本的post_training_quantization.py
-- 回到 PaddleSlim-quant-demo 中，直接执行 `./quant_post_rockchip_npu.sh` 即可在 `outputs` 目录下生成 mobilenet_v1_int8_log2 量化模型
+- 回到 PaddleSlim-quant-demo 中，直接执行 `./quant_post_rockchip_npu.sh` 即可在 `outputs` 目录下生成 mobilenet_v1_int8_per_layer_log2 量化模型
   ```shell
   -----------  Configuration Arguments -----------
   activation_bits: 8
@@ -266,9 +266,9 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
   $ tar -zxvf eznpu_ddk.tar.gz
   ```
 
-- 编译并生成 `Paddle Lite + EEASYTECH NPU` for armv7 的部署库
+- 编译并生成 `Paddle Lite + EEASYTECH NPU` for armhf 的部署库
 
-  - For RK1806/RV1126/RV1109 EVB
+  - For SH506/510 SV810/806 Linux armhf 
     - tiny_publish 编译方式
       ```shell
       $ ./lite/tools/build_linux.sh --toolchain=clang --with_extra=ON --with_log=ON --with_exception=ON --arch=armv7hf  --with_nnadapter=ON --nnadapter_with_eeasytech_npu=ON --nnadapter_eeasytech_npu_sdk_root=$(pwd)/eznpu_ddk
