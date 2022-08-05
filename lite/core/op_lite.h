@@ -87,6 +87,8 @@ class OpLite : public Registry {
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
+  bool Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope);
+
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
 
@@ -134,6 +136,10 @@ class OpLite : public Registry {
  protected:
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
+
+  virtual bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
+    return false;
+  }
 
   virtual bool InferShapeWithCache() const { return false; }
   // Specify the kernel to run by default. This will specify the value of

@@ -141,6 +141,14 @@ void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       }
     }
   }
+
+  std::cout << "softmax:" << std::endl;
+  const float16_t* fp_d = param.output->data<float16_t>();
+  std::cout << std::endl;
+  for (int i = 0; i < 20; i++) {
+    std::cout << fp_d[i] << ", " << std::endl;
+  }
+  std::cout << std::endl;
 }
 #endif  // ENABLE_ARM_FP16
 }  // namespace arm

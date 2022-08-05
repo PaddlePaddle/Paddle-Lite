@@ -24,6 +24,7 @@ namespace lite {
 
 void LightPredictor::Build(const std::string& lite_model_file,
                            bool model_from_memory) {
+  std::cout << "dddd0" << std::endl;
   if (model_from_memory) {
     LoadModelNaiveFromMemory(
         lite_model_file, scope_.get(), program_desc_.get());
@@ -33,7 +34,9 @@ void LightPredictor::Build(const std::string& lite_model_file,
 
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
+  std::cout << "dddd1" << std::endl;
   DequantizeWeight();
+  std::cout << "dddd2" << std::endl;
 #ifdef ENABLE_ARM_FP16
   // fp16 Weight convert
   WeightFP32ToFP16();
@@ -226,6 +229,57 @@ void LightPredictor::BuildRuntimeProgram(
       if (op_desc->Type() == "lod_array_length") bool_clear_tensor_ = true;
     }
   }
+
+  std::cout << "trans weight begin" << std::endl;
+
+  if (lite::DeviceInfo::Global().has_fp16()) {
+    for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+      auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
+      for (size_t k = 0; k < block->OpsSize(); ++k) {
+        auto* op_desc = block->GetOp<cpp::OpDesc>(k);
+        std::string op_type = op_desc->Type();
+        // auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
+        // if (iter != fp16_ops.end()) {
+        auto input_names = op_desc->input_vars();
+        for (auto& input_name : input_names) {
+          if (input_name == "feed" || input_name == "fetch") continue;
+          if (scope_->FindVar(input_name)) {
+            if (!scope_->FindVar(input_name)->IsType<lite::Tensor>()) continue;
+            std::cout << "scope:" << input_name << std::endl;
+
+            auto input_tensor =
+                scope_->Var(input_name)->GetMutable<lite::Tensor>();
+
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+
+            input_tensor->set_precision(PRECISION(kFP16));
+            Tensor tmp_tensor;
+            tmp_tensor.CopyDataFrom(*input_tensor);
+            input_tensor->clear();
+            input_tensor->set_precision(PRECISION(kFP16));
+
+            float16_t* fp_data = input_tensor->mutable_data<float16_t>();
+            const float* in_data = tmp_tensor.data<float>();
+            lite::arm::math::fp16::fp32_to_fp16(
+                in_data, fp_data, input_tensor->numel());
+          }
+          if (exe_scope->FindVar(input_name)) {
+            if (!exe_scope->FindVar(input_name)->IsType<lite::Tensor>())
+              continue;
+            std::cout << "exe_scpoe:" << input_name << std::endl;
+
+            auto input_tensor =
+                scope_->Var(input_name)->GetMutable<lite::Tensor>();
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+            input_tensor->set_precision(PRECISION(kFP16));
+          }
+        }
+        //}
+      }
+    }
+  }
+  std::cout << "trans weight end" << std::endl;
+
   // Only extracting the ops and generate the runtime program from the main
   // block desc
   program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIdx));
@@ -234,6 +288,7 @@ void LightPredictor::BuildRuntimeProgram(
 void LightPredictor::DequantizeWeight() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
   CHECK(program_desc != nullptr);
+
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \
@@ -247,7 +302,6 @@ void LightPredictor::DequantizeWeight() {
       fp_data[i * chout + j] = scale_list[j] * int_data[i * chout + j]; \
     }                                                                   \
   }
-
   auto is_weight_quantized_op = [](const cpp::OpDesc* op_desc) {
     CHECK(op_desc != nullptr);
     bool result = false;
@@ -340,7 +394,6 @@ void LightPredictor::DequantizeWeight() {
       }
     }
   }
-
 #undef PROCESS_CONV2D_DATA
 #undef PROCESS_FC_DATA
 }

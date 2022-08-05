@@ -26,9 +26,10 @@ using ProgramDesc = fbs::ProgramDescView;
 using BlockDesc = fbs::BlockDescView;
 using OpDesc = fbs::OpDescView;
 using VarDesc = fbs::VarDescView;
+using OpDescWrite = fbs::OpDesc;
 }
 }
-}
+}  // namespace paddle
 #else
 #include "lite/core/model/general/block_desc.h"
 #include "lite/core/model/general/op_desc.h"

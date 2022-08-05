@@ -69,17 +69,19 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   std::vector<std::unique_ptr<KernelBase>> kernels;
   CHECK(!op_type_.empty()) << "op_type_ should be set first";
 
+  std::cout << "create kernel step1" << std::endl;
   auto pick_kernel = [&](const Place &place) {
     auto ks = KernelRegistry::Global().Create(
         op_type_, place.target, place.precision, place.layout);
-    VLOG(5) << "pick kernel for " << op_info()->Type() << " "
-            << place.DebugString() << " get " << ks.size() << " kernels";
+    // VLOG(5) << "pick kernel for " << op_info()->Type() << " "
+    //        << place.DebugString() << " get " << ks.size() << " kernels";
     for (auto &&it : ks) {
       AttachKernel(it.get());
       kernels.emplace_back(std::move(it));
     }
   };
 
+  std::cout << "create kernel step2" << std::endl;
   if (!kernel_type.empty()) {
     Place place;
     std::string op_type, alias;
@@ -89,6 +91,7 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     return kernels;
   }
 
+  std::cout << "create kernel step3" << std::endl;
   std::set<Place> expanded_places(places.begin(), places.end());
   for (auto &place : places) {
     // Pick kernels those support any Precision and any DataLayout, For example:
@@ -99,6 +102,7 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     expanded_places.insert(
         Place(place.target, PRECISION(kAny), DATALAYOUT(kAny)));
   }
+  std::cout << "create kernel step4" << std::endl;
 
   std::set<TargetType> targets;
   for (auto place : expanded_places) {
@@ -128,6 +132,16 @@ bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   op_info_.reset(
       new OpInfo(opdesc));  // Force clean the out-of-date infomation.
   return AttachImpl(*op_info(), scope);
+}
+
+bool OpLite::Attach(cpp::OpDescWrite &opdesc, lite::Scope *scope) {
+  // valid_places_.clear();
+  CHECK(scope != nullptr);
+  // CHECK(!op_info_.get());
+  scope_ = scope;
+  // op_info_.reset(
+  //    new OpInfo(opdesc));  // Force clean the out-of-date infomation.
+  return AttachImpl(opdesc, scope);
 }
 
 const Tensor *OpLite::GetTensor(lite::Scope *scope,
