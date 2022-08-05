@@ -134,7 +134,7 @@ bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return AttachImpl(*op_info(), scope);
 }
 
-bool OpLite::Attach(cpp::OpDescWrite &opdesc, lite::Scope *scope) {
+bool OpLite::Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
   // valid_places_.clear();
   CHECK(scope != nullptr);
   // CHECK(!op_info_.get());

@@ -287,6 +287,39 @@ RuntimeProgram::RuntimeProgram(
   std::string first = "fp32", second = "fp32";
   Place old_place;
 
+  int low_precision = 1;
+  for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    CHECK(op_desc);
+    std::string op_type = op_desc->Type();
+
+    auto op = LiteOpRegistry::Global().Create(op_type);
+
+    std::unique_ptr<KernelBase> kernel;
+    if (op_desc->HasAttr(kKernelTypeAttr)) {
+      // Create op and pick up the best kernel according to the
+      // kKernelTypeAttr attribute
+      auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
+      std::string alias;
+      Place place;
+      KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
+      op->Attach(*op_desc, exec_scope_);
+
+      if (lite::DeviceInfo::Global().has_fp16()) {
+        if (op_type != "feed" && op_type != "fetch") {
+          if (place.precision == static_cast<PrecisionType>(1)) {
+            place.precision = static_cast<PrecisionType>(5);
+          }
+        }
+      }
+
+      auto kernels = op->CreateKernels({place});
+      if (kernels.size() == 0) {
+        low_precision = 0;
+      }
+    }
+  }
+
   for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
@@ -357,7 +390,7 @@ RuntimeProgram::RuntimeProgram(
 
       op->Attach(*op_desc, exec_scope_);
 
-      if (lite::DeviceInfo::Global().has_fp16()) {
+      if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
         if (op_type != "feed" && op_type != "fetch") {
           if (place.precision == static_cast<PrecisionType>(1)) {
             place.precision = static_cast<PrecisionType>(5);

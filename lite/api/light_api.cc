@@ -232,7 +232,45 @@ void LightPredictor::BuildRuntimeProgram(
 
   std::cout << "trans weight begin" << std::endl;
 
-  if (lite::DeviceInfo::Global().has_fp16()) {
+  int low_precision = 1;
+  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+    auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(i);
+    for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+      auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+      CHECK(op_desc);
+      std::string op_type = op_desc->Type();
+
+      auto op = LiteOpRegistry::Global().Create(op_type);
+
+      std::unique_ptr<KernelBase> kernel;
+      if (op_desc->HasAttr(kKernelTypeAttr)) {
+        // Create op and pick up the best kernel according to the
+        // kKernelTypeAttr attribute
+        auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
+        std::string alias;
+        Place place;
+        KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
+        op->Attach(*op_desc, exe_scope);
+        if (lite::DeviceInfo::Global().has_fp16()) {
+          if (op_type != "feed" && op_type != "fetch") {
+            if (place.precision == static_cast<PrecisionType>(1)) {
+              place.precision = static_cast<PrecisionType>(5);
+            }
+          }
+        }
+        auto kernels = op->CreateKernels({place});
+        if (kernels.size() == 0) {
+          low_precision = 0;
+        }
+      }
+    }
+  }
+  if (low_precision == 0)
+    std::cout << "do not use fix precision" << std::endl;
+  else
+    std::cout << "use fix precision" << std::endl;
+
+  if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
     for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
       auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
       for (size_t k = 0; k < block->OpsSize(); ++k) {
@@ -240,6 +278,7 @@ void LightPredictor::BuildRuntimeProgram(
         std::string op_type = op_desc->Type();
         // auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
         // if (iter != fp16_ops.end()) {
+
         auto input_names = op_desc->input_vars();
         for (auto& input_name : input_names) {
           if (input_name == "feed" || input_name == "fetch") continue;
