@@ -299,6 +299,54 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                     const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
+#if 1  /// common dw
+TEST(TestConvCommonDwFp16, test_conv_common_depthwise) {
+  if (FLAGS_basic_test) {
+    for (auto& stride0 : {3}) {
+      for (auto& stride1 : {2, 1}) {
+        for (auto& dia0 : {2}) {
+          for (auto& dia1 : {1, 2}) {
+            for (auto& pad : {0}) {
+              for (auto& pad1 : {1, 2}) {
+                for (auto& flag_bias : {false, true}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
+                    for (auto& c : {1, 5, 12, 32, 35, 46}) {
+                      for (auto kh : {2, 3}) {
+                        for (auto kw : {2, 3}) {
+                          std::vector<DDim> dims;
+                          for (auto& batch : {2}) {
+                            for (auto& h : {8, 15, 25, 36, 46, 74, 108}) {
+                              dims.push_back(DDim({batch, c, h, h}));
+                            }
+                          }
+                          DDim weights_dim({c, 1, kh, kw});
+                          const float leakey_relu_scale = 1.0f;
+                          test_conv_fp16(dims,
+                                         weights_dim,
+                                         c,
+                                         {stride0, stride1},
+                                         {pad, pad1, pad1, pad1},
+                                         {dia0, dia1},
+                                         flag_bias,
+                                         flag_act,
+                                         {FLAGS_threads},
+                                         {FLAGS_power_mode},
+                                         leakey_relu_scale);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif  /// common dw
+
 #if 1  /// 3x3dw
 TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
