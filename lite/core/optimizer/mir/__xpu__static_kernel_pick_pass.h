@@ -95,11 +95,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       if (kernel_pick_factors_.IsPrecisionConsidered() &&
           (place.precision == kernel.precision() ||
            kernel.precision() == PRECISION(kAny) ||
-           place.precision == PRECISION(kAny) ||
-           // fp16 may also pick FP32 kernel preciison
-           (xpu_use_fp16_optimizer_ &&
-            kernel.precision() == PRECISION(kFloat) &&
-            place.precision == PRECISION(kFP16)))) {
+           place.precision == PRECISION(kAny))) {
         // score skipped, if kernel is int8, but op is not int8
         if (!(kernel.precision() == PRECISION(kInt8) &&
               !instruct.op_info()->HasAttr("enable_int8"))) {
@@ -124,67 +120,22 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       }
       VLOG(4) << "[score s3]:" << score;
 
-      // add new rules for precision: When the input types are consistent with
-      // kernel's input types, select the kernel of the precision. However, if
-      // the op is feed, we should compare the output precision type.
-      // Note that this strategy is not compatible with quantization, so skip
-      // quantization op.
-
-      bool type_match = true;
 #ifdef LITE_WITH_XPU
-      if ((xpu_use_fp16_optimizer_ &&
-           (xpu_special_op_.count(instruct.op_type()) ||
-            xpu_inplace_op_.count(instruct.op_type()))) ||
-          (xpu_use_int8_optimizer_ &&
-           (xpu_int8_special_op_.count(instruct.op_type()) ||
-            xpu_inplace_op_.count(instruct.op_type())))) {
-        type_match = false;
-        if (kernel.summary().find(xpu_disable_flag_) != std::string::npos) {
-          score = 0;
-          VLOG(6) << " ignore pick current kernel:" << kernel.summary();
-        } else if (xpu_inplace_op_.count(instruct.op_type())) {
-          InplaceOpScore(
-              kernel, instruct, in_names, out_names, &type_match, &score);
-        } else {
-          SpecialOpScore(
-              kernel, instruct, in_names, out_names, &type_match, &score);
-        }
-      } else {
-        if (!instruct.op_info()->HasAttr("enable_int8")) {
-          if (instruct.op_type() == "feed") {
-            for (size_t i = 0; i < out_names.size(); ++i) {
-              std::string tmp;
-              CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-              if (out_types.count(out_names[i]) &&
-                  out_types.at(out_names[i]) !=
-                      kernel.GetOutputDeclType(tmp)->precision()) {
-                type_match = false;
-              }
-            }
-          } else {
-            for (size_t i = 0; i < in_names.size(); ++i) {
-              std::string tmp;
-              CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-              if (in_types.count(in_names[i]) &&
-                  !PrecTypeCompatible(
-                      in_types.at(in_names[i]),
-                      kernel.GetInputDeclType(tmp)->precision())) {
-                type_match = false;
-              }
-            }
-          }
-        }
-
-        ForceUseFP32Kernel(&score, kernel, instruct);
-        ForceUseInt8Kernel(&score, kernel, instruct);
-      }
-
+      bool type_match = true;
+      GradeXPUKernelScore(node,
+                          kernel,
+                          instruct,
+                          in_names,
+                          out_names,
+                          in_types,
+                          out_types,
+                          &score,
+                          &type_match);
       if (type_match) {
         score *= 2;
         VLOG(4) << "[Input/Output precision compatible]: *2";
       }
       VLOG(4) << "[score s4]:" << score;
-
 #endif
 
       // add new rules for datatype: When the input types are consistent
@@ -267,12 +218,9 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   }
 #ifdef LITE_WITH_XPU
   void DataPrecisionDicide(const std::unique_ptr<SSAGraph>& graph);
-  void ForceUseFP32Kernel(size_t* score,
-                          const lite::KernelBase& kernel,
-                          const paddle::lite::mir::Node::Stmt& instruct);
-  void ForceUseInt8Kernel(size_t* score,
-                          const lite::KernelBase& kernel,
-                          const paddle::lite::mir::Node::Stmt& instruct);
+  bool ForceUsePrecision(size_t* score,
+                         const lite::KernelBase& kernel,
+                         const paddle::lite::mir::Node::Stmt& instruct);
   void GetScore(PrecisionType precision, size_t* score_tmp);
 
   void NodeInputPrecision(lite::mir::Node* node,
@@ -282,27 +230,32 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
   void NodeOutputPrecision(const std::unique_ptr<SSAGraph>& graph,
                            lite::mir::Node* node);
-  void InplaceNodeOutputPrecision(const paddle::lite::mir::Node::Stmt& instruct,
-                                  const std::vector<std::string>& in_names,
-                                  const std::vector<std::string>& out_names);
+  void InplaceNodeOutputPrecision(lite::mir::Node* node);
   void SpecialNodeOutputPrecision(
       const std::unique_ptr<SSAGraph>& graph,
       lite::mir::Node* node,
       const std::unique_ptr<lite::KernelBase>& kernel);
 
-  void SpecialOpScore(const lite::KernelBase& kernel,
-                      const paddle::lite::mir::Node::Stmt& instruct,
-                      const std::vector<std::string>& in_names,
-                      const std::vector<std::string>& out_names,
+  void SpecialOpScore(lite::mir::Node* node,
+                      const lite::KernelBase& kernel,
                       bool* type_match,
                       size_t* score);
   void GetXPUDeviceType();
-  void InplaceOpScore(const lite::KernelBase& kernel,
-                      const paddle::lite::mir::Node::Stmt& instruct,
-                      const std::vector<std::string>& in_names,
-                      const std::vector<std::string>& out_names,
+  void InplaceOpScore(lite::mir::Node* node,
+                      const lite::KernelBase& kernel,
                       bool* type_match,
                       size_t* score);
+  void GradeXPUKernelScore(
+      lite::mir::Node* node,
+      const lite::KernelBase& kernel,
+      const paddle::lite::mir::Node::Stmt& instruct,
+      const std::vector<std::string>& in_names,
+      const std::vector<std::string>& out_names,
+      const std::map<std::string, PrecisionType>& in_types,
+      const std::map<std::string, PrecisionType>& out_types,
+      size_t* score,
+      bool* type_match);
+  void CollectXPUSpecialOPType(const std::unique_ptr<SSAGraph>& graph);
 #endif
 
  private:
@@ -310,44 +263,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 
   bool xpu_use_fp16_optimizer_{false};
 #ifdef LITE_WITH_XPU
-  // TODO(quwei:) addn more op
-  const std::set<std::string> PRECISION_INT31_OP_{"__xpu__fc"};
-  const std::set<std::string> PRECISION_INT8_OP_{"__xpu__fc"};
-  const std::set<std::string> input_parameter_name_{
-      "Input", "X", "Y", "Branch", "BBoxes", "Scores", "repeat_times_tensor"};
-  const std::set<std::string> output_parameter_name_{
-      "Output", "Out", "Boxes", "Scores", "Y"};
   std::multimap<std::string, std::vector<std::map<std::string, PrecisionType>>>
       xpu_input_type_{};
   std::map<std::string, PrecisionType> xpu_output_type_{};
   std::string xpu_disable_flag_{};
   const std::set<std::string> consider_cpu_op_{"cast"};
-  const std::set<std::string> xpu_special_op_{"__xpu__fc",
-                                              "conv3d",
-                                              "__xpu__conv2d",
-                                              "gather",
-                                              "pool2d",
-                                              "concat",
-                                              "calib",
-                                              "relu",
-                                              "tanh",
-                                              "sigmoid",
-                                              "leaky_relu",
-                                              "conv2d_transpose",
-                                              "elementwise_mul",
-                                              "elementwise_add",
-                                              "elementwise_mod",
-                                              "elementwise_floordiv",
-                                              "reduce_mean",
-                                              "bilinear_interp",
-                                              "bilinear_interp_v2",
-                                              "nearest_interp",
-                                              "nearest_interp_v2",
-                                              "tile",
-                                              "transpose",
-                                              "pixel_shuffle",
-                                              "expand_v2",
-                                              "meshgrid"};
+  std::set<std::string> xpu_special_op_{};
   const std::set<std::string> xpu_inplace_op_{"reshape",
                                               "reshape2",
                                               "flatten",
@@ -356,11 +277,9 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "squeeze2",
                                               "unsqueeze",
                                               "unsqueeze2"};
-
   // int8
   bool xpu_use_int8_optimizer_{false};
-  const std::set<std::string> xpu_int8_special_op_{"__xpu__conv2d",
-                                                   "__xpu__fc"};
+  std::set<std::string> xpu_int8_special_op_{};
 #endif
 };
 

@@ -265,7 +265,7 @@ REGISTER_LITE_KERNEL(
 using XPUFC_Int8_int8_int8 =
     xpu::XPUFcCompute<int8_t, int8_t, int8_t, int8_t, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
-    __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_int8_int8, XPU_Int8_int8_int8)
+    __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_int8_int8, XPU_Int8_Int8_Int8)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -278,7 +278,7 @@ REGISTER_LITE_KERNEL(
 using XPUFC_Int8_int8_fp32 =
     xpu::XPUFcCompute<int8_t, int8_t, int8_t, float, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
-    __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_int8_fp32, XPU_Int8_int8_fp32)
+    __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_int8_fp32, XPU_Int8_Int8_FP32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})

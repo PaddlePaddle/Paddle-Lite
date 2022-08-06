@@ -93,3 +93,13 @@ REGISTER_LITE_KERNEL(cast,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(cast,
+                     kXPU,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::CastCompute<uint8_t>,
+                     DISABLE_XPU1_cast_i8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kUInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
+    .Finalize();
