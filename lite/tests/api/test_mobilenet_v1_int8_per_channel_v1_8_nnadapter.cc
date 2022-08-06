@@ -50,6 +50,9 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_channel_nnadapter) {
 #if defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.push_back("mediatek_apu");
   out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  out_accuracy_threshold = 1.0f;
 #else
   nnadapter_device_names.emplace_back("builtin_device");
   out_accuracy_threshold = 0.63f;
