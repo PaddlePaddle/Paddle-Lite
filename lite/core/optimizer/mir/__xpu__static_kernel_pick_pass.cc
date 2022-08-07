@@ -115,6 +115,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       VLOG(2) << "current candidate kernel is: " << kernel->summary();
       VLOG(2) << "valid_places size is: " << graph->valid_places().size();
       if (instruct.op_info()->HasAttr("enable_int8") &&
+          instruct.op_info()->GetAttr<bool>("enable_int8") &&
           kernel->precision() != PrecisionType::kInt8) {
         VLOG(6) << "Ignore current kernel: " << kernel->summary()
                 << ", because we only want to pick int8 precision kernel.";
