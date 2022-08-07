@@ -69,7 +69,8 @@ class TargetWrapper<TARGET(kXPU)> {
   template <typename Tcpu, typename Txpu>
   static XPUQuantData ConvertCPUWeightToXPUQuantWeight(const Tcpu* cpu_data,
                                                        const DDimLite& dims,
-                                                       bool data_transpose);
+                                                       bool data_transpose,
+                                                       size_t max_ptr_len);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_.get() == nullptr) {

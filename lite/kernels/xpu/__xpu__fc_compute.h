@@ -38,6 +38,8 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PType> {
  private:
   XPUScratchPadGuard input_max_guard_;
   XPUQuantData xpu_quant_weight_;
+  bool per_channel_;
+  bool enable_int8_;
 };
 
 }  // namespace xpu
