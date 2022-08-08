@@ -235,7 +235,7 @@ TEST(Compare, precision) {
   TestCompare<float>(place, abs_error, "not_equal", {2, 3, 4}, {2, 3, 4}, 0);
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
   for (auto op : std::vector<std::string>{"equal",
                                           "not_equal",
                                           "less_than",

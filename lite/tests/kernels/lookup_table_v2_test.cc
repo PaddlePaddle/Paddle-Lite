@@ -122,7 +122,7 @@ TEST(LookupTableV2, precision) {
   TestLookupTableV2Case<int>(place, abs_error);
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
   TestLookupTableV2Case<int>(place, abs_error);
   return;
 #else

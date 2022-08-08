@@ -303,7 +303,7 @@ TEST(Split_test, precision) {
   TestSplitAxisTensor(place, abs_error);
   TestSplitSectionsTensorList(place, abs_error);
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);
