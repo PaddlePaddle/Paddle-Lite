@@ -71,7 +71,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
                                        cpu_output_max.data(),
                                        sizeof(float) * max_ptr_size,
                                        IoDirection::HtoD);
-    if (param.quant_branch_max > 0) {
+    if (param.quant_branch_max != 0) {
       std::vector<float> cpu_branch_max(max_ptr_size, param.quant_branch_max);
       lite::TargetWrapperXPU::MemcpySync(branch_max_guard_->addr_,
                                          cpu_branch_max.data(),
@@ -165,7 +165,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::Run() {
   float* output_max =
       quant_int8 ? reinterpret_cast<float*>(output_max_guard_->addr_)
                  : param.output_max->template mutable_data<float>(TARGET(kXPU));
-  float* branch_max = (quant_int8 && (param.quant_branch_max > 0))
+  float* branch_max = (quant_int8 && (param.quant_branch_max != 0))
                           ? reinterpret_cast<float*>(branch_max_guard_->addr_)
                           : nullptr;
   const auto* bias =

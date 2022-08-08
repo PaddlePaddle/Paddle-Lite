@@ -313,7 +313,6 @@ void XPUStaticKernelPickPass::InplaceNodeOutputPrecision(
     lite::mir::Node* node) {
   PrecisionType pre_op_output_precision = PrecisionType::kUnk;
   auto& instruct = node->AsStmt();
-  const auto* op_info = instruct.op_info();
   for (auto* in_var_node : node->inlinks) {
     CHECK(in_var_node->IsArg());
     auto& var = in_var_node->AsArg();
@@ -728,22 +727,26 @@ void XPUStaticKernelPickPass::GradeXPUKernelScore(
 
   // kernel compute precision:int8/int16,data precicion:int8/fp16/fp32
   if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
-    *type_match = false;
     if (xpu_inplace_op_.count(instruct.op_type())) {
+      *type_match = false;
       InplaceOpScore(node, kernel, type_match, score);
       return;
     }
 
-    if (xpu_use_fp16_optimizer_ ||
+    if ((xpu_use_fp16_optimizer_ &&
+         xpu_special_op_.count(instruct.op_type())) ||
         (xpu_use_int8_optimizer_ &&
-         instruct.op_info()->HasAttr("enable_int8"))) {
+         instruct.op_info()->HasAttr("enable_int8") &&
+         xpu_int8_special_op_.count(instruct.op_type()))) {
+      *type_match = false;
       SpecialOpScore(node, kernel, type_match, score);
       return;
     }
   }
 
   // kernel compute precision:fp32(int16),data precicion:fp32
-  if (!instruct.op_info()->HasAttr("enable_int8")) {
+  if (!instruct.op_info()->HasAttr("enable_int8") ||
+      xpu_int8_special_op_.count(instruct.op_type()) == 0) {
     if (instruct.op_type() == "feed") {
       for (size_t i = 0; i < out_names.size(); ++i) {
         std::string tmp;
@@ -782,12 +785,6 @@ void XPUStaticKernelPickPass::CollectXPUSpecialOPType(
       }
 
       auto op_type = instruct.op_type();
-      if (xpu_use_int8_optimizer_) {
-        if (kernel->precision() == PrecisionType::kInt8) {
-          xpu_int8_special_op_.emplace(op_type);
-          continue;
-        }
-      }
 
       if (xpu_use_fp16_optimizer_) {
         if (kernel->precision() == PrecisionType::kFP16) {
@@ -802,9 +799,6 @@ void XPUStaticKernelPickPass::CollectXPUSpecialOPType(
     VLOG(6) << "Collected xpu fp16 precioson op:" << op_type;
   }
 
-  for (auto op_type : xpu_int8_special_op_) {
-    VLOG(6) << "Collected xpu int8 precioson op:" << op_type;
-  }
   return;
 }
 
