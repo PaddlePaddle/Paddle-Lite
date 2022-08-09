@@ -49,7 +49,8 @@ TEST(ResNet50, test_resnet50_fp32_v2_0_nnadapter) {
   out_accuracy_threshold = 0.76f;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   nnadapter_device_names.emplace_back("qualcomm_qnn");
-  out_accuracy_threshold = 0.76f;
+  FLAGS_iteration = 1;
+  out_accuracy_threshold = 1.f;
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   nnadapter_device_names.emplace_back("kunlunxin_xtcl");
   out_accuracy_threshold = 0.77f;

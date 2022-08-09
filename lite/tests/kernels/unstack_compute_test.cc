@@ -138,7 +138,7 @@ TEST(unstack, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
   TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
   TestUnstack<float>(place, abs_error, {1, 3, 4});
   return;
