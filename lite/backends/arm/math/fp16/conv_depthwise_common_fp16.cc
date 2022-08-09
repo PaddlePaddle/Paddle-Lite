@@ -34,19 +34,19 @@ namespace fp16 {
   "mov x7, %[weight]\n"
 
 #define LOOP               \
-  "Loop:\n"                \
+  "Loop_%=:\n"             \
   "mov x9, %[pre_din]\n"   \
   "mov x10, %[pre_dout]\n" \
   "mov x6, %[ow]\n"
 
 #define COMPUTE16                                        \
-  "L16:\n"                                               \
+  "L16_%=:\n"                                            \
   "cmp x6, #16\n"                                        \
-  "blt L8\n"                                             \
+  "blt L8_%=\n"                                          \
   "mov x3, #16\n" /*x3 = sw * 8(c) * 16(w)*/             \
   "mul x3, %[src_w_setup], x3\n"                         \
                                                          \
-  "L16Loop:\n"                                           \
+  "L16Loop_%=:\n"                                        \
   "mov x8, %[pre_din]\n"                                 \
   "mov v16.8h, %[vbias].8h\n"                            \
   "mov v17.8h, %[vbias].8h\n"                            \
@@ -67,9 +67,9 @@ namespace fp16 {
                                                          \
   /*kh*/                                                 \
   "mov x1, %[kh]\n"                                      \
-  "L16LoopH:\n"                                          \
+  "L16LoopH_%=:\n"                                       \
   "mov x2, %[kw]\n" /*kw*/                               \
-  "L16LoopW:\n"                                          \
+  "L16LoopW_%=:\n"                                       \
   "ld1 {v7.8h}, [%[weight]], #16\n"                      \
   "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
   "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
@@ -106,10 +106,10 @@ namespace fp16 {
   "sub %[pre_din], %[pre_din], x3\n"                     \
   "add %[pre_din], %[pre_din], %[dilateX_step]\n" /*kw*/ \
   "subs x2, x2, #1\n"                                    \
-  "bne L16LoopW\n" /*kh*/                                \
+  "bne L16LoopW_%=\n" /*kh*/                             \
   "add %[pre_din], %[pre_din], x5\n"                     \
   "subs x1, x1, #1\n"                                    \
-  "bne L16LoopH\n"                                       \
+  "bne L16LoopH_%=\n"                                    \
   "mov %[weight], x7\n"                                  \
   "sub x6, x6, #16\n"                                    \
   "add %[pre_din], x8, x3\n"
@@ -120,16 +120,16 @@ namespace fp16 {
   "st1 {v24.8h, v25.8h, v26.8h, v27.8h}, [%[pre_dout]], #64\n" \
   "st1 {v28.8h, v29.8h, v30.8h, v31.8h}, [%[pre_dout]], #64\n" \
   "cmp x6, #16\n"                                              \
-  "bge L16Loop\n"
+  "bge L16Loop_%=\n"
 
 #define COMPUTE8                                         \
-  "L8:"                                                  \
+  "L8_%=:"                                               \
   "cmp x6, #8\n"                                         \
-  "blt L4\n"                                             \
+  "blt L4_%=\n"                                          \
   "mov x3, #8\n" /*x3 = sw * 8(c) * 8(w)*/               \
   "mul x3, %[src_w_setup], x3\n"                         \
                                                          \
-  "L8Loop:\n"                                            \
+  "L8Loop_%=:\n"                                         \
   "mov x8, %[pre_din]\n"                                 \
   "mov v16.8h, %[vbias].8h\n"                            \
   "mov v17.8h, %[vbias].8h\n"                            \
@@ -142,9 +142,9 @@ namespace fp16 {
                                                          \
   /*kh*/                                                 \
   "mov x1, %[kh]\n"                                      \
-  "L8LoopH:\n"                                           \
+  "L8LoopH_%=:\n"                                        \
   "mov x2, %[kw]\n" /*kw*/                               \
-  "L8LoopW:\n"                                           \
+  "L8LoopW_%=:\n"                                        \
   "ld1 {v7.8h}, [%[weight]], #16\n"                      \
   "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
   "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
@@ -165,10 +165,10 @@ namespace fp16 {
   "sub %[pre_din], %[pre_din], x3\n"                     \
   "add %[pre_din], %[pre_din], %[dilateX_step]\n" /*kw*/ \
   "subs x2, x2, #1\n"                                    \
-  "bne L8LoopW\n"                                        \
+  "bne L8LoopW_%=\n"                                     \
   "add %[pre_din], %[pre_din], x5\n" /*kh*/              \
   "subs x1, x1, #1\n"                                    \
-  "bne L8LoopH\n"                                        \
+  "bne L8LoopH_%=\n"                                     \
   "mov %[weight], x7\n"                                  \
   "sub x6, x6, #8\n"                                     \
   "add %[pre_din], x8, x3\n"
@@ -178,22 +178,22 @@ namespace fp16 {
   "st1 {v20.8h, v21.8h, v22.8h, v23.8h}, [%[pre_dout]], #64\n"
 
 #define COMPUTE4                                         \
-  "L4:\n"                                                \
+  "L4_%=:\n"                                             \
   "cmp x6, #4\n"                                         \
-  "blt L1\n"                                             \
+  "blt L1_%=\n"                                          \
   "mov x3, #4\n" /*x3 = sw * 8(c) * 4(w)*/               \
   "mul x3, %[src_w_setup], x3\n"                         \
                                                          \
-  "L4Loop:\n"                                            \
+  "L4Loop_%=:\n"                                         \
   "mov x8, %[pre_din]\n"                                 \
   "mov v16.8h, %[vbias].8h\n"                            \
   "mov v17.8h, %[vbias].8h\n"                            \
   "mov v18.8h, %[vbias].8h\n"                            \
   "mov v19.8h, %[vbias].8h\n" /*kh*/                     \
   "mov x1, %[kh]\n"                                      \
-  "L4LoopH:\n" /*kw*/                                    \
+  "L4LoopH_%=:\n" /*kw*/                                 \
   "mov x2, %[kw]\n"                                      \
-  "L4LoopW:\n"                                           \
+  "L4LoopW_%=:\n"                                        \
   "ld1 {v7.8h}, [%[weight]], #16\n"                      \
   "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
   "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
@@ -206,10 +206,10 @@ namespace fp16 {
   "sub %[pre_din], %[pre_din], x3\n"                     \
   "add %[pre_din], %[pre_din], %[dilateX_step]\n" /*kw*/ \
   "subs x2, x2, #1\n"                                    \
-  "bne L4LoopW\n"                                        \
+  "bne L4LoopW_%=\n"                                     \
   "add %[pre_din], %[pre_din], x5\n" /*kh*/              \
   "subs x1, x1, #1\n"                                    \
-  "bne L4LoopH\n"                                        \
+  "bne L4LoopH_%=\n"                                     \
   "mov %[weight], x7\n"                                  \
   "sub x6, x6, #4\n"                                     \
   "add %[pre_din], x8, x3\n"
@@ -217,24 +217,24 @@ namespace fp16 {
 #define STORE4 "st1 {v16.8h, v17.8h, v18.8h, v19.8h}, [%[pre_dout]], #64\n"
 
 #define COMPUTE1                                 \
-  "L1:\n"                                        \
+  "L1_%=:\n"                                     \
   "cmp x6, #1\n"                                 \
-  "blt END\n"                                    \
-  "L1Loop:\n"                                    \
+  "blt 0f\n"                                     \
+  "L1Loop_%=:\n"                                 \
   "mov x8, %[pre_din]\n"                         \
   "mov v16.8h, %[vbias].8h\n" /*kh*/             \
   "mov x1, %[kh]\n"                              \
-  "L1LoopH:\n"                                   \
+  "L1LoopH_%=:\n"                                \
   "mov x2, %[kw]\n" /*kw*/                       \
-  "L1LoopW:\n"                                   \
+  "L1LoopW_%=:\n"                                \
   "ld1 {v7.8h}, [%[weight]], #16\n"              \
   "ld1 {v0.8h}, [%[pre_din]], %[dilateX_step]\n" \
   "fmla v16.8h, v7.8h, v0.8h\n" /*kw*/           \
   "subs x2, x2, #1\n"                            \
-  "bne L1LoopW\n" /*kh*/                         \
+  "bne L1LoopW_%=\n" /*kh*/                      \
   "add %[pre_din], %[pre_din], x5\n"             \
   "subs x1, x1, #1\n"                            \
-  "bne L1LoopH\n"                                \
+  "bne L1LoopH_%=\n"                             \
   "mov %[weight], x7\n"                          \
   "sub x6, x6, #1\n"                             \
   "add %[pre_din], x8, %[src_w_setup]\n"
@@ -242,14 +242,14 @@ namespace fp16 {
 #define STORE1                         \
   "st1 {v16.8h}, [%[pre_dout]], #16\n" \
   "cmp x6, #1\n"                       \
-  "bge L1Loop\n"
+  "bge L1Loop_%=\n"
 
 #define END                             \
-  "END:\n"                              \
+  "0:\n"                                \
   "add %[pre_din], x9, %[srcHStep]\n"   \
   "add %[pre_dout], x10, %[dstHStep]\n" \
   "subs %[oh], %[oh], #1 \n"            \
-  "bne Loop\n"
+  "bne Loop_%=\n"
 #else
 #define INIT                      \
   /*r10 = kw * dw * 8(c)*/        \
@@ -260,18 +260,18 @@ namespace fp16 {
   "vmov.i32 d8[0], %[weight]\n"
 
 #define LOOP                      \
-  "Loop:\n"                       \
+  "Loop_%=:\n"                    \
   "ldr r9, [%[param_ptr], #12]\n" \
   "push {%[oh], %[ow], %[pre_din]}\n"
 
 #define COMPUTE8                                 \
-  "L8:"                                          \
+  "L8_%=:"                                       \
   "cmp %[ow], #8\n"                              \
-  "blt L4\n"                                     \
+  "blt L4_%=\n"                                  \
   "mov %[oh], #8\n"                              \
   "mul %[oh], %[src_w_setup], %[oh]\n"           \
                                                  \
-  "L8Loop:\n"                                    \
+  "L8Loop_%=:\n"                                 \
   "vmov.i32 d8[1], %[pre_din]\n"                 \
   "vmov q8,  %[vbias]\n"                         \
   "vmov q9,  %[vbias]\n"                         \
@@ -284,9 +284,9 @@ namespace fp16 {
                                                  \
   /*kh*/                                         \
   "mov r11, %[kh]\n"                             \
-  "L8LoopH:\n"                                   \
+  "L8LoopH_%=:\n"                                \
   "mov r10, %[kw]\n" /*kw*/                      \
-  "L8LoopW:\n"                                   \
+  "L8LoopW_%=:\n"                                \
   "vld1.16 {q3}, [%[weight]]!\n"                 \
   "vld1.16 {q0}, [%[pre_din]], %[src_w_setup]\n" \
   "vmla.f16 q8,  q0, q3\n"                       \
@@ -307,10 +307,10 @@ namespace fp16 {
   "sub %[pre_din], %[pre_din], %[oh]\n"          \
   "add %[pre_din], %[pre_din], r9\n" /*kw*/      \
   "subs r10, r10, #1\n"                          \
-  "bne L8LoopW\n"                                \
+  "bne L8LoopW_%=\n"                             \
   "add %[pre_din], %[pre_din], r12\n" /*kh*/     \
   "subs r11, r11, #1\n"                          \
-  "bne L8LoopH\n"                                \
+  "bne L8LoopH_%=\n"                             \
   "vmov.i32 %[weight], d8[0]\n"                  \
   "sub %[ow], %[ow], #8\n"                       \
   "vmov.i32  %[pre_din], d8[1]\n"                \
@@ -322,25 +322,25 @@ namespace fp16 {
   "vst1.16  {d24-d27}, [%[pre_dout]]!\n" \
   "vst1.16  {d28-d31}, [%[pre_dout]]!\n" \
   "cmp %[ow], #8\n"                      \
-  "bge L8Loop\n"
+  "bge L8Loop_%=\n"
 
 #define COMPUTE4                                 \
-  "L4:\n"                                        \
+  "L4_%=:\n"                                     \
   "cmp %[ow], #4\n"                              \
-  "blt L1\n"                                     \
+  "blt L1_%=\n"                                  \
   "mov %[oh], #4\n"                              \
   "mul %[oh], %[src_w_setup], %[oh]\n"           \
                                                  \
-  "L4Loop:\n"                                    \
+  "L4Loop_%=:\n"                                 \
   "vmov.i32 d8[1], %[pre_din]\n"                 \
   "vmov q8,  %[vbias]\n"                         \
   "vmov q9,  %[vbias]\n"                         \
   "vmov q10, %[vbias]\n"                         \
   "vmov q11, %[vbias]\n" /*kh*/                  \
   "mov r11, %[kh]\n"                             \
-  "L4LoopH:\n" /*kw*/                            \
+  "L4LoopH_%=:\n" /*kw*/                         \
   "mov r10, %[kw]\n"                             \
-  "L4LoopW:\n"                                   \
+  "L4LoopW_%=:\n"                                \
   "vld1.16 {q3}, [%[weight]]!\n"                 \
   "vld1.16 {q0}, [%[pre_din]], %[src_w_setup]\n" \
   "vmla.f16 q8,  q0, q3\n"                       \
@@ -353,10 +353,10 @@ namespace fp16 {
   "sub %[pre_din], %[pre_din], %[oh]\n"          \
   "add %[pre_din], %[pre_din], r9\n" /*kw*/      \
   "subs r10, r10, #1\n"                          \
-  "bne L4LoopW\n"                                \
+  "bne L4LoopW_%=\n"                             \
   "add %[pre_din], %[pre_din], r12\n" /*kh*/     \
   "subs r11, r11, #1\n"                          \
-  "bne L4LoopH\n"                                \
+  "bne L4LoopH_%=\n"                             \
   "vmov.i32 %[weight], d8[0]\n"                  \
   "sub %[ow], %[ow], #4\n"                       \
   "vmov.i32 %[pre_din], d8[1]\n"                 \
@@ -367,24 +367,24 @@ namespace fp16 {
   "vst1.16  {d20-d23}, [%[pre_dout]]!\n"
 
 #define COMPUTE1                      \
-  "L1:\n"                             \
+  "L1_%=:\n"                          \
   "cmp %[ow], #1\n"                   \
-  "blt END\n"                         \
-  "L1Loop:\n"                         \
+  "blt 0f\n"                          \
+  "L1Loop_%=:\n"                      \
   "vmov.i32 d8[1], %[pre_din]\n"      \
   "vmov q8,  %[vbias]\n" /*kh*/       \
   "mov r11, %[kh]\n"                  \
-  "L1LoopH:\n"                        \
+  "L1LoopH_%=:\n"                     \
   "mov r10, %[kw]\n" /*kw*/           \
-  "L1LoopW:\n"                        \
+  "L1LoopW_%=:\n"                     \
   "vld1.16 {q3}, [%[weight]]!\n"      \
   "vld1.16 {q0}, [%[pre_din]], r9\n"  \
   "vmla.f16 q8, q0, q3\n" /*kw*/      \
   "subs r10, r10, #1\n"               \
-  "bne L1LoopW\n" /*kh*/              \
+  "bne L1LoopW_%=\n" /*kh*/           \
   "add %[pre_din], %[pre_din], r12\n" \
   "subs r11, r11, #1\n"               \
-  "bne L1LoopH\n"                     \
+  "bne L1LoopH_%=\n"                  \
   "vmov.i32 %[weight], d8[0]\n"       \
   "sub %[ow], %[ow], #1\n"            \
   "vmov.i32 %[pre_din], d8[1]\n"      \
@@ -393,15 +393,15 @@ namespace fp16 {
 #define STORE1                           \
   "vst1.16  {d16-d17}, [%[pre_dout]]!\n" \
   "cmp %[ow], #1\n"                      \
-  "bge L1Loop\n"
+  "bge L1Loop_%=\n"
 
 #define END                          \
-  "END:\n"                           \
+  "0:\n"                             \
   "pop {%[oh], %[ow], %[pre_din]}\n" \
   "ldr r9, [%[param_ptr], #0]\n"     \
   "add %[pre_din], %[pre_din], r9\n" \
   "subs %[oh], %[oh], #1 \n"         \
-  "bne Loop\n"
+  "bne Loop_%=\n"
 #endif
 /*
 *The following function conv_depthwise_common_line is
