@@ -21,12 +21,26 @@
 namespace paddle {
 namespace lite {
 
-static size_t Hashed(const void* cpu_data,
+template <typename T>
+static double AveGrowCompute(const T* in, const size_t length) {
+  const double eps = 1e-5;
+  double ave_grow_rate = 0.0f;
+  for (size_t i = 1; i < length; ++i) {
+    ave_grow_rate += (in[i] - in[i - 1]) / (in[i - 1] + eps);
+  }
+  ave_grow_rate /= (length + eps);
+  return ave_grow_rate;
+}
+
+template <typename T>
+static size_t Hashed(const T* cpu_data,
                      int numel,
                      const std::string& precision,
                      bool trans) {
   std::hash<const void*> ptr_hasher;
-  auto hash_res = ptr_hasher(cpu_data);
+  auto hash_res = ptr_hasher(reinterpret_cast<const void*>(cpu_data));
+  double ave_grow_rate = AveGrowCompute(cpu_data, numel);
+  CombineHash(ave_grow_rate, &hash_res);
   CombineHash(numel, &hash_res);
   CombineHash(precision, &hash_res);
   CombineHash(trans, &hash_res);
@@ -187,7 +201,7 @@ XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
   const std::string cpu_dtype = CppTypeToString<Tcpu>();
   const std::string xpu_dtype = CppTypeToString<Txpu>();
   const std::string precision = cpu_dtype + xpu_dtype;
-  auto hashed_key = Hashed(cpu_data, numel, precision, data_transpose);
+  auto hashed_key = Hashed<Tcpu>(cpu_data, numel, precision, data_transpose);
   VLOG(3) << "cpu_data=" << cpu_data << ", numel=" << numel
           << ", precision=" << precision << ", transpose=" << data_transpose
           << ", hashed_key=" << hashed_key;

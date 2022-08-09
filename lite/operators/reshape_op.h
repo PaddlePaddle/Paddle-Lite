@@ -44,6 +44,7 @@ class ReshapeOp : public OpLite {
     return true;
   }
 
+  bool InferShape() override;
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     auto input_dims = param_.x->dims();
@@ -55,6 +56,16 @@ class ReshapeOp : public OpLite {
 
  protected:
   mutable ReshapeParam param_;
+  // shape tensor vector cache, only for reshape/reshape2
+  std::vector<std::vector<const Tensor *>> input_shape_tensor_vct_cache_{};
+
+ private:
+  std::vector<DDimLite> last_input_shapes_{};
+  std::vector<LoD> last_input_lods_{};
+  std::vector<DDimLite> last_output_shapes_{};
+  std::vector<LoD> last_output_lods_{};
+  // last shape tensor vector cache.
+  std::vector<std::vector<int>> last_shape_tensor_vals{};
 };
 
 class Reshape2Op : public ReshapeOp {

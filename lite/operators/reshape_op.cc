@@ -20,6 +20,86 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+bool ReshapeOp::InferShape() {
+  auto UseCache = [&, this]() -> bool {
+    if (last_input_shapes_.empty()) {
+      return false;
+    }
+    if (last_input_shapes_.size() == input_tensor_ptrs_cache_.size()) {
+      for (size_t i = 0; i < input_tensor_ptrs_cache_.size(); i++) {
+        if (last_input_shapes_[i] != input_tensor_ptrs_cache_[i]->dims() ||
+            last_input_lods_[i] != input_tensor_ptrs_cache_[i]->lod()) {
+          return false;
+        }
+      }
+      // if shape_tensor_vct_cache_ is empty, no need to check shape_tensor.
+      if (input_shape_tensor_vct_cache_.empty()) {
+        return true;
+      }
+
+      // check shape tensor vector cache here.
+      if (input_shape_tensor_vct_cache_.size() !=
+          last_shape_tensor_vals.size()) {
+        return false;
+      }
+      // check all shape_tensor's value is same.
+      for (size_t i = 0; i < input_shape_tensor_vct_cache_.size(); i++) {
+        auto shape_tensor_vct = input_shape_tensor_vct_cache_[i];
+        for (int k = 0; k < shape_tensor_vct.size(); ++k) {
+          if (!shape_tensor_vct[k]->dims().empty() &&
+              shape_tensor_vct[k]->target() == TargetType::kHost &&
+              shape_tensor_vct[k]->data<int>() != nullptr) {
+            if (shape_tensor_vct[k]->data<int>()[0] !=
+                last_shape_tensor_vals[i][k]) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+    return false;
+  };
+
+  if (InferShapeWithCache() && UseCache()) {
+    for (size_t i = 0; i < output_tensor_ptrs_cache_.size(); i++) {
+      output_tensor_ptrs_cache_[i]->Resize(last_output_shapes_[i]);
+      output_tensor_ptrs_cache_[i]->set_lod(last_output_lods_[i]);
+    }
+  } else {
+    this->InferShapeImpl();
+    if (InferShapeWithCache()) {
+      last_output_shapes_.clear();
+      last_output_lods_.clear();
+      for (size_t i = 0; i < output_tensor_ptrs_cache_.size(); i++) {
+        last_output_shapes_.push_back(output_tensor_ptrs_cache_[i]->dims());
+        last_output_lods_.push_back(output_tensor_ptrs_cache_[i]->lod());
+      }
+      last_input_shapes_.clear();
+      last_input_lods_.clear();
+      for (size_t i = 0; i < input_tensor_ptrs_cache_.size(); i++) {
+        last_input_shapes_.push_back(input_tensor_ptrs_cache_[i]->dims());
+        last_input_lods_.push_back(input_tensor_ptrs_cache_[i]->lod());
+      }
+
+      last_shape_tensor_vals.clear();
+      for (size_t i = 0; i < input_shape_tensor_vct_cache_.size(); i++) {
+        auto shape_tensor_vct = input_shape_tensor_vct_cache_[i];
+        std::vector<int> final_shape;
+        for (int k = 0; k < shape_tensor_vct.size(); ++k) {
+          if (!shape_tensor_vct[k]->dims().empty() &&
+              shape_tensor_vct[k]->target() == TargetType::kHost &&
+              shape_tensor_vct[k]->data<int>() != nullptr) {
+            final_shape.push_back(shape_tensor_vct[k]->data<int>()[0]);
+          }
+        }
+        last_shape_tensor_vals.push_back(final_shape);
+      }
+    }
+  }
+  return true;
+}
+
 bool ReshapeOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
@@ -88,6 +168,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
            "which contains Tensor, the shape's size can't be zero. "
            "But received shape's size is "
         << param_.shape_tensor_vct.size();
+    input_shape_tensor_vct_cache_.push_back(param_.shape_tensor_vct);
   }
   if (opdesc.HasInput("Shape") && !opdesc.Input("Shape").empty()) {
     auto var = scope->FindVar(opdesc.Input("Shape").front());
