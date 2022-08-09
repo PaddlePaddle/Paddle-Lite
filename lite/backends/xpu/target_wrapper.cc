@@ -195,6 +195,8 @@ LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
 // xpu quantizer
 LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> TargetWrapperXPU::quantizer_{
     nullptr};
-
+// xpu set cluster sdnn
+LITE_THREAD_LOCAL int TargetWrapperXPU::cluster_num{0};
+LITE_THREAD_LOCAL int TargetWrapperXPU::sdnn_num{0};
 }  // namespace lite
 }  // namespace paddle
