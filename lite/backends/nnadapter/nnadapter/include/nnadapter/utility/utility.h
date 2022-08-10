@@ -74,7 +74,10 @@ void CopyOperandTypeExceptQuantParams(NNAdapterOperandType* dst_type,
 // Caculate the production of the given dimensions
 int64_t ProductionOfDimensions(const int32_t* input_dimensions_data,
                                uint32_t input_dimensions_count);
+int64_t ProductionOfDimensions(const uint32_t* input_dimensions_data,
+                               uint32_t input_dimensions_count);
 int64_t ProductionOfDimensions(const std::vector<int32_t>& input_dimensions);
+int64_t ProductionOfDimensions(const std::vector<uint32_t>& input_dimensions);
 // Transpose the given dimensions, similar to numpy.transpose
 void TransposeDimensions(int32_t* input_dimensions,
                          const std::vector<int32_t>& permutation,

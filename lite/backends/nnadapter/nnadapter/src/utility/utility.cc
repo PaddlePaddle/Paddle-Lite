@@ -297,24 +297,29 @@ NNADAPTER_EXPORT void CopyOperandTypeExceptQuantParams(
   CopyOperandTypeWithDimensions(dst_type, src_type);
 }
 
-NNADAPTER_EXPORT int64_t ProductionOfDimensions(
-    const int32_t* input_dimensions_data, uint32_t input_dimensions_count) {
-  int64_t production = 1;
-  for (uint32_t i = 0; i < input_dimensions_count; i++) {
-    auto dimension = input_dimensions_data[i];
-    NNADAPTER_CHECK_GT(dimension, 0);
-    production *= dimension;
+#define PRODUCTION_OF_DIMENSIONS(T)                                      \
+  NNADAPTER_EXPORT int64_t ProductionOfDimensions(                       \
+      const T* input_dimensions_data, uint32_t input_dimensions_count) { \
+    int64_t production = 1;                                              \
+    for (uint32_t i = 0; i < input_dimensions_count; i++) {              \
+      auto dimension = input_dimensions_data[i];                         \
+      NNADAPTER_CHECK_GT(dimension, 0);                                  \
+      production *= dimension;                                           \
+    }                                                                    \
+    return production;                                                   \
+  }                                                                      \
+  NNADAPTER_EXPORT int64_t ProductionOfDimensions(                       \
+      const std::vector<T>& input_dimensions) {                          \
+    return !input_dimensions.empty()                                     \
+               ? ProductionOfDimensions(&input_dimensions[0],            \
+                                        input_dimensions.size())         \
+               : 1;                                                      \
   }
-  return production;
-}
 
-NNADAPTER_EXPORT int64_t
-ProductionOfDimensions(const std::vector<int32_t>& input_dimensions) {
-  return !input_dimensions.empty()
-             ? ProductionOfDimensions(&input_dimensions[0],
-                                      input_dimensions.size())
-             : 1;
-}
+PRODUCTION_OF_DIMENSIONS(int32_t)
+PRODUCTION_OF_DIMENSIONS(uint32_t)
+
+#undef PRODUCTION_OF_DIMENSIONS
 
 NNADAPTER_EXPORT void TransposeDimensions(
     int32_t* input_dimensions,
