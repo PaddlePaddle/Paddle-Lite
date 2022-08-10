@@ -324,7 +324,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_SLICE:
-        input_args = {"input", "axes", "start", "ends"};
+        input_args = {"input", "axes", "start", "ends", "steps"};
         output_args = {"output"};
         break;
       case NNADAPTER_CLIP:
@@ -651,6 +651,7 @@ NNADAPTER_EXPORT std::string OperandLayoutCodeToString(
     NNADAPTER_TYPE_TO_STRING(NCHW);
     NNADAPTER_TYPE_TO_STRING(NHWC);
     NNADAPTER_TYPE_TO_STRING(HWCN);
+    NNADAPTER_TYPE_TO_STRING(HWNC);
     default:
       name = "UNKNOWN";
       break;

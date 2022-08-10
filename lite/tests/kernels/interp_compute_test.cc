@@ -575,7 +575,7 @@ TEST(Interp, precision) {
   TestInterpScale(place, abs_error);
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 2e-5;
+  abs_error = 1e-2;
   TestInterpOuthw(place, abs_error);
   TestInterpScale(place, abs_error);
   TestInterpAlignCorners(place, abs_error);

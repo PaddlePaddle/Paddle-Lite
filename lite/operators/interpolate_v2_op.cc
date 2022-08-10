@@ -65,7 +65,6 @@ bool InterpolateV2Op::InferShapeImpl() const {
     float scale_w = -1.f;
     if (Scale) {
       auto Scale_dims = Scale->dims();
-      LOG(INFO) << "Scale->dims() " << Scale->dims();
       scale_h = Scale->data<float>()[0];
       scale_w = Scale->data<float>()[1];
       out_h = static_cast<int>(h * scale_h);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,27 +13,13 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+#include "core/types.h"
 
-template <typename T_W, typename T_IDS>
-class LookupTableCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::LookupTableParam;
+namespace nnadapter {
 
-  LookupTableCompute() = default;
+void RemoveUselessCast(core::Model *model);
 
-  void Run() override;
+void RemoveUselessMul(core::Model *model);
 
-  virtual ~LookupTableCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+}  // namespace nnadapter

@@ -407,7 +407,6 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2DTranspose(
         {operation}, input_operand, transpose_input_operand);
     SetPermutation(transpose_input_operand, kNCHW2NHWC);
   }
-  std::vector<int32_t> filter_permutation = {};
   if (is_per_channel) {
     filter_operand->type.symm_per_channel_params.channel_dim = 0;
   }
@@ -1109,6 +1108,31 @@ void NCHW2NHWCDataLayoutConverter::ConvertStack(core::Operation* operation) {
   }
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertTile(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  NNADAPTER_CHECK(IsConstantOperand(input_operands[1]));
+  int32_t* repeat_data = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  int32_t repeat_count = input_operands[1]->length / sizeof(int32_t);
+  std::vector<int32_t> repeat(repeat_count);
+  auto input_permutation = GetPermutation(input_operand);
+  NNADAPTER_CHECK_EQ(repeat_count,
+                     static_cast<int32_t>(input_permutation.size()));
+  for (int i = 0; i < repeat_count; i++) {
+    repeat[i] = repeat_data[input_permutation[i]];
+  }
+  memcpy(repeat_data, repeat.data(), input_operands[1]->length);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertTranspose(
     core::Operation* operation) {
   auto& input_operands = operation->input_operands;
@@ -1295,6 +1319,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_STACK:
         ConvertStack(operation);
+        break;
+      case NNADAPTER_TILE:
+        ConvertTile(operation);
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);

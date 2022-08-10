@@ -511,7 +511,7 @@ TEST(Activation_leaky_relu, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 2e-5;
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
@@ -698,7 +698,7 @@ TEST(Activation_tanh, precision) {
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 2e-5;
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
   for (auto& dims : test_dims) {
@@ -750,7 +750,7 @@ TEST(Activation_swish, precision) {
   abs_error = 1e-2;
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 2e-5;
+  abs_error = 1e-2;
   coefs = {1.};
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
@@ -815,6 +815,8 @@ TEST(Activation_relu6, precision) {
       dims.push_back(1);
     }
   }
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -1073,7 +1075,7 @@ TEST(Activation_gelu, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
 #else
   return;
 #endif

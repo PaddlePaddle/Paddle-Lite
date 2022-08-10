@@ -193,11 +193,8 @@ void FillLikeCumSumSubGatherAddFuser::BuildPattern() {
       CreatePattern("cum_sum_axis")
           ->IsOperationInputOperand(NNADAPTER_CUM_SUM, 1)
           ->MatchCondition([](const Node* node) -> bool {
-            auto operand = node->operand;
-            return operand != nullptr &&
-                   operand->type.precision == NNADAPTER_INT32 &&
-                   operand->length == sizeof(int32_t) &&
-                   *reinterpret_cast<int32_t*>(operand->buffer) == 1;
+            int32_t axis = *reinterpret_cast<int32_t*>(node->operand->buffer);
+            return axis == 1 || axis == -1;
           })
           ->IsIntermediate();
   auto cum_sum_exclusive =
