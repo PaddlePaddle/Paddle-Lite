@@ -1011,7 +1011,9 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
                              bias_val,
                              bias_val};
 #endif
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
+      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0, j = 0;
+                                                  i < h_in, j < h_out;
+                                                  i += 4, j += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
         uint16_t* val_mask = vmask;
@@ -1115,7 +1117,9 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
                              bias_val,
                              bias_val};
 #endif
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
+      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0, j = 0;
+                                                  i < h_in, j < h_out;
+                                                  i += 4, j += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
         uint16_t* val_mask = vmask;
@@ -1235,7 +1239,9 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
                              bias_val,
                              bias_val};
 #endif
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
+      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0, j = 0;
+                                                  i < h_in, j < h_out;
+                                                  i += 4, j += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
         uint16_t* val_mask = vmask;
@@ -1355,7 +1361,9 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
                              bias_val,
                              bias_val};
 #endif
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
+      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0, j = 0;
+                                                  i < h_in, j < h_out;
+                                                  i += 4, j += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
         uint16_t* val_mask = vmask;
