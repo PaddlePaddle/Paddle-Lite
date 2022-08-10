@@ -24,7 +24,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateFillLike(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareFillLike(core::Operation* operation) {
@@ -38,7 +38,19 @@ NNADAPTER_EXPORT int PrepareFillLike(core::Operation* operation) {
 }
 
 NNADAPTER_EXPORT int ExecuteFillLike(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  FILL_LIKE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  auto output_buffer = AllocateOperand(output_operand);
+  auto out_uint8 = reinterpret_cast<uint8_t*>(output_buffer);
+  auto out_length = output_operand->length;
+  auto value_uint8 = reinterpret_cast<uint8_t*>(value_operand->buffer);
+  auto value_length = value_operand->length;
+  for (int i = 0; i < out_length; i += value_length) {
+    memcpy(out_uint8, value_uint8, value_length);
+    out_uint8 += value_length;
+  }
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation
