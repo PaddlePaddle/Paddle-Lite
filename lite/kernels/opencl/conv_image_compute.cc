@@ -1685,7 +1685,8 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
     input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
-  } else if (kernel_func_names_[1] == "conv2d_common_mul_group") {
+  } else if (kernel_func_names_[0] == "mul_groups_fill0" && 
+             kernel_func_names_[1] == "conv2d_common_mul_group") {
     c_blk_ = (output_tensor_c_ / groups_ + 3) / 4 * groups_;
     w_blk_ = maptofactor(default_w_blk_, 4);
     nh_blk_ = default_nh_blk_;
