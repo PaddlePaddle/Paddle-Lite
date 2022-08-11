@@ -25,20 +25,12 @@ import hypothesis.strategies as st
 import numpy as np
 from functools import partial
 
-\
-
 
 class TestBitwiseNotOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         arm_places = [
-            Place(TargetType.ARM, PrecisionType.INT64, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.UINT8, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.BOOL, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+            Place(TargetType.ARM, PrecisionType.INT64, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places)
 
@@ -47,14 +39,14 @@ class TestBitwiseNotOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(
-            st.sampled_from(
-                ["int64", "int32", "int16", "int8", "uint8", "bool"]))
+        input_type = draw(st.sampled_from(["int64"]))
+
+        #["int64", "int32", "int16", "int8", "uint8", "bool"]))
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "bool":
                 return np.random.choice([True, False],
-                                        kwargs["shape"]).astype(np.bool)
+                                        kwargs["shape"]).astype(bool)
             if kwargs["type"] == "uint8":
                 return np.random.normal(0, 255,
                                         kwargs["shape"]).astype(np.uint8)

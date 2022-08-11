@@ -25,10 +25,10 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <class T, PrecisionType PType>
-class BitwiseCompute : public KernelLite<TARGET(kARM), PType> {
+class BitwiseCompute : public KernelLite<TARGET(kHost), PType> {
  public:
   void Run() override;
 
@@ -42,7 +42,7 @@ class BitwiseCompute : public KernelLite<TARGET(kARM), PType> {
 #endif
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
