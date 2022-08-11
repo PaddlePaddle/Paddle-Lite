@@ -28,83 +28,43 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class ReluCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+class ActivationComputeBuffer
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ActivationParam;
 
-  std::string doc() const override { return "Relu using cl::Buffer, kFloat"; }
+  std::string doc() const override { return "Activation using cl::Buffer, kFloat"; }
   void PrepareForRun() override {
+    act_param_ = param_.get_mutable<param_t>();
+    act_type_ = static_cast<int>(act_param_->active_type);
+    switch (act_type_) {
+      case 1:
+        kernel_func_name_ = "relu";
+        break;
+      case 2:
+        kernel_func_name_ = "relu6";
+        break;
+      case 5:
+        kernel_func_name_ = "sigmoid";
+        break;
+      case 6:
+        kernel_func_name_ = "tanh_act";
+        break;
+      case 18:
+        kernel_func_name_ = "gelu";
+        break;
+      default:
+        LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
+        return;
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/relu_kernel.cl",
+                                    "buffer/activation_kernel.cl",
                                     build_options_,
                                     time_stamp_);
-  }
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.X->dims();
-    size_t count = x_dims.production();
-
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    auto* x_buf = param.X->data<float, cl::Buffer>();
-    auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    VLOG(4) << TargetToStr(param.X->target());
-    VLOG(4) << TargetToStr(param.Out->target());
-
-    int arg_idx = 0;
-    cl_int status = kernel.setArg(arg_idx, *x_buf);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, (const int)count);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_buf);
-    CL_CHECK_FATAL(status);
-
-    auto global_work_size = cl::NDRange{count};
-
-    status = EnqueueNDRangeKernel(context,
-                                  kernel,
-                                  cl::NullRange,
-                                  global_work_size,
-                                  cl::NullRange,
-                                  nullptr,
-                                  event_);
-    CL_CHECK_FATAL(status);
-  }
-
-#ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-    ch->cl_event =
-        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
-  }
-#endif
-
- private:
-  std::string kernel_func_name_{"relu"};
-  std::string build_options_{"-DCL_DTYPE_float -DRELU"};
-  std::string time_stamp_{GetTimeStamp()};
-};
-
-class SigmoidCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  std::string doc() const override {
-    return "Sigmoid using cl::Buffer, kFloat";
-  }
-  void PrepareForRun() override {
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/sigmoid_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void Run() override {
@@ -114,14 +74,16 @@ class SigmoidCompute
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    auto* x_buf = param.X->data<float, cl::Buffer>();
-    auto* out_buf = param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    auto* x_buf = GET_BUFFER_GPU(param.X);
+    auto* out_buf =
+        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+            ? param.Out->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+            : param.Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
     VLOG(4) << TargetToStr(param.X->target());
     VLOG(4) << TargetToStr(param.Out->target());
 
+    auto& kernel = kernel_;
     int arg_idx = 0;
     cl_int status = kernel.setArg(arg_idx, *x_buf);
     CL_CHECK_FATAL(status);
@@ -151,8 +113,11 @@ class SigmoidCompute
 #endif
 
  private:
-  std::string kernel_func_name_{"sigmoid"};
-  std::string build_options_{"-DCL_DTYPE_float -DSIGMOID"};
+  param_t* act_param_{nullptr};
+  int act_type_{0};
+  cl::Kernel kernel_;
+  std::string kernel_func_name_{""};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 
@@ -164,9 +129,9 @@ class SigmoidCompute
 // Relu
 REGISTER_LITE_KERNEL(relu,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReluCompute,
+                     paddle::lite::kernels::opencl::ActivationComputeBuffer,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
@@ -175,10 +140,44 @@ REGISTER_LITE_KERNEL(relu,
 // Sigmoid
 REGISTER_LITE_KERNEL(sigmoid,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SigmoidCompute,
+                     paddle::lite::kernels::opencl::ActivationComputeBuffer,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .Finalize()
+    .Finalize();
+
+// gelu
+REGISTER_LITE_KERNEL(gelu,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ActivationComputeBuffer,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
+// relu6
+REGISTER_LITE_KERNEL(relu6,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ActivationComputeBuffer,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
+// tanh
+REGISTER_LITE_KERNEL(tanh,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ActivationComputeBuffer,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();
+
