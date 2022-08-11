@@ -74,6 +74,7 @@ class LITE_API LightPredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory();
+  bool use_low_precision_ = false;
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
@@ -125,7 +126,8 @@ class LITE_API LightPredictor {
       bool model_from_memory = false);
 
   void BuildRuntimeProgram(
-      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+      bool use_precision_low);
 
   void DequantizeWeight();
 
@@ -176,6 +178,8 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
+
+  bool use_low_precision_ = false;
 
  private:
   std::unique_ptr<lite::LightPredictor> raw_predictor_;

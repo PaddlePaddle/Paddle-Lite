@@ -50,6 +50,12 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   lite::arm::math::conv_3x3s2_direct_fp32(
       i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
   KERNEL_FUNC_NAME("conv_3x3s2_direct_fp32")
+
+  std::cout << "direct conv out fp32:" << std::endl;
+  for (int i = 0; i < 20; i++) {
+    std::cout << o_data[i] << ", " << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -221,7 +227,7 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
     KERNEL_FUNC_NAME("conv_3x3s1_direct_fp16")
   }
 
-  std::cout << "direct conv out :" << std::endl;
+  std::cout << "direct conv out fp16:" << std::endl;
   for (int i = 0; i < 20; i++) {
     std::cout << o_data[i] << ", " << std::endl;
   }

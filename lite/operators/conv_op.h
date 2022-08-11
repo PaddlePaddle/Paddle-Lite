@@ -68,6 +68,15 @@ class ConvOpLite : public OpLite {
   }
 #endif
 
+  bool AttachInput(const cpp::OpDescWrite& op_desc,
+                   lite::Scope* scope) override {
+    std::cout << "attatch conv op" << std::endl;
+    auto X = op_desc.Input("Input").front();
+    std::cout << X << std::endl;
+    param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
+    CHECK(param_.x);
+    return true;
+  }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
     auto X = op_desc.Input("Input").front();

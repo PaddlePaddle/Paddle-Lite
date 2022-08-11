@@ -45,8 +45,12 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
     raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
                                             config.is_model_from_memory()));
   }
+
   mode_ = config.power_mode();
   threads_ = config.threads();
+  raw_predictor_->use_low_precision_ =
+      (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true : false;
+
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {

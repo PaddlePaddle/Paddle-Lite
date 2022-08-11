@@ -41,7 +41,7 @@ void LightPredictor::Build(const std::string& lite_model_file,
   // fp16 Weight convert
   WeightFP32ToFP16();
 #endif
-  BuildRuntimeProgram(program_desc_);
+  BuildRuntimeProgram(program_desc_, use_low_precision_);
   PrepareFeedFetch();
 }
 
@@ -75,7 +75,7 @@ void LightPredictor::Build(const std::string& model_dir,
   // fp16 Weight convert
   WeightFP32ToFP16();
 #endif
-  BuildRuntimeProgram(program_desc_);
+  BuildRuntimeProgram(program_desc_, use_low_precision_);
   PrepareFeedFetch();
 }
 
@@ -167,6 +167,7 @@ const std::vector<PrecisionType>& LightPredictor::GetInputPrecisions() const {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
+  std::cout << "prepare feed1" << std::endl;
   std::vector<const cpp::OpDesc*> feeds;
   std::vector<const cpp::OpDesc*> fetchs;
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
@@ -180,24 +181,29 @@ void LightPredictor::PrepareFeedFetch() {
       fetchs.push_back(op_desc);
     }
   }
+  std::cout << "prepare feed2" << std::endl;
+
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
   input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
+    std::cout << "prepare feed3" << std::endl;
+    for (size_t i = 0; i < fetchs.size(); i++) {
+      output_names_[fetchs[i]->GetAttr<int>("col")] =
+          fetchs[i]->Input("X").front();
+    }
   }
-  for (size_t i = 0; i < fetchs.size(); i++) {
-    output_names_[fetchs[i]->GetAttr<int>("col")] =
-        fetchs[i]->Input("X").front();
-  }
+  std::cout << "prepare feed5" << std::endl;
   for (size_t i = 0; i < feeds.size(); i++) {
     input_precisions_[i] = GetInput(i)->precision();
   }
 }
 
 void LightPredictor::BuildRuntimeProgram(
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc) {
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+    bool use_precision_low) {
   auto* exe_scope = &scope_->NewScope();
   // Prepare workspace
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
@@ -255,73 +261,108 @@ void LightPredictor::BuildRuntimeProgram(
           if (op_type != "feed" && op_type != "fetch") {
             if (place.precision == static_cast<PrecisionType>(1)) {
               place.precision = static_cast<PrecisionType>(5);
+            } else if (place.precision == static_cast<PrecisionType>(4)) {
+              place.precision = static_cast<PrecisionType>(5);
+            } else {
+              std::cout << op_type << ":not precision float" << std::endl;
+              low_precision = 0;
             }
           }
         }
         auto kernels = op->CreateKernels({place});
         if (kernels.size() == 0) {
+          std::cout << op_type << ":not precision float" << std::endl;
           low_precision = 0;
         }
       }
     }
   }
   if (low_precision == 0)
+    use_low_precision_ = false;
+  else
+    use_low_precision_ = true;
+  /*
+  if (low_precision == 0)
     std::cout << "do not use fix precision" << std::endl;
   else
     std::cout << "use fix precision" << std::endl;
 
+  std::vector<std::string> fp16_ops{"conv2d",
+                                    "depthwise_conv2d",
+                                    "conv2d_transpose",
+                                    "fc",
+                                    "mul",
+                                    "matmul",
+                                    "matmul_v2",
+                                    "gru",
+                                    "sequence_conv",
+                                    "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
+                                    "elementwise_mul",
+                                    "prelu"};
+
   if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
     for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
       auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
+        std::cout<<"0.1"<<std::endl;
       for (size_t k = 0; k < block->OpsSize(); ++k) {
         auto* op_desc = block->GetOp<cpp::OpDesc>(k);
+        CHECK(op_desc != nullptr);
         std::string op_type = op_desc->Type();
-        // auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
-        // if (iter != fp16_ops.end()) {
+        auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
+        if (iter != fp16_ops.end()) {
+        std::cout<<"0.2"<<std::endl;
 
         auto input_names = op_desc->input_vars();
+
+        std::cout<<"0.3"<<std::endl;
         for (auto& input_name : input_names) {
+            std::cout<<"input_name:"<<input_name<<std::endl;
+            if(input_name == "") continue;
           if (input_name == "feed" || input_name == "fetch") continue;
           if (scope_->FindVar(input_name)) {
             if (!scope_->FindVar(input_name)->IsType<lite::Tensor>()) continue;
             std::cout << "scope:" << input_name << std::endl;
 
+            std::cout<<"1"<<std::endl;
             auto input_tensor =
                 scope_->Var(input_name)->GetMutable<lite::Tensor>();
 
-            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+            std::cout<<"2"<<std::endl;
+            if(input_tensor->persistable()) {
+            std::cout<<"3"<<std::endl;
 
-            input_tensor->set_precision(PRECISION(kFP16));
-            Tensor tmp_tensor;
-            tmp_tensor.CopyDataFrom(*input_tensor);
-            input_tensor->clear();
-            input_tensor->set_precision(PRECISION(kFP16));
+              if (input_tensor->precision() != PRECISION(kFloat)) continue;
+            std::cout<<"4"<<std::endl;
 
-            float16_t* fp_data = input_tensor->mutable_data<float16_t>();
-            const float* in_data = tmp_tensor.data<float>();
-            lite::arm::math::fp16::fp32_to_fp16(
-                in_data, fp_data, input_tensor->numel());
-          }
-          if (exe_scope->FindVar(input_name)) {
-            if (!exe_scope->FindVar(input_name)->IsType<lite::Tensor>())
-              continue;
-            std::cout << "exe_scpoe:" << input_name << std::endl;
+              input_tensor->set_precision(PRECISION(kFP16));
+              Tensor tmp_tensor;
+              tmp_tensor.CopyDataFrom(*input_tensor);
+            std::cout<<"5"<<std::endl;
+              input_tensor->clear();
+              input_tensor->set_precision(PRECISION(kFP16));
 
-            auto input_tensor =
-                scope_->Var(input_name)->GetMutable<lite::Tensor>();
-            if (input_tensor->precision() != PRECISION(kFloat)) continue;
-            input_tensor->set_precision(PRECISION(kFP16));
+            std::cout<<"6"<<std::endl;
+              float16_t* fp_data = input_tensor->mutable_data<float16_t>();
+              const float* in_data = tmp_tensor.data<float>();
+              lite::arm::math::fp16::fp32_to_fp16(
+                  in_data, fp_data, input_tensor->numel());
+            std::cout<<"7"<<std::endl;
+            }
           }
         }
-        //}
+        }
       }
     }
   }
+  */
   std::cout << "trans weight end" << std::endl;
 
   // Only extracting the ops and generate the runtime program from the main
   // block desc
-  program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIdx));
+  program_.reset(new RuntimeProgram(
+      program_desc, exe_scope, kRootBlockIdx, use_low_precision_));
 }
 
 void LightPredictor::DequantizeWeight() {

@@ -335,6 +335,14 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   const auto* w_data = flag_trans_weights_ ? weights_.data<float>()
                                            : param.filter->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  const float* fp_d = param.x->data<float>();
+  std::cout << "in depth conv fp32" << std::endl;
+  std::cout << std::endl;
+  for (int i = 0; i < 20; i++) {
+    std::cout << fp_d[i] << ", " << std::endl;
+  }
+  std::cout << std::endl;
+
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }

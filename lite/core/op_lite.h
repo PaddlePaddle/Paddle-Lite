@@ -87,6 +87,10 @@ class OpLite : public Registry {
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
+  virtual bool AttachInput(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
+    return false;
+  }
+
   bool Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope);
 
   const OpInfo *op_info() const { return op_info_.get(); }

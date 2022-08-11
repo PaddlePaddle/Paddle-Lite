@@ -63,6 +63,13 @@ namespace arm {
 template <>
 void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   PARAM_INIT
+  const float* fp_d = param.x->data<float>();
+  std::cout << "in float conv" << std::endl;
+  std::cout << std::endl;
+  for (int i = 0; i < 20; i++) {
+    std::cout << fp_d[i] << ", " << std::endl;
+  }
+  std::cout << std::endl;
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;

@@ -111,6 +111,7 @@ void CalibComputeInt64ToFp32<DLType>::Run() {
 template <DataLayoutType DLType>
 void CalibComputeFp16ToFp32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
+  std::cout << "in calib op" << std::endl;
   const auto* din = param.input->template data<float16_t>();
   for (int i = 0; i < 10; i++) {
     std::cout << "in:" << din[i] << std::endl;
@@ -124,10 +125,17 @@ void CalibComputeFp16ToFp32<DLType>::Run() {
 }
 template <DataLayoutType DLType>
 void CalibComputeFp32ToFp16<DLType>::Run() {
+  std::cout << "in calib op" << std::endl;
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float>();
+  for (int i = 0; i < 10; i++) {
+    std::cout << "in:" << din[i] << std::endl;
+  }
   auto* dout = param.output->template mutable_data<float16_t>();
   lite::arm::math::fp16::fp32_to_fp16(din, dout, param.input->numel());
+  for (int i = 0; i < 10; i++) {
+    std::cout << "out:" << dout[i] << std::endl;
+  }
 }
 #endif
 

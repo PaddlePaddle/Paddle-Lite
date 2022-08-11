@@ -26,11 +26,13 @@ class FeedCompute
   using param_t = operators::FeedParam;
 
   void Run() override {
+    std::cout << "in feed kernel" << std::endl;
     auto &param = Param<operators::FeedParam>();
     VLOG(4) << "feed_list.size: " << param.feed_list->size();
     VLOG(4) << "col " << param.col;
+    std::cout << "in feed kernel" << std::endl;
     const lite::Tensor &feed_item = (*param.feed_list)[param.col];
-    param.out->ShareDataWith(feed_item);
+    param.out->CopyDataFrom(feed_item);
   }
 };
 
