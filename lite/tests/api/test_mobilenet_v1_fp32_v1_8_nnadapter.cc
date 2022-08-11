@@ -53,7 +53,8 @@ TEST(MobileNetV1, test_mobilenet_v1_fp32_v1_8_nnadapter) {
   out_accuracy_threshold = 0.79f;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   nnadapter_device_names.emplace_back("qualcomm_qnn");
-  out_accuracy_threshold = 0.79f;
+  FLAGS_iteration = 1;
+  out_accuracy_threshold = 1.f;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   nnadapter_device_names.emplace_back("verisilicon_timvx");
   out_accuracy_threshold = 0.79f;

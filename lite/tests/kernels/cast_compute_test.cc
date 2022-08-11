@@ -55,6 +55,8 @@ class CastComputeTester : public arena::TestCase {
   void RunBaseline(Scope* scope) override {
     if (in_dtype_ == 20 && out_dtype_ == 5) {
       RunBaselineHelper<uint8_t, float>(scope);
+    } else if (in_dtype_ == 0 && out_dtype_ == 5) {
+      RunBaselineHelper<bool, float>(scope);
     } else if (in_dtype_ == 2 && out_dtype_ == 5) {
       RunBaselineHelper<int32_t, float>(scope);
     } else if (in_dtype_ == 3 && out_dtype_ == 5) {
@@ -79,48 +81,65 @@ class CastComputeTester : public arena::TestCase {
   }
 
   template <typename T1>
-  void PrepareDataHelper() {
-    std::vector<T1> x_data(dims_.production());
-    for (int i = 0; i < dims_.production(); i++) {
-      x_data[i] = static_cast<T1>(i % 128);
-    }
-    SetCommonTensor(x_, dims_, x_data.data());
-  }
+  void PrepareDataHelper();
 
-  void PrepareData() override {
-    // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
-    // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-    switch (in_dtype_) {
-      case 20:
-        PrepareDataHelper<uint8_t>();
-        break;
-      case 21:
-        PrepareDataHelper<int8_t>();
-        break;
-      case 1:
-        PrepareDataHelper<int16_t>();
-        break;
-      case 2:
-        PrepareDataHelper<int32_t>();
-        break;
-      case 3:
-        PrepareDataHelper<int64_t>();
-        break;
-      case 5:
-        PrepareDataHelper<float>();
-        break;
-      case 6:
-        PrepareDataHelper<double>();
-        break;
-      case 19:
-        PrepareDataHelper<size_t>();
-        break;
-      default:
-        LOG(FATAL) << "unsupported data type: " << in_dtype_;
-        break;
-    }
-  }
+  void PrepareData() override;
 };
+
+template <typename T1>
+void CastComputeTester::PrepareDataHelper() {
+  std::vector<T1> x_data(dims_.production());
+  for (int i = 0; i < dims_.production(); i++) {
+    x_data[i] = static_cast<T1>(i % 128);
+  }
+  SetCommonTensor(x_, dims_, x_data.data());
+}
+
+template <>
+void CastComputeTester::PrepareDataHelper<bool>() {
+  std::vector<uint8_t> x_data(dims_.production());
+  for (int i = 0; i < dims_.production(); i++) {
+    x_data[i] = static_cast<uint8_t>(i % 2);
+  }
+  SetCommonTensor(x_, dims_, reinterpret_cast<bool*>(x_data.data()));
+}
+
+void CastComputeTester::PrepareData() {
+  // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
+  // SIZE_T = 19;UINT8 = 20;INT8 = 21;
+  switch (in_dtype_) {
+    case 20:
+      PrepareDataHelper<uint8_t>();
+      break;
+    case 21:
+      PrepareDataHelper<int8_t>();
+      break;
+    case 0:
+      PrepareDataHelper<bool>();
+      break;
+    case 1:
+      PrepareDataHelper<int16_t>();
+      break;
+    case 2:
+      PrepareDataHelper<int32_t>();
+      break;
+    case 3:
+      PrepareDataHelper<int64_t>();
+      break;
+    case 5:
+      PrepareDataHelper<float>();
+      break;
+    case 6:
+      PrepareDataHelper<double>();
+      break;
+    case 19:
+      PrepareDataHelper<size_t>();
+      break;
+    default:
+      LOG(FATAL) << "unsupported data type: " << in_dtype_;
+      break;
+  }
+}
 
 void TestCast(Place place, float abs_error, int in_dtype, int out_dtype) {
   std::unique_ptr<arena::TestCase> tester(
@@ -145,6 +164,11 @@ TEST(Cast, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
   TestCast(place, abs_error, 2, 5);
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestCast(place, abs_error, 2, 5);
+  TestCast(place, abs_error, 0, 5);
   return;
 #else
   return;

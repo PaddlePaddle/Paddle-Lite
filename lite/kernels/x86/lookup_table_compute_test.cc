@@ -25,7 +25,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(lookup_table_x86, compute) {
-  LookupTableCompute<float> lookup_table;
+  LookupTableCompute<float, int64_t> lookup_table;
   operators::LookupTableParam param;
   lite::Tensor w, ids, out, out_ref;
   int64_t padding_idx = -1;
