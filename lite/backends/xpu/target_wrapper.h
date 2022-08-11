@@ -111,14 +111,6 @@ class TargetWrapper<TARGET(kXPU)> {
         quantizer_.reset(new XPUQuantizer());
       }
       CHECK(quantizer_.get());
-      if (conv_autotune) {
-        tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
-        tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
-      }
-      if (!conv_autotune_file.empty()) {
-        tls_raw_ctx_->_xpu1_conv_selector.set_autotune_file(
-            conv_autotune_file.c_str());
-      }
       int devid = -1;
       uint64_t max_l3_size = 0;
       XPU_CALL(xpu_current_device(&devid));
@@ -173,9 +165,6 @@ class TargetWrapper<TARGET(kXPU)> {
   // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
   static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
-  // conv autotune config
-  static LITE_THREAD_LOCAL bool conv_autotune;
-  static LITE_THREAD_LOCAL std::string conv_autotune_file;  // NOLINT
   // l3 cache config
   static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
   static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
