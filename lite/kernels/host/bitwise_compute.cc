@@ -36,6 +36,7 @@ void BitwiseCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+/*TODO: calib kernel do not support
 using bitwise_bool =
     paddle::lite::kernels::host::BitwiseCompute<bool, PRECISION(kBool)>;
 REGISTER_LITE_KERNEL(bitwise_not, kHost, kBool, kNCHW, bitwise_bool, bitwise_bl)
@@ -56,6 +57,7 @@ REGISTER_LITE_KERNEL(bitwise_not, kHost, kInt8, kNCHW, bitwise_int8, bitwise_i8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
     .Finalize();
+*/
 using bitwise_int16 =
     paddle::lite::kernels::host::BitwiseCompute<int16_t, PRECISION(kInt16)>;
 REGISTER_LITE_KERNEL(
