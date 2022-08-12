@@ -27,20 +27,31 @@ namespace nnadapter {
 
 class MatMulAddFuser : public PatternMatcher {
  public:
+  explicit MatMulAddFuser(bool restrict_2d_input)
+      : restrict_2d_input_(restrict_2d_input) {}
   void BuildPattern() override;
   bool HandleMatchedResults(core::Model* model,
                             const std::map<std::string, Node*>& nodes) override;
+
+ private:
+  bool restrict_2d_input_{false};
 };
 
 void MatMulAddFuser::BuildPattern() {
   // Operation patterns
   auto matmul_pattern =
       CreatePattern("matmul", NNADAPTER_MAT_MUL)
-          ->MatchCondition([](const Node* node) -> bool {
+          ->MatchCondition([this](const Node* node) -> bool {
             auto operation = node->operation;
-            return operation && operation->input_operands.size() == 4 &&
-                   operation->input_operands[0]->type.dimensions.count == 2 &&
-                   operation->input_operands[1]->type.dimensions.count == 2;
+            if (restrict_2d_input_) {
+              return operation && operation->input_operands.size() == 4 &&
+                     operation->input_operands[0]->type.dimensions.count == 2 &&
+                     operation->input_operands[1]->type.dimensions.count == 2;
+            } else {
+              return operation && operation->input_operands.size() == 4 &&
+                     operation->input_operands[0]->type.dimensions.count >= 2 &&
+                     operation->input_operands[1]->type.dimensions.count == 2;
+            }
           })
           ->IsIntermediate();
   auto add_pattern = CreatePattern("add", NNADAPTER_ADD)->IsIntermediate();
@@ -187,11 +198,12 @@ bool MatMulAddFuser::HandleMatchedResults(
   return true;
 }
 
-NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {
+NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model,
+                                                      bool restrict_2d_input) {
   NNADAPTER_VLOG(5) << "Apply MatMulAddFuser";
   bool stop;
   do {
-    MatMulAddFuser mat_mul_add_fuser;
+    MatMulAddFuser mat_mul_add_fuser(restrict_2d_input);
     stop = mat_mul_add_fuser.Apply(model) == 0;
   } while (!stop);
 }
