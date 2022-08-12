@@ -231,52 +231,56 @@ void LightPredictor::BuildRuntimeProgram(
   int low_precision = 1;
   std::string old_op;
 
-  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
-    auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(i);
-    for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
-      auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-      CHECK(op_desc);
-      std::string op_type = op_desc->Type();
+  if (lite::DeviceInfo::Global().has_fp16()) {
+    for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+      auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(i);
+      for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+        auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+        CHECK(op_desc);
+        std::string op_type = op_desc->Type();
 
-      auto op = LiteOpRegistry::Global().Create(op_type);
+        auto op = LiteOpRegistry::Global().Create(op_type);
 
-      std::unique_ptr<KernelBase> kernel;
-      if (op_desc->HasAttr(kKernelTypeAttr)) {
-        // Create op and pick up the best kernel according to the
-        // kKernelTypeAttr attribute
-        auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
-        std::string alias;
-        Place place;
-        KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-        op->Attach(*op_desc, exe_scope);
-        if (lite::DeviceInfo::Global().has_fp16()) {
+        std::unique_ptr<KernelBase> kernel;
+        if (op_desc->HasAttr(kKernelTypeAttr)) {
+          // Create op and pick up the best kernel according to the
+          // kKernelTypeAttr attribute
+          auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
+          std::string alias;
+          Place place;
+          KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
+          op->Attach(*op_desc, exe_scope);
           if (op_type != "feed" && op_type != "fetch") {
-            if (place.precision == static_cast<PrecisionType>(1)) {
-              place.precision = static_cast<PrecisionType>(5);
-            } else if (place.precision == static_cast<PrecisionType>(4)) {
-              place.precision = static_cast<PrecisionType>(5);
+            if (place.precision == PRECISION(kFloat)) {
+              place.precision = PRECISION(kFP16);
+            } else if (place.precision == PRECISION(kAny)) {
+              place.precision = PRECISION(kFP16);
             } else {
               low_precision = 0;
             }
           }
+          auto kernels = op->CreateKernels({place});
+          if (kernels.size() == 0) {
+            low_precision = 0;
+          }
         }
-        auto kernels = op->CreateKernels({place});
-        if (kernels.size() == 0) {
-          low_precision = 0;
+        if (old_op == "feed") {
+          if (op_type != "conv2d") {
+            low_precision = 0;
+          }
         }
+        old_op = op_type;
       }
-      if (old_op == "feed") {
-        if (op_type != "conv2d") {
-          low_precision = 0;
-        }
-      }
-      old_op = op_type;
     }
+  } else {
+    low_precision = 0;
   }
-  if (low_precision == 0)
-    use_low_precision_ = false;
-  else
+  if (low_precision == 1 && use_precision_low) {
     use_low_precision_ = true;
+    LOG(INFO) << "Inference with low precision!";
+  } else {
+    use_low_precision_ = false;
+  }
 
   // Only extracting the ops and generate the runtime program from the main
   // block desc

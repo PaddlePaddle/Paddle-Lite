@@ -287,9 +287,8 @@ RuntimeProgram::RuntimeProgram(
   PrecisionType old_type = PrecisionType::kFloat;
   PrecisionType new_type = PrecisionType::kFloat;
   std::string first = "fp32", second = "fp32";
-  Place old_place;
-
   int low_precision = 1;
+  std::string old_op;
 
   if (use_precision_low == true) {
     low_precision = 1;
@@ -367,7 +366,6 @@ RuntimeProgram::RuntimeProgram(
           op_type + "' is not supported by Paddle-Lite.";
 #endif
 
-      int flag = 0;
       if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
         if (op_type != "feed" && op_type != "fetch") {
           if (place.precision == static_cast<PrecisionType>(1)) {
@@ -376,7 +374,7 @@ RuntimeProgram::RuntimeProgram(
             place.precision = static_cast<PrecisionType>(5);
           }
         }
-
+        // transfer weight to fp16
         std::vector<std::string> fp16_ops{"conv2d",
                                           "depthwise_conv2d",
                                           "conv2d_transpose",
@@ -393,13 +391,11 @@ RuntimeProgram::RuntimeProgram(
                                           "prelu"};
 
         typedef __fp16 float16_t;
-
         auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
         if (iter != fp16_ops.end()) {
           auto input_names = op_desc->input_vars();
 
           for (auto& input_name : input_names) {
-            // std::cout << "input_name:" << input_name << std::endl;
             if (input_name == "") continue;
             if (input_name == "feed" || input_name == "fetch") continue;
             if (exec_scope_->FindVar(input_name)) {
@@ -428,11 +424,10 @@ RuntimeProgram::RuntimeProgram(
         }
 
         auto kernels = op->CreateKernels({place});
-        if (kernels.size() == 0) {
-          place.precision = static_cast<PrecisionType>(1);
-          kernels = op->CreateKernels({place});
-        }
-
+        // if (kernels.size() == 0) {
+        //  place.precision = static_cast<PrecisionType>(1);
+        //  kernels = op->CreateKernels({place});
+        //}
         if (kernels.size() == 0 && place.target == TargetType::kARM) {
           place.target = TargetType::kHost;
           kernels = op->CreateKernels({place});
@@ -448,136 +443,99 @@ RuntimeProgram::RuntimeProgram(
         CHECK(it != kernels.end());
         kernel = std::move(*it);
 
-        std::vector<std::string> input_names;
-        if (op_type != "concat" && op_type != "reshape2" &&
-            op_type != "stack" && op_type != "rnn")
-          input_names = op_desc->input_vars();
-        CHECK(op_desc != nullptr);
-        std::vector<std::string> input_names_new;
-        new_type = place.precision;
-        if (op_type == "feed") {
+        // insert calib op
+        if (old_op == "feed" || op_type == "fetch") {
+          auto input_names = op_desc->input_vars();
+          std::vector<std::string> input_names_new;
           for (int i = 0; i < input_names.size(); i++) {
-            auto input_name = input_names[i];
+            std::string input_name = input_names[i];
 
             if (exec_scope_->Var(input_name)) {
               if (!exec_scope_->FindVar(input_name)->IsType<lite::Tensor>())
                 continue;
-
               auto input_tensor =
                   exec_scope_->Var(input_name)->GetMutable<lite::Tensor>();
 
-              if (input_tensor->precision() == PRECISION(kFloat)) {
-                old_type = PRECISION(kFloat);
+              if ((!input_tensor->persistable())) {
+                cpp::OpDescWrite calib_desc;
+                if (op_type == "fetch") {
+                  calib_desc.SetType("calib_inplace");
+                } else {
+                  calib_desc.SetType("calib");
+                }
+                calib_desc.SetInput("Input", {input_name});
+                auto output_name = input_name + "_calib";
+                calib_desc.SetOutput("Out", {output_name});
+
+                auto op_calib = LiteOpRegistry::Global().Create("calib");
+                if (op_type == "fetch") {
+                  op_calib = LiteOpRegistry::Global().Create("calib_inplace");
+                }
+                auto x_var = exec_scope_->FindVar(input_name);
+                auto output_var = exec_scope_->Var(output_name);
+                auto output_tensor =
+                    exec_scope_->Var(output_name)->GetMutable<lite::Tensor>();
+
+                op_calib->Attach(calib_desc, exec_scope_);
+                Place fetch_calib_place;
+                fetch_calib_place.target = TARGET(kARM);
+                fetch_calib_place.layout = DATALAYOUT(kNCHW);
+                fetch_calib_place.precision = PRECISION(kFP16);
+                auto calib_kernels = op_calib->CreateKernels({place});
+                if (op_type == "fetch") {
+                  calib_kernels = op_calib->CreateKernels({fetch_calib_place});
+                }
+                std::string alias_calib;
+                if (op_type != "fetch")
+                  alias_calib = "fp32_to_fp16";
+                else
+                  alias_calib = "fp16_to_fp32";
+                auto it = std::find_if(calib_kernels.begin(),
+                                       calib_kernels.end(),
+                                       [&](std::unique_ptr<KernelBase>& it) {
+                                         return it->alias() == alias_calib;
+                                       });
+                std::unique_ptr<KernelBase> calib_kernel;
+                if (it != calib_kernels.end()) {
+                  calib_kernel = std::move(*it);
+
+                  instructions_[kRootBlockIdx].emplace_back(
+                      std::move(op_calib), std::move(calib_kernel));
+                } else {
+                }
+
+                input_names_new.push_back(output_name);
               }
             }
           }
-        }
-
-        if (op_type == "fetch") {
-          new_type = PRECISION(kFloat);
-        }
-
-        if (new_type != old_type && op_type != "feed" &&
-            op_type != "fill_constant" && low_precision == 1) {
-          flag = 1;
-          if (old_type == PrecisionType::kFloat) {
-            first = "fp32";
-          }
-          if (old_type == PrecisionType::kFP16) {
-            first = "fp16";
-          }
-          if (new_type == PrecisionType::kFloat) {
-            second = "fp32";
-          }
-          if (new_type == PrecisionType::kFP16) {
-            second = "fp16";
-          }
-          old_type = new_type;
-        }
-
-        for (int i = 0; i < input_names.size(); i++) {
-          std::string input_name = input_names[i];
-
-          if (exec_scope_->Var(input_name)) {
-            if (!exec_scope_->FindVar(input_name)->IsType<lite::Tensor>())
-              continue;
-            auto input_tensor =
-                exec_scope_->Var(input_name)->GetMutable<lite::Tensor>();
-
-            if ((!input_tensor->persistable()) && (flag == 1)) {
-              cpp::OpDescWrite calib_desc;
-              if (op_type == "fetch") {
-                calib_desc.SetType("calib_inplace");
-              } else {
-                calib_desc.SetType("calib");
-              }
-              calib_desc.SetInput("Input", {input_name});
-              auto output_name = input_name + "_calib";
-              calib_desc.SetOutput("Out", {output_name});
-
-              auto op_calib = LiteOpRegistry::Global().Create("calib");
-              if (op_type == "fetch") {
-                op_calib = LiteOpRegistry::Global().Create("calib_inplace");
-              }
-              auto x_var = exec_scope_->FindVar(input_name);
-              auto output_var = exec_scope_->Var(output_name);
-              auto output_tensor =
-                  exec_scope_->Var(output_name)->GetMutable<lite::Tensor>();
-
-              op_calib->Attach(calib_desc, exec_scope_);
-
-              old_place.target = TARGET(kARM);
-              old_place.layout = DATALAYOUT(kNCHW);
-              auto calib_kernels = op_calib->CreateKernels({place});
-              if (op_type == "fetch") {
-                calib_kernels = op_calib->CreateKernels({old_place});
-              }
-              std::string alias_calib = first + "_to_" + second;
-              auto it = std::find_if(calib_kernels.begin(),
-                                     calib_kernels.end(),
-                                     [&](std::unique_ptr<KernelBase>& it) {
-                                       return it->alias() == alias_calib;
-                                     });
-              std::unique_ptr<KernelBase> calib_kernel;
-              if (it != calib_kernels.end()) {
-                calib_kernel = std::move(*it);
-
-                instructions_[kRootBlockIdx].emplace_back(
-                    std::move(op_calib), std::move(calib_kernel));
-              } else {
-              }
-
-              input_names_new.push_back(output_name);
+          if (op_type != "fetch") {
+            cpp::OpDescWrite op_desc_write;
+            op_desc_write.SetInput("Input", input_names_new);
+            op->AttachInput(op_desc_write, exec_scope_);
+            kernels = op->CreateKernels({place});
+            if (kernels.size() == 0) {
+              place.precision = PRECISION(kFloat);
+              kernels = op->CreateKernels({place});
             }
+
+            if (kernels.size() == 0 && place.target == TargetType::kARM) {
+              place.target = TargetType::kHost;
+              kernels = op->CreateKernels({place});
+            }
+
+            CHECK_GT(kernels.size(), 0) << kernels_error_message;
+            auto it = std::find_if(kernels.begin(),
+                                   kernels.end(),
+                                   [&](std::unique_ptr<KernelBase>& it) {
+                                     return it->alias() == alias;
+                                   });
+
+            CHECK(it != kernels.end());
+            kernel = std::move(*it);
           }
         }
-        old_place = place;
 
-        if (flag == 1 && op_type != "fetch") {
-          cpp::OpDescWrite op_desc_write;
-          op_desc_write.SetInput("Input", input_names_new);
-          op->AttachInput(op_desc_write, exec_scope_);
-          kernels = op->CreateKernels({place});
-          if (kernels.size() == 0) {
-            place.precision = static_cast<PrecisionType>(1);
-            kernels = op->CreateKernels({place});
-          }
-
-          if (kernels.size() == 0 && place.target == TargetType::kARM) {
-            place.target = TargetType::kHost;
-            kernels = op->CreateKernels({place});
-          }
-
-          CHECK_GT(kernels.size(), 0) << kernels_error_message;
-          auto it = std::find_if(kernels.begin(),
-                                 kernels.end(),
-                                 [&](std::unique_ptr<KernelBase>& it) {
-                                   return it->alias() == alias;
-                                 });
-
-          CHECK(it != kernels.end());
-          kernel = std::move(*it);
-        }
+        old_op = op_type;
       } else {
         auto kernels = op->CreateKernels({place});
         if (kernels.size() == 0 && place.target == TargetType::kARM) {

@@ -35,21 +35,24 @@ namespace lite {
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
   if (config.lite_model_file().empty()) {
-    raw_predictor_.reset(
-        new LightPredictor(config.model_dir(),
-                           config.model_buffer(),
-                           config.param_buffer(),
-                           config.is_model_from_memory(),
-                           lite_api::LiteModelType::kNaiveBuffer));
+    raw_predictor_.reset(new LightPredictor(
+        config.model_dir(),
+        config.model_buffer(),
+        config.param_buffer(),
+        config.is_model_from_memory(),
+        lite_api::LiteModelType::kNaiveBuffer,
+        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
+                                                                  : false));
   } else {
-    raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
-                                            config.is_model_from_memory()));
+    raw_predictor_.reset(new LightPredictor(
+        config.lite_model_file(),
+        config.is_model_from_memory(),
+        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
+                                                                  : false));
   }
 
   mode_ = config.power_mode();
   threads_ = config.threads();
-  raw_predictor_->use_low_precision_ =
-      (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true : false;
 
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
