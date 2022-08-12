@@ -44,7 +44,7 @@ bool CalibInplaceOpLite::AttachImpl(const cpp::OpDesc &opdesc,
   CHECK(x_var);
   CHECK(output_var);
   param_.input = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.output = param_.input;
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (opdesc.HasAttr("scale")) {
     param_.scale = opdesc.GetAttr<float>("scale");

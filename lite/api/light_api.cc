@@ -183,10 +183,10 @@ void LightPredictor::PrepareFeedFetch() {
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
-    for (size_t i = 0; i < fetchs.size(); i++) {
-      output_names_[fetchs[i]->GetAttr<int>("col")] =
-          fetchs[i]->Input("X").front();
-    }
+  }
+  for (size_t i = 0; i < fetchs.size(); i++) {
+    output_names_[fetchs[i]->GetAttr<int>("col")] =
+        fetchs[i]->Input("X").front();
   }
   for (size_t i = 0; i < feeds.size(); i++) {
     input_precisions_[i] = GetInput(i)->precision();
@@ -305,6 +305,7 @@ void LightPredictor::DequantizeWeight() {
       fp_data[i * chout + j] = scale_list[j] * int_data[i * chout + j]; \
     }                                                                   \
   }
+
   auto is_weight_quantized_op = [](const cpp::OpDesc* op_desc) {
     CHECK(op_desc != nullptr);
     bool result = false;
@@ -397,6 +398,7 @@ void LightPredictor::DequantizeWeight() {
       }
     }
   }
+
 #undef PROCESS_CONV2D_DATA
 #undef PROCESS_FC_DATA
 }

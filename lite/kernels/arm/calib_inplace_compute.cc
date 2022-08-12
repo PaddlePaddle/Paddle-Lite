@@ -30,58 +30,21 @@ namespace arm {
 #ifdef ENABLE_ARM_FP16
 template <DataLayoutType DLType>
 void CalibInplaceComputeFp16ToFp32<DLType>::Run() {
-  //  std::cout << "in calib In 1" << std::endl;
   auto& param = this->template Param<operators::CalibInplaceParam>();
-
-  // std::cout << "in calib In 2" << std::endl;
-  // if(param.input->precision() == PRECISION(kFP16)) {
   lite::Tensor tmp;
   tmp.CopyDataFrom(*param.input);
-
-  // std::cout << "in calib In 3" << std::endl;
   auto din = tmp.template data<float16_t>();
-
-  // std::cout << "in calib In 4" << std::endl;
-
-  // for (int i = 0; i < 10; i++) {
-  // std::cout << "in:" << din[i] << std::endl;
-  //}
-
   auto* dout = param.output->template mutable_data<float>();
-
   lite::arm::math::fp16::fp16_to_fp32(din, dout, param.input->numel());
-
-  // for (int i = 0; i < 10; i++) {
-  // std::cout << "out:" << dout[i] << std::endl;
-  //}
-  //}
 }
 template <DataLayoutType DLType>
 void CalibInplaceComputeFp32ToFp16<DLType>::Run() {
-  // std::cout << "in calib In 1" << std::endl;
   auto& param = this->template Param<operators::CalibInplaceParam>();
-
-  // std::cout << "in calib In 2" << std::endl;
-  // if(param.input->precision() == PRECISION(kFloat)) {
   lite::Tensor tmp;
   tmp.CopyDataFrom(*param.input);
-
-  // std::cout << "in calib In 3" << std::endl;
   auto* din = tmp.template data<float>();
-  // std::cout << "in calib In 4" << std::endl;
-
   auto* dout = param.output->template mutable_data<float16_t>();
-  // std::cout << "in calib In 5" << std::endl;
-  // for (int i = 0; i < 10; i++) {
-  //  std::cout << "in:" << din[i] << std::endl;
-  // }
-
   lite::arm::math::fp16::fp32_to_fp16(din, dout, param.input->numel());
-  // std::cout << "in calib In 6" << std::endl;
-  // for (int i = 0; i < 10; i++) {
-  //  std::cout << "out:" << dout[i] << std::endl;
-  //}
-  //}
 }
 #endif
 

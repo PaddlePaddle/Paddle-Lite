@@ -50,12 +50,6 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   lite::arm::math::conv_3x3s2_direct_fp32(
       i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
   KERNEL_FUNC_NAME("conv_3x3s2_direct_fp32")
-
-  // std::cout << "direct conv out fp32:" << std::endl;
-  // for (int i = 0; i < 20; i++) {
-  //  std::cout << o_data[i] << ", " << std::endl;
-  //}
-  // std::cout << std::endl;
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -167,27 +161,6 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
-
-  //  const float16_t* fp_d = param.x->data<float16_t>();
-  // std::cout<<"direct conv in :"<<std::endl;
-  // for(int i = 0; i < 20; i++) {
-  //  std::cout<<fp_d[i]<<", "<<std::endl;
-  //}
-  // std::cout<<std::endl;
-
-  //  const float16_t* fp_w = weights_.data<float16_t>();
-  // std::cout<<"direct conv filter :"<<std::endl;
-  // for(int i = 0; i < 20; i++) {
-  //  std::cout<<fp_w[i]<<", "<<std::endl;
-  //}
-  // std::cout<<std::endl;
-  //  const float16_t* fp_b = param.bias->data<float16_t>();
-  // std::cout<<"direct conv bias :"<<std::endl;
-  // for(int i = 0; i < 20; i++) {
-  //  std::cout<<fp_b[i]<<", "<<std::endl;
-  //}
-  // std::cout<<std::endl;
-
   int iw = x_dims[3];  // nchw
   int ih = x_dims[2];
   int ic = x_dims[1];
@@ -226,12 +199,6 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                                   &ctx);
     KERNEL_FUNC_NAME("conv_3x3s1_direct_fp16")
   }
-
-  // std::cout << "direct conv out fp16:" << std::endl;
-  // for (int i = 0; i < 20; i++) {
-  //  std::cout << o_data[i] << ", " << std::endl;
-  //}
-  // std::cout << std::endl;
 }
 PROFILE_INFO(kFP16, kFP16)
 #endif

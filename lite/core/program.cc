@@ -553,7 +553,6 @@ RuntimeProgram::RuntimeProgram(
       }
 
     } else {
-      op->Attach(*op_desc, exec_scope_);
       // TODO(hong19860320) add kernel picking according to the type of input
       // and output tensors
       VLOG(3) << "The attr '" << kKernelTypeAttr

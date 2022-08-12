@@ -48,8 +48,6 @@ class CalibOpLite : public OpLite {
 
   bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) override;
 
-  void *getparam() { return &param_; }
-
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "calib"; }

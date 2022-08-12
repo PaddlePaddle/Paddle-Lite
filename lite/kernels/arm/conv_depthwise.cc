@@ -17,7 +17,6 @@
 #include "lite/backends/arm/math/conv_impl.h"
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
-#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 
 namespace paddle {
@@ -336,13 +335,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                            : param.filter->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
   const float* fp_d = param.x->data<float>();
-  // std::cout << "in depth conv fp32" << std::endl;
-  // std::cout << std::endl;
-  // for (int i = 0; i < 20; i++) {
-  //  std::cout << fp_d[i] << ", " << std::endl;
-  //}
-  // std::cout << std::endl;
-
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
@@ -476,29 +468,7 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
-
-  // if(param.x->precision() != PRECISION(kFP16)) {
-  //   Tensor tmp_tensor;
-  //   tmp_tensor.CopyDataFrom(*param.x);
-  //   param.x->clear();
-  //   param.x->set_precision(PRECISION(kFP16));
-  //   float16_t* fp_data = param.x->mutable_data<float16_t>();
-  //   const float* in_data = tmp_tensor.data<float>();
-  //   lite::arm::math::fp16::fp32_to_fp16(
-  //       in_data, fp_data, param.x->numel());
-  // }
-
-  //     if(param.x->precision() == PRECISION(kFP16))
-  //      std::cout<<"depth conv input precision: FP16" <<std::endl;
-  //     else
-  //      std::cout<<"depth conv input precision: other" <<std::endl;
-
   const float16_t* fp_d = param.x->data<float16_t>();
-  // std::cout << std::endl;
-  // for (int i = 0; i < 20; i++) {
-  //  std::cout << fp_d[i] << ", " << std::endl;
-  //}
-  // std::cout << std::endl;
 
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = flag_trans_weights_ ? weights_.data<float16_t>()
