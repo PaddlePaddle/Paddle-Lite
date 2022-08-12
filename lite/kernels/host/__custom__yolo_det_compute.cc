@@ -18,7 +18,6 @@
 #include <cmath>
 #include <utility>
 #include <vector>
-
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -26,16 +25,22 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T>
-inline T Sigmoid(T x) {
-  return (T)1. / ((T)1. + std::exp(-x));
+static inline float fast_exp(float x) {
+  union {
+    float f;
+    int32_t i;
+  } u;
+  u.i = (int32_t)(12102203.0f * x + 1065353216);
+  int32_t m = (u.i >> 7) & 0xFFFF;
+  u.i +=
+      ((((((((1277 * m) >> 14) + 14825) * m) >> 14) - 79749) * m) >> 11) - 626;
+  return u.f;
 }
 
-float CalConfScore(const float* data, int cls_idx) {
-  const float objectness = Sigmoid(data[4]);
-  const float confidence = Sigmoid(data[cls_idx + 5]);
-
-  return objectness * confidence;
+template <typename T>
+inline T Sigmoid(T x) {
+  // return (T)1. / ((T)1. + fast_exp(-x));
+  return 0.5 * (x / (1 + std::abs(x))) + 0.5;
 }
 
 void NMS(const std::vector<std::pair<float, int>>& score_index,
@@ -100,7 +105,6 @@ bool ForwardInClassNMS(const std::vector<lite::Tensor*>& inputs,
   int data_offset = class_num + 5;
   int input_h = img_size[0];
   int input_w = img_size[1];
-
   for (int c = 0; c < class_num; c++) {
     std::vector<float> bboxes;
     std::vector<std::pair<float, int>> score_idx;
@@ -112,8 +116,13 @@ bool ForwardInClassNMS(const std::vector<lite::Tensor*>& inputs,
       for (int yid = 0; yid < grid_h; yid++) {
         for (int xid = 0; xid < grid_w; xid++) {
           for (int b = 0; b < anchor_stride; b++) {
-            float score = CalConfScore(input_data, c);
-            if (score >= conf_thresh) {
+            float obj_score = Sigmoid(input_data[4]);
+            if (obj_score < conf_thresh) {
+              input_data += data_offset;
+              continue;
+            }
+            float conf = obj_score * Sigmoid(input_data[c + 5]);
+            if (conf >= conf_thresh) {
               // decode bbox
               const float pred_x = input_data[0];
               const float pred_y = input_data[1];
@@ -121,17 +130,17 @@ bool ForwardInClassNMS(const std::vector<lite::Tensor*>& inputs,
               const float pred_h = input_data[3];
               float dec_x = (xid + Sigmoid(pred_x)) / grid_w;
               float dec_y = (yid + Sigmoid(pred_y)) / grid_h;
-              float dec_w = exp(pred_w) *
+              float dec_w = fast_exp(pred_w) *
                             anchors[i * anchor_stride * 2 + b * 2] / input_w;
-              float dec_h = exp(pred_h) *
+              float dec_h = fast_exp(pred_h) *
                             anchors[i * anchor_stride * 2 + b * 2 + 1] /
                             input_h;
               bboxes.emplace_back(dec_x - dec_w * 0.5);
               bboxes.emplace_back(dec_y - dec_h * 0.5);
               bboxes.emplace_back(dec_x + dec_w * 0.5);
               bboxes.emplace_back(dec_y + dec_h * 0.5);
-              bboxes.emplace_back(score);
-              score_idx.emplace_back(std::make_pair(score, bbox_idx));
+              bboxes.emplace_back(conf);
+              score_idx.emplace_back(std::make_pair(conf, bbox_idx));
               bbox_idx++;
             }
             input_data += data_offset;
@@ -155,6 +164,7 @@ bool ForwardInClassNMS(const std::vector<lite::Tensor*>& inputs,
       if (xmax <= xmin || ymax <= ymin) {
         continue;
       }
+      outputs.emplace_back(0);
       outputs.emplace_back(c);
       outputs.emplace_back(bboxes[indices[k] * 5 + 4]);
       outputs.emplace_back(xmin * input_w);
@@ -196,8 +206,10 @@ void CustomYoloDetCompute<T, TType, PType>::Run() {
                     conf_thresh,
                     keep_top_k,
                     nms_threshold);
-  int output_num = outputs.size() / 6;
-  Output->Resize({output_num, 6});
+  int output_num = outputs.size() / 7;
+  Output->Resize({output_num, 7});
+  auto output_data = Output->template mutable_data<T>();
+  memcpy(output_data, outputs.data(), outputs.size() * sizeof(float));
 }
 
 }  // namespace host
@@ -216,5 +228,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("X2", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("ImgSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();

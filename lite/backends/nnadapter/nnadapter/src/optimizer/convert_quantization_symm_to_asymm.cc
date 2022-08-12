@@ -23,8 +23,7 @@
 
 namespace nnadapter {
 
-static void ConvertOperandSymmToAsymm(core::Operand* operand,
-                                      int32_t zero_point) {
+void ConvertOperandSymmToAsymm(core::Operand* operand, int32_t zero_point) {
   switch (operand->type.precision) {
     case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
       operand->type.precision = NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER;
@@ -58,8 +57,8 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
   }
 }
 
-static void PropagateAsymmZeroPoint(core::Operand* reference_operand,
-                                    core::Operand* target_operand) {
+void PropagateAsymmZeroPoint(core::Operand* reference_operand,
+                             core::Operand* target_operand) {
   auto& reference_type = reference_operand->type;
   auto& target_type = target_operand->type;
   if (IsAsymmPerLayerQuantType(reference_type.precision) &&
@@ -169,8 +168,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_DEQUANTIZE:
       case NNADAPTER_YOLO_BOX:
       case NNADAPTER_NON_MAX_SUPPRESSION:
-      case NNADAPTER_CUSTOM_YOLO_BOX_3D:
-      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER: {
+      case NNADAPTER_CUSTOM_YOLO_BOX_3D: {
       } break;
       default:
         NNADAPTER_LOG(FATAL) << "Missing the processing of "

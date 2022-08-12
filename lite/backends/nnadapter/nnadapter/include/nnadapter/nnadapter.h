@@ -941,7 +941,7 @@ typedef enum {
    * (a mini-batch of 2D inputs with additional channel dimension)
    * as described in the paper Group Normalization.
    *
-  * Inputs:
+   * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
    * of shape [N, C, ...].
    * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
@@ -949,7 +949,7 @@ typedef enum {
    * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
    * to the variance to prevent division by zero, defaults to 1e-5.
    * * 4: groups, a NNADAPTER_INT32 tensor of shape [1], the number of groups
-  * that divided from channels.
+   * that divided from channels.
    *
    * Outputs:
    * * 0: output, a tensor of the same shape and type as `input`.
@@ -1592,19 +1592,19 @@ typedef enum {
   NNADAPTER_REDUCE_SUM,
 
   /**
-  * Performs element-wise rectified linear activation.
-  * The output is calculated using this formula:
-  *     `output` = max(0, `input`)
-  *
-  * Inputs:
-  * * 0: input, a NNADAPTER_FLOAT32,
-  * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-  *
-  * Outputs:
-  * * 0: output, a tensor of the same shape and type as `input`.
-  *
-  * Available since version 1.
-  */
+   * Performs element-wise rectified linear activation.
+   * The output is calculated using this formula:
+   *     `output` = max(0, `input`)
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_RELU,
 
   /**
@@ -1856,19 +1856,19 @@ typedef enum {
   NNADAPTER_SPLIT,
 
   /**
-  * Performs element-wise square operation.
-  * The output is calculated using this formula:
-  *     `output` = `input`^2
-  *
-  * Inputs:
-  * * 0: input, a NNADAPTER_FLOAT32,
-  * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-  *
-  * Outputs:
-  * * 0: output, a tensor of the same shape and type as `input`.
-  *
-  * Available since version 1.
-  */
+   * Performs element-wise square operation.
+   * The output is calculated using this formula:
+   *     `output` = `input`^2
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_SQUARE,
 
   /**
@@ -2273,6 +2273,41 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_CUSTOM_YOLO_BOX_3D,
+
+  /**
+   * A custom operation, which adds the calculation of 3d information as output
+   * on the basis of yolo-box.
+   *
+   * Inputs:
+   * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor of shape [N, C, H, W], its
+   * dimension(C) stores box locations, confidence score and classification
+   * one-hot keys of each anchor box.
+   * * 1: imgsize, a NNADAPTER_INT32 tensor of shape [N, 2], holds height and
+   * width of each input image used for resizing output box in input image
+   * scale.
+   * * 2: anchors, a NNADAPTER_INT32 tensor of shape [2], represents the anchor
+   * width and height, it will be parsed pair by pair.
+   * * 3: class_num, a NNADAPTER_INT32 tensor of shape [1], represents number of
+   * classes.
+   * * 4: conf_thresh, a NNADAPTER_FLOAT32 tensor of shape [1], the confidence
+   * scores threshold of detection boxes, boxes with confidence scores under
+   * threshold should be ignored.
+   * * 5: downsample_ratio, a NNADAPTER_INT32 tensor of shape [1], down-sampling
+   * rate from network input to this operation input.
+   * * 6: nms_threshold, a NNADAPTER_FLOAT32 tensor with shape [1], the
+   * parameter for NMS.
+   * * 7: keep_top_k, a NNADAPTER_INT32 tensor with shape [1], number of total
+   * bboxes to be kept per image after NMS step.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as bboxes, with shape [No, 6].
+   * "No" is the number of all RoIs. Each row has 6 values: [label, confidence,
+   * xmin, ymin, xmax, ymax]
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CUSTOM_YOLO_DET,
 } NNAdapterOperationCode;
 
 /**

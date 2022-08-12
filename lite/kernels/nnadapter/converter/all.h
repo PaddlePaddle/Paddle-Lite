@@ -458,6 +458,7 @@ REGISTER_CONVERTER(multiclass_nms3,
 REGISTER_CONVERTER(__custom__yolo_box_3d,
                    ConvertCustomYoloBox3d,
                    "qualcomm_qnn");
+REGISTER_CONVERTER(__custom__yolo_det, ConvertCustomYoloDet, "qualcomm_qnn");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

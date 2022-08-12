@@ -15,10 +15,12 @@
 #pragma once
 
 #include "core/types.h"
-#include "driver/qualcomm_qnn/operation/type.h"
 
 namespace nnadapter {
 
-void ConvertQuantizationSymmToAsymm(core::Model *model);
+void ConvertOperandSymmToAsymm(core::Operand* operand, int32_t zero_point);
+void PropagateAsymmZeroPoint(core::Operand* reference_operand,
+                             core::Operand* target_operand);
+void ConvertQuantizationSymmToAsymm(core::Model* model);
 
 }  // namespace nnadapter

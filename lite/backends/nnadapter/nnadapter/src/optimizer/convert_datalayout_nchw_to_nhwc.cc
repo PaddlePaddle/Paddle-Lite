@@ -1197,16 +1197,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertUnsqueeze(
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
-void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
-  model_ = model;
-  // Initialize the permutation of model input operands
-  for (auto& operand : model_->input_operands) {
-    SetPermutation(operand,
-                   IdentityPermutation(operand->type.dimensions.count));
-  }
-  // Layout inference and get the permutations of all operands
-  std::vector<core::Operation*> operations =
-      SortOperationsInTopologicalOrder(model_);
+void NCHW2NHWCDataLayoutConverter::ConvertOperations(
+    std::vector<core::Operation*> operations) {
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
@@ -1350,7 +1342,6 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_YOLO_BOX:
       case NNADAPTER_NON_MAX_SUPPRESSION:
       case NNADAPTER_CUSTOM_YOLO_BOX_3D:
-      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
         SkipConversion(operation);
         break;
       default:
@@ -1361,6 +1352,19 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
     }
   }
+}
+
+void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
+  model_ = model;
+  // Initialize the permutation of model input operands
+  for (auto& operand : model_->input_operands) {
+    SetPermutation(operand,
+                   IdentityPermutation(operand->type.dimensions.count));
+  }
+  // Layout inference and get the permutations of all operands
+  std::vector<core::Operation*> operations =
+      SortOperationsInTopologicalOrder(model_);
+  ConvertOperations(operations);
   // Restore all of the model output operands if they have non-identity
   // permutation
   for (auto& output_operand : model_->output_operands) {
