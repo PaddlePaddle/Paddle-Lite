@@ -57,9 +57,9 @@ void fp32_to_int8(const float* din,
 #ifdef __aarch64__
       float32x4_t vmax = vdupq_n_f32(-127.0);
       asm volatile(
+          "0:                                         \n" /* main loop */
           "ldp q0, q1, [%[in]], #32                           \n"
           "ldp q2, q3, [%[in]], #32                   \n"
-          "0:                                         \n" /* main loop */
           "fmul v4.4s, v0.4s, %[scale].4s             \n"
           "fmul v5.4s, v1.4s, %[scale].4s             \n"
           "fmul v6.4s, v2.4s, %[scale].4s             \n"
@@ -74,14 +74,12 @@ void fp32_to_int8(const float* din,
           "bif v5.16b, %[vmax].16b, v9.16b            \n"
           "bif v6.16b, %[vmax].16b, v10.16b            \n"
           "bif v7.16b, %[vmax].16b, v11.16b            \n"
-          "ldp q0, q1, [%[in]], #32                   \n"
           "subs %[cnt], %[cnt], #1                    \n"
           /* fp32 - int32 */
           "FCVTAS v8.4s, v4.4s                        \n"
           "FCVTAS v9.4s, v5.4s                        \n"
           "FCVTAS v10.4s, v6.4s                       \n"
           "FCVTAS v11.4s, v7.4s                       \n"
-          "ldp q2, q3, [%[in]], #32                   \n"
           "sqxtn    v4.4h, v8.4s                      \n"
           "sqxtn2   v4.8h, v9.4s                      \n"
           "sqxtn    v5.4h, v10.4s                     \n"
