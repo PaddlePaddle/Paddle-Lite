@@ -174,7 +174,6 @@ class OpDescView : public OpDescAPI {
     VLOG(5) << "This function call is expensive.";
     std::vector<std::string> res;
     for (const auto& var : *(desc_->inputs())) {
-      std::cout << 11 << std::endl;
       if (var && var->arguments()) {
         res.emplace_back(var->arguments()->begin()->c_str(),
                          var->arguments()->end()->c_str());

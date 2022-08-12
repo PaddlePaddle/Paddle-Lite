@@ -336,12 +336,12 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                            : param.filter->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
   const float* fp_d = param.x->data<float>();
-  std::cout << "in depth conv fp32" << std::endl;
-  std::cout << std::endl;
-  for (int i = 0; i < 20; i++) {
-    std::cout << fp_d[i] << ", " << std::endl;
-  }
-  std::cout << std::endl;
+  // std::cout << "in depth conv fp32" << std::endl;
+  // std::cout << std::endl;
+  // for (int i = 0; i < 20; i++) {
+  //  std::cout << fp_d[i] << ", " << std::endl;
+  //}
+  // std::cout << std::endl;
 
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -494,11 +494,11 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   //      std::cout<<"depth conv input precision: other" <<std::endl;
 
   const float16_t* fp_d = param.x->data<float16_t>();
-  std::cout << std::endl;
-  for (int i = 0; i < 20; i++) {
-    std::cout << fp_d[i] << ", " << std::endl;
-  }
-  std::cout << std::endl;
+  // std::cout << std::endl;
+  // for (int i = 0; i < 20; i++) {
+  //  std::cout << fp_d[i] << ", " << std::endl;
+  //}
+  // std::cout << std::endl;
 
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = flag_trans_weights_ ? weights_.data<float16_t>()

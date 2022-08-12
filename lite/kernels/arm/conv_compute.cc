@@ -64,12 +64,12 @@ template <>
 void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   PARAM_INIT
   const float* fp_d = param.x->data<float>();
-  std::cout << "in float conv" << std::endl;
-  std::cout << std::endl;
-  for (int i = 0; i < 20; i++) {
-    std::cout << fp_d[i] << ", " << std::endl;
-  }
-  std::cout << std::endl;
+  // std::cout << "in float conv" << std::endl;
+  // std::cout << std::endl;
+  // for (int i = 0; i < 20; i++) {
+  //  std::cout << fp_d[i] << ", " << std::endl;
+  //}
+  // std::cout << std::endl;
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
@@ -164,11 +164,11 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   //      std::cout<<"conv input precision: other" <<std::endl;
 
   const float16_t* fp_d = param.x->data<float16_t>();
-  std::cout << std::endl;
-  for (int i = 0; i < 20; i++) {
-    std::cout << fp_d[i] << ", " << std::endl;
-  }
-  std::cout << std::endl;
+  // std::cout << std::endl;
+  // for (int i = 0; i < 20; i++) {
+  //  std::cout << fp_d[i] << ", " << std::endl;
+  //}
+  // std::cout << std::endl;
 
   /// select conv impl
   auto act_param = param.activation_param;

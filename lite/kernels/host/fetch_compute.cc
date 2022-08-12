@@ -31,10 +31,6 @@ class FetchCompute
     if (fetch_list->size() <= static_cast<size_t>(param.col)) {
       fetch_list->resize(param.col + 1);
     }
-    auto x_data = param.input->data<float>();
-    for (int i = 0; i < 10; i++) {
-      std::cout << "fetch:" << x_data[i] << std::endl;
-    }
 
     auto& dst = fetch_list->at(param.col);
     dst.ShareDataWith(*param.input);

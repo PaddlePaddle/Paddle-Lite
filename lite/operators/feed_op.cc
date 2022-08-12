@@ -31,22 +31,16 @@ class FeedOp : public OpLite {
   }
 
   bool InferShapeImpl() const override {
-    std::cout << "feed infer shape1" << std::endl;
     auto input_tensor = (*param_.feed_list)[param_.col];
-    std::cout << "feed infer shape2" << std::endl;
     auto output_tensor = param_.out;
     DDim output_dims = output_tensor->dims();
     auto input_dims = input_tensor.dims();
-    std::cout << "feed infer shape3" << std::endl;
     if (!output_dims.empty()) {
-      std::cout << "feed infer shape4" << std::endl;
       if (output_tensor->dims()[0] == -1) {
         output_dims[0] = input_dims[0];
         output_tensor->Resize(output_dims);
       }
-      std::cout << "feed infer shape5" << std::endl;
     } else {
-      std::cout << "feed infer shape6" << std::endl;
       output_tensor->Resize(input_dims);
     }
     return true;
@@ -60,7 +54,6 @@ class FeedOp : public OpLite {
     auto* feed_var = scope->FindVar(feed_var_name);
     CHECK(feed_var);
     auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
-    std::cout << "attach feed op" << std::endl;
     param_.feed_list = feed_tensor_list;
 
     auto out_name = opdesc.Output("Out").front();

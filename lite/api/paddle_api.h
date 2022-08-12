@@ -198,8 +198,6 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
 
-  // set Power_mode
-
   /// \brief Set path and file name of generated OpenCL compiled kernel binary.
   ///
   /// If you use GPU of specific soc, using OpenCL binary will speed up the

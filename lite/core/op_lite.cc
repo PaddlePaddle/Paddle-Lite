@@ -69,7 +69,6 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   std::vector<std::unique_ptr<KernelBase>> kernels;
   CHECK(!op_type_.empty()) << "op_type_ should be set first";
 
-  std::cout << "create kernel step1" << std::endl;
   auto pick_kernel = [&](const Place &place) {
     auto ks = KernelRegistry::Global().Create(
         op_type_, place.target, place.precision, place.layout);
@@ -81,7 +80,6 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     }
   };
 
-  std::cout << "create kernel step2" << std::endl;
   if (!kernel_type.empty()) {
     Place place;
     std::string op_type, alias;
@@ -91,7 +89,6 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     return kernels;
   }
 
-  std::cout << "create kernel step3" << std::endl;
   std::set<Place> expanded_places(places.begin(), places.end());
   for (auto &place : places) {
     // Pick kernels those support any Precision and any DataLayout, For example:
@@ -102,7 +99,6 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
     expanded_places.insert(
         Place(place.target, PRECISION(kAny), DATALAYOUT(kAny)));
   }
-  std::cout << "create kernel step4" << std::endl;
 
   std::set<TargetType> targets;
   for (auto place : expanded_places) {
