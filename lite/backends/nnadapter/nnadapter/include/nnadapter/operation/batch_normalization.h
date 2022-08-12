@@ -32,7 +32,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "scale_operand: " << OperandToString(scale_operand); \
   int32_t scale_count = scale_operand->length / sizeof(float);              \
   auto scale_data = reinterpret_cast<float*>(scale_operand->buffer);        \
-  for (uint32_t i = 0; i < scale_count && i < 5; i++) {                     \
+  for (uint32_t i = 0; i < scale_count && i < 16; i++) {                    \
     NNADAPTER_VLOG(5) << "scale[" << i << "]=" << scale_data[i];            \
   }                                                                         \
   /* Bias */                                                                \
@@ -41,7 +41,7 @@ namespace operation {
   int32_t bias_count = bias_operand->length / sizeof(float);                \
   NNADAPTER_CHECK_EQ(bias_count, scale_count);                              \
   auto bias_data = reinterpret_cast<float*>(bias_operand->buffer);          \
-  for (uint32_t i = 0; i < bias_count && i < 5; i++) {                      \
+  for (uint32_t i = 0; i < bias_count && i < 16; i++) {                     \
     NNADAPTER_VLOG(5) << "bias[" << i << "]=" << bias_data[i];              \
   }                                                                         \
   /* Mean */                                                                \
@@ -50,7 +50,7 @@ namespace operation {
   int32_t mean_count = mean_operand->length / sizeof(float);                \
   NNADAPTER_CHECK_EQ(mean_count, scale_count);                              \
   auto mean_data = reinterpret_cast<float*>(mean_operand->buffer);          \
-  for (uint32_t i = 0; i < mean_count && i < 5; i++) {                      \
+  for (uint32_t i = 0; i < mean_count && i < 16; i++) {                     \
     NNADAPTER_VLOG(5) << "mean[" << i << "]=" << mean_data[i];              \
   }                                                                         \
   /* Variance */                                                            \
@@ -60,7 +60,7 @@ namespace operation {
   int32_t variance_count = variance_operand->length / sizeof(float);        \
   NNADAPTER_CHECK_EQ(variance_count, scale_count);                          \
   auto variance_data = reinterpret_cast<float*>(variance_operand->buffer);  \
-  for (uint32_t i = 0; i < variance_count && i < 5; i++) {                  \
+  for (uint32_t i = 0; i < variance_count && i < 16; i++) {                 \
     NNADAPTER_VLOG(5) << "variance[" << i << "]=" << variance_data[i];      \
   }                                                                         \
   /* Epsilon */                                                             \
