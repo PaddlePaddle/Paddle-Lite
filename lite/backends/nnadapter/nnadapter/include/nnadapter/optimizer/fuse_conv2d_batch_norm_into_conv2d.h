@@ -18,6 +18,7 @@
 
 namespace nnadapter {
 
-void FuseConv2DBatchNormIntoConv2D(core::Model *model);
+void FuseConv2DBatchNormIntoConv2D(core::Model *model,
+                                   bool skip_quant_op = false);
 
 }  // namespace nnadapter

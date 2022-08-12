@@ -28,8 +28,11 @@ namespace nnadapter {
 class Conv2DBatchNormFuser : public PatternMatcher {
  public:
   explicit Conv2DBatchNormFuser(NNAdapterOperationType conv2d_type,
-                                NNAdapterOperationType batch_norm_type)
-      : conv2d_type_(conv2d_type), batch_norm_type_(batch_norm_type) {}
+                                NNAdapterOperationType batch_norm_type,
+                                bool skip_quant_op)
+      : conv2d_type_(conv2d_type),
+        batch_norm_type_(batch_norm_type),
+        skip_quant_op_(skip_quant_op) {}
   void BuildPattern() override;
   bool HandleMatchedResults(core::Model* model,
                             const std::map<std::string, Node*>& nodes) override;
@@ -37,6 +40,7 @@ class Conv2DBatchNormFuser : public PatternMatcher {
  private:
   NNAdapterOperationType conv2d_type_{NNADAPTER_CONV_2D};
   NNAdapterOperationType batch_norm_type_{NNADAPTER_BATCH_NORMALIZATION};
+  bool skip_quant_op_{false};
 };
 
 void Conv2DBatchNormFuser::BuildPattern() {
@@ -152,6 +156,7 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
       (IsInt8SymmPerLayerQuantType(conv2d_filter_operand->type.precision) ||
        IsInt8SymmPerChannelQuantType(conv2d_filter_operand->type.precision)) &&
       IsInt8SymmPerLayerQuantType(conv2d_output_operand->type.precision)) {
+    if (skip_quant_op_) return false;
     auto conv2d_filter_data =
         reinterpret_cast<int8_t*>(conv2d_filter_operand->buffer);
     auto conv2d_bias_data =
@@ -275,7 +280,8 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
   return true;
 }
 
-NNADAPTER_EXPORT void FuseConv2DBatchNormIntoConv2D(core::Model* model) {
+NNADAPTER_EXPORT void FuseConv2DBatchNormIntoConv2D(core::Model* model,
+                                                    bool skip_quant_op) {
   for (auto conv2d_type : {NNADAPTER_CONV_2D, NNADAPTER_CONV_2D_TRANSPOSE}) {
     for (auto batch_norm_type : {NNADAPTER_BATCH_NORMALIZATION}) {
       NNADAPTER_VLOG(5) << "Apply Conv2DBatchNormFuser for conv2d_type:"
@@ -284,8 +290,8 @@ NNADAPTER_EXPORT void FuseConv2DBatchNormIntoConv2D(core::Model* model) {
                         << OperationTypeToString(batch_norm_type);
       bool stop;
       do {
-        Conv2DBatchNormFuser conv2d_batch_norm_fuser(conv2d_type,
-                                                     batch_norm_type);
+        Conv2DBatchNormFuser conv2d_batch_norm_fuser(
+            conv2d_type, batch_norm_type, skip_quant_op);
         stop = conv2d_batch_norm_fuser.Apply(model) == 0;
       } while (!stop);
     }
