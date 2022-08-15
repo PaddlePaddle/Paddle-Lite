@@ -2272,6 +2272,11 @@ struct RollParam : ParamBase {
   std::vector<int64_t> axis{};
 };
 
+struct BitwiseParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
