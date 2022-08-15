@@ -197,7 +197,7 @@ TEST(tile, precision) {
   abs_error = 1e-2;
   alias = "def";
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
   alias = "def";
 #else
   return;

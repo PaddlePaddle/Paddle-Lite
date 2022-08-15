@@ -26,7 +26,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void LookupTableCompute::Run() {
+template <typename T_W, typename T_IDS>
+void LookupTableCompute<T_W, T_IDS>::Run() {
   auto& param = this->Param<param_t>();
   auto w = param.W;
   auto ids = param.Ids;
@@ -34,17 +35,17 @@ void LookupTableCompute::Run() {
 
   auto table_dim = w->dims();
   int64_t ids_numel = ids->numel();
-  auto ids_data = ids->data<int64_t>();
+  auto ids_data = ids->template data<T_IDS>();
 
   int64_t row_number = table_dim[0];
   int64_t row_width = table_dim[1];
-  auto table_data = w->data<float>();
-  auto dout = out->mutable_data<float>();
+  auto table_data = w->template data<T_W>();
+  auto dout = out->template mutable_data<T_W>();
 
   for (int64_t i = 0; i < ids_numel; ++i) {
     int ids_int = ids_data[i];
     if (param.padding_idx != -1 && ids_data[i] == param.padding_idx) {
-      memset(dout + i * row_width, 0, row_width * sizeof(float));
+      memset(dout + i * row_width, 0, row_width * sizeof(T_W));
     } else {
       CHECK_LT(ids_data[i], row_number)
           << "look uptable ids[i] < row_number check failed";
@@ -52,7 +53,7 @@ void LookupTableCompute::Run() {
 
       memcpy(dout + i * row_width,
              table_data + ids_int * row_width,
-             row_width * sizeof(float));
+             row_width * sizeof(T_W));
     }
   }
   *(out->mutable_lod()) = ids->lod();
@@ -63,25 +64,37 @@ void LookupTableCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(lookup_table,
-                     kARM,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::arm::LookupTableCompute,
-                     def)
+using LookupTableFloatInt64 =
+    paddle::lite::kernels::arm::LookupTableCompute<float, int64_t>;
+using LookupTableFloatInt32 =
+    paddle::lite::kernels::arm::LookupTableCompute<float, int32_t>;
+
+REGISTER_LITE_KERNEL(
+    lookup_table, kARM, kAny, kNCHW, LookupTableFloatInt64, def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(lookup_table_v2,
-                     kARM,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::arm::LookupTableCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    lookup_table_v2, kARM, kAny, kNCHW, LookupTableFloatInt64, def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("lookup_table_v2", 1)
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    lookup_table, kARM, kAny, kNCHW, LookupTableFloatInt32, float_int32)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    lookup_table_v2, kARM, kAny, kNCHW, LookupTableFloatInt32, float_int32)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindPaddleOpVersion("lookup_table_v2", 1)
     .Finalize();

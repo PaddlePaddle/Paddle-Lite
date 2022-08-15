@@ -190,7 +190,7 @@ REGISTER_CONVERTER(sigmoid,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,cambricon_mlu,verisilicon_timvx,kunlunxin_"
                    "xtcl,android_nnapi,nvidia_tensorrt,intel_openvino,"
-                   "eeasytech_npu");
+                   "eeasytech_npu,qualcomm_qnn");
 REGISTER_CONVERTER(relu,
                    ConvertUnaryActivations,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
@@ -214,9 +214,10 @@ REGISTER_CONVERTER(tanh,
                    "npu,amlogic_npu,cambricon_mlu,verisilicon_timvx,kunlunxin_"
                    "xtcl,android_nnapi,intel_openvino,nvidia_tensorrt,"
                    "eeasytech_npu,qualcomm_qnn");
-REGISTER_CONVERTER(abs,
-                   ConvertUnaryActivations,
-                   "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
+REGISTER_CONVERTER(
+    abs,
+    ConvertUnaryActivations,
+    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,qualcomm_qnn");
 REGISTER_CONVERTER(exp,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,nvidia_"
