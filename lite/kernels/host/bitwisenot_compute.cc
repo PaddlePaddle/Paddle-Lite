@@ -35,7 +35,12 @@ void BitwiseNotCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(bitwise_not, kHost, kAny, kNCHW, paddle::lite::kernels::host::BitwiseNotCompute, bit_bl)
+REGISTER_LITE_KERNEL(bitwise_not,
+                     kHost,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::host::BitwiseNotCompute,
+                     bit_bl)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .Finalize();
