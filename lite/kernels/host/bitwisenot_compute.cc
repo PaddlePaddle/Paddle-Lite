@@ -20,7 +20,7 @@ namespace kernels {
 namespace host {
 
 void BitwiseNotCompute::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = Param<param_t>();
   CHECK(param.X);
   const auto* input_data = param.X->data<bool>();
   auto* output_data = param.Out->mutable_data<bool>();
@@ -35,7 +35,12 @@ void BitwiseNotCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(bitwise_not, kHost, kAny, kNCHW, paddle::lite::kernels::host::BitwiseNotCompute, bit_bl)
+REGISTER_LITE_KERNEL(bitwise_not,
+                     kHost,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::host::BitwiseNotCompute,
+                     bit_bl)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .Finalize();

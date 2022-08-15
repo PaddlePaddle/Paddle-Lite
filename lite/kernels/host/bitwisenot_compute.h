@@ -27,7 +27,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class BitwiseNotCompute : public KernelLite<TARGET(kHost), KBool> {
+class BitwiseNotCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::BitwiseParam;
 
