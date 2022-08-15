@@ -92,7 +92,7 @@ class ActivationComputeBuffer
     status = kernel.setArg(++arg_idx, *out_buf);
     CL_CHECK_FATAL(status);
 
-    auto global_work_size = cl::NDRange{count};
+    auto global_work_size = cl::NDRange{(count + 7) >> 3};
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,

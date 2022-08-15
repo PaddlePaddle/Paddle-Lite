@@ -17,49 +17,55 @@ limitations under the License. */
 __kernel void relu(__global const CL_DTYPE* x_data,
                    const int count,
                    __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0);
-  CL_DTYPE alpha;
-  if (index < count) {
-    out_data[index] = activation(x_data[index], alpha);
-  }
+  const int idx = get_global_id(0) << 3;
+
+  const int index = (idx + 8) > count ? (count - 8) : idx;
+  CL_DTYPE8 in = vload8(0, x_data + index);
+  in = max((CL_DTYPE8)(0.0f), in);
+  vstore8(in, 0, out_data + index);
 }
+
 
 __kernel void relu6(__global const CL_DTYPE* x_data,
                    const int count,
                    __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0);
-  CL_DTYPE alpha;
-  if (index < count) {
-    out_data[index] = clamp(x_data[index], (CL_DTYPE)0, (CL_DTYPE)6);
-  }
+  const int idx = get_global_id(0) << 3;
+
+  const int index = (idx + 8) > count ? (count - 8) : idx;
+  CL_DTYPE8 in = vload8(0, x_data + index);
+  in = clamp(in, (CL_DTYPE8)(0.0f), (CL_DTYPE)6);
+  vstore8(in, 0, out_data + index);
 }
 
 __kernel void tanh_act(__global const CL_DTYPE* x_data,
                    const int count,
                    __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0);
-  CL_DTYPE alpha;
-  if (index < count) {
-    CL_DTYPE in = x_data[index];
-    out_data[index] = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
-  }
+  const int idx = get_global_id(0) << 3;
+
+  const int index = (idx + 8) > count ? (count - 8) : idx;
+  CL_DTYPE8 in = vload8(0, x_data + index);
+  in = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
+  vstore8(in, 0, out_data + index);
 }
 
 __kernel void gelu(__global const CL_DTYPE* x_data,
                    const int count,
                    __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0);
+  const int idx = get_global_id(0) << 3;
 
-  if (index < count) {
-    out_data[index] = (CL_DTYPE)(0.5f * x_data[index] * (1.0f + erf(x_data[index] / 1.41421f)));
-  }
+  const int index = (idx + 8) > count ? (count - 8) : idx;
+  CL_DTYPE8 in = vload8(0, x_data + index);
+  in = (CL_DTYPE8)0.5f * in * ((CL_DTYPE8)1.0f + erf(in / (CL_DTYPE8)1.41421f));
+  vstore8(in, 0, out_data + index);
 }
 
 __kernel void sigmoid(__global const CL_DTYPE* x_data,
-                      const int count,
-                      __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0);
-  if (index < count) {
-    out_data[index] = 1 / (1 + exp(-x_data[index]));
-  }
+                   const int count,
+                   __global CL_DTYPE* out_data) {
+  const int idx = get_global_id(0) << 3;
+
+  const int index = (idx + 8) > count ? (count - 8) : idx;
+  CL_DTYPE8 in = vload8(0, x_data + index);
+  in = (CL_DTYPE8)1 / ((CL_DTYPE8)1 + exp(-in));
+  vstore8(in, 0, out_data + index);
 }
