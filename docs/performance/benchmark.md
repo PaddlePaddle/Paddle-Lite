@@ -188,3 +188,6 @@
 
 ## 英特尔 OpenVINO 的性能数据
 请参考 [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)的最新性能数据
+
+## 亿智 NPU 的性能数据
+请参考 [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)的最新性能数据

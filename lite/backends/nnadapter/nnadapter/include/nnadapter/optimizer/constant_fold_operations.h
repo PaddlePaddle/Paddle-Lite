@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 
 namespace nnadapter {
 
-void FuseConv2DBatchNormIntoConv2D(core::Model *model,
-                                   bool skip_quant_op = false);
+void ConstantFoldOperations(core::Model* model);
 
 }  // namespace nnadapter

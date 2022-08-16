@@ -99,6 +99,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_ABS:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:

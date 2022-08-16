@@ -56,7 +56,7 @@ class StackComputeTester : public arena::TestCase {
   std::string input2_ = "X2";
   std::string output_ = "Out";
   int axis_ = 0;
-  DDim dims_{{1, 5, 6, 7}};
+  DDim dims_{{1, 6, 7}};
 
  public:
   StackComputeTester(const Place& place, const std::string& alias, float axis)
@@ -95,7 +95,7 @@ class StackComputeTester : public arena::TestCase {
 template <class T = float>
 void test_stack(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
-  for (float axis : {0, 1, 3, 4}) {
+  for (float axis : {0, 1, 3}) {
 #ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
     if (axis == 0) continue;
 #endif
@@ -118,7 +118,7 @@ TEST(Stack, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-5;
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -131,10 +131,6 @@ TEST(Stack, precision) {
 #endif
 
   test_stack<float>(place, abs_error);
-#ifndef LITE_WITH_XPU
-  place = TARGET(kHost);
-  test_stack<float>(place, abs_error);
-#endif
 }
 
 }  // namespace lite
