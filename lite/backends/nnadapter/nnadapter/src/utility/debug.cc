@@ -16,8 +16,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include "driver/nvidia_tensorrt/operation/type.h"
-#include "driver/qualcomm_qnn/operation/type.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -588,28 +586,6 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         };
         output_args = {"output"};
         break;
-      case NNADAPTER_CUSTOM_YOLO_BOX_3D_NMS_FUSER:
-        input_args = {"input0",
-                      "input1",
-                      "input2",
-                      "imgsize",
-                      "anchors0",
-                      "anchors1",
-                      "anchors2",
-                      "class_num",
-                      "conf_thresh",
-                      "downsample_ratio0",
-                      "downsample_ratio1",
-                      "downsample_ratio2",
-                      "scale_x_y",
-                      "background_label",
-                      "keep_top_k",
-                      "nms_eta",
-                      "nms_threshold",
-                      "nms_top_k",
-                      "normalized",
-                      "score_threshold"};
-        output_args = {"boxes", "scores", "location", "dim", "alpha"};
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -730,7 +706,6 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
-    NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_BOX_3D_NMS_FUSER);
     NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_BOX_3D);
     NNADAPTER_TYPE_TO_STRING(CUSTOM_YOLO_DET);
     NNADAPTER_TYPE_TO_STRING(ABS);

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 #include "core/types.h"
@@ -40,10 +41,5 @@ std::string OperandIdToString(core::Operand* operand);
 std::string OperandTypeToString(NNAdapterOperandType* type);
 std::string OperandValueToString(core::Operand* operand);
 std::string OperationIdToString(core::Operation* operation);
-std::string ArgsDescription(std::vector<std::string>& input_args,   // NOLINT
-                            std::vector<std::string>& output_args,  // NOLINT
-                            core::Operation* operation,
-                            size_t input_count,
-                            size_t output_count);
 
 }  // namespace nnadapter
