@@ -618,6 +618,12 @@ if (LITE_WITH_ARM)
                 COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/lac_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${PADDLE_SOURCE_DIR}/lite/demo/cxx/makefiles/lac_demo/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/lac_demo/Makefile"
             )
+            # Add armv8 ernie demo
+            if (ARM_TARGET_ARCH_ABI STREQUAL armv8)
+                add_custom_target(publish_inference_android_ernie_demo ${TARGET}
+                    COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/ernie_faster_tokenizer" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx")
+                add_dependencies(tiny_publish_cxx_lib publish_inference_android_ernie_demo)
+            endif()
             add_dependencies(tiny_publish_cxx_lib publish_inference_android_cxx_demos)
         endif()
 
