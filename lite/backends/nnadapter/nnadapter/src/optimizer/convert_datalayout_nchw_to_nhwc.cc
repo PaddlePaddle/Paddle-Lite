@@ -1339,8 +1339,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertOperations(
         ConvertUnsqueeze(operation);
         break;
       case NNADAPTER_DEQUANTIZE:
-      case NNADAPTER_YOLO_BOX:
       case NNADAPTER_NON_MAX_SUPPRESSION:
+      case NNADAPTER_YOLO_BOX:
       case NNADAPTER_CUSTOM_YOLO_BOX_3D:
         SkipConversion(operation);
         break;

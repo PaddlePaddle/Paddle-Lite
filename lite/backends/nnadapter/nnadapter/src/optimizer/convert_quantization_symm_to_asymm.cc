@@ -105,6 +105,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CHANNEL_SHUFFLE:
       case NNADAPTER_CLIP:
       case NNADAPTER_CUM_SUM:
+      case NNADAPTER_DEQUANTIZE:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_GELU:
@@ -165,9 +166,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
       } break;
-      case NNADAPTER_DEQUANTIZE:
-      case NNADAPTER_YOLO_BOX:
       case NNADAPTER_NON_MAX_SUPPRESSION:
+      case NNADAPTER_YOLO_BOX:
       case NNADAPTER_CUSTOM_YOLO_BOX_3D: {
       } break;
       default:
