@@ -19,11 +19,12 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-void BitwiseNotCompute::Run() {
-  auto& param = Param<param_t>();
+template <typename T>
+void BitwiseNotCompute<T>::Run() {
+  auto& param = this->template Param<param_t>();
   CHECK(param.X);
-  const auto* input_data = param.X->data<bool>();
-  auto* output_data = param.Out->mutable_data<bool>();
+  const auto* input_data = param.X->template data<T>();
+  auto* output_data = param.Out->template mutable_data<T>();
   for (int i = 0; i < param.X->numel(); ++i) {
     output_data[i] = ~input_data[i];
   }
@@ -39,8 +40,18 @@ REGISTER_LITE_KERNEL(bitwise_not,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::BitwiseNotCompute,
+                     paddle::lite::kernels::host::BitwiseNotCompute<bool>,
                      bit_bl)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .Finalize();
+REGISTER_LITE_KERNEL(bitwise_not,
+                     kHost,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::host::BitwiseNotCompute<int>,
+                     bit_i32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
