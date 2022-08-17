@@ -57,6 +57,7 @@ add_kernel(expand_v2_compute_xpu XPU basic SRCS expand_v2_compute.cc)
 add_kernel(range_compute_xpu XPU extra SRCS range_compute.cc)
 add_kernel(where_compute_xpu XPU extra SRCS where_compute.cc)
 add_kernel(gather_nd_compute_xpu XPU extra SRCS gather_nd_compute.cc)
+add_kernel(meshgrid_compute_xpu XPU basic SRCS meshgrid_compute.cc)
 
 # extra
 add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc)
@@ -97,6 +98,7 @@ add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc)
 add_kernel(is_empty_compute_xpu XPU extra SRCS is_empty_compute.cc)
 add_kernel(shape_compute_xpu XPU extra SRCS shape_compute.cc)
 add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.cc)
+add_kernel(multiclass_nms_compute_xpu XPU extra SRCS multiclass_nms_compute.cc)
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)

@@ -28,22 +28,22 @@ namespace operation {
 namespace math {
 
 template <typename T>
-int conv2d(const T* input_data,
-           const std::vector<int32_t>& input_shape,
-           const T* filter_data,
-           const std::vector<int32_t>& filter_shape,
-           const T* bias_data,
-           int pad_height_top,
-           int pad_height_bottom,
-           int pad_width_left,
-           int pad_width_right,
-           int stride_height,
-           int stride_width,
-           int dilation_height,
-           int dilation_width,
-           int group,
-           FuseCode fuse_code,
-           T* output_data) {
+static int conv2d(const T* input_data,
+                  const std::vector<int32_t>& input_shape,
+                  const T* filter_data,
+                  const std::vector<int32_t>& filter_shape,
+                  const T* bias_data,
+                  int pad_height_top,
+                  int pad_height_bottom,
+                  int pad_width_left,
+                  int pad_width_right,
+                  int stride_height,
+                  int stride_width,
+                  int dilation_height,
+                  int dilation_width,
+                  int group,
+                  FuseCode fuse_code,
+                  T* output_data) {
   if (!input_data || !filter_data || !output_data) {
     return -1;
   }

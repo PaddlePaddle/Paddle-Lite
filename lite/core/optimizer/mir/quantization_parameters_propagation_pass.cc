@@ -77,7 +77,15 @@ void QuantizationParametersPropagationPass::Apply(
       for (auto in_op_node : in_var_node->inlinks) {
         if (!in_op_node->IsStmt()) continue;
         auto in_op_info = in_op_node->AsStmt().mutable_op_info();
-        if (HasOutputThreshold(in_op_info, in_var_name, false)) {
+        bool in_op_is_quanted =
+            HasOutputThreshold(in_op_info, in_var_name, false);
+        auto in_op_in_vars = in_op_node->inlinks;
+        for (auto in_op_in_var : in_op_in_vars) {
+          in_op_is_quanted =
+              in_op_is_quanted ||
+              in_op_info->HasInputScale(in_op_in_var->arg()->name);
+        }
+        if (in_op_is_quanted) {
           // Use this input scale to update the output scale of the quantized op
           in_op_info->SetOutputScale(in_var_name, in_var_scale);
         }

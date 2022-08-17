@@ -59,7 +59,7 @@ CMAKE_API_LEVEL_OPTIONS=""
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {

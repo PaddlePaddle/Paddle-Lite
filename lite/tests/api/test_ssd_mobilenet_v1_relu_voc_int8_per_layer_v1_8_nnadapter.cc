@@ -60,6 +60,9 @@ TEST(ssd_mobilentert_v1,
   nnadapter_device_names.emplace_back("android_nnapi");
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
 #else
   return;
 #endif

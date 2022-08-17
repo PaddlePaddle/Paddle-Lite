@@ -14,11 +14,13 @@
 
 #include "optimizer/constant_fold_shape_and_associated_operations.h"
 #include <set>
+#include "optimizer/pattern_matcher.h"
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 

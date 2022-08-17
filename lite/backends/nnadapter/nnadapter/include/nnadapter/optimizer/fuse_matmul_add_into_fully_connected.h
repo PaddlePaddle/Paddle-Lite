@@ -18,6 +18,7 @@
 
 namespace nnadapter {
 
-void FuseMatMulAddIntoFullyConnected(core::Model *model);
+void FuseMatMulAddIntoFullyConnected(core::Model *model,
+                                     bool restrict_2d_input = false);
 
 }  // namespace nnadapter

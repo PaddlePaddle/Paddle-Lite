@@ -160,7 +160,7 @@ TEST(Concat, precision) {
   abs_error = 1e-5;
   use_axis_tensor = std::vector<bool>{false};
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 2e-5;
+  abs_error = 1e-2;
   use_axis_tensor = std::vector<bool>{false};
 #else
   return;

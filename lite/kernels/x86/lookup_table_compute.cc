@@ -14,32 +14,37 @@
 
 #include "lite/kernels/x86/lookup_table_compute.h"
 
-// REGISTER_LITE_KERNEL(lookup_table, kX86, kFloat, kNCHW,
-//                     paddle::lite::kernels::x86::LookupTableCompute<float>,
-//                     def)
-//    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
-//    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86))})
-//    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-//    .Finalize();
-//,
-REGISTER_LITE_KERNEL(lookup_table,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::LookupTableCompute<float>,
-                     def)
+using LookupTableFloatInt64 =
+    paddle::lite::kernels::x86::LookupTableCompute<float, int64_t>;
+using LookupTableFloatInt32 =
+    paddle::lite::kernels::x86::LookupTableCompute<float, int32_t>;
+
+REGISTER_LITE_KERNEL(
+    lookup_table, kX86, kFloat, kNCHW, LookupTableFloatInt64, def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
-REGISTER_LITE_KERNEL(lookup_table_v2,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::LookupTableCompute<float>,
-                     def)
+
+REGISTER_LITE_KERNEL(
+    lookup_table_v2, kX86, kFloat, kNCHW, LookupTableFloatInt64, def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("lookup_table_v2", 1)
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    lookup_table, kX86, kFloat, kNCHW, LookupTableFloatInt32, float_int32)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    lookup_table_v2, kX86, kFloat, kNCHW, LookupTableFloatInt32, float_int32)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindPaddleOpVersion("lookup_table_v2", 1)
     .Finalize();

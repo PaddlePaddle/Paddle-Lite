@@ -114,6 +114,12 @@ if(ARMLINUX)
     endif()
 endif()
 
+if(QNX)
+    add_definitions(-DLITE_WITH_QNX)
+    add_definitions(-D_QNX_SOURCE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -V${QNX_COMPILER_TARGET} -fPIC -D_QNX_SOURCE=1")
+endif()
+
 function(check_linker_flag)
     foreach(flag ${ARGN})
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flag}")
