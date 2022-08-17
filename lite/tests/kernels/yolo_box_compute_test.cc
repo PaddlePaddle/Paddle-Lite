@@ -272,7 +272,14 @@ void TestYoloBox(Place place, float abs_error) {
 TEST(YoloBox, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL));
   abs_error = 2e-2;
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)

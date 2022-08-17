@@ -372,6 +372,8 @@ TEST(YoloBox3d, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-3;
+#else
+  return;
 #endif
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
