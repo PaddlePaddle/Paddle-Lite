@@ -47,6 +47,7 @@ class TestNormOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
+        has_norm = draw(st.sampled_from([True, False]))
         in_num = draw(
             st.lists(
                 st.integers(
@@ -60,14 +61,23 @@ class TestNormOp(AutoScanTest):
         in_shape = in_num + in_c_h_w
         axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         epsilon = draw(st.sampled_from([0.9, 1., 1.1, 1e-5]))
-        norm_op = OpConfig(
-            type="norm",
-            inputs={"X": ["input_data"]},
-            outputs={"Out": ["output_data"],
-                     "Norm": ["Norm"]},
-            attrs={"axis": axis,
-                   "epsilon": epsilon,
-                   "is_test": 1})
+        if has_norm == True :
+            norm_op = OpConfig(
+                type="norm",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"],
+                        "Norm": ["Norm"]},
+                attrs={"axis": axis,
+                    "epsilon": epsilon,
+                    "is_test": 1})
+        else :
+            norm_op = OpConfig(
+                type="norm",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={"axis": axis,
+                    "epsilon": epsilon,
+                    "is_test": 1})
         program_config = ProgramConfig(
             ops=[norm_op],
             weights={},
