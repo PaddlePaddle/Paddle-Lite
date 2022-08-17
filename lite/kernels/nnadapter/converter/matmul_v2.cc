@@ -51,7 +51,11 @@ int ConvertMatmulV2(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_name)) {
+    out_scales = op->GetOutputScale(out_name);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
   // Mat_mul operation
   converter->AddOperation(

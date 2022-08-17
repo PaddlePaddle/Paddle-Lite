@@ -234,7 +234,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseConv2DBatchNormIntoConv2D(model);
     FuseConv2DAddIntoConv2D(model);
     FuseConv2DActivationIntoConv2D(model);
-    FuseMatMulAddIntoFullyConnected(model);
+    FuseMatMulAddIntoFullyConnected(model, true);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);

@@ -55,6 +55,10 @@ class DeleteQuantOpFuser : public FuseBase {
 };
 
 /* DequantOpFuser process conv2d/depthwise_conv2d/mul + fake_dequantize_max_abs.
+ *
+ * 1. Set previous op's weight scale info.
+ * 2. Restore float32 weight to int8.
+ * 3. Delete fake_dequantize_max_abs op.
 */
 class DequantOpFuser : public FuseBase {
  public:

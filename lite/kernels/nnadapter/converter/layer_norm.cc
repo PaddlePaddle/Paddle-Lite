@@ -73,7 +73,11 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
   auto epsilon_operand = converter->AddConstantOperand(epsilon);
   // Output operand
   auto out_name = op->Output("Y").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_name)) {
+    out_scales = op->GetOutputScale(out_name);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // LayerNorm operand
   converter->AddOperation(NNADAPTER_LAYER_NORMALIZATION,
                           {input_operand,
