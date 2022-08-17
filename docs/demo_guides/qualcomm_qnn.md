@@ -1,6 +1,6 @@
 # 高通 QNN 部署示例
 
-Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA8295P）上进行预测部署。
+Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA8295P）上进行预测部署。
 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Qualcomm QNN 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
@@ -15,10 +15,13 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
 
 ### 已支持的 Paddle 模型
 
-- ResNet-50
-- MobileNetV1
-- Ernie
-- 厂内各类业务模型
+- [mobilenet_v1_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz)
+- [resnet50_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
+- [yolov3_darknet53_270e_coco](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz)
+- [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
+- [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
 
 ### 已支持（或部分支持）的 Paddle 算子（ Kernel 接入方式）
 
@@ -33,11 +36,11 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
 
 ### 准备设备环境
 
-- 设备安装QNX系统，网口和串口都已配置，配置详情咨询高通。
+- 设备安装 QNX 系统，网口和串口都已配置，配置详情请咨询高通。
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
+- 下载示例程序 [ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -69,19 +72,19 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
           - run_with_adb.sh # 示例程序 adb 运行脚本
       - libs
         - PaddleLite
-        	- qnx
-        		- arm64
-        			- include
-        			- lib
-        				- qualcomm_qnn # 高通 QNN 在QNX下的运行时库、NNAdapter 运行时库、device HAL 库
+          - qnx
+            - amd64
+              - include # Paddle Lite 头文件
+              - lib # Paddle Lite 库文件
+                - qualcomm_qnn  # 高通 QNN 运行时库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libqualcomm_qnn.so # NNAdapter device HAL 库
                   - libqualcomm_qnn_cpu_custom_op_package.so # 高通 QNN CPU 自定义算子库
                   - libqualcomm_qnn_htp_custom_op_package.so # 高通 QNN HTP 自定义算子库
-                  - libQnnHtp.so  # 下列为高通 QNN 在真机的 QNX 系统上运行时所需库
+                  - libQnnHtp.so    # 下列为高通 QNN 在真机的 QNX 系统上运行时所需库
                   - libQnnCpu.so
                   - libQnn*.so
-        					- hexagon-v68/lib/unsigned/ # 高通在 QNX 运行的 dsp 库
+                  - hexagon-v68/lib/unsigned/ # 高通在 QNX 运行的 dsp 库
           - android
             - arm64-v8a
             - armeabi-v7a
@@ -89,12 +92,12 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
             - amd64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - qualcomm_qnn # 高通 QNN 运行时库、NNAdapter 运行时库、device HAL 库
+                - qualcomm_qnn  # 高通 QNN 运行时库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libqualcomm_qnn.so # NNAdapter device HAL 库
                   - libqualcomm_qnn_cpu_custom_op_package.so # 高通 QNN CPU 自定义算子库
                   - libqualcomm_qnn_htp_custom_op_package.so # 高通 QNN HTP 自定义算子库
-                  - libQnnHtp.so  # 下列为高通 QNN 在 X86_64 模拟器上运行时所需库
+                  - libQnnHtp.so  # 下列为高通 QNN 在 x86 模拟器上运行时所需库
                   - libQnnCpu.so
                   - libQnn*.so
                 - cpu
@@ -114,142 +117,137 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
       - tools # 工具库，包含模型处理工具、编译脚本和代码风格检查工具
   ```
 
-  
-
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
 - 执行以下命令分别比较 **mobilenet_v1_int8_224_per_layer** 和 **mobilenet_v1_fp32_224** 模型的性能和结果；
 
   - 运行 **mobilenet_v1_int8_224_per_layer** 模型
 
-    - Intel CPU (QNN Simulator)
+    - Intel CPU ( QNN x86 Simulator )
 
       ```shell
       $ unset FILE_TRANSFER_COMMAND
       $ ./run.sh mobilenet_v1_int8_224_per_layer linux amd64 qualcomm_qnn
-          warmup: 1 repeat: 5, average: 1644.109009 ms, max: 1660.884033 ms, min: 1625.844971 ms
-          results: 3
-          Top0  tabby, tabby cat - 0.456282
-          Top1  Egyptian cat - 0.456282
-          Top2  tiger cat - 0.070197
-          Preprocess time: 1.345000 ms
-          Prediction time: 1644.109009 ms
-          Postprocess time: 0.112000 ms
+        warmup: 1 repeat: 5, average: 1644.109009 ms, max: 1660.884033 ms, min: 1625.844971 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.456282
+        Top1  Egyptian cat - 0.456282
+        Top2  tiger cat - 0.070197
+        Preprocess time: 1.345000 ms
+        Prediction time: 1644.109009 ms
+        Postprocess time: 0.112000 ms
       ```
 
-    - Qualcomm 8295P EVB (Android)
+    - Qualcomm 8295P EVB ( Android )
 
       ```shell
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android arm64-v8a qualcomm_qnn 858e5789
-          warmup: 1 repeat: 5, average: 1.659400 ms, max: 2.342000 ms, min: 1.446000 ms
-          results: 3
-          Top0  Egyptian cat - 0.456282
-          Top1  tabby, tabby cat - 0.456282
-          Top2  tiger cat - 0.070197
-          Preprocess time: 1.171000 ms
-          Prediction time: 1.659400 ms
-          Postprocess time: 0.187000 ms
+        warmup: 1 repeat: 5, average: 1.659400 ms, max: 2.342000 ms, min: 1.446000 ms
+        results: 3
+        Top0  Egyptian cat - 0.456282
+        Top1  tabby, tabby cat - 0.456282
+        Top2  tiger cat - 0.070197
+        Preprocess time: 1.171000 ms
+        Prediction time: 1.659400 ms
+        Postprocess time: 0.187000 ms
       ```
 
-    - Qualcomm 8295P EVB (QNX)
+    - Qualcomm 8295P EVB ( QNX )
 
       ```shell
       $ export FILE_TRANSFER_COMMAND=lftp
       $ adb -s 858e5789 root
       $ rm -rf ../assets/models/cache
-      # 用于生成cache和nb
+      # 用于生成 cache 和 nb
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android arm64-v8a qualcomm_qnn 858e5789 null cache
       # 上板远程执行
       $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
-          warmup: 1 repeat: 5, average: 1.200000 ms, max: 2.000000 ms, min: 1.000000 ms
-          results: 3
-          Top0  Egyptian cat - 0.456282
-          Top1  tabby, tabby cat - 0.456282
-          Top2  tiger cat - 0.070197
-          Preprocess time: 1.000000 ms
-          Prediction time: 1.200000 ms
-          Postprocess time: 0.000000 ms
+        warmup: 1 repeat: 5, average: 1.200000 ms, max: 2.000000 ms, min: 1.000000 ms
+        results: 3
+        Top0  Egyptian cat - 0.456282
+        Top1  tabby, tabby cat - 0.456282
+        Top2  tiger cat - 0.070197
+        Preprocess time: 1.000000 ms
+        Prediction time: 1.200000 ms
+        Postprocess time: 0.000000 ms
       ```
 
   - 将测试模型改为 **mobilenet_v1_fp32_224**，执行命令：
 
-       - Intel CPU (QNN Simulator)
+    - Intel CPU ( QNN x86 Simulator )
 
+      ```shell
+      $ unset FILE_TRANSFER_COMMAND
+      $ ./run.sh mobilenet_v1_fp32_224 linux amd64 qualcomm_qnn
+        warmup: 1 repeat: 5, average: 686.677405 ms, max: 693.025024 ms, min: 680.283020 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.529133
+        Top1  Egyptian cat - 0.419681
+        Top2  tiger cat - 0.045172
+        Preprocess time: 0.951000 ms
+        Prediction time: 686.677405 ms
+        Postprocess time: 0.110000 ms
+      ```
 
-       ```shell
-       $ unset FILE_TRANSFER_COMMAND
-       $ ./run.sh mobilenet_v1_fp32_224 linux amd64 qualcomm_qnn
-           warmup: 1 repeat: 5, average: 686.677405 ms, max: 693.025024 ms, min: 680.283020 ms
-           results: 3
-           Top0  tabby, tabby cat - 0.529133
-           Top1  Egyptian cat - 0.419681
-           Top2  tiger cat - 0.045172
-           Preprocess time: 0.951000 ms
-           Prediction time: 686.677405 ms
-           Postprocess time: 0.110000 ms
-       ```
+    - Qualcomm 8295P EVB ( Android )
 
-       - Qualcomm 8295P EVB (Android)
+      ```shell
+      $ adb -s 858e5789 root
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789
+        warmup: 1 repeat: 5, average: 10893.910547 ms, max: 10955.571289 ms, min: 10795.490234 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.529133
+        Top1  Egyptian cat - 0.419681
+        Top2  tiger cat - 0.045172
+        Preprocess time: 1.193000 ms
+        Prediction time: 10893.910547 ms
+        Postprocess time: 0.213000 ms
+      
+      # 以 FP16 方式运行
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true"
+        warmup: 1 repeat: 5, average: 1.883000 ms, max: 1.977000 ms, min: 1.847000 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.531738
+        Top1  Egyptian cat - 0.417480
+        Top2  tiger cat - 0.045013
+        Preprocess time: 1.329000 ms
+        Prediction time: 1.883000 ms
+        Postprocess time: 0.110000 ms
+      ```
 
+    - Qualcomm 8295P EVB ( QNX )
 
-       ```shell
-       $ adb -s 858e5789 root
-       $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789
-           warmup: 1 repeat: 5, average: 10893.910547 ms, max: 10955.571289 ms, min: 10795.490234 ms
-           results: 3
-           Top0  tabby, tabby cat - 0.529133
-           Top1  Egyptian cat - 0.419681
-           Top2  tiger cat - 0.045172
-           Preprocess time: 1.193000 ms
-           Prediction time: 10893.910547 ms
-           Postprocess time: 0.213000 ms
-       
-       # 以 FP16 方式运行
-       $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true"
-           warmup: 1 repeat: 5, average: 1.883000 ms, max: 1.977000 ms, min: 1.847000 ms
-           results: 3
-           Top0  tabby, tabby cat - 0.531738
-           Top1  Egyptian cat - 0.417480
-           Top2  tiger cat - 0.045013
-           Preprocess time: 1.329000 ms
-           Prediction time: 1.883000 ms
-           Postprocess time: 0.110000 ms
-       ```
-
-       - Qualcomm 8295P EVB (QNX)
-
-
-       ```shell
-       $ export FILE_TRANSFER_COMMAND=lftp
-       $ adb -s 858e5789 root
-       $ rm -rf ../assets/models/cache
-       # 用于生成cache和nb
-       $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 null cache
-       # 上板远程执行
-       $ ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
-           warmup: 1 repeat: 5, average: 10910.345508 ms, max: 11007.915039 ms, min: 10865.540039 ms
-           results: 3
-           Top0  tabby, tabby cat - 0.529133
-           Top1  Egyptian cat - 0.419681
-           Top2  tiger cat - 0.045172
-           Preprocess time: 1.000000 ms
-           Prediction time: 10910.345508 ms
-           Postprocess time: 0.000000 ms
-       
-       # 以 FP16 方式运行
-       rm -rf ../assets/models/cache
-       ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
-       ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
-           warmup: 1 repeat: 5, average: 1.600000 ms, max: 2.000000 ms, min: 1.000000 ms
-           results: 3
-           Top0  tabby, tabby cat - 0.531738
-           Top1  Egyptian cat - 0.417480
-           Top2  tiger cat - 0.045013
-           Preprocess time: 1.000000 ms
-           Prediction time: 1.600000 ms
-           Postprocess time: 0.000000 ms
-       ```
+      ```shell
+      $ export FILE_TRANSFER_COMMAND=lftp
+      $ adb -s 858e5789 root
+      $ rm -rf ../assets/models/cache
+      # 用于生成 cache 和 nb
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 null cache
+      # 上板远程执行
+      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
+        warmup: 1 repeat: 5, average: 10910.345508 ms, max: 11007.915039 ms, min: 10865.540039 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.529133
+        Top1  Egyptian cat - 0.419681
+        Top2  tiger cat - 0.045172
+        Preprocess time: 1.000000 ms
+        Prediction time: 10910.345508 ms
+        Postprocess time: 0.000000 ms
+      
+      # 以 FP16 方式运行
+      $ rm -rf ../assets/models/cache
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
+      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
+        warmup: 1 repeat: 5, average: 1.600000 ms, max: 2.000000 ms, min: 1.000000 ms
+        results: 3
+        Top0  tabby, tabby cat - 0.531738
+        Top1  Egyptian cat - 0.417480
+        Top2  tiger cat - 0.045013
+        Preprocess time: 1.000000 ms
+        Prediction time: 1.600000 ms
+        Postprocess time: 0.000000 ms
+      ```
 
 - 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
 
@@ -283,54 +281,27 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
   $ cd Paddle-Lite
   ```
 
-- 获取 qualcomm_qnn 适配源码（暂不对外开源）；
+- 获取 qualcomm_qnn 适配源码（暂未开源）；
 
   ```shell
-  # 在 Paddle-Lite/lite/backends/nnadapter/nnadapter/src/driver 目录下 clone qualcomm_qnn 代码
-  # repo 地址：https://console.cloud.baidu-int.com/devops/icode/repos/baidu/personal-code/qualcomm_qnn/tree/master
-  # 权限问题请如流联系 zhupengyang@baidu.com
+  # 在 Paddle-Lite/lite/backends/nnadapter/nnadapter/src/driver 目录里下载 qualcomm_qnn 代码
   ```
 
-- 获取 [QNN SDK]()，解压后目录为qnn-v1.15.0.220706112757_38277;
+- 请向高通索取 QNN SDK ，解压后目录为 qnn-v1.15.0.220706112757_38277;
 
-- 获取 [QNX 工具链]()，解压后目录为：SDP;
+- 请向高通索取 Hexagon SDK，解压后目录为：Hexagon_SDK；
 
-- 获取 [Hexagon SDK]()，解压后目录为：Hexagon_SDK；
+- 下述为各个平台下的预测库编译命令，根据自身所需进行编译。
 
-- 获取 [license]()，解压后目录为：qnx-key；
-
-- 设置 QNN 交叉编译环境
-
-  ```shell
-  $ source SDP/qnx710/qnxsdp-env.sh
-  $ cd qnx-key && tar xvf qnx_license_700_710.tar.gz && cd ..
-  $ export QNX_CONFIGURATION=$(pwd)/qnx-key/home/jone/.qnx
-  $ cp -r $(pwd)/qnx-key/home/jone/.qnx ~/
-  ```
-
-- 编译 QNX 预测库
-
-  ```shell
-  $ cd Paddle-Lite
-  $ ./lite/tools/build_qnx.sh \
-      --with_extra=ON \
-      --with_log=ON \
-      --with_nnadapter=ON \
-      --nnadapter_with_qualcomm_qnn=ON \
-      --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
-      --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0>\
-      full_publish
-  ```
-
-- 编译 X86_64 预测库（QNN Simulator)，目的是用来生成模型 cache，以能在 QNX 上直接运行。
+- **编译 Linux x86 simulator 预测库**
 
   ```shell
   # 注：编译时 nnadapter_qualcomm_qnn_sdk_root 和 nnadapter_qualcomm_hexagon_sdk_root 两个变量需要使用绝对路径，采用相对路径可能会产生编译问题
   # 注：请使用 clang 编译
-  export CC=<path/to/clang>
-  export CXX=<path/to/clang++>
-  cd Paddle-Lite
-  ./lite/tools/build_linux.sh \
+  $ export CC=<path/to/clang>
+  $ export CXX=<path/to/clang++>
+  $ cd Paddle-Lite
+  $ ./lite/tools/build_linux.sh \
       --arch=x86 \
       --with_extra=ON \
       --with_log=ON \
@@ -341,35 +312,103 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
       --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
       --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
       full_publish
-  ```
-
-- 替换 QNX 预测库
-
-  ```shell
-  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64
-  $ cp -rf build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/include PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64
-  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/
-  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
-  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
-  ```
-
-- 替换 X86_64 预测库
-
-  ```shell
-  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64
+  # 替换 x86 simulator预测库
+  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include
   $ cp -rf build.lite.linux.x86.clang/inference_lite_lib/cxx/include PaddleLite-generic-demo/libs/PaddleLite/linux/amd64
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
   ```
 
+- **编译 Android arm64-v8a/ameabi-v7a 预测库**
+
+  ```shell
+  # Android arm64-v8a
+  $ cd Paddle-Lite
+  $ ./lite/tools/build_android.sh \
+      --arch=armv8 \
+      --with_extra=ON \
+      --with_log=ON \
+      --toolchain=clang \
+      --with_exception=ON \
+      --with_nnadapter=ON \
+      --android_stl=c++_shared \
+      --nnadapter_with_qualcomm_qnn=ON \
+      --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
+      --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
+      full_publish
+  # 替换 Android arm64-v8a 预测库
+  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include
+  $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
+  $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
+  $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
+  $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+  
+  # Android ameabi-v7a
+  $ cd Paddle-Lite
+  $ ./lite/tools/build_android.sh \
+      --arch=armv7 \
+      --with_extra=ON \
+      --with_log=ON \
+      --android_stl=c++_shared \
+      --toolchain=clang \
+      --with_exception=ON \
+      --with_nnadapter=ON \
+      --nnadapter_with_qualcomm_qnn=ON \
+      --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
+      --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
+      full_publish
+  # 替换 Android ameabi-v7a 预测库
+  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include
+  $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
+  $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
+  $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
+  $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+  ```
+
+- **编译 QNX arm64 预测库**
+
+  1. 请向高通索取 QNX 工具链，解压后目录为：SDP;
+
+  2. 请向高通索取 License，解压后目录为：qnx-key；
+
+  3. 设置 QNN 交叉编译环境
+
+    ```shell
+  $ source SDP/qnx710/qnxsdp-env.sh
+  $ cd qnx-key && tar xvf qnx_license_700_710.tar.gz && cd ..
+  $ export QNX_CONFIGURATION=$(pwd)/qnx-key/home/jone/.qnx
+  $ cp -r $(pwd)/qnx-key/home/jone/.qnx ~/
+    ```
+
+  4. 编译 QNX 预测库
+
+    ```shell
+  $ cd Paddle-Lite
+  $ ./lite/tools/build_qnx.sh \
+      --with_extra=ON \
+      --with_log=ON \
+      --with_nnadapter=ON \
+      --nnadapter_with_qualcomm_qnn=ON \
+      --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
+      --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0>\
+      full_publish
+  # 替换 QNX 预测库
+  $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/include
+  $ cp -rf build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/include PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64
+  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/
+  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
+  $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
+    ```
+
+
 ## 高级特性
 
 - 高级参数
 
-  - QUALCOMM_QNN_DEVICE:
+  - QUALCOMM_QNN_DEVICE_TYPE:
 
-    指定使用的高通设备，Options: "cpu", "gpu", "dsp", "htp"。
+    指定使用的高通设备，Options: "CPU", "GPU", "DSP", "HTP"。
 
   - QUALCOMM_QNN_LOG_LEVEL:
 
@@ -377,7 +416,7 @@ Paddle Lite 已支持高通 QNN 在 X86 （模拟器）和 ARM 设备（例如SA
 
   - QUALCOMM_QNN_SKIP_SYMM2ASYMM
 
-    指定是否跳过将输入输出从对称量化转非对称量化的步骤。Options:  "true", "false", "1", "0"。
+    指定是否跳过将输入输出从对称量化转非对称量化的步骤，Options:  "true", "false", "1", "0"。
 
   - QUALCOMM_QNN_ENABLE_FP16
 
