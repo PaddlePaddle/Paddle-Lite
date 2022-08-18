@@ -75,6 +75,7 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
     def sample_program_configs(self, draw):
         dim = draw(st.sampled_from([2, 3, 4]))
         transpose_type = draw(st.sampled_from(["transpose", "transpose2"]))
+        has_xshape = draw(st.booleans())
 
         #default dim = 4
         transpose1_input_shape = draw(
@@ -146,29 +147,40 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
                 outputs={"Out": ["output_data"]},
                 attrs={"axis": transpose2_axis})
         elif transpose_type == "transpose2":
-            transpose1_op = OpConfig(
-                type="transpose2",
-                inputs={"X": ["transpose1_input_x"]},
-                outputs={
-                    "Out": ["transpose1_output"],
-                    "XShape": ["transpose1_XShape"]
-                },
-                attrs={"axis": transpose1_axis})
+            if has_xshape:
+                transpose1_op = OpConfig(
+                    type="transpose2",
+                    inputs={"X": ["transpose1_input_x"]},
+                    outputs={
+                        "Out": ["transpose1_output"],
+                        "XShape": ["transpose1_XShape"]
+                    },
+                    attrs={"axis": transpose1_axis})
+                transpose2_op = OpConfig(
+                    type="transpose2",
+                    inputs={"X": ["softmax_output"]},
+                    outputs={
+                        "Out": ["output_data"],
+                        "XShape": ["transpose2_XShape"]
+                    },
+                    attrs={"axis": transpose2_axis})
+            else:
+                transpose1_op = OpConfig(
+                    type="transpose2",
+                    inputs={"X": ["transpose1_input_x"]},
+                    outputs={"Out": ["transpose1_output"]},
+                    attrs={"axis": transpose1_axis})
+                transpose2_op = OpConfig(
+                    type="transpose2",
+                    inputs={"X": ["softmax_output"]},
+                    outputs={"Out": ["output_data"]},
+                    attrs={"axis": transpose2_axis})
 
             softmax_op = OpConfig(
                 type="softmax",
                 inputs={"X": ["transpose1_output"]},
                 outputs={"Out": ["softmax_output"]},
                 attrs={"axis": -1})
-
-            transpose2_op = OpConfig(
-                type="transpose2",
-                inputs={"X": ["softmax_output"]},
-                outputs={
-                    "Out": ["output_data"],
-                    "XShape": ["transpose2_XShape"]
-                },
-                attrs={"axis": transpose2_axis})
 
         ops = [transpose1_op, softmax_op, transpose2_op]
         program_config = ProgramConfig(
@@ -190,7 +202,7 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=50,
+            max_examples=200,
             passes=["lite_transpose_softmax_transpose_fuse_pass"])
 
 

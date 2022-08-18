@@ -24,11 +24,15 @@ namespace mir {
 
 void TransposeSoftmaxTransposeFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
-  fusion::TransposeSoftmaxTransposeFuser fuser("transpose", "softmax");
+  fusion::TransposeSoftmaxTransposeFuser fuser("transpose", "softmax", false);
   fuser(graph.get());
 
-  fusion::TransposeSoftmaxTransposeFuser fuser2("transpose2", "softmax");
-  fuser2(graph.get());
+  std::vector<bool> has_xshapes = {false, true};
+  for (auto has_xshape : has_xshapes) {
+    fusion::TransposeSoftmaxTransposeFuser fuser2(
+        "transpose2", "softmax", has_xshape);
+    fuser2(graph.get());
+  }
 }
 
 }  // namespace mir

@@ -30,7 +30,7 @@ void TransposeSoftmaxTransposeFuser::BuildPattern() {
 
   PMNode* xshape1 = nullptr;
   PMNode* xshape2 = nullptr;
-  if (transpose_type_ == "transpose2") {
+  if (transpose_type_ == "transpose2" && has_xshape_) {
     xshape1 =
         VarNode("xshape1")->assert_is_op_output(transpose_type_, "XShape");
     xshape2 =

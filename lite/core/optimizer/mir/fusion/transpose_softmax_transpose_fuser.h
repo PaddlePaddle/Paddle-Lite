@@ -26,8 +26,11 @@ namespace fusion {
 class TransposeSoftmaxTransposeFuser : public FuseBase {
  public:
   explicit TransposeSoftmaxTransposeFuser(const std::string& transpose_type,
-                                          const std::string& softmax_type)
-      : transpose_type_(transpose_type), softmax_type_(softmax_type) {}
+                                          const std::string& softmax_type,
+                                          bool has_xshape)
+      : transpose_type_(transpose_type),
+        softmax_type_(softmax_type),
+        has_xshape_(has_xshape) {}
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
@@ -36,6 +39,7 @@ class TransposeSoftmaxTransposeFuser : public FuseBase {
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
   std::string transpose_type_;
   std::string softmax_type_;
+  bool has_xshape_;
 };
 
 }  // namespace fusion
