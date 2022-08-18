@@ -47,7 +47,9 @@ void Squeeze2MatmulFuser::BuildPattern() {
   auto* squeeze2_op = OpNode("squeeze2", "squeeze2")
                           ->assert_node_satisfied(squeeze2_inputs_teller);
   auto* squeeze2_out = VarNode("squeeze2_out");
-  auto* squeeze2_xshape = VarNode("squeeze2_xshape");
+  PMNode* squeeze2_xshape;
+  if(has_xshape_)
+    squeeze2_xshape = VarNode("squeeze2_xshape");
 
   // Teller function about matmul's inputs:
   //          the rank of input X and Y should 2
@@ -83,11 +85,13 @@ void Squeeze2MatmulFuser::BuildPattern() {
           ->assert_node_satisfied(matmul_inputs_teller);
   auto* matmul_out = VarNode("Out");
   std::vector<PMNode*> squeeze2_inputs{squeeze2_in_x};
-  std::vector<PMNode*> squeeze2_outputs{squeeze2_out, squeeze2_xshape};
+  std::vector<PMNode*> squeeze2_outputs{squeeze2_out};
   std::vector<PMNode*> matmul_inputs{squeeze2_out, matmul_y};
 
   // Create topology: squeeze2 --> matmul
   squeeze2_inputs >> *squeeze2_op >> squeeze2_outputs;
+  if(has_xshape_)
+    *squeeze2_op >> *squeeze2_xshape;
   matmul_inputs >> *matmul_op >> *matmul_out;
 
   // squeeze2_op, matmul_op and squeeze2_out will be removed after this fusion.

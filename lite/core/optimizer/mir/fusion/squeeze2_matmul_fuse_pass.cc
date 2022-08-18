@@ -23,8 +23,11 @@ namespace lite {
 namespace mir {
 
 void Squeeze2MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::Squeeze2MatmulFuser fuser;
-  fuser(graph.get());
+  std::vector<bool> has_xshapes = {false, true};
+  for (auto has_xshape : has_xshapes) {
+    fusion::Squeeze2MatmulFuser fuser(has_xshape);
+    fuser(graph.get());
+  }
 }
 
 }  // namespace mir
