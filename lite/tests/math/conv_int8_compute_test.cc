@@ -340,6 +340,7 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_fp32.Launch();
           t0.Stop();
         }
+
         LOG(INFO) << "int8 conv, fp32 output: output shape" << dim_out
                   << ",running time, avg: " << t0.LapTimes().Avg() << " ms"
                   << ", min time: " << t0.LapTimes().Min() << " ms"
@@ -354,13 +355,13 @@ void test_conv_int8(const std::vector<DDim>& input_dims,
           conv_int8_int8.Launch();
           t0.Stop();
         }
+
         LOG(INFO) << "int8 conv, int8 output: output shape" << dim_out
                   << ",running time, avg: " << t0.LapTimes().Avg()
                   << ", min time: " << t0.LapTimes().Min()
                   << ", total GOPS: " << 1e-9 * gops
                   << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
                   << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
-
         /// compare result fp32 output
         if (FLAGS_check_result) {
           double max_ratio = 0;
@@ -766,3 +767,45 @@ TEST(TestConvCustomInt8, test_conv_custom_size) {
                  FLAGS_leakey_relu_alpha);
 }
 #endif  // custom
+
+#ifdef LITE_WITH_ARM8_SVE2  /// conv3x3s2
+TEST(TestConv3x3s2Int8SVE2, test_conv_3x3s2_sve2) {
+  if (1) {
+    for (auto& cin : {1, 3, 8}) {
+      for (auto& cout : {5, 16, 32}) {
+        for (auto& pad_top : {1, 0}) {
+          for (auto& pad_bottom : {pad_top}) {
+            for (auto& pad_left : {1, 0}) {
+              for (auto& pad_right : {pad_left}) {
+                for (auto& flag_bias : {false, true}) {
+                  for (auto& flag_act : {0, 1, 2, 4}) {
+                    DDim weights_dim({cout, cin, 3, 3});
+                    std::vector<DDim> dims;
+                    for (auto& batch : {1, 2}) {
+                      for (auto& h : {3, 7, 9, 15, 39, 41}) {
+                        dims.push_back(DDim({batch, cin, h, h}));
+                      }
+                    }
+                    test_conv_int8(dims,
+                                   weights_dim,
+                                   1,
+                                   {2, 2},
+                                   {pad_top, pad_bottom, pad_left, pad_right},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_act,
+                                   {4},
+                                   {FLAGS_power_mode},
+                                   FLAGS_clipped_coef,
+                                   FLAGS_leakey_relu_alpha);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif  /// conv3x3s2

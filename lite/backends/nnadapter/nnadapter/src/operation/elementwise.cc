@@ -78,7 +78,8 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
 
 static std::unordered_map<NNAdapterOperationType, math::ElementwiseTypeCode>
     kSupportedElementwise = {{NNADAPTER_ADD, math::ADD},
-                             {NNADAPTER_SUB, math::SUB}};
+                             {NNADAPTER_SUB, math::SUB},
+                             {NNADAPTER_MUL, math::MUL}};
 
 NNADAPTER_EXPORT bool ValidateElementwise(const core::Operation* operation) {
   return kSupportedElementwise.count(operation->type) > 0;
@@ -152,6 +153,18 @@ NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
                                       input1_shape,
                                       static_cast<math::FuseCode>(fuse_code),
                                       output_data);
+  } else if (input0_type.precision == NNADAPTER_INT32 &&
+             input1_type.precision == NNADAPTER_INT32) {
+    const auto input0_data = reinterpret_cast<const int32_t*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const int32_t*>(input1_buffer);
+    auto output_data = reinterpret_cast<int32_t*>(output_buffer);
+    status = math::elementwise<int32_t>(eltwise_type,
+                                        input0_data,
+                                        input0_shape,
+                                        input1_data,
+                                        input1_shape,
+                                        static_cast<math::FuseCode>(fuse_code),
+                                        output_data);
   } else if (input0_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
              input1_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
     const auto input0_data = reinterpret_cast<const int8_t*>(input0_buffer);

@@ -58,11 +58,11 @@ float CopyToHostSync(void* target, const void* source, size_t size) {
 float CopyFromDeviceToDeviceSync(void* target,
                                  const void* source,
                                  size_t size) {
+  CLRuntime::Global()->command_queue().finish();
 #ifdef LITE_WITH_PROFILE
   lite::Timer timer;
   timer.Start();
 #endif
-  CLRuntime::Global()->command_queue().finish();
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoD);
 #ifdef LITE_WITH_PROFILE
   auto d2h_duration = timer.Stop();

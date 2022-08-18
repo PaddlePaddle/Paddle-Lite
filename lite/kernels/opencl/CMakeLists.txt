@@ -161,7 +161,7 @@ lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
 # buffer kernel      #
 ######################
 # basic
-#add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
+add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc)
 #add_kernel(pool_opencl_buffer OPENCL basic SRCS pool_buffer_compute.cc)
