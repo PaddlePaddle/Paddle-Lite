@@ -102,7 +102,6 @@ bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
 bool Squeeze2Op::CheckShape() const {
   SqueezeOp::CheckShape();
-  CHECK_OR_FALSE(param_.XShape);
   return true;
 }
 
@@ -113,14 +112,16 @@ bool Squeeze2Op::InferShapeImpl() const {
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.XShape->Resize(DDim(xshape_dims));
+  if (param_.XShape) param_.XShape->Resize(DDim(xshape_dims));
   return true;
 }
 
 bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   SqueezeOp::AttachImpl(opdesc, scope);
-  param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
-  CHECK(param_.XShape) << "Output(XShape) of SqueezeOp should not be null.";
+  if (opdesc.HasOutput("XShape"))
+    param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+  else
+    LOG(INFO) << "PaddleLiteV2.12 remove XShape OutputTensor for SqueezeOp.";
   return true;
 }
 
