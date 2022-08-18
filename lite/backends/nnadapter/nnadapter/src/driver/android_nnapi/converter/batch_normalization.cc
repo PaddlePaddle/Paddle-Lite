@@ -51,10 +51,10 @@ int ConvertBatchNormalization(Converter* converter,
     alpha[i] = coeff;
     beta[i] = -mean_data[i] * coeff + bias_data[i];
   }
-  for (uint32_t i = 0; i < scale_count && i < 16; i++) {
+  for (uint32_t i = 0; i < scale_count && i < 8; i++) {
     NNADAPTER_VLOG(5) << "alpha[" << i << "]=" << alpha[i];
   }
-  for (uint32_t i = 0; i < scale_count && i < 16; i++) {
+  for (uint32_t i = 0; i < scale_count && i < 8; i++) {
     NNADAPTER_VLOG(5) << "beta[" << i << "]=" << beta[i];
   }
   uint32_t alpha_index = INVALID_INDEX;
@@ -110,11 +110,11 @@ int ConvertBatchNormalization(Converter* converter,
                                           0,
                                           255,
                                           quantized_beta.data()));
-    for (uint32_t i = 0; i < scale_count && i < 16; i++) {
+    for (uint32_t i = 0; i < scale_count && i < 8; i++) {
       NNADAPTER_VLOG(5) << "quantized_alpha[" << i
                         << "]=" << static_cast<int32_t>(quantized_alpha[i]);
     }
-    for (uint32_t i = 0; i < scale_count && i < 16; i++) {
+    for (uint32_t i = 0; i < scale_count && i < 8; i++) {
       NNADAPTER_VLOG(5) << "quantized_beta[" << i
                         << "]=" << static_cast<int32_t>(quantized_beta[i]);
     }
