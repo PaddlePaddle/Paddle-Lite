@@ -51,9 +51,16 @@ void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
                    ->AsIntermediate();
 
   // create intermediate nodes
-  auto* unsqu_shape = VarNode("unsqu_shape")
-                          ->assert_is_op_output(unsqueeze2_type_, "XShape")
-                          ->AsIntermediate();
+  PMNode* unsqu_shape;
+  PMNode* sque_shape;
+  if (has_xshape_) {
+    unsqu_shape = VarNode("unsqu_shape")
+                      ->assert_is_op_output(unsqueeze2_type_, "XShape")
+                      ->AsIntermediate();
+    sque_shape = VarNode("sque_shape")
+                     ->assert_is_op_output(squeeze2_type_, "XShape")
+                     ->AsIntermediate();
+  }
   auto* unsque_out = VarNode("unsque_out")
                          ->assert_is_op_output(unsqueeze2_type_, "Out")
                          ->assert_is_op_input(pad3d_type_, "X")
@@ -66,14 +73,16 @@ void Unsqueeze2Pad3dSqueeze2Fuser::BuildPattern() {
   auto* sque_out = VarNode("sque_out")
                        ->assert_is_op_output(squeeze2_type_, "Out")
                        ->AsOutput();
-  auto* sque_shape = VarNode("sque_shape")
-                         ->assert_is_op_output(squeeze2_type_, "XShape")
-                         ->AsIntermediate();
-  std::vector<PMNode*> unsque_output{unsque_out, unsqu_shape};
-  std::vector<PMNode*> sque_output{sque_out, sque_shape};
+
+  std::vector<PMNode*> unsque_output{unsque_out};
+  std::vector<PMNode*> sque_output{sque_out};
   *unsqu_input >> *unsque >> unsque_output;
   *unsque_out >> *p3d >> *pad3d_out;
   *pad3d_out >> *sque >> sque_output;
+  if (has_xshape_) {
+    *unsque >> *unsqu_shape;
+    *sque >> *sque_shape;
+  }
 }
 
 void Unsqueeze2Pad3dSqueeze2Fuser::InsertNewNode(SSAGraph* graph,

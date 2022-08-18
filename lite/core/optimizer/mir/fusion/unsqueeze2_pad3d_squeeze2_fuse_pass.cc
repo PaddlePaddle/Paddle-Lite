@@ -29,8 +29,12 @@ namespace mir {
 void Unsqueeze2Pad3dSqueeze2FusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(4) << "start";
-  fusion::Unsqueeze2Pad3dSqueeze2Fuser fuser("unsqueeze2", "pad3d", "squeeze2");
-  fuser(graph.get());
+  std::vector<bool> has_xshapes = {false, true};
+  for (auto has_xshape : has_xshapes) {
+    fusion::Unsqueeze2Pad3dSqueeze2Fuser fuser(
+        "unsqueeze2", "pad3d", "squeeze2", has_xshape);
+    fuser(graph.get());
+  }
   VLOG(4) << "end";
 }
 }  // namespace mir
