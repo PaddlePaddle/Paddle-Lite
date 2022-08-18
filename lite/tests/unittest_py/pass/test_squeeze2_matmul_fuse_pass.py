@@ -69,6 +69,7 @@ class TestSqueeze2MatmulFusePass(FusePassAutoScanTest):
         int32_values_1 = draw(st.integers(min_value=1, max_value=40))
         int32_values_2 = draw(st.integers(min_value=1, max_value=40))
         int32_values_3 = draw(st.integers(min_value=1, max_value=40))
+        has_xsahpe = draw(st.booleans())
 
         squeeze2_input_shape = [int32_values_1, int32_values_2, 1, 1]
         matmul_input_shape = [squeeze2_input_shape[1], int32_values_3]
@@ -76,16 +77,25 @@ class TestSqueeze2MatmulFusePass(FusePassAutoScanTest):
         scale_y = draw(st.sampled_from([0.1, 1.1]))
         scale_out = draw(st.sampled_from([0.1, 1.1]))
         force_fp32_output = draw(st.booleans())
-        squeeze2_op = OpConfig(
-            type="squeeze2",
-            inputs={"X": ["squeeze2_input_x"]},
-            outputs={
-                "Out": ["squeeze2_output"],
-                "XShape": ["squeeze2_output_XShape"]
-            },
-            attrs={
-                "axes": [2, 3]  #required in pass
-            })
+        if (has_xsahpe):
+            squeeze2_op = OpConfig(
+                type="squeeze2",
+                inputs={"X": ["squeeze2_input_x"]},
+                outputs={
+                    "Out": ["squeeze2_output"],
+                    "XShape": ["squeeze2_output_XShape"]
+                },
+                attrs={
+                    "axes": [2, 3]  #required in pass
+                })
+        else:
+            squeeze2_op = OpConfig(
+                type="squeeze2",
+                inputs={"X": ["squeeze2_input_x"]},
+                outputs={"Out": ["squeeze2_output"]},
+                attrs={
+                    "axes": [2, 3]  #required in pass
+                })
 
         matmul_op = OpConfig(
             type="matmul",
