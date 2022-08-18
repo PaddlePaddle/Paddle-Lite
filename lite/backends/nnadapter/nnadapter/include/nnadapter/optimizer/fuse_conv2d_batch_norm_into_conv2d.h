@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <limits.h>
+#include <float.h>
 #include "core/types.h"
 
 namespace nnadapter {
