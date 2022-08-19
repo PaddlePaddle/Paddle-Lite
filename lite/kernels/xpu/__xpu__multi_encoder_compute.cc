@@ -170,7 +170,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       slice_idx,
                                       true /* qkv fusion */,
                                       max_pad_seqlen,
-                                      param.hidden_dim);
+                                      param.hidden_dim,
+                                      param.norm_before);
     if (std::is_same<TGEMM, int8_t>::value) {
       CHECK_GT(fc_input_max_.size(), 0);
     }
@@ -202,7 +203,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       qkv_act,
                                       slice_idx,
                                       true,
-                                      param.hidden_dim);
+                                      param.hidden_dim,
+                                      param.norm_before);
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,

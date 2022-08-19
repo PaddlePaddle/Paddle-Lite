@@ -58,7 +58,11 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
       new_dims.ConstructFrom(new_out_shape);
       out_dims = new_dims;
     }
-    param_.output->Resize(out_dims);
+    if (param_.norm_before) {
+      param_.output->Resize({batch_size, 1, head_num});
+    } else {
+      param_.output->Resize(out_dims);
+    }
   } else {
     param_.output->Resize({batch_size, seq_len, head_num});
   }
