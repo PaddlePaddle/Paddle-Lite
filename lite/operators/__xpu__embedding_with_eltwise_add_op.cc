@@ -33,7 +33,12 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
     }
   }
   if (param_.Mask != nullptr) {
-    CHECK_EQ(id_rank, param_.Mask->dims().size());
+    if (id_rank != param_.Mask->dims().size()) {
+      CHECK(id_rank == 2 && param_.Mask->dims().size() == 3 &&
+            param_.Mask->dims()[2] == 1)
+          << "unsupported id_rank: " << id_rank
+          << "mask_dims_size: " << param_.Mask->dims().size();
+    }
     for (size_t j = 0; j < id_rank; j++) {
       CHECK_EQ(ids_dim[j], param_.Mask->dims()[j]);
     }
