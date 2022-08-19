@@ -38,6 +38,34 @@ class XPUFcFuser : public FuseBase {
     auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
     auto* mul = OpNode("mul", mul_type_)->AsIntermediate();
     auto* mul_out = VarNode("mul_out")->assert_is_op_output(mul_type_, "Out");
+    auto input_attr_teller = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      bool trans_x = op_desc.GetAttr<bool>("transpose_X");
+      bool trans_y = op_desc.GetAttr<bool>("transpose_Y");
+      // assert alpha = 1.0f
+      auto alpha = op_desc.GetAttr<float>("alpha");
+      bool has_alpha = (fabsf(alpha - 1.f) > 1e-8f);
+      auto res = (trans_x == false && trans_y == false && !has_alpha);
+      return res;
+    };
+    auto input_attr_teller_v2 = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      bool trans_x = op_desc.GetAttr<bool>("trans_x");
+      bool trans_y = op_desc.GetAttr<bool>("trans_y");
+      bool has_alpha = false;
+      if (op_desc.HasAttr("alpha")) {
+        auto alpha = op_desc.GetAttr<float>("alpha");
+        has_alpha = (fabsf(alpha - 1.f) > 1e-8f);
+      }
+      bool res = (trans_x == false && trans_y == false && !has_alpha);
+      return res;
+    };
+    if (mul_type_ == "matmul") {
+      mul = OpNode("mul", mul_type_)->assert_node_satisfied(input_attr_teller);
+    } else if (mul_type_ == "matmul_v2") {
+      mul =
+          OpNode("mul", mul_type_)->assert_node_satisfied(input_attr_teller_v2);
+    }
     PMNode* bias = nullptr;
     PMNode* add = nullptr;
     PMNode* add_out = nullptr;

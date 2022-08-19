@@ -42,6 +42,9 @@ void FillAnyLikeCompute::Run() {
       case PRECISION(kInt64):
         dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
         break;
+      case PRECISION(kBool):
+        dtype = static_cast<int32_t>(lite::core::FluidType::BOOL);
+        break;
       default:
         LOG(FATAL) << "not supported x dtype: "
                    << lite_api::PrecisionToStr(param.X->precision());
@@ -51,6 +54,14 @@ void FillAnyLikeCompute::Run() {
 
   int r = 0;
   switch (dtype) {
+    case 0: {
+      auto data = param.Out->mutable_data<bool>(TARGET(kXPU));
+      r = xdnn::constant<bool>(ctx.GetRawContext(),
+                               data,
+                               write_size,
+                               static_cast<bool>(param.value));
+      break;
+    }
     case 1: {
       auto data = param.Out->mutable_data<int16_t>(TARGET(kXPU));
       r = xdnn::constant<int16_t>(ctx.GetRawContext(),

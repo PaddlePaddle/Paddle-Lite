@@ -50,6 +50,18 @@ void CastCompute<InType>::Run() {
     auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
     r = xdnn::cast_v2<InType, int64_t>(
         ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (out_dtype == 0) {
+    auto* out_data = out->template mutable_data<bool>(TARGET(kXPU));
+    XPUScratchPadGuard out_int_guard =
+        TargetWrapperXPU::MallocScratchPad(out->numel() * sizeof(int));
+    r = xdnn::cast_v2<InType, int>(ctx.GetRawContext(),
+                                   in_data,
+                                   reinterpret_cast<int*>(out_int_guard->addr_),
+                                   numel);
+    XPU_CALL(xpu_memcpy(out_data,
+                        reinterpret_cast<bool*>(out_int_guard->addr_),
+                        out->numel() * sizeof(bool),
+                        XPUMemcpyKind::XPU_DEVICE_TO_DEVICE));
   } else {
     LOG(FATAL) << "cast from in_type("
                << lite_api::PrecisionToStr(
