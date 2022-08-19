@@ -266,7 +266,7 @@ inline void prepack_input_nxwc4(const float16_t* din,
 }
 
 // clang-format off
-#ifdef __aarch64__
+#ifdef __aarch64__ //可以优化
 #define INIT_C8                       \
   "cmp %w[cnt], #1\n"                 \
   "ldp  q0, q1, [%[din_ptr]], #32\n"  \
@@ -284,7 +284,9 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "2: \n"                             \
   "ldp  q4, q5, [%[din_ptr]], #32\n"  \
   "ldp  q6, q7, [%[din_ptr]], #32\n"
-
+//v0--a0a1a2a3a4a5a6a7
+//...
+//v7--h0h1h2h3h4h5h6h7
 #define TRANS_C8                      \
   "fadd v0.8h, v0.8h, %[vbias].8h\n"  \
   "fadd v1.8h, v1.8h, %[vbias].8h\n"  \
@@ -769,9 +771,9 @@ static void write_to_oc8_fp16(const float16_t* din,
                               int he,
                               int ws,
                               int we,
-                              int channel,
-                              int height,
-                              int width,
+                              int channel,  // oc
+                              int height,   // oh
+                              int width,    // ow--重复传参？
                               int flag_act,
                               float16_t alpha,
                               const float16_t* bias,
@@ -789,11 +791,12 @@ static void write_to_oc8_fp16(const float16_t* din,
   float16_t* doutc6r0 = doutc5r0 + size_c_out;
   float16_t* doutc7r0 = doutc6r0 + size_c_out;
   float16_t ptr_zero[size_c_out];  // NOLINT
-
+  //将ws-we&&hs-he的输入有效性判断挪到函数头是否更好？
   int size_h = (he > height ? height : he) - hs;  // size_h == hei_n
   int w_round = we - ws;
 
   int valid_we = we > width ? width : we;
+  //命名需统一，改为size_w是否更好？
   int win = valid_we - ws;
   int w_in_stride = w_round << 3;
   int cnt_col = win >> 3;
@@ -930,7 +933,7 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
                                         int he,
                                         int ws,
                                         int we,
-                                        int channel,
+                                        int channel,  // din的layout信息
                                         int width,
                                         int height,
                                         float16_t* zero_ptr) {
@@ -941,16 +944,17 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
   int size_w = we - ws;
   int w0 = ws < 0 ? 0 : ws;
   int w1 = we > width ? width : we;
-  int valid_w = w1 - w0;
+  int valid_w = w1 - w0;  // padding前din的实际width --》可被替换为width
   int pad_l = ws < 0 ? -ws : 0;
   int pad_r = we > width ? we - width : 0;
   int size_c = width * height;
 
   int valid_cnt = valid_w >> 3;
   int remain = valid_w & 7;
-  int stride = size_w << 3;
-  int pad_l_stride = pad_l << 3;
-  int pad_r_stride = pad_r << 3;
+  //为dout补上padding的zero-val
+  int stride = size_w << 3;       //加上padding后的width * 8
+  int pad_l_stride = pad_l << 3;  // pad_l * 8
+  int pad_r_stride = pad_r << 3;  // pad_r * 8
   for (int h = hs; h < he; ++h) {
     const float16_t* ptr_c0 = din + h * width + cs * size_c;
     const float16_t* ptr_c1 = ptr_c0 + size_c;
@@ -960,7 +964,7 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
     const float16_t* ptr_c5 = ptr_c4 + size_c;
     const float16_t* ptr_c6 = ptr_c5 + size_c;
     const float16_t* ptr_c7 = ptr_c6 + size_c;
-    if (h < 0 || h >= height) {
+    if (h < 0 || h >= height) {  //这一段判断需要置前，h<0时会访问未知地址
       memset(dout, 0.f, stride * sizeof(float16_t));
       dout += stride;
       continue;
@@ -994,42 +998,45 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
       asm volatile(
           /* main loop */
           "1:\n"
-          "ldr q0,    [%[r0]], #16\n"
-          "ldr q1,    [%[r1]], #16\n"
-          "ldr q2,    [%[r2]], #16\n"
-          "ldr q3,    [%[r3]], #16\n"
+          "ldr q0,    [%[r0]], #16\n"  // c0_a0a1a2a3a4a5a6a7
+          "ldr q1,    [%[r1]], #16\n"  // c1_b0b1b2b3b4b5b6b7
+          "ldr q2,    [%[r2]], #16\n"  // c2_c0c1c2c3c4c5c6c7
+          "ldr q3,    [%[r3]], #16\n"  // c3_d0d1d2d3d4d5d6d7
           "ldr q4,    [%[r4]], #16\n"
           "ldr q5,    [%[r5]], #16\n"
           "ldr q6,    [%[r6]], #16\n"
           "ldr q7,    [%[r7]], #16\n"
-          "trn1 v8.8h,  v0.8h, v1.8h\n"
-          "trn2 v9.8h,  v0.8h, v1.8h\n"
-          "trn1 v10.8h, v2.8h, v3.8h\n"
-          "trn2 v11.8h, v2.8h, v3.8h\n"
-          "trn1 v12.8h, v4.8h, v5.8h\n"
-          "trn2 v13.8h, v4.8h, v5.8h\n"
-          "trn1 v14.8h, v6.8h, v7.8h\n"
-          "trn2 v15.8h, v6.8h, v7.8h\n"
-          "trn1 v0.4s,  v8.4s, v10.4s\n"
-          "trn2 v1.4s,  v8.4s, v10.4s\n"
-          "trn1 v2.4s,  v9.4s, v11.4s\n"
-          "trn2 v3.4s,  v9.4s, v11.4s\n"
-          "trn1 v4.4s,  v12.4s, v14.4s\n"
-          "trn2 v5.4s,  v12.4s, v14.4s\n"
-          "trn1 v6.4s,  v13.4s, v15.4s\n"
-          "trn2 v7.4s,  v13.4s, v15.4s\n"
-          "trn1 v8.2d,  v0.2d, v4.2d\n"
-          "trn1 v9.2d,  v2.2d, v6.2d\n"
-          "trn1 v10.2d, v1.2d, v5.2d\n"
-          "trn1 v11.2d, v3.2d, v7.2d\n"
-          "trn2 v12.2d, v0.2d, v4.2d\n"
+
+          "trn1 v8.8h,  v0.8h, v1.8h\n"  // a0b0a2b2a4b4a6b6
+          "trn2 v9.8h,  v0.8h, v1.8h\n"  // a1b1a3b3a5b5a7b7
+          "trn1 v10.8h, v2.8h, v3.8h\n"  // c0d0c2d2c4d4c6d6
+          "trn2 v11.8h, v2.8h, v3.8h\n"  // c1d1c3d3c5d5c7d7
+          "trn1 v12.8h, v4.8h, v5.8h\n"  // e0f0e2f2e4f4e6f6
+          "trn2 v13.8h, v4.8h, v5.8h\n"  // e1f1e3f3e5f5e7f7
+          "trn1 v14.8h, v6.8h, v7.8h\n"  // g0h0g2h2g4h4g6h6
+          "trn2 v15.8h, v6.8h, v7.8h\n"  // g1h1g3h3g5h5g7h7
+
+          "trn1 v0.4s,  v8.4s, v10.4s\n"   // a0b0c0d0a4b4c4d4
+          "trn2 v1.4s,  v8.4s, v10.4s\n"   // a2b2c2d2a6b6c6d6
+          "trn1 v2.4s,  v9.4s, v11.4s\n"   // a1b1c1d1a5b5c5d5
+          "trn2 v3.4s,  v9.4s, v11.4s\n"   // a3b3c3d3a7b7c7d7
+          "trn1 v4.4s,  v12.4s, v14.4s\n"  // e0f0g0h0e4f4g4h4
+          "trn2 v5.4s,  v12.4s, v14.4s\n"  // e2f2g2h2e6f6g6h6
+          "trn1 v6.4s,  v13.4s, v15.4s\n"  // e1f1g1h1e5f5g5h5
+          "trn2 v7.4s,  v13.4s, v15.4s\n"  // e3f3g3h3e7f7g7h7
+
+          "trn1 v8.2d,  v0.2d, v4.2d\n"  // a0b0c0d0e0f0g0h0
+          "trn1 v9.2d,  v2.2d, v6.2d\n"  // a1b1c1d1e1f1g1h1
+          "trn1 v10.2d, v1.2d, v5.2d\n"  // a2b2c2d2e2f2g2h2
+          "trn1 v11.2d, v3.2d, v7.2d\n"  // a3b3c3d3e3f3g3h3
+          "trn2 v12.2d, v0.2d, v4.2d\n"  // a4b4c4d4e4f4g4h4
           "str q8, [%[ptr_out]], #16\n"
-          "trn2 v13.2d, v2.2d, v6.2d\n"
+          "trn2 v13.2d, v2.2d, v6.2d\n"  // a5b5c5d5e5f5g5h5
           "str q9, [%[ptr_out]], #16\n"
-          "trn2 v14.2d, v1.2d, v5.2d\n"
+          "trn2 v14.2d, v1.2d, v5.2d\n"  // a6b6c6d6e6f6g6h6
           "str q10, [%[ptr_out]], #16\n"
           "subs %w[cnt], %w[cnt], #1\n"
-          "trn2 v15.2d, v3.2d, v7.2d\n"
+          "trn2 v15.2d, v3.2d, v7.2d\n"  // a7b7c7d7e7f7g7h7
           "str q11, [%[ptr_out]], #16\n"
           "stp q12, q13, [%[ptr_out]], #32\n"
           "stp q14, q15, [%[ptr_out]], #32\n"

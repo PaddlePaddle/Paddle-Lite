@@ -25,10 +25,10 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
-const int KBLOCK_FP16 = 2;
+const int KBLOCK_FP16 = 4;
 const int MBLOCK_FP16 = 8;
 #ifdef __aarch64__
-const int NBLOCK_FP16 = 16;
+const int NBLOCK_FP16 = 24;
 #else
 const int NBLOCK_FP16 = 8;
 #endif  // __aarch64__

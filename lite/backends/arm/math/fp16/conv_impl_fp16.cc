@@ -287,9 +287,10 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
   int channel_size_in = win * ih;
 
   const int group = param.groups;
-  const int m = oc / group;
-  const int n = oh * ow;
-  const int k = ic / group;
+  const int m =
+      oc / group;         //分组后，每组的卷积核数量减少，即输出特征图的通道数减少。
+  const int n = oh * ow;  // conv1*1，输出特征图的size和输入一致。
+  const int k = ic / group;  //分组后，每组的输入特征图通道数减少。
 
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;

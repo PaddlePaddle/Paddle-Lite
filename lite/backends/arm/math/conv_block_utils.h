@@ -124,7 +124,7 @@ static bool conv_trans_weights_numc(const Dtype* din,
   memset(ptr_zero, 0, win_stride * sizeof(Dtype));
   for (; co < c_loop; ++co) {
     Dtype* dout_c = dout + co * wout_stride;
-    const Dtype* din_array[n];
+    const Dtype* din_array[n];  // n个channel的weights起始地址
     din_array[0] = din + co * wout_stride;
     for (int i = 1; i < n; i++) {
       din_array[i] = din_array[i - 1] + win_stride;

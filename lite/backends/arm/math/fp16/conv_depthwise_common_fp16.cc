@@ -27,8 +27,10 @@ namespace arm {
 namespace math {
 namespace fp16 {
 #ifdef __aarch64__
+// x4 = kw * dw * 8(c)*/
+// x4表示kw循环结束时pre_din已经移动的地址
 #define INIT                         \
-  /*x4 = kw * dw * 8(c)*/            \
+  \                    
   "mul x4, %[kw], %[dilateX_step]\n" \
   "sub x5, %[dilateY_step], x4\n"    \
   "mov x7, %[weight]\n"
@@ -39,79 +41,81 @@ namespace fp16 {
   "mov x10, %[pre_dout]\n" \
   "mov x6, %[ow]\n"
 
-#define COMPUTE16                                        \
-  "L16_%=:\n"                                            \
-  "cmp x6, #16\n"                                        \
-  "blt L8_%=\n"                                          \
-  "mov x3, #16\n" /*x3 = sw * 8(c) * 16(w)*/             \
-  "mul x3, %[src_w_setup], x3\n"                         \
-                                                         \
-  "L16Loop_%=:\n"                                        \
-  "mov x8, %[pre_din]\n"                                 \
-  "mov v16.8h, %[vbias].8h\n"                            \
-  "mov v17.8h, %[vbias].8h\n"                            \
-  "mov v18.8h, %[vbias].8h\n"                            \
-  "mov v19.8h, %[vbias].8h\n"                            \
-  "mov v20.8h, %[vbias].8h\n"                            \
-  "mov v21.8h, %[vbias].8h\n"                            \
-  "mov v22.8h, %[vbias].8h\n"                            \
-  "mov v23.8h, %[vbias].8h\n"                            \
-  "mov v24.8h, %[vbias].8h\n"                            \
-  "mov v25.8h, %[vbias].8h\n"                            \
-  "mov v26.8h, %[vbias].8h\n"                            \
-  "mov v27.8h, %[vbias].8h\n"                            \
-  "mov v28.8h, %[vbias].8h\n"                            \
-  "mov v29.8h, %[vbias].8h\n"                            \
-  "mov v30.8h, %[vbias].8h\n"                            \
-  "mov v31.8h, %[vbias].8h\n"                            \
-                                                         \
-  /*kh*/                                                 \
-  "mov x1, %[kh]\n"                                      \
-  "L16LoopH_%=:\n"                                       \
-  "mov x2, %[kw]\n" /*kw*/                               \
-  "L16LoopW_%=:\n"                                       \
-  "ld1 {v7.8h}, [%[weight]], #16\n"                      \
-  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v16.8h, v7.8h, v0.8h\n"                          \
-  "fmla v17.8h, v7.8h, v1.8h\n"                          \
-  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v18.8h, v7.8h, v2.8h\n"                          \
-  "fmla v19.8h, v7.8h, v3.8h\n"                          \
-  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v20.8h, v7.8h, v0.8h\n"                          \
-  "fmla v21.8h, v7.8h, v1.8h\n"                          \
-  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v22.8h, v7.8h, v2.8h\n"                          \
-  "fmla v23.8h, v7.8h, v3.8h\n"                          \
-  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v24.8h, v7.8h, v0.8h\n"                          \
-  "fmla v25.8h, v7.8h, v1.8h\n"                          \
-  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v26.8h, v7.8h, v2.8h\n"                          \
-  "fmla v27.8h, v7.8h, v3.8h\n"                          \
-  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v28.8h, v7.8h, v0.8h\n"                          \
-  "fmla v29.8h, v7.8h, v1.8h\n"                          \
-  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"          \
-  "fmla v30.8h, v7.8h, v2.8h\n"                          \
-  "fmla v31.8h, v7.8h, v3.8h\n"                          \
-  "sub %[pre_din], %[pre_din], x3\n"                     \
-  "add %[pre_din], %[pre_din], %[dilateX_step]\n" /*kw*/ \
-  "subs x2, x2, #1\n"                                    \
-  "bne L16LoopW_%=\n" /*kh*/                             \
-  "add %[pre_din], %[pre_din], x5\n"                     \
-  "subs x1, x1, #1\n"                                    \
-  "bne L16LoopH_%=\n"                                    \
-  "mov %[weight], x7\n"                                  \
-  "sub x6, x6, #16\n"                                    \
+/*x3 = sw * 8(c) * 16(w)*/
+#define COMPUTE16                                                                                                \
+  "L16_%=:\n"                                                                                                    \
+  "cmp x6, #16\n"                                                                                                \
+  "blt L8_%=\n"                                                                                                  \
+  "mov x3, #16\n"                                                                                                \
+  "mul x3, %[src_w_setup], x3\n"                                                                                 \
+                                                                                                                 \
+  "L16Loop_%=:\n" /*16个ow，每个ow对应8channel结果*/                                                                                      \                    
+  "mov x8, %[pre_din]\n"                                                                                               \  
+  "mov v16.8h, %[vbias].8h\n"                                                                                    \
+  "mov v17.8h, %[vbias].8h\n"                                                                                    \
+  "mov v18.8h, %[vbias].8h\n"                                                                                    \
+  "mov v19.8h, %[vbias].8h\n"                                                                                    \
+  "mov v20.8h, %[vbias].8h\n"                                                                                    \
+  "mov v21.8h, %[vbias].8h\n"                                                                                    \
+  "mov v22.8h, %[vbias].8h\n"                                                                                    \
+  "mov v23.8h, %[vbias].8h\n"                                                                                    \
+  "mov v24.8h, %[vbias].8h\n"                                                                                    \
+  "mov v25.8h, %[vbias].8h\n"                                                                                    \
+  "mov v26.8h, %[vbias].8h\n"                                                                                    \
+  "mov v27.8h, %[vbias].8h\n"                                                                                    \
+  "mov v28.8h, %[vbias].8h\n"                                                                                    \
+  "mov v29.8h, %[vbias].8h\n"                                                                                    \
+  "mov v30.8h, %[vbias].8h\n"                                                                                    \
+  "mov v31.8h, %[vbias].8h\n"                                                                                    \
+                                                                                                                 \
+  /*kh*/                                                                                                         \
+  "mov x1, %[kh]\n"                                                                                              \
+  "L16LoopH_%=:\n"                                                                                               \
+  "mov x2, %[kw]\n" /*kw*/                                                                                       \
+  "L16LoopW_%=:\n"  /*weight00 of 8 channels */                                                                  \
+  "ld1 {v7.8h}, [%[weight]], #16\n"                                                                              \
+  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v16.8h, v7.8h, v0.8h\n"                                                                                  \
+  "fmla v17.8h, v7.8h, v1.8h\n"                                                                                  \
+  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v18.8h, v7.8h, v2.8h\n"                                                                                  \
+  "fmla v19.8h, v7.8h, v3.8h\n"                                                                                  \
+  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v20.8h, v7.8h, v0.8h\n"                                                                                  \
+  "fmla v21.8h, v7.8h, v1.8h\n"                                                                                  \
+  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v22.8h, v7.8h, v2.8h\n"                                                                                  \
+  "fmla v23.8h, v7.8h, v3.8h\n"                                                                                  \
+  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v24.8h, v7.8h, v0.8h\n"                                                                                  \
+  "fmla v25.8h, v7.8h, v1.8h\n"                                                                                  \
+  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v26.8h, v7.8h, v2.8h\n"                                                                                  \
+  "fmla v27.8h, v7.8h, v3.8h\n"                                                                                  \
+  "ld1 {v0.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v1.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v28.8h, v7.8h, v0.8h\n"                                                                                  \
+  "fmla v29.8h, v7.8h, v1.8h\n"                                                                                  \
+  "ld1 {v2.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "ld1 {v3.8h}, [%[pre_din]], %[src_w_setup]\n"                                                                  \
+  "fmla v30.8h, v7.8h, v2.8h\n"                                                                                  \
+  "fmla v31.8h, v7.8h, v3.8h\n" /*将pre_din挪到上一次weight运算的起始地址*/                         \
+  "sub %[pre_din], %[pre_din], x3\n" /*根据dilation确定下一次pre_din的起始地址*/                     \
+  "add %[pre_din], %[pre_din], %[dilateX_step]\n"                                                                \
+  "subs x2, x2, #1\n"                                                                                            \
+  "bne L16LoopW_%=\n" /*kh                                                                                       \
+                         此时pre_din在上一h中挪动了x4个位置,将pre_din挪到下一h的开始位置*/ \
+  "add %[pre_din], %[pre_din], x5\n"                                                                             \
+  "subs x1, x1, #1\n"                                                                                            \
+  "bne L16LoopH_%=\n"                                                                                            \
+  "mov %[weight], x7\n" /*将weight指针复位到weight00处*/                                                  \
+  "sub x6, x6, #16\n" /*ow-=16*/ /*x8保存了上一个L16循环开始时pre_din的起始地址*/                \
   "add %[pre_din], x8, x3\n"
 
 #define STORE16                                                \
@@ -244,15 +248,17 @@ namespace fp16 {
   "cmp x6, #1\n"                       \
   "bge L1Loop_%=\n"
 
-#define END                             \
-  "0:\n"                                \
-  "add %[pre_din], x9, %[srcHStep]\n"   \
-  "add %[pre_dout], x10, %[dstHStep]\n" \
-  "subs %[oh], %[oh], #1 \n"            \
+// x9保存了上一oh循环开始时pre_din的起始地址
+// x10保存了上一oh循环开始时pre_din的起始地址
+#define END                  \
+  "0:\n"                     \
+  "add %[pre_din], x9, %[srcHStep]\n"           \   
+  "add %[pre_dout], x10, %[dstHStep]\n"         \ 
+  "subs %[oh], %[oh], #1 \n" \
   "bne Loop_%=\n"
 #else
+// r10 = kw * dw * 8(c)
 #define INIT                      \
-  /*r10 = kw * dw * 8(c)*/        \
   "ldr r9, [%[param_ptr], #12]\n" \
   "mul r10, %[kw], r9\n"          \
   "ldr r9, [%[param_ptr], #8]\n"  \
@@ -421,7 +427,7 @@ void conv_depthwise_common_line(const float16_t* i_data,
                                 int ow,
                                 int kh,
                                 int kw,
-                                std::vector<int> strides,
+                                std::vector<int> strides,  //传const引用更好？
                                 std::vector<int> dilations,
                                 std::vector<int> paddings,
                                 const float16_t* weights,
@@ -452,18 +458,21 @@ void conv_depthwise_common_line(const float16_t* i_data,
   /// get workspace
   auto ptr_zero = ctx->workspace_data<float16_t>();
   memset(ptr_zero, 0, sizeof(float16_t) * (iw + pad_left + pad_right));
-  float16_t* ptr_write = ptr_zero + (iw + pad_left + pad_right);
-  float16_t* ptr_out =
-      ptr_zero + (iw + pad_left + pad_right) + threads * prein_size;
+  float16_t* ptr_write =
+      ptr_zero + (iw + pad_left + pad_right);  //对input转换layout后存放地址
+  float16_t* ptr_out = ptr_zero + (iw + pad_left + pad_right) +
+                       threads * prein_size;  //待转换layout的输出存放地址
 
   int size_in_channel = iw * ih;
   int size_out_channel = ow * oh;
 
+  // used by prepack_input_nxwc8_fp16_dw
   int ws = -pad_left;
   int we = iw + pad_right;
   int hs = -pad_top;
   int he = ih + pad_bottom;
 
+  //*2 表示字节数，即地址
   uint src_w_setup = sw * out_c_block * 2;
   uint srcHStep = (iw + pad_left + pad_right) * out_c_block * sh * 2;
   uint dstHStep = ow * out_c_block * 2;
@@ -485,103 +494,135 @@ void conv_depthwise_common_line(const float16_t* i_data,
   for (int n = 0; n < bs; ++n) {
     const float16_t* din_batch = i_data + n * ic * size_in_channel;
     float16_t* dout_batch = o_data + n * oc * size_out_channel;
-    LITE_PARALLEL_COMMON_BEGIN(c, tid, oc, 0, out_c_block) {
-      auto oh_bak = oh;
+    LITE_PARALLEL_COMMON_BEGIN(c, tid, oc, 0, out_c_block)
+    auto oh_bak = oh;
 #ifdef LITE_USE_THREAD_POOL
-      float16_t* pre_din = ptr_write + tid * prein_size;
-      float16_t* pre_dout = ptr_out + tid * preout_size;
+    float16_t* pre_din = ptr_write + tid * prein_size;
+    float16_t* pre_dout = ptr_out + tid * preout_size;
 #elif ARM_WITH_OMP
-      float16_t* pre_din = ptr_write + omp_get_thread_num() * prein_size;
-      float16_t* pre_dout = ptr_out + omp_get_thread_num() * preout_size;
+    float16_t* pre_din = ptr_write + omp_get_thread_num() * prein_size;
+    float16_t* pre_dout = ptr_out + omp_get_thread_num() * preout_size;
 #else
-      float16_t* pre_din = ptr_write;
-      float16_t* pre_dout = ptr_out;
+    float16_t* pre_din = ptr_write;
+    float16_t* pre_dout = ptr_out;
 #endif
-      float16_t* out_back = pre_dout;
-      prepack_input_nxwc8_fp16_dw(
-          din_batch, pre_din, c, hs, he, ws, we, ic, iw, ih, ptr_zero);
-      const float16_t* weight_c = weights + c * kw * kh;  // kernel_w * kernel_h
-      float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      float16x8_t vbias = vdupq_n_f16(0.f);
-      if (flag_bias) {
-        if (c + out_c_block < oc) {
-          vbias = vld1q_f16(&bias[c]);
-        } else {
-          for (int k = 0; k < 8 && c + k < oc; k++) {
-            bias_local[k] = bias[c + k];
-          }
-          vbias = vld1q_f16(bias_local);
+    float16_t* out_back = pre_dout;
+    prepack_input_nxwc8_fp16_dw(
+        din_batch, pre_din, c, hs, he, ws, we, ic, iw, ih, ptr_zero);
+    const float16_t* weight_c = weights + c * kw * kh;  // kernel_w * kernel_h
+    float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    float16x8_t vbias = vdupq_n_f16(0.f);
+    if (flag_bias) {
+      if (c + out_c_block < oc) {
+        vbias = vld1q_f16(&bias[c]);
+      } else {
+        for (int k = 0; k < 8 && c + k < oc; k++) {
+          bias_local[k] = bias[c + k];
         }
+        vbias = vld1q_f16(bias_local);
       }
-#ifdef __aarch64__
-      asm volatile(INIT LOOP COMPUTE16 STORE16 COMPUTE8 STORE8 COMPUTE4 STORE4 COMPUTE1 STORE1 END
-                          :[pre_dout] "+r"(pre_dout),\
-                           [pre_din] "+r"(pre_din),\
-                           [weight] "+r"(weight_c),\
-                           [oh] "+r"(oh_bak)                      
-                          :[ow] "r"(ow),\
-                           [src_w_setup] "r"(src_w_setup),\
-                           [kh] "r"(kh),\
-                           [kw] "r"(kw),\
-                           [dilateY_step] "r"(dilateY_step),\
-                           [dilateX_step] "r"(dilateX_step),\                                                                               
-                           [srcHStep] "r"(srcHStep),\
-                           [dstHStep] "r"(dstHStep),\
-                           [vbias] "w"(vbias)
-                          :"cc", "memory", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10",
-                           "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v16",\
-                           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",\
-                           "v27", "v28", "v29", "v30", "v31"\
-                          );
-#else
-      asm volatile(INIT LOOP COMPUTE8 STORE8 COMPUTE4 STORE4 COMPUTE1 STORE1 END
-                   : [pre_dout] "+r"(pre_dout),
-                     [pre_din] "+r"(pre_din),
-                     [weight] "+r"(weight_c),
-                     [oh] "+r"(oh_bak)
-                   : [ow] "r"(ow),
-                     [src_w_setup] "r"(src_w_setup),
-                     [kh] "r"(kh),
-                     [kw] "r"(kw),
-                     [param_ptr] "r"(param_ptr),
-                     [vbias] "w"(vbias)
-                   : "cc",
-                     "memory",
-                     "r9",
-                     "r10",
-                     "r11",
-                     "r12",
-                     "q0",
-                     "q1",
-                     "q3",
-                     "q4",
-                     "q8",
-                     "q9",
-                     "q10",
-                     "q11",
-                     "q12",
-                     "q13",
-                     "q14",
-                     "q15");
-#endif
-      write_to_oc8_fp16(out_back,
-                        dout_batch,
-                        c,
-                        c + out_c_block,
-                        0,
-                        oh,
-                        0,
-                        ow,
-                        oc,
-                        oh,
-                        ow,
-                        flag_act,
-                        alpha,
-                        nullptr,
-                        false,
-                        offset,
-                        threshold);
     }
+#ifdef __aarch64__
+    asm volatile(INIT LOOP COMPUTE16 STORE16 COMPUTE8 STORE8 COMPUTE4 STORE4
+                     COMPUTE1 STORE1 END
+                 : [pre_dout] "+r"(pre_dout),
+                   [pre_din] "+r"(pre_din),
+                   [weight] "+r"(weight_c),
+                   [oh] "+r"(oh_bak)
+                 : [ow] "r"(ow),
+                   [src_w_setup] "r"(src_w_setup),
+                   [kh] "r"(kh),
+                   [kw] "r"(kw),
+                   [dilateY_step] "r"(dilateY_step),
+                   [dilateX_step] "r"(dilateX_step),
+                   [srcHStep] "r"(srcHStep),
+                   [dstHStep] "r"(dstHStep),
+                   [vbias] "w"(vbias)
+                 : "cc",
+                   "memory",
+                   "x1",
+                   "x2",
+                   "x3",
+                   "x4",
+                   "x5",
+                   "x6",
+                   "x7",
+                   "x8",
+                   "x9",
+                   "x10",
+                   "v0",
+                   "v1",
+                   "v2",
+                   "v3",
+                   "v4",
+                   "v5",
+                   "v6",
+                   "v7",
+                   "v8",
+                   "v16",
+                   "v17",
+                   "v18",
+                   "v19",
+                   "v20",
+                   "v21",
+                   "v22",
+                   "v23",
+                   "v24",
+                   "v25",
+                   "v26",
+                   "v27",
+                   "v28",
+                   "v29",
+                   "v30",
+                   "v31");
+#else
+    asm volatile(INIT LOOP COMPUTE8 STORE8 COMPUTE4 STORE4 COMPUTE1 STORE1 END
+                 : [pre_dout] "+r"(pre_dout),
+                   [pre_din] "+r"(pre_din),
+                   [weight] "+r"(weight_c),
+                   [oh] "+r"(oh_bak)
+                 : [ow] "r"(ow),
+                   [src_w_setup] "r"(src_w_setup),
+                   [kh] "r"(kh),
+                   [kw] "r"(kw),
+                   [param_ptr] "r"(param_ptr),
+                   [vbias] "w"(vbias)
+                 : "cc",
+                   "memory",
+                   "r9",
+                   "r10",
+                   "r11",
+                   "r12",
+                   "q0",
+                   "q1",
+                   "q3",
+                   "q4",
+                   "q8",
+                   "q9",
+                   "q10",
+                   "q11",
+                   "q12",
+                   "q13",
+                   "q14",
+                   "q15");
+#endif
+    write_to_oc8_fp16(out_back,
+                      dout_batch,
+                      c,
+                      c + out_c_block,
+                      0,
+                      oh,
+                      0,
+                      ow,
+                      oc,
+                      oh,
+                      ow,
+                      flag_act,
+                      alpha,
+                      nullptr,
+                      false,
+                      offset,
+                      threshold);
     LITE_PARALLEL_COMMON_END()
   }
 }

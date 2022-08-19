@@ -290,6 +290,7 @@ static void basic_gemm(bool trans_a,
         }
         sum += av * bv;
       }
+      //type2 tmp = alpha * (sum + beta * c[i * ldc + j] + bias_data);
       type2 tmp = alpha * sum + beta * c[i * ldc + j] + bias_data;
       if (flag_act > 0) {
         if (flag_act == 1) {  // relu
