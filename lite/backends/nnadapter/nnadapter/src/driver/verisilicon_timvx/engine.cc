@@ -99,7 +99,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-    FuseConv2DBatchNormIntoConv2D(model);
+    // (yingshengBD) in conv+BN fuse, set the quant_scale_threshold 1000
+    FuseConv2DBatchNormIntoConv2D(model, 1000);
     FuseConv2DAddIntoConv2D(model);
     FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
