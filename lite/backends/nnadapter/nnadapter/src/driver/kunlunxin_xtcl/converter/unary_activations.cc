@@ -35,7 +35,15 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     break;
     CONVERT_UNARY_ACTIVATION(RELU, CreateRelu(input_expr));
     CONVERT_UNARY_ACTIVATION(RELU6, CreateRelu6(input_expr));
+    CONVERT_UNARY_ACTIVATION(SIGMOID, CreateUnaryOp("sigmoid", input_expr));
     CONVERT_UNARY_ACTIVATION(TANH, CreateUnaryOp("tanh", input_expr));
+    CONVERT_UNARY_ACTIVATION(LOG, CreateUnaryOp("log", input_expr));
+    CONVERT_UNARY_ACTIVATION(ABS, CreateUnaryOp("abs", input_expr));
+    CONVERT_UNARY_ACTIVATION(EXP, CreateUnaryOp("exp", input_expr));
+    CONVERT_UNARY_ACTIVATION(FLOOR, CreateUnaryOp("floor", input_expr));
+    CONVERT_UNARY_ACTIVATION(
+        SQUARE, CreateBinaryOp("multiply", input_expr, input_expr));
+
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

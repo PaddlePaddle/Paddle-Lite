@@ -34,6 +34,8 @@ class TestWhereOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=host_places)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -46,6 +48,9 @@ class TestWhereOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=50), min_size=1, max_size=1))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            in_shape = [1]
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
@@ -97,7 +102,10 @@ class TestWhereOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        max_examples = 25
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            max_examples = 200
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

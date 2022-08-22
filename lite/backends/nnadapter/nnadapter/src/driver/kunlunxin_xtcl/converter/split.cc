@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "operation/split.h"
+#include <numeric>
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -25,13 +26,27 @@ int ConvertSplit(Converter* converter, core::Operation* operation) {
   NNADAPTER_CHECK(IsConstantOperand(axis_operand));
   NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
+  // Check: The sum of sections must match the input.shape[axis]
+  int split_section_sum = std::accumulate(split.begin(), split.end(), 0);
+  NNADAPTER_CHECK_EQ(split_section_sum,
+                     input_operand->type.dimensions.data[axis]);
+
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
+
+  // Convert split_sections to split_indices
+  int32_t index_sum = 0;
+  std::vector<int32_t> split_indices;
+  for (size_t index = 0; index < split.size() - 1; ++index) {
+    index_sum += split[index];
+    split_indices.push_back(index_sum);
+  }
+
   auto split_expr = converter->builder()->CreateSplit(
-      input_expr, ConvertToXTCLArray<xtcl::Integer>(split), axis);
+      input_expr, ConvertToXTCLArray<xtcl::Integer>(split_indices), axis);
   for (size_t i = 0; i < split.size(); i++) {
     converter->UpdateExprMap(output_operands[i],
                              converter->builder()->GetField(split_expr, i));

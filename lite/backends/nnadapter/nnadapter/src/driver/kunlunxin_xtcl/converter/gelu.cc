@@ -22,8 +22,7 @@ namespace kunlunxin_xtcl {
 
 int ConvertGelu(Converter* converter, core::Operation* operation) {
   GELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(approximate, false)
-      << "CANN only supports approximate=false.";
+  NNADAPTER_CHECK_EQ(approximate, false) << "only supports approximate=false.";
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

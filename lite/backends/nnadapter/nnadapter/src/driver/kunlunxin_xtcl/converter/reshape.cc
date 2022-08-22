@@ -60,6 +60,11 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
                                 shape_operand->type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
+
+  for (uint32_t index = 0; index < shape_count; ++index) {
+    NNADAPTER_VLOG(5) << "[" << index << "]: " << shape_data[index];
+  }
+
   auto reshape_expr = converter->builder()->CreateReshape(
       input_expr, ConvertToXTCLArray<xtcl::Integer>(shape_data, shape_count));
   converter->UpdateExprMap(output_operand, reshape_expr);
