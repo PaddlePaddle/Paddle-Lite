@@ -568,6 +568,24 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     return;
   }
 
+  if (instruct.op_type() == "elementwise_add") {
+    for (auto* in_node : node->inlinks) {
+      CHECK(in_node->IsArg());
+      auto& var = in_node->AsArg();
+      const auto& var_name = var.name;
+      std::string tmp;
+      CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+      if (in_node->inlinks.empty()) {
+        if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
+          *score = 0;
+          VLOG(6) << "not pick fp16 kernel ,because elementwise input weight "
+                     "is FP32.";
+          return;
+        }
+      }
+    }
+  }
+
   // input data precision score
   for (auto* in_node : node->inlinks) {
     CHECK(in_node->IsArg());
