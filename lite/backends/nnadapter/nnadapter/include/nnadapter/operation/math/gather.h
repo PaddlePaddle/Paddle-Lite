@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <vector>
+#include "operation/math/utility.h"
 
 namespace nnadapter {
 namespace operation {
@@ -30,8 +31,8 @@ static int gather(const DATA_T* input_data,
                   DATA_T* output_data) {
   int inner_dim_size = 1;
   int outer_dim_size = 1;
-  int input_size = input_shape.size();
-  int index_size = index_shape.size();
+  int input_size = shape_production(input_shape);
+  int index_size = shape_production(index_shape);
   std::vector<int32_t> out_shape;
   for (int i = 0; i < axis; i++) {
     inner_dim_size *= input_shape[i];
