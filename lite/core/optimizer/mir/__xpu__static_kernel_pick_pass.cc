@@ -77,6 +77,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 #endif
 
+#ifdef LITE_WITH_XPU
   // sort kernels by the factors.
   VLOG(2) << "graph block_idx: " << graph->blockIdx();
   VLOG(2) << "graph->mutable_nodes().size(): " << graph->mutable_nodes().size();
@@ -110,7 +111,6 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
     VLOG(2) << "candidate kernels size:" << instruct.kernels().size();
 
-#ifdef LITE_WITH_XPU
     for (auto&& kernel : instruct.kernels()) {
       VLOG(2) << "current candidate kernel is: " << kernel->summary();
       VLOG(2) << "valid_places size is: " << graph->valid_places().size();
@@ -147,13 +147,14 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         NodeOutputPrecision(graph, node);
       }
     }
-#endif
+
     instruct.kernels().emplace_back(std::move(scored.front().second));
     VLOG(2) << "the final pick kernel is "
             << instruct.kernels().front()->summary() << "\n\n";
     instruct.mutable_op_info()->SetAttr<std::string>(
         "kernel_summary", instruct.kernels().front()->summary());
   }
+#endif
 }
 
 #ifdef LITE_WITH_XPU
