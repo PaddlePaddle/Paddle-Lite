@@ -34,10 +34,10 @@ int ConvertResizeLinear(Converter* converter, core::Operation* operation) {
   if (scales_operand) {
     factor = reinterpret_cast<float*>(input_operands[2]->buffer)[0];
   } else {
-    if (shape_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN &&
-        input_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN) {
-      factor = static_cast<float>(shape_operand->type.dimensions.data[2] /
-                                  input_operand->type.dimensions.data[2]);
+    if (input_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN) {
+      factor = static_cast<float>(
+          reinterpret_cast<int32_t*>(shape_operand->buffer)[0] /
+          input_operand->type.dimensions.data[2]);
       NNADAPTER_VLOG(5) << "ResizeLinear factor: " << factor;
     } else {
       NNADAPTER_LOG(FATAL) << "TIM-VX require a specific factor";

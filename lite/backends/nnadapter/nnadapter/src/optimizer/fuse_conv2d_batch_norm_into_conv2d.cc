@@ -188,14 +188,10 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     }
     // Disable batchnorm fusion if the difference of fused filter scale is
     // greater than the given threshold
-    // the priority of the given threshold is ENV > HAL's transfer param
-    if (getenv("QUANT_SCALE_THRESHOLD")) {
-      max_allowed_quant_scale_deviation_ =
-          static_cast<double>(atoi(getenv("QUANT_SCALE_THRESHOLD")));
-    }
     if (conv2d_filter_max_scale >=
-        max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale)
+        max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale) {
       return false;
+    }
     // Update the quant scale of weight and bias with the fused one and requant
     // the bias
     auto conv2d_filter_data =

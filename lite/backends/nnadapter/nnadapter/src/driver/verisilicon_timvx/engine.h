@@ -33,8 +33,12 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   ~Context();
+  double batchnorm_fusion_max_allowed_quant_scale_deviation() {
+    return batchnorm_fusion_max_allowed_quant_scale_deviation_;
+  }
 
  private:
+  double batchnorm_fusion_max_allowed_quant_scale_deviation_{0.0f};
   void* device_{nullptr};
   void* context_{nullptr};
 };
