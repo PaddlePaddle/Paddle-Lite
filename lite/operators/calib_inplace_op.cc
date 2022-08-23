@@ -21,7 +21,7 @@ namespace operators {
 
 bool CalibInplaceOpLite::CheckShape() const { return true; }
 bool CalibInplaceOpLite::InferShapeImpl() const { return true; }
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
 bool CalibInplaceOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
                                     lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
@@ -36,7 +36,7 @@ bool CalibInplaceOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
   CHECK(param_.output) << "Output(Out) of CalibInplaceOp should not be null.";
   return true;
 }
-
+#endif
 bool CalibInplaceOpLite::AttachImpl(const cpp::OpDesc &opdesc,
                                     lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());

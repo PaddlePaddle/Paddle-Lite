@@ -37,7 +37,13 @@ using OpDescWrite = fbs::OpDesc;
 #include "lite/core/model/general/var_desc.h"
 namespace paddle {
 namespace lite {
-namespace cpp = general;
+namespace cpp {
+using ProgramDesc = general::ProgramDesc;
+using BlockDesc = general::BlockDesc;
+using OpDesc = general::OpDesc;
+using VarDesc = general::VarDesc;
+using OpDescWrite = general::OpDesc;
 }
 }
+}  // namespace paddle
 #endif  // LITE_ON_FLATBUFFERS_DESC_VIEW

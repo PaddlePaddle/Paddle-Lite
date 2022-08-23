@@ -130,6 +130,7 @@ bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return AttachImpl(*op_info(), scope);
 }
 
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
 bool OpLite::Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
   // valid_places_.clear();
   CHECK(scope != nullptr);
@@ -139,6 +140,7 @@ bool OpLite::Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
   //    new OpInfo(opdesc));  // Force clean the out-of-date infomation.
   return AttachImpl(opdesc, scope);
 }
+#endif
 
 const Tensor *OpLite::GetTensor(lite::Scope *scope,
                                 const std::string &name) const {

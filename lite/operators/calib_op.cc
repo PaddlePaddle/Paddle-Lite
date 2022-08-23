@@ -29,7 +29,7 @@ bool CalibOpLite::InferShapeImpl() const {
   param_.output->set_lod(param_.input->lod());
   return true;
 }
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
 bool CalibOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
                              lite::Scope *scope) {
   std::cout << "attach calib op" << std::endl;
@@ -47,7 +47,7 @@ bool CalibOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
   CHECK(param_.output) << "Output(Out) of CalibOp should not be null.";
   return true;
 }
-
+#endif
 bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());

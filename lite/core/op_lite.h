@@ -90,9 +90,9 @@ class OpLite : public Registry {
   virtual bool AttachInput(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
     return false;
   }
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   bool Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope);
-
+#endif
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
 
@@ -140,11 +140,11 @@ class OpLite : public Registry {
  protected:
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   virtual bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
     return false;
   }
-
+#endif
   virtual bool InferShapeWithCache() const { return false; }
   // Specify the kernel to run by default. This will specify the value of
   // `kernel_place_`.

@@ -45,9 +45,9 @@ class CalibInplaceOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) override;
-
+#endif
   void *getparam() { return &param_; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
