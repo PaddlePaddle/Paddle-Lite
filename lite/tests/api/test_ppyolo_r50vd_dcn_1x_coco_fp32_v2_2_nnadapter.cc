@@ -52,6 +52,9 @@ TEST(ppyolo_r50vd_dcn, test_ppyolo_r50vd_dcn_1x_coco_fp32_v2_2_nnadapter) {
   nnadapter_device_names.emplace_back("cambricon_mlu");
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
+// TODO(hong19860320) Fix timeout
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
