@@ -228,6 +228,7 @@ void LightPredictor::BuildRuntimeProgram(
     }
   }
 
+#ifdef ENABLE_ARM_FP16
   int low_precision = 1;
   std::string old_op;
 
@@ -281,6 +282,7 @@ void LightPredictor::BuildRuntimeProgram(
   } else {
     use_low_precision_ = false;
   }
+#endif
 
   // Only extracting the ops and generate the runtime program from the main
   // block desc
