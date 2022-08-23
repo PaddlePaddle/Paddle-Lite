@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   conv2d_transpose_attrs->data_layout = "NCHW";
   conv2d_transpose_attrs->kernel_layout = "OIHW";
   conv2d_transpose_attrs->out_layout = "";
-  // conv2d_transpose_attrs->out_dtype = "";
   conv2d_transpose_attrs->output_padding =
       std::move(ConvertToXTCLArray<xtcl::xIndexExpr>(
           std::vector<int>({output_padding_height, output_padding_width})));
@@ -97,7 +96,7 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
       converter->builder()->CreateBiasAdd(conv2d_transpose_expr, 1, bias_expr);
   converter->UpdateExprMap(output_operand, bias_add_expr);
 
-  // fuse activations ?
+  // fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, func)                              \
   case NNADAPTER_FUSED_##type:                                            \

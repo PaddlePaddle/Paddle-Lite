@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -79,7 +79,6 @@ int ConvertDeformableConv2d(Converter* converter, core::Operation* operation) {
   conv_attrs->data_layout = "NCHW";
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";
-  // conv_attrs->out_dtype = "";
 
   auto conv_expr = converter->builder()->CreateConv2DDeformable(
       input_expr, filter_expr, offset_expr, conv_attrs);

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ namespace kunlunxin_xtcl {
 
 int ConvertGelu(Converter* converter, core::Operation* operation) {
   GELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(approximate, false) << "only supports approximate=false.";
+  NNADAPTER_CHECK(!approximate) << "only supports approximate=false.";
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

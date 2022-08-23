@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,15 +37,14 @@ int ConvertBinaryLogicalOp(Converter* converter, core::Operation* operation) {
 
   xtcl::xExpr binary_logical_expr;
   switch (operation->type) {
-#define CONVERT_BINARY_LOGICAL_OP(type, func)                      \
+#define CONVERT_BINARY_LOGICAL_OP(type, xtcl_type)                 \
   case NNADAPTER_##type: {                                         \
-    binary_logical_expr = converter->builder()->func;              \
+    binary_logical_expr = converter->builder()->CreateBinaryOp(    \
+        #xtcl_type, input0_expr, input1_expr);                     \
     converter->UpdateExprMap(output_operand, binary_logical_expr); \
   } break;
-    CONVERT_BINARY_LOGICAL_OP(
-        AND, CreateBinaryOp("logical_and", input0_expr, input1_expr));
-    CONVERT_BINARY_LOGICAL_OP(
-        OR, CreateBinaryOp("logical_or", input0_expr, input1_expr));
+    CONVERT_BINARY_LOGICAL_OP(AND, logical_and);
+    CONVERT_BINARY_LOGICAL_OP(OR, logical_or);
 #undef CONVERT_BINARY_LOGICAL_OP
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported unary logical operation type "

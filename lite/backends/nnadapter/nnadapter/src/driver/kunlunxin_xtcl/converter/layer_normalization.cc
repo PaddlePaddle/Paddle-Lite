@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ int ConvertLayerNormalization(Converter* converter,
                               core::Operation* operation) {
   LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // XPU only support the last dimension
+  // XTCL only support the last dimension
   auto last_dimension = input_operand->type.dimensions.count - 1;
-  NNADAPTER_CHECK_EQ(begin_norm_axis, last_dimension);
-  NNADAPTER_CHECK_EQ(begin_norm_axis, -1);
+  NNADAPTER_CHECK((begin_norm_axis == last_dimension) ||
+                  (begin_norm_axis == -1))
+      << "XTCL only support the last dimension";
 
   // Convert to XTCL exprs
   // Input expr

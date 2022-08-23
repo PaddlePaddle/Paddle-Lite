@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ int ConvertResizeLinear(Converter* converter, core::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
 
-  auto shape_count = shape_operand->length / sizeof(int32_t);
-  NNADAPTER_CHECK_EQ(shape_count, 2);
-  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-  std::vector<int> output_shape_size(shape_data, shape_data + shape_count);
+  // shape_operand may be invalid, get output shape size from output_operand
+  std::vector<int> output_shape_size(output_operand->type.dimensions.data,
+                                     output_operand->type.dimensions.data +
+                                         output_operand->type.dimensions.count);
   auto size = ConvertToXTCLArray<xtcl::xIndexExpr>(output_shape_size);
   auto resize_nearest_expr = converter->builder()->CreateInterpolate(
       input_expr, size, "NCHW", "bilinear", align_corners);

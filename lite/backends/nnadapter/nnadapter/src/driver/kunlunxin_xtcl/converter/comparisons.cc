@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,23 +37,18 @@ int ConvertComparisons(Converter* converter, core::Operation* operation) {
 
   xtcl::xExpr comparisons_expr;
   switch (operation->type) {
-#define CONVERT_COMPARISON(type, func)                          \
+#define CONVERT_COMPARISON(type, xtcl_type)                     \
   case NNADAPTER_##type: {                                      \
-    comparisons_expr = converter->builder()->func;              \
+    comparisons_expr = converter->builder()->CreateBinaryOp(    \
+        #xtcl_type, input0_expr, input1_expr);                  \
     converter->UpdateExprMap(output_operand, comparisons_expr); \
   } break;
-    CONVERT_COMPARISON(EQUAL,
-                       CreateBinaryOp("equal", input0_expr, input1_expr));
-    CONVERT_COMPARISON(NOT_EQUAL,
-                       CreateBinaryOp("not_equal", input0_expr, input1_expr));
-    CONVERT_COMPARISON(GREATER,
-                       CreateBinaryOp("greater", input0_expr, input1_expr));
-    CONVERT_COMPARISON(
-        GREATER_EQUAL,
-        CreateBinaryOp("greater_equal", input0_expr, input1_expr));
-    CONVERT_COMPARISON(LESS, CreateBinaryOp("less", input0_expr, input1_expr));
-    CONVERT_COMPARISON(LESS_EQUAL,
-                       CreateBinaryOp("less_equal", input0_expr, input1_expr));
+    CONVERT_COMPARISON(EQUAL, equal);
+    CONVERT_COMPARISON(NOT_EQUAL, not_equal);
+    CONVERT_COMPARISON(GREATER, greater);
+    CONVERT_COMPARISON(GREATER_EQUAL, greater_equal);
+    CONVERT_COMPARISON(LESS, less);
+    CONVERT_COMPARISON(LESS_EQUAL, less_equal);
 #undef CONVERT_COMPARISON
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported comparison operation type "

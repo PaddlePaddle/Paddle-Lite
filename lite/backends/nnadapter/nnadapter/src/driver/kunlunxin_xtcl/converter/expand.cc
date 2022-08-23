@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,39 +33,9 @@ int ConvertExpand(Converter* converter, core::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
   // shape
-  std::vector<int> expand_shape;
-  if (IsTemporaryShapeOperand(shape_operand)) {
-    if (IsOperandWithDynamicShape(shape_operand)) {
-      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape";
-      return NNADAPTER_INVALID_PARAMETER;
-    } else {
-      auto& temporary_shape = *(GetTemporaryShape(shape_operand));
-      auto shape_count = temporary_shape.count;
-      auto shape_data = temporary_shape.data;
-      expand_shape.resize(shape_count);
-      operation::UpdateExpandInferOutputShape(
-          input_operand->type.dimensions.data,
-          input_operand->type.dimensions.count,
-          expand_shape.data(),
-          shape_count,
-          shape_data);
-    }
-  } else if (IsConstantOperand(shape_operand)) {
-    auto shape_count = shape_operand->length / sizeof(int32_t);
-    auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-    expand_shape.resize(shape_count);
-    operation::UpdateExpandInferOutputShape(
-        input_operand->type.dimensions.data,
-        input_operand->type.dimensions.count,
-        expand_shape.data(),
-        shape_count,
-        shape_data);
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
-                         << OperandLifetimeCodeToString(
-                                shape_operand->type.lifetime);
-    return NNADAPTER_INVALID_PARAMETER;
-  }
+  auto shape_count = shape_operand->length / sizeof(int32_t);
+  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  std::vector<int> expand_shape(shape_data, shape_data + shape_count);
 
   auto expand_expr = converter->builder()->CreateBroadCastTo(
       input_expr, ConvertToXTCLArray<xtcl::Integer>(expand_shape));
