@@ -37,7 +37,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
 
   xpu_quant_filter_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-          filter_ptr, filter_dims, false);
+          filter_ptr, filter_dims, false, max_ptr_size);
 }
 
 template <typename TGEMM,

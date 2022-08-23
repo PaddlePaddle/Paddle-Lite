@@ -43,9 +43,13 @@ void TargetWrapperXPU::MemcpySync(void* dst,
 
 template <typename Tcpu, typename Txpu>
 XPUQuantData TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight(
-    const Tcpu* cpu_data, const DDimLite& dims, bool data_transpose) {
+    const Tcpu* cpu_data,
+    const DDimLite& dims,
+    bool data_transpose,
+    size_t max_ptr_len) {
   CHECK(quantizer_.get());
-  return quantizer_->quant<Tcpu, Txpu>(cpu_data, dims, data_transpose);
+  return quantizer_->quant<Tcpu, Txpu>(
+      cpu_data, dims, data_transpose, max_ptr_len);
 }
 
 void TargetWrapperXPU::ScatterL3Cache(
@@ -145,16 +149,16 @@ void TargetWrapperXPU::FreeL3Cache() {
 
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
-    const int8_t*, const DDimLite&, bool);
+    const int8_t*, const DDimLite&, bool, size_t);
 
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
