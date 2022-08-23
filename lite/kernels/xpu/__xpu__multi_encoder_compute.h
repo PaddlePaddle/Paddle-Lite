@@ -56,6 +56,12 @@ class XPUMultiEncoderCompute
                          int n_layers,
                          int max_ptr_len,
                          std::vector<const float *> &max_xpu_ptrs);
+  void prepare_weight_max(int n_layers,
+                          bool per_channel,
+                          const lite::Tensor *weight_max,
+                          int max_ptr_len,
+                          const std::vector<int> &fc_channels,
+                          std::vector<const float *> &max_xpu_ptrs);
   template <typename T, typename TW, typename TGEMM>
   void run_encoder(const T *in, T *out);
 };
