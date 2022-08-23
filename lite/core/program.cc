@@ -368,6 +368,7 @@ RuntimeProgram::RuntimeProgram(
           op_type + "' is not supported by Paddle-Lite.";
 #endif
 
+#ifdef ENABLE_ARM_FP16
       if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
         if (op_type != "feed" && op_type != "fetch") {
           if (place.precision == static_cast<PrecisionType>(1)) {
@@ -391,7 +392,6 @@ RuntimeProgram::RuntimeProgram(
                                           "elementwise_div",
                                           "elementwise_mul",
                                           "prelu"};
-#ifdef ENABLE_ARM_FP16
         typedef __fp16 float16_t;
         auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
         if (iter != fp16_ops.end()) {
@@ -424,7 +424,6 @@ RuntimeProgram::RuntimeProgram(
             }
           }
         }
-#endif
         auto kernels = op->CreateKernels({place});
         // if (kernels.size() == 0) {
         //  place.precision = static_cast<PrecisionType>(1);
@@ -539,6 +538,7 @@ RuntimeProgram::RuntimeProgram(
 
         old_op = op_type;
       } else {
+#endif
         auto kernels = op->CreateKernels({place});
         if (kernels.size() == 0 && place.target == TargetType::kARM) {
           place.target = TargetType::kHost;
@@ -552,7 +552,9 @@ RuntimeProgram::RuntimeProgram(
                                });
         CHECK(it != kernels.end());
         kernel = std::move(*it);
+#ifdef ENABLE_ARM_FP16
       }
+#endif
 
     } else {
       // TODO(hong19860320) add kernel picking according to the type of input

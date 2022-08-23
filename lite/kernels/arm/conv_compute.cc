@@ -63,7 +63,6 @@ namespace arm {
 template <>
 void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   PARAM_INIT
-  const float* fp_d = param.x->data<float>();
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
@@ -140,7 +139,6 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 template <>
 void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   PARAM_INIT
-  const float16_t* fp_d = param.x->data<float16_t>();
   /// select conv impl
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;

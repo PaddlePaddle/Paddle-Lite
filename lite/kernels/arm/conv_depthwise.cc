@@ -334,7 +334,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   const auto* w_data = flag_trans_weights_ ? weights_.data<float>()
                                            : param.filter->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
-  const float* fp_d = param.x->data<float>();
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
@@ -468,8 +467,6 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
-  const float16_t* fp_d = param.x->data<float16_t>();
-
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = flag_trans_weights_ ? weights_.data<float16_t>()
                                            : param.filter->data<float16_t>();

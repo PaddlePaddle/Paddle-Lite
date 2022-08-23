@@ -161,6 +161,7 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
+
   int iw = x_dims[3];  // nchw
   int ih = x_dims[2];
   int ic = x_dims[1];
