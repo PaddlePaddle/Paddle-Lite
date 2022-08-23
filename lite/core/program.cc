@@ -18,7 +18,9 @@
 #include <map>
 #include <set>
 
+#ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
@@ -389,7 +391,7 @@ RuntimeProgram::RuntimeProgram(
                                           "elementwise_div",
                                           "elementwise_mul",
                                           "prelu"};
-
+#ifdef ENABLE_ARM_FP16
         typedef __fp16 float16_t;
         auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
         if (iter != fp16_ops.end()) {
@@ -422,7 +424,7 @@ RuntimeProgram::RuntimeProgram(
             }
           }
         }
-
+#endif
         auto kernels = op->CreateKernels({place});
         // if (kernels.size() == 0) {
         //  place.precision = static_cast<PrecisionType>(1);
