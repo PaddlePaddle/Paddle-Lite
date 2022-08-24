@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <algorithm>
 #include "lite/backends/arm/math/fp16/conv3x3_depthwise_fp16.h"
+#include "lite/backends/arm/math/fp16/conv_depthwise_common_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/core/context.h"
@@ -662,6 +663,46 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
                  << pad_h << "pad_w " << pad_w << "is not supported!";
     }
   }
+}
+
+void conv_depthwise_common(const float16_t* w_data,
+                           const operators::ConvParam& param,
+                           ARMContext* ctx) {
+  const auto* i_data = param.x->data<float16_t>();
+  const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
+  auto* o_data = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+  int kh = w_dims[2];
+  int kw = w_dims[3];
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  conv_depthwise_common_line(i_data,
+                             o_data,
+                             ic,
+                             ih,
+                             iw,
+                             bs,
+                             oc,
+                             oh,
+                             ow,
+                             kh,
+                             kw,
+                             param.strides,
+                             *param.dilations.get(),
+                             *param.paddings.get(),
+                             w_data,
+                             b_data,
+                             param,
+                             ctx);
 }
 
 }  // namespace fp16

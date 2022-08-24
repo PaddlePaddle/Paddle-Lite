@@ -26,7 +26,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateGather(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
@@ -95,7 +95,49 @@ NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
 }
 
 NNADAPTER_EXPORT int ExecuteGather(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto output_buffer = AllocateOperand(output_operand);
+  auto in_dims_data = input_operand->type.dimensions.data;
+  auto in_dims_count = input_operand->type.dimensions.count;
+  std::vector<int32_t> in_dims(in_dims_data, in_dims_data + in_dims_count);
+  auto idx_dims_data = indices_operand->type.dimensions.data;
+  auto idx_dims_count = indices_operand->type.dimensions.count;
+  std::vector<int32_t> idx_dims(idx_dims_data, idx_dims_data + idx_dims_count);
+  auto input_precision = input_operand->type.precision;
+  auto precision_size = GetOperandPrecisionDataLength(input_precision);
+  switch (precision_size) {
+    case 4:
+      if (indices_operand->type.precision == NNADAPTER_INT32) {
+        status =
+            math::gather(reinterpret_cast<float*>(input_operand->buffer),
+                         in_dims,
+                         reinterpret_cast<int32_t*>(indices_operand->buffer),
+                         idx_dims,
+                         axis,
+                         reinterpret_cast<float*>(output_buffer));
+      } else {
+        status =
+            math::gather(reinterpret_cast<float*>(input_operand->buffer),
+                         in_dims,
+                         reinterpret_cast<int64_t*>(indices_operand->buffer),
+                         idx_dims,
+                         axis,
+                         reinterpret_cast<float*>(output_buffer));
+      }
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported input precision code("
+                           << OperandPrecisionCodeToString(input_precision)
+                           << ") for " << OperationTypeToString(operation->type)
+                           << " is found!";
+      break;
+  }
+
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation

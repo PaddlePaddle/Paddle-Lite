@@ -67,6 +67,10 @@ void conv_depthwise_5x5s1_fp16(CONV_PARAM(float16_t));
 
 void conv_depthwise_5x5s2_fp16(CONV_PARAM(float16_t));
 
+void conv_depthwise_common(const float16_t *w_data,
+                           const operators::ConvParam &param,
+                           ARMContext *ctx);
+
 void weight_trans_c8_4x4_fp16(
     float16_t *dest, const float16_t *src, int ic, int oc, void *workspace);
 
@@ -93,6 +97,7 @@ void col2im(const Dtype *data_col,
             const int dilation_h,
             const int dilation_w,
             Dtype *data_im);
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

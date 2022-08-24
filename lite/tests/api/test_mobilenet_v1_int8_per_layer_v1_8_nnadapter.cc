@@ -49,7 +49,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
 #if defined(LITE_WITH_NNADAPTER)
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   nnadapter_device_names.emplace_back("rockchip_npu");
-  out_accuracy_threshold = 0.79f;
+  out_accuracy_threshold = 0.78f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
   out_accuracy_threshold = 0.79f;
@@ -71,9 +71,13 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
+  out_accuracy_threshold = 1.f;
 #else
   nnadapter_device_names.emplace_back("builtin_device");
-  out_accuracy_threshold = 0.61f;
+  out_accuracy_threshold = 0.60f;
 #endif
 #else
   return;

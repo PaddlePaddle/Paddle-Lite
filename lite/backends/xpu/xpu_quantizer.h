@@ -36,7 +36,8 @@ class XPUQuantizer {
   template <typename Tcpu, typename Txpu>
   XPUQuantData quant(const Tcpu* cpu_data,
                      const DDimLite& dims,
-                     bool data_transpose);
+                     bool data_transpose,
+                     size_t max_ptr_len);
 
  private:
   template <typename T>
@@ -49,7 +50,8 @@ class XPUQuantizer {
   void ConvertWithoutQuant(const T* cpu_data,
                            const DDimLite& dims,
                            bool data_transpose,
-                           size_t hashed_key);
+                           size_t hashed_key,
+                           size_t max_ptr_len);
 
   template <typename Tcpu,
             typename Txpu,
@@ -58,7 +60,8 @@ class XPUQuantizer {
   void ConvertWithQuant(const Tcpu* cpu_data,
                         const DDimLite& dims,
                         bool data_transpose,
-                        size_t hashed_key);
+                        size_t hashed_key,
+                        size_t max_ptr_len);
 
   template <typename Tcpu,
             typename Txpu,
@@ -67,7 +70,8 @@ class XPUQuantizer {
   void ConvertWithQuant(const Tcpu* cpu_data,
                         const DDimLite& dims,
                         bool data_transpose,
-                        size_t hashed_key);
+                        size_t hashed_key,
+                        size_t max_ptr_len);
 
   template <typename Tcpu,
             typename Txpu,
@@ -76,8 +80,10 @@ class XPUQuantizer {
   void ConvertWrapper(const Tcpu* cpu_data,
                       const DDimLite& dims,
                       bool data_transpose,
-                      size_t hashed_key) {
-    ConvertWithQuant<Tcpu, Txpu>(cpu_data, dims, data_transpose, hashed_key);
+                      size_t hashed_key,
+                      size_t max_ptr_len) {
+    ConvertWithQuant<Tcpu, Txpu>(
+        cpu_data, dims, data_transpose, hashed_key, max_ptr_len);
   }
 
   template <typename Tcpu,
@@ -87,8 +93,10 @@ class XPUQuantizer {
   void ConvertWrapper(const Tcpu* cpu_data,
                       const DDimLite& dims,
                       bool data_transpose,
-                      size_t hashed_key) {
-    ConvertWithoutQuant<Tcpu>(cpu_data, dims, data_transpose, hashed_key);
+                      size_t hashed_key,
+                      size_t max_ptr_len) {
+    ConvertWithoutQuant<Tcpu>(
+        cpu_data, dims, data_transpose, hashed_key, max_ptr_len);
   }
 
   // cpu data to xpu quant data

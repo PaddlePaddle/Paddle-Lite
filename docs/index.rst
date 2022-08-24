@@ -78,6 +78,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
   demo_guides/kunlunxin_xpu
+  demo_guides/qualcomm_qnn
   demo_guides/rockchip_npu
   demo_guides/amlogic_npu
   demo_guides/verisilicon_timvx
@@ -87,6 +88,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/bitmain
   demo_guides/intel_fpga
   demo_guides/intel_openvino
+  demo_guides/eeasytech_npu
 
 .. toctree::
   :maxdepth: 1

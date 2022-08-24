@@ -41,7 +41,7 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
         for (uint32_t i = 0; i < operand->length; i++) {
           transform_buffer[i] = static_cast<uint8_t>(std::min(
-              std::max(static_cast<int16_t>(
+              std::max(static_cast<int32_t>(
                            reinterpret_cast<int8_t*>(operand->buffer)[i]) +
                            zero_point,
                        0),
@@ -100,6 +100,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_ABS:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:
@@ -123,6 +124,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_SQUEEZE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
+      case NNADAPTER_TILE:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_UNSQUEEZE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);

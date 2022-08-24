@@ -25,6 +25,7 @@ namespace xpu {
 
 void XPUSqueezeExcitationCompute::PrepareForRun() {
   auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto weight_ptr = param.filter->data<float>();
   auto weight_len = param.filter->numel();
   auto weight1_len = weight_len / 2;
@@ -33,12 +34,13 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
   auto weight2_dims = paddle::lite::DDimLite();
   weight1_dims.ConstructFrom({weight1_len});
   weight2_dims.ConstructFrom({weight2_len});
+  auto max_ptr_len = ctx.GetRawContext()->max_ptr_size();
   quant_weight1_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-          weight_ptr, weight1_dims, false);
+          weight_ptr, weight1_dims, false, max_ptr_len);
   quant_weight2_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-          weight_ptr + weight1_len, weight2_dims, false);
+          weight_ptr + weight1_len, weight2_dims, false, max_ptr_len);
 }
 
 void XPUSqueezeExcitationCompute::Run() {

@@ -61,14 +61,14 @@ namespace fusion {
 class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
  public:
   explicit XPUMultiEncoderAdaptiveSeqlenFuser(
-      const std::string& matmul_type = "matmul")
-      : matmul_type_(matmul_type) {}
+      const std::string& matmul_type = "matmul", bool pre_ln = false)
+      : matmul_type_(matmul_type), pre_ln_(pre_ln) {}
 
   void BuildPattern() override {
     auto* mask = VarNode("mask")
                      ->assert_is_op_input(matmul_type_, "X")
                      ->assert_is_op_input(matmul_type_, "Y");
-    auto* matmul = OpNode("matmul", matmul_type_)->AsIntermediate();
+    auto* matmul = OpNode(matmul_type_, matmul_type_)->AsIntermediate();
     auto* matmul_out = VarNode("matmul_out")
                            ->assert_is_op_input("scale", "X")
                            ->assert_is_op_output(matmul_type_, "Out")
@@ -85,20 +85,37 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
                           ->AsIntermediate();
     auto* xpu_embedding =
         OpNode("xpu_embedding", "__xpu__embedding_with_eltwise_add");
-    auto* embedding_out =
-        VarNode("embedding_out")
-            ->assert_is_op_output("__xpu__embedding_with_eltwise_add", "Output")
-            ->assert_is_op_input("layer_norm", "X");
-    auto* layer_norm = OpNode("layer_norm", "layer_norm");
-    auto* layer_norm_out =
-        VarNode("layer_norm_out")
-            ->assert_is_op_output("layer_norm", "Y")
-            ->assert_is_op_input("__xpu__multi_encoder", "Input");
+
+    PMNode* embedding_out = nullptr;
+    PMNode* layer_norm = nullptr;
+    PMNode* layer_norm_out = nullptr;
+
+    if (pre_ln_) {
+      embedding_out = VarNode("embedding_out")
+                          ->assert_is_op_output(
+                              "__xpu__embedding_with_eltwise_add", "Output")
+                          ->assert_is_op_input("__xpu__multi_encoder", "Input");
+    } else {
+      embedding_out = VarNode("embedding_out")
+                          ->assert_is_op_output(
+                              "__xpu__embedding_with_eltwise_add", "Output")
+                          ->assert_is_op_input("layer_norm", "X");
+      layer_norm = OpNode("layer_norm", "layer_norm");
+      layer_norm_out =
+          VarNode("layer_norm_out")
+              ->assert_is_op_output("layer_norm", "Y")
+              ->assert_is_op_input("__xpu__multi_encoder", "Input");
+    }
     auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__multi_encoder")
                             ->assert_op_attr<bool>("adaptive_seqlen", true);
+    if (pre_ln_) {
+      xpu_encoder->assert_op_attr<bool>("norm_before", true);
+      *xpu_embedding >> *embedding_out >> *xpu_encoder;
+    } else {
+      *xpu_embedding >> *embedding_out >> *layer_norm >> *layer_norm_out >>
+          *xpu_encoder;
+    }
 
-    *xpu_embedding >> *embedding_out >> *layer_norm >> *layer_norm_out >>
-        *xpu_encoder;
     *mask >> *matmul >> *matmul_out >> *scale >> *scale_out >> *stack >>
         *stack_out >> *xpu_encoder;
   }
@@ -147,6 +164,7 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
 
  private:
   std::string matmul_type_;
+  bool pre_ln_;
 };
 
 }  // namespace fusion
@@ -155,9 +173,12 @@ class XPUMultiEncoderAdaptiveSeqlenFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
+    std::vector<bool> pre_lns{true, false};
     for (auto& matmul_type : matmul_types) {
-      fusion::XPUMultiEncoderAdaptiveSeqlenFuser fuser(matmul_type);
-      fuser(graph.get());
+      for (auto pre_ln : pre_lns) {
+        fusion::XPUMultiEncoderAdaptiveSeqlenFuser fuser(matmul_type, pre_ln);
+        fuser(graph.get());
+      }
     }
   }
 };

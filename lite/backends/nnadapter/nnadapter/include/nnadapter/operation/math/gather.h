@@ -21,13 +21,13 @@ namespace nnadapter {
 namespace operation {
 namespace math {
 
-template <typename T>
-static int gather(const T* input_data,
+template <typename DATA_T, typename ID_T = int32_t>
+static int gather(const DATA_T* input_data,
                   const std::vector<int32_t>& input_shape,
-                  const T* index_data,
+                  const ID_T* index_data,
                   const std::vector<int32_t>& index_shape,
                   int32_t axis,
-                  T* output_data) {
+                  DATA_T* output_data) {
   int inner_dim_size = 1;
   int outer_dim_size = 1;
   int input_size = input_shape.size();

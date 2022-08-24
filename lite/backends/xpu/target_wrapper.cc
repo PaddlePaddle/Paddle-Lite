@@ -43,9 +43,13 @@ void TargetWrapperXPU::MemcpySync(void* dst,
 
 template <typename Tcpu, typename Txpu>
 XPUQuantData TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight(
-    const Tcpu* cpu_data, const DDimLite& dims, bool data_transpose) {
+    const Tcpu* cpu_data,
+    const DDimLite& dims,
+    bool data_transpose,
+    size_t max_ptr_len) {
   CHECK(quantizer_.get());
-  return quantizer_->quant<Tcpu, Txpu>(cpu_data, dims, data_transpose);
+  return quantizer_->quant<Tcpu, Txpu>(
+      cpu_data, dims, data_transpose, max_ptr_len);
 }
 
 void TargetWrapperXPU::ScatterL3Cache(
@@ -145,19 +149,17 @@ void TargetWrapperXPU::FreeL3Cache() {
 
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
-    const float*, const DDimLite&, bool);
+    const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
-    const int8_t*, const DDimLite&, bool);
-template XPUQuantData
-TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
-    const int16_t*, const DDimLite&, bool);
+    const int8_t*, const DDimLite&, bool, size_t);
+
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
     nullptr};
@@ -167,9 +169,6 @@ LITE_THREAD_LOCAL std::shared_ptr<void> TargetWrapperXPU::xpu_stream_{nullptr};
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
-// conv autotune config
-LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
-LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;
 // l3 cache config
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{

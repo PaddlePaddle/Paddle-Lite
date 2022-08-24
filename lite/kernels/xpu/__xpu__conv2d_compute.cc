@@ -53,7 +53,10 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   if (quant_int8) {
     xpu_quant_filter_ =
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
-            reinterpret_cast<const int8_t*>(filter_ptr), filter_dims, false);
+            reinterpret_cast<const int8_t*>(filter_ptr),
+            filter_dims,
+            false,
+            max_ptr_size);
     std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max);
     CHECK(xpu_quant_filter_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_filter_max_ptr should't be null";
@@ -85,7 +88,10 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   if (quant_int16) {
     xpu_quant_filter_ =
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
-            reinterpret_cast<const int16_t*>(filter_ptr), filter_dims, false);
+            reinterpret_cast<const int16_t*>(filter_ptr),
+            filter_dims,
+            false,
+            max_ptr_size);
     std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max);
     CHECK(xpu_quant_filter_.max_ptr_ != nullptr)
         << "slim int16 quant xpu_quant_filter_max_ptr should't be null";
@@ -104,7 +110,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   // data precision cast FP16 <-> FP32
   xpu_quant_filter_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-          filter_ptr, filter_dims, false);
+          filter_ptr, filter_dims, false, max_ptr_size);
 }
 
 template <

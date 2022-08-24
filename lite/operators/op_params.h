@@ -1727,6 +1727,7 @@ struct XPUBlockFuseParam : ParamBase {
 
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
+  const lite::Tensor* weight_max{nullptr};
   std::vector<lite::Tensor*> fc_weight;
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
@@ -1742,7 +1743,6 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
-  std::vector<float> weight_max{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1752,6 +1752,8 @@ struct XPUMultiEncoderParam : ParamBase {
   bool enable_qkv_fusion{false};
   bool norm_before{false};
   bool adaptive_seqlen{false};
+  bool per_channel{false};
+  std::vector<int> fc_channels{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -1775,17 +1777,19 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
+  std::vector<float> weight_max{};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
   bool transpose_x{false};
   bool transpose_w{true};
+
   // int8/int16
   bool enable_int8{false};
   bool enable_int16{false};
   float quant_input_max{0.f};
-  float quant_w_max{0.f};
   float quant_output_max{0.f};
+  bool per_channel{false};
 };
 
 struct XPUResNetCbamParam : ParamBase {

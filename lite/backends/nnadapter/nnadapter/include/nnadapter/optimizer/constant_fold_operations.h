@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void ConstantFoldGatherAndAssociatedOperations(core::Model* model);
+void ConstantFoldOperations(core::Model* model);
 
 }  // namespace nnadapter

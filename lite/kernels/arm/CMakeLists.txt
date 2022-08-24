@@ -15,6 +15,7 @@ message(STATUS "compile with lite ARM kernels")
 # 1. basic kernels for basic models
 # for conv op
 add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc)
+add_kernel(conv_depthwise_common ARM basic SRCS conv_depthwise_common.cc)
 add_kernel(conv_direct ARM basic SRCS conv_direct.cc)
 add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc)
 add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc)
