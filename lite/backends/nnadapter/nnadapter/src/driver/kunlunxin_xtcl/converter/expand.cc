@@ -33,8 +33,9 @@ int ConvertExpand(Converter* converter, core::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
   // shape
-  auto shape_count = shape_operand->length / sizeof(int32_t);
-  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  NNADAPTER_CHECK(!IsDynamicShapeOperandType(output_operand->type));
+  auto shape_count = output_operand->type.dimensions.count;
+  auto shape_data = output_operand->type.dimensions.data;
   std::vector<int> expand_shape(shape_data, shape_data + shape_count);
 
   auto expand_expr = converter->builder()->CreateBroadCastTo(
