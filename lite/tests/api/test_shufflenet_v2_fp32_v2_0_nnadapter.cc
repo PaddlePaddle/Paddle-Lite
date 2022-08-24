@@ -50,6 +50,11 @@ TEST(ShuffleNetV2, test_shufflenet_v2_fp32_v2_0_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
   out_accuracy_threshold = 0.69f;
+// TODO(hong19860320) Fix core dump
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
+//   FLAGS_iteration = 1;
+//   out_accuracy_threshold = 1.f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

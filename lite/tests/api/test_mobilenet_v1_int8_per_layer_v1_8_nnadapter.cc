@@ -73,8 +73,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
   out_accuracy_threshold = 0.99f;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   nnadapter_device_names.emplace_back("qualcomm_qnn");
-  FLAGS_iteration = 1;
-  out_accuracy_threshold = 1.f;
+  out_accuracy_threshold = 0.81f;
 #else
   nnadapter_device_names.emplace_back("builtin_device");
   out_accuracy_threshold = 0.60f;
