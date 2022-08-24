@@ -286,18 +286,10 @@ RuntimeProgram::RuntimeProgram(
   instructions_.resize(kRootBlockIdx + 1);
   auto op_size = block_desc->OpsSize();
 
-  PrecisionType old_type = PrecisionType::kFloat;
-  PrecisionType new_type = PrecisionType::kFloat;
-  std::string first = "fp32", second = "fp32";
   int low_precision = 1;
   std::string old_op;
-
-  if (use_precision_low == true) {
-    low_precision = 1;
-    use_precision_low_ = true;
-  } else {
-    low_precision = 0;
-  }
+  use_precision_low_ = use_precision_low;
+  low_precision = use_precision_low_ ? 1 : 0;
 
   for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
@@ -371,10 +363,10 @@ RuntimeProgram::RuntimeProgram(
 #ifdef ENABLE_ARM_FP16
       if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
         if (op_type != "feed" && op_type != "fetch") {
-          if (place.precision == static_cast<PrecisionType>(1)) {
-            place.precision = static_cast<PrecisionType>(5);
-          } else if (place.precision == static_cast<PrecisionType>(4)) {
-            place.precision = static_cast<PrecisionType>(5);
+          if (place.precision == PRECISION(kFloat)) {
+            place.precision = PRECISION(kFP16);
+          } else if (place.precision == PRECISION(kAny)) {
+            place.precision = PRECISION(kFP16);
           }
         }
         // transfer weight to fp16
@@ -425,10 +417,6 @@ RuntimeProgram::RuntimeProgram(
           }
         }
         auto kernels = op->CreateKernels({place});
-        // if (kernels.size() == 0) {
-        //  place.precision = static_cast<PrecisionType>(1);
-        //  kernels = op->CreateKernels({place});
-        //}
         if (kernels.size() == 0 && place.target == TargetType::kARM) {
           place.target = TargetType::kHost;
           kernels = op->CreateKernels({place});
