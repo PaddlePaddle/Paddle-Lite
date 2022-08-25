@@ -553,7 +553,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertActivation(
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_GE(input_count, 1);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
   auto output_operand = output_operands[0];
