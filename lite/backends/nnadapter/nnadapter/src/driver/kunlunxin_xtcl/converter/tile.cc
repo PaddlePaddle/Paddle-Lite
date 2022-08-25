@@ -16,6 +16,7 @@
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace kunlunxin_xtcl {
@@ -30,6 +31,7 @@ int ConvertTile(Converter* converter, core::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
   // Repeats
+  NNADAPTER_CHECK(IsConstantOperand(repeats_operand));
   auto repeats_count = repeats_operand->length / sizeof(int32_t);
   auto repeats_data = reinterpret_cast<int32_t*>(repeats_operand->buffer);
 

@@ -16,6 +16,7 @@
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace kunlunxin_xtcl {
@@ -29,11 +30,15 @@ int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
 
-  auto shape_count = shape_operand->length / sizeof(int32_t);
-  NNADAPTER_CHECK_EQ(shape_count, 2);
-  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-  std::vector<int> output_shape_size(shape_data, shape_data + shape_count);
-  auto size = ConvertToXTCLArray<xtcl::xIndexExpr>(output_shape_size);
+  // shape_operand may be invalid, get output height and width from
+  // output_operand
+  NNADAPTER_CHECK_EQ(output_operand->type.dimensions.count, 4);
+  std::vector<int> output_h_w(output_operand->type.dimensions.data + 2,
+                              output_operand->type.dimensions.data + 4);
+  for (const auto& item : output_h_w) {
+    NNADAPTER_VLOG(5) << "output_h_w : " << item;
+  }
+  auto size = ConvertToXTCLArray<xtcl::xIndexExpr>(output_h_w);
   auto resize_nearest_expr = converter->builder()->CreateInterpolate(
       input_expr, size, "NCHW", "nearest_neighbor", align_corners);
   converter->UpdateExprMap(output_operand, resize_nearest_expr);
