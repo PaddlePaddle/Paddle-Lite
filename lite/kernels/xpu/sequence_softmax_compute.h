@@ -13,22 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
+#include <memory>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class LayerNormCompute : public KernelLite<TARGET(kXPU), PType> {
+class XPUSequenceSoftmaxCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::LayerNormParam;
+  using param_t = operators::SequenceSoftmaxParam;
 
-  virtual void Run();
+  void PrepareForRun() override;
+  void Run() override;
 
-  virtual ~LayerNormCompute() = default;
+ private:
+  std::unique_ptr<int[]> lod_cpu;
 };
 
 }  // namespace xpu

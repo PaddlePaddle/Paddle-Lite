@@ -13,22 +13,22 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class LayerNormCompute : public KernelLite<TARGET(kXPU), PType> {
+template <class T>
+class LodResetCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::LayerNormParam;
+  using param_t = operators::LodResetParam;
 
-  virtual void Run();
+  void Run() override;
 
-  virtual ~LayerNormCompute() = default;
+  virtual ~LodResetCompute() = default;
 };
 
 }  // namespace xpu

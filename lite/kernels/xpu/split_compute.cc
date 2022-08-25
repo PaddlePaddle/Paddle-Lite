@@ -22,30 +22,32 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void SplitCompute::Run() {
+template <typename InType, PrecisionType PType>
+void SplitCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& dout = param.output;
-  auto in_dim = param.x->dims();
+  const lite::Tensor* x = param.x;
+  auto in_dim = x->dims();
   auto axis = param.axis;
   int height = 1;
   for (int i = 0; i < axis; i++) {
     height = height * in_dim[i];
   }
-  int width = param.x->numel() / height;
-  std::vector<float*> out_ptrs;
+  int width = x->numel() / height;
+  std::vector<InType*> out_ptrs;
   std::vector<int> width_out;
-  for (auto out : dout) {
-    out->set_lod(param.x->lod());
-    out_ptrs.push_back(out->mutable_data<float>(TARGET(kXPU)));
+  for (lite::Tensor* out : dout) {
+    out->set_lod(x->lod());
+    out_ptrs.push_back(out->mutable_data<InType>(TARGET(kXPU)));
     width_out.push_back(out->numel() / height);
   }
-  int r = xdnn::split<float>(ctx.GetRawContext(),
-                             param.x->data<float>(),
-                             out_ptrs,
-                             {height, width},
-                             width_out,
-                             1);
+  int r = xdnn::split<InType>(ctx.GetRawContext(),
+                              x->data<InType>(),
+                              out_ptrs,
+                              {height, width},
+                              width_out,
+                              1);
 
   CHECK_EQ(r, 0);
 }
@@ -55,12 +57,24 @@ void SplitCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    split, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SplitCompute, def)
+namespace xpu = paddle::lite::kernels::xpu;
+using splitFP32 = xpu::SplitCompute<float, PRECISION(kFloat)>;
+using splitFP16 = xpu::SplitCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(split, kXPU, kFloat, kNCHW, splitFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("SectionsTensorList",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(split, kXPU, kFP16, kNCHW, splitFP16, float16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("SectionsTensorList",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();

@@ -44,9 +44,9 @@ void ConcatCompute<InType, PType>::Run() {
       for (int j = 0; j < ins[i]->dims().size(); j++) {
         xdims_list.back().push_back(ins[i]->dims()[j]);
       }
-      if (sizeof(InType) == 8) {
-        xdims_list[i].back() = xdims_list[i].back() * 2;
-      }
+      // if (sizeof(InType) == 8) {
+      //   xdims_list[i].back() = xdims_list[i].back() * 2;
+      // }
       x_list.push_back(
           reinterpret_cast<const InType*>(ins[i]->template data<InType>()));
     }
@@ -115,7 +115,7 @@ REGISTER_LITE_KERNEL(concat, kXPU, kInt32, kNCHW, concati32, concat_INT32)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(concat, kXPU, kInt64, kNCHW, concati64, concat_INT64)
+REGISTER_LITE_KERNEL(concat, kXPU, kFloat, kNCHW, concati64, concat_INT64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
