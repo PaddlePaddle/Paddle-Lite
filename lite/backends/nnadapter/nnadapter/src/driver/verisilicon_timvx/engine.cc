@@ -36,16 +36,18 @@ namespace nnadapter {
 namespace verisilicon_timvx {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // in conv+BN fuse, dafault, set the quant_scale_threshold 1000,
-  // user can modify the threshold by context_property or ENV
+  // By dafault, set the
+  // TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
+  // as 1000, user can modify the threshold by context_property or ENV
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-  if (key_values.count(BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {
+  if (key_values.count(
+          TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {
     batchnorm_fusion_max_allowed_quant_scale_deviation_ = string_parse<double>(
-        key_values[BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);
+        key_values[TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);
   } else {
     batchnorm_fusion_max_allowed_quant_scale_deviation_ = GetDoubleFromEnv(
-        BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION, 1000.f);
+        TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION, 1000.f);
   }
   NNADAPTER_LOG(INFO) << "bn_fusion_max_allowed_quant_scale_deviation: "
                       << batchnorm_fusion_max_allowed_quant_scale_deviation_;
@@ -115,6 +117,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseConv2DBatchNormIntoConv2D(
         model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DAddIntoConv2D(model);
+    FuseConv2DBatchNormIntoConv2D(
+        model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);

@@ -16,6 +16,7 @@
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace verisilicon_timvx {
@@ -29,20 +30,17 @@ int ConvertResizeLinear(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-
   float factor = 0.0f;
   if (scales_operand) {
-    factor = reinterpret_cast<float*>(input_operands[2]->buffer)[0];
+    NNADAPTER_CHECK(IsConstantOperand(scales_operand));
+    factor = reinterpret_cast<float*>(scales_operand->buffer)[0];
   } else {
-    if (input_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN) {
-      factor = static_cast<float>(
-          reinterpret_cast<int32_t*>(shape_operand->buffer)[0] /
-          input_operand->type.dimensions.data[2]);
-      NNADAPTER_VLOG(5) << "ResizeLinear factor: " << factor;
-    } else {
-      NNADAPTER_LOG(FATAL) << "TIM-VX require a specific factor";
-      return NNADAPTER_INVALID_PARAMETER;
-    }
+    NNADAPTER_CHECK(
+        shape_operand && IsConstantOperand(shape_operand) &&
+        (input_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN));
+    factor = static_cast<float>(output_operand->type.dimensions.data[2] /
+                                input_operand->type.dimensions.data[2]);
+    NNADAPTER_VLOG(5) << "ResizeLinear factor: " << factor;
   }
   auto resize_op = converter->graph()->CreateOperation<tim::vx::ops::Resize>(
       tim::vx::ResizeType::BILINEAR,
