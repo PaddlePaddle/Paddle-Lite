@@ -489,6 +489,8 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
   void set_xpu_multi_encoder_method(const std::string& precision = "int16",
                                     bool adaptive_seqlen = false);
+  void set_xpu_local_quant(bool local_quant = false);
+  void set_xpu_compute_precision(const std::string& precision = "int16");
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

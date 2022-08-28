@@ -223,6 +223,8 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
           instruct.kernels().emplace_back(std::move(candidate.second));
           VLOG(2) << "instruct.kernels.emplace_back "
                   << instruct.kernels().front()->name();
+          VLOG(2) << "the final pick kernel is "
+                  << instruct.kernels().front()->summary() << "\n\n";
           break;
         }
       }
@@ -255,6 +257,9 @@ void XPUStaticKernelPickPass::ForceUseFP32Kernel(
     return;
   }
 
+  if (GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::xpu_local_quant) {
+    return;
+  }
   // only use in FC，it will not use in future.
   if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
       lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
@@ -291,6 +296,23 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
     return;
   }
 
+  auto op_info = instruct.op_info();
+  bool int8_quant = op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8");
+  bool int16_quant = op_info->HasAttr("enable_int16") && op_info->GetAttr<bool>("enable_int16");
+  CHECK(!(int8_quant && int16_quant)) << "You can only specify one quant type for an OP!";
+
+  if (instruct.op_type() == "__xpu__fc") {
+    if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
+      *score *= 2;
+      VLOG(6) << "__xpu__fc: use PRECISON INT8: *2";
+      return;
+    } else if (int16_quant && kernel.alias() == "XPUFC_INT16_FP32_FP32") {
+      *score *= 2;
+      VLOG(6) << "__xpu__fc: use PRECISON INT8: *2";
+      return;
+    }
+  }
+
   // only use in FC，it will not use in future.
   if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
       lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
@@ -314,6 +336,32 @@ void XPUStaticKernelPickPass::ForceUseInt8Kernel(
   if (kernel.alias() == "XPU_Int8_FP32_FP32") {
     *score = 0;
     VLOG(6) << "By default,XPU not use PRECISION INT8, so not pick "
+               "current kernel: "
+            << kernel.summary();
+  }
+}
+
+void XPUStaticKernelPickPass::ForceUseLocalQuantKernel(
+    size_t* score,
+    const lite::KernelBase& kernel,
+    const paddle::lite::mir::Node::Stmt& instruct) {
+  if (kernel.place().target != TARGET(kXPU)) {
+    return;
+  }
+
+  static bool xpu_local_quant = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
+                                lite::TargetWrapperXPU::xpu_local_quant;
+  if (xpu_local_quant &&
+      kernel.alias() == "XPU_FP32_LOCAL_QUANT" &&
+      instruct.op_type() == "__xpu__fc") {
+      *score *= 2;
+      VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *2";
+      return;
+  }
+
+  if (kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
+    *score = 0;
+    VLOG(6) << "By default,XPU not use LOCAL QUANT, so not pick "
                "current kernel: "
             << kernel.summary();
   }

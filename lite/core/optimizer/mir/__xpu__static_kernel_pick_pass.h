@@ -180,6 +180,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 #ifdef LITE_WITH_XPU
       ForceUseFP32Kernel(&score, kernel, instruct);
       ForceUseInt8Kernel(&score, kernel, instruct);
+      ForceUseLocalQuantKernel(&score, kernel, instruct);
 #endif
 
       // add new rules for datatype: When the input types are consistent with
@@ -262,6 +263,9 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                           const lite::KernelBase& kernel,
                           const paddle::lite::mir::Node::Stmt& instruct);
   void ForceUseInt8Kernel(size_t* score,
+                          const lite::KernelBase& kernel,
+                          const paddle::lite::mir::Node::Stmt& instruct);
+  void ForceUseLocalQuantKernel(size_t* score,
                           const lite::KernelBase& kernel,
                           const paddle::lite::mir::Node::Stmt& instruct);
   void GetScore(PrecisionType precision, size_t* score_tmp);
