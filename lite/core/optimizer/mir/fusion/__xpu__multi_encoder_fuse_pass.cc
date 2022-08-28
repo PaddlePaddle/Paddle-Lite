@@ -28,6 +28,14 @@ namespace mir {
 
 namespace fusion {
 
+static bool is_int8_quantized_op(const OpInfo* op_info) {
+  return (op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8"));
+}
+
+static bool is_int16_quantized_op(const OpInfo* op_info) {
+  return (op_info->HasAttr("enable_int16") && op_info->GetAttr<bool>("enable_int16"));
+}
+
 class XPUSingleEncoderFuser : public FuseBase {
  public:
   explicit XPUSingleEncoderFuser(const std::string& act_type = "gelu",
@@ -509,23 +517,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
     CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
 
-    if (q_mul_op_info->HasAttr("enable_int8") &&
-        q_mul_op_info->GetAttr<bool>("enable_int8")) {
-      op_desc.SetAttr<bool>("enable_int8", true);
-      // mul input_max, output_max * 6 + matmul x_max,y_max,output_max * 2
-      std::vector<float> fc_input_max;
-      std::vector<float> fc_weight_max;
-      std::vector<int> fc_channels;
-      set_quant_info(matched, &fc_input_max);  // set input/output scale
-      bool per_channel = false;
-      set_weight_info(
-          scope, matched, &fc_weight_max, &per_channel, &fc_channels);
-      op_desc.SetAttr<bool>("per_channel", per_channel);
-      op_desc.SetAttr<std::vector<int>>("fc_channels", fc_channels);
-      // mul & matmul input/output max
-      op_desc.SetAttr<std::vector<float>>("fc_input_max", fc_input_max);
-      op_desc.SetAttr<std::vector<float>>("Y0_max", fc_weight_max);
-    }
+    set_quant_info(matched, op_desc);
+
     // extra traits to distill
     auto* reshape_op_info = matched.at("q_reshape2")->stmt()->op_info();
     auto reshape_dim = reshape_op_info->GetAttr<std::vector<int>>("shape");
@@ -603,81 +596,146 @@ class XPUSingleEncoderFuser : public FuseBase {
   // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
   // * 2
   void set_quant_info(const key2nodes_t& matched,
-                      std::vector<float>* quant_info) {
+                      cpp::OpDesc& op_desc) {
     const std::vector<std::string> quant_mul_ops = {
         "q_mul", "k_mul", "v_mul", "qkv_mul", "qkv_mul_3", "qkv_mul_4"};
     const std::vector<std::string> mul_add_ops = {
         "q_add", "k_add", "v_add", "qkv_add", "qkv_act", "qkv_add_4"};
     const std::vector<std::string> matmul_ops = {"qk_matmul", "qkv_matmul"};
 
-    auto* q_mul_op_info = matched.at("q_mul")->stmt()->op_info();
-    const bool mul_quant = q_mul_op_info->HasAttr("enable_int8") &&
-                           q_mul_op_info->GetAttr<bool>("enable_int8");
-    auto* qk_matmul_op_info = matched.at("qk_matmul")->stmt()->op_info();
-    const bool matmul_quant = qk_matmul_op_info->HasAttr("enable_int8") &&
-                              qk_matmul_op_info->GetAttr<bool>("enable_int8");
+    bool mul_quant = false;
+    bool matmul_quant = false;
+    const int ops_size = quant_mul_ops.size() + matmul_ops.size();
+    std::vector<bool> op_is_quantized(ops_size, false);
+    std::vector<std::string> op_quant_types(ops_size, "not_quantized");
+    for (int i = 0; i < quant_mul_ops.size(); ++i) {
+      auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
+      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
+        mul_quant = true;
+        op_is_quantized[i] = true;
+        if (is_int8_quantized_op(op_info)) {
+          op_desc.SetAttr<bool>("enable_int8", true);
+          op_quant_types[i] = "enable_int8";
+        } else {
+          op_desc.SetAttr<bool>("enable_int16", true);
+          op_quant_types[i] = "enable_int16";
+        }
+      }
+    }
+    for (int i = 0; i < matmul_ops.size(); ++i) {
+      auto op_info = matched.at(matmul_ops[i])->stmt()->op_info();
+      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
+        matmul_quant = true;
+        op_is_quantized[quant_mul_ops.size() + i] = true;
+        if (is_int8_quantized_op(op_info)) {
+          op_desc.SetAttr<bool>("enable_int8", true);
+          op_quant_types[quant_mul_ops.size() + i] = "enable_int8";
+        } else {
+          op_desc.SetAttr<bool>("enable_int16", true);
+          op_quant_types[quant_mul_ops.size() + i] = "enable_int16";
+        }
+      }
+    }
+
+    op_desc.SetAttr<std::vector<std::string>>("quant_types", op_quant_types);
+
     if (!mul_quant && !matmul_quant) {
       VLOG(3) << "no quantized op";
       return;
     } else {
-      VLOG(3) << "mul quantized: " << mul_quant
-              << ", matmul quantized: " << matmul_quant;
+      VLOG(3) << "mul quantized: " << mul_quant;
+      for (int i = 0; i < quant_mul_ops.size(); ++i) {
+        VLOG(3) << "  " << quant_mul_ops[i] << " : " << op_quant_types[i];
+      }
+      VLOG(3) << "matmul quantized: " << matmul_quant;
+      for (int i = 0; i < matmul_ops.size(); ++i) {
+        VLOG(3) << "  " << matmul_ops[i] << " : " << op_quant_types[quant_mul_ops.size() + i];
+      }
     }
-    for (int i = 0; mul_quant && (i < quant_mul_ops.size()); ++i) {
-      auto& quant_mul = quant_mul_ops[i];
-      quant_info->push_back(
-          127 *
-          matched.at(quant_mul)->stmt()->op_info()->GetAttr<std::vector<float>>(
-              "X0_scale")[0]);
-      // ew_add out_threshold for output quant
-      auto& quant_ew = mul_add_ops[i];
-      CHECK(matched.at(quant_ew)->stmt()->op_info()->HasAttr("out_threshold"))
-          << "act after quant mul has no out_threshold";
-      quant_info->push_back(
-          matched.at(quant_ew)->stmt()->op_info()->GetAttr<float>(
-              "out_threshold"));
-      VLOG(3) << quant_mul << " input_max: " << (*quant_info)[i * 2]
-              << ", output_max(ew_add): " << (*quant_info)[i * 2 + 1];
+    // mul input_max, output_max * 6 + matmul x_max,y_max,output_max * 2
+    std::vector<float> input_max(quant_mul_ops.size() * 2 + matmul_ops.size() * 3, 0);
+    std::vector<std::vector<float>> weight_max(quant_mul_ops.size());
+    bool per_channel = false;
+
+    for (int i = 0; i < quant_mul_ops.size(); ++i) {
+      if (op_is_quantized[i]) {
+        auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
+        input_max[i * 2] = 127 * op_info->GetAttr<std::vector<float>>("X0_scale")[0];
+        input_max[i * 2 + 1] =
+            matched.at(mul_add_ops[i])->stmt()->op_info()->GetAttr<float>("out_threshold");
+
+        // weight per tensor or per channel
+        auto weight_max_tensor = op_info->GetAttr<std::vector<float>>("Y0_scale");
+        bool per_tensor = is_per_tensor(weight_max_tensor);
+        CHECK(!(per_channel && per_tensor)) << "The quant type of all weights must be consistent!";
+        per_channel = !per_tensor;
+        int weight_scale_size = per_tensor ? 1 : weight_max_tensor.size();
+        for (int j = 0; j < weight_scale_size; j ++) {
+          weight_max[i].push_back(127 * weight_max_tensor[j]);
+        }
+
+        VLOG(3) << quant_mul_ops[i] << " input_max: " << input_max[i * 2]
+                << ", output_max(ew_add): " << input_max[i * 2 + 1]
+                << (per_tensor ?  ", per_tensor " : ", per_channel ")
+                << "weight_max: " << weight_max[i][0] << " " << weight_max[i][weight_scale_size - 1];
+      }
     }
-    CHECK_EQ(quant_info->size(), 12);
-    float max_qkv_input = std::max((*quant_info)[0], (*quant_info)[2]);
-    max_qkv_input = std::max(max_qkv_input, (*quant_info)[4]);
-    (*quant_info)[0] = max_qkv_input;
-    (*quant_info)[2] = max_qkv_input;
-    (*quant_info)[4] = max_qkv_input;
-    float max_qkv_output = std::max((*quant_info)[1], (*quant_info)[3]);
-    max_qkv_output = std::max(max_qkv_output, (*quant_info)[5]);
-    (*quant_info)[1] = max_qkv_output;
-    (*quant_info)[3] = max_qkv_output;
-    (*quant_info)[5] = max_qkv_output;
+    float max_qkv_input = std::max(input_max[0], input_max[2]);
+    max_qkv_input = std::max(max_qkv_input, input_max[4]);
+    input_max[0] = max_qkv_input;
+    input_max[2] = max_qkv_input;
+    input_max[4] = max_qkv_input;
+    float max_qkv_output = std::max(input_max[1], input_max[3]);
+    max_qkv_output = std::max(max_qkv_output, input_max[5]);
+    input_max[1] = max_qkv_output;
+    input_max[3] = max_qkv_output;
+    input_max[5] = max_qkv_output;
     VLOG(3) << "max_qkv_input: " << max_qkv_input
             << ", max_qkv_output: " << max_qkv_output;
+    VLOG(3) << "q/k/v weight_max: " << weight_max[0][0]
+                            << ", " << weight_max[1][0]
+                            << ", " << weight_max[2][0];
 
     if (matmul_quant) {
-      auto* qkv_matmul_op_info = matched.at("qkv_matmul")->stmt()->op_info();
-      CHECK(qkv_matmul_op_info->HasAttr("X0_scale"));
-      float softmax_out_threshold = matched.at("qk_softmax")
-                                        ->stmt()
-                                        ->op_info()
-                                        ->GetAttr<float>("out_threshold");
-      VLOG(3) << "qkv_matmul X max: " << softmax_out_threshold
-              << ", qkv_matmul Out max: " << (*quant_info)[6];
-      CHECK_LT(std::abs(softmax_out_threshold -
-                        qkv_matmul_op_info->GetAttr<std::vector<float>>(
-                            "X0_scale")[0] *
-                            127),
-               1e-5);
-      CHECK(qk_matmul_op_info->HasAttr("X0_scale"));
-      quant_info->push_back(max_qkv_output);
-      quant_info->push_back(max_qkv_output);
-      quant_info->push_back(softmax_out_threshold);
-      // qkv_matmul X max
-      quant_info->push_back(softmax_out_threshold);
-      quant_info->push_back(max_qkv_output);
-      quant_info->push_back((*quant_info)[6]);
-      CHECK_EQ(quant_info->size(), 18);
+      auto matmul_offset = quant_mul_ops.size();
+      if (op_is_quantized[matmul_offset + 0]) {
+        auto qk_matmul_op_info = matched.at("qk_matmul")->stmt()->op_info();
+        input_max[matmul_offset * 2 + 0] = max_qkv_output != 0 ? max_qkv_output :
+            127 * qk_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
+        input_max[matmul_offset * 2 + 1] = max_qkv_output != 0 ? max_qkv_output :
+            127 * qk_matmul_op_info->GetAttr<std::vector<float>>("Y0_scale")[0];
+        input_max[matmul_offset * 2 + 2] =
+            matched.at("qk_softmax")->stmt()->op_info()->GetAttr<float>("out_threshold");
+
+        VLOG(3) << "qk_matmul X_max: " << input_max[matmul_offset * 2 + 0]
+                << "          Y_max: " << input_max[matmul_offset * 2 + 1]
+                << "        Out_max: " << input_max[matmul_offset * 2 + 2];
+      }
+
+      if (op_is_quantized[matmul_offset + 1]) {
+        auto qkv_matmul_op_info = matched.at("qkv_matmul")->stmt()->op_info();
+        input_max[matmul_offset * 2 + 3] =
+            127 * qkv_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
+        input_max[matmul_offset * 2 + 4] = max_qkv_output != 0 ? max_qkv_output :
+            127 * qkv_matmul_op_info->GetAttr<std::vector<float>>("Y0_scale")[0];
+        input_max[matmul_offset * 2 + 5] =
+            qkv_matmul_op_info->GetAttr<float>("out_threshold");
+
+        VLOG(3) << "qk_matmul X_max: " << input_max[matmul_offset * 2 + 3]
+                << "          Y_max: " << input_max[matmul_offset * 2 + 4]
+                << "        Out_max: " << input_max[matmul_offset * 2 + 5];
+      }
+    } else {
+      // For backward compatible, API uses the size of input_max vector to
+      // check whether it is mul quant or mul+matmul quant.
+      input_max.resize(quant_mul_ops.size() * 2);
     }
+    // mul & matmul input/output max
+    op_desc.SetAttr<std::vector<float>>("fc_input_max", input_max);
+    op_desc.SetAttr<std::vector<std::vector<float>>>("Y0_max", weight_max);
+    op_desc.SetAttr<bool>("per_channel", per_channel);
   }
+
   bool is_per_tensor(const std::vector<float>& weight_max) {
     bool per_tensor = true;
     CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
@@ -689,56 +747,6 @@ class XPUSingleEncoderFuser : public FuseBase {
       }
     }
     return per_tensor;
-  }
-  void set_weight_info(Scope* scope,
-                       const key2nodes_t& matched,
-                       std::vector<float>* weight_info,
-                       bool* per_channel,
-                       std::vector<int>* fc_channels) {
-    const std::vector<std::string> quant_mul_ops = {
-        "q_mul", "k_mul", "v_mul", "qkv_mul", "qkv_mul_3", "qkv_mul_4"};
-    bool tmp_pc = false;
-    for (int i = 0; i < quant_mul_ops.size(); ++i) {
-      auto& mul_op = quant_mul_ops[i];
-      auto op_info = matched.at(mul_op)->stmt()->op_info();
-      auto weight_name = op_info->Input("Y").front();
-      auto weight_shape = scope->FindMutableTensor(weight_name)->dims();
-      CHECK_EQ(weight_shape.size(), 2) << "weight_shape: " << weight_shape;
-      CHECK(op_info->HasAttr("Y0_scale")) << " quant op has no Y0_scale";
-      int weight_scale_size =
-          op_info->GetAttr<std::vector<float>>("Y0_scale").size();
-      CHECK_EQ(weight_scale_size, weight_shape[1])
-          << "weight_scale_size: " << weight_scale_size
-          << ", weight_shape: " << weight_shape;
-      CHECK_GT(weight_scale_size, 3)
-          << mul_op << ", weight_scale_size: " << weight_scale_size;
-      fc_channels->push_back(weight_scale_size);
-      if (i == 0) {
-        if (is_per_tensor(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
-          tmp_pc = false;
-          VLOG(3) << "mul quant using weight_max per tensor";
-        } else {
-          tmp_pc = true;
-          VLOG(3) << "mul quant using weight_max per channel";
-        }
-      }
-      for (int j = 0; j < weight_scale_size; ++j) {
-        weight_info->push_back(
-            127 * op_info->GetAttr<std::vector<float>>("Y0_scale")[j]);
-        if (!tmp_pc) break;
-      }
-      if (i < 3) {
-        if (tmp_pc) {
-          VLOG(3)
-              << mul_op << " weight max first channel: "
-              << (*weight_info)[i * weight_scale_size] << ", last channel:"
-              << (*weight_info)[i * weight_scale_size + weight_scale_size - 1];
-        } else {
-          VLOG(3) << mul_op << " weight max per tensor: " << (*weight_info)[i];
-        }
-      }
-    }
-    *per_channel = tmp_pc;
   }
 };
 
@@ -778,9 +786,9 @@ class XPUMultiEncoderFuser {
       VLOG(3) << "Found continuous " << all_encoders.size()
               << " single_encoder";
 
-      const bool enable_int8 =
-          all_encoders[0]->stmt()->op_info()->HasAttr("enable_int8") &&
-          all_encoders[0]->stmt()->op_info()->GetAttr<bool>("enable_int8");
+      const bool enable_int8 = is_int8_quantized_op(all_encoders[0]->stmt()->op_info());
+      const bool enable_int16 = is_int16_quantized_op(all_encoders[0]->stmt()->op_info());
+
       // TODO(miaotianxiang): more verification
       const bool norm_before_0 =
           all_encoders[0]->stmt()->op_info()->GetAttr<bool>("norm_before");
@@ -814,48 +822,32 @@ class XPUMultiEncoderFuser {
       std::vector<std::string> arg_names{
           "FCWeight", "FCBias", "LNScale", "LNBias"};
       std::map<std::string, std::vector<std::string>> arg_map;
-      std::vector<float> fc_weight_max;
+      std::vector<std::vector<float>> fc_weight_max(all_encoders.size() * 6);
       std::vector<float> fc_input_max;
-
-      std::vector<int> fc_channels;
-      int single_encoder_weight_scale_size = 0;
-      if (per_channel) {
-        for (auto channel :
-             first_encoder_op_info->GetAttr<std::vector<int>>("fc_channels")) {
-          single_encoder_weight_scale_size += channel;
-        }
-      } else {
-        // non-quant or per tensor quant
-        single_encoder_weight_scale_size = 6;
-      }
-      fc_weight_max.resize(all_encoders.size() *
-                           single_encoder_weight_scale_size);
+      std::vector<std::string> quant_types;
 
       for (size_t i = 0; i < all_encoders.size(); ++i) {
         Node* cur_encoder = all_encoders[i];
         auto* op_info = cur_encoder->stmt()->op_info();
-        if (enable_int8) {
-          CHECK(op_info->HasAttr("enable_int8")) << "no enable_int8 attr";
+        CHECK(op_info->HasAttr("quant_types")) << "no quant_types attr";
+        for (auto quant_type : op_info->GetAttr<std::vector<std::string>>("quant_types")) {
+          quant_types.push_back(quant_type);
+        }
+        if (enable_int8 || enable_int16) {
+          CHECK(op_info->HasAttr("enable_int8") || op_info->HasAttr("enable_int16"))
+              << "no enable_int8 or enable_int16 attr";
           CHECK(op_info->HasAttr("Y0_max")) << "no Y0_max attr";
           CHECK(op_info->HasAttr("per_channel")) << "no per_channel attr";
           CHECK(op_info->HasAttr("fc_input_max")) << "no fc_input_max attr";
-          CHECK_EQ(op_info->GetAttr<std::vector<float>>("Y0_max").size(),
-                   single_encoder_weight_scale_size)
-              << "invalid weight scale size: "
-              << op_info->GetAttr<std::vector<float>>("Y0_max").size() << ", "
-              << single_encoder_weight_scale_size;
-          for (int j = 0; j < single_encoder_weight_scale_size; ++j) {
-            fc_weight_max[i * single_encoder_weight_scale_size + j] =
-                op_info->GetAttr<std::vector<float>>("Y0_max")[j];
+          int fc_offset = i * 6;
+          for (auto& y0_list : op_info->GetAttr<std::vector<std::vector<float>>>("Y0_max")) {
+            for (auto y0 : y0_list) {
+              fc_weight_max[fc_offset].push_back(y0);
+            }
+            fc_offset++;
           }
           for (auto x0 : op_info->GetAttr<std::vector<float>>("fc_input_max")) {
             fc_input_max.push_back(x0);
-          }
-          if (per_channel) {
-            for (auto channel :
-                 op_info->GetAttr<std::vector<int>>("fc_channels")) {
-              fc_channels.push_back(channel);
-            }
           }
         }
         for (auto arg_name : arg_names) {
@@ -902,35 +894,21 @@ class XPUMultiEncoderFuser {
       op_desc.SetAttr<int>("xpu", 1);
       op_desc.SetAttr<bool>("norm_before", norm_before_0);
       op_desc.SetAttr<bool>("enable_int8", enable_int8);
-      if (enable_int8) {
-        CHECK_EQ(fc_precision_, "int8");
-        if (per_channel) {
-          CHECK_EQ(fc_weight_max.size(),
-                   all_encoders.size() * single_encoder_weight_scale_size)
-              << " fc_weight_max.size:" << fc_weight_max.size()
-              << ", all_encoders.size():" << all_encoders.size()
-              << ", single_encoder_weight_scale_size: "
-              << single_encoder_weight_scale_size;
-          CHECK_EQ(fc_channels.size(), all_encoders.size() * 6)
-              << "fc_channels.size:" << fc_channels.size();
-        } else {
-          CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6)
-              << " fc_weight_max.size:" << fc_weight_max.size()
-              << ", all_encoders.size():" << all_encoders.size();
-          CHECK_EQ(fc_channels.size(), 0) << fc_channels.size();
-        }
+      op_desc.SetAttr<bool>("enable_int16", enable_int16);
+      if (enable_int8 || enable_int16) {
+        CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6);
         CHECK((fc_input_max.size() == all_encoders.size() * 12) ||
               (fc_input_max.size() == all_encoders.size() * 18))
             << fc_input_max.size()
             << ", all_encoders.size:" << all_encoders.size();
         if (!per_channel) {
           for (int i = 0; i < fc_weight_max.size(); i += 6) {
-            CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 1]), 1e-5)
+            CHECK_LT(std::abs(fc_weight_max[i][0] - fc_weight_max[i + 1][0]), 1e-5)
                 << " quanted ernie's q/k weight scale should be euqal: "
-                << fc_weight_max[i] << ", " << fc_weight_max[i + 1];
-            CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 2]), 1e-5)
+                << fc_weight_max[i][0] << ", " << fc_weight_max[i + 1][0];
+            CHECK_LT(std::abs(fc_weight_max[i][0] - fc_weight_max[i + 2][0]), 1e-5)
                 << " quanted ernie's q/v weight scale should be euqal: "
-                << fc_weight_max[i] << ", " << fc_weight_max[i + 2];
+                << fc_weight_max[i][0] << ", " << fc_weight_max[i + 2][0];
           }
         }
         op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
@@ -940,6 +918,8 @@ class XPUMultiEncoderFuser {
       } else {
         CHECK_EQ(per_channel, false) << "per_channel in non-quant model";
       }
+      op_desc.SetAttr<std::vector<std::string>>("FCQuantTypes", quant_types);
+
       op_desc.SetAttr<int>("hidden_dim", hidden_dim);
       op_desc.SetAttr<int>("head_num",
                            first_encoder_op_info->GetAttr<int>("head_num"));
@@ -952,9 +932,6 @@ class XPUMultiEncoderFuser {
       op_desc.SetAttr<std::string>("precision", fc_precision_);
       op_desc.SetAttr<bool>("adaptive_seqlen", adaptive_seqlen_);
       op_desc.SetAttr<bool>("per_channel", per_channel);
-      if (per_channel) {
-        op_desc.SetAttr<std::vector<int>>("fc_channels", fc_channels);
-      }
 
       // q/k/v fusion
       bool enable_qkv_fusion = true;
@@ -966,27 +943,35 @@ class XPUMultiEncoderFuser {
       auto* scope = multi_encoder_stmt->op()->scope();
       auto& fc_weight_names = arg_map["FCWeight"];
       for (size_t i = 0; i < fc_weight_names.size(); ++i) {
-        if (enable_qkv_fusion && (i % 6 == 0)) {
-          auto weight_tensor_tmp = scope->FindMutableTensor(fc_weight_names[i]);
-          CHECK(weight_tensor_tmp != nullptr);
-          auto weight_dims_tmp = weight_tensor_tmp->dims();
-          if (weight_dims_tmp.size() == 2 &&
-              (weight_dims_tmp[1] * 3 == weight_dims_tmp[0])) {
-            // the weight already be updated( previous patter fused )
-            VLOG(3) << "qkv-fused weight " << i
-                    << " were reused, dims: " << weight_dims_tmp;
-            i += 5;
-            continue;
+        auto quant_type = quant_types[(i / 6) * 8 + i % 6];
+        VLOG(3) << "The " << i << "th fc quant_type: " << quant_type;
+        std::string max_tensor_name = "encoder_max_" + fc_weight_names[i];
+        auto max_tensor = scope->FindTensor(max_tensor_name);
+        if (max_tensor != nullptr) {
+          // Some model may share weights between two multi_encoders and if the shared weight
+          // is already updated, just need to set max value for non-quant OP.
+          if (quant_type == "not_quantized") {
+            CHECK_EQ(max_tensor->numel(), 1);
+            CHECK_EQ(fc_weight_max[i].size(), 0);
+            auto max_f = max_tensor->data<float>()[0];
+            fc_weight_max[i].push_back(max_f);
+            VLOG(3) << "Get " << max_tensor_name << " " << max_f;
           }
-          // quant q/k/v weight into q
-          update_weight(
-              scope, fc_weight_names, i, i + 3, enable_int8, &fc_weight_max);
-          continue;
+        } else {
+          // Update weight, including tranpose\convert type\fuse qkv weight\findmax.
+          int start = i;
+          int end = (enable_qkv_fusion && (i % 6 == 0)) ? i + 3 : i + 1;
+          auto new_max_tensor = scope->NewTensor(max_tensor_name);
+          update_weight(scope, fc_weight_names, start, end, quant_type, &fc_weight_max);
+          if (quant_type == "not_quantized") {
+            CHECK_EQ(fc_weight_max[i].size(), 1);
+            new_max_tensor->mutable_data<float>(TargetType::kHost, 1)[0] = fc_weight_max[i][0];
+            VLOG(3) << "Set " << max_tensor_name << " " << fc_weight_max[i][0];
+          }
         }
-        // quant weight
-        update_weight(
-            scope, fc_weight_names, i, i + 1, enable_int8, &fc_weight_max);
       }
+
+      op_desc.SetAttr<std::vector<std::vector<float>>>("FCWeightMax", fc_weight_max);
 
       auto& fc_bias_names = arg_map["FCBias"];
       for (size_t i = 0; enable_qkv_fusion && i < fc_bias_names.size();
@@ -1037,31 +1022,6 @@ class XPUMultiEncoderFuser {
                bias_qkv.get(),
                qkv_len * sizeof(float));
       }
-
-      std::string max_name = "encoder_max_" + fc_weight_names[0];
-      VLOG(3) << "multi-encoder max weight name: " << max_name;
-      auto* max_filter_node = graph->RetrieveArgument(max_name);
-      if (max_filter_node == nullptr) {
-        max_filter_node = graph->NewArgumentNode(max_name);
-        CHECK(max_filter_node != nullptr) << "NewArgumentNode failed";
-        max_filter_node->arg()->is_weight = true;
-        max_filter_node->arg()->type = LiteType::GetTensorTy(
-            TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-        auto* max_filter_tensor = scope->MutableParent()->NewTensor(max_name);
-        max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
-        memcpy(max_filter_tensor->mutable_data<float>(),
-               &fc_weight_max[0],
-               sizeof(float) * fc_weight_max.size());
-        max_filter_tensor->set_precision(
-            paddle::lite_api::PrecisionType::kFloat);
-        max_filter_tensor->set_persistable(true);
-      } else {
-        // the weight/bias were used in another multiencoder pattern
-        auto weight_max_tensor_tmp = scope->FindMutableTensor(max_name);
-        CHECK(weight_max_tensor_tmp != nullptr) << "max xpu weight not exist";
-      }
-      DirectedLink(max_filter_node, first_encoder);
-      op_desc.SetInput("FCWeightMax", {max_name});
 
       auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
       multi_encoder_op->Attach(op_desc, scope);
@@ -1125,8 +1085,8 @@ class XPUMultiEncoderFuser {
                      const std::vector<std::string>& fc_weight_names,
                      int start,
                      int end,
-                     bool enable_int8,
-                     std::vector<float>* fc_weight_max) {
+                     std::string quant_type,
+                     std::vector<std::vector<float>>* fc_weight_max) {
     CHECK(start >= 0 && end <= fc_weight_names.size());
     CHECK(start < end) << " start:" << start << ", end:" << end;
     std::vector<Tensor*> weight_tensor_vec(end - start, nullptr);
@@ -1149,8 +1109,7 @@ class XPUMultiEncoderFuser {
     }
 
     int qkv_offset = 0;
-    if (enable_int8) {
-      CHECK_EQ(fc_precision_, "int8");
+    if (quant_type == "enable_int8") {
       std::unique_ptr<int8_t[]> weight_qkv_trans(new int8_t[qkv_len]);
       for (int i = 0; i < (end - start); ++i) {
         // the quanted weight is alreay int8 in quanted model
@@ -1171,6 +1130,27 @@ class XPUMultiEncoderFuser {
       memcpy(weight_tensor_vec[0]->mutable_data<int8_t>(),
              weight_qkv_trans.get(),
              qkv_len * sizeof(int8_t));
+    } else if (quant_type == "enable_int16") {
+      std::unique_ptr<int16_t[]> weight_qkv_trans(new int16_t[qkv_len]);
+      for (int i = 0; i < (end - start); ++i) {
+        // the quanted weight is alreay int16 in quanted model
+        int16_t* weight_host_ptr = weight_tensor_vec[i]->mutable_data<int16_t>();
+        std::unique_ptr<int16_t[]> weight_host_trans(
+            new int16_t[weight_len_vec[i]]);
+        paddle::lite::xpu::math::Transpose<int16_t>(weight_host_ptr,
+                                                   weight_host_trans.get(),
+                                                   weight_dims_vec[i][0],
+                                                   weight_dims_vec[i][1]);
+        memcpy(weight_qkv_trans.get() + qkv_offset,
+               weight_host_trans.get(),
+               weight_len_vec[i] * sizeof(int16_t));
+        qkv_offset += weight_len_vec[i];
+      }
+      CHECK_EQ(qkv_offset, qkv_len);
+      weight_tensor_vec[0]->Resize({weight_dim1_acc, weight_dims_vec[0][0]});
+      memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
+             weight_qkv_trans.get(),
+             qkv_len * sizeof(int16_t));
     } else {
       std::unique_ptr<float[]> weight_qkv_trans(new float[qkv_len]);
       for (int i = 0; i < (end - start); ++i) {
@@ -1191,8 +1171,9 @@ class XPUMultiEncoderFuser {
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_qkv_trans.get(), qkv_len);
       CHECK(start < fc_weight_max->size());
-      (*fc_weight_max)[start] = max_f;
-      VLOG(3) << "QKV fused FC-" << start << ", weight_max:" << max_f;
+      CHECK_EQ((*fc_weight_max)[start].size(), 0);
+      (*fc_weight_max)[start].push_back(max_f);
+      VLOG(3) << "Lite find max: " << start << "th fc , weight_max:" << max_f;
       if (fc_precision_ == "int31") {
         memcpy(weight_tensor_vec[0]->mutable_data<float>(),
                weight_qkv_trans.get(),
@@ -1208,15 +1189,27 @@ class XPUMultiEncoderFuser {
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
-        std::unique_ptr<int16_t[]> weight_qkv_trans_int16(new int16_t[qkv_len]);
-        paddle::lite::xpu::math::ConvertFP32ToInt16(
-            weight_qkv_trans.get(),
-            weight_qkv_trans_int16.get(),
-            max_f,
-            qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
-               weight_qkv_trans_int16.get(),
-               qkv_len * sizeof(int16_t));
+        // For R200+int16+local quant, use the fp16 weight.
+        if (GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::xpu_local_quant) {
+          std::unique_ptr<float16[]> weight_qkv_trans_fp16(new float16[qkv_len]);
+          paddle::lite::xpu::math::ConvertFP32ToFP16(
+              weight_qkv_trans.get(),
+              weight_qkv_trans_fp16.get(),
+              qkv_len);
+          memcpy(weight_tensor_vec[0]->mutable_data<float16>(),
+                weight_qkv_trans_fp16.get(),
+                qkv_len * sizeof(float16));
+        } else {
+          std::unique_ptr<int16_t[]> weight_qkv_trans_int16(new int16_t[qkv_len]);
+          paddle::lite::xpu::math::ConvertFP32ToInt16(
+              weight_qkv_trans.get(),
+              weight_qkv_trans_int16.get(),
+              max_f,
+              qkv_len);
+          memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
+                weight_qkv_trans_int16.get(),
+                qkv_len * sizeof(int16_t));
+        }
       }
     }
   }
