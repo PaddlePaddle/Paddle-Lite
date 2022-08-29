@@ -28,6 +28,7 @@ void* TargetMalloc(TargetType target, size_t size) {
     case TargetType::kHost:
     case TargetType::kX86:
     case TargetType::kARM:
+    case TargetType::kARMTrustZone:
       data = TargetWrapper<TARGET(kHost)>::Malloc(size);
       break;
 #ifdef LITE_WITH_CUDA
@@ -77,6 +78,7 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
     case TargetType::kHost:
     case TargetType::kX86:
     case TargetType::kARM:
+    case TargetType::kARMTrustZone:
       TargetWrapper<TARGET(kHost)>::Free(data);
       break;
 
@@ -133,6 +135,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
     case TargetType::kHost:
     case TargetType::kX86:
     case TargetType::kARM:
+    case TargetType::kARMTrustZone:
       TargetWrapper<TARGET(kHost)>::MemcpySync(
           dst, src, size, IoDirection::DtoD);
       break;

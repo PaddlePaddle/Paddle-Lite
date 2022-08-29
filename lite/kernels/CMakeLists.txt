@@ -89,6 +89,7 @@ endif()
 
 add_subdirectory(host)
 add_subdirectory(arm)
+add_subdirectory(arm_trustzone)
 add_subdirectory(cuda)
 add_subdirectory(x86)
 add_subdirectory(opencl)

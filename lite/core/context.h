@@ -72,6 +72,7 @@ using MLUContext = Context<TargetType::kMLU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
+using ARMTrustZoneContext = Context<TargetType::kARMTrustZone>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -387,6 +388,47 @@ class Context<TargetType::kARM> {
 };
 #endif
 
+#ifdef LITE_WITH_ARM_TRUSTZONE
+template <>
+class Context<TargetType::kARMTrustZone> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() { DeviceInfo::Init(); }
+
+  void CopySharedTo(ARMTrustZoneContext* ctx) {}
+
+  void SetRunMode(lite_api::PowerMode mode, int threads) {
+    return DeviceInfo::Global().SetRunMode(mode, threads);
+  }
+  void SetCache(int l1size, int l2size, int l3size) {
+    return DeviceInfo::Global().SetCache(l1size, l2size, l3size);
+  }
+  void SetArch(ARMArch arch) { return DeviceInfo::Global().SetArch(arch); }
+
+  lite_api::PowerMode mode() const { return DeviceInfo::Global().mode(); }
+  int threads() const { return DeviceInfo::Global().threads(); }
+  ARMArch arch() const { return DeviceInfo::Global().arch(); }
+  int l1_cache_size() const { return DeviceInfo::Global().l1_cache_size(); }
+  int l2_cache_size() const { return DeviceInfo::Global().l2_cache_size(); }
+  int l3_cache_size() const { return DeviceInfo::Global().l3_cache_size(); }
+  int llc_size() const { return DeviceInfo::Global().llc_size(); }
+  bool has_dot() const { return DeviceInfo::Global().has_dot(); }
+  bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
+  bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
+
+  template <typename T>
+  T* workspace_data() {
+    return DeviceInfo::Global().workspace_data<T>();
+  }
+
+  bool ExtendWorkspace(size_t size) {
+    return DeviceInfo::Global().ExtendWorkspace(size);
+  }
+
+  std::string name() const { return "ARMTrustZoneContext"; }
+};
+#endif
+
 #ifdef LITE_WITH_FPGA
 // TODO(tianxiaogang): add needed implementation to context
 template <>
@@ -617,6 +659,12 @@ class ContextScheduler {
             &ctx->As<ARMContext>());
         break;
 #endif
+#ifdef LITE_WITH_ARM_TRUSTZONE
+      case TARGET(kARMTrustZone):
+        kernel_contexts_[TargetType::kARMTrustZone].As<ARMTrustZoneContext>().CopySharedTo(
+            &ctx->As<ARMTrustZoneContext>());
+        break;
+#endif
 #ifdef LITE_WITH_NPU
       case TARGET(kNPU):
         kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
@@ -703,6 +751,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_ARM
     InitContext<TargetType::kARM, ARMContext>();
+#endif
+#ifdef LITE_WITH_ARM_TRUSTZONE
+    InitContext<TargetType::kARMTrustZone, ARMTrustZoneContext>();
 #endif
 #ifdef LITE_WITH_OPENCL
     InitContext<TargetType::kOpenCL, OpenCLContext>();
