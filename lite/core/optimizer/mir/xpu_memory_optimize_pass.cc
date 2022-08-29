@@ -140,6 +140,38 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph) {
       var_nodes.insert(
           var_nodes.end(), op_node->outlinks.begin(), op_node->outlinks.end());
       TargetType target_type;
+
+      auto inplace_op_node = inplace_op_nodes.find(op_type);
+      if (inplace_op_node != inplace_op_nodes.end()) {
+        bool inplace = false;
+        if (op_info->HasAttr("inplace")) {
+          inplace = op_info->GetAttr<bool>("inplace");
+        }
+        if (inplace) {
+          auto in_arg_name = op_info->Input("X")[0];
+          auto out_arg_name = op_info->Output("Out")[0];
+          if (invalid_var_names.count(in_arg_name)) continue;
+          if (invalid_var_names.count(out_arg_name)) continue;
+          bool reuse = false;
+          int i = 0;
+          for (const auto& reuse_var_names : inpalce_reuse_var_names) {
+            auto in_iter = std::find(
+                reuse_var_names.begin(), reuse_var_names.end(), in_arg_name);
+            if (in_iter != reuse_var_names.end()) {
+              reuse = true;
+              inpalce_reuse_var_names[i].push_back(out_arg_name);
+              break;
+            }
+            ++i;
+          }
+          if (!reuse) {
+            std::vector<std::string> tmp_reuse_var_name{in_arg_name,
+                                                        out_arg_name};
+            inpalce_reuse_var_names.push_back(tmp_reuse_var_name);
+          }
+        }
+      }
+
       for (auto* var_node : var_nodes) {
         CHECK(var_node->IsArg());
         auto& arg = var_node->AsArg();
@@ -161,35 +193,6 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph) {
         }
       }
       ++max_lifecycle_;
-
-      auto inplace_op_node = inplace_op_nodes.find(op_type);
-      if (inplace_op_node != inplace_op_nodes.end()) {
-        bool inplace = false;
-        if (op_info->HasAttr("inplace")) {
-          inplace = op_info->GetAttr<bool>("inplace");
-        }
-        if (inplace) {
-          auto in_arg_name = op_info->Input("X")[0];
-          auto out_arg_name = op_info->Output("Out")[0];
-          bool reuse = false;
-          int i = 0;
-          for (const auto& reuse_var_names : inpalce_reuse_var_names) {
-            auto in_iter = std::find(
-                reuse_var_names.begin(), reuse_var_names.end(), in_arg_name);
-            if (in_iter != reuse_var_names.end()) {
-              reuse = true;
-              inpalce_reuse_var_names[i].push_back(out_arg_name);
-              break;
-            }
-            ++i;
-          }
-          if (!reuse) {
-            std::vector<std::string> tmp_reuse_var_name{in_arg_name,
-                                                        out_arg_name};
-            inpalce_reuse_var_names.push_back(tmp_reuse_var_name);
-          }
-        }
-      }
     }
   }
 

@@ -82,27 +82,6 @@ class XPUFcFuser : public FuseBase {
     op_desc.SetInput("Input", {matched.at("x")->arg()->name});
     op_desc.SetInput("Filter", {matched.at("W")->arg()->name});
 
-    std::string precision = "int16";
-#ifdef LITE_WITH_XPU
-    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-      precision = "int31";
-      VLOG(3) << "Use int31 in XPUFcOp";
-    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-      precision = "int8";
-      if (op_desc.HasAttr("enable_int8") &&
-          op_desc.GetAttr<bool>("enable_int8")) {
-        CHECK(op_desc.HasAttr("X0_scale")) << " quant model fc no X0_scale";
-        CHECK(op_desc.HasAttr("Y0_scale")) << " quant model fc no Y0_scale";
-        VLOG(3) << "Use int8 quant model in XPUFcOp, InputMax:"
-                << 127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0]
-                << ", WeightMax: "
-                << 127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
-      }
-      VLOG(3) << "Use int8 in XPUFcOp";
-    }
-#endif
     if (with_bias_) {
       op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
     }
@@ -118,8 +97,48 @@ class XPUFcFuser : public FuseBase {
       output_name = matched.at("mul_out")->arg()->name;
       output_node_name = "mul_out";
     }
+    bool per_channel = false;
+    int weight_scale_size = 1;
+    auto* op_info = matched.at("mul")->stmt()->op_info();
+    auto mul_input_y_name = op_info->Input("Y").front();
+    auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
+    CHECK_EQ(mul_y_shape.size(), 2) << "mul_y_shape.size: "
+                                    << mul_y_shape.size();
+    const bool quant = op_info->HasAttr("enable_int8") &&
+                       op_info->GetAttr<bool>("enable_int8");
+    op_desc.SetAttr<bool>("enable_int8", quant);
+    // X0_scale is already in op_desc when copy from mul
+    if (quant) {
+      CHECK(op_info->HasAttr("Y0_scale")) << "quant model no Y0_scale";
+      weight_scale_size =
+          op_info->GetAttr<std::vector<float>>("Y0_scale").size();
+      CHECK_EQ(weight_scale_size, mul_y_shape[1])
+          << "weight_scale_size: " << weight_scale_size
+          << ", mul_y_shape:" << mul_y_shape;
+      CHECK_GE(weight_scale_size, 1) << weight_scale_size;
+      std::vector<float> weight_max;
+      if (is_per_tensor(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
+        per_channel = false;
+        VLOG(3) << "xpu fc per tensor";
+        weight_max.push_back(
+            op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127);
+      } else {
+        per_channel = true;
+        VLOG(3) << "xpu fc per channel, first channel max:"
+                << op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127
+                << ", last channel max: "
+                << op_info->GetAttr<std::vector<float>>(
+                       "Y0_scale")[weight_scale_size - 1] *
+                       127;
+        for (auto wm : op_info->GetAttr<std::vector<float>>("Y0_scale")) {
+          weight_max.push_back(wm * 127);
+        }
+      }
+      VLOG(3) << "weight_max size:" << weight_max.size();
+      op_desc.SetAttr<std::vector<float>>("Y0_max", weight_max);
+      op_desc.SetAttr<bool>("per_channel", per_channel);
+    }
     op_desc.SetOutput("Output", {output_name});
-    op_desc.SetAttr<std::string>("precision", precision);
     std::map<std::string, int> act_map{{"linear", 0},
                                        {"relu", 1},
                                        {"sigmoid", 2},
@@ -169,6 +188,19 @@ class XPUFcFuser : public FuseBase {
  private:
   bool with_bias_;
   std::string act_type_;
+  std::string mul_type_;
+  bool is_per_tensor(const std::vector<float>& weight_max) {
+    bool per_tensor = true;
+    CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
+    auto first = weight_max[0];
+    for (int i = 1; i < weight_max.size(); ++i) {
+      if (std::abs(first - weight_max[i]) > 1e-6) {
+        per_tensor = false;
+        break;
+      }
+    }
+    return per_tensor;
+  }
 };
 
 }  // namespace fusion

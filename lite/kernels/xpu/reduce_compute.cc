@@ -154,6 +154,8 @@ using ReduceAll = xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>>;
 using ReduceAny = xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>>;
 using ReduceMeanFloat32 =
     xpu::ReduceCompute<float, xpu::ReduceMeanFunctor<float>>;
+using ReduceMeanFloat16 =
+    xpu::ReduceCompute<float16, xpu::ReduceMeanFunctor<float16>>;
 using ReduceSumFloat32 =
     xpu::ReduceCompute<float, xpu::ReduceSumFunctor<float>>;
 using ReduceProdFloat32 =
@@ -176,6 +178,16 @@ REGISTER_LITE_KERNEL(reduce_any, kXPU, kFloat, kNCHW, ReduceAny, def)
 REGISTER_LITE_KERNEL(reduce_mean, kXPU, kFloat, kNCHW, ReduceMeanFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_mean,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     ReduceMeanFloat16,
+                     DISABLE_XPU1_ReduceMeanFloat16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reduce_sum, kXPU, kFloat, kNCHW, ReduceSumFloat32, def)

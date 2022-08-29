@@ -23,6 +23,23 @@ namespace kernels {
 namespace xpu {
 
 template <>
+void Conv2dTransposeCompute<PRECISION(kFloat)>::PrepareForRun() {
+  int cur_dev_idx = 0;
+
+  XPU_CALL(xpu_current_device(&cur_dev_idx));
+  XPU_CALL(xpu_device_get_attr(&cur_dev_attr_, XPUATTR_MODEL, cur_dev_idx));
+  if (cur_dev_attr_ <= 1) {
+    VLOG(4) << "Currents XPU device : XPU1";
+  } else if (cur_dev_attr_ >= 2 && cur_dev_attr_ <= 299) {
+    VLOG(4) << "Currents XPU device : XPU2";
+  } else if (cur_dev_attr_ >= 300 && cur_dev_attr_ <= 599) {
+    VLOG(4) << "Currents XPU device : XPU3";
+  } else {
+    VLOG(4) << "invaid XPU device";
+  }
+}
+
+template <>
 void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
@@ -37,27 +54,53 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
   auto dilations = *param.dilations;
 
   if (param.output_padding.empty()) {
-    int ret = xdnn::conv2d_transpose<float, float, float, int16_t>(
-        ctx.GetRawContext(),
-        param.x->data<float>(),
-        param.filter->data<float>(),
-        param.output->mutable_data<float>(TARGET(kXPU)),
-        in_dims[0],
-        in_dims[1],
-        in_dims[2],
-        in_dims[3],
-        out_dims[1],
-        std::vector<int>{static_cast<int>(w_dims[2]),
-                         static_cast<int>(w_dims[3])},
-        strides,
-        paddings,
-        dilations,
-        groups,
-        nullptr,
-        nullptr,
-        nullptr,
-        true);
-    CHECK_EQ(ret, 0);
+    if (cur_dev_attr_ <= 1) {
+      int ret = xdnn::conv2d_transpose<float, float, float, int16_t>(
+          ctx.GetRawContext(),
+          param.x->data<float>(),
+          param.filter->data<float>(),
+          param.output->mutable_data<float>(TARGET(kXPU)),
+          in_dims[0],
+          in_dims[1],
+          in_dims[2],
+          in_dims[3],
+          out_dims[1],
+          std::vector<int>{static_cast<int>(w_dims[2]),
+                           static_cast<int>(w_dims[3])},
+          strides,
+          paddings,
+          dilations,
+          groups,
+          nullptr,
+          nullptr,
+          nullptr,
+          true);
+      CHECK_EQ(ret, 0);
+    } else {
+      int ret = xdnn::conv2d_transpose_fusion<float, float, float, int16_t>(
+          ctx.GetRawContext(),
+          param.x->data<float>(),
+          param.filter->data<float>(),
+          param.output->mutable_data<float>(TARGET(kXPU)),
+          in_dims[0],
+          in_dims[1],
+          in_dims[2],
+          in_dims[3],
+          out_dims[1],
+          std::vector<int>{static_cast<int>(w_dims[2]),
+                           static_cast<int>(w_dims[3])},
+          strides,
+          paddings,
+          dilations,
+          groups,
+          nullptr,
+          nullptr,
+          nullptr,
+          nullptr,
+          xdnn::Activation_t::LINEAR,
+          true);
+      CHECK_EQ(ret, 0);
+    }
   } else {
     int n = in_dims[0];
     int yc = in_dims[1];

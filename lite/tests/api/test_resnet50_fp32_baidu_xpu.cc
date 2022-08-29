@@ -14,6 +14,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <stdlib.h>
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -35,13 +36,13 @@ namespace paddle {
 namespace lite {
 
 TEST(resnet50, test_resnet50_fp32_baidu_xpu) {
+  setenv("XPU_CONV_AUTOTUNE", "5", 1);
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
-  config.set_xpu_conv_autotune(true);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");

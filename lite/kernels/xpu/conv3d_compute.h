@@ -21,14 +21,22 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <PrecisionType FilterPtype>
-class Conv3DCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
+class Conv3DCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ConvParam;
+  void PrepareForRun() override;
 
   void Run() override;
 
   virtual ~Conv3DCompute() = default;
+
+ private:
+  XPUQuantData xpu_quant_filter_;
 };
 
 }  // namespace xpu

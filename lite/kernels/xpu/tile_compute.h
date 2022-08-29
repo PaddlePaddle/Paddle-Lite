@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -24,13 +21,13 @@ namespace kernels {
 namespace xpu {
 
 template <typename T, PrecisionType PType>
-class StackCompute : public KernelLite<TARGET(kXPU), PType> {
+class TileCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::StackParam;
+  using param_t = operators::TileParam;
 
   virtual void Run();
 
-  virtual ~StackCompute() = default;
+  virtual ~TileCompute() = default;
 };
 
 }  // namespace xpu

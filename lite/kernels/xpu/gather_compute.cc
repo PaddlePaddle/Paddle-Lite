@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/gather_compute.h"
+
 #include <vector>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -22,8 +24,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename DataType, typename IndexType>
-void GatherCompute<DataType, IndexType>::Run() {
+template <typename DataType, typename IndexType, PrecisionType PType>
+void GatherCompute<DataType, IndexType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -46,88 +48,16 @@ void GatherCompute<DataType, IndexType>::Run() {
     axis += x_dims.size();
   }
 
-  if (param.X->precision() == PrecisionType::kInt64 &&
-      param.Index->precision() == PrecisionType::kInt64) {
-    auto* index_int64 = param.Index->template data<int64_t>();
-    int size = param.Index->dims().production();
-    XPUScratchPadGuard index_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(size * sizeof(int));
-    int* index_int32_device = reinterpret_cast<int*>(index_xpu_guard_->addr_);
+  int r = xdnn::gather<DataType, IndexType>(
+      ctx.GetRawContext(),
+      x->template data<DataType>(),
+      index->template data<IndexType>(),
+      out->template mutable_data<DataType>(TARGET(kXPU)),
+      x_dims,
+      index->numel(),
+      axis);
 
-    int r0 = xdnn::cast_v2<int64_t, int32_t>(
-        ctx.GetRawContext(), index_int64, index_int32_device, index->numel());
-    CHECK_EQ(r0, 0);
-
-    int r1 = xdnn::gather<int64_t, int32_t>(
-        ctx.GetRawContext(),
-        x->template data<int64_t>(),
-        index_int32_device,
-        out->template mutable_data<int64_t>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r1, 0);
-  } else if (param.X->precision() == PrecisionType::kInt64 &&
-             param.Index->precision() == PrecisionType::kInt32) {
-    int r = xdnn::gather<int64_t, int32_t>(
-        ctx.GetRawContext(),
-        x->template data<int64_t>(),
-        index->template data<int32_t>(),
-        out->template mutable_data<int64_t>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r, 0);
-  } else if (param.X->precision() == PrecisionType::kInt32 &&
-             param.Index->precision() == PrecisionType::kInt32) {
-    int r = xdnn::gather<int32_t, int32_t>(
-        ctx.GetRawContext(),
-        x->template data<int32_t>(),
-        index->template data<int32_t>(),
-        out->template mutable_data<int32_t>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r, 0);
-  } else if (param.X->precision() == PrecisionType::kInt32 &&
-             param.Index->precision() == PrecisionType::kInt64) {
-    int r = xdnn::gather<int32_t, int64_t>(
-        ctx.GetRawContext(),
-        x->template data<int32_t>(),
-        index->template data<int64_t>(),
-        out->template mutable_data<int32_t>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r, 0);
-  } else if (param.X->precision() == PrecisionType::kFloat &&
-             param.Index->precision() == PrecisionType::kInt32) {
-    int r = xdnn::gather<float, int32_t>(
-        ctx.GetRawContext(),
-        x->template data<float>(),
-        index->template data<int32_t>(),
-        out->template mutable_data<float>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r, 0);
-  } else if (param.X->precision() == PrecisionType::kFloat &&
-             param.Index->precision() == PrecisionType::kInt64) {
-    int r = xdnn::gather<float, int64_t>(
-        ctx.GetRawContext(),
-        x->template data<float>(),
-        index->template data<int64_t>(),
-        out->template mutable_data<float>(TARGET(kXPU)),
-        x_dims,
-        index->numel(),
-        axis);
-    CHECK_EQ(r, 0);
-  } else {
-    LOG(FATAL) << "Unsupported gather op with x dtype: "
-               << lite_api::PrecisionToStr(param.X->precision())
-               << " and index dtype: "
-               << lite_api::PrecisionToStr(param.Index->precision());
-  }
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -141,10 +71,21 @@ REGISTER_LITE_KERNEL(gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt32, def)
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt64, gather_float_i64)
+    gather, kXPU, kFP16, kNCHW, GatherXPUkFP16Int32, gather_FP16_Int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Axis",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt64, gather_FP32_INT64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -153,7 +94,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt32Int32, gather_i32_i32)
+    gather, kXPU, kInt32, kNCHW, GatherXPUInt32Int32, gather_INT32_INT32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
@@ -162,7 +103,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt32Int64, gather_i32_i64)
+    gather, kXPU, kInt32, kNCHW, GatherXPUInt32Int64, gather_INT32_INT64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -171,19 +112,10 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt64Int32, gather_i64_i32)
+    gather, kXPU, kInt64, kNCHW, GatherXPUInt64Int32, gather_INT64_INT32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
-    .BindInput("Axis",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .Finalize();
-REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt64Int64, gather_i64_i64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})

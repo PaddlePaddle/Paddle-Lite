@@ -472,6 +472,8 @@ class LITE_API CxxConfig : public ConfigBase {
 
   void set_xpu_gm_workspace_method(size_t gm_size);
 
+  // **DEPRECATED**, use environ variable to enable autotune
+  // check http://agroup.baidu.com/share/md/f9233d84df11452488a1fdd4f859647f
   void set_xpu_conv_autotune(bool autotune = true,
                              const std::string& autotune_file = "");
 
