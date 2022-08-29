@@ -61,7 +61,7 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_float, def)
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
-    .BindInput("expand_shapes_tensor",
+    .BindInput("expand_times_tensor",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
@@ -82,7 +82,7 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFP16, kAny, expand_xpu_float16, fp16)
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
-    .BindInput("expand_shapes_tensor",
+    .BindInput("expand_times_tensor",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
