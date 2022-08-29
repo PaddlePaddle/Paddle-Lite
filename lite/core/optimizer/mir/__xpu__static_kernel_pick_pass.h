@@ -121,7 +121,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       VLOG(4) << "[score s3]:" << score;
 
 #ifdef LITE_WITH_XPU
-      bool type_match = true;
+      bool type_match = false;
       GradeXPUKernelScore(node,
                           kernel,
                           instruct,

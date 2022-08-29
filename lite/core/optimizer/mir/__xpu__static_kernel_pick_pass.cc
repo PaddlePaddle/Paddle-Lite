@@ -197,8 +197,8 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
         instruct.op_type() == "__xpu__fc") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT8: *4";
+      return true;
     }
-    return true;
   }
 
   // only use in FC，it will not use in future.
@@ -208,24 +208,24 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
         instruct.op_type() == "__xpu__fc") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT31: *4";
+      return true;
     }
-    return true;
   }
 
   if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int8") {
     if (kernel.alias() == "XPU_Int8_Int8_Int8") {
       *score *= 4;
       VLOG(6) << instruct.op_type() << ": force use PRECISON INT8: *4";
+      return true;
     }
-    return true;
   }
 
   if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int31") {
     if (kernel.alias() == "XPU_Real_kFloat") {
       *score *= 4;
       VLOG(6) << instruct.op_type() << ": force use PRECISON INT31: *4";
+      return true;
     }
-    return true;
   }
 
   if (kernel.alias() == "XPU_Real_kFloat") {
@@ -747,7 +747,6 @@ void XPUStaticKernelPickPass::GradeXPUKernelScore(
   // kernel compute precision:int8/int16,data precicion:int8/fp16/fp32
   if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
     if (xpu_inplace_op_.count(instruct.op_type())) {
-      *type_match = false;
       InplaceOpScore(node, kernel, type_match, score);
       return;
     }
@@ -757,7 +756,6 @@ void XPUStaticKernelPickPass::GradeXPUKernelScore(
         (xpu_use_int8_optimizer_ &&
          instruct.op_info()->HasAttr("enable_int8") &&
          xpu_int8_special_op_.count(instruct.op_type()))) {
-      *type_match = false;
       SpecialOpScore(node, kernel, type_match, score);
       return;
     }
@@ -766,6 +764,7 @@ void XPUStaticKernelPickPass::GradeXPUKernelScore(
   // kernel compute precision:fp32(int16),data precicion:fp32
   if (!instruct.op_info()->HasAttr("enable_int8") ||
       xpu_int8_special_op_.count(instruct.op_type()) == 0) {
+    *type_match = true;
     if (instruct.op_type() == "feed") {
       for (size_t i = 0; i < out_names.size(); ++i) {
         std::string tmp;
