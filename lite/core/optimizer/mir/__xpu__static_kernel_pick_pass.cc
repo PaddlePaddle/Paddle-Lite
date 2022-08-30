@@ -277,6 +277,9 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
               << "in current scope.";
       continue;
     }
+    if (!var_ptr->IsType<lite::Tensor>()) {
+      continue;
+    }
 
     PrecisionType precison = var_ptr->GetMutable<lite::Tensor>()->precision();
     xpu_output_type_.emplace(var_name, precison);
@@ -429,6 +432,10 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
       continue;
     }
 
+    if (!var_ptr->IsType<lite::Tensor>()) {
+      continue;
+    }
+
     precison = var_ptr->GetMutable<lite::Tensor>()->precision();
     tmp_map.emplace(inst.op_type(), precison);
     kernel_input_type.emplace_back(std::move(tmp_map));
@@ -570,20 +577,19 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     return;
   }
 
-  if (instruct.op_type() == "elementwise_add") {
-    for (auto* in_node : node->inlinks) {
-      CHECK(in_node->IsArg());
-      auto& var = in_node->AsArg();
-      const auto& var_name = var.name;
-      std::string tmp;
-      CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
-      if (in_node->inlinks.empty()) {
-        if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
-          *score = 0;
-          VLOG(6) << "not pick fp16 kernel ,because elementwise input weight "
-                     "is FP32.";
-          return;
-        }
+  // type cast bug，We temporarily add it here
+  for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
+    std::string tmp;
+    CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+    if (in_node->inlinks.empty()) {
+      if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
+        *score = 0;
+        VLOG(6) << "not pick fp16 kernel ,because  input weight "
+                   "is not fp16.";
+        return;
       }
     }
   }
@@ -624,7 +630,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     }
 
     if (score_tmp == 0) {
-      output_match = false;
+      intput_match = false;
     }
 
     score_tmp_all += score_tmp;
@@ -691,6 +697,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     if (score_tmp == 0) {
       output_match = false;
     }
+
     score_tmp_all += score_tmp;
   }
 
@@ -780,10 +787,13 @@ void XPUStaticKernelPickPass::GradeXPUKernelScore(
       for (size_t i = 0; i < in_names.size(); ++i) {
         std::string tmp;
         CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-        if (in_types.count(in_names[i]) &&
-            !PrecTypeCompatible(in_types.at(in_names[i]),
-                                kernel.GetInputDeclType(tmp)->precision())) {
-          *type_match = false;
+        if (in_types.count(in_names[i])) {
+          if (!PrecTypeCompatible(in_types.at(in_names[i]),
+                                  kernel.GetInputDeclType(tmp)->precision())) {
+            *type_match = false;
+          } else {
+            *score += 1;
+          }
         }
       }
     }
