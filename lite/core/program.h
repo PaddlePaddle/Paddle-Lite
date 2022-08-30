@@ -32,6 +32,12 @@
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
+#ifdef LITE_WITH_ARM_TRUSTZONE
+extern "C" {
+    int init_tee_context();
+}
+extern bool g_init_tee_context;
+#endif
 
 namespace paddle {
 namespace lite {

@@ -28,6 +28,9 @@
 #ifdef LITE_WITH_FPGA
 #include "lite/backends/fpga/monitor.hpp"
 #endif
+#ifdef LITE_WITH_ARM_TRUSTZONE
+bool g_init_tee_context;
+#endif
 
 namespace paddle {
 namespace lite {
@@ -408,6 +411,16 @@ void RuntimeProgram::SaveOutput() {
 #endif
 
 void RuntimeProgram::Run() {
+#ifdef LITE_WITH_ARM_TRUSTZONE
+  VLOG(4) << "Initialize tee context";
+  if (init_tee_context() != 0) {
+    VLOG(4) << "Initialize tee context failed";
+    return;
+  }
+  else {
+    g_init_tee_context = true;
+  }
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
   std::string precision_profiler_summary =
