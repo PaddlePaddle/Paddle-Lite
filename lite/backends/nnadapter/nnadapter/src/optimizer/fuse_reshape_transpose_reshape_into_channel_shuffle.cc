@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include <algorithm>
 #include <map>
 #include <vector>
-#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/pattern_matcher.h"
 #include "utility/debug.h"
 #include "utility/logging.h"

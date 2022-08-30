@@ -406,10 +406,13 @@ REGISTER_CONVERTER(fc,
 REGISTER_CONVERTER(norm,
                    ConvertNorm,
                    "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu");
-REGISTER_CONVERTER(pad2d,
+REGISTER_CONVERTER(
+    pad2d,
+    ConvertPad,
+    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,qualcomm_qnn");
+REGISTER_CONVERTER(pad3d,
                    ConvertPad,
-                   "huawei_ascend_npu,huawei_kirin_npu,intel_openvino");
-REGISTER_CONVERTER(pad3d, ConvertPad, "huawei_ascend_npu,intel_openvino");
+                   "huawei_ascend_npu,intel_openvino,qualcomm_qnn");
 REGISTER_CONVERTER(prior_box,
                    ConvertPriorBox,
                    "nvidia_tensorrt,intel_openvino");

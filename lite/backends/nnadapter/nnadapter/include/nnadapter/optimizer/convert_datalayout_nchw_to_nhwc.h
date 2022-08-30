@@ -55,6 +55,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertLeakyRelu(core::Operation* operation);
   void ConvertLpNormalization(core::Operation* operation);
   void ConvertActivation(core::Operation* operation);
+  void ConvertPad(core::Operation* operation);
   void ConvertPow(core::Operation* operation);
   void ConvertQuantize(core::Operation* operation);
   void ConvertReduce(core::Operation* operation);

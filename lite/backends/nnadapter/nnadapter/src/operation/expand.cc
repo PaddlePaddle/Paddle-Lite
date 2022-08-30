@@ -15,6 +15,7 @@
 #include "operation/expand.h"
 #include <vector>
 #include "core/types.h"
+#include "operation/math/expand.h"
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
@@ -70,7 +71,7 @@ NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
 }
 
 NNADAPTER_EXPORT bool ValidateExpand(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareExpand(core::Operation* operation) {
@@ -120,7 +121,23 @@ NNADAPTER_EXPORT int PrepareExpand(core::Operation* operation) {
 }
 
 NNADAPTER_EXPORT int ExecuteExpand(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  auto in_dims_data = input_operand->type.dimensions.data;
+  auto in_dims_count = input_operand->type.dimensions.count;
+  std::vector<int32_t> in_dims(in_dims_data, in_dims_data + in_dims_count);
+  auto out_dims_data = input_operand->type.dimensions.data;
+  auto out_dims_count = input_operand->type.dimensions.count;
+  std::vector<int32_t> out_dims(out_dims_data, out_dims_data + out_dims_count);
+  auto in_dtype_length =
+      GetOperandPrecisionDataLength(input_operand->type.precision);
+  switch (in_dtype_length) {
+    case 1:
+      break;
+    default:
+      break;
+  }
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation
