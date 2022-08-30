@@ -36,7 +36,20 @@ class XPUFcFuser : public FuseBase {
   void BuildPattern() override {
     auto* x = VarNode("x")->assert_is_op_input(mul_type_, "X")->AsInput();
     auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* mul = OpNode("mul", mul_type_)->AsIntermediate();
+    // check w.dims() == 2 and x.trans == false.
+    auto mul_input_check = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      auto mul_input_y_name = op_desc.Input("Y").front();
+      auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+      auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
+      return (
+          mul_y_shape.size() == 2 && (!op_desc.HasAttr("transpose_X") ||
+                                      !op_desc.GetAttr<bool>("transpose_X")) &&
+          (!op_desc.HasAttr("trans_x") || !op_desc.GetAttr<bool>("trans_x")));
+    };
+    auto* mul = OpNode("mul", mul_type_)
+                    ->AsIntermediate()
+                    ->assert_node_satisfied(mul_input_check);
     auto* mul_out = VarNode("mul_out")->assert_is_op_output(mul_type_, "Out");
     PMNode* bias = nullptr;
     PMNode* add = nullptr;
@@ -216,7 +229,7 @@ class XPUFcFuser : public FuseBase {
     bool per_tensor = true;
     CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
     auto first = weight_max[0];
-    for (int i = 1; i < weight_max.size(); ++i) {
+    for (size_t i = 1; i < weight_max.size(); ++i) {
       if (std::abs(first - weight_max[i]) > 1e-6) {
         per_tensor = false;
         break;
@@ -233,7 +246,7 @@ class XPUFcFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(weihaoji) support with_no_bias and more activation types
-    for (auto with_bias : {true, /*false*/}) {
+    for (auto with_bias : {true, false}) {
       for (auto act_type : {"relu",
                             "gelu",
                             /*"sigmoid",
@@ -243,7 +256,7 @@ class XPUFcFusePass : public ProgramPass {
                             "hard_sigmoid",
                             "relu6",*/
                             "linear"}) {
-        for (auto mul_type : {"mul", "matmul_v2"}) {
+        for (auto mul_type : {"mul", "matmul", "matmul_v2"}) {
           fusion::XPUFcFuser fuser(with_bias, act_type, mul_type);
           fuser(graph.get());
         }
