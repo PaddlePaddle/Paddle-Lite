@@ -18,9 +18,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include "lite/api/paddle_place.h"
-#include "lite/backends/arm_trustzone/math/funcs.h"
-#include "lite/backends/arm_trustzone/math/gemm_prepacked_int8.h"
-#include "lite/backends/arm_trustzone/math/gemv_arm_int8.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/core/program.h"
