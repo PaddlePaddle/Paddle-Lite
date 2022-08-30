@@ -599,13 +599,13 @@ TEST(Interp, precision) {
   return;
 #endif
 
-  // TestInterpOuthw(place, abs_error);
-  // TestInterpScale(place, abs_error);
-  // TestInterpSizetensor(place, abs_error);
-  // TestInterpInputScale(place, abs_error);
-  // TestInterpOutsize(place, abs_error);
-  // TestInterpAlignCorners(place, abs_error);
-  // TestInterpAlignMode(place, abs_error);
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpSizetensor(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
 }
 
 }  // namespace lite
