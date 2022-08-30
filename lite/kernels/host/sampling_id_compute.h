@@ -29,14 +29,10 @@ class SamplingIdCompute
  public:
   using param_t = operators::SamplingIdParam;
 
-  void PrepareForRun() override;
-
   void Run() override;
 
   virtual ~SamplingIdCompute() = default;
 
- private:
-  std::shared_ptr<std::mt19937_64> engine_;
 };
 
 }  // namespace host

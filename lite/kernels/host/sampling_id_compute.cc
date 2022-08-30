@@ -13,24 +13,12 @@
 // limitations under the License.
 
 #include "lite/kernels/host/sampling_id_compute.h"
+#include <mutex>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
-
-template <class T>
-void SamplingIdCompute<T>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
-  int seed = param.seed;
-
-  auto engine_ = std::make_shared<std::mt19937_64>();
-  if (seed == 0) {
-    std::random_device rd;
-    seed = ((((uint64_t)rd()) << 32) + rd()) & 0x1FFFFFFFFFFFFF;
-  }
-  engine_->seed(seed);
-}
 
 template <class T>
 void SamplingIdCompute<T>::Run() {
@@ -45,8 +33,20 @@ void SamplingIdCompute<T>::Run() {
   std::uniform_real_distribution<T> dist(static_cast<T>(param.min),
                                          static_cast<T>(param.max));
 
+  int seed = param.seed;
+  auto engine = std::make_shared<std::mt19937_64>();
+  if (seed == 0) {
+    std::random_device rd;
+    seed = ((((uint64_t)rd()) << 32) + rd()) & 0x1FFFFFFFFFFFFF;
+  }
+  static std::mutex mu_;
+  {
+    std::lock_guard<std::mutex> lock(mu_);
+    engine->seed(seed);
+  }
+
   for (int64_t i = 0; i < batch_size; ++i) {
-    T r = dist(*engine_);
+    T r = dist(*engine);
     int64_t idx = width - 1;
     for (int64_t j = 0; j < width; ++j) {
       if ((r -= x_data[i * width + j]) < 0) {
