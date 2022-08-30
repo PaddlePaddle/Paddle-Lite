@@ -43,71 +43,35 @@ void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int inner_num = x_dims.Slice(axis + 1, x_rank).production();
   int axis_size = x_dims[axis];
 
-  if (inner_num == 1) {
-    if (axis_size > 4) {
-      VLOG(4) << "Prepare to run softmax op in TEE...";
-      if (!g_init_tee_context) {
-        VLOG(4) << "TEE context is not initialized";
-        return;
-      }
+  VLOG(4) << "Prepare to run softmax op in TEE...";
 
-      check_interactive();
-      //lite::arm::math::softmax_inner1_large_axis(
-      //    din, dout, outer_num, axis_size);
-      // invoke TEE
-      PT_SoftmaxParam pt_softmax_param;
-      pt_softmax_param.x = convert_to_portable_tensor(param.x, PT_DataType::kPTFloat, false);
-      pt_softmax_param.output = convert_to_portable_tensor(param.output, PT_DataType::kPTFloat, true);
-      pt_softmax_param.axis = axis;
-      pt_softmax_param.use_cudnn = false;
+  CHECK(g_init_tee_context) << "TEE context is not initialized";
 
-      handle_t param_handle = create_tee_param(SupportedOp::Softmax, (void*)&pt_softmax_param);
-      VLOG(4) << "Get handle:" << param_handle;
-      check_interactive();
-      if (tee_run(SupportedOp::Softmax, param_handle) != 0) {
-        VLOG(4) << "TEE run error";
-        return;
-      }
-      check_interactive();
-      VLOG(4) << "TEE run finished, then fetch output tensor from TEE:";
-      // write output in CA and free the handle
-      if (fetch_output_tensor(SupportedOp::Softmax, param_handle, pt_softmax_param.output) != 0) {
-        VLOG(4) << "fetch_output_tensor error";
-        return;
-      }
-      VLOG(4) << "Fetch output tensor finished";
-      check_interactive();
-    } else {
-      VLOG(4) << "lite::arm::math::softmax_inner1_small_axis";
-      lite::arm::math::softmax_inner1_small_axis(
-          din, dout, outer_num, axis_size);
-    }
-  } else {
-    int compute_size = outer_num * inner_num;
-    if (axis_size == 4 && inner_num % 8 == 0) {
-      VLOG(4) << "lite::arm::math::softmax_inner8_axis4";
-      lite::arm::math::softmax_inner8_axis4(
-          din, dout, axis_size, inner_num, outer_num);
-    } else if (axis_size == 4 && inner_num % 4 == 0) {
-      VLOG(4) << "lite::arm::math::softmax_inner4_axis4";
-      lite::arm::math::softmax_inner4_axis4(
-          din, dout, axis_size, inner_num, outer_num);
-    } else {
-      if (inner_num % 8 == 0) {
-        VLOG(4) << "lite::arm::math::softmax_inner8";
-        lite::arm::math::softmax_inner8(
-            din, dout, axis_size, inner_num, outer_num);
-      } else if (inner_num % 4 == 0) {
-        VLOG(4) << "lite::arm::math::softmax_inner4";
-        lite::arm::math::softmax_inner4(
-            din, dout, axis_size, inner_num, outer_num);
-      } else {
-        VLOG(4) << "lite::arm::math::softmax_basic";
-        lite::arm::math::softmax_basic(
-            din, dout, axis_size, inner_num, outer_num);
-      }
-    }
+  VLOG(4) << "outer " << outer_num;
+  VLOG(4) << "inner " << inner_num;
+  VLOG(4) << "axis_size " << axis_size;
+
+  // invoke TEE
+  PT_SoftmaxParam pt_softmax_param;
+  pt_softmax_param.x = convert_to_portable_tensor(param.x, PT_DataType::kPTFloat, false);
+  pt_softmax_param.output = convert_to_portable_tensor(param.output, PT_DataType::kPTFloat, true);
+  pt_softmax_param.axis = axis;
+  pt_softmax_param.use_cudnn = false;
+
+  handle_t param_handle = create_tee_param(SupportedOp::Softmax, (void*)&pt_softmax_param);
+  VLOG(4) << "Get handle:" << param_handle;
+  if (tee_run(SupportedOp::Softmax, param_handle) != 0) {
+    VLOG(4) << "TEE run error";
+    return;
   }
+
+  VLOG(4) << "TEE run finished, then fetch output tensor from TEE:";
+  // write output in CA and free the handle
+  if (fetch_output_tensor(SupportedOp::Softmax, param_handle, pt_softmax_param.output) != 0) {
+    VLOG(4) << "fetch_output_tensor error";
+    return;
+  }
+  VLOG(4) << "Fetch output tensor finished";
 
   //delete dl_param;
 }
