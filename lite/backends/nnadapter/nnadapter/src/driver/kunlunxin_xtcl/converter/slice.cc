@@ -24,22 +24,19 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   SLICE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   auto input_dim = input_operand->type.dimensions;
   auto input_dim_count = input_dim.count;
   auto input_dim_data = input_dim.data;
-
   xtcl::Array<xtcl::Integer> begin, end, strides;
   std::vector<int32_t> axes_vec(axes, axes + axes_count);
   for (size_t i = 0; i < input_dim_count; ++i) {
     auto it = std::find(axes_vec.cbegin(), axes_vec.cend(), i);
     if (it == axes_vec.cend()) {
-      // don't slice this axis
+      // Don't slice this axis
       begin.push_back(0);
       end.push_back(input_dim_data[i]);
       strides.push_back(1);
@@ -52,7 +49,6 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
       strides.push_back(1);
     }
   }
-
   // slice_mode: "end" or "size"
   auto slice_expr = converter->builder()->CreateStridedSlice(
       input_expr, begin, end, strides, "end");

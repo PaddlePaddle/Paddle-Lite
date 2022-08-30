@@ -25,16 +25,13 @@ int ConvertTile(Converter* converter, core::Operation* operation) {
   TILE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Repeats
   NNADAPTER_CHECK(IsConstantOperand(repeats_operand));
   auto repeats_count = repeats_operand->length / sizeof(int32_t);
   auto repeats_data = reinterpret_cast<int32_t*>(repeats_operand->buffer);
-
   auto tile_expr = converter->builder()->CreateTile(
       input_expr,
       ConvertToXTCLArray<xtcl::Integer>(repeats_data, repeats_count));

@@ -43,7 +43,6 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(FLOOR, CreateUnaryOp("floor", input_expr));
     CONVERT_UNARY_ACTIVATION(
         SQUARE, CreateBinaryOp("multiply", input_expr, input_expr));
-
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

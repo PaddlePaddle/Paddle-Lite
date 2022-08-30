@@ -24,12 +24,11 @@ int ConvertCumSum(Converter* converter, core::Operation* operation) {
   CUM_SUM_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // reverse: whether to perform the cumsum in the reversed direction
+  // Reverse: whether to perform the cumsum in the reversed direction
   xtcl::xExpr cum_sum_expr;
   if (reverse) {
     auto reverse_expr = converter->builder()->CreateReverse(input_expr, axis);

@@ -29,7 +29,6 @@ int ConvertSum(Converter* converter, core::Operation* operation) {
   if (!sum_expr.defined()) {
     sum_expr = converter->ConvertOperand(input_operand);
   }
-
   for (int i = 1; i < input_count; i++) {
     auto input_operand = input_operands[i];
     auto input_expr = converter->GetMappedExpr(input_operand);

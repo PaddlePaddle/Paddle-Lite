@@ -24,24 +24,24 @@ int ConvertClip(Converter* converter, core::Operation* operation) {
   CLIP_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // min
+  // Min
   uint32_t min_size =
       min_operand->length / static_cast<uint32_t>(sizeof(float));
-  // must set min
-  NNADAPTER_CHECK_EQ(min_size, 1U);
+  // Must set min
+  NNADAPTER_CHECK_EQ(min_size, 1U) << "Expect min_size: 1, but receive: "
+                                   << min_size;
   auto min_buffer = *reinterpret_cast<float*>(min_operand->buffer);
-  // max
+  // Max
   uint32_t max_size =
       max_operand->length / static_cast<uint32_t>(sizeof(float));
-  // must set min
-  NNADAPTER_CHECK_EQ(max_size, 1U);
+  // Must set min
+  NNADAPTER_CHECK_EQ(max_size, 1U) << "Expect max_size: 1, but receive: "
+                                   << max_size;
   auto max_buffer = *reinterpret_cast<float*>(max_operand->buffer);
-
   auto clip_expr =
       converter->builder()->CreateClip(input_expr, min_buffer, max_buffer);
   converter->UpdateExprMap(output_operand, clip_expr);

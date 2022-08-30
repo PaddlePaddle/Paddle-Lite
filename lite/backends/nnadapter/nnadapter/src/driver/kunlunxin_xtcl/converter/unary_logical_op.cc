@@ -24,12 +24,10 @@ int ConvertUnaryLogicalOp(Converter* converter, core::Operation* operation) {
   UNARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   xtcl::xExpr unary_logical_expr;
   switch (operation->type) {
 #define CONVERT_UNARY_LOGICAL_OP(type, func)                      \

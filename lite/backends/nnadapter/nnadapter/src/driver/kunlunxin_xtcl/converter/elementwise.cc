@@ -54,7 +54,7 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
                            << " is found.";
       break;
   }
-  // fuse activations
+  // Fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, func)                              \
   case NNADAPTER_FUSED_##type:                                            \

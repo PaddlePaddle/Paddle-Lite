@@ -27,17 +27,14 @@ int ConvertExpand(Converter* converter, core::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // shape
   NNADAPTER_CHECK(!IsDynamicShapeOperandType(output_operand->type));
   auto shape_count = output_operand->type.dimensions.count;
   auto shape_data = output_operand->type.dimensions.data;
   std::vector<int> expand_shape(shape_data, shape_data + shape_count);
-
   auto expand_expr = converter->builder()->CreateBroadCastTo(
       input_expr, ConvertToXTCLArray<xtcl::Integer>(expand_shape));
   converter->UpdateExprMap(output_operand, expand_expr);

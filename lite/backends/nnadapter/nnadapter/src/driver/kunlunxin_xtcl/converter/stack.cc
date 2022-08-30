@@ -25,7 +25,6 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
   STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto N = input_count - 1;
   xtcl::Array<xtcl::xExpr> input_exprs;
   for (int i = 0; i < N; i++) {

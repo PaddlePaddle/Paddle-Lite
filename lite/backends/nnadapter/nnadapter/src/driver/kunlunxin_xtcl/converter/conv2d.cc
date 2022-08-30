@@ -65,13 +65,12 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
   conv_attrs->data_layout = "NCHW";
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";
-
   auto conv_expr =
       converter->builder()->CreateConv2D(input_expr, filter_expr, conv_attrs);
   auto bias_add_expr =
       converter->builder()->CreateBiasAdd(conv_expr, 1, bias_expr);
   converter->UpdateExprMap(output_operand, bias_add_expr);
-  // fuse activations
+  // Fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, func)                              \
   case NNADAPTER_FUSED_##type:                                            \

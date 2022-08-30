@@ -25,33 +25,26 @@ int ConvertBatchNormalization(Converter* converter,
   BATCH_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Scale expr
   auto scale_expr = converter->GetMappedExpr(scale_operand);
   if (!scale_expr.defined()) {
     scale_expr = converter->ConvertOperand(scale_operand);
   }
-  // Bias expr
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
   }
-  // Mean expr
   auto mean_expr = converter->GetMappedExpr(mean_operand);
   if (!mean_expr.defined()) {
     mean_expr = converter->ConvertOperand(mean_operand);
   }
-  // Variance expr
   auto variance_expr = converter->GetMappedExpr(variance_operand);
   if (!variance_expr.defined()) {
     variance_expr = converter->ConvertOperand(variance_operand);
   }
-
-  // BatchNorm expr
   auto batch_norm_expr = converter->builder()->CreateBatchNorm(
       input_expr, scale_expr, bias_expr, mean_expr, variance_expr, 1, epsilon);
   converter->UpdateExprMap(output_operand,

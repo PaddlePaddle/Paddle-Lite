@@ -24,12 +24,10 @@ int ConvertUnsqueeze(Converter* converter, core::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   for (const auto& axis : axes) {
     input_expr = converter->builder()->CreateExpandDims(input_expr, axis, 1);
   }

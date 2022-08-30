@@ -24,17 +24,14 @@ int ConvertPRelu(Converter* converter, core::Operation* operation) {
   PRELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Slope expr
   auto slope_expr = converter->GetMappedExpr(slope_operand);
   if (!slope_expr.defined()) {
     slope_expr = converter->ConvertOperand(slope_operand);
   }
-  // axis
   int axis = input_operand->type.dimensions.count <= 1 ? 0 : 1;
   auto prelu_expr =
       converter->builder()->CreatePRelu(input_expr, slope_expr, axis);

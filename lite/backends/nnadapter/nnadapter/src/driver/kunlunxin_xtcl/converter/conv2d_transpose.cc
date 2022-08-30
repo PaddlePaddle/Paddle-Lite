@@ -23,7 +23,6 @@ namespace kunlunxin_xtcl {
 
 int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
   if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
     operation::UpdateConv2DPadAndDilation(
         input_operand->type.dimensions.data[2],
@@ -44,25 +43,20 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   }
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Filter expr
   auto filter_expr = converter->GetMappedExpr(filter_operand);
   if (!filter_expr.defined()) {
     filter_expr = converter->ConvertOperand(filter_operand);
   }
-  // Bias expr
   // NOTE: may be dummy zero bias operand. if so, CreateBiasAdd is not
   // neccessary
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
   }
-
-  // conv2d_transpose_attrs
   auto conv2d_transpose_attrs =
       xtcl::make_object<xtcl::network::Conv2DTransposeAttrs>();
   conv2d_transpose_attrs->strides =
@@ -88,15 +82,12 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
   conv2d_transpose_attrs->output_padding =
       std::move(ConvertToXTCLArray<xtcl::xIndexExpr>(
           std::vector<int>({output_padding_height, output_padding_width})));
-
-  // Conv2d_Transpose expr
   auto conv2d_transpose_expr = converter->builder()->CreateConv2DTranspose(
       input_expr, filter_expr, conv2d_transpose_attrs);
   auto bias_add_expr =
       converter->builder()->CreateBiasAdd(conv2d_transpose_expr, 1, bias_expr);
   converter->UpdateExprMap(output_operand, bias_add_expr);
-
-  // fuse activations
+  // Fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, func)                              \
   case NNADAPTER_FUSED_##type:                                            \

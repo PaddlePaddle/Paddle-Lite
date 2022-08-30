@@ -24,17 +24,14 @@ int ConvertRoiAlign(Converter* converter, core::Operation* operation) {
   ROI_ALIGN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // ROIs expr
   auto rois_expr = converter->GetMappedExpr(rois_operand);
   if (!rois_expr.defined()) {
     rois_expr = converter->ConvertOperand(rois_operand);
   }
-
   auto pooled_size = ConvertToXTCLArray<xtcl::xIndexExpr>(
       std::vector<int>({output_height, output_width}));
   auto roi_align_expr = converter->builder()->CreateROIAlign(input_expr,

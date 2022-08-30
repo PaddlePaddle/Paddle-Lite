@@ -24,7 +24,6 @@ int ConvertMeshgrid(Converter* converter, core::Operation* operation) {
   MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   xtcl::Array<xtcl::xExpr> input_exprs;
   for (int i = 0; i < input_count; ++i) {
     auto input_operand = input_operands[i];
@@ -34,15 +33,12 @@ int ConvertMeshgrid(Converter* converter, core::Operation* operation) {
     }
     input_exprs.push_back(input_expr);
   }
-
   auto meshgrid_expr = converter->builder()->CreateMeshgrid(
       xtcl::network::Tuple(input_exprs), "ij");
-
   for (size_t i = 0; i < output_count; ++i) {
     converter->UpdateExprMap(output_operands[i],
                              converter->builder()->GetField(meshgrid_expr, i));
   }
-
   return NNADAPTER_NO_ERROR;
 }
 

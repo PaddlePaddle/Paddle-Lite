@@ -24,15 +24,16 @@ namespace kunlunxin_xtcl {
 int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
   RESIZE_NEAREST_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Input expr
+  // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   // shape_operand may be invalid, get output height and width from
   // output_operand
-  NNADAPTER_CHECK_EQ(output_operand->type.dimensions.count, 4);
+  NNADAPTER_CHECK_EQ(output_operand->type.dimensions.count, 4)
+      << "Expect output_operand dimensions count: 4"
+      << ", but receive: " << output_operand->type.dimensions.count;
   std::vector<int> output_h_w(output_operand->type.dimensions.data + 2,
                               output_operand->type.dimensions.data + 4);
   for (const auto& item : output_h_w) {

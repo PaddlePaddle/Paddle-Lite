@@ -25,15 +25,12 @@ int ConvertReduce(Converter* converter, core::Operation* operation) {
   REDUCE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   auto axes_xtcl_array =
       ConvertToXTCLArray<xtcl::Integer>(axes_data, axes_size);
-
   xtcl::xExpr reduce_expr;
   switch (operation->type) {
 #define CONVERT_REDUCE(type, func)                         \

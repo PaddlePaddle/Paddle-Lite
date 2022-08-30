@@ -26,26 +26,21 @@ int ConvertGroupNormalization(Converter* converter,
   GROUP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Scale expr
   auto scale_expr = converter->GetMappedExpr(scale_operand);
   if (!scale_expr.defined()) {
     scale_expr = converter->ConvertOperand(scale_operand);
   }
-  // Bias expr
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
   }
-
   auto group_norm_expr = converter->builder()->CreateGroupNorm(
       input_expr, scale_expr, bias_expr, groups, 1, epsilon, true, true);
   converter->UpdateExprMap(output_operand, group_norm_expr);
-
   return NNADAPTER_NO_ERROR;
 }
 

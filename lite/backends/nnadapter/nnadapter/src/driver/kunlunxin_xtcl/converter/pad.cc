@@ -24,11 +24,8 @@ namespace kunlunxin_xtcl {
 
 int ConvertPad(Converter* converter, core::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  // check and convert mode
-  // now only support constant mode
-  NNADAPTER_CHECK_EQ(mode, NNADAPTER_PAD_MODE_CONSTANT);
-
+  NNADAPTER_CHECK_EQ(mode, NNADAPTER_PAD_MODE_CONSTANT)
+      << "XTCL only support constant mode";
   if (mode == NNADAPTER_PAD_MODE_REPLICATE) {
     mode = NNADAPTER_PAD_MODE_EDGE;
   }
@@ -44,30 +41,27 @@ int ConvertPad(Converter* converter, core::Operation* operation) {
       mode_str = "edge";
       break;
     default:
-      // Don't support mod='circular', circular -> NNADAPTER_PAD_MODE_NONE
+      // Don't support 'circular' mode. circular -> NNADAPTER_PAD_MODE_NONE
       NNADAPTER_LOG(FATAL) << "Unsupported mode: " << mode;
       break;
   }
   NNADAPTER_VLOG(5) << "mode: " << mode_str;
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
-  // Value expr
-  // must be constant expr
-  std::vector<int64_t> constant_shape(value_operand->type.dimensions.data,
-                                      value_operand->type.dimensions.data +
-                                          value_operand->type.dimensions.count);
-  NNADAPTER_CHECK_EQ(constant_shape.size(), 1);
-  NNADAPTER_CHECK_EQ(constant_shape[0], 1);
-
+  // Must be constant expr
+  NNADAPTER_CHECK_EQ(value_operand->type.dimensions.count, 1)
+      << "Expect value_operand dimensions count: 1"
+      << ", but receive: " << value_operand->type.dimensions.count;
+  NNADAPTER_CHECK_EQ(value_operand->type.dimensions.data[0], 1)
+      << "Expect value_operand shape: [1]"
+      << ", but receive: " << value_operand->type.dimensions.data[0];
   xtcl::xExpr pade_value_constant_expr;
-  // has the same type as 'input'
-  // xtcl get value from attrs pad_val, not from input pad_val.
+  // Value operand has the same type as 'input'
+  // XTCL get value from attrs pad_val, not from input pad_val.
   // attrs pad_val must be scalar constant
   switch (input_operand->type.precision) {
     case NNADAPTER_INT32: {
@@ -97,13 +91,11 @@ int ConvertPad(Converter* converter, core::Operation* operation) {
       break;
     }
   }
-
-  // Pads
-  // tensor of shape [2 * rank(`input`)]
+  // Tensor of shape [2 * rank(`input`)]
   uint32_t pads_size =
       pads_operand->length / static_cast<uint32_t>(sizeof(int32_t));
-  NNADAPTER_CHECK_EQ((input_operand->type.dimensions.count) * 2, pads_size);
-
+  NNADAPTER_CHECK_EQ((input_operand->type.dimensions.count) * 2, pads_size)
+      << "Expect pads_size == 2 * rank(input)";
   xtcl::Array<xtcl::Array<xtcl::Integer>> pad_width;
   auto pads_buffer = reinterpret_cast<int32_t*>(pads_operand->buffer);
   for (size_t i = 0; i < static_cast<size_t>(pads_size); i = i + 2) {
@@ -113,7 +105,6 @@ int ConvertPad(Converter* converter, core::Operation* operation) {
     padding_vec[1] = pads_buffer[i + 1];
     pad_width.push_back(ConvertToXTCLArray<xtcl::Integer>(padding_vec));
   }
-
   auto pad_expr = converter->builder()->CreatePad(
       input_expr, pad_width, pade_value_constant_expr, mode_str);
   converter->UpdateExprMap(output_operand, pad_expr);

@@ -24,31 +24,24 @@ namespace kunlunxin_xtcl {
 int ConvertLayerNormalization(Converter* converter,
                               core::Operation* operation) {
   LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  // XTCL only support the last dimension
   auto last_dimension = input_operand->type.dimensions.count - 1;
   NNADAPTER_CHECK((begin_norm_axis == last_dimension) ||
                   (begin_norm_axis == -1))
       << "XTCL only support the last dimension";
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Scale expr
   auto scale_expr = converter->GetMappedExpr(scale_operand);
   if (!scale_expr.defined()) {
     scale_expr = converter->ConvertOperand(scale_operand);
   }
-  // Bias expr
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
   }
-
-  // Layer Norm expr
   auto layer_norm_expr = converter->builder()->CreateLayerNorm(
       input_expr, scale_expr, bias_expr, begin_norm_axis, epsilon, true, true);
   converter->UpdateExprMap(output_operand, layer_norm_expr);

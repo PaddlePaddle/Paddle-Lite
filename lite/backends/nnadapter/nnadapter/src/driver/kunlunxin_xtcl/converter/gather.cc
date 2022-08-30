@@ -24,26 +24,20 @@ int ConvertGather(Converter* converter, core::Operation* operation) {
   GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Indices expr
   auto indices_expr = converter->GetMappedExpr(indices_operand);
   if (!indices_expr.defined()) {
     indices_expr = converter->ConvertOperand(indices_operand);
   }
-
-  // Flatten Indices expr
   if (indices_operand->type.dimensions.count != 1) {
     indices_expr = converter->builder()->CreateReshape(indices_expr, {-1});
   }
-
   // Reshape the gather expr with the inferred shape as the output expr
   auto gather_expr =
       converter->builder()->CreateTake(input_expr, indices_expr, axis);
-
   converter->UpdateExprMap(output_operand, gather_expr);
   return NNADAPTER_NO_ERROR;
 }

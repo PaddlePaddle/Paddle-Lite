@@ -24,12 +24,10 @@ int ConvertFillLike(Converter* converter, core::Operation* operation) {
   FILL_LIKE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Value expr
   // The fill value should be a scalar constant
   xtcl::xExpr value_constant_expr;
   switch (value_operand->type.precision) {
@@ -74,8 +72,7 @@ int ConvertFillLike(Converter* converter, core::Operation* operation) {
       break;
     }
   }
-
-  // paddle: data type of output is same as fill_value
+  // Paddle: data type of output is same as fill_value
   // XTCL:   data type of output is same as input_value
   if (input_operand->type.precision != value_operand->type.precision) {
     input_expr = converter->builder()->CreateCast(
@@ -84,7 +81,6 @@ int ConvertFillLike(Converter* converter, core::Operation* operation) {
   auto fill_like_expr =
       converter->builder()->CreateFullLike(input_expr, value_constant_expr);
   converter->UpdateExprMap(output_operand, fill_like_expr);
-
   return NNADAPTER_NO_ERROR;
 }
 

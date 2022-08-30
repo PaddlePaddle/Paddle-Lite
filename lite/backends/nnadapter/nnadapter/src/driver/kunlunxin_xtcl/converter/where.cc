@@ -24,22 +24,18 @@ int ConvertWhere(Converter* converter, core::Operation* operation) {
   WHERE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Condition expr
   auto condition_expr = converter->GetMappedExpr(condition_operand);
   if (!condition_expr.defined()) {
     condition_expr = converter->ConvertOperand(condition_operand);
   }
-  // Input0 expr
   auto input0_expr = converter->GetMappedExpr(input0_operand);
   if (!input0_expr.defined()) {
     input0_expr = converter->ConvertOperand(input0_operand);
   }
-  // Input1 expr
   auto input1_expr = converter->GetMappedExpr(input1_operand);
   if (!input1_expr.defined()) {
     input1_expr = converter->ConvertOperand(input1_operand);
   }
-
   auto where_expr = converter->builder()->CreateWhere(
       condition_expr, input0_expr, input1_expr);
   converter->UpdateExprMap(output_operand, where_expr);

@@ -25,22 +25,18 @@ int ConvertRange(Converter* converter, core::Operation* operation) {
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Start expr
   auto start_expr = converter->GetMappedExpr(start_operand);
   if (!start_expr.defined()) {
     start_expr = converter->ConvertOperand(start_operand);
   }
-  // Limit expr
   auto limit_expr = converter->GetMappedExpr(limit_operand);
   if (!limit_expr.defined()) {
     limit_expr = converter->ConvertOperand(limit_operand);
   }
-  // Delta expr
   auto delta_expr = converter->GetMappedExpr(delta_operand);
   if (!delta_expr.defined()) {
     delta_expr = converter->ConvertOperand(delta_operand);
   }
-
   auto range_expr = converter->builder()->CreateArange(
       start_expr,
       limit_expr,

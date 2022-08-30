@@ -25,12 +25,10 @@ int ConvertHardSwish(Converter* converter, core::Operation* operation) {
   HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   //  `output` = `input` * max(0, min(1, `alpha` * `input` + `beta`))
   // 1. HardSigmoid
   auto scale_expr =
@@ -40,7 +38,6 @@ int ConvertHardSwish(Converter* converter, core::Operation* operation) {
   // 2. Mul
   auto hard_swish_expr = converter->builder()->CreateBinaryOp(
       "multiply", input_expr, hard_sigmoid_expr);
-
   converter->UpdateExprMap(output_operand, hard_swish_expr);
   return NNADAPTER_NO_ERROR;
 }

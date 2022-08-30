@@ -22,17 +22,15 @@ namespace kunlunxin_xtcl {
 
 int ConvertArgMinMax(Converter* converter, core::Operation* operation) {
   ARG_MIN_MAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  // not support 'in_shape_size == 1'
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.count, 1);
+  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.count, 1)
+      << "Expect input dimensions count: 1"
+      << ", but receive: " << input_operand->type.dimensions.count;
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   xtcl::xExpr arg_min_max_expr;
   if (operation->type == NNADAPTER_ARG_MAX) {
     arg_min_max_expr = converter->builder()->CreateReduceArgMax(
@@ -51,7 +49,6 @@ int ConvertArgMinMax(Converter* converter, core::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-
   if (dtype == NNADAPTER_INT64) {
     arg_min_max_expr = converter->builder()->CreateCast(
         arg_min_max_expr, ConvertToXTCLDataType(dtype));

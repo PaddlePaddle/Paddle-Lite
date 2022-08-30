@@ -22,26 +22,20 @@ namespace kunlunxin_xtcl {
 
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
   NNADAPTER_VLOG(5) << "x_operand dimensions count = "
                     << x_operand->type.dimensions.count;
   NNADAPTER_VLOG(5) << "y_operand dimensions count = "
                     << y_operand->type.dimensions.count;
 
   // Convert to XTCL exprs
-  // x expr
   auto x_expr = converter->GetMappedExpr(x_operand);
   if (!x_expr.defined()) {
     x_expr = converter->ConvertOperand(x_operand);
   }
-
-  // y expr
   auto y_expr = converter->GetMappedExpr(y_operand);
   if (!y_expr.defined()) {
     y_expr = converter->ConvertOperand(y_operand);
   }
-
-  // Matmul expr
   xtcl::xExpr matmul_expr;
   auto x_dims = x_operand->type.dimensions;
   auto y_dims = y_operand->type.dimensions;

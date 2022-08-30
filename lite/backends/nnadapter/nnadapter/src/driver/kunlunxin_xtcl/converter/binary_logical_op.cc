@@ -24,17 +24,14 @@ int ConvertBinaryLogicalOp(Converter* converter, core::Operation* operation) {
   BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input0 expr
   auto input0_expr = converter->GetMappedExpr(input0_operand);
   if (!input0_expr.defined()) {
     input0_expr = converter->ConvertOperand(input0_operand);
   }
-  // Input1 expr
   auto input1_expr = converter->GetMappedExpr(input1_operand);
   if (!input1_expr.defined()) {
     input1_expr = converter->ConvertOperand(input1_operand);
   }
-
   xtcl::xExpr binary_logical_expr;
   switch (operation->type) {
 #define CONVERT_BINARY_LOGICAL_OP(type, xtcl_type)                 \

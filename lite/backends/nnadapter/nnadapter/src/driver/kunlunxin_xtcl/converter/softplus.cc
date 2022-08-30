@@ -24,17 +24,14 @@ int ConvertSoftplus(Converter* converter, core::Operation* operation) {
   SOFTPLUS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   auto beta_expr = converter->builder()->CreateConstant({1}, beta);
   auto constant_expr = converter->builder()->CreateConstant({1}, 1.0f);
-
   // `output` = log(1 + exp^(`beta` * `input`)) / `beta`
-  // when: `beta` * `input` > threshold:  `output` = `input`
+  // When: `beta` * `input` > threshold:  `output` = `input`
   xtcl::xExpr softplus_expr =
       converter->builder()->CreateBinaryOp("multiply", beta_expr, input_expr);
   softplus_expr = converter->builder()->CreateUnaryOp("exp", softplus_expr);

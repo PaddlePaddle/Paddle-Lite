@@ -24,12 +24,10 @@ int ConvertShape(Converter* converter, core::Operation* operation) {
   SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-
   auto shape_expr = converter->builder()->CreateShapeof(
       input_expr, ConvertToXTCLDataType(dtype));
   converter->UpdateExprMap(output_operand, shape_expr);

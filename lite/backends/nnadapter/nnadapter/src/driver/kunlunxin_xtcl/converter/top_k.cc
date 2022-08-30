@@ -22,11 +22,9 @@ namespace kunlunxin_xtcl {
 
 int ConvertTopK(Converter* converter, core::Operation* operation) {
   TOP_K_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  NNADAPTER_CHECK_NE(k, NNADAPTER_UNKNOWN);
+  NNADAPTER_CHECK_NE(k, NNADAPTER_UNKNOWN) << "";
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
@@ -36,7 +34,6 @@ int ConvertTopK(Converter* converter, core::Operation* operation) {
       static_cast<NNAdapterOperandPrecisionCode>(return_indices_dtype));
   auto top_k_expr = converter->builder()->CreateTopK(
       input_expr, k, axis, "both", is_ascend, dtype);
-
   converter->UpdateExprMap(output_operand,
                            converter->builder()->GetField(top_k_expr, 0));
   converter->UpdateExprMap(indices_operand,

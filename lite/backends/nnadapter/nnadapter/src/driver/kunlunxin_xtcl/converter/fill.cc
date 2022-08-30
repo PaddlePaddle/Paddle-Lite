@@ -28,7 +28,6 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   NNADAPTER_CHECK(IsConstantOperand(value_operand));
 
   // Convert to XTCL exprs
-  // Value expr
   // Fill value should be a scalar
   xtcl::xExpr value_constant_expr;
   switch (value_operand->type.precision) {
@@ -77,13 +76,11 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
   auto shape_count =
       shape_operand->length / static_cast<uint32_t>(sizeof(int32_t));
   auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-
   auto fill_expr = converter->builder()->CreateFull(
       value_constant_expr,
       ConvertToXTCLArray<xtcl::Integer>(shape_data, shape_count),
       ConvertToXTCLDataType(value_operand->type.precision));
   converter->UpdateExprMap(output_operand, fill_expr);
-
   return NNADAPTER_NO_ERROR;
 }
 

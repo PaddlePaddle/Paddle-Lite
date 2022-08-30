@@ -26,22 +26,18 @@ int ConvertInstanceNormalization(Converter* converter,
   INSTANCE_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // Input expr
   auto input_expr = converter->GetMappedExpr(input_operand);
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  // Scale expr
   auto scale_expr = converter->GetMappedExpr(scale_operand);
   if (!scale_expr.defined()) {
     scale_expr = converter->ConvertOperand(scale_operand);
   }
-  // Bias expr
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
   }
-
   auto instance_norm_expr = converter->builder()->CreateInstanceNorm(
       input_expr, scale_expr, bias_expr, 1, epsilon, true, true);
   converter->UpdateExprMap(output_operand, instance_norm_expr);
