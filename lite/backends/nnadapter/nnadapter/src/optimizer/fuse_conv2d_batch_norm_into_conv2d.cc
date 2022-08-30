@@ -189,8 +189,9 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     // Disable batchnorm fusion if the difference of fused filter scale is
     // greater than the given threshold
     if (conv2d_filter_max_scale >=
-        max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale)
+        max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale) {
       return false;
+    }
     // Update the quant scale of weight and bias with the fused one and requant
     // the bias
     auto conv2d_filter_data =

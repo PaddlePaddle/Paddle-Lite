@@ -40,14 +40,14 @@ bool IsValidSymmQuantParams(const std::vector<float>& quant_scales,
   if (quant_scale_count == 0) return false;
   CHECK(quant_channel_dim < NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
   for (size_t i = 0; i < quant_scale_count; i++) {
-    if (quant_scales[i] <= 0.f) return false;
+    if (quant_scales[i] < 0.f) return false;
   }
   return true;
 }
 
 bool IsValidSymmPerLayerQuantParams(const std::vector<float>& quant_scales) {
   if (quant_scales.size() != 1) return false;
-  return quant_scales[0] > 0.f;
+  return quant_scales[0] >= 0.f;
 }
 
 bool IsValidSymmPerChannelQuantParams(const std::vector<float>& quant_scales,
@@ -57,10 +57,10 @@ bool IsValidSymmPerChannelQuantParams(const std::vector<float>& quant_scales,
   if (quant_scale_count <= 1) return false;
   CHECK(quant_channel_dim < NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
   auto ref_quant_scale = quant_scales[0];
-  if (ref_quant_scale <= 0.f) return false;
+  if (ref_quant_scale < 0.f) return false;
   for (size_t i = 1; i < quant_scale_count; i++) {
     auto cur_quant_scale = quant_scales[i];
-    if (cur_quant_scale <= 0.f) return false;
+    if (cur_quant_scale < 0.f) return false;
     if (fabs(cur_quant_scale - ref_quant_scale) > threshold) {
       return true;
     }
