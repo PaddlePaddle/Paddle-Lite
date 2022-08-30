@@ -61,10 +61,10 @@ ops_lines = []
 # valid targets and valid_ops
 valid_targets = [
     "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA",
-    "kNPU", "kXPU", "kBM", "kMLU", "kIntelFPGA", "kMetal", "kNNAdapter"
+    "kNPU", "kXPU", "kBM", "kMLU", "kIntelFPGA", "kMetal", "kNNAdapter", "kARMTrustZone"
 ]
 valid_ops = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
-             [], [], []]
+             [], [], [], []]
 
 
 class TargetType:
@@ -84,6 +84,7 @@ class TargetType:
     kIntelFPGA = 16
     kMetal = 17
     kNNAdapter = 18
+    kARMTrustZone = 19
 
 
 # record op_info of valid kernels into `valid_ops` according to different target type

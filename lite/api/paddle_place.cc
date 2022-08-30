@@ -144,7 +144,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kImaginationNNA",
                                               "kIntelFPGA",
                                               "kMetal",
-                                              "kNNAdapter"};
+                                              "kNNAdapter",
+                                              "kARMTrustZone"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -211,7 +212,8 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kImaginationNNA),
                                                TARGET(kIntelFPGA),
                                                TARGET(kMetal),
-                                               TARGET(kNNAdapter)});
+                                               TARGET(kNNAdapter),
+                                               TARGET(kARMTrustZone)});
   if (target == TARGET(kAny)) {
     return valid_set;
   }
