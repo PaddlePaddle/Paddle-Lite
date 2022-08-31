@@ -254,11 +254,11 @@ REGISTER_CONVERTER(hard_sigmoid,
                    ConvertHardSigmoid,
                    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
                    "intel_openvino,kunlunxin_xtcl");
-REGISTER_CONVERTER(
-    hard_swish,
-    ConvertHardSwish,
-    "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
-    "nvidia_tensorrt,intel_openvino,eeasytech_npu,kunlunxin_xtcl");
+REGISTER_CONVERTER(hard_swish,
+                   ConvertHardSwish,
+                   "huawei_ascend_npu,huawei_kirin_npu,verisilicon_timvx,"
+                   "nvidia_tensorrt,intel_openvino,eeasytech_npu,qualcomm_qnn,"
+                   "kunlunxin_xtcl");
 REGISTER_CONVERTER(arg_max,
                    ConvertArgMinMax,
                    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt,"

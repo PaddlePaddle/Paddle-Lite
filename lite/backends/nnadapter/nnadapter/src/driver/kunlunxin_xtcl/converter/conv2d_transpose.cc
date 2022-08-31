@@ -41,6 +41,25 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
         stride_width,
         &dilation_width);
   }
+  bool is_set_output_shape =
+      ((output_shape_height != -1) || (output_shape_width != -1));
+  auto input_h = input_operand->type.dimensions
+                     .data[input_layout == NNADAPTER_NCHW ? 2 : 1];
+  auto input_w = input_operand->type.dimensions
+                     .data[input_layout == NNADAPTER_NCHW ? 3 : 2];
+  auto expect_output_height =
+      (input_h - 1) * stride_height - pad_height_top - pad_height_bottom +
+      (dilation_height * (filter_height - 1)) + 1 + output_padding_height;
+  auto expect_output_width =
+      (input_w - 1) * stride_width - pad_width_left - pad_width_right +
+      (dilation_width * (filter_width - 1)) + 1 + output_padding_width;
+  NNADAPTER_CHECK(!is_set_output_shape ||
+                  ((output_shape_height == expect_output_height) &&
+                   (output_shape_width == expect_output_width)))
+      << "XTCL not support set output shape size. Expect: "
+      << expect_output_height << ", " << expect_output_width
+      << ",  but receive: " << output_shape_height << ", "
+      << output_shape_width;
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
