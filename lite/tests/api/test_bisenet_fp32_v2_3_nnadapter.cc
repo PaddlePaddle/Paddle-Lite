@@ -47,6 +47,9 @@ TEST(bisenet, test_bisenet_fp32_v2_3_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
 // TODO(hong19860320) Fix core dump
+// 1. Model (split to relu_8.tmp_0) core dump (android htp fp16)
+// 2. Error is "A single op (1e7f00000017) requires 0x704800 bytes of TCM, which
+// is greater than the TCM size of 0x400000!". It seems like shape is too large?
 // #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
 //   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
