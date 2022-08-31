@@ -31,6 +31,9 @@ bool XPUFcOp::CheckShape() const {
   CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
 
   int64_t w_dims_1 = w_dims[1];
+  if (!param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+  }
   if (param_.bias) {
     const auto bias_dims = param_.bias->dims();
     if (bias_dims.size() == 2) {
@@ -57,7 +60,9 @@ bool XPUFcOp::InferShapeImpl() const {
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
   int64_t w_dims_1 = w_dims[1];
-
+  if (!param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+  }
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
   for (int i = 0; i < in_num_col_dims; ++i) {
