@@ -68,7 +68,7 @@ int AdaptEndIndex(int ph, int input_size, int output_size) {
       ceil(static_cast<double>((ph + 1) * input_size) / output_size));
 }
 
-// hin / hout ,win / wout 是整数 且是4的倍数！
+// hin mod hout is 0,  win mod wout is 0, win/wout mod 4 is 0
 void pooling_avg_fp16_adaptive_exclusive_p0(POOLING_PARAM) {
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
