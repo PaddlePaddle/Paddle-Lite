@@ -67,7 +67,7 @@ REGISTER_CONVERTER(matmul_v2,
                    ConvertMatmulV2,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,intel_"
                    "openvino,android_nnapi,nvidia_tensorrt,intel_openvino,"
-                   "qualcomm_qnn,kunlunxin_xtcl");
+                   "qualcomm_qnn,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
