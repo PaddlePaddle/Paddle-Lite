@@ -68,6 +68,61 @@ int AdaptEndIndex(int ph, int input_size, int output_size) {
       ceil(static_cast<double>((ph + 1) * input_size) / output_size));
 }
 
+// hin / hout ,win / wout 是整数 且是4的倍数！
+void pooling_avg_fp16_adaptive_exclusive_p0(POOLING_PARAM) {
+  int size_channel_in = win * hin;
+  int size_channel_out = wout * hout;
+  int kernel_h = hin / hout;
+  int kernel_w = win / wout;
+  float kernel_size = 1.f / (kernel_h * kernel_w);
+
+  for (int n = 0; n < num; ++n) {
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
+      for (int h = 0; h < hout; ++h) {
+        for (int w = 0; w < wout; ++w) {
+          const float16_t *input = din + (n * chin + c) * size_channel_in +
+                                   h * kernel_h * win + w * kernel_w;
+          float16_t *output =
+              dout + (n * chout + c) * size_channel_out + h * wout + w;
+          int kh = 0, kw = 0;
+          float16x8_t sum = vdupq_n_f16(0);
+          float16x4_t sum1 = vdup_n_f16(0);
+          for (kh = 0; kh + 1 < kernel_h; kh += 2) {
+            const float16_t *line0 = input + kh * win;
+            const float16_t *line1 = line0 + win;
+            for (kw = 0; kw + 7 < kernel_w; kw += 8) {
+              sum = vaddq_f16(vld1q_f16(line0 + kw), sum);
+              sum = vaddq_f16(vld1q_f16(line1 + kw), sum);
+            }
+            for (; kw + 3 < kernel_w; kw += 4) {
+              sum1 = vadd_f16(vld1_f16(line0 + kw), sum1);
+              sum1 = vadd_f16(vld1_f16(line1 + kw), sum1);
+            }
+          }
+          for (; kh < kernel_h; kh++) {
+            const float16_t *line0 = input + kh * win;
+            const float16_t *line1 = line0 + win;
+            for (kw = 0; kw + 7 < kernel_w; kw += 8) {
+              sum = vaddq_f16(vld1q_f16(line0 + kw), sum);
+              sum = vaddq_f16(vld1q_f16(line1 + kw), sum);
+            }
+            for (; kw + 3 < kernel_w; kw += 4) {
+              sum1 = vadd_f16(vld1_f16(line0 + kw), sum1);
+              sum1 = vadd_f16(vld1_f16(line1 + kw), sum1);
+            }
+          }
+          float16x8_t vsum = vpaddq_f16(sum, sum);
+          float16x4_t vsum_half = vadd_f16(vget_low_f16(vsum), sum1);
+          vsum_half = vpadd_f16(vsum_half, vsum_half);
+          vsum_half = vpadd_f16(vsum_half, vsum_half);
+          output[0] = vsum_half[0] * kernel_size;
+        }
+      }
+    }
+    LITE_PARALLEL_END()
+  }
+}
+
 void pooling_basic_fp16(POOLING_PARAM,
                         const std::vector<int> &ksize,
                         const std::vector<int> &strides,
@@ -78,8 +133,6 @@ void pooling_basic_fp16(POOLING_PARAM,
                         bool ceil_mode,
                         bool use_quantizer,
                         const std::string &pooling_type) {
-  // no need to pad input tensor, border is zero pad inside this function
-  memset(dout, 0, num * chout * hout * wout * sizeof(float16_t));
   int kernel_h = ksize[0];
   int kernel_w = ksize[1];
   int stride_h = strides[0];
@@ -88,6 +141,19 @@ void pooling_basic_fp16(POOLING_PARAM,
   int pad_w = paddings[2];
   int size_channel_in = win * hin;
   int size_channel_out = wout * hout;
+
+  if (exclusive && adaptive && pad_h == 0 && pad_w == 0 && hin % hout == 0 &&
+      win % wout == 0 && pooling_type == "avg" && global_pooling == false) {
+    int scale = win / wout;
+    if (scale % 4 == 0) {
+      pooling_avg_fp16_adaptive_exclusive_p0(
+          din, dout, num, chout, hout, wout, chin, hin, win);
+      return;
+    }
+  }
+
+  // no need to pad input tensor, border is zero pad inside this function
+  memset(dout, 0, num * chout * hout * wout * sizeof(float16_t));
   if (global_pooling) {
     if (pooling_type == "max") {  // Pooling_max
       for (int n = 0; n < num; ++n) {
