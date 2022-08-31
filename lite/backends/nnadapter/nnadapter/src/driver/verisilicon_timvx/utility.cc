@@ -168,7 +168,6 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
       quantization.SetType(tim::vx::QuantType::SYMMETRIC_PER_CHANNEL);
       quantization.SetChannelDim(quant_channel_dim);
     } else {
-      NNADAPTER_CHECK_LT(quant_channel_dim, 0);
       quantization.SetType(tim::vx::QuantType::ASYMMETRIC);
     }
     quantization.SetScales(
