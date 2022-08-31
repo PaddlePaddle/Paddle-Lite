@@ -53,6 +53,10 @@ TEST(MobileNetV3_large_x1_0, test_mobilenetv3_large_x_1_0_fp32_v2_0_nnadapter) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   nnadapter_device_names.emplace_back("huawei_kirin_npu");
   out_accuracy_threshold = 0.73f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
+  out_accuracy_threshold = 1.f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

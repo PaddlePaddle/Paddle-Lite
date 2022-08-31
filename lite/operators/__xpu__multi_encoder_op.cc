@@ -73,7 +73,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
                                    lite::Scope* scope) {
   param_.input = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.fc_weight_max = const_cast<lite::Tensor*>(
+  param_.weight_max = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("FCWeightMax").front())
            ->Get<lite::Tensor>());
   param_.output = scope->FindVar(op_desc.Output("Output").front())
@@ -145,9 +145,12 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
+  param_.per_channel = op_desc.GetAttr<bool>("per_channel");
+  if (param_.per_channel) {
+    param_.fc_channels = op_desc.GetAttr<std::vector<int>>("fc_channels");
+  }
   if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
-    param_.weight_max = op_desc.GetAttr<std::vector<float>>("FCWeightMax");
   }
 
   if (op_desc.HasAttr("slice_axes")) {

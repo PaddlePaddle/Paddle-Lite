@@ -14,11 +14,17 @@
 
 #pragma once
 
+#include <float.h>
 #include "core/types.h"
 
 namespace nnadapter {
 
-void FuseConv2DBatchNormIntoConv2D(core::Model *model,
-                                   bool skip_quant_op = false);
+// For the quatized model, folding batch norm causes a large difference in the
+// quantized scale of each channel of the filter of conv2d. Some hardware is
+// more sensitive to this deviation, which may lead to wrong results. In order
+// to solve the problem, we use a threshold of max_scale/min_scale to determine
+// whether to perform conv+bn folding.
+void FuseConv2DBatchNormIntoConv2D(
+    core::Model *model, double max_allowed_quant_scale_deviation = FLT_MAX);
 
 }  // namespace nnadapter

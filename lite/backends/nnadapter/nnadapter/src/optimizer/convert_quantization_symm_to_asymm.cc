@@ -41,7 +41,7 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
         for (uint32_t i = 0; i < operand->length; i++) {
           transform_buffer[i] = static_cast<uint8_t>(std::min(
-              std::max(static_cast<int16_t>(
+              std::max(static_cast<int32_t>(
                            reinterpret_cast<int8_t*>(operand->buffer)[i]) +
                            zero_point,
                        0),

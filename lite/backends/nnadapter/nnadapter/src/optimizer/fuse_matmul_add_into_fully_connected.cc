@@ -176,6 +176,33 @@ bool MatMulAddFuser::HandleMatchedResults(
                                   fully_connected_bias.data(),
                                   {matmul_num_units},
                                   fully_connected_bias_scale);
+  } else if (IsInt8SymmPerLayerQuantType(matmul_x_operand->type.precision) &&
+             IsInt8SymmPerChannelQuantType(matmul_y_operand->type.precision) &&
+             IsInt8SymmPerLayerQuantType(
+                 matmul_output_operand->type.precision)) {
+    std::vector<float> fully_connected_bias_scale;
+    for (uint32_t i = 0; i < matmul_num_units; i++) {
+      fully_connected_bias_scale.push_back(
+          matmul_x_operand->type.symm_per_layer_params.scale *
+          matmul_y_operand->type.symm_per_channel_params.scales[i]);
+    }
+    std::vector<int32_t> fully_connected_bias(matmul_num_units);
+    NNADAPTER_CHECK(QuantizeData<int32_t>(dequantized_add_input.data(),
+                                          &matmul_num_units,
+                                          1,
+                                          fully_connected_bias_scale.data(),
+                                          NULL,
+                                          -1,
+                                          -2147483647,
+                                          2147483647,
+                                          fully_connected_bias.data()));
+    fully_connected_bias_operand =
+        AddQuant32ConstantOperand(model,
+                                  fully_connected_bias.data(),
+                                  {matmul_num_units},
+                                  fully_connected_bias_scale.data(),
+                                  matmul_num_units,
+                                  0);
   } else {
     NNADAPTER_CHECK_EQ(matmul_x_operand->type.precision, NNADAPTER_FLOAT32);
     NNADAPTER_CHECK_EQ(matmul_y_operand->type.precision, NNADAPTER_FLOAT32);

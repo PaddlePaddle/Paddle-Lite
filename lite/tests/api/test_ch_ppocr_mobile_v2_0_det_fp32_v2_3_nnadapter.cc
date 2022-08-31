@@ -50,6 +50,9 @@ TEST(ch_ppocr_mobile_v2_0_det,
   nnadapter_device_names.emplace_back("huawei_kirin_npu");
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
+// TODO(hong19860320) Fix timeout
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

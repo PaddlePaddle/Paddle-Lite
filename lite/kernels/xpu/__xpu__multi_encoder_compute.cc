@@ -91,7 +91,51 @@ void XPUMultiEncoderCompute::prepare_quant_max(
   }
   return;
 }
-
+void XPUMultiEncoderCompute::prepare_weight_max(
+    int n_layers,
+    bool per_channel,
+    const lite::Tensor* weight_max,
+    int max_ptr_len,
+    const std::vector<int>& fc_channels,
+    std::vector<const float*>& max_xpu_ptrs) {
+  // prepare weight_max
+  int max_ext_times = max_ptr_len;
+  int total_channels = 0;
+  if (per_channel) {
+    max_ext_times = 1;
+    CHECK_EQ(fc_channels.size(), n_layers * 6) << fc_channels.size();
+    for (auto channel : fc_channels) {
+      total_channels += channel;
+    }
+    CHECK_EQ(weight_max->numel(), total_channels)
+        << "weight_max->numel: " << weight_max->numel()
+        << ", total_channels: " << total_channels;
+  }
+  int len = weight_max->numel() * max_ext_times * sizeof(float);
+  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(len);
+  float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
+  if (per_channel) {
+    lite::TargetWrapperXPU::MemcpySync(
+        weight_max_ptr, weight_max->data<float>(), len, IoDirection::HtoD);
+    float* cur_ptr = weight_max_ptr;
+    for (int i = 0; i < fc_channels.size(); ++i) {
+      max_xpu_ptrs.push_back(cur_ptr);
+      cur_ptr += fc_channels[i];
+    }
+    CHECK_EQ(cur_ptr - weight_max_ptr, total_channels)
+        << weight_max_ptr << ", cur_ptr:" << cur_ptr;
+  } else {
+    for (int i = 0; i < weight_max->numel(); i++) {
+      float* cur_weight_max_ptr = weight_max_ptr + i * max_ptr_len;
+      std::vector<float> cpu_max(max_ptr_len, weight_max->data<float>()[i]);
+      lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
+                                         cpu_max.data(),
+                                         sizeof(float) * max_ptr_len,
+                                         IoDirection::HtoD);
+      max_xpu_ptrs.push_back(cur_weight_max_ptr);
+    }
+  }
+}
 void XPUMultiEncoderCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
@@ -115,23 +159,15 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  // prepare weight_max
-  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
-      param.fc_weight_max->numel() * XPU_QUANT_SCALE_NUM * sizeof(float));
-  float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
-  for (int i = 0; i < param.fc_weight_max->numel(); i++) {
-    float* cur_weight_max_ptr = weight_max_ptr + i * XPU_QUANT_SCALE_NUM;
-    std::vector<float> cpu_max(XPU_QUANT_SCALE_NUM,
-                               param.fc_weight_max->data<float>()[i]);
-    lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
-                                       cpu_max.data(),
-                                       sizeof(float) * XPU_QUANT_SCALE_NUM,
-                                       IoDirection::HtoD);
-    fc_weight_max_.push_back(cur_weight_max_ptr);
-  }
-  // prepare quant max, mul&matmul input/output max
   const int n_layers = param.fc_weight.size() / 6;
+  const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
+  prepare_weight_max(n_layers,
+                     param.per_channel,
+                     param.weight_max,
+                     XPU_QUANT_SCALE_NUM,
+                     param.fc_channels,
+                     fc_weight_max_);
+  // prepare quant max, mul&matmul input/output max
   prepare_quant_max(
       param.input_max, n_layers, XPU_QUANT_SCALE_NUM, fc_input_max_);
   // prepare act_type
@@ -171,7 +207,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       true /* qkv fusion */,
                                       max_pad_seqlen,
                                       param.hidden_dim,
-                                      param.norm_before);
+                                      param.norm_before, /*is_pre_norm*/
+                                      param.per_channel);
     if (std::is_same<TGEMM, int8_t>::value) {
       CHECK_GT(fc_input_max_.size(), 0);
     }
