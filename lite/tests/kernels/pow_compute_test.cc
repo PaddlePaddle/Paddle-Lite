@@ -87,6 +87,9 @@ TEST(Pow, precision) {
 #endif
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 3e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

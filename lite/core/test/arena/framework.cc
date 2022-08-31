@@ -295,7 +295,7 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
         static_cast<const cl::Image2D*>(out_image)->getImageInfo(
             CL_IMAGE_HEIGHT, &out_image_shape[1]);
         std::unique_ptr<half_t[]> out_image_data(
-            new half_t(out_image_shape.production() * 4));
+            new half_t[out_image_shape.production() * 4]);
         TargetWrapperCL::ImgcpySync(out_image_data.get(),
                                     out_image,
                                     out_image_shape[0],

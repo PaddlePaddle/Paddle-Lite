@@ -104,8 +104,8 @@ class ScaleComputeTester : public arena::TestCase {
 };
 
 void TestScaleShape(Place place, float abs_error) {
-  for (auto x_dims :
-       std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
+  for (auto x_dims : std::vector<std::vector<int64_t>>{
+           {5, 2, 3, 4}, {8, 3, 5}, {12, 3}, {5}}) {
     std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester<float>(
         place, "def", DDim(x_dims), 1.5f, 0.2f, true));
     arena::Arena arena(std::move(tester), place, abs_error);
@@ -181,7 +181,7 @@ TEST(Scale, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-1;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
-  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 5e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
@@ -195,6 +195,10 @@ TEST(Scale, precision) {
   TestScaleValue(place, abs_error);
   TestScaleOrder(place, abs_error);
 #if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  TestScaleShape(place, abs_error);
+  TestScaleValue(place, abs_error);
+  TestScaleOrder(place, abs_error);
   TestScaleRelu6(place, abs_error);
 #endif
 }
