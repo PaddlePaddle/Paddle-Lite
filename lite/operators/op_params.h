@@ -1779,6 +1779,7 @@ struct XPUFcParam : ParamBase {
   bool transpose_w{true};
   bool enable_int8{false};
   bool per_channel{false};
+  float alpha{1.0f};
 };
 
 struct XPUResNetCbamParam : ParamBase {

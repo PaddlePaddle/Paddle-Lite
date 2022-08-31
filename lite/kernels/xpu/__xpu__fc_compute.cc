@@ -147,7 +147,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         ldx,                                                       // ldx
         ldw,                                                       // ldw
         ldy,                                                       // ldy
-        1.0f,                                                      // alpha
+        param.alpha,                                               // alpha
         0.0f,                                                      // beta
         bias,                                                      // bias
         reinterpret_cast<const float*>(
@@ -170,7 +170,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         ldx,                                                         // ldx
         ldw,                                                         // ldw
         ldy,                                                         // ldy
-        1.0f,                                                        // alpha
+        param.alpha,                                                 // alpha
         0.0f,                                                        // beta
         bias,                                                        // bias
         act);
