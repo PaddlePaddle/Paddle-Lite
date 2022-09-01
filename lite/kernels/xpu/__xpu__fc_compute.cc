@@ -107,6 +107,9 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
 
   bool x_trans = param.transpose_x;
   bool w_trans = param.transpose_w;
+  if (!w_trans) {
+    n = param.w->dims()[0];
+  }
   int ldx = (x_trans ? m : k);
   int ldw = (w_trans ? k : n);
   int ldy = n;

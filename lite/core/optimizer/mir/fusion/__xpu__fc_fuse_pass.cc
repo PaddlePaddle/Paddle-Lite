@@ -180,13 +180,13 @@ class XPUFcFuser : public FuseBase {
       op_desc.SetAttr("in_num_col_dims",
                       op_info->GetAttr<int>("x_num_col_dims"));
       op_desc.SetAttr("transpose_x", false);
-      op_desc.SetAttr("transpose_w", false);
+      op_desc.SetAttr("transpose_w", true);
     } else if (mul_type_ == "matmul") {
       op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("transpose_X"));
-      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("transpose_Y"));
+      op_desc.SetAttr("transpose_w", !op_info->GetAttr<bool>("transpose_Y"));
     } else {
       op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("trans_x"));
-      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("trans_y"));
+      op_desc.SetAttr("transpose_w", !op_info->GetAttr<bool>("trans_y"));
     }
     if (op_info->HasAttr("alpha")) {
       op_desc.SetAttr("alpha", op_info->GetAttr<float>("alpha"));
