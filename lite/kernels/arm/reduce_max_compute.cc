@@ -24,9 +24,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-void ReduceMaxCompute<T>::Run() {
-  auto& param = Param<operators::ReduceParam>();
+template <typename T, PrecisionType PType>
+void ReduceMaxCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ReduceParam>();
   const T* input = param.X->template data<T>();
   auto x_dims = param.X->dims();
 
@@ -147,14 +147,25 @@ void ReduceMaxCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using float_reduce_max = paddle::lite::kernels::arm::ReduceMaxCompute<float>;
+using float_reduce_max =
+    paddle::lite::kernels::arm::ReduceMaxCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, float_reduce_max, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-using int64_reduce_max = paddle::lite::kernels::arm::ReduceMaxCompute<int64_t>;
+using int64_reduce_max =
+    paddle::lite::kernels::arm::ReduceMaxCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, int64_reduce_max, i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+
+#ifdef ENABLE_ARM_FP16
+using float16_reduce_max =
+    paddle::lite::kernels::arm::ReduceMaxCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(reduce_max, kARM, kFP16, kNCHW, float16_reduce_max, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif

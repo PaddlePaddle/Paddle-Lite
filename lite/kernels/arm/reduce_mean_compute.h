@@ -23,13 +23,15 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReduceMeanCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ReduceMeanCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
   virtual ~ReduceMeanCompute() = default;
 
  private:
+  using param_t = operators::ReduceParam;
 };
 
 }  // namespace arm

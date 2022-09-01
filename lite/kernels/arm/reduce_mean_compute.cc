@@ -21,12 +21,13 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ReduceMeanCompute::Run() {
-  auto& param = Param<operators::ReduceParam>();
-  const float* input = param.X->data<float>();
+template <typename T, PrecisionType PType>
+void ReduceMeanCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  const T* input = param.X->template data<T>();
   auto x_dims = param.X->dims();
   int x_rank = x_dims.size();
-  float* output = param.Out->mutable_data<float>();
+  T* output = param.Out->template mutable_data<T>();
   bool keep_dim = param.keep_dim;
   auto dim = param.dim;
 
@@ -47,31 +48,35 @@ void ReduceMeanCompute::Run() {
   int h_in = new_dims[2];
   int w_in = new_dims[3];
   if (dim.size() == 0) {
-    lite::arm::math::reduce_mean_all(input, output, n_in, c_in, h_in, w_in);
+    lite::arm::math::reduce_mean_all<T>(input, output, n_in, c_in, h_in, w_in);
   } else if (dim.size() == 1) {
     switch (dim[0]) {
       case 0:
-        lite::arm::math::reduce_mean_n(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_mean_n<T>(
+            input, output, n_in, c_in, h_in, w_in);
         break;
       case 1:
-        lite::arm::math::reduce_mean_c(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_mean_c<T>(
+            input, output, n_in, c_in, h_in, w_in);
         break;
       case 2:
-        lite::arm::math::reduce_mean_h(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_mean_h<T>(
+            input, output, n_in, c_in, h_in, w_in);
         break;
       case 3:
-        lite::arm::math::reduce_mean_w(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_mean_w<T>(
+            input, output, n_in, c_in, h_in, w_in);
         break;
       default:
         LOG(FATAL) << "error!!!";
     }
   } else if (dim.size() == 2) {
     if (dim[0] == 0 && dim[1] == 1) {
-      lite::arm::math::reduce_mean_nc(input, output, n_in, c_in, h_in, w_in);
+      lite::arm::math::reduce_mean_nc<T>(input, output, n_in, c_in, h_in, w_in);
     } else if (dim[0] == 1 && dim[1] == 2) {
-      lite::arm::math::reduce_mean_ch(input, output, n_in, c_in, h_in, w_in);
+      lite::arm::math::reduce_mean_ch<T>(input, output, n_in, c_in, h_in, w_in);
     } else if (dim[0] == 2 && dim[1] == 3) {
-      lite::arm::math::reduce_mean_hw(input, output, n_in, c_in, h_in, w_in);
+      lite::arm::math::reduce_mean_hw<T>(input, output, n_in, c_in, h_in, w_in);
     } else {
       LOG(FATAL) << "invalid dim!!";
     }
@@ -85,12 +90,18 @@ void ReduceMeanCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(reduce_mean,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ReduceMeanCompute,
-                     def)
+using float_reduce_mean =
+    paddle::lite::kernels::arm::ReduceMeanCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(reduce_mean, kARM, kFloat, kNCHW, float_reduce_mean, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+#ifdef ENABLE_ARM_FP16
+using float16_reduce_mean =
+    paddle::lite::kernels::arm::ReduceMeanCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(reduce_mean, kARM, kFP16, kNCHW, float16_reduce_mean, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif
