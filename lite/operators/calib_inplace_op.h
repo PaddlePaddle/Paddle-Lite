@@ -34,11 +34,11 @@ namespace operators {
  * Currently, this operator only supports mutual conversion of int8
  * and float32 types.
  */
-class CalibOpLite : public OpLite {
+class CalibInplaceOpLite : public OpLite {
  public:
-  CalibOpLite() {}
+  CalibInplaceOpLite() {}
 
-  explicit CalibOpLite(const std::string &type) : OpLite(type) {}
+  explicit CalibInplaceOpLite(const std::string &type) : OpLite(type) {}
 
   bool CheckShape() const override;
 
@@ -48,9 +48,10 @@ class CalibOpLite : public OpLite {
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) override;
 #endif
+
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "calib"; }
+  std::string DebugString() const override { return "calibInplace"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
@@ -64,7 +65,7 @@ class CalibOpLite : public OpLite {
 #endif
 
  private:
-  mutable CalibParam param_;
+  mutable CalibInplaceParam param_;
 };
 
 }  // namespace operators

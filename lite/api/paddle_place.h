@@ -78,6 +78,12 @@ enum class PrecisionType : int {
   kFP64 = 10,
   NUM = 11,  // number of fields.
 };
+
+typedef enum {
+  LITE_PRECISION_NORMAL = 0,
+  LITE_PRECISION_LOW = 1,
+} PrecisionMode;
+
 enum class DataLayoutType : int {
   kUnk = 0,
   kNCHW = 1,

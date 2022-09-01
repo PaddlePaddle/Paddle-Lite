@@ -12,55 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/calib_op.h"
+#include "lite/operators/calib_inplace_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool CalibOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.input);
-  CHECK_OR_FALSE(param_.output);
-  return true;
-}
-bool CalibOpLite::InferShapeImpl() const {
-  param_.output->Resize(param_.input->dims());
-  param_.output->set_lod(param_.input->lod());
-  return true;
-}
+bool CalibInplaceOpLite::CheckShape() const { return true; }
+bool CalibInplaceOpLite::InferShapeImpl() const { return true; }
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-bool CalibOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
-                             lite::Scope *scope) {
-  std::cout << "attach calib op" << std::endl;
+bool CalibInplaceOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
+                                    lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
-  auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);
-  CHECK(output_var);
   param_.input = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.output = param_.input;
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (opdesc.HasAttr("scale")) {
     param_.scale = opdesc.GetAttr<float>("scale");
   }
-  CHECK(param_.input) << "Input(X) of CalibOp should not be null.";
-  CHECK(param_.output) << "Output(Out) of CalibOp should not be null.";
+  CHECK(param_.input) << "Input(X) of CalibInplaceOp should not be null.";
+  CHECK(param_.output) << "Output(Out) of CalibInplaceOp should not be null.";
   return true;
 }
 #endif
-bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool CalibInplaceOpLite::AttachImpl(const cpp::OpDesc &opdesc,
+                                    lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);
   CHECK(output_var);
   param_.input = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.output = param_.input;
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (opdesc.HasAttr("scale")) {
     param_.scale = opdesc.GetAttr<float>("scale");
   }
-  CHECK(param_.input) << "Input(X) of CalibOp should not be null.";
-  CHECK(param_.output) << "Output(Out) of CalibOp should not be null.";
+  CHECK(param_.input) << "Input(X) of CalibInplaceOp should not be null.";
+  CHECK(param_.output) << "Output(Out) of CalibInplaceOp should not be null.";
   return true;
 }
 
@@ -68,4 +58,4 @@ bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(calib, paddle::lite::operators::CalibOpLite);
+REGISTER_LITE_OP(calib_inplace, paddle::lite::operators::CalibInplaceOpLite);
