@@ -401,8 +401,8 @@ void mean_grad<float16_t>(const float16_t* out_grad,
                           int size) {
   float16_t grad = out_grad[0] / size;
   float16x8_t grad_v = vdupq_n_f16(grad);
-  int loop = size >> 2;
-  int remain = size & 3;
+  int loop = size >> 3;
+  int remain = size & 7;
 
   LITE_PARALLEL_BEGIN(i, tid, loop) {
     vst1q_f16(in_grad, grad_v);
