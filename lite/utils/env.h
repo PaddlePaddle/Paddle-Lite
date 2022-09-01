@@ -35,16 +35,17 @@
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
-// The environment variables for the quant model settings, use "QUANT_" as
-// prefix.
-// Apply the constraints for the quantized ops(such as concat) that the inputs
-// and outputs must have the same scale. Use the environment variable to specify
-// how to caculate the new scale, includes the following methods:
-// 0(default): The mean of the input and output scales.
-// 1: The maximum of the input and output scales.
-// 2: The minimum of the input and output scales.
-#define QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD \
-  "QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD"
+// There are several methods to force complete quant scale info:
+// (a) Force propagate the input scale which is from quantize_xxx to previous
+// op's output scale.
+// (b) Try to set the output scale from the current op's input scale and set the
+// input scale from the previous op's output scale repeatly.
+//
+// FORCE_COMPLETE_QUANT_SCALE_LEVEL has following options:
+// "0", not apply extra methods;
+// "1", apply method (a);
+// "2", apply method (a)(b);
+#define FORCE_COMPLETE_QUANT_SCALE_LEVEL "FORCE_COMPLETE_QUANT_SCALE_LEVEL"
 
 namespace paddle {
 namespace lite {

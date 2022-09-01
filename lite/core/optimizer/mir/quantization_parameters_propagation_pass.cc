@@ -61,11 +61,12 @@ static float GetOutputThreshold(const OpInfo* op_info,
   return op_info->GetAttr<float>(threshold_name);
 }
 
-void QuantizationParametersPropagationPass::Apply(
-    const std::unique_ptr<SSAGraph>& graph) {
-  VLOG(5) << "\n" << Visualize(graph.get());
-  // Propagete the input scale which is from fake_quantize_xxx and
-  // fake_quantize_dequantize_xxx op
+// Propagate the input scale which is from fake_quantize_xxx and
+// fake_quantize_dequantize_xxx op
+static bool SetOutScaleFromNextInScale(
+    const std::unique_ptr<SSAGraph>& graph,
+    int force_complete_quant_scale_level = 0) {
+  bool found = false;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
@@ -85,14 +86,23 @@ void QuantizationParametersPropagationPass::Apply(
               in_op_is_quanted ||
               in_op_info->HasInputScale(in_op_in_var->arg()->name);
         }
+        in_op_is_quanted =
+            in_op_is_quanted || force_complete_quant_scale_level >= 1;
         if (in_op_is_quanted) {
           // Use this input scale to update the output scale of the quantized op
           in_op_info->SetOutputScale(in_var_name, in_var_scale);
+          found = true;
         }
       }
     }
   }
-  // Calculate the output scale according to its output threshold
+  return found;
+}
+
+// Calculate the output scale according to its output threshold
+static bool SetOutScaleFromCurOutThreshold(
+    const std::unique_ptr<SSAGraph>& graph) {
+  bool found = false;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
@@ -109,9 +119,15 @@ void QuantizationParametersPropagationPass::Apply(
       auto out_var_scale = std::vector<float>{
           GetOutputThreshold(op_info, out_var_name, false) / range};
       op_info->SetOutputScale(out_var_name, out_var_scale);
+      found = true;
     }
   }
-  // Set the input scale according to the output scale of the previous ops
+  return found;
+}
+
+// Set the input scale according to the output scale of the previous ops
+static bool SetInScaleFromPrevOutScale(const std::unique_ptr<SSAGraph>& graph) {
+  bool found = false;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
@@ -137,7 +153,53 @@ void QuantizationParametersPropagationPass::Apply(
       }
       if (!in_var_scale.empty()) {
         op_info->SetInputScale(in_var_name, in_var_scale);
+        found = true;
       }
+    }
+  }
+  return found;
+}
+
+// Set the output scale according to the input scale
+static bool SetOutScaleFromCurInScale(const std::unique_ptr<SSAGraph>& graph) {
+  bool found = false;
+  for (auto& op_node : graph->StmtTopologicalOrder()) {
+    if (!op_node->IsStmt()) continue;
+    auto op_info = op_node->AsStmt().mutable_op_info();
+    for (auto out_var_node : op_node->outlinks) {
+      CHECK(out_var_node->IsArg());
+      auto out_var_name = out_var_node->arg()->name;
+      if (op_info->HasOutputScale(out_var_name)) continue;
+      for (auto in_var_node : op_node->inlinks) {
+        CHECK(in_var_node->IsArg());
+        auto in_var_name = in_var_node->arg()->name;
+        if (!op_info->HasInputScale(in_var_name)) continue;
+        op_info->SetOutputScale(out_var_name,
+                                op_info->GetInputScale(in_var_name));
+        found = true;
+        break;
+      }
+    }
+  }
+  return found;
+}
+
+void QuantizationParametersPropagationPass::Apply(
+    const std::unique_ptr<SSAGraph>& graph) {
+  VLOG(5) << "\n" << Visualize(graph.get());
+  int force_complete_quant_scale_level =
+      GetIntFromEnv(FORCE_COMPLETE_QUANT_SCALE_LEVEL);
+  SetOutScaleFromNextInScale(graph, force_complete_quant_scale_level);
+  SetOutScaleFromCurOutThreshold(graph);
+  SetInScaleFromPrevOutScale(graph);
+  // In some special cases, quant info is still missing. Try following steps to
+  // fill quant info:
+  if (force_complete_quant_scale_level >= 2) {
+    bool found = true;
+    while (found) {
+      bool ret0 = SetOutScaleFromCurInScale(graph);
+      bool ret1 = SetInScaleFromPrevOutScale(graph);
+      found = ret0 || ret1;
     }
   }
   VLOG(5) << "\n" << Visualize(graph.get());
