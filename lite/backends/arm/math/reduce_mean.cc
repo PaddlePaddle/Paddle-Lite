@@ -251,20 +251,20 @@ void reduce_mean_c<float16_t>(const float16_t* src,
   int hw_size = height_in * width_in;
   int chw_size = hw_size * channel_in;
   int data_index, src_index0, src_index;
-  // for (int n = 0; n < num_in; ++n) {
-  //   for (int h = 0; h < height_in; ++h) {
-  //     for (int w = 0; w < width_in; ++w) {
-  //       data_index = n * hw_size + h * width_in + w;
-  //       src_index0 = n * chw_size + h * width_in + w;
-  //       dst[data_index] = 0.0;
-  //       for (int c = 0; c < channel_in; ++c) {
-  //         src_index = src_index0 + c * hw_size;
-  //         dst[data_index] += static_cast<float16_t>(src[src_index]) /
-  //         channel_in;
-  //       }
-  //     }
-  //   }
-  // }
+  for (int n = 0; n < num_in; ++n) {
+    for (int h = 0; h < height_in; ++h) {
+      for (int w = 0; w < width_in; ++w) {
+        data_index = n * hw_size + h * width_in + w;
+        src_index0 = n * chw_size + h * width_in + w;
+        dst[data_index] = 0.0;
+        for (int c = 0; c < channel_in; ++c) {
+          src_index = src_index0 + c * hw_size;
+          dst[data_index] +=
+              static_cast<float16_t>(src[src_index]) / channel_in;
+        }
+      }
+    }
+  }
 }
 
 template <>
