@@ -199,6 +199,10 @@ if (LITE_WITH_INTEL_FPGA)
 add_definitions("-DLITE_WITH_INTEL_FPGA")
 endif()
 
+if (LITE_WITH_ARM_TRUSTZONE)
+add_definitions("-DLITE_WITH_ARM_TRUSTZONE")
+endif()
+
 if (LITE_WITH_BM)
 add_definitions("-DLITE_WITH_BM")
 endif()

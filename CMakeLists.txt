@@ -67,6 +67,7 @@ lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"  
 lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
 lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)
 lite_option(LITE_WITH_INTEL_FPGA               "Enable Intel FPGA support in lite"                                    OFF)
+lite_option(LITE_WITH_ARM_TRUSTZONE            "Enable ARM TrustZone support in lite" 	                              OFF)
 lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in profile mode ON in lite"                  OFF)
 lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)

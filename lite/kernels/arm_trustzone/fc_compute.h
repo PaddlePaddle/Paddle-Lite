@@ -15,8 +15,6 @@
 #pragma once
 #include <stdint.h>
 #include <vector>
-#include "lite/backends/arm_trustzone/math/funcs.h"
-#include "lite/backends/arm_trustzone/math/type_trans.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
