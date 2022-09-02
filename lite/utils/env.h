@@ -40,12 +40,15 @@
 // op's output scale.
 // (b) Try to set the output scale from the current op's input scale and set the
 // input scale from the previous op's output scale repeatly.
+// (c) Try to set the input scale from the current op's output scale and set the
+// output scale from the previous op's input scale repeatly.
 //
-// FORCE_COMPLETE_QUANT_SCALE_LEVEL has following options:
+// QUANT_AUTO_COMPLETE_SCALE_LEVEL has following options:
 // "0", not apply extra methods;
 // "1", apply method (a);
 // "2", apply method (a)(b);
-#define FORCE_COMPLETE_QUANT_SCALE_LEVEL "FORCE_COMPLETE_QUANT_SCALE_LEVEL"
+// "3", apply method (a)(b)(c);
+#define QUANT_AUTO_COMPLETE_SCALE_LEVEL "QUANT_AUTO_COMPLETE_SCALE_LEVEL"
 
 namespace paddle {
 namespace lite {

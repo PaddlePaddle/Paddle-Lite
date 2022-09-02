@@ -161,11 +161,17 @@ static bool SetInScaleFromPrevOutScale(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 // Set the output scale according to the input scale
-static bool SetOutScaleFromCurInScale(const std::unique_ptr<SSAGraph>& graph) {
+static bool SetOutScaleFromCurInScale(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::vector<std::string>& valid_op_types) {
   bool found = false;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
+    auto op_type = op_info->Type();
+    if (std::find(valid_op_types.begin(), valid_op_types.end(), op_type) ==
+        valid_op_types.end())
+      continue;
     for (auto out_var_node : op_node->outlinks) {
       CHECK(out_var_node->IsArg());
       auto out_var_name = out_var_node->arg()->name;
@@ -184,22 +190,64 @@ static bool SetOutScaleFromCurInScale(const std::unique_ptr<SSAGraph>& graph) {
   return found;
 }
 
+// Set the input scale according to the output scale
+static bool SetInScaleFromCurOutScale(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::vector<std::string>& valid_op_types) {
+  bool found = false;
+  for (auto& op_node : graph->StmtTopologicalOrder()) {
+    if (!op_node->IsStmt()) continue;
+    auto op_info = op_node->AsStmt().mutable_op_info();
+    auto op_type = op_info->Type();
+    if (std::find(valid_op_types.begin(), valid_op_types.end(), op_type) ==
+        valid_op_types.end())
+      continue;
+    for (auto in_var_node : op_node->inlinks) {
+      CHECK(in_var_node->IsArg());
+      auto in_var_name = in_var_node->arg()->name;
+      if (op_info->HasInputScale(in_var_name)) continue;
+      for (auto out_var_node : op_node->outlinks) {
+        CHECK(out_var_node->IsArg());
+        auto out_var_name = out_var_node->arg()->name;
+        if (!op_info->HasOutputScale(out_var_name)) continue;
+        op_info->SetInputScale(in_var_name,
+                               op_info->GetOutputScale(out_var_name));
+        found = true;
+        break;
+      }
+    }
+  }
+  return found;
+}
+
 void QuantizationParametersPropagationPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
   int force_complete_quant_scale_level =
-      GetIntFromEnv(FORCE_COMPLETE_QUANT_SCALE_LEVEL);
+      GetIntFromEnv(QUANT_AUTO_COMPLETE_SCALE_LEVEL);
   SetOutScaleFromNextInScale(graph, force_complete_quant_scale_level);
   SetOutScaleFromCurOutThreshold(graph);
   SetInScaleFromPrevOutScale(graph);
   // In some special cases, quant info is still missing. Try following steps to
-  // fill quant info:
+  // fill quant info.
+  // Ops that allow input and output sacles are the same.
+  std::vector<std::string> valid_op_types{"bilinear_interp_v2",
+                                          "leaky_relu",
+                                          "nearest_interp_v2",
+                                          "pool2d",
+                                          "relu"};
   if (force_complete_quant_scale_level >= 2) {
     bool found = true;
     while (found) {
-      bool ret0 = SetOutScaleFromCurInScale(graph);
-      bool ret1 = SetInScaleFromPrevOutScale(graph);
-      found = ret0 || ret1;
+      found = SetOutScaleFromCurInScale(graph, valid_op_types);
+      SetInScaleFromPrevOutScale(graph);
+    }
+  }
+  if (force_complete_quant_scale_level >= 3) {
+    bool found = true;
+    while (found) {
+      found = SetInScaleFromCurOutScale(graph, valid_op_types);
+      SetOutScaleFromNextInScale(graph);
     }
   }
   VLOG(5) << "\n" << Visualize(graph.get());
