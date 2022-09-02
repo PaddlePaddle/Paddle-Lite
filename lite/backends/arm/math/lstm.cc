@@ -84,9 +84,9 @@ float* row_offset(Tensor& input, int start) {  // NOLINT
 
 #ifdef ENABLE_ARM_FP16
 void add_bias_rowwise_fp16(Tensor* input,
-                      const Tensor* bias,
-                      int start_w,
-                      int end_w) {
+                           const Tensor* bias,
+                           int start_w,
+                           int end_w) {
   auto in_dim = input->dims();
   int width = input->numel() / in_dim[0];
   int w_adds = width < end_w ? width : end_w;
@@ -100,8 +100,11 @@ void add_bias_rowwise_fp16(Tensor* input,
   }
 }
 
-void vector_dot_fp16(
-    float16_t* out, const float16_t* in, const float16_t* v1, int size, const float16_t* v2) {
+void vector_dot_fp16(float16_t* out,
+                     const float16_t* in,
+                     const float16_t* v1,
+                     int size,
+                     const float16_t* v2) {
   int loop = size >> 3;
   int remain = size & 7;
   const float16_t* in_ptr = in;
@@ -139,8 +142,11 @@ void vector_dot_fp16(
 }
 
 template <>
-void activation<float16_t>(
-    const float16_t* din, float16_t* dout, int size, std::string act_str, int threads) {
+void activation<float16_t>(const float16_t* din,
+                           float16_t* dout,
+                           int size,
+                           std::string act_str,
+                           int threads) {
   if (act_str == "sigmoid") {
     fp16::act_sigmoid<float16_t>(din, dout, size, threads);
   } else if (act_str == "tanh") {
@@ -153,10 +159,10 @@ void activation<float16_t>(
 }
 template <>
 void activation<float16_t>(const float16_t* din,
-                float16_t* dout,
-                int size,
-                lite_api::ActivationType act_type,
-                int threads) {
+                           float16_t* dout,
+                           int size,
+                           lite_api::ActivationType act_type,
+                           int threads) {
   switch (act_type) {
     case lite_api::ActivationType::kSigmoid:
       fp16::act_sigmoid<float16_t>(din, dout, size, threads);
@@ -174,7 +180,8 @@ void activation<float16_t>(const float16_t* din,
       fp16::act_relu<float16_t>(din, dout, size, threads);
       break;
     default:
-      LOG(FATAL) << "unsupport fp16 activation type:" << static_cast<int>(act_type);
+      LOG(FATAL) << "unsupport fp16 activation type:"
+                 << static_cast<int>(act_type);
       break;
   }
 }
