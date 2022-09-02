@@ -39,14 +39,17 @@ void vector_dot(float* out,
                 const float* v2 = nullptr);
 #ifdef ENABLE_ARM_FP16
 void add_bias_rowwise_fp16(Tensor* input,
-                      const Tensor* bias,
-                      int start_w,
-                      int end_w);
-void vector_dot_fp16(
-    float16_t* out, const float16_t* in, const float16_t* v1, int size, const float16_t* v2 = nullptr);
+                           const Tensor* bias,
+                           int start_w,
+                           int end_w);
+void vector_dot_fp16(float16_t* out,
+                     const float16_t* in,
+                     const float16_t* v1,
+                     int size,
+                     const float16_t* v2 = nullptr);
 #endif
 
-float* row_offset(Tensor& input, int start);
+float* row_offset(Tensor& input, int start);  // NOLINT
 
 template <class T>
 struct LstmMetaValue {
@@ -104,14 +107,17 @@ void activation(const T* din,
 
 #ifdef ENABLE_ARM_FP16
 template <>
-void activation<float16_t>(
-    const float16_t* din, float16_t* dout, int size, std::string act_str, int threads);
+void activation<float16_t>(const float16_t* din,
+                           float16_t* dout,
+                           int size,
+                           std::string act_str,
+                           int threads);
 template <>
 void activation<float16_t>(const float16_t* din,
-                float16_t* dout,
-                int size,
-                lite_api::ActivationType act_type,
-                int threads);
+                           float16_t* dout,
+                           int size,
+                           lite_api::ActivationType act_type,
+                           int threads);
 #endif
 
 template <typename T>
@@ -244,7 +250,7 @@ struct RnnLstmUnitFunctor {
 
 #ifdef ENABLE_ARM_FP16
 
-struct RnnLstmUnitFunctorFP16{
+struct RnnLstmUnitFunctorFP16 {
   static void compute(LstmMetaValue<float16_t> value,
                       int frame_size,
                       int batch_size,

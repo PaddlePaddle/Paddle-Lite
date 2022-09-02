@@ -367,7 +367,10 @@ void act_tanh<float16_t>(const float16_t* din,
 }
 
 template <>
-void act_sigmoid<float16_t>(const float16_t* din, float16_t* dout, int size, int threads) {
+void act_sigmoid<float16_t>(const float16_t* din,
+                            float16_t* dout,
+                            int size,
+                            int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim8 = nums_per_thread >> 3;

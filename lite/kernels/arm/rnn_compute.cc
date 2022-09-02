@@ -53,19 +53,19 @@ namespace arm {
 // layer, output_tensor, is_bidirection, offset
 #define RUN_RNN_LAYER_FP16(x, y, z, w) \
   RunRnnLayer_fp16(&ctx,               \
-              input_temp_holder,  \
-              parameter_lists[x], \
-              init_h_unbind,      \
-              init_c_unbind,      \
-              sequence_length,    \
-              &last_h_unbind,     \
-              &last_c_unbind,     \
-              y,                  \
-              x,                  \
-              &gate_value,        \
-              z,                  \
-              w,                  \
-              mode)
+                   input_temp_holder,  \
+                   parameter_lists[x], \
+                   init_h_unbind,      \
+                   init_c_unbind,      \
+                   sequence_length,    \
+                   &last_h_unbind,     \
+                   &last_c_unbind,     \
+                   y,                  \
+                   x,                  \
+                   &gate_value,        \
+                   z,                  \
+                   w,                  \
+                   mode)
 #endif
 
 void reset_parameter_vector(const std::vector<Tensor*>& raw_params_vec,
@@ -208,23 +208,24 @@ static void preprocess_fp16(ARMContext* ctx,
   int n = weight_input_dims[0];
 
   lite::arm::math::fp16::sgemm_fp16(false,
-                         true,
-                         m,
-                         n,
-                         k,
-                         1.f,
-                         i_data,
-                         k,
-                         w_data,
-                         k,
-                         0.f,
-                         o_data,
-                         n,
-                         nullptr,
-                         false,
-                         act_param,
-                         ctx);
-  lite::arm::math::fp16::fill_bias_fc(o_data, bias_ih.data<float16_t>(), m, n, nullptr);
+                                    true,
+                                    m,
+                                    n,
+                                    k,
+                                    1.f,
+                                    i_data,
+                                    k,
+                                    w_data,
+                                    k,
+                                    0.f,
+                                    o_data,
+                                    n,
+                                    nullptr,
+                                    false,
+                                    act_param,
+                                    ctx);
+  lite::arm::math::fp16::fill_bias_fc(
+      o_data, bias_ih.data<float16_t>(), m, n, nullptr);
 
   if ("GRU" == mode) {
     Tensor bias_tmp_hh;
@@ -233,12 +234,14 @@ static void preprocess_fp16(ARMContext* ctx,
     auto bias_src = bias_hh.data<float16_t>();
     int bias_offt = bias_hh.numel() / 3 * 2;
     std::memcpy(bias_ptr, bias_src, bias_offt * sizeof(float16_t));
-    std::memset(
-        bias_ptr + bias_offt, 0, (bias_hh.numel() - bias_offt) * sizeof(float16_t));
+    std::memset(bias_ptr + bias_offt,
+                0,
+                (bias_hh.numel() - bias_offt) * sizeof(float16_t));
     lite::arm::math::fp16::fill_bias_fc(
         o_data, bias_tmp_hh.data<float16_t>(), m, n, nullptr);
   } else {
-    lite::arm::math::fp16::fill_bias_fc(o_data, bias_hh.data<float16_t>(), m, n, nullptr);
+    lite::arm::math::fp16::fill_bias_fc(
+        o_data, bias_hh.data<float16_t>(), m, n, nullptr);
   }
 }
 #endif
@@ -376,8 +379,6 @@ static void TransposeNormal(const Tensor& in,
   transpose_helper(0, out->numel());
 }
 
-
-
 /******************************************************
 input:
     sequence_length,
@@ -431,9 +432,9 @@ static void create_mask_matrix(const Tensor* sequence_length,
 
 #ifdef ENABLE_ARM_FP16
 static void create_mask_matrix_fp16(const Tensor* sequence_length,
-                               Tensor* mask_matrix,
-                               const bool& is_reverse,
-                               int* min_seq_len) {
+                                    Tensor* mask_matrix,
+                                    const bool& is_reverse,
+                                    int* min_seq_len) {
   // Tensor to vector<int>
   std::vector<int> seq_len_vec;
   seq_len_vec.resize(sequence_length->numel());
@@ -561,15 +562,15 @@ static void lstm_cell(ARMContext* ctx,
 
 #ifdef ENABLE_ARM_FP16
 static void lstm_cell_fp16(ARMContext* ctx,
-                      Tensor* input,
-                      Tensor* weight_hh,
-                      Tensor* init_h,
-                      Tensor* init_c,
-                      Tensor* last_h,
-                      Tensor* last_c,
-                      Tensor* last_c_act,
-                      Tensor* output,
-                      const Tensor* bias_hh) {
+                           Tensor* input,
+                           Tensor* weight_hh,
+                           Tensor* init_h,
+                           Tensor* init_c,
+                           Tensor* last_h,
+                           Tensor* last_c,
+                           Tensor* last_c_act,
+                           Tensor* output,
+                           const Tensor* bias_hh) {
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();
@@ -585,22 +586,22 @@ static void lstm_cell_fp16(ARMContext* ctx,
   tmp_gate.Resize(input->dims());
   auto tmp_data = tmp_gate.mutable_data<float16_t>();
   lite::arm::math::fp16::sgemm_fp16(false,
-                         true,
-                         m,
-                         n,
-                         k,
-                         1.f,
-                         h_data,
-                         k,
-                         w_data,
-                         k,
-                         0.f,
-                         tmp_data,
-                         n,
-                         nullptr,
-                         false,
-                         act_param,
-                         ctx);
+                                    true,
+                                    m,
+                                    n,
+                                    k,
+                                    1.f,
+                                    h_data,
+                                    k,
+                                    w_data,
+                                    k,
+                                    0.f,
+                                    tmp_data,
+                                    n,
+                                    nullptr,
+                                    false,
+                                    act_param,
+                                    ctx);
   for (int i = 0; i < input->dims()[0] * input->dims()[1]; i++) {
     tmp_data[i] += i_data[i];
   }
@@ -636,13 +637,13 @@ static void lstm_cell_fp16(ARMContext* ctx,
   lstm_value.state_active_value = last_c_act->mutable_data<float16_t>();
   float16_t cell_clip = 0.0;
   lite::arm::math::RnnLstmUnitFunctorFP16::compute(lstm_value,
-                                                      frame_size,
-                                                      batch_size,
-                                                      cell_clip,
-                                                      cand_act,
-                                                      gate_act,
-                                                      cell_act,
-                                                      ctx->threads());
+                                                   frame_size,
+                                                   batch_size,
+                                                   cell_clip,
+                                                   cand_act,
+                                                   gate_act,
+                                                   cell_act,
+                                                   ctx->threads());
 }
 #endif
 
@@ -715,16 +716,16 @@ static void gru_cell(ARMContext* ctx,
 
 #ifdef ENABLE_ARM_FP16
 static void gru_cell_fp16(ARMContext* ctx,
-                     Tensor* input,
-                     Tensor* weight_hh,
-                     Tensor* init_h,
-                     Tensor* init_c,
-                     Tensor* last_h,
-                     Tensor* last_c,
-                     Tensor* last_c_act,
-                     Tensor* output,
-                     const Tensor* bias_hh,
-                     Tensor* weight_hh_gru) {
+                          Tensor* input,
+                          Tensor* weight_hh,
+                          Tensor* init_h,
+                          Tensor* init_c,
+                          Tensor* last_h,
+                          Tensor* last_c,
+                          Tensor* last_c_act,
+                          Tensor* output,
+                          const Tensor* bias_hh,
+                          Tensor* weight_hh_gru) {
   operators::ActivationParam act_param;
   act_param.has_active = false;
   auto h_dims = init_h->dims();
@@ -740,22 +741,22 @@ static void gru_cell_fp16(ARMContext* ctx,
   tmp_gate.Resize(input->dims());
   auto tmp_data = tmp_gate.mutable_data<float16_t>();
   lite::arm::math::fp16::sgemm_fp16(false,
-                         true,
-                         m,
-                         n,
-                         k,
-                         1.f,
-                         h_data,
-                         k,
-                         w_gru,
-                         k,
-                         0.f,
-                         tmp_data,
-                         n,
-                         nullptr,
-                         false,
-                         act_param,
-                         ctx);
+                                    true,
+                                    m,
+                                    n,
+                                    k,
+                                    1.f,
+                                    h_data,
+                                    k,
+                                    w_gru,
+                                    k,
+                                    0.f,
+                                    tmp_data,
+                                    n,
+                                    nullptr,
+                                    false,
+                                    act_param,
+                                    ctx);
   for (int i = 0; i < input->dims()[0] * input->dims()[1]; i++) {
     tmp_data[i] += i_data[i];
   }
@@ -1012,19 +1013,19 @@ static void RunRnnLayer(ARMContext* ctx,
 
 #ifdef ENABLE_ARM_FP16
 static void RunRnnLayer_fp16(ARMContext* ctx,
-                        const Tensor* input,
-                        std::vector<Tensor> vec,
-                        std::vector<Tensor> init_h,
-                        std::vector<Tensor> init_c,
-                        const Tensor* sequence_length,
-                        std::vector<Tensor>* last_h_ptr,
-                        std::vector<Tensor>* last_c_ptr,
-                        Tensor* output,
-                        int layer_idx,
-                        Tensor* gate_value,
-                        bool is_bidirect,
-                        int offset,
-                        std::string mode) {
+                             const Tensor* input,
+                             std::vector<Tensor> vec,
+                             std::vector<Tensor> init_h,
+                             std::vector<Tensor> init_c,
+                             const Tensor* sequence_length,
+                             std::vector<Tensor>* last_h_ptr,
+                             std::vector<Tensor>* last_c_ptr,
+                             Tensor* output,
+                             int layer_idx,
+                             Tensor* gate_value,
+                             bool is_bidirect,
+                             int offset,
+                             std::string mode) {
   bool is_reverse = false;
   if (is_bidirect) {
     layer_idx = 2 * layer_idx + offset;
@@ -1034,12 +1035,12 @@ static void RunRnnLayer_fp16(ARMContext* ctx,
   }
   const int& time_step = input->dims()[0];
   preprocess_fp16(ctx,
-             input,
-             vec[0 + offset * 4],
-             vec[2 + offset * 4],
-             vec[3 + offset * 4],
-             mode,
-             gate_value);
+                  input,
+                  vec[0 + offset * 4],
+                  vec[2 + offset * 4],
+                  vec[3 + offset * 4],
+                  mode,
+                  gate_value);
   std::vector<Tensor> input_tensors, output_tensors;
   std::vector<Tensor *> input_tensors_t, output_tensors_t;
   std::vector<int> stride1, stride2;
@@ -1065,7 +1066,8 @@ static void RunRnnLayer_fp16(ARMContext* ctx,
   }
   lite::host::math::split(
       gate_value->data<float16_t>(), input_tensors_t, 0, stride1);
-  lite::host::math::split(output->data<float16_t>(), output_tensors_t, 0, stride2);
+  lite::host::math::split(
+      output->data<float16_t>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float16_t>();
   if (is_reverse) {
     // don't need to reverse input_tensors_t becauese of unuseful
@@ -1166,27 +1168,27 @@ static void RunRnnLayer_fp16(ARMContext* ctx,
 
     if ("LSTM" == mode) {
       lstm_cell_fp16(ctx,
-                &input_tensors[i],
-                &vec[1 + offset * 4],
-                init_h_holder,
-                init_c_temp_holder,
-                last_h_holder,
-                last_c_holder,
-                nullptr,
-                &output_tensors[i],
-                &vec[3 + offset * 4]);
+                     &input_tensors[i],
+                     &vec[1 + offset * 4],
+                     init_h_holder,
+                     init_c_temp_holder,
+                     last_h_holder,
+                     last_c_holder,
+                     nullptr,
+                     &output_tensors[i],
+                     &vec[3 + offset * 4]);
     } else if ("GRU" == mode) {
       gru_cell_fp16(ctx,
-               &input_tensors[i],
-               &vec[1 + offset * 4],
-               init_h_holder,
-               init_c_temp_holder,
-               last_h_holder,
-               last_c_holder,
-               nullptr,
-               &output_tensors[i],
-               &vec[3 + offset * 4],
-               &weight_hh_tmp);
+                    &input_tensors[i],
+                    &vec[1 + offset * 4],
+                    init_h_holder,
+                    init_c_temp_holder,
+                    last_h_holder,
+                    last_c_holder,
+                    nullptr,
+                    &output_tensors[i],
+                    &vec[3 + offset * 4],
+                    &weight_hh_tmp);
     }
 
     /*
@@ -1194,13 +1196,13 @@ static void RunRnnLayer_fp16(ARMContext* ctx,
     */
     if (in_mask) {
       postprocess_fp16(ctx,
-                  &output_tensors[i],
-                  init_h_holder,
-                  init_c_temp_holder,
-                  last_h_holder,
-                  last_c_holder,
-                  mask_vec[i],
-                  mode);
+                       &output_tensors[i],
+                       init_h_holder,
+                       init_c_temp_holder,
+                       last_h_holder,
+                       last_c_holder,
+                       mask_vec[i],
+                       mode);
     }
 
     // prepare next step
@@ -1513,9 +1515,9 @@ void RnnCompute<PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using rnn_f32_compute = paddle::lite::kernels::arm::RnnCompute<PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    rnn, kARM, kFloat, kNCHW, rnn_f32_compute, def)
+using rnn_f32_compute =
+    paddle::lite::kernels::arm::RnnCompute<PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f32_compute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -1528,17 +1530,22 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 #ifdef ENABLE_ARM_FP16
-using rnn_f16_compute = paddle::lite::kernels::arm::RnnCompute<PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(
-    rnn, kARM, kFloat, kNCHW, rnn_f16_compute, fp16)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
-    .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
-    .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
+using rnn_f16_compute =
+    paddle::lite::kernels::arm::RnnCompute<PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f16_compute, fp16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("WeightList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("PreState",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("SequenceLength",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("DropoutState", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
-    .BindOutput("Reserve", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
-    .BindOutput("State", {LiteType::GetTensorTy(TARGET(kARM),PRECISION(kFP16))})
+    .BindOutput("DropoutState",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Reserve",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("State",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 #endif

@@ -69,10 +69,10 @@ void rnn_activation(const T* din,
 #ifdef ENABLE_ARM_FP16
 template <>
 void rnn_activation<float16_t>(const float16_t* din,
-                    float16_t* dout,
-                    int size,
-                    lite_api::ActivationType act_type,
-                    int threads) {
+                               float16_t* dout,
+                               int size,
+                               lite_api::ActivationType act_type,
+                               int threads) {
   switch (act_type) {
     case lite_api::ActivationType::kSigmoid:
       fp16::act_sigmoid<float16_t>(din, dout, size, threads);
@@ -90,7 +90,8 @@ void rnn_activation<float16_t>(const float16_t* din,
       fp16::act_relu<float16_t>(din, dout, size, threads);
       break;
     default:
-      LOG(FATAL) << "unsupport fp16 activation type:" << static_cast<int>(act_type);
+      LOG(FATAL) << "unsupport fp16 activation type:"
+                 << static_cast<int>(act_type);
       break;
   }
 }
@@ -245,10 +246,10 @@ void compute_kernel<float>(RNNGRUValue<float> value,
 #ifdef ENABLE_ARM_FP16
 template <>
 void compute_kernel<float16_t>(RNNGRUValue<float16_t> value,
-                           int frame_size,
-                           int batch_size,
-                           lite_api::ActivationType active_node,
-                           lite_api::ActivationType active_gate) {
+                               int frame_size,
+                               int batch_size,
+                               lite_api::ActivationType active_node,
+                               lite_api::ActivationType active_gate) {
   auto value_reset_gate = value.gate_value;
   auto value_update_gate = value.gate_value + frame_size;
   auto value_reset_output = value.reset_output_value;
@@ -376,24 +377,25 @@ struct RnnGruUnitFunctorV2<float16_t> {
       operators::ActivationParam act_param;
       act_param.has_active = false;
       lite::arm::math::fp16::sgemm_fp16(false,
-                             true,
-                             batch_size,
-                             frame_size,
-                             frame_size,
-                             1.f,
-                             value.prev_out_value,
-                             frame_size,
-                             value.state_weight,
-                             frame_size,
-                             0.f,
-                             value.reset_output_value,
-                             frame_size,
-                             nullptr,
-                             false,
-                             act_param,
-                             ctx);
+                                        true,
+                                        batch_size,
+                                        frame_size,
+                                        frame_size,
+                                        1.f,
+                                        value.prev_out_value,
+                                        frame_size,
+                                        value.state_weight,
+                                        frame_size,
+                                        0.f,
+                                        value.reset_output_value,
+                                        frame_size,
+                                        nullptr,
+                                        false,
+                                        act_param,
+                                        ctx);
     }
-    compute_kernel<float16_t>(value, frame_size, batch_size, active_node, active_gate);
+    compute_kernel<float16_t>(
+        value, frame_size, batch_size, active_node, active_gate);
   }
 };
 
