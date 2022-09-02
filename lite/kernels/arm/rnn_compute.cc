@@ -636,13 +636,13 @@ static void lstm_cell_fp16(ARMContext* ctx,
   lstm_value.state_active_value = last_c_act->mutable_data<float16_t>();
   float16_t cell_clip = 0.0;
   lite::arm::math::RnnLstmUnitFunctorFP16::compute(lstm_value,
-                                                      frame_size,
-                                                      batch_size,
-                                                      cell_clip,
-                                                      cand_act,
-                                                      gate_act,
-                                                      cell_act,
-                                                      ctx->threads());
+                                                    frame_size,
+                                                    batch_size,
+                                                    cell_clip,
+                                                    cand_act,
+                                                    gate_act,
+                                                    cell_act,
+                                                    ctx->threads());
 }
 #endif
 
@@ -1241,6 +1241,9 @@ static void RunRnnLayer_fp16(ARMContext* ctx,
 #endif
 
 template <>
+void RnnCompute<PRECISION(kFloat)>::PrepareForRun() {}
+
+template <>
 void RnnCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::RnnParam>();
   auto& ctx = this->ctx_->As<ARMContext>();
@@ -1374,6 +1377,23 @@ void RnnCompute<PRECISION(kFloat)>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
+template <>
+void RnnCompute<PRECISION(kFP16)>::PrepareForRun() {
+  auto& param = this->Param<operators::RnnParam>();
+  for(int i = 0; i < param.WeightList.size(); i++) {
+    if(param.WeightList[i]->precision() != PRECISION(kFP16)) {
+      Tensor tmp_tensor;
+      tmp_tensor.CopyDataFrom(*(param.WeightList[i]));
+      param.WeightList[i]->clear();
+      param.WeightList[i]->set_precision(PRECISION(kFP16));
+      float16_t* fp_data = param.WeightList[i]->mutable_data<float16_t>();
+      const float* in_data = tmp_tensor.data<float>();
+      lite::arm::math::fp16::fp32_to_fp16(
+          in_data, fp_data, param.WeightList[i]->numel());
+    }
+  }
+}
+
 template <>
 void RnnCompute<PRECISION(kFP16)>::Run() {
   auto& param = this->Param<operators::RnnParam>();

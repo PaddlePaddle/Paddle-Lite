@@ -386,8 +386,8 @@ void act_sigmoid<float16_t>(const float16_t* din, float16_t* dout, int size, int
       recip = vmulq_f16(vrecpsq_f16(exp_vec, recip), recip);
       recip = vmulq_f16(vrecpsq_f16(exp_vec, recip), recip);
       vst1q_f16(ptr_out_thread, recip);
-      ptr_out_thread += 4;
-      ptr_in_thread += 4;
+      ptr_out_thread += 8;
+      ptr_in_thread += 8;
     }
     for (int j = 0; j < neon_loop_remain_dim8; ++j) {
       ptr_out_thread[0] = 1.f / (1 + expf(-ptr_in_thread[0]));

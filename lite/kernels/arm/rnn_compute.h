@@ -25,6 +25,7 @@ namespace arm {
 template <PrecisionType PType>
 class RnnCompute : public KernelLite<TARGET(kARM), PType> {
  public:
+  virtual void PrepareForRun();
   void Run() override;
 
   virtual ~RnnCompute() = default;
