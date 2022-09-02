@@ -376,17 +376,15 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                             Place{TARGET(kARM), PRECISION(kInt8)});
       }
 
-#ifdef LITE_WITH_XPU
       if (valid_place.target == TARGET(kXPU)) {
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kXPU), PRECISION(kInt8)});
       }
-#else
+
       if (valid_place.target == TARGET(kX86)) {
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kX86), PRECISION(kInt8)});
       }
-#endif
     }
   }
 
