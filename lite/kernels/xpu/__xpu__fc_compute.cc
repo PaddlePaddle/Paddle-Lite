@@ -143,7 +143,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                         // n
         k,                                                         // k
         x_trans,                                                   // x_trans
-        w_trans,                                                   // w_trans
+        true,                                                      // w_trans
         input_max,                                                 // x_maxptr
         nullptr,                                                   // w_maxptr
         output_max,                                                // y_maxptr
@@ -166,7 +166,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                           // n
         k,                                                           // k
         x_trans,                                                     // x_trans
-        w_trans,                                                     // w_trans
+        true,                                                        // y_trans
         input_max,                                                   // x_maxptr
         reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
         output_max,                                                  // y_maxptr
