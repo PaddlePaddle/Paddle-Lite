@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class RnnCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType>
+class RnnCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
