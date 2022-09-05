@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,20 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T, PrecisionType PType>
-class AssignCompute : public KernelLite<TARGET(kXPU), PType> {
+template <typename T, PrecisionType PType>
+class ExpandCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::AssignParam;
+  virtual void Run();
 
-  void Run() override;
-
-  virtual ~AssignCompute() = default;
+  virtual ~ExpandCompute() = default;
 };
 
 }  // namespace xpu
