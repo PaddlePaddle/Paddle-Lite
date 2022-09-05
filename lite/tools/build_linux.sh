@@ -81,6 +81,8 @@ KUNLUNXIN_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
+# options of compiling arm trustzone libs.
+WITH_ARM_TRUSTZONE=ON
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
@@ -243,6 +245,7 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
+			-DLITE_WITH_ARM_TRUSTZONE=$WITH_ARM_TRUSTZONE \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
@@ -723,6 +726,11 @@ function main {
                 ;;
             --intel_fpga_sdk_root=*)
                 INTEL_FPGA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+	    # compiling lib which can operate on ARM TrustZone.
+            --with_arm_trustzone=*)
+                WITH_ARM_TRUSTZONE="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF
