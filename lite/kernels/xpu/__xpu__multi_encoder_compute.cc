@@ -109,7 +109,7 @@ void XPUMultiEncoderCompute::prepare_weight_max(
   VLOG(3) << "Total weight max value number: " << max_value_num;
 
   if (!per_channel) {
-    max_value_num *= 6;
+    max_value_num *= max_ptr_len;
   }
   weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(max_value_num * sizeof(float));
   float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
