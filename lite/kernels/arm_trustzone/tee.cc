@@ -91,7 +91,6 @@ PortableTensor convert_to_portable_tensor(void* data, PT_DataType dtype, const p
   return *portable_tensor;
 }
 
-
 void check_interactive(){
   char *interactive = getenv("INTERACTIVE");
   if (*interactive == '1') {

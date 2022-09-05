@@ -45,30 +45,10 @@ void fc_trans_weights(const Tensor& tin, Tensor* tout);
 
 template <>
 void fc_trans_weights<PRECISION(kFloat)>(const Tensor& tin, Tensor* tout) {
-  // CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
-  // int m = tin.dims()[0];
-  // int n = tin.dims()[1];
-  // tout->Resize({n, m});
-  // auto* ptr_in = tin.data<float>();
-  // auto* ptr_out = tout->mutable_data<float>();
-  // naive_transpose(ptr_in, ptr_out, m, n);
-  //VLOG(4) << "Invoke trust_transpose";
-  //trust_transpose(ptr_in, ptr_out, m, n);
-  // PortableTensor pt_in = convert_to_portable_tensor(const_cast<Tensor*>(&tin), PT_DataType::kPTFloat, false);
-  // PortableTensor pt_out = convert_to_portable_tensor(tout, PT_DataType::kPTFloat, true);
-  // VLOG(4) << "Invoke tee_fc_transpose";
-  // tee_fc_transpose(pt_in, pt_out);
 }
 
 template <>
 void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
-  // CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
-  // int m = tin.dims()[0];
-  // int n = tin.dims()[1];
-  // tout->Resize({n, m});
-  // auto* ptr_in = tin.data<int8_t>();
-  // auto* ptr_out = tout->mutable_data<int8_t>();
-  // naive_transpose(ptr_in, ptr_out, m, n);
 }
 
 template <PrecisionType PType, PrecisionType OutType>
@@ -110,13 +90,10 @@ void FcCompute<PType, OutType>::ReInitWhenNeeded() {
   CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
   CHECK_EQ(k_, static_cast<int>(w_dims[0]));
-  // flag_gemm_ = check_fc_use_gemm<PType, OutType>(
-  //    m_, param.weight_scale, param.bias != nullptr);
-  // init_tee_context();
-  // g_init_tee_context = true;
+  flag_gemm_ = check_fc_use_gemm<PType, OutType>(
+   m_, param.weight_scale, param.bias != nullptr);
   if (!flag_trans_weights_ && !flag_gemm_) {
    flag_trans_weights_ = true;
-  //  fc_trans_weights<PType>(*param.w, &weights_);
   }
 }
 
@@ -131,17 +108,6 @@ template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
   auto& param = this->template Param<operators::FcParam>();
-  /// update scale
-  // float input_scale = param.input_scale;
-  // int extend_size = flag_gemm_ ? m_ : n_;
-  // scale_.resize(extend_size);
-  // for (int i = 0; i < extend_size; ++i) {
-  //   if (flag_gemm_) {
-  //     scale_[i] = param.weight_scale[0] * input_scale;
-  //   } else {
-  //     scale_[i] = param.weight_scale[i] * input_scale;
-  //   }
-  // }
 }
 
 /// for int8 kernel with int8 output
@@ -149,28 +115,7 @@ template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
   auto& param = this->template Param<operators::FcParam>();
-  /// update scale
-  // scale_ = param.weight_scale;
-  // float input_scale = param.input_scale;
-  // float output_scale = param.output_scale;
-  // int extend_size = flag_gemm_ ? m_ : n_;
-  // scale_.resize(extend_size);
-  // for (int i = 0; i < extend_size; ++i) {
-  //   if (flag_gemm_) {
-  //     scale_[i] = param.weight_scale[0] * input_scale / output_scale;
-  //   } else {
-  //     scale_[i] = param.weight_scale[i] * input_scale / output_scale;
-  //   }
-  // }
-  /// update bias
   if (param.bias) {
-    // bias_.Resize(param.bias->dims());
-    // auto* ptr = bias_.mutable_data<float>();
-    // auto* ptr_in = bias_.data<float>();
-    // float out_scale = param.output_scale;
-    // for (int i = 0; i < bias_.numel(); ++i) {
-    //   ptr[i] = ptr_in[i] / out_scale;
-    // }
     flag_trans_bias_ = true;
   }
 }
@@ -186,17 +131,6 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   }
 
   VLOG(4) << "invoke fccompute(float, float)";
-  check_interactive();
-  //auto* i_data = param.input->data<float>();
-  //auto* o_data = param.output->mutable_data<float>();
-  // auto* w_data = flag_gemm_ ? param.w->data<float>() : weights_.data<float>();
-  // auto* w_data = flag_gemm_ ? param.w->raw_data() : weights_.raw_data();
-  //const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
-
-  //if (flag_trans_bias_) {
-  //  b_data = bias_.data<float>();
-  //}
-
   VLOG(4) << "Prepare to run fc op in TEE...";
   VLOG(4) << "M " << m_ << " N " << n_ << " K " << k_;
 
@@ -223,21 +157,16 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   handle_t param_handle = create_tee_param(SupportedOp::Fc, (void*)&pt_fc_param);
   VLOG(4) << "Get handle:" << param_handle;
-  check_interactive();
   if (tee_run(SupportedOp::Fc, param_handle) != 0) {
     VLOG(4) << "TEE run error";
     return;
   }
-  check_interactive();
   VLOG(4) << "TEE run finished, then fetch output tensor from TEE:";
   if (fetch_output_tensor(SupportedOp::Fc, param_handle, pt_fc_param.output) != 0) {
     VLOG(4) << "fetch_output_tensor error";
     return;
   }
   VLOG(4) << "Fetch output tensor finished";
-  check_interactive();
-
-
 }
 
 template <>
@@ -275,19 +204,16 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   pt_fc_param.flag_trans_weights = flag_trans_weights_;
   handle_t param_handle = create_tee_param(SupportedOp::Fc, (void*)&pt_fc_param);
   VLOG(4) << "Get handle:" << param_handle;
-  check_interactive();
   if (tee_run(SupportedOp::Fc, param_handle) != 0) {
     VLOG(4) << "TEE run error";
     return;
   }
-  check_interactive();
   VLOG(4) << "TEE run finished, then fetch output tensor from TEE:";
   if (fetch_output_tensor(SupportedOp::Fc, param_handle, pt_fc_param.output) != 0) {
     VLOG(4) << "fetch_output_tensor error";
     return;
   }
   VLOG(4) << "Fetch output tensor finished";
-  check_interactive();
 }
 
 template <>
@@ -295,14 +221,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMTrustZoneContext>();
 
-  // auto* i_data = param.input->data<int8_t>();
-  // auto* o_data = param.output->mutable_data<int8_t>();
-  // auto* w_data =
-  //     flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
-  // const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
-  // if (flag_trans_bias_) {
-  //   b_data = bias_.data<float>();
-  // }
   VLOG(4) << "invoke fccompute(int8, int8)";
   bool flag_relu = false;
   operators::ActivationParam act_param;
@@ -335,19 +253,16 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   pt_fc_param.flag_act = flag_relu;
   handle_t param_handle = create_tee_param(SupportedOp::Fc, (void*)&pt_fc_param);
   VLOG(4) << "Get handle:" << param_handle;
-  check_interactive();
   if (tee_run(SupportedOp::Fc, param_handle) != 0) {
     VLOG(4) << "TEE run error";
     return;
   }
-  check_interactive();
   VLOG(4) << "TEE run finished, then fetch output tensor from TEE:";
   if (fetch_output_tensor(SupportedOp::Fc, param_handle, pt_fc_param.output) != 0) {
     VLOG(4) << "fetch_output_tensor error";
     return;
   }
   VLOG(4) << "Fetch output tensor finished";
-  check_interactive();
 }
 
 }  // namespace arm_trustzone
