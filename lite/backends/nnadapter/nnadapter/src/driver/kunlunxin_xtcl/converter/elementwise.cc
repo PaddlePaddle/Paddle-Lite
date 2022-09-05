@@ -34,23 +34,19 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
   }
   xtcl::xExpr eltwise_expr;
   switch (operation->type) {
-#define CONVERT_ELEMENTWISE(type, func)                     \
+#define CONVERT_ELEMENTWISE(type, xtcl_type)                \
   case NNADAPTER_##type: {                                  \
-    eltwise_expr = converter->builder()->func;              \
+    eltwise_expr = converter->builder()->CreateBinaryOp(    \
+        #xtcl_type, input0_expr, input1_expr);              \
     converter->UpdateExprMap(output_operand, eltwise_expr); \
   } break;
-    CONVERT_ELEMENTWISE(ADD, CreateBinaryOp("add", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(SUB,
-                        CreateBinaryOp("subtract", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(MUL,
-                        CreateBinaryOp("multiply", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(DIV,
-                        CreateBinaryOp("divide", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(MAX,
-                        CreateBinaryOp("maximum", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(MIN,
-                        CreateBinaryOp("minimum", input0_expr, input1_expr));
-    CONVERT_ELEMENTWISE(POW, CreateBinaryOp("power", input0_expr, input1_expr));
+    CONVERT_ELEMENTWISE(ADD, add);
+    CONVERT_ELEMENTWISE(SUB, subtract);
+    CONVERT_ELEMENTWISE(MUL, multiply);
+    CONVERT_ELEMENTWISE(DIV, divide);
+    CONVERT_ELEMENTWISE(MAX, maximum);
+    CONVERT_ELEMENTWISE(MIN, minimum);
+    CONVERT_ELEMENTWISE(POW, power);
 #undef CONVERT_ELEMENTWISE
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
@@ -58,7 +54,7 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
                            << " is found.";
       break;
   }
-  // fuse activations ?
+  // Fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, func)                              \
   case NNADAPTER_FUSED_##type:                                            \

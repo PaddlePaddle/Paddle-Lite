@@ -180,6 +180,8 @@ class TestConv2dOp(AutoScanTest):
             atol, rtol = 1e-3, 1e-3
         elif target_str == "XPU":
             atol, rtol = 1e-3, 1e-3
+        elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            atol, rtol = 1e-3, 1e-3
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
