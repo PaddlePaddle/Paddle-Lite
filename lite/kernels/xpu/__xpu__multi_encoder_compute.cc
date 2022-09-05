@@ -99,12 +99,12 @@ void XPUMultiEncoderCompute::prepare_quant_max(
 
 void XPUMultiEncoderCompute::prepare_weight_max(
     bool per_channel,
-    const std::vector<std::vector<float>>& weight_max,
+    const std::vector<lite::Tensor*>& weight_max,
     int max_ptr_len,
     std::vector<const float*>& max_xpu_ptrs) {
   int max_value_num = 0;
-  for (auto& max_values : weight_max) {
-    max_value_num += max_values.size();
+  for (auto max_tensor : weight_max) {
+    max_value_num += max_tensor->numel();
   }
   VLOG(3) << "Total weight max value number: " << max_value_num;
 
@@ -115,23 +115,27 @@ void XPUMultiEncoderCompute::prepare_weight_max(
   float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
 
   int offset = 0;
-  for (auto& max : weight_max) {
+  for (auto max_tensor : weight_max) {
     float* cur_weight_max_ptr = weight_max_ptr + offset;
-    std::vector<float> cpu_max(max_ptr_len, max[0]);
-    int max_len = max_ptr_len;
+    auto len = max_tensor->numel();
+    VLOG(6) << "weight max value: " << max_tensor->data<float>()[0]
+            << " " << max_tensor->data<float>()[len - 1];
     if (per_channel) {
-      cpu_max = std::move(max);
-      max_len = max.size();
+      lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
+                                         max_tensor->raw_data(),
+                                         sizeof(float) * len,
+                                         IoDirection::HtoD);
+      max_xpu_ptrs.push_back(cur_weight_max_ptr);
+      offset += len;
+    } else {
+      std::vector<float> cpu_max(max_ptr_len, max_tensor->data<float>()[0]);
+      lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
+                                         cpu_max.data(),
+                                         sizeof(float) * max_ptr_len,
+                                         IoDirection::HtoD);
+      max_xpu_ptrs.push_back(cur_weight_max_ptr);
+      offset += max_ptr_len;
     }
-
-    VLOG(6) << "weight max value: " << max[0] << " " << max[max_len - 1];
-    VLOG(6) << "cpu_max value: " << cpu_max[0] << " " << cpu_max[max_len - 1];
-    lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
-                                        cpu_max.data(),
-                                        sizeof(float) * max_len,
-                                        IoDirection::HtoD);
-    max_xpu_ptrs.push_back(cur_weight_max_ptr);
-    offset += max_len;
   }
 }
 

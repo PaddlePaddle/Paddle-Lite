@@ -147,7 +147,13 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
       op_desc.HasAttr("enable_int16") && op_desc.GetAttr<bool>("enable_int16")) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
   }
-  param_.weight_max = op_desc.GetAttr<std::vector<std::vector<float>>>("FCWeightMax");
+  param_.weight_max.clear();
+  for (auto& weight_max_tensor :
+          op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    auto tensor = scope->FindMutableTensor(weight_max_tensor);
+    CHECK(tensor != nullptr);
+    param_.weight_max.push_back(tensor);
+  }
   param_.quant_types = op_desc.GetAttr<std::vector<std::string>>("FCQuantTypes");
 
   if (op_desc.HasAttr("slice_axes")) {
