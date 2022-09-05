@@ -1535,20 +1535,6 @@ void RnnCompute<PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using rnn_f32_compute =
-    paddle::lite::kernels::arm::RnnCompute<PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f32_compute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("SequenceLength",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("DropoutState", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Reserve", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("State", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
-
 #ifdef ENABLE_ARM_FP16
 using rnn_f16_compute =
     paddle::lite::kernels::arm::RnnCompute<PRECISION(kFP16)>;
@@ -1569,3 +1555,17 @@ REGISTER_LITE_KERNEL(rnn, kARM, kFP16, kNCHW, rnn_f16_compute, fp16)
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 #endif  // ENABLE_ARM_FP16
+
+using rnn_f32_compute =
+    paddle::lite::kernels::arm::RnnCompute<PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f32_compute, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("SequenceLength",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("DropoutState", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Reserve", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("State", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
