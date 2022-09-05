@@ -266,7 +266,7 @@ void XPUStaticKernelPickPass::ForceUseLocalQuantKernel(
   }
 
   static bool xpu_local_quant = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                                lite::TargetWrapperXPU::xpu_local_quant;
+                                lite::TargetWrapperXPU::local_quant;
   if (xpu_local_quant &&
       kernel.alias() == "XPU_FP32_LOCAL_QUANT" &&
       instruct.op_type() == "__xpu__fc") {

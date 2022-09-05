@@ -173,7 +173,7 @@ LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
 // local quant
-LITE_THREAD_LOCAL bool TargetWrapperXPU::xpu_local_quant{false};
+LITE_THREAD_LOCAL bool TargetWrapperXPU::local_quant{false};
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::xpu_compute_precision;  // NOLINT
 // l3 cache config

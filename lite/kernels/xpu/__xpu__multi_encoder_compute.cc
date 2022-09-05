@@ -153,7 +153,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   // prepare weights
   if (param.precision == "int16") {
     static bool xpu_local_quant = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                                  lite::TargetWrapperXPU::xpu_local_quant;
+                                  lite::TargetWrapperXPU::local_quant;
     if (xpu_local_quant) {
       arg_fc_weight_fp16_ = prepare_weight<float16>(param.fc_weight);
     } else {
@@ -276,7 +276,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
 
 void XPUMultiEncoderCompute::Run() {
   static bool xpu_local_quant = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                                lite::TargetWrapperXPU::xpu_local_quant;
+                                lite::TargetWrapperXPU::local_quant;
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   const float* in = param.input->data<float>();

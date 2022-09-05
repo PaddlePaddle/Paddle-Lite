@@ -625,7 +625,7 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 
 void CxxConfig::set_xpu_local_quant(bool local_quant) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::xpu_local_quant = local_quant;
+  lite::TargetWrapperXPU::local_quant = local_quant;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_local_quant' is "
