@@ -639,22 +639,22 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 #endif
 }
 
-void CxxConfig::set_xpu_cluster_num_per_thread(const int num) {
+void CxxConfig::set_xpu_cluster_num(const int num) {
 #ifdef LITE_WITH_XPU
   lite::TargetWrapperXPU::cluster_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_cluster_num_per_thread' is ignored, please "
+                  "'set_xpu_cluster_num' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
 
-void CxxConfig::set_xpu_sdnn_num_per_thread(const int num) {
+void CxxConfig::set_xpu_sdnn_num(const int num) {
 #ifdef LITE_WITH_XPU
   lite::TargetWrapperXPU::sdnn_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_sdnn_num_per_thread' is ignored, please "
+                  "'set_xpu_sdnn_num' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
