@@ -1552,7 +1552,7 @@ REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f32_compute, def)
 #ifdef ENABLE_ARM_FP16
 using rnn_f16_compute =
     paddle::lite::kernels::arm::RnnCompute<PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f16_compute, fp16)
+REGISTER_LITE_KERNEL(rnn, kARM, kFP16, kNCHW, rnn_f16_compute, fp16)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("WeightList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
@@ -1568,4 +1568,4 @@ REGISTER_LITE_KERNEL(rnn, kARM, kFloat, kNCHW, rnn_f16_compute, fp16)
     .BindOutput("State",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16
