@@ -82,7 +82,7 @@ KUNLUNXIN_XPU_SDK_ROOT=""
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 # options of compiling arm trustzone libs.
-WITH_ARM_TRUSTZONE=ON
+WITH_ARM_TRUSTZONE=OFF
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
