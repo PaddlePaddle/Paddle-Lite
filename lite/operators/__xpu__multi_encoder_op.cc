@@ -148,7 +148,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
   }
   param_.weight_max.clear();
-  for (auto& weight_max_tensor :
+  for (const auto& weight_max_tensor :
           op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
     auto tensor = scope->FindMutableTensor(weight_max_tensor);
     CHECK(tensor != nullptr);
