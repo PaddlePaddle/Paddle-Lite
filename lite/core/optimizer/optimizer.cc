@@ -214,7 +214,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
+#ifdef LITE_WITH_XPU
        "__xpu__multi_encoder_fuse_pass",
+#endif
        "__xpu__embedding_with_eltwise_add_fuse_pass",
        "__xpu__fc_fuse_pass",
        "__xpu__softmax_topk_fuse_pass",
