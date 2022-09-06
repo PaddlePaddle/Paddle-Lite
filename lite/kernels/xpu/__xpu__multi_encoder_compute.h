@@ -60,7 +60,7 @@ class XPUMultiEncoderCompute
                          int max_ptr_len,
                          std::vector<const float *> &max_xpu_ptrs);
   void prepare_weight_max(bool per_channel,
-                          const std::vector<lite::Tensor*>& weight_max,
+                          const std::vector<lite::Tensor *> &weight_max,
                           int max_ptr_len,
                           std::vector<const float *> &max_xpu_ptrs);
   template <typename T, typename TW, typename TGEMM>

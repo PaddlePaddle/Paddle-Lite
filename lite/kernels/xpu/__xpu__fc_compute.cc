@@ -327,6 +327,12 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kFloat, kNCHW, XPUFC_FP32_LOCAL_QUANT, XPU_FP32_LOCAL_QUANT)
+REGISTER_LITE_KERNEL(__xpu__fc,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     XPUFC_FP32_LOCAL_QUANT,
+                     XPU_FP32_LOCAL_QUANT)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})

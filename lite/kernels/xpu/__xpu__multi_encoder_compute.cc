@@ -111,15 +111,16 @@ void XPUMultiEncoderCompute::prepare_weight_max(
   if (!per_channel) {
     max_value_num *= max_ptr_len;
   }
-  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(max_value_num * sizeof(float));
+  weight_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_value_num * sizeof(float));
   float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
 
   int offset = 0;
   for (auto max_tensor : weight_max) {
     float* cur_weight_max_ptr = weight_max_ptr + offset;
     auto len = max_tensor->numel();
-    VLOG(6) << "weight max value: " << max_tensor->data<float>()[0]
-            << " " << max_tensor->data<float>()[len - 1];
+    VLOG(6) << "weight max value: " << max_tensor->data<float>()[0] << " "
+            << max_tensor->data<float>()[len - 1];
     if (per_channel) {
       lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
                                          max_tensor->raw_data(),
@@ -155,8 +156,8 @@ void XPUMultiEncoderCompute::PrepareForRun() {
     arg_ln_bias_.push_back(ln_bias->data<float>());
   }
   // prepare weights
-  local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                     lite::TargetWrapperXPU::local_quant;
+  local_quant_ =
+      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
   if (param.precision == "int16") {
     if (local_quant_) {
       arg_fc_weight_fp16_ = prepare_weight<float16>(param.fc_weight);
@@ -170,10 +171,8 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   }
   const int n_layers = param.fc_weight.size() / 6;
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(param.per_channel,
-                     param.weight_max,
-                     XPU_QUANT_SCALE_NUM,
-                     fc_weight_max_);
+  prepare_weight_max(
+      param.per_channel, param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
   // prepare quant max, mul&matmul input/output max
   prepare_quant_max(
       param.input_max, n_layers, XPU_QUANT_SCALE_NUM, fc_input_max_);

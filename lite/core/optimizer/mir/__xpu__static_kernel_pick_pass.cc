@@ -192,9 +192,12 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
   }
 
   auto op_info = instruct.op_info();
-  bool int8_quant = op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8");
-  bool int16_quant = op_info->HasAttr("enable_int16") && op_info->GetAttr<bool>("enable_int16");
-  CHECK(!(int8_quant && int16_quant)) << "You can only specify one quant type for an OP!";
+  bool int8_quant =
+      op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8");
+  bool int16_quant = op_info->HasAttr("enable_int16") &&
+                     op_info->GetAttr<bool>("enable_int16");
+  CHECK(!(int8_quant && int16_quant))
+      << "You can only specify one quant type for an OP!";
 
   if (instruct.op_type() == "__xpu__fc") {
     if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
@@ -265,14 +268,13 @@ void XPUStaticKernelPickPass::ForceUseLocalQuantKernel(
     return;
   }
 
-  bool xpu_local_quant = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                         lite::TargetWrapperXPU::local_quant;
-  if (xpu_local_quant &&
-      kernel.alias() == "XPU_FP32_LOCAL_QUANT" &&
+  bool xpu_local_quant =
+      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
+  if (xpu_local_quant && kernel.alias() == "XPU_FP32_LOCAL_QUANT" &&
       instruct.op_type() == "__xpu__fc") {
-      *score *= 2;
-      VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *2";
-      return;
+    *score *= 2;
+    VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *2";
+    return;
   }
 
   if (kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
