@@ -206,6 +206,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        "keepdims_convert_pass",
+#ifdef LITE_WITH_XPU
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
@@ -214,9 +215,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
-#ifdef LITE_WITH_XPU
        "__xpu__multi_encoder_fuse_pass",
-#endif
        "__xpu__embedding_with_eltwise_add_fuse_pass",
        "__xpu__fc_fuse_pass",
        "__xpu__softmax_topk_fuse_pass",
@@ -225,9 +224,12 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__generate_sequence_fuse_pass",
        "__xpu__logit_fuse_pass",
        "__xpu__link_previous_out_max_pass",
+#endif
        "fix_mismatched_precision_pass",
+#ifdef LITE_WITH_XPU
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
+#endif
        "npu_subgraph_pass",
        "bm_subgraph_pass",
        "mlu_subgraph_pass",
