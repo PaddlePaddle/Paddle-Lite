@@ -1722,6 +1722,13 @@ struct XPUBlockFuseParam : ParamBase {
   std::vector<int> block_lod;
   bool has_bias{false};
   bool has_branch{false};
+  // for int8/int16
+  bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
+  float quant_output_max{0.f};
+  float quant_branch_max{0.f};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1776,14 +1783,18 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
-  float quant_input_max{0.f};
   std::vector<float> weight_max{};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
   bool transpose_x{false};
   bool transpose_w{true};
+
+  // int8/int16
   bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_output_max{0.f};
   bool per_channel{false};
 };
 
