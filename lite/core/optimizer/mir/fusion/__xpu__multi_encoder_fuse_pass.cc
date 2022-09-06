@@ -1221,10 +1221,10 @@ class XPUMultiEncoderFuser {
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
+#ifdef LITE_WITH_XPU
         // For R200+int16+local quant, use the fp16 weight.
         if (GetBoolFromEnv("XPU_LOCAL_QUANT") ||
             lite::TargetWrapperXPU::local_quant) {
-#ifdef LITE_WITH_XPU
           std::unique_ptr<float16[]> weight_qkv_trans_fp16(
               new float16[qkv_len]);
           paddle::lite::xpu::math::ConvertFP32ToFP16(
@@ -1232,7 +1232,6 @@ class XPUMultiEncoderFuser {
           memcpy(weight_tensor_vec[0]->mutable_data<float16>(),
                  weight_qkv_trans_fp16.get(),
                  qkv_len * sizeof(float16));
-#endif
         } else {
           std::unique_ptr<int16_t[]> weight_qkv_trans_int16(
               new int16_t[qkv_len]);
@@ -1245,6 +1244,7 @@ class XPUMultiEncoderFuser {
                  weight_qkv_trans_int16.get(),
                  qkv_len * sizeof(int16_t));
         }
+#endif
       }
     }
   }
