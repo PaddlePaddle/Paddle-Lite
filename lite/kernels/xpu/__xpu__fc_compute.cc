@@ -325,8 +325,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    __xpu__fc, kXPU, kFloat, kNCHW, XPUFC_FP32_LOCAL_QUANT, XPU_FP32_LOCAL_QUANT)
 REGISTER_LITE_KERNEL(__xpu__fc,
                      kXPU,
                      kFloat,
