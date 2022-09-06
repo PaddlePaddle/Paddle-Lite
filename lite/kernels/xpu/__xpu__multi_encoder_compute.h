@@ -50,7 +50,7 @@ class XPUMultiEncoderCompute
   XPUScratchPadGuard cast_out_guard_;
   xdnn::Activation_t qkv_act = xdnn::Activation_t::RELU;
   int slice_idx = -1;
-  bool xpu_local_quant_ = false;
+  bool local_quant_ = false;
 
   template <typename T>
   std::vector<const T *> *get_weight();

@@ -155,10 +155,10 @@ void XPUMultiEncoderCompute::PrepareForRun() {
     arg_ln_bias_.push_back(ln_bias->data<float>());
   }
   // prepare weights
-  xpu_local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
+  local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
                      lite::TargetWrapperXPU::local_quant;
   if (param.precision == "int16") {
-    if (xpu_local_quant_) {
+    if (local_quant_) {
       arg_fc_weight_fp16_ = prepare_weight<float16>(param.fc_weight);
     } else {
       arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
@@ -320,7 +320,7 @@ void XPUMultiEncoderCompute::Run() {
           param.input->numel());
       CHECK_EQ(r, 0);
 
-      if (xpu_local_quant_) {
+      if (local_quant_) {
         run_encoder<float16, float16, float>(
             reinterpret_cast<const float16*>(cast_in_guard_->addr_),
             reinterpret_cast<float16*>(cast_out_guard_->addr_));
@@ -337,7 +337,7 @@ void XPUMultiEncoderCompute::Run() {
           param.output->numel());
       CHECK_EQ(r, 0);
     } else if (param.precision == "int31") {
-      if (xpu_local_quant_) {
+      if (local_quant_) {
         run_encoder<float, float, float>(in, out);
       } else {
         run_encoder<float, float, int>(in, out);
