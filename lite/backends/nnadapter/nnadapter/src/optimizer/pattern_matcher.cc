@@ -15,6 +15,7 @@
 #include "optimizer/pattern_matcher.h"
 #include <algorithm>
 #include <array>
+#include "utility/debug.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
 

@@ -91,8 +91,7 @@ void ReshapeTransposeReshapeFuser::BuildPattern() {
           ->IsIntermediate();
   auto last_reshape_output_pattern =
       CreatePattern("last_reshape_output")
-          ->IsOperationOutputOperand(NNADAPTER_RESHAPE, 0)
-          ->IsIntermediate();
+          ->IsOperationOutputOperand(NNADAPTER_RESHAPE, 0);
   // Create the topological connections for the above patterns
   std::vector<Pattern*> first_reshape_input_patterns{
       first_reshape_input_pattern, first_reshape_shape_pattern};

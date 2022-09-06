@@ -162,8 +162,7 @@ void TestPad2d(const Place& place,
 TEST(Pad2d, precision) {
   Place place;
   float abs_error = 2e-5;
-  std::vector<std::string> pad_mode_list = {
-      /*"constant", */ "edge" /*, "reflect"*/};
+  std::vector<std::string> pad_mode_list = {"constant", "edge", "reflect"};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)

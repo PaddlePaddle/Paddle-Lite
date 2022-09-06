@@ -55,9 +55,8 @@ TEST(DPN, test_dpn68_fp32_v2_3_nnadapter) {
   out_accuracy_threshold = 0.74f;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   nnadapter_device_names.emplace_back("qualcomm_qnn");
-  FLAGS_iteration = 1;
-  // TODO(hong19860320) Fix precision
-  out_accuracy_threshold = 0.f;
+  FLAGS_iteration = 10;
+  out_accuracy_threshold = 0.6f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

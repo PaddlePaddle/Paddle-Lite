@@ -249,6 +249,22 @@ void NCHW2NHWCDataLayoutConverter::ConvertCast(core::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertChannelShuffle(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertClip(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -1242,6 +1258,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_CAST:
         ConvertCast(operation);
+        break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
+        ConvertChannelShuffle(operation);
         break;
       case NNADAPTER_CLIP:
         ConvertClip(operation);

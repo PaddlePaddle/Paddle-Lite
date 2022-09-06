@@ -14,9 +14,8 @@
 
 #pragma once
 
-#include <cstring>
-#include <memory>
 #include <vector>
+#include "operation/math/utility.h"
 
 namespace nnadapter {
 namespace operation {
@@ -24,11 +23,11 @@ namespace math {
 
 template <typename T>
 static int expand(const T* input_data,
-                  const std::vector<int>& input_shape,
+                  const std::vector<int32_t>& input_shape,
                   T* output_data,
-                  const std::vector<int>& output_shape) {
-  std::vector<int> in_stride(input_shape.size(), 1),
-      std::vector<int> out_stride(output_shape.size(), 1);
+                  const std::vector<int32_t>& output_shape) {
+  std::vector<int> in_stride(input_shape.size(), 1);
+  std::vector<int> out_stride(output_shape.size(), 1);
   for (int i = input_shape.size() - 2; i >= 0; --i) {
     in_stride[i] = input_shape[i + 1] * in_stride[i + 1];
   }
@@ -38,11 +37,11 @@ static int expand(const T* input_data,
   int out_size = shape_production(output_shape);
   for (int out_id = 0; out_id < out_size; ++out_id) {
     int in_id = 0;
-    for (int i = expand_times_.size() - 1; i >= 0; --i) {
+    for (int i = input_shape.size() - 1; i >= 0; --i) {
       int in_j = (out_id / out_stride[i]) % input_shape[i];
       in_id += in_j * in_stride[i];
     }
-    out_data[out_id] = input_data[in_id];
+    output_data[out_id] = input_data[in_id];
   }
   return 0;
 }
