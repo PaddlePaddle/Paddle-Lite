@@ -76,6 +76,12 @@ class TargetWrapper<TARGET(kXPU)> {
     if (tls_raw_ctx_.get() == nullptr) {
       tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
       CHECK(tls_raw_ctx_.get());
+      if (cluster_num != 0) {
+        tls_raw_ctx_->set_ncluster(cluster_num);
+      }
+      if (sdnn_num != 0) {
+        tls_raw_ctx_->set_nsdnn(sdnn_num);
+      }
       if (!enable_multi_stream_) {
         CHECK(xpu_stream_.get() == nullptr)
             << " xpu default stream should be nullptr: " << xpu_stream_.get();
@@ -174,6 +180,8 @@ class TargetWrapper<TARGET(kXPU)> {
   static size_t shared_l3_size;  // model level l3 size
   static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
       l3_block_dict;  // l3 cache block used between op layers
+  static LITE_THREAD_LOCAL int cluster_num;
+  static LITE_THREAD_LOCAL int sdnn_num;
 
  private:
   static void ScatterL3Cache(

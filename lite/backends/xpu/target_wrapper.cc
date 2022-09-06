@@ -159,6 +159,9 @@ TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
     const int8_t*, const DDimLite&, bool, size_t);
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
+    const int16_t*, const DDimLite&, bool, size_t);
 
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
@@ -188,6 +191,8 @@ LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
 // xpu quantizer
 LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> TargetWrapperXPU::quantizer_{
     nullptr};
-
+// xpu set cluster sdnn
+LITE_THREAD_LOCAL int TargetWrapperXPU::cluster_num{0};
+LITE_THREAD_LOCAL int TargetWrapperXPU::sdnn_num{0};
 }  // namespace lite
 }  // namespace paddle
