@@ -77,6 +77,12 @@ struct CalibParam : ParamBase {
   float scale;
 };
 
+struct CalibInplaceParam : ParamBase {
+  lite::Tensor* input{};
+  lite::Tensor* output{};
+  float scale;
+};
+
 struct SubgraphParam : ParamBase {
   std::vector<std::string> input_names{};
   std::vector<std::string> output_names{};

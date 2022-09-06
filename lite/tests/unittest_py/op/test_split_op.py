@@ -227,6 +227,8 @@ class TestSplitOp(AutoScanTest):
         if target_str == "Metal":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 500
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            max_examples = 500
 
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)

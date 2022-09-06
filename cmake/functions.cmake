@@ -189,6 +189,8 @@ function(lite_cc_test TARGET)
       target_link_libraries(${TARGET} ${cuda_deps})
   endif()
 
+  set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+  set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
   common_link(${TARGET})
   add_test(NAME ${TARGET}
           COMMAND ${TARGET} ${args_ARGS}

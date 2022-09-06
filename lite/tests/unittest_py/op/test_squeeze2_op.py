@@ -171,6 +171,25 @@ class TestSqueeze2Op(AutoScanTest):
             "Lite does not support 'the axis that will be squeezed is not one' on nnadapter."
         )
 
+        def teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(axes) == 0:
+                    return True
+                if len(axes) == len(in_shape):
+                    is_all_one = True
+                    for i in axes:
+                        if in_shape[i] != 1:
+                            is_all_one = False
+                    if is_all_one:
+                        return True
+
+        self.add_ignore_check_case(
+            teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'all axis of inputs are squeezed' on kunlunxin_xtcl. because output shape is wrong"
+        )
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 200

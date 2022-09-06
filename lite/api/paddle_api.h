@@ -562,6 +562,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // whether to load data from memory. Model data will be loaded from memory
   // buffer if model_from_memory_ is true.
   bool model_from_memory_{false};
+  PrecisionMode precision_mode_{LITE_PRECISION_NORMAL};
 
   // model data readed from file or memory buffer in combined format.
   std::string lite_model_file_;
@@ -578,6 +579,8 @@ class LITE_API MobileConfig : public ConfigBase {
   void set_model_from_buffer(const std::string& x);
   void set_model_from_buffer(std::string&& x);
   void set_model_from_buffer(const char* buffer, size_t length);
+  void set_precision_mode(PrecisionMode mode) { precision_mode_ = mode; }
+  PrecisionMode precision_mode() const { return precision_mode_; }
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 

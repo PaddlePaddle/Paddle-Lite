@@ -45,7 +45,9 @@ class CalibOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+  bool AttachImpl(const cpp::OpDescWrite &opdesc, lite::Scope *scope) override;
+#endif
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "calib"; }
