@@ -616,7 +616,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     std::vector<std::string> weight_max_tensor_name(quant_mul_ops.size());
     CHECK(op_desc.HasInput("FCWeight")) << "op_desc does not have FCWeight Input.";
     const auto& fc_weight_names = op_desc.Input("FCWeight");
-    CHECK(fc_weight_names.size() == quant_mul_ops.size()) << "FCWeight size is wrong.";
+    CHECK_EQ(fc_weight_names.size(), quant_mul_ops.size()) << "FCWeight size is wrong.";
     for (int i = 0; i < quant_mul_ops.size(); ++i) {
       weight_max_tensor_name[i] = get_weight_max_tensor_name(fc_weight_names[i]);
       auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
@@ -912,17 +912,6 @@ class XPUMultiEncoderFuser {
               (fc_input_max.size() == all_encoders.size() * 18))
             << fc_input_max.size()
             << ", all_encoders.size:" << all_encoders.size();
-        // TODO : change to use tensor
-        // if (!per_channel) {
-        //   for (int i = 0; i < fc_weight_max.size(); i += 6) {
-        //     CHECK_LT(std::abs(fc_weight_max[i][0] - fc_weight_max[i + 1][0]), 1e-5)
-        //         << " quanted ernie's q/k weight scale should be euqal: "
-        //         << fc_weight_max[i][0] << ", " << fc_weight_max[i + 1][0];
-        //     CHECK_LT(std::abs(fc_weight_max[i][0] - fc_weight_max[i + 2][0]), 1e-5)
-        //         << " quanted ernie's q/v weight scale should be euqal: "
-        //         << fc_weight_max[i][0] << ", " << fc_weight_max[i + 2][0];
-        //   }
-        // }
         op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
         VLOG(3) << "fc_input_max size: " << fc_input_max.size();
         // only support adaptive_seqlen in int8 quant model
@@ -965,7 +954,8 @@ class XPUMultiEncoderFuser {
         auto tag_tensor = scope->FindMutableTensor(update_tag);
         if (tag_tensor != nullptr) {
           auto max_tensor = scope->FindTensor(max_tensor_name);
-          CHECK(max_tensor != nullptr && max_tensor->numel() == 1);
+          CHECK(max_tensor != nullptr);
+          CHECK_EQ(max_tensor->numel(), 1);
           VLOG(3) << "Get " << max_tensor_name << " " << max_tensor->data<float>()[0];
         } else {
           int start = i;

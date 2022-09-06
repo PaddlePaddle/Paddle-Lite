@@ -635,7 +635,7 @@ void CxxConfig::set_xpu_local_quant(bool local_quant) {
 
 void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::xpu_compute_precision = precision;
+  lite::TargetWrapperXPU::compute_precision = precision;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'xpu_compute_precision' is "
