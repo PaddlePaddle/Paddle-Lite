@@ -974,7 +974,7 @@ NNADAPTER_EXPORT std::string OperandValueToString(core::Operand* operand) {
 }
 
 NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
-  const uint32_t max_scale_display_size = 20;
+  const uint32_t max_scale_display_size = 100000000;
   std::ostringstream os;
   os << " precision: " << OperandPrecisionCodeToString(type->precision)
      << std::endl;
