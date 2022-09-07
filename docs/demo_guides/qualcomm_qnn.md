@@ -36,7 +36,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
 ### 准备设备环境
 
-- 设备安装 QNX 系统，网口和串口都已配置，配置详情请咨询高通。
+- 设备安装 QNX 和 Android 双系统，网口和串口都已配置，配置详情请咨询高通。
 
 ### 运行图像分类示例程序
 
@@ -318,6 +318,8 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
+  # 将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中 
+  $ cp qnn-v1.15.0.220706112757_38277/target/x86_64-linux-clang/lib/* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn
   ```
 
 - **编译 Android arm64-v8a/ameabi-v7a 预测库**
@@ -343,7 +345,10 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
-  
+  # 将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
+  $ cp qnn-v1.15.0.220706112757_38277/target/aarch64-android/lib/*  PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn
+  $ cp qnn-v1.15.0.220706112757_38277/target/hexagon-v68/lib/unsigned/* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/hexagon-v68/lib/unsigned
+
   # Android ameabi-v7a
   $ cd Paddle-Lite
   $ ./lite/tools/build_android.sh \
@@ -364,6 +369,9 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+  #将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
+  $ cp qnn-v1.15.0.220706112757_38277/target/arm-android/lib/*  PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn
+  $ cp qnn-v1.15.0.220706112757_38277/target/hexagon-v68/lib/unsigned/*  PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/hexagon-v68/lib/unsigned
   ```
 
 - **编译 QNX arm64 预测库**
@@ -399,6 +407,11 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/
   $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
   $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/
+    ```
+  5. 将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中 
+    ```
+      $ cp qnn-v1.15.0.220706112757_38277/target/aarch64-qnx/lib/*  PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn
+      $ cp qnn-v1.15.0.220706112757_38277/target/hexagon-v68/lib/unsigned/*  PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/qualcomm_qnn/hexagon-v68/lib/unsigned
     ```
 
 
