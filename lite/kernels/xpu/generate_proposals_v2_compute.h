@@ -13,22 +13,34 @@
 // limitations under the License.
 
 #pragma once
-
+#include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/operators/generate_proposals_v2_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class MulticlassNmsCompute
+class GenerateProposalsV2Compute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::MulticlassNmsParam;
+  using param_t = operators::GenerateProposalsV2Param;
 
-  virtual void Run();
+  void Run() override;
 
-  virtual ~MulticlassNmsCompute() = default;
+  void PrepareForRun() override;
+
+  virtual ~GenerateProposalsV2Compute() = default;
+
+ private:
+  XPUScratchPadGuard trans_scores_guard_;
+  XPUScratchPadGuard trans_deltas_guard_;
+  XPUScratchPadGuard im_shape_guard_;
+  XPUScratchPadGuard box_sel_guard_;
+  XPUScratchPadGuard scores_sel_guard_;
+  XPUScratchPadGuard index_sel_guard_;
+  XPUScratchPadGuard num_guard_;
 };
 
 }  // namespace xpu
