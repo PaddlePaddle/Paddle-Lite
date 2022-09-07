@@ -375,19 +375,23 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kARM), PRECISION(kInt8)});
       }
-
-      if (valid_place.target == TARGET(kXPU)) {
-        inner_places.insert(inner_places.begin(),
-                            Place{TARGET(kXPU), PRECISION(kInt8)});
-      }
-
       if (valid_place.target == TARGET(kX86)) {
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kX86), PRECISION(kInt8)});
       }
     }
   }
-
+// XPU target must make sure to insert in front of others.
+#ifdef LITE_WITH_XPU
+  if (IsQuantizedMode(program_desc_)) {
+    for (auto &valid_place : valid_places) {
+      if (valid_place.target == TARGET(kXPU)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kXPU), PRECISION(kInt8)});
+      }
+    }
+  }
+#endif
   Program program(program_desc_, scope_, inner_places);
   valid_places_ = inner_places;
 
