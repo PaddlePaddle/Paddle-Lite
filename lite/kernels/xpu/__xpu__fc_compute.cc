@@ -157,7 +157,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   // TODO(weihaoji): remove fc_int31 and fc_int16 after xpu fc wrapper
   // refactor
   int r = 0;
-  if (per_channel_) {
+  if (per_channel_ && !(std::is_same<TGEMM, float>::value)) {
     r = xdnn::fc_fusion_pc<DX, TW, DY, TGEMM>(
         ctx.GetRawContext(),                                       // ctx
         param.input->template data<DX>(),                          // x
@@ -229,6 +229,9 @@ using XPUFC_FP16_FP16_FP32 =
 
 using XPUFC_Int8_FP32_FP32 =
     xpu::XPUFcCompute<int8_t, int8_t, float, float, PRECISION(kInt8)>;
+
+using XPUFC_FP32_LOCAL_QUANT =
+    xpu::XPUFcCompute<float, float, float, float, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kFloat, kNCHW, XPUFC_FP32, XPU_Real_kFloat)
@@ -318,5 +321,19 @@ REGISTER_LITE_KERNEL(
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__fc,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     XPUFC_FP32_LOCAL_QUANT,
+                     XPU_FP32_LOCAL_QUANT)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

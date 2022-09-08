@@ -172,6 +172,9 @@ class TargetWrapper<TARGET(kXPU)> {
   // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
   static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
+  static LITE_THREAD_LOCAL std::string compute_precision;  // NOLINT
+  // only for R200
+  static LITE_THREAD_LOCAL bool local_quant;
   // l3 cache config
   static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
   static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size

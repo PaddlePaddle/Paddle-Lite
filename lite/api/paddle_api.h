@@ -491,6 +491,9 @@ class LITE_API CxxConfig : public ConfigBase {
                                     bool adaptive_seqlen = false);
   void set_xpu_cluster_num(const int num);
   void set_xpu_sdnn_num(const int num);
+  void set_xpu_local_quant(bool local_quant = false);
+  void set_xpu_compute_precision(const std::string& precision = "int16");
+
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when
   // predictor is created
