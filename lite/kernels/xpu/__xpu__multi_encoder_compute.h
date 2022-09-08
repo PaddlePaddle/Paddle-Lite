@@ -37,17 +37,20 @@ class XPUMultiEncoderCompute
   std::vector<const int8_t *> arg_fc_weight_int8_;
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const float *> arg_fc_weight_fp32_;
+  std::vector<const float16 *> arg_fc_weight_fp16_;
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> fc_input_max_;
+  std::vector<xdnn::QuantType> quant_types_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard input_max_guard_;
   XPUScratchPadGuard cast_in_guard_;
   XPUScratchPadGuard cast_out_guard_;
   xdnn::Activation_t qkv_act = xdnn::Activation_t::RELU;
   int slice_idx = -1;
+  bool local_quant_ = false;
 
   template <typename T>
   std::vector<const T *> *get_weight();
@@ -56,11 +59,9 @@ class XPUMultiEncoderCompute
                          int n_layers,
                          int max_ptr_len,
                          std::vector<const float *> &max_xpu_ptrs);
-  void prepare_weight_max(int n_layers,
-                          bool per_channel,
-                          const lite::Tensor *weight_max,
+  void prepare_weight_max(bool per_channel,
+                          const std::vector<lite::Tensor *> &weight_max,
                           int max_ptr_len,
-                          const std::vector<int> &fc_channels,
                           std::vector<const float *> &max_xpu_ptrs);
   template <typename T, typename TW, typename TGEMM>
   void run_encoder(const T *in, T *out);
