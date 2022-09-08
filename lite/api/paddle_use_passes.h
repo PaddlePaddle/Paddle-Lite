@@ -87,7 +87,6 @@ USE_MIR_PASS(lite_flatten_fc_fuse_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
 USE_MIR_PASS(lite_greater_than_cast_fuse_pass);
 USE_MIR_PASS(assign_value_calc_offline_pass);
-#ifdef LITE_WITH_XPU
 USE_MIR_PASS(__xpu__graph_dedup_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
@@ -108,7 +107,6 @@ USE_MIR_PASS(__xpu__dynamic_lstm_fuse_pass);
 USE_MIR_PASS(__xpu__multi_softmax_fuse_pass);
 USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
 USE_MIR_PASS(__xpu__static_kernel_pick_pass);
-#endif
 USE_MIR_PASS(x86_int8_attribute_pass);
 USE_MIR_PASS(fill_range_fuse_pass);
 USE_MIR_PASS(range_calc_offline_pass);
