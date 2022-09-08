@@ -39,6 +39,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertAdaptivePool2D(core::Operation* operation);
   void ConvertBatchNormalization(core::Operation* operation);
   void ConvertCast(core::Operation* operation);
+  void ConvertChannelShuffle(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
   void ConvertComparisons(core::Operation* operation);
   void ConvertCumSum(core::Operation* operation);
@@ -55,6 +56,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertLeakyRelu(core::Operation* operation);
   void ConvertLpNormalization(core::Operation* operation);
   void ConvertActivation(core::Operation* operation);
+  void ConvertPad(core::Operation* operation);
   void ConvertPow(core::Operation* operation);
   void ConvertQuantize(core::Operation* operation);
   void ConvertReduce(core::Operation* operation);

@@ -126,6 +126,9 @@ TEST(Clip, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_err = 1e-5;
   use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_err = 1e-2;
+  use_minmax_tensor = std::vector<bool>{false};
 #else
   return;
 #endif
