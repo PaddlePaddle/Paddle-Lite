@@ -623,6 +623,12 @@ class XPUSingleEncoderFuser : public FuseBase {
       VLOG(3) << "mul quantized: " << mul_quant
               << ", matmul quantized: " << matmul_quant;
     }
+    bool use_gelu10 = false;
+    // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
+    float gelu_limit_value = GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD", 10.f);
+    CHECK_GT(gelu_limit_value, 0.f)
+        << "QUANT_GELU_OUT_THRESHOLD should be an positive float value: "
+        << gelu_limit_value;
     for (int i = 0; mul_quant && (i < quant_mul_ops.size()); ++i) {
       auto& quant_mul = quant_mul_ops[i];
       quant_info->push_back(
@@ -633,11 +639,22 @@ class XPUSingleEncoderFuser : public FuseBase {
       auto& quant_ew = mul_add_ops[i];
       CHECK(matched.at(quant_ew)->stmt()->op_info()->HasAttr("out_threshold"))
           << "act after quant mul has no out_threshold";
-      quant_info->push_back(
+      float out_threshold =
           matched.at(quant_ew)->stmt()->op_info()->GetAttr<float>(
-              "out_threshold"));
+              "out_threshold");
+      if ((i == 4) && (matched.at(quant_ew)->stmt()->op_type() == "gelu")) {
+        use_gelu10 = out_threshold > gelu_limit_value;
+        VLOG(3) << "ffn0's gelu output threshold " << out_threshold
+                << ", limit to " << gelu_limit_value;
+        out_threshold = std::min(out_threshold, gelu_limit_value);
+      }
+      quant_info->push_back(out_threshold);
       VLOG(3) << quant_mul << " input_max: " << (*quant_info)[i * 2]
               << ", output_max(ew_add): " << (*quant_info)[i * 2 + 1];
+    }
+    if (use_gelu10) {
+      // set ffn1's input max to 10(ffn0's output max)
+      (*quant_info)[10] = gelu_limit_value;
     }
     CHECK_EQ(quant_info->size(), 12);
     float max_qkv_input = std::max((*quant_info)[0], (*quant_info)[2]);
