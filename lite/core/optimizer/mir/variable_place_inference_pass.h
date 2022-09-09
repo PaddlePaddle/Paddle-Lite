@@ -76,6 +76,9 @@ class VariablePlaceInferencePass : public DebugPass {
                type.precision() == PRECISION(kUnk)) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else if (with_targets.at("kXPU")) {
+      weight_node->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
@@ -129,9 +132,11 @@ class VariablePlaceInferencePass : public DebugPass {
         {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
         {"kFPGA", valid_places_has_target(TARGET(kFPGA))},
         {"kMetal", valid_places_has_target(TARGET(kMetal))},
+        {"kXPU", valid_places_has_target(TARGET(kXPU))},
     };
     VLOG(4) << "with_targets['kOpenCL']:" << with_targets["kOpenCL"];
     VLOG(4) << "with_targets['kFPGA']:" << with_targets["kFPGA"];
+    VLOG(4) << "with_targets['kXPU']:" << with_targets["kXPU"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& node : graph->StmtTopologicalOrder()) {

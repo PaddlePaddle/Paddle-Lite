@@ -527,7 +527,12 @@ void XPUStaticKernelPickPass::InplaceOpScore(lite::mir::Node* node,
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
     VLOG(6) << "current kernel input data variable name:" << var_name
             << "Parameter name:" << tmp;
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
+      continue;
+    }
+
+    // only to match input X
+    if (tmp != "X") {
       continue;
     }
 
@@ -559,7 +564,7 @@ void XPUStaticKernelPickPass::InplaceOpScore(lite::mir::Node* node,
       const auto& var_name = var.name;
       std::string tmp;
       CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
-      if (out_node->outlinks.empty()) {
+      if (out_node->outlinks.empty() && xpu_input_type_.count(var_name) == 0) {
         continue;
       }
 
@@ -594,7 +599,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     const auto& var_name = var.name;
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
       if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
         *score = 0;
         VLOG(6) << "not pick fp16 kernel ,because  input weight "
@@ -611,7 +616,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     const auto& var_name = var.name;
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
       continue;
     }
 
@@ -654,7 +659,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     std::string tmp;
     CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
     int output_match_num = xpu_input_type_.count(var_name);
-    if (out_node->outlinks.empty()) {
+    if (out_node->outlinks.empty() && output_match_num == 0) {
       continue;
     }
 

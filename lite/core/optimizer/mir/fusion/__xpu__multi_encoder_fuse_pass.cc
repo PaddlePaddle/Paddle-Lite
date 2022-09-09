@@ -974,9 +974,6 @@ class XPUMultiEncoderFuser {
 
       // q/k/v fusion
       bool enable_qkv_fusion = true;
-      if (norm_before_0 && !adaptive_seqlen_) {
-        enable_qkv_fusion = false;
-      }
       op_desc.SetAttr<bool>("enable_qkv_fusion", enable_qkv_fusion);
 
       auto* scope = multi_encoder_stmt->op()->scope();
