@@ -1795,6 +1795,7 @@ struct XPUFcParam : ParamBase {
   float quant_input_max{0.f};
   float quant_output_max{0.f};
   bool per_channel{false};
+  float alpha{1.0f};
 };
 
 struct XPUResNetCbamParam : ParamBase {

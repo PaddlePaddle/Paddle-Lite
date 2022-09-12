@@ -133,6 +133,9 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
 
   bool x_trans = param.transpose_x;
   bool w_trans = param.transpose_w;
+  if (!w_trans) {
+    n = param.w->dims()[0];
+  }
   int ldx = (x_trans ? m : k);
   int ldw = (w_trans ? k : n);
   int ldy = n;
@@ -168,14 +171,14 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                         // n
         k,                                                         // k
         x_trans,                                                   // x_trans
-        w_trans,                                                   // w_trans
+        true,                                                      // w_trans
         input_max,                                                 // x_maxptr
         nullptr,                                                   // w_maxptr
         output_max,                                                // y_maxptr
         ldx,                                                       // ldx
         ldw,                                                       // ldw
         ldy,                                                       // ldy
-        1.0f,                                                      // alpha
+        param.alpha,                                               // alpha
         0.0f,                                                      // beta
         bias,                                                      // bias
         reinterpret_cast<const float*>(
@@ -191,14 +194,14 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                           // n
         k,                                                           // k
         x_trans,                                                     // x_trans
-        w_trans,                                                     // w_trans
+        true,                                                        // y_trans
         input_max,                                                   // x_maxptr
         reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
         output_max,                                                  // y_maxptr
         ldx,                                                         // ldx
         ldw,                                                         // ldw
         ldy,                                                         // ldy
-        1.0f,                                                        // alpha
+        param.alpha,                                                 // alpha
         0.0f,                                                        // beta
         bias,                                                        // bias
         act);
