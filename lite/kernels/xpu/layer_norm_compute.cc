@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void LayerNormCompute::Run() {
+template <typename InType, PrecisionType PType>
+void LayerNormCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -30,16 +31,17 @@ void LayerNormCompute::Run() {
   auto matrix_dim = x_dims.Flatten2D(axis);
   float epsilon = param.epsilon;
 
-  int r = xdnn::layer_norm(ctx.GetRawContext(),    /* context */
-                           param.X->data<float>(), /* in */
-                           param.Y->mutable_data<float>(TARGET(kXPU)), /* out */
-                           matrix_dim[0],                              /* m */
-                           matrix_dim[1],                              /* n */
-                           epsilon,                    /* epsilon */
-                           param.Scale->data<float>(), /* scale */
-                           param.Bias->data<float>(),  /* bias */
-                           nullptr,
-                           nullptr);
+  int r = xdnn::layer_norm<InType>(
+      ctx.GetRawContext(),                                  /* context */
+      param.X->template data<InType>(),                     /* in */
+      param.Y->template mutable_data<InType>(TARGET(kXPU)), /* out */
+      matrix_dim[0],                                        /* m */
+      matrix_dim[1],                                        /* n */
+      epsilon,                                              /* epsilon */
+      param.Scale->template data<float>(),                  /* scale */
+      param.Bias->template data<float>(),                   /* bias */
+      nullptr,
+      nullptr);
 
   CHECK_EQ(r, 0);
 }
@@ -49,16 +51,25 @@ void LayerNormCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(layer_norm,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::LayerNormCompute,
-                     def)
+namespace xpu = paddle::lite::kernels::xpu;
+
+using LayerNorm_FP32 = xpu::LayerNormCompute<float, PRECISION(kFloat)>;
+using LayerNorm_FP16 = xpu::LayerNormCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(layer_norm, kXPU, kFloat, kNCHW, LayerNorm_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(layer_norm, kXPU, kFP16, kNCHW, LayerNorm_FP16, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Variance",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();

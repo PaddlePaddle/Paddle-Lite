@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -21,14 +22,19 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class LayerNormCompute : public KernelLite<TARGET(kXPU), PType> {
+template <typename T, PrecisionType PType>
+class SequenceExpandCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::LayerNormParam;
+  using param_t = operators::SequenceExpandParam;
 
-  virtual void Run();
+  void PrepareForRun() override;
 
-  virtual ~LayerNormCompute() = default;
+  void Run() override;
+
+ private:
+  std::unique_ptr<int[]> lodx_cpu;
+  std::unique_ptr<int[]> lody_cpu;
+  std::unique_ptr<int[]> lodref_cpu;
 };
 
 }  // namespace xpu
