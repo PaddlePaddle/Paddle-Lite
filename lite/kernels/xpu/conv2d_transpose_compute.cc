@@ -77,6 +77,21 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
           true);
       CHECK_EQ(ret, 0);
     } else {
+      const auto* bias = (param.bias != nullptr)
+                             ? param.bias->template data<float>()
+                             : nullptr;
+      xdnn::Activation_t act = xdnn::Activation_t::LINEAR;
+      if (param.activation_param.has_active) {
+        if (param.fuse_relu) {
+          act = xdnn::Activation_t::RELU;
+        } else if (param.fuse_sigmoid) {
+          act = xdnn::Activation_t::SIGMOID;
+        } else if (param.fuse_tanh) {
+          act = xdnn::Activation_t::TANH;
+        } else {
+          act = xdnn::Activation_t::LINEAR;
+        }
+      }
       int ret = xdnn::conv2d_transpose_fusion<float, float, float, int16_t>(
           ctx.GetRawContext(),
           param.x->data<float>(),
@@ -96,8 +111,8 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
           nullptr,
           nullptr,
           nullptr,
-          nullptr,
-          xdnn::Activation_t::LINEAR,
+          bias,
+          act,
           true);
       CHECK_EQ(ret, 0);
     }

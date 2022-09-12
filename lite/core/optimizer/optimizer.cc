@@ -211,6 +211,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__resnet_fuse_pass",
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
+       "__xpu__conv2d_transpose_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
