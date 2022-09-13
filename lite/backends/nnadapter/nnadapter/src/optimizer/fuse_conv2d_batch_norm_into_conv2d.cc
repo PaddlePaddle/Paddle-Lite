@@ -41,7 +41,7 @@ class Conv2DBatchNormFuser : public PatternMatcher {
  private:
   NNAdapterOperationType conv2d_type_{NNADAPTER_CONV_2D};
   NNAdapterOperationType batch_norm_type_{NNADAPTER_BATCH_NORMALIZATION};
-  double max_allowed_quant_scale_deviation_{FLT_MAX};
+  double max_allowed_quant_scale_deviation_{-1.0f};
 };
 
 void Conv2DBatchNormFuser::BuildPattern() {
@@ -156,8 +156,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     batch_norm_alpha[i] = coeff;
     batch_norm_beta[i] =
         -batch_norm_mean_data[i] * coeff + batch_norm_bias_data[i];
-    NNADAPTER_LOG(INFO) << "[" << i << "] alpha:" << batch_norm_alpha[i]
-                        << " beta:" << batch_norm_beta[i];
   }
   if (IsInt8SymmPerLayerQuantType(conv2d_input_type.precision) &&
       (IsInt8SymmPerLayerQuantType(conv2d_filter_type.precision) ||
@@ -167,7 +165,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     // conv2d/conv2d_transpose
     std::vector<float> conv2d_filter_scales(conv2d_output_channel_size);
     std::vector<float> conv2d_bias_scales(conv2d_output_channel_size);
-    std::vector<double> conv2d_bias_scales2(conv2d_output_channel_size);
     double conv2d_filter_min_scale = FLT_MAX, conv2d_filter_max_scale = 0;
     double conv2d_bias_min_scale = FLT_MAX, conv2d_bias_max_scale = 0;
     for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
@@ -178,7 +175,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
           fabs(batch_norm_alpha[i]);
       double bias_scale_value =
           filter_scale_value * conv2d_input_type.symm_per_layer_params.scale;
-      conv2d_bias_scales2[i] = bias_scale_value;
       if (filter_scale_value < conv2d_filter_min_scale) {
         conv2d_filter_min_scale = filter_scale_value;
       } else if (filter_scale_value > conv2d_filter_max_scale) {
@@ -192,12 +188,16 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
       conv2d_filter_scales[i] = filter_scale_value;
       conv2d_bias_scales[i] = bias_scale_value;
     }
+    NNADAPTER_VLOG(5) << "fused_conv2d_filter_scale=["
+                      << conv2d_filter_min_scale << "," << conv2d_bias_max_scale
+                      << "] fused_conv2d_bias_scale=[" << conv2d_bias_min_scale
+                      << "," << conv2d_bias_max_scale << "]";
     // Disable batchnorm fusion if the difference of fused filter scale is
-    // greater than the given threshold
-    // if (conv2d_filter_max_scale >=
-    //    max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale) {
-    //  return false;
-    //}
+    // greater than the given threshold.
+    if (max_allowed_quant_scale_deviation_ > 0 &&
+        conv2d_filter_max_scale >=
+            max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale)
+      return false;
     // Update the quant scale of weight and bias with the fused one and requant
     // the bias
     auto conv2d_filter_data =
@@ -205,7 +205,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
     auto conv2d_bias_data =
         reinterpret_cast<int32_t*>(conv2d_bias_operand->buffer);
     std::vector<float> dequantized_conv2d_bias(conv2d_output_channel_size);
-    std::vector<float> dequantized_conv2d_bias2(conv2d_output_channel_size);
     if (IsInt8SymmPerChannelQuantType(conv2d_filter_type.precision)) {
       NNADAPTER_CHECK(
           IsInt32SymmPerChannelQuantType(conv2d_bias_type.precision));
@@ -251,13 +250,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
       conv2d_bias_type.symm_per_channel_params.channel_dim = 0;
       conv2d_bias_type.precision = NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
     }
-    for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
-      dequantized_conv2d_bias2[i] = dequantized_conv2d_bias[i];
-      NNADAPTER_LOG(INFO) << "[" << i
-                          << "] origin quant bias value:" << conv2d_bias_data[i]
-                          << " origin dequant bias value:"
-                          << dequantized_conv2d_bias[i];
-    }
     memcpy(conv2d_filter_type.symm_per_channel_params.scales,
            conv2d_filter_scales.data(),
            conv2d_output_channel_size * sizeof(float));
@@ -282,28 +274,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
         }
       }
     }
-#if 1
-    for (int64_t i = 0; i < conv2d_filter_outer_size; i++) {
-      for (int64_t j = 0; j < conv2d_output_channel_size; j++) {
-        if (conv2d_filter_type.symm_per_channel_params.scales[j] >= 3.922e-10)
-          continue;
-        conv2d_filter_type.symm_per_channel_params.scales[j] =
-            0;  // 3.922e-10f;
-        for (int64_t k = 0; k < conv2d_filter_inner_size; k++) {
-          auto offset =
-              i * conv2d_output_channel_size * conv2d_filter_inner_size +
-              j * conv2d_filter_inner_size + k;
-          // Avoid overflow
-          conv2d_filter_data[offset] = 0;
-        }
-      }
-    }
-    for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
-      conv2d_bias_type.symm_per_channel_params.scales[i] =
-          conv2d_filter_type.symm_per_channel_params.scales[i] *
-          conv2d_input_type.symm_per_layer_params.scale;
-    }
-#endif
     NNADAPTER_CHECK(QuantizeData<int32_t>(
         dequantized_conv2d_bias.data(),
         &conv2d_output_channel_size,
@@ -314,25 +284,6 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
         -2147483647,
         2147483647,
         conv2d_bias_data));
-    for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
-      std::cout << "adjusted filter scale[" << i
-                << "]: " << conv2d_filter_type.symm_per_channel_params.scales[i]
-                << " bias scale: "
-                << conv2d_bias_type.symm_per_channel_params.scales[i] << " , "
-                << conv2d_bias_scales2[i]
-                << " dequant bias value: " << dequantized_conv2d_bias[i]
-                << " , "
-                << static_cast<double>(batch_norm_alpha[i]) *
-                           static_cast<double>(dequantized_conv2d_bias2[i]) +
-                       static_cast<double>(batch_norm_beta[i])
-                << " quant bias value: " << conv2d_bias_data[i] << " , "
-                << std::round(
-                       static_cast<double>(batch_norm_alpha[i]) *
-                           static_cast<double>(dequantized_conv2d_bias2[i]) +
-                       static_cast<double>(batch_norm_beta[i]) /
-                           conv2d_bias_scales2[i])
-                << std::endl;
-    }
   } else {
     NNADAPTER_CHECK_EQ(conv2d_input_type.precision, NNADAPTER_FLOAT32);
     NNADAPTER_CHECK_EQ(conv2d_filter_type.precision, NNADAPTER_FLOAT32);

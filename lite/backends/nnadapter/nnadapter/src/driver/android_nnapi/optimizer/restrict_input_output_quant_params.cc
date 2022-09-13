@@ -296,6 +296,7 @@ void RestrictInputOutputQuantParams(core::Model* model) {
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
+      case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_MAT_MUL:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
