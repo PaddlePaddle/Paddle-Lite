@@ -204,6 +204,15 @@ class PReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~PReluCompute() = default;
 };
 
+class FloorCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~FloorCompute() = default;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
