@@ -141,7 +141,7 @@ void softmax_inner1_sve(const Dtype* din,
     auto vec_max1 = svdup_n(static_cast<Dtype>(-FLT_MAX));
     auto vec_max2 = svdup_n(static_cast<Dtype>(-FLT_MAX));
     auto vec_max3 = svdup_n(static_cast<Dtype>(-FLT_MAX));
-    for (int j = 0; j < axis_size; j++) {
+    for (int j = 0; j < axis_size; j += svcnt<Dtype>()) {
       pg0 = svwhilelt<Dtype>(j, axis_size);
       auto vdata0 = svld1(pg0, din_max_ptr0);
       auto vdata1 = svld1(pg0, din_max_ptr1);
