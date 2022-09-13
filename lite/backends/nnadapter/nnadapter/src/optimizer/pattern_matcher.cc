@@ -189,14 +189,14 @@ NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::HasInLinksNum(int num) {
+PatternMatcher::Pattern::CheckInputCount(int num) {
   conditions.emplace_back(
       [num](const Node *node) { return node->inlinks.size() == num; });
   return this;
 }
 
 NNADAPTER_EXPORT PatternMatcher::Pattern *
-PatternMatcher::Pattern::HasOutLinksNum(int num) {
+PatternMatcher::Pattern::CheckOutputCount(int num) {
   conditions.emplace_back(
       [num](const Node *node) { return node->outlinks.size() == num; });
   return this;

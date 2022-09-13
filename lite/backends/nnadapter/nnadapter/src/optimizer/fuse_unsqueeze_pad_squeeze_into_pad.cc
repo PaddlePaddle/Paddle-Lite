@@ -45,7 +45,7 @@ void UnsqueezePadSqueezeFuser::BuildPattern() {
   auto unsqueeze_out = CreatePattern("unsqueeze_out")
                            ->IsOperationOutputOperand(NNADAPTER_UNSQUEEZE, 0)
                            ->IsOperationInputOperand(NNADAPTER_PAD, 0)
-                           ->HasOutLinksNum(1)
+                           ->CheckOutputCount(1)
                            ->IsIntermediate();
   // Pad
   auto pad_pads = CreatePattern("pad_pads")
@@ -59,7 +59,7 @@ void UnsqueezePadSqueezeFuser::BuildPattern() {
   auto pad_out = CreatePattern("pad_out")
                      ->IsOperationOutputOperand(NNADAPTER_PAD, 0)
                      ->IsOperationInputOperand(NNADAPTER_SQUEEZE, 0)
-                     ->HasOutLinksNum(1)
+                     ->CheckOutputCount(1)
                      ->IsIntermediate();
   // Squeeze
   auto squeeze_axes = CreatePattern("squeeze_axes")
