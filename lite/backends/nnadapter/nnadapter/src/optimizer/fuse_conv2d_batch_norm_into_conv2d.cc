@@ -194,7 +194,7 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
                       << "," << conv2d_bias_max_scale << "]";
     // Disable batchnorm fusion if the difference of fused filter scale is
     // greater than the given threshold.
-    if (max_allowed_quant_scale_deviation_ > 0 &&
+    if (max_allowed_quant_scale_deviation_ >= 0.0f &&
         conv2d_filter_max_scale >=
             max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale)
       return false;
