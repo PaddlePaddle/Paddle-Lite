@@ -32,6 +32,7 @@ namespace paddle {
 namespace lite {
 
 TEST(picodet, test_picodet_coco_fp32_v2_3_nnadapter) {
+  FLAGS_warmup = 1;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -50,9 +51,10 @@ TEST(picodet, test_picodet_coco_fp32_v2_3_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
-// TODO(hong19860320) Fix core dump
-// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-//   nnadapter_device_names.emplace_back("qualcomm_qnn");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_warmup = 0;
+  FLAGS_iteration = 1;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -87,7 +89,6 @@ TEST(picodet, test_picodet_coco_fp32_v2_3_nnadapter) {
     input_size *= i;
   }
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
     predictor->Run();

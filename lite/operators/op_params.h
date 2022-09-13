@@ -1733,12 +1733,10 @@ struct XPUBlockFuseParam : ParamBase {
 
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
-  const lite::Tensor* weight_max{nullptr};
   std::vector<lite::Tensor*> fc_weight;
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
-  lite::Tensor* fc_weight_max{};
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
@@ -1749,6 +1747,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
+  std::vector<lite::Tensor*> weight_max{};
+  std::vector<std::string> quant_types{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1759,7 +1759,6 @@ struct XPUMultiEncoderParam : ParamBase {
   bool norm_before{false};
   bool adaptive_seqlen{false};
   bool per_channel{false};
-  std::vector<int> fc_channels{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {

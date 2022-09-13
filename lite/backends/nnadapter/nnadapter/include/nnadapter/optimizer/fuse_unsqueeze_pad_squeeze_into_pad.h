@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +13,11 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace xpu {
+#include "core/types.h"
 
-template <typename T, PrecisionType PType>
-class SplitCompute : public KernelLite<TARGET(kXPU), PType> {
- public:
-  using param_t = operators::SplitParam;
+namespace nnadapter {
 
-  virtual void Run();
+void FuseUnsqueezePadSqueezeIntoPad(core::Model *model);
 
-  virtual ~SplitCompute() = default;
-};
-
-}  // namespace xpu
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+}  // namespace nnadapter

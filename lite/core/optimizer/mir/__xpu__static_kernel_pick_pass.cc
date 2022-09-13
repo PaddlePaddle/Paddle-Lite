@@ -191,22 +191,32 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
     return false;
   }
 
-  // only use in FC，it will not use in future.
-  if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-      lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-    if (kernel.alias() == "XPU_Int8_FP32_FP32" &&
-        instruct.op_type() == "__xpu__fc") {
+  auto op_info = instruct.op_info();
+  bool int8_quant =
+      op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8");
+  bool int16_quant = op_info->HasAttr("enable_int16") &&
+                     op_info->GetAttr<bool>("enable_int16");
+  CHECK(!(int8_quant && int16_quant))
+      << "You can only specify one quant type for an OP!";
+  bool xpu_local_quant =
+      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
+
+  if (instruct.op_type() == "__xpu__fc") {
+    if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT8: *4";
       return true;
-    }
-  }
-
-  // only use in FC，it will not use in future.
-  if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-      lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-    if (kernel.alias() == "XPU_Real_kFloat" &&
-        instruct.op_type() == "__xpu__fc") {
+    } else if (int16_quant && kernel.alias() == "XPUFC_INT16_FP32_FP32") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use PRECISON INT16: *4";
+      return true;
+    } else if (xpu_local_quant && kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *4";
+      return true;
+    } else if ((GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+                lite::TargetWrapperXPU::multi_encoder_precision == "int31") &&
+               kernel.alias() == "XPU_Real_kFloat") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT31: *4";
       return true;
@@ -517,7 +527,12 @@ void XPUStaticKernelPickPass::InplaceOpScore(lite::mir::Node* node,
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
     VLOG(6) << "current kernel input data variable name:" << var_name
             << "Parameter name:" << tmp;
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
+      continue;
+    }
+
+    // only to match input X
+    if (tmp != "X") {
       continue;
     }
 
@@ -549,7 +564,7 @@ void XPUStaticKernelPickPass::InplaceOpScore(lite::mir::Node* node,
       const auto& var_name = var.name;
       std::string tmp;
       CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
-      if (out_node->outlinks.empty()) {
+      if (out_node->outlinks.empty() && xpu_input_type_.count(var_name) == 0) {
         continue;
       }
 
@@ -584,7 +599,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     const auto& var_name = var.name;
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
       if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
         *score = 0;
         VLOG(6) << "not pick fp16 kernel ,because  input weight "
@@ -601,7 +616,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     const auto& var_name = var.name;
     std::string tmp;
     CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
-    if (in_node->inlinks.empty()) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
       continue;
     }
 
@@ -644,7 +659,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
     std::string tmp;
     CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
     int output_match_num = xpu_input_type_.count(var_name);
-    if (out_node->outlinks.empty()) {
+    if (out_node->outlinks.empty() && output_match_num == 0) {
       continue;
     }
 

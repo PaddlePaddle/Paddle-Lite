@@ -115,6 +115,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_LAYER_NORMALIZATION:
       case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_MAX_POOL_2D:
+      case NNADAPTER_PAD:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:

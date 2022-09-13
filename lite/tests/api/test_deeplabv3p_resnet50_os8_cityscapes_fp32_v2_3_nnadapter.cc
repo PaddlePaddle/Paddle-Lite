@@ -46,8 +46,12 @@ TEST(deeplabv3p, test_deeplabv3p_resnet50_os8_cityscapes_fp32_v2_3_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
-// TODO(hong19860320) Fix nchw2nhwc
 // #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   // 1. transpose + conv2d + relu failed
+//   // 2. error info: A single op (1f7a00000016) requires 0x704800 bytes of
+//   TCM,
+//   // which is greater than the TCM size of 0x400000
+//   // 3. input shape may be too large?
 //   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";

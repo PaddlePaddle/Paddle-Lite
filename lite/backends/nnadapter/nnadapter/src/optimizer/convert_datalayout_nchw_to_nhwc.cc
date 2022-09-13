@@ -249,6 +249,22 @@ void NCHW2NHWCDataLayoutConverter::ConvertCast(core::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertChannelShuffle(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertClip(core::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -630,6 +646,31 @@ void NCHW2NHWCDataLayoutConverter::ConvertLpNormalization(
   // The input and output operands share the same dimorder vector
   TransposeOperand(output_operand, input_permutation);
   SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertPad(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+  // Trans pads
+  auto pads_data = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  int32_t pads_size = input_operands[1]->length / sizeof(int32_t);
+  NNADAPTER_CHECK_EQ(input_permutation.size() * 2, pads_size);
+  std::vector<int32_t> trans_pads_data(pads_size);
+  for (int i = 0; i < input_permutation.size(); i++) {
+    trans_pads_data[i * 2] = pads_data[input_permutation[i] * 2];
+    trans_pads_data[i * 2 + 1] = pads_data[input_permutation[i] * 2 + 1];
+  }
+  memcpy(pads_data, trans_pads_data.data(), pads_size * sizeof(int32_t));
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertPow(core::Operation* operation) {
@@ -1218,6 +1259,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_CAST:
         ConvertCast(operation);
         break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
+        ConvertChannelShuffle(operation);
+        break;
       case NNADAPTER_CLIP:
         ConvertClip(operation);
         break;
@@ -1270,6 +1314,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_MAT_MUL:
         ConvertMatMul(operation);
+        break;
+      case NNADAPTER_PAD:
+        ConvertPad(operation);
         break;
       case NNADAPTER_POW:
         ConvertPow(operation);

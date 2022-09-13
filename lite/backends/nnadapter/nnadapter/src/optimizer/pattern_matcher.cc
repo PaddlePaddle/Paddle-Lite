@@ -15,6 +15,7 @@
 #include "optimizer/pattern_matcher.h"
 #include <algorithm>
 #include <array>
+#include "utility/debug.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
 
@@ -184,6 +185,20 @@ NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
     return node && node->IsOperation() &&
            (node->operation->type == type || type == NNADAPTER_UNKNOWN);
   });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::CheckInputCount(int num) {
+  conditions.emplace_back(
+      [num](const Node *node) { return node->inlinks.size() == num; });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::CheckOutputCount(int num) {
+  conditions.emplace_back(
+      [num](const Node *node) { return node->outlinks.size() == num; });
   return this;
 }
 

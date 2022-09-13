@@ -73,9 +73,6 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
                                    lite::Scope* scope) {
   param_.input = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.weight_max = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("FCWeightMax").front())
-           ->Get<lite::Tensor>());
   param_.output = scope->FindVar(op_desc.Output("Output").front())
                       ->GetMutable<lite::Tensor>();
 
@@ -146,12 +143,20 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
   param_.per_channel = op_desc.GetAttr<bool>("per_channel");
-  if (param_.per_channel) {
-    param_.fc_channels = op_desc.GetAttr<std::vector<int>>("fc_channels");
-  }
-  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8") ||
+      op_desc.HasAttr("enable_int16") &&
+          op_desc.GetAttr<bool>("enable_int16")) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
   }
+  param_.weight_max.clear();
+  for (const auto& weight_max_tensor :
+       op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    auto tensor = scope->FindMutableTensor(weight_max_tensor);
+    CHECK(tensor != nullptr);
+    param_.weight_max.push_back(tensor);
+  }
+  param_.quant_types =
+      op_desc.GetAttr<std::vector<std::string>>("FCQuantTypes");
 
   if (op_desc.HasAttr("slice_axes")) {
     param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");

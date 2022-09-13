@@ -27,8 +27,11 @@ namespace paddle {
 namespace lite {
 
 TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
+  FLAGS_warmup = 1;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
+  std::string nnadapter_subgraph_partition_config_path;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<paddle::lite_api::Place> valid_places;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
@@ -44,11 +47,26 @@ TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+  nnadapter_subgraph_partition_config_path =
+      FLAGS_model_dir +
+      "/huawei_ascend_npu_subgraph_custom_partition_config_file.txt";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
-// TODO(hong19860320) Support int64 datatype
-// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-//   nnadapter_device_names.emplace_back("qualcomm_qnn");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  nnadapter_subgraph_partition_config_buffer =
+      "equal:input_ids,tmp_0:tmp_1\n"
+      "cast:tmp_1:tmp_2\n"
+      "scale:tmp_2:tmp_3\n"
+      "unsqueeze2:tmp_3:unsqueeze2_0.tmp_0,unsqueeze2_0.tmp_1\n"
+      "fill_any_like:input_ids:full_like_0.tmp_0\n"
+      "cumsum:full_like_0.tmp_0:cumsum_0.tmp_0\n"
+      "elementwise_sub:cumsum_0.tmp_0,full_like_0.tmp_0:tmp_4\n"
+      "lookup_table_v2:input_ids,embedding_0.w_0:embedding_3.tmp_0\n"
+      "lookup_table_v2:tmp_4,embedding_1.w_0:embedding_4.tmp_0\n"
+      "lookup_table_v2:token_type_ids,embedding_2.w_0:embedding_5.tmp_0";
+  FLAGS_warmup = 0;
+  FLAGS_iteration = 1;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -61,8 +79,9 @@ TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
   cxx_config.set_nnadapter_subgraph_partition_config_path(
-      FLAGS_model_dir +
-      "/huawei_ascend_npu_subgraph_custom_partition_config_file.txt");
+      nnadapter_subgraph_partition_config_path);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -100,7 +119,6 @@ TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
     output0_data.push_back(Split<float>(Split(line, ":")[1], " "));
   }
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; i++) {
     int data_idx = i % static_cast<int>(input0_data.size());
     fill_tensor(
