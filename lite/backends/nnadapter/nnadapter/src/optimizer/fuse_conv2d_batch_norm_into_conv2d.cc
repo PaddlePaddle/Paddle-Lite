@@ -14,6 +14,7 @@
 
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include <algorithm>
+#include <iostream>
 #include <map>
 #include <vector>
 #include "optimizer/pattern_matcher.h"
@@ -40,7 +41,7 @@ class Conv2DBatchNormFuser : public PatternMatcher {
  private:
   NNAdapterOperationType conv2d_type_{NNADAPTER_CONV_2D};
   NNAdapterOperationType batch_norm_type_{NNADAPTER_BATCH_NORMALIZATION};
-  double max_allowed_quant_scale_deviation_{FLT_MAX};
+  double max_allowed_quant_scale_deviation_{-1.0f};
 };
 
 void Conv2DBatchNormFuser::BuildPattern() {
@@ -150,7 +151,8 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
       batch_norm_beta(conv2d_output_channel_size);
   for (int64_t i = 0; i < conv2d_output_channel_size; i++) {
     double coeff = batch_norm_scale_data[i] /
-                   std::sqrt(batch_norm_variance_data[i] + batch_norm_epsilon);
+                   std::sqrt(static_cast<double>(batch_norm_variance_data[i]) +
+                             batch_norm_epsilon);
     batch_norm_alpha[i] = coeff;
     batch_norm_beta[i] =
         -batch_norm_mean_data[i] * coeff + batch_norm_bias_data[i];
@@ -186,12 +188,16 @@ bool Conv2DBatchNormFuser::HandleMatchedResults(
       conv2d_filter_scales[i] = filter_scale_value;
       conv2d_bias_scales[i] = bias_scale_value;
     }
+    NNADAPTER_VLOG(5) << "fused_conv2d_filter_scale=["
+                      << conv2d_filter_min_scale << "," << conv2d_bias_max_scale
+                      << "] fused_conv2d_bias_scale=[" << conv2d_bias_min_scale
+                      << "," << conv2d_bias_max_scale << "]";
     // Disable batchnorm fusion if the difference of fused filter scale is
-    // greater than the given threshold
-    if (conv2d_filter_max_scale >=
-        max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale) {
+    // greater than the given threshold.
+    if (max_allowed_quant_scale_deviation_ >= 0.0f &&
+        conv2d_filter_max_scale >=
+            max_allowed_quant_scale_deviation_ * conv2d_filter_min_scale)
       return false;
-    }
     // Update the quant scale of weight and bias with the fused one and requant
     // the bias
     auto conv2d_filter_data =

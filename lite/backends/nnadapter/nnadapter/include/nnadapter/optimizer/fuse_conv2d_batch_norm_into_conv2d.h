@@ -25,6 +25,6 @@ namespace nnadapter {
 // to solve the problem, we use a threshold of max_scale/min_scale to determine
 // whether to perform conv+bn folding.
 void FuseConv2DBatchNormIntoConv2D(
-    core::Model *model, double max_allowed_quant_scale_deviation = FLT_MAX);
+    core::Model *model, double max_allowed_quant_scale_deviation = -1.0f);
 
 }  // namespace nnadapter
