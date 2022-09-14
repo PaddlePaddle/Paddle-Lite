@@ -137,7 +137,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
     n = param.w->dims()[0];
   }
   int ldx = (x_trans ? m : k);
-  int ldw = (w_trans ? k : n);
+  int ldw = k;
   int ldy = n;
 
   float* output_max =
