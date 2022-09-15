@@ -281,8 +281,13 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         default:
           LOG(ERROR) << "Unknow cpu arch: " << arch_id;
       }
-      archs->at(cpu_idx) = arch_type;
-      cpu_idx++;
+      // may cause out of range exception from vector.
+      if(cpu_idx < cpu_num) {
+        archs->at(cpu_idx) = arch_type;
+        cpu_idx++;
+      }else{
+        LOG(ERROR) << "cpu_idx: " << cpu_idx << " is out of range: " << cpu_num;
+      }
     }
   }
   fclose(fp);
