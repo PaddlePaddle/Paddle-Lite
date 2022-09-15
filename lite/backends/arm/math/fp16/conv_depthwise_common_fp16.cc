@@ -48,22 +48,22 @@ namespace fp16 {
                                                          \
   "L16Loop_%=:\n"                                        \
   "mov x8, %[pre_din]\n"                                 \
-  "mov v16.8h, %[vbias].8h\n"                            \
-  "mov v17.8h, %[vbias].8h\n"                            \
-  "mov v18.8h, %[vbias].8h\n"                            \
-  "mov v19.8h, %[vbias].8h\n"                            \
-  "mov v20.8h, %[vbias].8h\n"                            \
-  "mov v21.8h, %[vbias].8h\n"                            \
-  "mov v22.8h, %[vbias].8h\n"                            \
-  "mov v23.8h, %[vbias].8h\n"                            \
-  "mov v24.8h, %[vbias].8h\n"                            \
-  "mov v25.8h, %[vbias].8h\n"                            \
-  "mov v26.8h, %[vbias].8h\n"                            \
-  "mov v27.8h, %[vbias].8h\n"                            \
-  "mov v28.8h, %[vbias].8h\n"                            \
-  "mov v29.8h, %[vbias].8h\n"                            \
-  "mov v30.8h, %[vbias].8h\n"                            \
-  "mov v31.8h, %[vbias].8h\n"                            \
+  "mov v16.16b, %[vbias].16b\n"                          \
+  "mov v17.16b, %[vbias].16b\n"                          \
+  "mov v18.16b, %[vbias].16b\n"                          \
+  "mov v19.16b, %[vbias].16b\n"                          \
+  "mov v20.16b, %[vbias].16b\n"                          \
+  "mov v21.16b, %[vbias].16b\n"                          \
+  "mov v22.16b, %[vbias].16b\n"                          \
+  "mov v23.16b, %[vbias].16b\n"                          \
+  "mov v24.16b, %[vbias].16b\n"                          \
+  "mov v25.16b, %[vbias].16b\n"                          \
+  "mov v26.16b, %[vbias].16b\n"                          \
+  "mov v27.16b, %[vbias].16b\n"                          \
+  "mov v28.16b, %[vbias].16b\n"                          \
+  "mov v29.16b, %[vbias].16b\n"                          \
+  "mov v30.16b, %[vbias].16b\n"                          \
+  "mov v31.16b, %[vbias].16b\n"                          \
                                                          \
   /*kh*/                                                 \
   "mov x1, %[kh]\n"                                      \
@@ -131,14 +131,14 @@ namespace fp16 {
                                                          \
   "L8Loop_%=:\n"                                         \
   "mov x8, %[pre_din]\n"                                 \
-  "mov v16.8h, %[vbias].8h\n"                            \
-  "mov v17.8h, %[vbias].8h\n"                            \
-  "mov v18.8h, %[vbias].8h\n"                            \
-  "mov v19.8h, %[vbias].8h\n"                            \
-  "mov v20.8h, %[vbias].8h\n"                            \
-  "mov v21.8h, %[vbias].8h\n"                            \
-  "mov v22.8h, %[vbias].8h\n"                            \
-  "mov v23.8h, %[vbias].8h\n"                            \
+  "mov v16.16b, %[vbias].16b\n"                          \
+  "mov v17.16b, %[vbias].16b\n"                          \
+  "mov v18.16b, %[vbias].16b\n"                          \
+  "mov v19.16b, %[vbias].16b\n"                          \
+  "mov v20.16b, %[vbias].16b\n"                          \
+  "mov v21.16b, %[vbias].16b\n"                          \
+  "mov v22.16b, %[vbias].16b\n"                          \
+  "mov v23.16b, %[vbias].16b\n"                          \
                                                          \
   /*kh*/                                                 \
   "mov x1, %[kh]\n"                                      \
@@ -186,10 +186,10 @@ namespace fp16 {
                                                          \
   "L4Loop_%=:\n"                                         \
   "mov x8, %[pre_din]\n"                                 \
-  "mov v16.8h, %[vbias].8h\n"                            \
-  "mov v17.8h, %[vbias].8h\n"                            \
-  "mov v18.8h, %[vbias].8h\n"                            \
-  "mov v19.8h, %[vbias].8h\n" /*kh*/                     \
+  "mov v16.16b, %[vbias].16b\n"                          \
+  "mov v17.16b, %[vbias].16b\n"                          \
+  "mov v18.16b, %[vbias].16b\n"                          \
+  "mov v19.16b, %[vbias].16b\n" /*kh*/                   \
   "mov x1, %[kh]\n"                                      \
   "L4LoopH_%=:\n" /*kw*/                                 \
   "mov x2, %[kw]\n"                                      \
@@ -222,7 +222,7 @@ namespace fp16 {
   "blt 0f\n"                                     \
   "L1Loop_%=:\n"                                 \
   "mov x8, %[pre_din]\n"                         \
-  "mov v16.8h, %[vbias].8h\n" /*kh*/             \
+  "mov v16.16b, %[vbias].16b\n" /*kh*/           \
   "mov x1, %[kh]\n"                              \
   "L1LoopH_%=:\n"                                \
   "mov x2, %[kw]\n" /*kw*/                       \
@@ -524,7 +524,7 @@ void conv_depthwise_common_line(const float16_t* i_data,
                            [kh] "r"(kh),\
                            [kw] "r"(kw),\
                            [dilateY_step] "r"(dilateY_step),\
-                           [dilateX_step] "r"(dilateX_step),\                                                                               
+                           [dilateX_step] "r"(dilateX_step),\                                                                            
                            [srcHStep] "r"(srcHStep),\
                            [dstHStep] "r"(dstHStep),\
                            [vbias] "w"(vbias)
