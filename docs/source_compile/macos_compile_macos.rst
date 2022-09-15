@@ -62,11 +62,10 @@ macOS 环境下编译适用于 macOS 的库
 
    # 2-1. 如果是 x86 macOS 则安装 CMake，以下命令以3.15版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/ \
-       cd /usr/local/Cellar/cmake/ \
-       wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz \
-       tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz \
-       mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2 \
-       ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
+   wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz \
+   tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz \
+   mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2 \
+   ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
 
    # 2-2. 如果是 ARM macOS 则 brew 安装 cmake
    brew install cmake
