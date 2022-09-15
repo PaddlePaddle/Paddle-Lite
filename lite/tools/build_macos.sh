@@ -38,7 +38,7 @@ workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 IOS_DEPLOYMENT_TARGET=11.0
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=16
 #####################################################################################################
 
 
@@ -424,6 +424,11 @@ function main {
                 ;;
             --with_benchmark=*)
                 WITH_BENCHMARK="${i#*=}"
+                shift
+                ;;
+
+            --with_testing=*)
+                WITH_TESTING="${i#*=}"
                 shift
                 ;;
             --with_lto=*)
