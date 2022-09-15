@@ -702,7 +702,7 @@ void loadb_k8n12_trans_int8_sve(int8_t* out,
   LITE_PARALLEL_END();
   const int8_t* input_1 = input_4 + cnt_4 * 4 * ldin;
   int8_t* output_1 = output_4 + cnt_4 * 4 * size;
-  LITE_PARALLEL_COMMON_BEGIN(y, tid, cnt_1, 0, 2) {
+  for (int y = 0; y < cnt_1; y += 2) {
     int8_t* outptr = output_1 + y * size;
     const int8_t* inptr_row0 = input_1 + y * ldin;
     const int8_t* inptr_row1 = inptr_row0 + ldin;
@@ -729,7 +729,6 @@ void loadb_k8n12_trans_int8_sve(int8_t* out,
       memset(outptr + 8 + remain, 0, (8 - remain) * sizeof(int8_t));
     }
   }
-  LITE_PARALLEL_COMMON_END();
 }
 
 void prepackA_int8_sve(int8_t* out,
@@ -905,7 +904,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmla   z28.s, z8.s, z4.s[2]\n"             \
   "fmla   z27.s, z9.s, z4.s[3]\n"             \
   "fmla   z26.s, z14.s, z5.s[0]\n"            \
-  "fmla   z25.s, z15.s, z5.s[2]\n"            \
+  "fmla   z25.s, z15.s, z5.s[1]\n"            \
   "fmla   z24.s, z20.s, z5.s[2]\n"            \
   "fmla   z23.s, z21.s, z5.s[3]\n"
 
@@ -1200,7 +1199,8 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "add %x[c_ptr7], %x[c_ptr7], #0x10\n"
 
 #define SMMLA_STORE_INT8_8x4 \
-  "mov z2.s, #-127 \n"         \
+  "ptrue p0.b\n" \
+  "ld1rqw {z2.s}, p0/Z, [%x[vmax]]\n" \
   "fcmge v22.4s,  v30.4s,  v2.4s       \n" \
   "fcmge v21.4s,  v29.4s,  v2.4s       \n" \
   "fcmge v20.4s,  v28.4s,  v2.4s       \n" \
@@ -1252,6 +1252,61 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "str s17, [%[c_ptr5]], #4\n"           \
   "str s16, [%[c_ptr6]], #4\n"           \
   "str s15, [%[c_ptr7]], #4\n"
+
+#define SMMLA_STORE_INT8_8x1               \
+  "ptrue p0.b\n"                      \
+  "ld1rqw {z2.s}, p0/Z, [%x[vmax]]\n" \
+  "fcmge v22.4s,  v30.4s,  v2.4s       \n" \
+  "fcmge v21.4s,  v29.4s,  v2.4s       \n" \
+  "fcmge v20.4s,  v28.4s,  v2.4s       \n" \
+  "fcmge v19.4s,  v27.4s,  v2.4s       \n" \
+  "fcmge v18.4s,  v26.4s,  v2.4s       \n" \
+  "fcmge v17.4s,  v25.4s,  v2.4s       \n" \
+  "fcmge v16.4s,  v24.4s,  v2.4s       \n" \
+  "fcmge v15.4s,  v23.4s,  v2.4s       \n" \
+  "bif   v30.16b, v2.16b, v22.16b      \n" \
+  "bif   v29.16b, v2.16b, v21.16b      \n" \
+  "bif   v28.16b, v2.16b, v20.16b      \n" \
+  "bif   v27.16b, v2.16b, v19.16b      \n" \
+  "bif   v26.16b, v2.16b, v18.16b      \n" \
+  "bif   v25.16b, v2.16b, v17.16b      \n" \
+  "bif   v24.16b, v2.16b, v16.16b      \n" \
+  "bif   v23.16b, v2.16b, v15.16b      \n" \
+  /* fp32 -> int32 */                      \
+  "fcvtas  v22.4s,  v30.4s              \n" \
+  "fcvtas  v21.4s,  v29.4s              \n" \
+  "fcvtas  v20.4s,  v28.4s              \n" \
+  "fcvtas  v19.4s,  v27.4s              \n" \
+  "fcvtas  v18.4s,  v26.4s              \n" \
+  "fcvtas  v17.4s,  v25.4s              \n" \
+  "fcvtas  v16.4s,  v24.4s              \n" \
+  "fcvtas  v15.4s,  v23.4s              \n" \
+  /* int32 -> int16 */                     \
+  "sqxtn   v30.4h,  v22.4s              \n" \
+  "sqxtn   v29.4h,  v21.4s              \n" \
+  "sqxtn   v28.4h,  v20.4s              \n" \
+  "sqxtn   v27.4h,  v19.4s              \n" \
+  "sqxtn   v26.4h,  v18.4s              \n" \
+  "sqxtn   v25.4h,  v17.4s              \n" \
+  "sqxtn   v24.4h,  v16.4s              \n" \
+  "sqxtn   v23.4h,  v15.4s              \n" \
+  /* int16 -> int8  */                     \
+  "sqxtn   v22.8b,  v30.8h           \n" \
+  "sqxtn   v21.8b,  v29.8h           \n" \
+  "sqxtn   v20.8b,  v28.8h           \n" \
+  "sqxtn   v19.8b,  v27.8h           \n" \
+  "sqxtn   v18.8b,  v26.8h           \n" \
+  "sqxtn   v17.8b,  v25.8h           \n" \
+  "sqxtn   v16.8b,  v24.8h           \n" \
+  "sqxtn   v15.8b,  v23.8h           \n" \
+  "str s22, [%[c_ptr0]]\n"           \
+  "str s21, [%[c_ptr1]]\n"           \
+  "str s20, [%[c_ptr2]]\n"           \
+  "str s19, [%[c_ptr3]]\n"           \
+  "str s18, [%[c_ptr4]]\n"           \
+  "str s17, [%[c_ptr5]]\n"           \
+  "str s16, [%[c_ptr6]]\n"           \
+  "str s15, [%[c_ptr7]]\n"
 
 #define SMMLA_STORE_INT8_8x4_1          \
   "mov z0.s, #0x0\n"                  \
@@ -2013,7 +2068,8 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
 // clang-format on
 
 #define SMMLA_STORE_INT8_8x12 \
-  "mov z2.s, #-127 \n"         \
+  "ptrue p0.b\n" \
+  "ld1rqw {z2.s}, p0/Z, [%x[vmax]]\n" \
   SMMLA_STORE_INT8_ASM(29, 30, 31) \
   SMMLA_STORE_INT8_ASM(26, 4,  6) \
   SMMLA_STORE_INT8_ASM(27, 5,  7) \
@@ -2356,13 +2412,28 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26", \
     "z27", "z28", "z29", "z30", "z31"
 
+#define ASM_PARAMS_FP32_INT8                                              \
+  : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k), \
+    [c_ptr0] "+r"(c_ptr0), [c_ptr1] "+r"(c_ptr1), [c_ptr2] "+r"(c_ptr2), \
+    [c_ptr3] "+r"(c_ptr3), [c_ptr4] "+r"(c_ptr4), [c_ptr5] "+r"(c_ptr5), \
+    [c_ptr6] "+r"(c_ptr6), [c_ptr7] "+r"(c_ptr7) \
+  : [bias] "r"(bias), [alpha] "r"(alpha), [scale] "r"(scale), \
+    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last), \
+    [vmax] "r"(vmax) \
+  : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
+    "z5", "z6", "z7", \
+    "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
+    "z18", "z19", "z20", "z21", "z22", "z23", "z24", "z25", "z26", \
+    "z27", "z28", "z29", "z30", "z31"
+
 #define ASM_PARAMS_INT8                                                   \
   : [a_ptr] "+r"(a_ptr), [b_ptr] "+r"(b_ptr), [k] "+r"(k)  \
   : [c_ptr0] "r"(out0), [c_ptr1] "r"(out1), [c_ptr2] "r"(out2), \
     [c_ptr3] "r"(out3), [c_ptr4] "r"(out4), [c_ptr5] "r"(out5), \
     [c_ptr6] "r"(out6), [c_ptr7] "r"(out7), \
-    [bias] "r"(bias), [alpha] "r"(alpha), [scale] "r"(scale), \
-    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last) \
+    [bias] "r"(bias), [alpha] "r"(alpha), [vmax] "r"(vmax), \
+    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last), \
+    [scale] "r"(scale) \
   : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
     "z5", "z6", "z7", \
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
@@ -2386,9 +2457,12 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
   int8_t out5[4] = {0};
   int8_t out6[4] = {0};
   int8_t out7[4] = {0};
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
+
   asm volatile(INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
                    CVT_SMMLA_INT32_TO_FP32_8x2 SMMLA_ACT_PROCESS_8x4
-                       SMMLA_STORE_INT8_8x4 ASM_PARAMS_INT8);
+                       SMMLA_STORE_INT8_8x1 ASM_PARAMS_INT8);
+
   int cnt = 2;
   if (last == 0) cnt = 1;
   for (int i = 0; i < cnt; i++) {
@@ -2421,10 +2495,11 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
 
 template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(
       INIT_SMMLA_8x4 COMPUTE_SMMLA_8x4_0 COMPUTE_SMMLA_8x4_1
           COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4
-              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_INT8_8x4 ASM_PARAMS_FP32);
+              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_INT8_8x4 ASM_PARAMS_FP32_INT8);
 }
 
 template <>
@@ -2437,10 +2512,11 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
-  asm volatile(
-      INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
-          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
-              SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_INT8_8x12 ASM_PARAMS_FP32);
+  float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
+  asm volatile(INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
+                   COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
+                       SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_INT8_8x12
+                           ASM_PARAMS_FP32_INT8);
 }
 // clang-format on
 /// a: m*k  b: k*n  c: m*n
@@ -2571,21 +2647,21 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
           bias_local[j] = bias[i];
         }
       }
-      float32_t scale_local[8];
+      float32_t scale_local[8] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
       if (scale) {
         int j = 0;
         for (int i = y; i < ymax && j < 8; i++, j++) {
           scale_local[j] = scale[i];
         }
       }
-      dtype cout0[NBLOCK_INT8_SVE];
-      dtype cout1[NBLOCK_INT8_SVE];
-      dtype cout2[NBLOCK_INT8_SVE];
-      dtype cout3[NBLOCK_INT8_SVE];
-      dtype cout4[NBLOCK_INT8_SVE];
-      dtype cout5[NBLOCK_INT8_SVE];
-      dtype cout6[NBLOCK_INT8_SVE];
-      dtype cout7[NBLOCK_INT8_SVE + 16];
+      dtype cout0[NBLOCK_INT8_SVE] = {0};
+      dtype cout1[NBLOCK_INT8_SVE] = {0};
+      dtype cout2[NBLOCK_INT8_SVE] = {0};
+      dtype cout3[NBLOCK_INT8_SVE] = {0};
+      dtype cout4[NBLOCK_INT8_SVE] = {0};
+      dtype cout5[NBLOCK_INT8_SVE] = {0};
+      dtype cout6[NBLOCK_INT8_SVE] = {0};
+      dtype cout7[NBLOCK_INT8_SVE + 16] = {0};
 
       dtype* c_ptr0 = C + y * N + x0;
       dtype* c_ptr1 = c_ptr0 + N;
@@ -2760,6 +2836,8 @@ GEMM_PREPACK_INT8_SVE(float);
 #undef SMMLA_STORE_INT8_8x4_1
 #undef SMMLA_STORE_INT8_8x12
 #undef SMMLA_STORE_INT8_8x12_1
+#undef SMMLA_STORE_INT8_8x1
+#undef ASM_PARAMS_FP32_INT8
 }  // namespace sve
 }  // namespace math
 }  // namespace arm
