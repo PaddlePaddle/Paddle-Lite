@@ -514,25 +514,58 @@ void conv_depthwise_common_line(const float16_t* i_data,
         }
       }
 #ifdef __aarch64__
-      asm volatile(INIT LOOP COMPUTE16 STORE16 COMPUTE8 STORE8 COMPUTE4 STORE4 COMPUTE1 STORE1 END
-                          :[pre_dout] "+r"(pre_dout),\
-                           [pre_din] "+r"(pre_din),\
-                           [weight] "+r"(weight_c),\
-                           [oh] "+r"(oh_bak)                      
-                          :[ow] "r"(ow),\
-                           [src_w_setup] "r"(src_w_setup),\
-                           [kh] "r"(kh),\
-                           [kw] "r"(kw),\
-                           [dilateY_step] "r"(dilateY_step),\
-                           [dilateX_step] "r"(dilateX_step),\                                                                            
-                           [srcHStep] "r"(srcHStep),\
-                           [dstHStep] "r"(dstHStep),\
-                           [vbias] "w"(vbias)
-                          :"cc", "memory", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10",
-                           "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v16",\
-                           "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26",\
-                           "v27", "v28", "v29", "v30", "v31"\
-                          );
+      asm volatile(INIT LOOP COMPUTE16 STORE16 COMPUTE8 STORE8 COMPUTE4 STORE4
+                       COMPUTE1 STORE1 END
+                   : [pre_dout] "+r"(pre_dout),
+                     [pre_din] "+r"(pre_din),
+                     [weight] "+r"(weight_c),
+                     [oh] "+r"(oh_bak)
+                   : [ow] "r"(ow),
+                     [src_w_setup] "r"(src_w_setup),
+                     [kh] "r"(kh),
+                     [kw] "r"(kw),
+                     [dilateY_step] "r"(dilateY_step),
+                     [dilateX_step] "r"(dilateX_step),
+                     [srcHStep] "r"(srcHStep),
+                     [dstHStep] "r"(dstHStep),
+                     [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "x1",
+                     "x2",
+                     "x3",
+                     "x4",
+                     "x5",
+                     "x6",
+                     "x7",
+                     "x8",
+                     "x9",
+                     "x10",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v16",
+                     "v17",
+                     "v18",
+                     "v19",
+                     "v20",
+                     "v21",
+                     "v22",
+                     "v23",
+                     "v24",
+                     "v25",
+                     "v26",
+                     "v27",
+                     "v28",
+                     "v29",
+                     "v30",
+                     "v31");
 #else
       asm volatile(INIT LOOP COMPUTE8 STORE8 COMPUTE4 STORE4 COMPUTE1 STORE1 END
                    : [pre_dout] "+r"(pre_dout),
