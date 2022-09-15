@@ -43,6 +43,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertClip(core::Operation* operation);
   void ConvertComparisons(core::Operation* operation);
   void ConvertCumSum(core::Operation* operation);
+  void ConvertDequantize(core::Operation* operation);
   void ConvertElementwise(core::Operation* operation);
   void ConvertPool2D(core::Operation* operation);
   void ConvertConcat(core::Operation* operation);
