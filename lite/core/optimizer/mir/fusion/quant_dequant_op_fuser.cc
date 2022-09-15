@@ -744,6 +744,32 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     }
 #endif
     op_info->SetInputScale(input_var_name, scales);
+    for (auto op_out_var_node : quantized_node->outlinks) {
+      CHECK(op_out_var_node->IsArg());
+      for (auto out_scale_node : op_out_var_node->outlinks) {
+        if (!out_scale_node->IsStmt()) continue;
+        auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
+        auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (!out_scale_op_info->HasInput("Scale")) continue;
+        std::string out_scale_name = out_scale_op_info->Input("Scale").front();
+        auto* out_scale_tensor =
+            out_scale_scope->FindMutableTensor(out_scale_name);
+        auto* out_scale_data = out_scale_tensor->data<float>();
+        std::vector<float> out_thresholds(
+            out_scale_data, out_scale_data + scale_tensor->data_size());
+        int out_bit_length =
+            out_scale_node->stmt()->op_info()->GetAttr<int>("bit_length");
+        std::vector<float> out_scales(out_thresholds.size(), 0);
+        std::transform(out_thresholds.begin(),
+                       out_thresholds.end(),
+                       out_scales.begin(),
+                       [&out_bit_length](float x) {
+                         return x / ((1 << (out_bit_length - 1)) - 1);
+                       });
+        op_info->SetOutputScale(op_out_var_node->arg()->name, out_scales);
+        break;
+      }
+    }
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
