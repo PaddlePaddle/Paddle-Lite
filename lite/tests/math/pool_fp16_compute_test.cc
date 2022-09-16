@@ -280,7 +280,6 @@ TEST(TesPoolGlobal, test_pool_fp16_global) {
 }
 #endif  // global_pool
 
-#if 1  // basic adaptive
 TEST(TesPoolBasicAdaptive, test_pool_fp16_adaptive_size) {
   test_pool_fp16(
       {DDim({4, 32, 80, 80}), DDim({4, 32, 32, 32}), DDim({4, 32, 16, 16})},
@@ -311,9 +310,7 @@ TEST(TesPoolBasicAdaptive, test_pool_fp16_adaptive_size) {
       {0},
       {DDim({1, 3, 2, 2})});
 }
-#endif  // basic adaptive
 
-#if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp16_custom_size) {
   test_pool_fp16(
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
@@ -329,4 +326,3 @@ TEST(TesPoolCustom, test_pool_fp16_custom_size) {
       {FLAGS_threads},
       {FLAGS_power_mode});
 }
-#endif  // custom

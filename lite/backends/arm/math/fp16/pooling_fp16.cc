@@ -143,7 +143,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   int size_channel_out = wout * hout;
 
   if (exclusive && adaptive && pad_h == 0 && pad_w == 0 && hin % hout == 0 &&
-      win % wout == 0 && pooling_type == "avg" && global_pooling == false) {
+      win % wout == 0 && pooling_type == "avg" && !global_pooling) {
     int scale = win / wout;
     if (scale % 4 == 0) {
       pooling_avg_fp16_adaptive_exclusive_p0(
