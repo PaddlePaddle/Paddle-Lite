@@ -727,6 +727,17 @@ class XPUSingleEncoderFuser : public FuseBase {
     VLOG(3) << "max_qkv_input: " << max_qkv_input
             << ", max_qkv_output: " << max_qkv_output;
 
+    if (act_type_ == "gelu") {
+      // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
+      float gelu_limit_value =
+          GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD", 10.f);
+      CHECK_GT(gelu_limit_value, 0.f)
+          << "QUANT_GELU_OUT_THRESHOLD should be an positive float value: "
+          << gelu_limit_value;
+
+      input_max[9] = std::min(gelu_limit_value, input_max[9]);
+      input_max[10] = std::min(gelu_limit_value, input_max[10]);
+    }
     if (matmul_quant) {
       auto matmul_offset = quant_mul_ops.size();
       if (op_is_quantized[matmul_offset + 0]) {
