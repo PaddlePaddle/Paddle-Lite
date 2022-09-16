@@ -42,7 +42,6 @@ void LodResetCompute::Run() {
                                    y_data,
                                    param.Y->numel() * sizeof(int),
                                    IoDirection::DtoH);
-
       (*lod).resize(1);
       (*lod)[0].resize(param.Y->numel());
       for (int i = 0; i < param.Y->numel(); i++) {
