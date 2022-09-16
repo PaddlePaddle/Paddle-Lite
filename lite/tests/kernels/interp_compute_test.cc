@@ -498,8 +498,8 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
 void TestInterpOuthw_fp16(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
-      for (int out_h : {6, 8, 12}) {
-        for (int out_w : {6, 9, 12}) {
+      for (int out_h : {6, 8, 12, 36, 72}) {
+        for (int out_w : {6, 9, 12, 36, 48, 72}) {
           std::unique_ptr<arena::TestCase> tester(
               new NearestInterpComputeTester(place,
                                              "def",
