@@ -18,12 +18,22 @@
 #include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace kunlunxin_xtcl {
 
 int ConvertReshape(Converter* converter, core::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  auto input_size =
+      ProductionOfDimensions(input_operand->type.dimensions.data,
+                             input_operand->type.dimensions.count);
+  auto output_size =
+      ProductionOfDimensions(output_operand->type.dimensions.data,
+                             output_operand->type.dimensions.count);
+  NNADAPTER_CHECK_EQ(input_size, output_size)
+      << "Expect input_size == output_size, but receive: " << input_size << ", "
+      << output_size;
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
