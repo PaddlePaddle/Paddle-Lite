@@ -26,8 +26,8 @@
 // op_type::out_var_name_0
 // op_type:in_var_name_0
 // op_type
-#define SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE \
-  "SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE"
+#define SUBGRAPH_PARTITION_CONFIG_FILE "SUBGRAPH_PARTITION_CONFIG_FILE"
+#define SUBGRAPH_PARTITION_CONFIG_BUFFER "SUBGRAPH_PARTITION_CONFIG_BUFFER"
 
 // The original weight/local/unused variables in the subblock of the subgraph op
 // will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to true(default) during
@@ -59,8 +59,8 @@
 // Specify the configuration file path or data to apply the rule (b).
 #define QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE \
   "QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE"
-#define QUANT_AUTO_COMPLETE_SCALE_CONFIG_DATA \
-  "QUANT_AUTO_COMPLETE_SCALE_CONFIG_DATA"
+#define QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER \
+  "QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER"
 
 namespace paddle {
 namespace lite {
