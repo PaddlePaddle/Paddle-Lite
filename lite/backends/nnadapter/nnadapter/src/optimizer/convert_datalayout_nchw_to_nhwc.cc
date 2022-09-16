@@ -532,6 +532,22 @@ void NCHW2NHWCDataLayoutConverter::ConvertCumSum(core::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertDequantize(
+    core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
     core::Operation* operation) {
   auto& input_operands = operation->input_operands;
@@ -1276,6 +1292,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_CUM_SUM:
         ConvertCumSum(operation);
+        break;
+      case NNADAPTER_DEQUANTIZE:
+        ConvertDequantize(operation);
         break;
       case NNADAPTER_EQUAL:
       case NNADAPTER_GREATER:
