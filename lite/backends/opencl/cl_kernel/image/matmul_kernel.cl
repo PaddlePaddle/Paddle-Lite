@@ -224,6 +224,50 @@ __kernel void matmul_xdim3_ydim1(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos3, out3 * s);
 }
 
+__kernel void matmul_xdim2_ydim1(__read_only image2d_t input,
+                                 __write_only image2d_t output,
+                                 __global const CL_COMPUTE_DTYPE4 *weights,
+                                 int M,
+                                 int C,
+                                 int H,
+                                 int W,
+                                 float scale) {
+  int hblk_id = get_global_id(0);
+
+  CL_COMPUTE_DTYPE s0 = (CL_COMPUTE_DTYPE)(0.0f);
+  CL_COMPUTE_DTYPE s1 = (CL_COMPUTE_DTYPE)(0.0f);
+  CL_COMPUTE_DTYPE s2 = (CL_COMPUTE_DTYPE)(0.0f);
+  CL_COMPUTE_DTYPE s3 = (CL_COMPUTE_DTYPE)(0.0f);
+
+  for (int w = 0; w < (W + 3) / 4; ++w) {
+    CL_COMPUTE_DTYPE4 w0 = weights[w];
+    CL_COMPUTE_DTYPE4 v0 = READ_IMG_TYPE(
+        CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(w, hblk_id * 4));
+    CL_COMPUTE_DTYPE4 v1 = READ_IMG_TYPE(
+        CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(w, hblk_id * 4 + 1));
+    CL_COMPUTE_DTYPE4 v2 = READ_IMG_TYPE(
+        CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(w, hblk_id * 4 + 2));
+    CL_COMPUTE_DTYPE4 v3 = READ_IMG_TYPE(
+        CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(w, hblk_id * 4 + 3));
+    s0 += dot(v0, w0);
+    s1 += dot(v1, w0);
+    s2 += dot(v2, w0);
+    s3 += dot(v3, w0);
+  }
+
+  CL_COMPUTE_DTYPE4 output0 = (CL_COMPUTE_DTYPE4)(s0, s1, s2, s3);
+  CL_DTYPE4 zero_v4 = (CL_DTYPE4)0;
+  CL_DTYPE4 out0 = zero_v4;
+  out0.x = CONVERT_TYPE_TO(output0.x, CL_DTYPE);
+  out0.y = CONVERT_TYPE_TO(output0.y, CL_DTYPE);
+  out0.z = CONVERT_TYPE_TO(output0.z, CL_DTYPE);
+  out0.w = CONVERT_TYPE_TO(output0.w, CL_DTYPE);
+
+  int2 out_pos0 = (int2)(hblk_id, 0);
+  CL_DTYPE s = CONVERT_TYPE_TO(scale, CL_DTYPE);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos0, out0 * s);
+}
+
 __kernel void matmul_highdimx_ydim2(__read_only image2d_t input,
                                     __write_only image2d_t output,
                                     __global const CL_COMPUTE_DTYPE4 *weights,
