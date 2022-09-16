@@ -27,14 +27,13 @@ namespace xpu {
 
 template <typename T, PrecisionType PType>
 void SequenceExpandCompute<T, PType>::PrepareForRun() {
-  lodx_cpu.reset(new int[XPU_MAX_LOD_SIZE_64]);
-  lody_cpu.reset(new int[XPU_MAX_LOD_SIZE_64]);
-  lodref_cpu.reset(new int[XPU_MAX_LOD_SIZE_64]);
+  lodx_cpu_.reset(new int[XPU_MAX_LOD_SIZE_64]);
+  lody_cpu_.reset(new int[XPU_MAX_LOD_SIZE_64]);
+  lodref_cpu_.reset(new int[XPU_MAX_LOD_SIZE_64]);
 }
 
 template <typename T, PrecisionType PType>
 void SequenceExpandCompute<T, PType>::Run() {
-  auto _start = std::chrono::steady_clock::now();
   auto& param = this->template Param<operators::SequenceExpandParam>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto* x = param.X;
@@ -57,8 +56,6 @@ void SequenceExpandCompute<T, PType>::Run() {
                                reinterpret_cast<int8_t*>(out_data),
                                x->numel() * sizeof(T));
     CHECK_EQ(r, 0) << "seqence_expand do copy failed.";
-
-    out->set_lod(x_lod);
     return;
   }
 
@@ -91,18 +88,18 @@ void SequenceExpandCompute<T, PType>::Run() {
 
   int lod_len = ref_y_lod.size();
   for (int i = 0; i < lod_len; ++i) {
-    lodx_cpu[i] = ref_x_lod[i];
-    lodref_cpu[i] = ref_y_lod[i];
-    lody_cpu[i] = ref_out_lod[i];
+    lodx_cpu_[i] = ref_x_lod[i];
+    lodref_cpu_[i] = ref_y_lod[i];
+    lody_cpu_[i] = ref_out_lod[i];
   }
 
   int r =
       xdnn::sequence_expand<float, int>(ctx.GetRawContext(),
                                         reinterpret_cast<const float*>(x_data),
                                         reinterpret_cast<float*>(out_data),
-                                        {lodx_cpu.get(), lod_len, nullptr},
-                                        {lody_cpu.get(), lod_len, nullptr},
-                                        {lodref_cpu.get(), lod_len, nullptr},
+                                        {lodx_cpu_.get(), lod_len, nullptr},
+                                        {lody_cpu_.get(), lod_len, nullptr},
+                                        {lodref_cpu_.get(), lod_len, nullptr},
                                         dims);
 
   CHECK_EQ(r, 0);

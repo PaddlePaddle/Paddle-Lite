@@ -32,9 +32,9 @@ class SequenceExpandCompute : public KernelLite<TARGET(kXPU), PType> {
   void Run() override;
 
  private:
-  std::unique_ptr<int[]> lodx_cpu;
-  std::unique_ptr<int[]> lody_cpu;
-  std::unique_ptr<int[]> lodref_cpu;
+  std::unique_ptr<int[]> lodx_cpu_;
+  std::unique_ptr<int[]> lody_cpu_;
+  std::unique_ptr<int[]> lodref_cpu_;
 };
 
 }  // namespace xpu

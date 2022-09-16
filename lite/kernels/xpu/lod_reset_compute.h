@@ -21,8 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-class LodResetCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class LodResetCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
   using param_t = operators::LodResetParam;
 

@@ -22,8 +22,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-void LodResetCompute<T>::Run() {
+void LodResetCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -65,33 +64,11 @@ void LodResetCompute<T>::Run() {
 
 REGISTER_LITE_KERNEL(lod_reset,
                      kXPU,
-                     kFloat,
+                     kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::LodResetCompute<float>,
-                     float32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+                     paddle::lite::kernels::xpu::LodResetCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(lod_reset,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::LodResetCompute<int>,
-                     int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(lod_reset,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::LodResetCompute<int64_t>,
-                     int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

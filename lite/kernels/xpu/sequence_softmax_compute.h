@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUSequenceSoftmaxCompute
+class SequenceSoftmaxCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequenceSoftmaxParam;
@@ -31,7 +31,7 @@ class XPUSequenceSoftmaxCompute
   void Run() override;
 
  private:
-  std::unique_ptr<int[]> lod_cpu;
+  std::unique_ptr<int[]> lod_cpu_;
 };
 
 }  // namespace xpu

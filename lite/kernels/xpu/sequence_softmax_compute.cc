@@ -24,30 +24,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void XPUSequenceSoftmaxCompute::PrepareForRun() {
-  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+void SequenceSoftmaxCompute::PrepareForRun() {
+  lod_cpu_.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
-void sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out) {
-  int seq_num = seq_offset.size() - 1;
-  for (int i = 0; i < seq_num; i++) {
-    float seq_max = input[seq_offset[i]];
-    float exp_sum = 0.f;
-    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
-      seq_max = std::max(seq_max, input[j]);
-    }
-    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
-      exp_sum += exp(input[j] - seq_max);
-    }
-    for (int j = seq_offset[i]; j < seq_offset[i + 1]; j++) {
-      out[j] = exp(input[j] - seq_max) / exp_sum;
-    }
-  }
-}
-
-void XPUSequenceSoftmaxCompute::Run() {
+void SequenceSoftmaxCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto* in = param.X;
@@ -55,7 +36,7 @@ void XPUSequenceSoftmaxCompute::Run() {
   // get lod
   auto seq_offset = in->lod()[0];
   for (size_t i = 0; i < seq_offset.size(); ++i) {
-    lod_cpu[i] = seq_offset[i];
+    lod_cpu_[i] = seq_offset[i];
   }
   // get shape
   auto input_dims = in->dims();
@@ -70,7 +51,7 @@ void XPUSequenceSoftmaxCompute::Run() {
                                     out->mutable_data<float>(TARGET(kXPU)),
                                     xshape,
                                     0,
-                                    {lod_cpu.get(), seq_num, nullptr});
+                                    {lod_cpu_.get(), seq_num, nullptr});
   CHECK_EQ(r, 0);
 }
 
@@ -83,7 +64,7 @@ REGISTER_LITE_KERNEL(sequence_softmax,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUSequenceSoftmaxCompute,
+                     paddle::lite::kernels::xpu::SequenceSoftmaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

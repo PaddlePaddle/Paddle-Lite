@@ -112,10 +112,10 @@ void test_sequence_softmax(Place place) {
 
 TEST(SequenceSoftmax, precision) {
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  place = TARGET(kHost);
-#elif defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif
