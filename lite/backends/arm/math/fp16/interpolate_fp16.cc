@@ -142,8 +142,15 @@ void bilinear_interp(const float16_t* src,
   int sx = 0;
   int sy = 0;
   if (with_align) {
-    scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
-    scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
+    if (w_out - 1 > 0 && w_in - 1 > 0)
+      scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
+    else
+      scale_x = 1.f;
+    if (h_out - 1 > 0 && h_in - 1 > 0)
+      scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
+    else
+      scale_y = 1.f;
+
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
       fx = dx * scale_x;
