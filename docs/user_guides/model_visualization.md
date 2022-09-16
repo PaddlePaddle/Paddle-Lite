@@ -164,7 +164,7 @@ I0924 10:50:12.715770 122828 op_lite.cc:89] pick kernel for subgraph host/float/
 
 ```bash
 # 此txt配置文件文件中的内容为 batch_norm
-$ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_config_file.txt
+$ export SUBGRAPH_PARTITION_CONFIG_FILE=./subgraph_partition_config_file.txt
 $ export GLOG_v=5 # 继续打开Lite的Debug Log信息
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \

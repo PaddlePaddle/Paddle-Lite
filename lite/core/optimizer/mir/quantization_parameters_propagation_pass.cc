@@ -42,7 +42,7 @@ ReadAutoCompleteScaleConfigsFromEnv() {
     }
   }
   if (data.empty()) {
-    data = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_DATA);
+    data = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER);
   }
   if (data.empty()) return std::unordered_map<std::string, float>();
   const auto& lines = Split(data, "\n");
