@@ -197,8 +197,8 @@ void bilinear_interp(const float16_t* src,
       beta[dy * 2 + 1] = static_cast<float16_t>(fy);
     }
   }
-  float16_t* rowsbuf0 = new float16_t[w_out];
-  float16_t* rowsbuf1 = new float16_t[w_out];
+  float16_t* rowsbuf0 = new float16_t[static_cast<size_t>(w_out)];
+  float16_t* rowsbuf1 = new float16_t[static_cast<size_t>(w_out)];
   float16_t* rows0 = rowsbuf0;
   float16_t* rows1 = rowsbuf1;
   // output w , h boundary
