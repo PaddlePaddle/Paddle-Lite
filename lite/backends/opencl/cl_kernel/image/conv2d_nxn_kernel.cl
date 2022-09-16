@@ -1,11 +1,27 @@
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
 #include <cl_common.h>
 
-__kernel void conv2d_7x7(__private const int global_size_dim0,
+__kernel void conv2d_nxn(__private const int global_size_dim0,
                          __private const int global_size_dim1,
                          __private const int global_size_dim2,
                          __read_only image2d_t input_image,
                          __read_only image2d_t filter_image,
                          __read_only image2d_t bias,
+                         __private const int filter_w,
+                         __private const int filter_h,
 #ifdef BATCH_NORM
                          __read_only image2d_t new_scale,
                          __read_only image2d_t new_biase,
@@ -56,6 +72,8 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
   in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
   in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
+  const int filter_w_half = filter_w >> 1;
+
 #ifdef BIASE_CH
   CL_DTYPE4 output =
       READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
@@ -74,34 +92,36 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
   for (int i = 0; i < input_c; ++i) {
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x,
                          in_pos_in_one_block.y + batch_index * input_height);
-    for (int j = 0; j < 7; j++) {
-      for (int k = 0; k < 7; k++) {
+    for (int j = 0; j < filter_h; j++) {
+      for (int k = 0; k < filter_w; k++) {
         input = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
-                          (int2)(pos_in.x + (j - 3) * dilation,
-                                 pos_in.y + (k - 3) * dilation)),
+                          (int2)(pos_in.x + (j - filter_w_half) * dilation,
+                                 pos_in.y + (k - filter_w_half) * dilation)),
             (CL_DTYPE4)(0.0f),
-            in_pos_in_one_block.x + (j - 3) * dilation < 0 ||
-                in_pos_in_one_block.y + (k - 3) * dilation < 0 ||
-                in_pos_in_one_block.x + (j - 3) * dilation >= input_width ||
-                in_pos_in_one_block.y + (k - 3) * dilation >= input_height);
-        int filter_h = k;
-        int filter_w = j;
-        int filter_c = i;
+            in_pos_in_one_block.x + (j - filter_w_half) * dilation < 0 ||
+                in_pos_in_one_block.y + (k - filter_w_half) * dilation < 0 ||
+                in_pos_in_one_block.x + (j - filter_w_half) * dilation >=
+                    input_width ||
+                in_pos_in_one_block.y + (k - filter_w_half) * dilation >=
+                    input_height);
+        int filter_h_id = k;
+        int filter_w_id = j;
+        int filter_c_id = i;
 
-        filter_pos0.x = filter_c * 7 + filter_w;
-        filter_pos0.y = filter_n0 * 7 + filter_h;
+        filter_pos0.x = filter_c_id * filter_w + filter_w_id;
+        filter_pos0.y = filter_n0 * filter_h + filter_h_id;
 
-        filter_pos1.x = filter_c * 7 + filter_w;
-        filter_pos1.y = filter_n1 * 7 + filter_h;
+        filter_pos1.x = filter_c_id * filter_w + filter_w_id;
+        filter_pos1.y = filter_n1 * filter_h + filter_h_id;
 
-        filter_pos2.x = filter_c * 7 + filter_w;
-        filter_pos2.y = filter_n2 * 7 + filter_h;
+        filter_pos2.x = filter_c_id * filter_w + filter_w_id;
+        filter_pos2.y = filter_n2 * filter_h + filter_h_id;
 
-        filter_pos3.x = filter_c * 7 + filter_w;
-        filter_pos3.y = filter_n3 * 7 + filter_h;
+        filter_pos3.x = filter_c_id * filter_w + filter_w_id;
+        filter_pos3.y = filter_n3 * filter_h + filter_h_id;
 
         filter[0] =
             READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos0);
