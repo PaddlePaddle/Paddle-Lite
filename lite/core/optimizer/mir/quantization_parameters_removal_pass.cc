@@ -111,7 +111,6 @@ std::set<Node*> QuantizationParametersRemovalPass::
     if (node_info.size() > 2) {
       out_vars_name = Split(node_info.at(2), ",");
     }
-
     for (auto& node : graph->mutable_nodes()) {
       if (node.IsArg()) continue;
       auto stmt = node.stmt();
@@ -122,9 +121,7 @@ std::set<Node*> QuantizationParametersRemovalPass::
           out_vars_name.size() > out_nodes.size()) {
         continue;
       }
-
       bool matched = true;
-
       for (auto in_var_name : in_vars_name) {
         bool find_var = false;
         for (auto* in_node : in_nodes) {
