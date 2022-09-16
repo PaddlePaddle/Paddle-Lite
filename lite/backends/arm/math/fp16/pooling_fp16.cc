@@ -111,8 +111,8 @@ void pooling_avg_fp16_adaptive_exclusive_p0(POOLING_PARAM) {
               sum1 = vadd_f16(vld1_f16(line1 + kw), sum1);
             }
           }
-          float16x8_t vsum = vpaddq_f16(sum, sum);
-          float16x4_t vsum_half = vadd_f16(vget_low_f16(vsum), sum1);
+          float16x4_t vsum = vadd_f16(vget_low_f16(sum), vget_high_f16(sum));
+          float16x4_t vsum_half = vadd_f16(vsum, sum1);
           vsum_half = vpadd_f16(vsum_half, vsum_half);
           vsum_half = vpadd_f16(vsum_half, vsum_half);
           output[0] = vsum_half[0] * kernel_size;
