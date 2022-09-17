@@ -247,6 +247,7 @@ __kernel void fc_gemv_naive(__global const CL_DTYPE* a,
 // a: param.input  {M, K}
 // b: param.w      {K, N}
 // c: param.output {M, N}
+/*
 __kernel void fc_gemv_1x4(__global const float* a,
                           __global const float* b,
                           __global const float* bias,
@@ -347,11 +348,13 @@ __kernel void fc_gemv_1x4(__global const float* a,
     }
   }
 }
+*/
 
 // fc_gemm_4x4: for fc with M = 1
 // a: param.input  {M, K}
 // b: param.w      {K, N}
 // c: param.output {M, N}
+/*
 __kernel void fc_gemm_4x4(__global const float* a,
                           __global const float* b,
                           __global const float* bias,
@@ -448,6 +451,218 @@ __kernel void fc_gemm_4x4(__global const float* a,
 #endif
         c[ridx * N + cidx] = activation(c0, alpha0);
       }
+    }
+  }
+}
+*/
+
+__kernel void adreno_gemm_4x4(__global const CL_DTYPE* a,
+                              __read_only image2d_t b,
+                              __global const CL_DTYPE* bias,
+                              __global CL_DTYPE* c,
+                              const int M,
+                              const int N,
+                              const int K,
+                              __global const CL_DTYPE* alpha) {
+  const int idy = get_global_id(0) << 2;  // id: [0, M>>2) height of out == M
+  const int idx = get_global_id(1);       // id: [0, N>>2) width of out == N
+
+  if ((idx << 2) >= N || idy >= M) return;
+
+  CL_COMPUTE_DTYPE4 bias0 = bias ? vload4(idx, bias) : (CL_COMPUTE_DTYPE4)0;
+  CL_COMPUTE_DTYPE16 c_v16 =
+      (CL_COMPUTE_DTYPE16)(bias0.s0123, bias0.s0123, bias0.s0123, bias0.s0123);
+
+  CL_COMPUTE_DTYPE8 a0, a1, a2, a3;
+  CL_COMPUTE_DTYPE4 b0 =
+      READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, 0));
+  CL_COMPUTE_DTYPE4 b1 =
+      READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, 1));
+  __global const CL_DTYPE* A0 = a + idy * K;
+  __global const CL_DTYPE* A1 = a + ((idy + 1) < M ? (idy + 1) : (M - 1)) * K;
+  __global const CL_DTYPE* A2 = a + ((idy + 2) < M ? (idy + 2) : (M - 1)) * K;
+  __global const CL_DTYPE* A3 = a + ((idy + 3) < M ? (idy + 3) : (M - 1)) * K;
+
+  int p = 0;
+  for (; p + 8 < K; p += 8) {
+    a0 = CONVERT_TYPE_TO(vload8(0, A0 + p), CL_COMPUTE_DTYPE8);
+    a1 = CONVERT_TYPE_TO(vload8(0, A1 + p), CL_COMPUTE_DTYPE8);
+    a2 = CONVERT_TYPE_TO(vload8(0, A2 + p), CL_COMPUTE_DTYPE8);
+    a3 = CONVERT_TYPE_TO(vload8(0, A3 + p), CL_COMPUTE_DTYPE8);
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s0,
+                                     (CL_COMPUTE_DTYPE4)a1.s0,
+                                     (CL_COMPUTE_DTYPE4)a2.s0,
+                                     (CL_COMPUTE_DTYPE4)a3.s0),
+                (CL_COMPUTE_DTYPE16)(b0.s0123, b0.s0123, b0.s0123, b0.s0123),
+                c_v16);
+
+    b0 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 2));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s1,
+                                     (CL_COMPUTE_DTYPE4)a1.s1,
+                                     (CL_COMPUTE_DTYPE4)a2.s1,
+                                     (CL_COMPUTE_DTYPE4)a3.s1),
+                (CL_COMPUTE_DTYPE16)(b1.s0123, b1.s0123, b1.s0123, b1.s0123),
+                c_v16);
+
+    b1 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 3));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s2,
+                                     (CL_COMPUTE_DTYPE4)a1.s2,
+                                     (CL_COMPUTE_DTYPE4)a2.s2,
+                                     (CL_COMPUTE_DTYPE4)a3.s2),
+                (CL_COMPUTE_DTYPE16)(b0.s0123, b0.s0123, b0.s0123, b0.s0123),
+                c_v16);
+
+    b0 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 4));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s3,
+                                     (CL_COMPUTE_DTYPE4)a1.s3,
+                                     (CL_COMPUTE_DTYPE4)a2.s3,
+                                     (CL_COMPUTE_DTYPE4)a3.s3),
+                (CL_COMPUTE_DTYPE16)(b1.s0123, b1.s0123, b1.s0123, b1.s0123),
+                c_v16);
+    b1 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 5));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s4,
+                                     (CL_COMPUTE_DTYPE4)a1.s4,
+                                     (CL_COMPUTE_DTYPE4)a2.s4,
+                                     (CL_COMPUTE_DTYPE4)a3.s4),
+                (CL_COMPUTE_DTYPE16)(b0.s0123, b0.s0123, b0.s0123, b0.s0123),
+                c_v16);
+
+    b0 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 6));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s5,
+                                     (CL_COMPUTE_DTYPE4)a1.s5,
+                                     (CL_COMPUTE_DTYPE4)a2.s5,
+                                     (CL_COMPUTE_DTYPE4)a3.s5),
+                (CL_COMPUTE_DTYPE16)(b1.s0123, b1.s0123, b1.s0123, b1.s0123),
+                c_v16);
+    b1 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 7));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s6,
+                                     (CL_COMPUTE_DTYPE4)a1.s6,
+                                     (CL_COMPUTE_DTYPE4)a2.s6,
+                                     (CL_COMPUTE_DTYPE4)a3.s6),
+                (CL_COMPUTE_DTYPE16)(b0.s0123, b0.s0123, b0.s0123, b0.s0123),
+                c_v16);
+    b0 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 8));
+
+    c_v16 = mad((CL_COMPUTE_DTYPE16)((CL_COMPUTE_DTYPE4)a0.s7,
+                                     (CL_COMPUTE_DTYPE4)a1.s7,
+                                     (CL_COMPUTE_DTYPE4)a2.s7,
+                                     (CL_COMPUTE_DTYPE4)a3.s7),
+                (CL_COMPUTE_DTYPE16)(b1.s0123, b1.s0123, b1.s0123, b1.s0123),
+                c_v16);
+    b1 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 9));
+  }
+  for (; p < K; p++) {
+    b0 = READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p));
+    c_v16.s0123 += (CL_COMPUTE_DTYPE4)(A0[p]) * b0;
+    c_v16.s4567 += (CL_COMPUTE_DTYPE4)(A1[p]) * b0;
+    c_v16.s89ab += (CL_COMPUTE_DTYPE4)(A2[p]) * b0;
+    c_v16.scdef += (CL_COMPUTE_DTYPE4)(A3[p]) * b0;
+  }
+
+  CL_DTYPE16 out = CONVERT_TYPE_TO(c_v16, CL_DTYPE16);
+  if (((idx << 2) + 4) <= N) {
+    if (idy < M) {
+      vstore4(out.s0123, 0, c + idy * N + (idx << 2));
+    }
+    if (idy + 1 < M) {
+      vstore4(out.s4567, 0, c + (idy + 1) * N + (idx << 2));
+    }
+    if (idy + 2 < M) {
+      vstore4(out.s89ab, 0, c + (idy + 2) * N + (idx << 2));
+    }
+    if (idy + 3 < M) {
+      vstore4(out.scdef, 0, c + (idy + 3) * N + (idx << 2));
+    }
+  } else {
+    CL_DTYPE c_v0[4] = {out.s0, out.s1, out.s2, out.s3};
+    CL_DTYPE c_v4[4] = {out.s4, out.s5, out.s6, out.s7};
+    CL_DTYPE c_v8[4] = {out.s8, out.s9, out.sa, out.sb};
+    CL_DTYPE c_vc[4] = {out.sc, out.sd, out.se, out.sf};
+    for (int i = idx << 2; i < N; i++) {
+      int c_index = i - (idx << 2);
+      if (idy < M) {
+        c[idy * N + i] = c_v0[c_index];
+      }
+      if (idy + 1 < M) {
+        c[(idy + 1) * N + i] = c_v4[c_index];
+      }
+      if (idy + 2 < M) {
+        c[(idy + 2) * N + i] = c_v8[c_index];
+      }
+      if (idy + 3 < M) {
+        c[(idy + 3) * N + i] = c_vc[c_index];
+      }
+    }
+  }
+}
+
+__kernel void adreno_gemv_1x4(__global const CL_DTYPE* a,
+                              __read_only image2d_t b,
+                              __global const CL_DTYPE* bias,
+                              __global CL_DTYPE* c,
+                              const int M,
+                              const int N,
+                              const int K,
+                              __global const CL_DTYPE* alpha) {
+  const int idx = get_global_id(0);  // id: [0, M>>2) height of out == M
+
+  if ((idx << 2) >= N) return;
+
+  CL_DTYPE4 bias0 = bias ? vload4(idx, bias) : (CL_DTYPE4)0;
+  CL_DTYPE4 c_v4 = bias0;
+
+  CL_DTYPE8 a0, a1, a2, a3;
+  CL_DTYPE4 b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, 0));
+  CL_DTYPE4 b1 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, 1));
+  __global const CL_DTYPE* A0 = a;
+
+  int p = 0;
+  for (; p + 8 < K; p += 8) {
+    a0 = vload8(0, A0 + p);
+
+    c_v4 = mad((CL_DTYPE4)(a0.s0), b0, c_v4);
+    b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 2));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s1), b1, c_v4);
+    b1 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 3));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s2), b0, c_v4);
+    b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 4));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s3), b1, c_v4);
+    b1 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 5));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s4), b0, c_v4);
+    b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 6));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s5), b1, c_v4);
+    b1 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 7));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s6), b0, c_v4);
+    b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 8));
+
+    c_v4 = mad((CL_DTYPE4)(a0.s7), b1, c_v4);
+    b1 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p + 9));
+  }
+  for (; p < K; p++) {
+    b0 = READ_IMG_TYPE(CL_DTYPE_CHAR, b, SAMPLER, (int2)(idx, p));
+    c_v4 += (CL_DTYPE4)(A0[p]) * b0;
+  }
+
+  if (((idx << 2) + 4) <= N) {
+    vstore4(c_v4, 0, c + (idx << 2));
+  } else {
+    CL_DTYPE c_v0[4] = {c_v4.s0, c_v4.s1, c_v4.s2, c_v4.s3};
+    for (int i = idx << 2; i < N; i++) {
+      int c_index = i - (idx << 2);
+      c[i] = c_v0[c_index];
     }
   }
 }

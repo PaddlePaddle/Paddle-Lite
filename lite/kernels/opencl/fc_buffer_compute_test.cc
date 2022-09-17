@@ -81,33 +81,46 @@ TEST(fc, compute) {
       for (int n = 1; n < 4; n += 1) {
 #else
 #if 0
-  const int m = 1;
-  const int k = 1024;
-  const int n = 1000;
+  const int m = 4;
+  const int k = 16;
+  const int n = 16;
 #else
   // m,k,n:2,3,1
   //       1,2,3
   //       2,1,3
   //       1,2,3
-  const int m = 1;
-  const int k = 2;
-  const int n = 3;
+  const int m = 15;    // 15
+  const int k = 640;   // 640
+  const int n = 2048;  // 2048
 #endif
 #endif
         LOG(INFO) << "m=" << m << " n=" << n << " k=" << k;
 
+        lite_api::CLPrecisionType p =
+            lite_api::CLPrecisionType::CL_PRECISION_FP16;
+        CLRuntime::Global()->set_precision(p);
+        const bool fp16_flag =
+            (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
         auto kernels = KernelRegistry::Global().Create(
-            "fc", TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW));
+            "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
         ASSERT_FALSE(kernels.empty());
         auto kernel = std::move(kernels.front());
 
-        lite::Tensor x, w, bias, out, out_ref;
+        lite::Tensor x, w, bias, out, out_ref, x_h, out_h;
         operators::FcParam param;
-        param.input = &x;
-        param.w = &w;
-        param.bias = &bias;
-        param.output = &out;
-        param.in_num_col_dims = 1;
+        if (fp16_flag) {
+          param.input = &x_h;
+          param.w = &w;
+          param.bias = &bias;
+          param.output = &out_h;
+          param.in_num_col_dims = 1;
+        } else {
+          param.input = &x;
+          param.w = &w;
+          param.bias = &bias;
+          param.output = &out;
+          param.in_num_col_dims = 1;
+        }
 
         kernel->SetParam(param);
         std::unique_ptr<KernelContext> fc_context(new KernelContext);
@@ -121,22 +134,29 @@ TEST(fc, compute) {
         const DDim out_dim = DDim(std::vector<DDim::value_type>{m, n});
 
         x.Resize(x_dim);
+        x_h.Resize(x_dim);
         w.Resize(w_dim);
         bias.Resize(bias_dim);
         out.Resize(out_dim);
+        out_h.Resize(out_dim);
         out_ref.Resize(out_dim);
 
         VLOG(2) << "out.dims():" << out.dims() << ", out_dim:" << out_dim;
 
+        auto* x_data_h = x_h.mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL));
+        auto* out_data_h =
+            out_h.mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL));
         auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        auto* out_data = out.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+
         auto* w_data = w.mutable_data<float>();
         auto* bias_data = bias.mutable_data<float>();
-        auto* out_data = out.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
         std::default_random_engine engine;
         std::uniform_real_distribution<float> dist(-5, 5);
 
         std::vector<float> x_source(x_dim.production());
+        std::vector<half_t> x_source_half(x_dim.production());
         std::vector<float> w_source(w_dim.production());
         std::vector<float> bias_source(bias_dim.production());
 
@@ -147,6 +167,7 @@ TEST(fc, compute) {
 
         for (size_t i = 0; i < x_dim.production(); ++i) {
           x_source[i] = static_cast<int>(dist(engine));
+          x_source_half[i] = Float2Half(x_source[i]);
         }
         for (size_t i = 0; i < w_dim.production(); ++i) {
           w_source[i] = static_cast<int>(dist(engine));
@@ -156,11 +177,15 @@ TEST(fc, compute) {
           bias_source[i] = 10;  // static_cast<int>(dist(engine));
           bias_data[i] = 10;
         }
+        if (fp16_flag) {
+          x_size = x_dim.production() * sizeof(half_t);
+          TargetWrapperCL::MemcpySync(
+              x_data_h, x_source_half.data(), x_size, IoDirection::HtoD);
+        } else {
+          TargetWrapperCL::MemcpySync(
+              x_data, x_source.data(), x_size, IoDirection::HtoD);
+        }
 
-        TargetWrapperCL::MemcpySync(
-            x_data, x_source.data(), x_size, IoDirection::HtoD);
-
-        // run opencl kernel
         kernel->Launch();
         CLRuntime::Global()->command_queue().finish();
 
@@ -184,13 +209,21 @@ TEST(fc, compute) {
               << "Could not find the sync event for the target cl tensor.";
         }
 #endif
-
         std::vector<float> out_data_from_gpu(out_dim.production());
-        TargetWrapperCL::MemcpySync(out_data_from_gpu.data(),
-                                    out_data,
-                                    out_data_from_gpu.size() * sizeof(float),
-                                    IoDirection::DtoH);
-
+        std::vector<float> output_half2float(out_dim.production());
+        std::vector<half_t> out_data_from_gpu_half(out_dim.production());
+        if (fp16_flag) {
+          TargetWrapperCL::MemcpySync(
+              out_data_from_gpu_half.data(),
+              out_data_h,
+              out_data_from_gpu_half.size() * sizeof(half_t),
+              IoDirection::DtoH);
+        } else {
+          TargetWrapperCL::MemcpySync(out_data_from_gpu.data(),
+                                      out_data,
+                                      out_data_from_gpu.size() * sizeof(float),
+                                      IoDirection::DtoH);
+        }
         // run cpu ref
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
         gemm_bias<float>(x_source.data(),
@@ -201,31 +234,63 @@ TEST(fc, compute) {
                          n,
                          bias_source.data(),
                          out_ref_data);
+        // output_half2float
+        for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
+          output_half2float[eidx] =
+              Half2Float(out_data_from_gpu_half.data()[eidx]);
+        }
 #ifdef PRINT_RESULT
         PrintData("x", static_cast<float*>(x_source.data()), m, k);
         PrintData("w", static_cast<float*>(w_source.data()), k, n);
         PrintData("bias", static_cast<float*>(bias_source.data()), 1, n);
         PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n);
-        PrintData(
-            "gpu_out", static_cast<float*>(out_data_from_gpu.data()), m, n);
+        if (fp16_flag) {
+          PrintData(
+              "gpu_half", static_cast<float*>(output_half2float.data()), m, n);
+        } else {
+          PrintData("gpu", static_cast<float*>(out_data_from_gpu.data()), m, n);
+        }
 #endif
-
-        for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
-          auto abs_diff = COMPUTE_ABS_DIFF(out_ref_data[eidx],
-                                           out_data_from_gpu.data()[eidx]);
-          auto relative_diff = COMPUTE_RELATIVE_DIFF(
-              out_ref_data[eidx], out_data_from_gpu.data()[eidx]);
-          EXPECT_EQ(
-              (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
-              true);
-          if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
-            LOG(FATAL) << "error idx:" << eidx << ", out_ref_data[" << eidx
-                       << "]:" << out_ref_data[eidx]
-                       << ", out_data_from_gpu.data()[" << eidx
-                       << "]:" << out_data_from_gpu.data()[eidx]
-                       << " abs_diff:" << abs_diff
-                       << " relative_diff:" << relative_diff
-                       << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+        if (fp16_flag) {
+          for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
+            auto abs_diff = COMPUTE_ABS_DIFF(
+                out_ref_data[eidx],
+                Half2Float(out_data_from_gpu_half.data()[eidx]));
+            auto relative_diff = COMPUTE_RELATIVE_DIFF(
+                out_ref_data[eidx],
+                Half2Float(out_data_from_gpu_half.data()[eidx]));
+            EXPECT_EQ(
+                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+                true);
+            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+              LOG(FATAL) << "error idx:" << eidx << ", out_ref_data[" << eidx
+                         << "]:" << out_ref_data[eidx]
+                         << ", Half2Float_out_data_from_gpu_half.data()["
+                         << eidx << "]:"
+                         << Half2Float(out_data_from_gpu_half.data()[eidx])
+                         << " abs_diff:" << abs_diff
+                         << " relative_diff:" << relative_diff
+                         << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+            }
+          }
+        } else {
+          for (int eidx = 0; eidx < out_dim.production(); ++eidx) {
+            auto abs_diff = COMPUTE_ABS_DIFF(out_ref_data[eidx],
+                                             out_data_from_gpu.data()[eidx]);
+            auto relative_diff = COMPUTE_RELATIVE_DIFF(
+                out_ref_data[eidx], out_data_from_gpu.data()[eidx]);
+            EXPECT_EQ(
+                (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+                true);
+            if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+              LOG(FATAL) << "error idx:" << eidx << ", out_ref_data[" << eidx
+                         << "]:" << out_ref_data[eidx]
+                         << ", out_data_from_gpu.data()[" << eidx
+                         << "]:" << out_data_from_gpu.data()[eidx]
+                         << " abs_diff:" << abs_diff
+                         << " relative_diff:" << relative_diff
+                         << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+            }
           }
         }
 
@@ -239,4 +304,4 @@ TEST(fc, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(fc, kOpenCL, kFP16, kNCHW, def);
