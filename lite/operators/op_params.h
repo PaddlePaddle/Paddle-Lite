@@ -628,6 +628,15 @@ struct FillConstantBatchSizeLikeParam : ParamBase {
   bool force_cpu{false};
 };
 
+// eye
+struct EyeParam : ParamBase {
+  lite::Tensor* out{nullptr};
+
+  int64_t num_rows{0};
+  int64_t num_columns{0};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+};
+
 //
 struct FakeQuantizeMovingAvgMaxAbsParam : ParamBase {
   const lite::Tensor* x{};
