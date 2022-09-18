@@ -894,134 +894,9 @@ void prepackA_trans_8x16(float16_t *out,
 /**
 * \brief input data is transpose
 * for arm-v7a, transform data to block x k x 12 layout
-* for arm-v8a, transform data to block x k x 16 layout
+* for arm-v8a, transform data to block x k x 24 layout
 */
 #ifdef __aarch64__
-// original version
-// void loadb(float16_t *out,
-//            const float16_t *in,
-//            const int ldin,
-//            const int k0,
-//            const int kmax,
-//            const int n0,
-//            const int nmax) {
-//   uint16_t *outptr = reinterpret_cast<uint16_t *>(out);
-//   const uint16_t *inptr =
-//       reinterpret_cast<const uint16_t *>(in) + k0 * ldin + n0;
-//   uint16_t mask_buffer[4] = {0, 1, 2, 3};
-//   int x_len = nmax - n0;
-//   int y_len = kmax - k0;
-//   int cnt = x_len >> 4;
-//   int right_remain = x_len & 15;
-
-//   uint16_t *outptr_row = outptr;
-//   int rem_cnt = right_remain >> 2;
-//   int rem_rem = right_remain & 3;
-//   int cnt_y = 4 * (y_len / 4);
-//   int cnt_16 = (cnt > 0) ? 16 : 0;
-//   int cnt_4 = (rem_cnt > 0) ? 4 : 0;
-//   int cnt_1 = (rem_rem > 0) ? 1 : 0;
-//   int stride_16 = cnt_16 * y_len;
-//   int stride_4 = cnt_4 * y_len;
-//   int stride_1 = cnt_1 * y_len;
-//   int stride_w_4 = stride_16 * cnt;
-//   int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
-
-//   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
-//     const uint16_t *ptr0 = inptr + y * ldin;
-//     const uint16_t *ptr1 = ptr0 + ldin;
-//     const uint16_t *ptr2 = ptr1 + ldin;
-//     const uint16_t *ptr3 = ptr2 + ldin;
-
-//     uint16_t *outptr_row_col = outptr_row + y * cnt_16;
-//     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
-//     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
-//     if (cnt > 0) {
-//       for (int i = 0; i < cnt; i++) {
-//         uint16x8_t v0 = vld1q_u16(ptr0);
-//         uint16x8_t v01 = vld1q_u16(ptr0 + 8);
-//         uint16x8_t v1 = vld1q_u16(ptr1);
-//         uint16x8_t v11 = vld1q_u16(ptr1 + 8);
-//         uint16x8_t v2 = vld1q_u16(ptr2);
-//         uint16x8_t v21 = vld1q_u16(ptr2 + 8);
-//         vst1q_u16(outptr_row_col, v0);
-//         uint16x8_t v3 = vld1q_u16(ptr3);
-//         vst1q_u16(outptr_row_col + 8, v01);
-//         uint16x8_t v31 = vld1q_u16(ptr3 + 8);
-//         vst1q_u16(outptr_row_col + 16, v1);
-//         ptr0 += 16;
-//         vst1q_u16(outptr_row_col + 24, v11);
-//         ptr1 += 16;
-//         vst1q_u16(outptr_row_col + 32, v2);
-//         ptr2 += 16;
-//         vst1q_u16(outptr_row_col + 40, v21);
-//         ptr3 += 16;
-//         vst1q_u16(outptr_row_col + 48, v3);
-//         vst1q_u16(outptr_row_col + 56, v31);
-//         outptr_row_col += stride_16;
-//       }
-//     }
-//     if (rem_cnt > 0) {
-//       for (int i = 0; i < rem_cnt; i++) {
-//         uint16x4_t v0 = vld1_u16(ptr0);
-//         uint16x4_t v1 = vld1_u16(ptr1);
-//         uint16x4_t v2 = vld1_u16(ptr2);
-//         uint16x4_t v3 = vld1_u16(ptr3);
-//         ptr0 += 4;
-//         vst1_u16(outptr_row_4, v0);
-//         ptr1 += 4;
-//         vst1_u16(outptr_row_4 + 4, v1);
-//         ptr2 += 4;
-//         vst1_u16(outptr_row_4 + 8, v2);
-//         ptr3 += 4;
-//         vst1_u16(outptr_row_4 + 12, v3);
-//         outptr_row_4 += stride_4;
-//       }
-//     }
-//     if (rem_rem > 0) {
-//       for (int i = 0; i < rem_rem; i++) {
-//         outptr_row_1[0] = *ptr0++;
-//         outptr_row_1[1] = *ptr1++;
-//         outptr_row_1[2] = *ptr2++;
-//         outptr_row_1[3] = *ptr3++;
-//         outptr_row_1 += stride_1;
-//       }
-//     }
-//   }
-//   LITE_PARALLEL_COMMON_END();
-
-//   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
-//     const uint16_t *ptr0 = inptr + y * ldin;
-//     uint16_t *outptr_row_col = outptr_row + y * cnt_16;
-//     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
-//     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
-//     if (cnt > 0) {
-//       for (int i = 0; i < cnt; i++) {
-//         uint16x8_t v0 = vld1q_u16(ptr0);
-//         uint16x8_t v1 = vld1q_u16(ptr0 + 8);
-//         ptr0 += 16;
-//         vst1q_u16(outptr_row_col, v0);
-//         vst1q_u16(outptr_row_col + 8, v1);
-//         outptr_row_col += stride_16;
-//       }
-//     }
-//     if (rem_cnt > 0) {
-//       for (int i = 0; i < rem_cnt; i++) {
-//         uint16x4_t v0 = vld1_u16(ptr0);
-//         ptr0 += 4;
-//         vst1_u16(outptr_row_4, v0);
-//         outptr_row_4 += stride_4;
-//       }
-//     }
-//     if (rem_rem > 0) {
-//       for (int i = 0; i < rem_rem; i++) {
-//         *outptr_row_1 = *ptr0++;
-//         outptr_row_1 += stride_1;
-//       }
-//     }
-//   }
-//   LITE_PARALLEL_COMMON_END();
-// }
 // 8/K -> 4/K -> 1/K  24/N -> 4/N -> 1/N
 void loadb(float16_t *out,
            const float16_t *in,
@@ -1292,164 +1167,6 @@ void loadb(float16_t *out,
   }
   LITE_PARALLEL_COMMON_END();
 }
-
-// void loadb(float16_t *out,
-//            const float16_t *in,
-//            const int ldin,  // N
-//            const int k0,
-//            const int kmax,
-//            const int n0,
-//            const int nmax) {
-//   uint16_t *outptr = reinterpret_cast<uint16_t *>(out);
-//   const uint16_t *inptr =
-//       reinterpret_cast<const uint16_t *>(in) + k0 * ldin + n0;
-//   //uint16_t mask_buffer[4] = {0, 1, 2, 3};
-//   int x_len = nmax - n0;
-//   int y_len = kmax - k0;
-//   //
-//   int xcnt_32 = x_len >> 5;
-//   int right_remain = x_len & 31;
-//   int xcnt_8 = right_remain >> 3;
-//   int xrem = right_remain & 7;
-
-//   uint16_t *outptr_row = outptr;
-//   int cnt_y = 4 * (y_len / 4);
-//   int xlen_32 = (xcnt_32 > 0) ? 32 : 0;
-//   int xlen_8 = (xcnt_8 > 0) ? 8 : 0;
-//   int xlen_1 = (xrem > 0) ? 1 : 0;
-
-//   int out_stride_32 = xlen_32 * y_len;
-//   int out_stride_8 = xlen_8 * y_len;
-//   int out_stride_1 = xlen_1 * y_len;
-//   //
-//   int stride_w_8 = out_stride_32 * xcnt_32;
-//   int stride_w_1 = stride_w_8 + out_stride_8 * xcnt_8;
-
-//   LITE_PARALLEL_COMMON_BEGIN(y, tid, cnt_y, 0, 4) {
-//     const uint16_t *ptr0 = inptr + y * ldin;
-//     const uint16_t *ptr1 = ptr0 + ldin;
-//     const uint16_t *ptr2 = ptr1 + ldin;
-//     const uint16_t *ptr3 = ptr2 + ldin;
-
-//     uint16_t *outptr_row_col = outptr_row + y * xlen_32;
-//     uint16_t *outptr_row_8 = outptr_row + stride_w_8 + y * xlen_8;
-//     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * xlen_1;
-//     if (xcnt_32 > 0) {
-//       for (int i = 0; i < xcnt_32; i++) {
-//         uint16x8_t v0 = vld1q_u16(ptr0);
-//         uint16x8_t v01 = vld1q_u16(ptr0 + 8);
-//         uint16x8_t v02 = vld1q_u16(ptr0 + 16);
-//         uint16x8_t v03 = vld1q_u16(ptr0 + 24);
-
-//         uint16x8_t v1 = vld1q_u16(ptr1);
-//         uint16x8_t v11 = vld1q_u16(ptr1 + 8);
-//         uint16x8_t v12 = vld1q_u16(ptr1 + 16);
-//         uint16x8_t v13 = vld1q_u16(ptr1 + 24);
-
-//         uint16x8_t v2 = vld1q_u16(ptr2);
-//         uint16x8_t v21 = vld1q_u16(ptr2 + 8);
-//         uint16x8_t v22 = vld1q_u16(ptr2 + 16);
-//         uint16x8_t v23 = vld1q_u16(ptr2 + 24);
-
-//         uint16x8_t v3 = vld1q_u16(ptr3);
-//         uint16x8_t v31 = vld1q_u16(ptr3 + 8);
-//         uint16x8_t v32 = vld1q_u16(ptr3 + 16);
-//         uint16x8_t v33 = vld1q_u16(ptr3 + 24);
-
-//         vst1q_u16(outptr_row_col, v0);
-//         vst1q_u16(outptr_row_col + 8, v01);
-//         vst1q_u16(outptr_row_col + 16, v02);
-//         vst1q_u16(outptr_row_col + 24, v03);
-
-//         vst1q_u16(outptr_row_col + 32, v1);
-//         vst1q_u16(outptr_row_col + 40, v11);
-//         vst1q_u16(outptr_row_col + 48, v12);
-//         vst1q_u16(outptr_row_col + 56, v13);
-
-//         vst1q_u16(outptr_row_col + 64, v2);
-//         vst1q_u16(outptr_row_col + 72, v21);
-//         vst1q_u16(outptr_row_col + 80, v22);
-//         vst1q_u16(outptr_row_col + 88, v23);
-
-//         vst1q_u16(outptr_row_col + 96, v3);
-//         vst1q_u16(outptr_row_col + 104, v31);
-//         vst1q_u16(outptr_row_col + 112, v32);
-//         vst1q_u16(outptr_row_col + 120, v33);
-
-//         ptr0 += 32;
-//         ptr1 += 32;
-//         ptr2 += 32;
-//         ptr3 += 32;
-//         // outptr point to next K*32 block
-//         outptr_row_col += out_stride_32;
-//       }
-//     }
-//     if (xcnt_8 > 0) {
-//       for (int i = 0; i < xcnt_8; i++) {
-//         uint16x8_t v0 = vld1q_u16(ptr0);
-//         uint16x8_t v1 = vld1q_u16(ptr1);
-//         uint16x8_t v2 = vld1q_u16(ptr2);
-//         uint16x8_t v3 = vld1q_u16(ptr3);
-//         ptr0 += 8;
-//         vst1q_u16(outptr_row_8, v0);
-//         ptr1 += 8;
-//         vst1q_u16(outptr_row_8 + 8, v1);
-//         ptr2 += 8;
-//         vst1q_u16(outptr_row_8 + 16, v2);
-//         ptr3 += 8;
-//         vst1q_u16(outptr_row_8 + 24, v3);
-//         // outptr point to next K*32 block
-//         outptr_row_8 += out_stride_8;
-//       }
-//     }
-//     if (xrem > 0) {
-//       for (int i = 0; i < xrem; i++) {
-//         outptr_row_1[0] = *ptr0++;
-//         outptr_row_1[1] = *ptr1++;
-//         outptr_row_1[2] = *ptr2++;
-//         outptr_row_1[3] = *ptr3++;
-//         outptr_row_1 += out_stride_1;
-//       }
-//     }
-//   }
-//   LITE_PARALLEL_COMMON_END();
-
-//   LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
-//     const uint16_t *ptr0 = inptr + y * ldin;
-//     uint16_t *outptr_row_col = outptr_row + y * xlen_32;
-//     uint16_t *outptr_row_8 = outptr_row + stride_w_8 + y * xlen_8;
-//     uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * xlen_1;
-//     if (xcnt_32 > 0) {
-//       for (int i = 0; i < xcnt_32; i++) {
-//         uint16x8_t v00 = vld1q_u16(ptr0);
-//         uint16x8_t v01 = vld1q_u16(ptr0 + 8);
-//         uint16x8_t v02 = vld1q_u16(ptr0 + 16);
-//         uint16x8_t v03 = vld1q_u16(ptr0 + 24);
-//         ptr0 += 32;
-//         vst1q_u16(outptr_row_col, v00);
-//         vst1q_u16(outptr_row_col + 8, v01);
-//         vst1q_u16(outptr_row_col + 16, v02);
-//         vst1q_u16(outptr_row_col + 24, v03);
-//         outptr_row_col += out_stride_32;
-//       }
-//     }
-//     if (xcnt_8 > 0) {
-//       for (int i = 0; i < xcnt_8; i++) {
-//         uint16x8_t v0 = vld1q_u16(ptr0);
-//         ptr0 += 8;
-//         vst1q_u16(outptr_row_8, v0);
-//         outptr_row_8 += out_stride_8;
-//       }
-//     }
-//     if (xrem > 0) {
-//       for (int i = 0; i < xrem; i++) {
-//         *outptr_row_1 = *ptr0++;
-//         outptr_row_1 += out_stride_1;
-//       }
-//     }
-//   }
-//   LITE_PARALLEL_COMMON_END();
-// }
 
 void loadb_trans(float16_t *out,
                  const float16_t *in,
@@ -2271,11 +1988,11 @@ void gemm_prepack_8x16(bool is_transB,
                        ARMContext *ctx) {
   //size_t llc_size = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   size_t llc_size = ctx->l2_cache_size() > 0 ? ctx->l2_cache_size() : 768 * 1024;
-  // size_t kernel_size =
+  // size_t micro_kernel_size =
   //     MBLOCK_FP16 * NBLOCK_FP16 + MBLOCK_FP16 * K + K * NBLOCK_FP16;
-  LOG(INFO) << " cache_size(KB): " << llc_size / 1024;
+  // LOG(INFO) << " cache_size(KB): " << llc_size / 1024;
   // LOG(INFO) << "conv1*1 M K N : " << M << " * " << K << " * " << N;
-  // LOG(INFO) << "matrix kernel size(B): " << kernel_size * 2 ;
+  // LOG(INFO) << "matrix kernel size(B): " << micro_kernel_size * 2 ;
   auto workspace = ctx->workspace_data<float16_t>();
   int threads = ctx->threads();
   //llc_size = llc_size * 9 / 10;
@@ -2303,14 +2020,15 @@ void gemm_prepack_8x16(bool is_transB,
   // float16x8_t vbeta = vdupq_n_f16(beta);
   // float16x8_t vzero = vdupq_n_f16(0.f);
 
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
+  //! MBLOCK * x (result) + MBLOCK * k (A)  + k * x (B) = l2
   X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
 
   /////////////////////////
   // x_block循环中，A的MBLOCK_FP16块以及B的NBLOCK_FP16块以及C的MBLOCK_FP16*NBLOCK_FP16保存在L1D中
   // int Kr = l1_size / (sizeof(float16_t) * (MBLOCK_FP16 + NBLOCK_FP16));
-  // LOG(INFO) << " x_block:" << x_block;
-  ///////////////////////
+  // LOG(INFO) << " x_block : " << x_block
+  //           << " Kr : " << Kr;
+  ////////////////////////
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -2429,74 +2147,54 @@ void gemm_prepack_8x16(bool is_transB,
               // entry of 4/K loop
               "0:                                 \n"
               "cmp %w[kcnt], #1                   \n"
+              "ldr q0, [%[a_ptr]], #16            \n"
+              "ldr q1, [%[a_ptr]], #16            \n"
+              "ldr d2, [%[b_ptr]], #8             \n"
+              "ldr d3, [%[b_ptr]], #8             \n"
               "prfm   pldl1keep, [%[a_ptr], #128] \n"
               "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              "prfm   pldl1keep, [%[b_ptr], #256]  \n"
               "blt 2f                             \n"
               "1:                                 \n"
               // FMLA_N00_4
-              "ldr q0, [%[a_ptr]], #16            \n"
-              "ldr d2, [%[b_ptr]], #8             \n"
-              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-              "prfm   pldl1keep, [%[b_ptr], #64]  \n"
               "fmla v8.4h,  v2.4h, v0.h[0]        \n" 
               "fmla v10.4h, v2.4h, v0.h[1]        \n" 
               "fmla v12.4h, v2.4h, v0.h[2]        \n" 
               "fmla v14.4h, v2.4h, v0.h[3]        \n"
-              "ldr q1, [%[a_ptr]], #16            \n"
-              "ldr d3, [%[b_ptr]], #8             \n"
               "fmla v16.4h, v2.4h, v0.h[4]        \n" 
               "fmla v18.4h, v2.4h, v0.h[5]        \n" 
               "fmla v20.4h, v2.4h, v0.h[6]        \n" 
               "fmla v22.4h, v2.4h, v0.h[7]        \n"
-              // FMLA_N11_4
+              "ldr d2, [%[b_ptr]], #8             \n"
+              "ldr q0, [%[a_ptr]], #16            \n"
               "fmla v8.4h,  v3.4h, v1.h[0]        \n" 
               "fmla v10.4h, v3.4h, v1.h[1]        \n" 
               "fmla v12.4h, v3.4h, v1.h[2]        \n" 
               "fmla v14.4h, v3.4h, v1.h[3]        \n"
-              "ldr q6, [%[a_ptr]], #16            \n"
-              "ldr d4, [%[b_ptr]], #8             \n"
               "fmla v16.4h, v3.4h, v1.h[4]        \n" 
               "fmla v18.4h, v3.4h, v1.h[5]        \n" 
               "fmla v20.4h, v3.4h, v1.h[6]        \n" 
               "fmla v22.4h, v3.4h, v1.h[7]        \n"
-              // FMLA_N22_4
-              "fmla v8.4h,  v4.4h, v6.h[0]        \n" 
-              "fmla v10.4h, v4.4h, v6.h[1]        \n" 
-              "fmla v12.4h, v4.4h, v6.h[2]        \n" 
-              "fmla v14.4h, v4.4h, v6.h[3]        \n"
-              "ldr q7, [%[a_ptr]], #16            \n"
-              "ldr d5, [%[b_ptr]], #8             \n"
-              "fmla v16.4h, v4.4h, v6.h[4]        \n" 
-              "fmla v18.4h, v4.4h, v6.h[5]        \n" 
-              "fmla v20.4h, v4.4h, v6.h[6]        \n" 
-              "fmla v22.4h, v4.4h, v6.h[7]        \n"
-              // FMLA_N33_4
-              "fmla v8.4h,  v5.4h, v7.h[0]        \n" 
-              "fmla v10.4h, v5.4h, v7.h[1]        \n" 
-              "fmla v12.4h, v5.4h, v7.h[2]        \n" 
-              "fmla v14.4h, v5.4h, v7.h[3]        \n"
               "subs %w[kcnt], %w[kcnt], #1        \n"
-              "fmla v16.4h, v5.4h, v7.h[4]        \n" 
-              "fmla v18.4h, v5.4h, v7.h[5]        \n" 
-              "fmla v20.4h, v5.4h, v7.h[6]        \n" 
-              "fmla v22.4h, v5.4h, v7.h[7]        \n"
-              // next 4/K loop
-              "prfm   pldl1keep, [%[a_ptr], #64] \n"
-              "prfm   pldl1keep, [%[b_ptr], #64] \n"
+              "ldr q1, [%[a_ptr]], #16            \n"
+              "ldr d3, [%[b_ptr]], #8             \n"
+              // next 2/K loop
+              "prfm   pldl1keep, [%[a_ptr], #256] \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
               "bne 1b                             \n"
-              // tail == 1 or tail == 2 or tail ==3 or tail==4
+              // tail == 1 or tail == 2 
               "2:                                 \n"
-              "ldr q0, [%[a_ptr]], #16            \n"
-              "ldr d2, [%[b_ptr]], #8             \n"
               "fmla v8.4h,  v2.4h, v0.h[0]        \n" 
               "fmla v10.4h, v2.4h, v0.h[1]        \n" 
               "fmla v12.4h, v2.4h, v0.h[2]        \n" 
               "fmla v14.4h, v2.4h, v0.h[3]        \n"
-              "subs %w[tail], %w[tail], #1        \n"
               "fmla v16.4h, v2.4h, v0.h[4]        \n" 
               "fmla v18.4h, v2.4h, v0.h[5]        \n" 
               "fmla v20.4h, v2.4h, v0.h[6]        \n" 
               "fmla v22.4h, v2.4h, v0.h[7]        \n"
+              "subs %w[tail], %w[tail], #1        \n"
+              "ldr q0, [%[a_ptr]], #16            \n"
+              "ldr d2, [%[b_ptr]], #8             \n"
               "prfm   pldl1keep, [%[a_ptr], #128] \n"
               "prfm   pldl1keep, [%[b_ptr], #128] \n"
               "bne 2b                            \n"
@@ -2612,42 +2310,38 @@ void gemm_prepack_8x16(bool is_transB,
               "fmla v20.4h, v5.4h, %[vbeta].4h    \n"
               "fmla v22.4h, v7.4h, %[vbeta].4h    \n"
               "0:                                 \n"
-              "cmp %w[kcnt], #1                   \n"
+              "cmp %w[kcnt], #1                    \n"
               "movi v4.8h, #0                     \n"
               "movi v5.8h, #0                     \n"
-              "movi v6.8h, #0                     \n"
-              "movi v7.8h, #0                     \n"
-              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-              "prfm   pldl1keep, [%[b_ptr], #64]  \n"
-              "blt 2f                             \n"
-              "1:                                 \n"
-              // A:8*4 B:4*1 C:8*1
               "ldp q0, q1, [%[a_ptr]], #32        \n"
               "ldr d2, [%[b_ptr]]                 \n"
-              "ldp q15, q17, [%[a_ptr]], #32        \n"
-              "add %[b_ptr], %[b_ptr], #8         \n"
+              "blt 2f                             \n"
+              "1:                                 \n"
+              // unrool 0
+              "add %[b_ptr], %[b_ptr], #4         \n"
+              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              "subs %w[cnt], %w[cnt], #1          \n"
               "fmla v4.8h, v0.8h, v2.h[0]         \n"
               "fmla v5.8h, v1.8h, v2.h[1]         \n"
-              "subs %w[kcnt], %w[kcnt], #1        \n"
-              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-              "fmla v6.8h, v15.8h, v2.h[2]         \n"
-              "fmla v7.8h, v17.8h, v2.h[3]         \n"
-              "bne 1b                             \n"
-              // tail == 1 or tail == 2 or tail ==3 or tail==4
-              "2:                                 \n"
-              "ldr q1, [%[a_ptr]], #16            \n"
+              "ldp q0, q1, [%[a_ptr]], #32        \n"
               "ldr d2, [%[b_ptr]]                 \n"
-              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-              "prfm   pldl1keep, [%[b_ptr], #64]  \n"
+              "bne 1b                             \n"
+              "2:                                 \n"
+              "cmp %w[tail], #1                   \n"
+              "beq 3f                             \n"
+              // tail=2
+              "add %[b_ptr], %[b_ptr], #4         \n"
               "fmla v4.8h, v0.8h, v2.h[0]         \n"
-              "subs %w[tail], %w[tail], #1        \n"
-              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "fmla v5.8h, v1.8h, v2.h[1]         \n"
+              "b 6f                               \n"
+              "3:                                 \n"
+              // tail = 1
+              "sub %[a_ptr], %[a_ptr], #16        \n"
               "add %[b_ptr], %[b_ptr], #2         \n"
-              "bne 2b                            \n"
+              "fmla v4.8h, v0.8h, v2.h[0]         \n"
               "6:                                 \n"
-              "fadd v11.8h, v4.8h, v5.8h          \n"
-              "fadd v13.8h, v6.8h, v7.8h          \n"
-              "fadd v9.8h, v11.8h, v13.8h         \n"
+              "fadd v9.8h, v4.8h, v5.8h          \n"
               "ldr   q24, [%[alpha_ptr]]\n"
               "ldr   q25, [%[alpha_ptr], #0x10]\n"
               "ldr   q26, [%[alpha_ptr], #0x20]\n"
@@ -2849,167 +2543,117 @@ void gemm_prepack_8x16(bool is_transB,
             "ldr q1, [%[b_ptr]], #16            \n"
             "ldr q2, [%[b_ptr]], #16            \n"
             "ldr q3, [%[b_ptr]], #16            \n"
+            "ldr q4, [%[a_ptr]], #16            \n"
+            "ldr q5, [%[b_ptr]], #16            \n"
+            "ldr q6, [%[b_ptr]], #16            \n"
+            "ldr q7, [%[b_ptr]], #16            \n"
             "blt 2f                             \n"
             // A:8*4 B:4*16 C:8*16(4/K)
             "1:                                 \n"
             //v0:[a-h][0]
             //v1-v3:B[0][0-7]-B[0][8-15]-B[0][16-23]
             "fmla v8.8h,  v1.8h, v0.h[0]        \n"
-            "fmla v9.8h,  v2.8h, v0.h[0]        \n"
-            "fmla v24.8h, v3.8h, v0.h[0]        \n"
             "fmla v10.8h, v1.8h, v0.h[1]        \n"
-            "fmla v11.8h, v2.8h, v0.h[1]        \n"
-            "fmla v25.8h, v3.8h, v0.h[1]        \n"
             "fmla v12.8h, v1.8h, v0.h[2]        \n"
-            "fmla v13.8h, v2.8h, v0.h[2]        \n"
-            "fmla v26.8h, v3.8h, v0.h[2]        \n"
             "fmla v14.8h, v1.8h, v0.h[3]        \n" 
-            "fmla v15.8h, v2.8h, v0.h[3]        \n" 
-            "fmla v27.8h, v3.8h, v0.h[3]        \n"
-            "ldr q4, [%[a_ptr]], #16            \n"
-            "ldr q5, [%[b_ptr]], #16            \n"
-            "ldr q6, [%[b_ptr]], #16            \n"
-            "ldr q7, [%[b_ptr]], #16            \n"
             "fmla v16.8h, v1.8h, v0.h[4]        \n" 
-            "fmla v17.8h, v2.8h, v0.h[4]        \n" 
-            "fmla v28.8h, v3.8h, v0.h[4]        \n"
             "fmla v18.8h, v1.8h, v0.h[5]        \n" 
-            "fmla v19.8h, v2.8h, v0.h[5]        \n" 
-            "fmla v29.8h, v3.8h, v0.h[5]        \n" 
             "fmla v20.8h, v1.8h, v0.h[6]        \n" 
-            "fmla v21.8h, v2.8h, v0.h[6]        \n" 
-            "fmla v30.8h, v3.8h, v0.h[6]        \n"
             "fmla v22.8h, v1.8h, v0.h[7]        \n"
+            "ldr q1, [%[b_ptr]], #16            \n"
+
+            "fmla v9.8h,  v2.8h, v0.h[0]        \n"
+            "fmla v11.8h, v2.8h, v0.h[1]        \n"
+            "fmla v13.8h, v2.8h, v0.h[2]        \n"
+            "fmla v15.8h, v2.8h, v0.h[3]        \n"
+            "fmla v17.8h, v2.8h, v0.h[4]        \n" 
+            "fmla v19.8h, v2.8h, v0.h[5]        \n" 
+            "fmla v21.8h, v2.8h, v0.h[6]        \n" 
             "fmla v23.8h, v2.8h, v0.h[7]        \n"
+            "ldr q2, [%[b_ptr]], #16            \n"
+
+            "fmla v24.8h, v3.8h, v0.h[0]        \n"
+            "fmla v25.8h, v3.8h, v0.h[1]        \n"
+            "fmla v26.8h, v3.8h, v0.h[2]        \n"
+            "fmla v27.8h, v3.8h, v0.h[3]        \n"
+            "fmla v28.8h, v3.8h, v0.h[4]        \n"
+            "fmla v29.8h, v3.8h, v0.h[5]        \n" 
+            "fmla v30.8h, v3.8h, v0.h[6]        \n"
             "fmla v31.8h, v3.8h, v0.h[7]        \n"
+            "ldr q3, [%[b_ptr]], #16            \n"
+
             //v4:[a-h][1]
             //v5-v7:B[1][0-7]-B[1][8-15]-B[1][16-23]
             "fmla v8.8h,  v5.8h, v4.h[0]        \n"
-            "fmla v9.8h,  v6.8h, v4.h[0]        \n"
-            "fmla v24.8h, v7.8h, v4.h[0]        \n"
             "fmla v10.8h, v5.8h, v4.h[1]        \n"
-            "fmla v11.8h, v6.8h, v4.h[1]        \n"
-            "fmla v25.8h, v7.8h, v4.h[1]        \n"
             "fmla v12.8h, v5.8h, v4.h[2]        \n"
-            "fmla v13.8h, v6.8h, v4.h[2]        \n"
-            "fmla v26.8h, v7.8h, v4.h[2]        \n"
-            "fmla v14.8h, v5.8h, v4.h[3]        \n" 
-            "fmla v15.8h, v6.8h, v4.h[3]        \n" 
-            "fmla v27.8h, v7.8h, v4.h[3]        \n"
-            "ldr q0, [%[a_ptr]], #16            \n"
-            "ldr q1, [%[b_ptr]], #16            \n"
-            "ldr q2, [%[b_ptr]], #16            \n"
-            "ldr q3, [%[b_ptr]], #16            \n"
+            "fmla v14.8h, v5.8h, v4.h[3]        \n"
             "fmla v16.8h, v5.8h, v4.h[4]        \n" 
-            "fmla v17.8h, v6.8h, v4.h[4]        \n" 
-            "fmla v28.8h, v7.8h, v4.h[4]        \n"
             "fmla v18.8h, v5.8h, v4.h[5]        \n" 
-            "fmla v19.8h, v6.8h, v4.h[5]        \n" 
-            "fmla v29.8h, v7.8h, v4.h[5]        \n" 
             "fmla v20.8h, v5.8h, v4.h[6]        \n" 
-            "fmla v21.8h, v6.8h, v4.h[6]        \n" 
-            "fmla v30.8h, v7.8h, v4.h[6]        \n"
             "fmla v22.8h, v5.8h, v4.h[7]        \n"
-            "fmla v23.8h, v6.8h, v4.h[7]        \n"
-            "fmla v31.8h, v7.8h, v4.h[7]        \n"
-            //v0:[a-h][2]
-            //v1-v3:B[2][0-7]-B[2][8-15]-B[2][16-23]
-            "fmla v8.8h,  v1.8h, v0.h[0]        \n"
-            "fmla v9.8h,  v2.8h, v0.h[0]        \n"
-            "fmla v24.8h, v3.8h, v0.h[0]        \n"
-            "fmla v10.8h, v1.8h, v0.h[1]        \n"
-            "fmla v11.8h, v2.8h, v0.h[1]        \n"
-            "fmla v25.8h, v3.8h, v0.h[1]        \n"
-            "fmla v12.8h, v1.8h, v0.h[2]        \n"
-            "fmla v13.8h, v2.8h, v0.h[2]        \n"
-            "fmla v26.8h, v3.8h, v0.h[2]        \n"
-            "fmla v14.8h, v1.8h, v0.h[3]        \n" 
-            "fmla v15.8h, v2.8h, v0.h[3]        \n" 
-            "fmla v27.8h, v3.8h, v0.h[3]        \n"
-            "ldr q4, [%[a_ptr]], #16            \n"
             "ldr q5, [%[b_ptr]], #16            \n"
-            "ldr q6, [%[b_ptr]], #16            \n"
-            "ldr q7, [%[b_ptr]], #16            \n"
-            "fmla v16.8h, v1.8h, v0.h[4]        \n" 
-            "fmla v17.8h, v2.8h, v0.h[4]        \n" 
-            "fmla v28.8h, v3.8h, v0.h[4]        \n"
-            "fmla v18.8h, v1.8h, v0.h[5]        \n" 
-            "fmla v19.8h, v2.8h, v0.h[5]        \n" 
-            "fmla v29.8h, v3.8h, v0.h[5]        \n" 
-            "fmla v20.8h, v1.8h, v0.h[6]        \n" 
-            "fmla v21.8h, v2.8h, v0.h[6]        \n" 
-            "fmla v30.8h, v3.8h, v0.h[6]        \n"
-            "fmla v22.8h, v1.8h, v0.h[7]        \n"
-            "fmla v23.8h, v2.8h, v0.h[7]        \n"
-            "fmla v31.8h, v3.8h, v0.h[7]        \n"
-            //v4:[a-h][3]
-            //v5-v7:B[3][0-7]-B[3][8-15]-B[3][16-23]
-            "fmla v8.8h,  v5.8h, v4.h[0]        \n"
+
             "fmla v9.8h,  v6.8h, v4.h[0]        \n"
-            "fmla v24.8h, v7.8h, v4.h[0]        \n"
-            "fmla v10.8h, v5.8h, v4.h[1]        \n"
             "fmla v11.8h, v6.8h, v4.h[1]        \n"
-            "fmla v25.8h, v7.8h, v4.h[1]        \n"
-            "fmla v12.8h, v5.8h, v4.h[2]        \n"
             "fmla v13.8h, v6.8h, v4.h[2]        \n"
-            "fmla v26.8h, v7.8h, v4.h[2]        \n"
-            "fmla v14.8h, v5.8h, v4.h[3]        \n" 
-            "fmla v15.8h, v6.8h, v4.h[3]        \n" 
-            "fmla v27.8h, v7.8h, v4.h[3]        \n"
-            "ldr q0, [%[a_ptr]], #16            \n"
-            "ldr q1, [%[b_ptr]], #16            \n"
-            "ldr q2, [%[b_ptr]], #16            \n"
-            "ldr q3, [%[b_ptr]], #16            \n"
-            "fmla v16.8h, v5.8h, v4.h[4]        \n" 
+            "fmla v15.8h, v6.8h, v4.h[3]        \n"
             "fmla v17.8h, v6.8h, v4.h[4]        \n" 
-            "fmla v28.8h, v7.8h, v4.h[4]        \n"
-            "fmla v18.8h, v5.8h, v4.h[5]        \n" 
             "fmla v19.8h, v6.8h, v4.h[5]        \n" 
-            "fmla v29.8h, v7.8h, v4.h[5]        \n" 
-            "fmla v20.8h, v5.8h, v4.h[6]        \n" 
             "fmla v21.8h, v6.8h, v4.h[6]        \n" 
-            "fmla v30.8h, v7.8h, v4.h[6]        \n"
-            "fmla v22.8h, v5.8h, v4.h[7]        \n"
             "fmla v23.8h, v6.8h, v4.h[7]        \n"
+            "ldr q6, [%[b_ptr]], #16            \n"
+
+            "fmla v24.8h, v7.8h, v4.h[0]        \n"
+            "fmla v25.8h, v7.8h, v4.h[1]        \n"
+            "fmla v26.8h, v7.8h, v4.h[2]        \n"
+            "fmla v27.8h, v7.8h, v4.h[3]        \n"
+            "fmla v28.8h, v7.8h, v4.h[4]        \n"
+            "fmla v29.8h, v7.8h, v4.h[5]        \n" 
+            "fmla v30.8h, v7.8h, v4.h[6]        \n"
             "fmla v31.8h, v7.8h, v4.h[7]        \n"
-            
             "subs %w[kcnt], %w[kcnt], #1        \n"
+            "ldr q7, [%[b_ptr]], #16            \n"
+            "ldr q4, [%[a_ptr]], #16            \n"
             "prfm   pldl1keep, [%[a_ptr], #256] \n"
             "prfm   pldl1keep, [%[b_ptr], #256] \n"
             "prfm   pldl1keep, [%[b_ptr], #512] \n"
             // next 4/K loop
             "bne 1b                             \n"
-            // tail == 1 or tail == 2 or tail ==3 or tail==4
+            // tail == 1 or tail == 2 
             "2:                                 \n"
             "fmla v8.8h,  v1.8h, v0.h[0]        \n"
-            "fmla v9.8h,  v2.8h, v0.h[0]        \n"
-            "fmla v24.8h, v3.8h, v0.h[0]        \n"
             "fmla v10.8h, v1.8h, v0.h[1]        \n"
-            "fmla v11.8h, v2.8h, v0.h[1]        \n"
-            "fmla v25.8h, v3.8h, v0.h[1]        \n"
             "fmla v12.8h, v1.8h, v0.h[2]        \n"
-            "fmla v13.8h, v2.8h, v0.h[2]        \n"
-            "fmla v26.8h, v3.8h, v0.h[2]        \n"
-            "fmla v14.8h, v1.8h, v0.h[3]        \n" 
             "fmla v15.8h, v2.8h, v0.h[3]        \n" 
-            "fmla v27.8h, v3.8h, v0.h[3]        \n"
             "fmla v16.8h, v1.8h, v0.h[4]        \n" 
-            "fmla v17.8h, v2.8h, v0.h[4]        \n" 
-            "fmla v28.8h, v3.8h, v0.h[4]        \n"
             "fmla v18.8h, v1.8h, v0.h[5]        \n" 
-            "fmla v19.8h, v2.8h, v0.h[5]        \n" 
-            "fmla v29.8h, v3.8h, v0.h[5]        \n" 
             "fmla v20.8h, v1.8h, v0.h[6]        \n" 
-            "fmla v21.8h, v2.8h, v0.h[6]        \n" 
-            "fmla v30.8h, v3.8h, v0.h[6]        \n"
             "fmla v22.8h, v1.8h, v0.h[7]        \n"
-            "fmla v23.8h, v2.8h, v0.h[7]        \n"
-            "fmla v31.8h, v3.8h, v0.h[7]        \n"                        
-            "subs %w[tail], %w[tail], #1        \n"
-            "ldr q0, [%[a_ptr]], #16            \n"
             "ldr q1, [%[b_ptr]], #16            \n"
+            "fmla v9.8h,  v2.8h, v0.h[0]        \n"
+            "fmla v11.8h, v2.8h, v0.h[1]        \n"
+            "fmla v13.8h, v2.8h, v0.h[2]        \n"
+            "fmla v14.8h, v1.8h, v0.h[3]        \n" 
+            "fmla v17.8h, v2.8h, v0.h[4]        \n" 
+            "fmla v19.8h, v2.8h, v0.h[5]        \n" 
+            "fmla v21.8h, v2.8h, v0.h[6]        \n" 
+            "fmla v23.8h, v2.8h, v0.h[7]        \n"
             "ldr q2, [%[b_ptr]], #16            \n"
+            "fmla v24.8h, v3.8h, v0.h[0]        \n"
+            "fmla v25.8h, v3.8h, v0.h[1]        \n"
+            "fmla v26.8h, v3.8h, v0.h[2]        \n"
+            "fmla v27.8h, v3.8h, v0.h[3]        \n"
+            "fmla v28.8h, v3.8h, v0.h[4]        \n"
+            "fmla v29.8h, v3.8h, v0.h[5]        \n" 
+            "fmla v30.8h, v3.8h, v0.h[6]        \n"
+            "fmla v31.8h, v3.8h, v0.h[7]        \n" 
+            "subs %w[tail], %w[tail], #1        \n"
             "ldr q3, [%[b_ptr]], #16            \n"
+            "ldr q0, [%[a_ptr]], #16            \n"                       
+            "prfm   pldl1keep, [%[a_ptr], #256] \n"
+            "prfm   pldl1keep, [%[b_ptr], #256] \n"
+            "prfm   pldl1keep, [%[b_ptr], #512] \n"
             "bne  2b                            \n"
             // entry of fused_activation op :
             "4:                                 \n"
