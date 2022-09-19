@@ -322,13 +322,13 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
-  // change the weight from the float type to int8 type.
+// change the weight from the float type to int8 type.
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
   size_t weight_num = quantized_weight_t->data_size();
 
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   for (size_t i = 0; i < weight_num; i++) {
     quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
@@ -442,11 +442,11 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
-
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
   int weight_chw = quantized_weight_t->data_size() / channel;
