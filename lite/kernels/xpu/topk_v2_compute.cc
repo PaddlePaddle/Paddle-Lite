@@ -25,9 +25,6 @@ namespace xpu {
 void TopkV2Compute::Run() {
   auto& param = this->Param<operators::TopkParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  const float* x_data = param.X->data<float>();
-  float* out_val = param.Out->mutable_data<float>();
-  auto out_ind = param.Indices->mutable_data<int64_t>();
 
   DDim x_dims = param.X->dims();
   int axis = param.axis;

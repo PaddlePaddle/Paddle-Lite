@@ -44,7 +44,7 @@ void Conv2DAddFuser::BuildPattern() {
   // Operand patterns
   auto conv2d_input_pattern =
       CreatePattern("conv2d_input")->IsOperationInputOperand(conv2d_type_, 0);
-  int conv2d_fuse_code_index;
+  int conv2d_fuse_code_index = -1;
   if (conv2d_type_ == NNADAPTER_CONV_2D) {
     conv2d_fuse_code_index = 8;
   } else if (conv2d_type_ == NNADAPTER_CONV_2D_TRANSPOSE) {
@@ -91,8 +91,6 @@ bool Conv2DAddFuser::HandleMatchedResults(
   // Get the operands and operations from the matched subgraph nodes.
   auto conv2d_operation = nodes.at("conv2d")->operation;
   auto conv2d_fuse_code_operand = nodes.at("conv2d_fuse_code")->operand;
-  auto conv2d_input_operand = conv2d_operation->input_operands[0];
-  auto conv2d_output_operand = conv2d_operation->output_operands[0];
   auto conv2d_filter_operand = conv2d_operation->input_operands[1];
   auto conv2d_bias_operand = conv2d_operation->input_operands[2];
   auto conv2d_group =
@@ -103,7 +101,6 @@ bool Conv2DAddFuser::HandleMatchedResults(
     conv2d_output_channel_size =
         conv2d_filter_operand->type.dimensions.data[1] * conv2d_group;
   }
-  auto add_operation = nodes.at("add")->operation;
   auto add_input_operand = nodes.at("add_input")->operand;
   auto add_fuse_code_operand = nodes.at("add_fuse_code")->operand;
   auto add_output_operand = nodes.at("add_output")->operand;
