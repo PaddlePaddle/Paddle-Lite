@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/lod_reset_compute.h"
+#include <algorithm>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
@@ -29,7 +30,12 @@ void LodResetCompute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();
-  output->ShareDataWith(*x);
+  // output->ShareDataWith(*x);
+  int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
+                             x->data<int8_t>(),
+                             output->mutable_data<int8_t>(TARGET(kXPU)),
+                             x->memory_size());
+  CHECK_EQ(r, 0);
 
   auto lod = output->mutable_lod();
   if (param.Y) {
