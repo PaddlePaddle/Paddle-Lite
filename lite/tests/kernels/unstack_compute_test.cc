@@ -135,7 +135,17 @@ void TestUnstack(Place place,
 TEST(unstack, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
+  TestUnstack<float>(place, abs_error, {1, 3, 4});
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);

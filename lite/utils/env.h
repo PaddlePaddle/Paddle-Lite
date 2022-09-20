@@ -26,8 +26,8 @@
 // op_type::out_var_name_0
 // op_type:in_var_name_0
 // op_type
-#define SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE \
-  "SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE"
+#define SUBGRAPH_PARTITION_CONFIG_FILE "SUBGRAPH_PARTITION_CONFIG_FILE"
+#define SUBGRAPH_PARTITION_CONFIG_BUFFER "SUBGRAPH_PARTITION_CONFIG_BUFFER"
 
 // The original weight/local/unused variables in the subblock of the subgraph op
 // will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to true(default) during
@@ -35,16 +35,32 @@
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
-// The environment variables for the quant model settings, use "QUANT_" as
-// prefix.
-// Apply the constraints for the quantized ops(such as concat) that the inputs
-// and outputs must have the same scale. Use the environment variable to specify
-// how to caculate the new scale, includes the following methods:
-// 0(default): The mean of the input and output scales.
-// 1: The maximum of the input and output scales.
-// 2: The minimum of the input and output scales.
-#define QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD \
-  "QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD"
+// Due to various reasons (such as bugs from PaddleSlim), some ops in the model
+// lack quantization parameters. Optionally, the missing quantization parameters
+// can be completed by the following rules.
+// (a) Complete the output scale from the input scale of its consumer ops.
+// (b) Complete the output scale from the user-defined configurations.
+// (c) Complete the output scale from its out_threshold attribute.
+// (d) Complete the input scale from the output scale of its producer op.
+// (e) Complete the output scale according to the input scale, or complete the
+// input scale according to the output scale, because the input scale and output
+// scale of some ops should be the same.
+// (f) Complete the output scale according to the formula of some special ops
+// themselves.
+// QUANT_AUTO_COMPLETE_SCALE_LEVEL support the following level:
+// "0", default to apply the rule (a)(c)(d);
+// "1", apply the rule (a)(c)(d) and set the output scale even if the op has no
+// out_thresold attribute;
+// "2", apply the rule (a)(c)(d)(e) and set the output scale even if the op has
+// no out_thresold attribute;
+// "3", apply the rule (a)(c)(d)(e)(f) and set the output scale even if the op
+// has no out_thresold attribute;
+#define QUANT_AUTO_COMPLETE_SCALE_LEVEL "QUANT_AUTO_COMPLETE_SCALE_LEVEL"
+// Specify the configuration file path or data to apply the rule (b).
+#define QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE \
+  "QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE"
+#define QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER \
+  "QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER"
 
 namespace paddle {
 namespace lite {

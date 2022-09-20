@@ -74,7 +74,10 @@ void CopyOperandTypeExceptQuantParams(NNAdapterOperandType* dst_type,
 // Caculate the production of the given dimensions
 int64_t ProductionOfDimensions(const int32_t* input_dimensions_data,
                                uint32_t input_dimensions_count);
+int64_t ProductionOfDimensions(const uint32_t* input_dimensions_data,
+                               uint32_t input_dimensions_count);
 int64_t ProductionOfDimensions(const std::vector<int32_t>& input_dimensions);
+int64_t ProductionOfDimensions(const std::vector<uint32_t>& input_dimensions);
 // Transpose the given dimensions, similar to numpy.transpose
 void TransposeDimensions(int32_t* input_dimensions,
                          const std::vector<int32_t>& permutation,
@@ -194,7 +197,8 @@ bool QuantizeData(const float* input_data,
       for (int64_t k = 0; k < inner_count; k++) {
         auto index = i * scale_count * inner_count + j * inner_count + k;
         output_data[index] = std::min(
-            std::max(static_cast<int>(input_data[index] / output_scales[j]) +
+            std::max(static_cast<int>(
+                         std::round(input_data[index] / output_scales[j])) +
                          (output_zero_points ? output_zero_points[j] : 0),
                      dtype_min),
             dtype_max);

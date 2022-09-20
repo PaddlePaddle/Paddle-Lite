@@ -32,6 +32,8 @@ class TestLogicalOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.Host, PrecisionType.Any,
                                      DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -46,6 +48,11 @@ class TestLogicalOp(AutoScanTest):
         op_type_str = draw(
             st.sampled_from(
                 ["logical_and", "logical_not", "logical_or", "logical_xor"]))
+
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            in_shape = [1]
+            assume(op_type_str == "logical_and" or
+                   op_type_str == "logical_not")
 
         def generate_input_x():
             return np.random.choice(a=[0, 1], size=in_shape).astype(np.int32)

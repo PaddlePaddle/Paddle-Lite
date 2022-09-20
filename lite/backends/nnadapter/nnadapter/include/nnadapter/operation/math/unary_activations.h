@@ -34,14 +34,14 @@ static int unary_activations(ActivationTypeCode act_type,
   if (!input_data || !output_data) {
     return -1;
   }
-  auto compute_count = shape_production(input_shape);
+  auto input_count = shape_production(input_shape);
   if (act_type == RELU) {
-    for (int64_t i = 0; i < compute_count; i++) {
+    for (int64_t i = 0; i < input_count; i++) {
       output_data[i] = std::max(static_cast<T>(0), input_data[i]);
     }
     return 0;
   } else if (act_type == RELU6) {
-    for (int64_t i = 0; i < compute_count; i++) {
+    for (int64_t i = 0; i < input_count; i++) {
       output_data[i] = std::min(static_cast<T>(6),
                                 std::max(static_cast<T>(0), input_data[i]));
     }

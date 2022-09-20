@@ -82,6 +82,12 @@ void OptBase::SetSparseThreshold(float sparse_threshold) {
   }
 }
 
+void OptBase::SetNNAdapterMixedPrecisionQuantizationConfigPath(
+    const std::string& nnadapter_mixed_precision_quantization_config_path) {
+  opt_config_.set_nnadapter_mixed_precision_quantization_config_path(
+      nnadapter_mixed_precision_quantization_config_path);
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);

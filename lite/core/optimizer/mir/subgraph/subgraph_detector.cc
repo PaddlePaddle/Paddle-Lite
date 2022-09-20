@@ -33,7 +33,7 @@ static bool IsQuantInstNode(Node *node) {
   CHECK(node->IsStmt());
   auto op_info = node->AsStmt().op_info();
 
-  bool has_input_scale = false;
+  bool has_input_scale = node->inlinks.empty();
   for (auto in_node : node->inlinks) {
     auto input_name = in_node->AsArg().name;
     std::string arg_name;

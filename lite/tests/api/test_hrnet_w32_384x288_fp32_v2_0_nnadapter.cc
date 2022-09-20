@@ -32,6 +32,7 @@ namespace paddle {
 namespace lite {
 
 TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
+  FLAGS_warmup = 1;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -50,6 +51,10 @@ TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_warmup = 0;
+  FLAGS_iteration = 1;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -84,7 +89,6 @@ TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
     input_size *= i;
   }
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
     predictor->Run();

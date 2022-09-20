@@ -106,12 +106,8 @@ void FcCompute<PType, OutType>::ReInitWhenNeeded() {
 
   m_ = x_dims.Slice(0, in_num_col_dims).production();
   k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
-  // LOG(INFO) << "in_num_col_dims: " << param.in_num_col_dims << ", x_dims: "
-  // << x_dims;
-  // LOG(INFO) << "w_dims: " << w_dims;
   CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
-  CHECK_EQ(k_, static_cast<int>(w_dims[0]));
   flag_gemm_ = check_fc_use_gemm<PType, OutType>(
       m_, param.weight_scale, param.bias != nullptr);
   if (!flag_trans_weights_ && !flag_gemm_) {

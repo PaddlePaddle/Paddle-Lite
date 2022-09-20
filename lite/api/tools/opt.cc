@@ -82,6 +82,10 @@ DEFINE_string(visualization_file_output_path,
               "",
               "output path of the visualization file, this argument is use for "
               "the VisualizeOptimizedModel API");
+DEFINE_string(nnadapter_mixed_precision_quantization_config_path,
+              "",
+              "path of nnadapter mixed precision quantization config, this "
+              "argument is used to remove quant info of ops");
 
 int main(int argc, char** argv) {
   auto opt = paddle::lite_api::OptBase();
@@ -114,10 +118,11 @@ int main(int argc, char** argv) {
     if (FLAGS_enable_fp16) opt.EnableFloat16();
     opt.SetValidPlaces(FLAGS_valid_targets);
   }
-
-  if (FLAGS_param_file != "") {
-    opt.SetParamFile(FLAGS_param_file);
+  if (FLAGS_nnadapter_mixed_precision_quantization_config_path != "") {
+    opt.SetNNAdapterMixedPrecisionQuantizationConfigPath(
+        FLAGS_nnadapter_mixed_precision_quantization_config_path);
   }
+
   if (FLAGS_record_tailoring_info) {
     opt.RecordModelInfo(true);
   }

@@ -56,6 +56,8 @@ class LITE_API OptBase {
   void SetQuantType(const std::string &quant_type);
   void SetSparseModel(bool sparse_model);
   void SetSparseThreshold(const float sparse_threshold = 0.6f);
+  void SetNNAdapterMixedPrecisionQuantizationConfigPath(
+      const std::string &nnadapter_mixed_precision_quantization_config_path);
   // set optimized_model type
   void SetModelType(std::string model_type = "naive_buffer");
   // internal inference for developer, not recommanded.

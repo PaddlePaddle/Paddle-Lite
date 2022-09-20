@@ -211,7 +211,9 @@ class LITE_API RuntimeProgram {
   explicit RuntimeProgram(
       const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
       Scope* exec_scope,
-      int block_idx = kRootBlockIdx);
+      int block_idx = kRootBlockIdx,
+      bool use_precision_low = false);
+  bool use_precision_low_ = false;
   ~RuntimeProgram() {
 #ifdef LITE_WITH_OPENCL
     // save program kernel cache & tuned params

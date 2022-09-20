@@ -29,7 +29,7 @@ namespace mir {
 
 static std::string ReadSubgraphPartitionConfigsFromEnv() {
   std::string configs;
-  auto path = GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
+  auto path = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_FILE);
   if (!path.empty()) {
     std::vector<char> buffer;
     if (ReadFile(path, &buffer, false)) {
@@ -37,10 +37,12 @@ static std::string ReadSubgraphPartitionConfigsFromEnv() {
         configs.insert(configs.begin(), buffer.begin(), buffer.end());
       }
     } else {
-      LOG(WARNING)
-          << "Missing the subgraph custom partition configuration file "
-          << path;
+      LOG(WARNING) << "Missing the subgraph partition configuration file "
+                   << path;
     }
+  }
+  if (configs.empty()) {
+    configs = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_BUFFER);
   }
   return configs;
 }

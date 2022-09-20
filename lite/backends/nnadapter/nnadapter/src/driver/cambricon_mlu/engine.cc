@@ -27,6 +27,7 @@
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_matmul_dequant_add_into_fully_connected_dequant.h"
 #include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -134,6 +135,7 @@ int Program::BuildFromModel(core::Model* model) {
   FuseConv2DBatchNormIntoConv2D(model);
   FuseConv2DAddIntoConv2D(model);
   FuseConv2DActivationIntoConv2D(model);
+  FuseMatMulDequantAddIntoFullyConnectedDequant(model);
   FuseMatMulAddIntoFullyConnected(model);
   FuseReshapeTransposeReshapeIntoChannelShuffle(model);
   FixQuantizedOps(model);

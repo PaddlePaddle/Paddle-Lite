@@ -74,7 +74,8 @@ class TestPad2dOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
+        self.enable_devices_on_nnadapter(
+            device_names=["intel_openvino", "kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -147,6 +148,16 @@ class TestPad2dOp(AutoScanTest):
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "Lite doesn't not support for NHWC pad2d on ARM && fp16, and on Metal and OpenCL"
         )
+
+        def _teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                mode = program_config.ops[0].attrs["mode"]
+                if mode != "constant":
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite only support constant mode on kunlunxin_xtcl")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

@@ -250,6 +250,18 @@ uint32_t Converter::AddFloat32ConstantOperand(float* values,
                     copy);
 }
 
+uint32_t Converter::AddInt32ConstantOperand(
+    const std::vector<int32_t>& values) {
+  return AddInt32ConstantOperand(
+      const_cast<int32_t*>(values.data()), values.size(), true);
+}
+
+uint32_t Converter::AddFloat32ConstantOperand(
+    const std::vector<float>& values) {
+  return AddFloat32ConstantOperand(
+      const_cast<float*>(values.data()), values.size(), true);
+}
+
 uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
                                              uint32_t num_values,
                                              float* quant_scales,
@@ -286,6 +298,18 @@ uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
                     copy);
 }
 
+uint32_t Converter::AddQuant8ConstantOperand(const std::vector<int8_t>& values,
+                                             float* quant_scales,
+                                             uint32_t quant_scale_count,
+                                             uint32_t quant_channel_dim) {
+  return AddQuant8ConstantOperand(const_cast<int8_t*>(values.data()),
+                                  values.size(),
+                                  quant_scales,
+                                  quant_scale_count,
+                                  quant_channel_dim,
+                                  true);
+}
+
 uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
                                              uint32_t num_values,
                                              float quant_scale,
@@ -318,6 +342,16 @@ uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
                     0,
                     values,
                     copy);
+}
+
+uint32_t Converter::AddQuant8ConstantOperand(const std::vector<uint8_t>& values,
+                                             float quant_scale,
+                                             int32_t zero_point) {
+  return AddQuant8ConstantOperand(const_cast<uint8_t*>(values.data()),
+                                  values.size(),
+                                  quant_scale,
+                                  zero_point,
+                                  true);
 }
 
 uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
@@ -350,6 +384,12 @@ uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
                     0,
                     values,
                     copy);
+}
+
+uint32_t Converter::AddQuant32ConstantOperand(
+    const std::vector<int32_t>& values, float quant_scale) {
+  return AddQuant32ConstantOperand(
+      const_cast<int32_t*>(values.data()), values.size(), quant_scale, true);
 }
 
 uint32_t Converter::AddFloat32VariableOperand(int32_t* dimensions_data,

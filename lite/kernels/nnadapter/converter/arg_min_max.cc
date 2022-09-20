@@ -35,14 +35,20 @@ int ConvertArgMinMax(Converter* converter, OpInfo* op, Scope* scope) {
   auto axis_operand = converter->AddConstantOperand(axis);
 
   // Keepdim operand
-  bool keepdim = op->GetAttr<bool>("keepdims");
+  bool keepdims = false;
+  if (op->HasAttr("keepdims")) {
+    keepdims = op->GetAttr<bool>("keepdims");
+  }
   auto keepdim_operand =
-      converter->AddConstantOperand(static_cast<int8_t>(keepdim));
+      converter->AddConstantOperand(static_cast<int8_t>(keepdims));
 
   // Dtype operand, using int64 by default
-  int dtype = op->GetAttr<int>("dtype");
-  if (dtype < 0) {
-    dtype = 3;  // INT64 in FluidType
+  int dtype = 3;
+  if (op->HasAttr("dtype")) {
+    dtype = op->GetAttr<int>("dtype");
+    if (dtype < 0) {
+      dtype = 3;  // INT64 in FluidType
+    }
   }
   auto dtype_operand = converter->AddConstantOperand(
       static_cast<int32_t>(ConvertFluidDataTypeToNNPrecisionCode(dtype)));

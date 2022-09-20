@@ -122,20 +122,41 @@ xtcl::DataType ConvertToXTCLDataType(
     NNAdapterOperandPrecisionCode input_precision) {
   xtcl::DataType output_precision = ::xtcl::DataType::Float(32);
   switch (input_precision) {
+    case NNADAPTER_BOOL8:
+      output_precision = ::xtcl::DataType::Bool();
+      break;
     case NNADAPTER_INT8:
       output_precision = ::xtcl::DataType::Int(8);
+      break;
+    case NNADAPTER_UINT8:
+      output_precision = ::xtcl::DataType::UInt(8);
       break;
     case NNADAPTER_INT16:
       output_precision = ::xtcl::DataType::Int(16);
       break;
+    case NNADAPTER_UINT16:
+      output_precision = ::xtcl::DataType::UInt(16);
+      break;
     case NNADAPTER_INT32:
       output_precision = ::xtcl::DataType::Int(32);
+      break;
+    case NNADAPTER_UINT32:
+      output_precision = ::xtcl::DataType::UInt(32);
       break;
     case NNADAPTER_INT64:
       output_precision = ::xtcl::DataType::Int(64);
       break;
+    case NNADAPTER_UINT64:
+      output_precision = ::xtcl::DataType::UInt(64);
+      break;
+    case NNADAPTER_FLOAT16:
+      output_precision = ::xtcl::DataType::Float(16);
+      break;
     case NNADAPTER_FLOAT32:
       output_precision = ::xtcl::DataType::Float(32);
+      break;
+    case NNADAPTER_FLOAT64:
+      output_precision = ::xtcl::DataType::Float(64);
       break;
     default:
       NNADAPTER_LOG(FATAL)

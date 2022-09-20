@@ -29,7 +29,25 @@ bool CalibOpLite::InferShapeImpl() const {
   param_.output->set_lod(param_.input->lod());
   return true;
 }
-
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+bool CalibOpLite::AttachImpl(const cpp::OpDescWrite &opdesc,
+                             lite::Scope *scope) {
+  std::cout << "attach calib op" << std::endl;
+  auto x_var = scope->FindVar(opdesc.Input("Input").front());
+  auto output_var = scope->FindVar(opdesc.Output("Out").front());
+  CHECK(x_var);
+  CHECK(output_var);
+  param_.input = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
+  param_.output = output_var->GetMutable<lite::Tensor>();
+  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+  if (opdesc.HasAttr("scale")) {
+    param_.scale = opdesc.GetAttr<float>("scale");
+  }
+  CHECK(param_.input) << "Input(X) of CalibOp should not be null.";
+  CHECK(param_.output) << "Output(Out) of CalibOp should not be null.";
+  return true;
+}
+#endif
 bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());

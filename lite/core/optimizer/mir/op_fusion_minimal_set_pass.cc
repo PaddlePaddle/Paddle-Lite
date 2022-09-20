@@ -77,13 +77,73 @@ class IdentityScaleEliminator : public FuseBase {
   }
 };
 
+class IdentityDropoutEliminator : public FuseBase {
+ public:
+  static bool DropoutIsTest(const Node* x) {
+    if (x && x->IsStmt()) {
+      auto* op_info = x->stmt()->op_info();
+      if (op_info->HasAttr("is_test")) {
+        auto attr_type = op_info->GetAttrType("is_test");
+        if (attr_type == paddle::lite::OpDescAPI::AttrType::INT &&
+            op_info->GetAttr<int>("is_test") == 1) {
+          return true;
+        } else if (attr_type == paddle::lite::OpDescAPI::AttrType::BOOLEAN &&
+                   op_info->GetAttr<bool>("is_test")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void BuildPattern() override {
+    // the previous op's output need updat
+    auto* pre_op = OpNode("preop")->assert_is_not_op_type("conditional_block");
+    // TODO(Superjomn) check has only one output
+    auto* x = VarNode("x")->assert_is_op_input("dropout", "X");
+    auto* dropout_op =
+        OpNode("dropout", "dropout")
+            ->assert_node_satisfied(IdentityDropoutEliminator::DropoutIsTest)
+            ->assert_op_attr<std::string>("dropout_implementation",
+                                          "upscale_in_train");
+    auto* out = VarNode("out")->assert_is_op_output("dropout", "Out");
+    auto* mask = VarNode("mask")->assert_is_op_output("dropout", "Mask");
+
+    *pre_op >> *x >> *dropout_op >> *out;
+    *dropout_op >> *mask;
+
+    // The pre_op will be eliminated, and a new output-updated op will insert.
+    x->AsIntermediate();  // x is pre_op's output, need to update
+    dropout_op->AsIntermediate();
+    mask->AsIntermediate();
+  }
+
+ private:
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto& pre_op = matched.at("preop")->AsStmt();
+    auto op_info = *pre_op.op_info();
+
+    op_info.UpdateAllOutputs(matched.at("x")->AsArg().name,
+                             matched.at("out")->AsArg().name);
+    pre_op.ResetOp(op_info, graph->valid_places());
+
+    IR_NODE_LINK_TO(matched.at("preop"), matched.at("out"));
+  }
+};
+
 void ApplyIdentityScaleEliminator(SSAGraph* graph) {
   IdentityScaleEliminator fuser;
   fuser(graph);
 }
 
+void ApplyIdentityDropoutEliminator(SSAGraph* graph) {
+  IdentityDropoutEliminator fuser;
+  fuser(graph);
+}
+
 void OpFusionMinimalSetPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   ApplyIdentityScaleEliminator(graph.get());
+  ApplyIdentityDropoutEliminator(graph.get());
 }
 
 }  // namespace mir

@@ -472,6 +472,8 @@ class LITE_API CxxConfig : public ConfigBase {
 
   void set_xpu_gm_workspace_method(size_t gm_size);
 
+  // **DEPRECATED**, use environ variable to enable autotune
+  // check http://agroup.baidu.com/share/md/f9233d84df11452488a1fdd4f859647f
   void set_xpu_conv_autotune(bool autotune = true,
                              const std::string& autotune_file = "");
 
@@ -487,6 +489,10 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
   void set_xpu_multi_encoder_method(const std::string& precision = "int16",
                                     bool adaptive_seqlen = false);
+  void set_xpu_cluster_num(const int num);
+  void set_xpu_sdnn_num(const int num);
+  void set_xpu_local_quant(bool local_quant = false);
+  void set_xpu_compute_precision(const std::string& precision = "int16");
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when
@@ -560,6 +566,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // whether to load data from memory. Model data will be loaded from memory
   // buffer if model_from_memory_ is true.
   bool model_from_memory_{false};
+  PrecisionMode precision_mode_{LITE_PRECISION_NORMAL};
 
   // model data readed from file or memory buffer in combined format.
   std::string lite_model_file_;
@@ -576,6 +583,8 @@ class LITE_API MobileConfig : public ConfigBase {
   void set_model_from_buffer(const std::string& x);
   void set_model_from_buffer(std::string&& x);
   void set_model_from_buffer(const char* buffer, size_t length);
+  void set_precision_mode(PrecisionMode mode) { precision_mode_ = mode; }
+  PrecisionMode precision_mode() const { return precision_mode_; }
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 

@@ -109,6 +109,8 @@ class TestElementwiseMaxOp(AutoScanTest):
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
             input_data_type = draw(st.sampled_from([np.float32]))
+        else:
+            input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
             return np.random.randint(

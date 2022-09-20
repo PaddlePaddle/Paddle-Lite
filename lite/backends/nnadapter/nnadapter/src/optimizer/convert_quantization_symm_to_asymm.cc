@@ -41,7 +41,7 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
         for (uint32_t i = 0; i < operand->length; i++) {
           transform_buffer[i] = static_cast<uint8_t>(std::min(
-              std::max(static_cast<int16_t>(
+              std::max(static_cast<int32_t>(
                            reinterpret_cast<int8_t*>(operand->buffer)[i]) +
                            zero_point,
                        0),
@@ -82,37 +82,52 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
+      case NNADAPTER_EQUAL:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_GATHER:
+      case NNADAPTER_GREATER:
+      case NNADAPTER_GREATER_EQUAL:
+      case NNADAPTER_LESS:
+      case NNADAPTER_LESS_EQUAL:
       case NNADAPTER_MAT_MUL:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
       case NNADAPTER_MUL:
+      case NNADAPTER_NOT_EQUAL:
       case NNADAPTER_POW:
       case NNADAPTER_SUB: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_ABS:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
+      case NNADAPTER_CAST:
+      case NNADAPTER_CHANNEL_SHUFFLE:
+      case NNADAPTER_CLIP:
+      case NNADAPTER_CUM_SUM:
+      case NNADAPTER_FILL_LIKE:
+      case NNADAPTER_FLATTEN:
+      case NNADAPTER_GELU:
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_LAYER_NORMALIZATION:
+      case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_MAX_POOL_2D:
+      case NNADAPTER_PAD:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_SLICE:
+      case NNADAPTER_SQUEEZE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
-      case NNADAPTER_FLATTEN:
+      case NNADAPTER_TILE:
       case NNADAPTER_TRANSPOSE:
-      case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_HARD_SWISH:
-      case NNADAPTER_LEAKY_RELU:
-      case NNADAPTER_SQUEEZE:
-      case NNADAPTER_CLIP:
-      case NNADAPTER_CHANNEL_SHUFFLE:
-      case NNADAPTER_SLICE:
-      case NNADAPTER_FILL_LIKE: {
+      case NNADAPTER_UNSQUEEZE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
@@ -146,6 +161,16 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
       } break;
+      case NNADAPTER_UNSTACK: {
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        NNADAPTER_CHECK_GE(output_count, 1);
+        for (uint32_t i = 0; i < output_count; i++) {
+          ConvertOperandSymmToAsymm(output_operands[i], 128);
+        }
+      } break;
+      case NNADAPTER_QUANTIZE:
+      case NNADAPTER_DEQUANTIZE:
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Missing the processing of "
                              << OperationTypeToString(operation->type)

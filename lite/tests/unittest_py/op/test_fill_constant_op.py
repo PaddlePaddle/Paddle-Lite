@@ -37,7 +37,8 @@ class TestFillConstantOp(AutoScanTest):
             thread=[1, 2, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
-            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino",
+            "kunlunxin_xtcl"
         ])
 
     def is_program_valid(self,
@@ -153,6 +154,17 @@ class TestFillConstantOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'shape is form tensor' or 'value is from tensor' "
             "or 'dtype is not float32' on nvidia_tensorrt.")
+
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                in_num = len(program_config.inputs)
+                if in_num != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'shape is form tensor' or 'value is from tensor' on kunlunxin_xtcl."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

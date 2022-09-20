@@ -155,8 +155,13 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       CHECK_GE(w_dims.size(), 2UL);
       CHECK_LE(param.output->dims().size(), 4UL);
 
-      m_ = x_dims.Slice(0, param.in_num_col_dims).production();
-      k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+      int in_num_col_dims = param.in_num_col_dims;
+      std::string op_type = param.op_type;
+      if (op_type == "matmul" || op_type == "matmul_v2") {
+        in_num_col_dims = x_dims.size() - 1;
+      }
+      m_ = x_dims.Slice(0, in_num_col_dims).production();
+      k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
       k_blks_ = UP_DIV(k_, 4);

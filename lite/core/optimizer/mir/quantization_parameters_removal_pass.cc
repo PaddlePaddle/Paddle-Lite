@@ -166,7 +166,36 @@ void QuantizationParametersRemovalPass::ClearQuantInfo(
     paddle::lite::mir::Node* node) {
   if (node->IsArg()) return;
   auto op_desc = node->AsStmt().mutable_op_info();
+  auto scope = node->AsStmt().op()->scope();
+  const auto& op_type = op_desc->Type();
   VLOG(5) << "remove " << op_desc->Type() << " quant info.";
+
+  if (op_type == "conv2d") {
+    auto filter_name = op_desc->Input("Filter").front();
+    auto filter_tensor =
+        scope->FindVar(filter_name)->GetMutable<lite::Tensor>();
+    if (op_desc->HasInputScale(filter_name) &&
+        filter_tensor->precision() == PRECISION(kInt8)) {
+      auto filter_scales = op_desc->GetInputScale(filter_name);
+      auto filter_dims = filter_tensor->dims();
+      Tensor temp_tensor;
+      temp_tensor.CopyDataFrom(*filter_tensor);
+      int8_t* temp_data = temp_tensor.mutable_data<int8_t>();
+      float* filter_data = filter_tensor->mutable_data<float>();
+      auto output_channel_size = filter_dims[0];
+      CHECK_EQ(filter_scales.size(), output_channel_size);
+      auto filter_inner_size = filter_dims.production() / output_channel_size;
+      for (size_t i = 0; i < output_channel_size; i++) {
+        for (size_t j = 0; j < filter_inner_size; j++) {
+          filter_data[i * filter_inner_size + j] =
+              temp_data[i * filter_inner_size + j] * filter_scales[i];
+        }
+      }
+      filter_tensor->set_persistable(true);
+      filter_tensor->set_precision(PRECISION(kFloat));
+    }
+  }
+
   op_desc->DeleteAttr("bit_length");
   op_desc->DeleteAttr("enable_int8");
 

@@ -77,6 +77,12 @@ struct CalibParam : ParamBase {
   float scale;
 };
 
+struct CalibInplaceParam : ParamBase {
+  lite::Tensor* input{};
+  lite::Tensor* output{};
+  float scale;
+};
+
 struct SubgraphParam : ParamBase {
   std::vector<std::string> input_names{};
   std::vector<std::string> output_names{};
@@ -1716,6 +1722,13 @@ struct XPUBlockFuseParam : ParamBase {
   std::vector<int> block_lod;
   bool has_bias{false};
   bool has_branch{false};
+  // for int8/int16
+  bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
+  float quant_output_max{0.f};
+  float quant_branch_max{0.f};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1724,7 +1737,6 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
-  lite::Tensor* fc_weight_max{};
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
@@ -1735,7 +1747,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
-  std::vector<float> weight_max{};
+  std::vector<lite::Tensor*> weight_max{};
+  std::vector<std::string> quant_types{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1745,6 +1758,7 @@ struct XPUMultiEncoderParam : ParamBase {
   bool enable_qkv_fusion{false};
   bool norm_before{false};
   bool adaptive_seqlen{false};
+  bool per_channel{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -1768,13 +1782,19 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
-  float quant_input_max{0.f};
-  float quant_w_max{0.f};
+  std::vector<float> weight_max{};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
   bool transpose_x{false};
   bool transpose_w{true};
+
+  // int8/int16
+  bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_output_max{0.f};
+  bool per_channel{false};
 };
 
 struct XPUResNetCbamParam : ParamBase {

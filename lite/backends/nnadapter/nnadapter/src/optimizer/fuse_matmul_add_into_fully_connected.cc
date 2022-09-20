@@ -27,20 +27,31 @@ namespace nnadapter {
 
 class MatMulAddFuser : public PatternMatcher {
  public:
+  explicit MatMulAddFuser(bool restrict_2d_input)
+      : restrict_2d_input_(restrict_2d_input) {}
   void BuildPattern() override;
   bool HandleMatchedResults(core::Model* model,
                             const std::map<std::string, Node*>& nodes) override;
+
+ private:
+  bool restrict_2d_input_{false};
 };
 
 void MatMulAddFuser::BuildPattern() {
   // Operation patterns
   auto matmul_pattern =
       CreatePattern("matmul", NNADAPTER_MAT_MUL)
-          ->MatchCondition([](const Node* node) -> bool {
+          ->MatchCondition([this](const Node* node) -> bool {
             auto operation = node->operation;
-            return operation && operation->input_operands.size() == 4 &&
-                   operation->input_operands[0]->type.dimensions.count == 2 &&
-                   operation->input_operands[1]->type.dimensions.count == 2;
+            if (restrict_2d_input_) {
+              return operation && operation->input_operands.size() == 4 &&
+                     operation->input_operands[0]->type.dimensions.count == 2 &&
+                     operation->input_operands[1]->type.dimensions.count == 2;
+            } else {
+              return operation && operation->input_operands.size() == 4 &&
+                     operation->input_operands[0]->type.dimensions.count >= 2 &&
+                     operation->input_operands[1]->type.dimensions.count == 2;
+            }
           })
           ->IsIntermediate();
   auto add_pattern = CreatePattern("add", NNADAPTER_ADD)->IsIntermediate();
@@ -165,6 +176,33 @@ bool MatMulAddFuser::HandleMatchedResults(
                                   fully_connected_bias.data(),
                                   {matmul_num_units},
                                   fully_connected_bias_scale);
+  } else if (IsInt8SymmPerLayerQuantType(matmul_x_operand->type.precision) &&
+             IsInt8SymmPerChannelQuantType(matmul_y_operand->type.precision) &&
+             IsInt8SymmPerLayerQuantType(
+                 matmul_output_operand->type.precision)) {
+    std::vector<float> fully_connected_bias_scale;
+    for (uint32_t i = 0; i < matmul_num_units; i++) {
+      fully_connected_bias_scale.push_back(
+          matmul_x_operand->type.symm_per_layer_params.scale *
+          matmul_y_operand->type.symm_per_channel_params.scales[i]);
+    }
+    std::vector<int32_t> fully_connected_bias(matmul_num_units);
+    NNADAPTER_CHECK(QuantizeData<int32_t>(dequantized_add_input.data(),
+                                          &matmul_num_units,
+                                          1,
+                                          fully_connected_bias_scale.data(),
+                                          NULL,
+                                          -1,
+                                          -2147483647,
+                                          2147483647,
+                                          fully_connected_bias.data()));
+    fully_connected_bias_operand =
+        AddQuant32ConstantOperand(model,
+                                  fully_connected_bias.data(),
+                                  {matmul_num_units},
+                                  fully_connected_bias_scale.data(),
+                                  matmul_num_units,
+                                  0);
   } else {
     NNADAPTER_CHECK_EQ(matmul_x_operand->type.precision, NNADAPTER_FLOAT32);
     NNADAPTER_CHECK_EQ(matmul_y_operand->type.precision, NNADAPTER_FLOAT32);
@@ -187,11 +225,12 @@ bool MatMulAddFuser::HandleMatchedResults(
   return true;
 }
 
-NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model) {
+NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(core::Model* model,
+                                                      bool restrict_2d_input) {
   NNADAPTER_VLOG(5) << "Apply MatMulAddFuser";
   bool stop;
   do {
-    MatMulAddFuser mat_mul_add_fuser;
+    MatMulAddFuser mat_mul_add_fuser(restrict_2d_input);
     stop = mat_mul_add_fuser.Apply(model) == 0;
   } while (!stop);
 }

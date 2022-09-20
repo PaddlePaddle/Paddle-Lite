@@ -134,7 +134,12 @@ static core::Operand* AddOperand(core::Model* model,
     if (quant_scale_count > 1) {
       // Symmetric per-channel quantization
       NNADAPTER_CHECK(!zero_point && IsSymmPerChannelQuantType(precision));
-      operand->type.symm_per_channel_params.scales = quant_scales;
+      float* scales =
+          reinterpret_cast<float*>(malloc(quant_scale_count * sizeof(float)));
+      NNADAPTER_CHECK(scales) << "Failed to allocate the Symmetric per-channel "
+                                 "scale buffer for a operand.";
+      memcpy(scales, quant_scales, quant_scale_count * sizeof(float));
+      operand->type.symm_per_channel_params.scales = scales;
       operand->type.symm_per_channel_params.scale_count = quant_scale_count;
       operand->type.symm_per_channel_params.channel_dim = quant_channel_dim;
     } else {
@@ -936,6 +941,8 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
 
 SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER()
 SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(const)
+
+#undef SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER
 
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_OPERANDS_KEY =
     "operands";

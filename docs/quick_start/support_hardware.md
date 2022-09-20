@@ -130,17 +130,6 @@ Paddle Lite 支持 瑞芯微 (Rockchip) NPU，支持列表如下：
 
 - [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
 
-## 英伟达 (Nvidia) TensorRT
-
-Paddle Lite 支持英伟达 TensorRT 预测部署
-- 支持设备:
-  - Jetson 全系列
-  - Pascal/Volt/Turning 架构的 GPU, 即将支持 Ampere 架构 GPU
-
-### 英伟达 (Nvidia) TensorRT 示例程序
-
-- [Paddle Lite 使用英伟达 TensorRT 预测部署](../demo_guides/nvidia_tensorrt)
-
 ## 英特尔 (Intel) OpenVINO
 
 Paddle Lite 支持英特尔 OpenVINO 预测部署

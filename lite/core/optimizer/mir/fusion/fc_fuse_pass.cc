@@ -50,7 +50,8 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : nodes) {
     if (node.IsStmt()) {
       auto* op_info = (node.stmt())->op_info();
-      if (op_info->HasAttr("quantization_type")) {
+      bool enable_int8 = op_info->HasAttr("enable_int8") ? true : false;
+      if (enable_int8) {
         has_weight_quant = true;
         break;
       }
