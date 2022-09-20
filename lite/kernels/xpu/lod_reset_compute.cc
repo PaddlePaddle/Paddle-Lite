@@ -59,6 +59,7 @@ void LodResetCompute::Run() {
       (*lod)[0].push_back(id);
     }
   }
+  output->set_precision(x->precision());
 }
 
 }  // namespace xpu
