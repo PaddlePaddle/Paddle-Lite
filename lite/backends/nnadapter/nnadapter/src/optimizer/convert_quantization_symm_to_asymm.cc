@@ -41,7 +41,7 @@ static void ConvertOperandSymmToAsymm(core::Operand* operand,
         }
         for (uint32_t i = 0; i < operand->length; i++) {
           transform_buffer[i] = static_cast<uint8_t>(std::min(
-              std::max(static_cast<int16_t>(
+              std::max(static_cast<int32_t>(
                            reinterpret_cast<int8_t*>(operand->buffer)[i]) +
                            zero_point,
                        0),
@@ -115,6 +115,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_LAYER_NORMALIZATION:
       case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_MAX_POOL_2D:
+      case NNADAPTER_PAD:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
@@ -167,6 +168,9 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
       } break;
+      case NNADAPTER_QUANTIZE:
+      case NNADAPTER_DEQUANTIZE:
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Missing the processing of "
                              << OperationTypeToString(operation->type)

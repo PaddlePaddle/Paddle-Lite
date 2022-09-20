@@ -125,6 +125,41 @@ void QuantizeTensorInPlace(Tensor* input,
   }
 }
 
+// Per-layer cast tensor
+template <typename T>
+static void TensorCaster(Tensor* input) {
+  if (input->precision() != PRECISION(kFloat)) {
+    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
+               << PrecisionToStr(input->precision());
+  }
+  Tensor temp_tensor;
+  temp_tensor.CopyDataFrom(*input);
+  input->clear();
+  float* temp_data = temp_tensor.mutable_data<float>();
+  T* input_data = input->mutable_data<T>();
+  for (size_t i = 0; i < input->numel(); i++) {
+    input_data[i] = static_cast<T>(temp_data[i]);
+  }
+}
+
+void CastPersistableTensorInPlace(Tensor* input, int bit_length) {
+  switch (bit_length) {
+    case 8:
+      TensorCaster<int8_t>(input);
+      input->set_precision(PRECISION(kInt8));
+      break;
+    case 16:
+      TensorCaster<int16_t>(input);
+      input->set_precision(PRECISION(kInt16));
+      break;
+    default:
+      // not support
+      LOG(FATAL) << "Not support, bit_length= " << bit_length;
+      break;
+  }
+  input->set_persistable(true);
+}
+
 void DeleteQuantOpFuser::BuildPattern() {
   auto* input_scale_node = VarNode("input_scale_node")
                                ->assert_is_op_input(quant_op_type_, "InScale");
@@ -276,7 +311,14 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     weight_scale.push_back(whole_weight_scale);
   }
 #ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
+  switch (bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
@@ -294,12 +336,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kFloat));
 #else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
+  CastPersistableTensorInPlace(quantized_weight_t, bit_length);
 #endif
 
   // new op and relink nodes
@@ -390,7 +427,14 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
 
 #ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
+  switch (weight_bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
@@ -414,12 +458,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   quantized_weight_t->set_precision(PRECISION(kFloat));
 
 #else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
+  CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
 #endif
 
   // new op and relink nodes
@@ -705,6 +744,32 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     }
 #endif
     op_info->SetInputScale(input_var_name, scales);
+    for (auto op_out_var_node : quantized_node->outlinks) {
+      CHECK(op_out_var_node->IsArg());
+      for (auto out_scale_node : op_out_var_node->outlinks) {
+        if (!out_scale_node->IsStmt()) continue;
+        auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
+        auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (!out_scale_op_info->HasInput("Scale")) continue;
+        std::string out_scale_name = out_scale_op_info->Input("Scale").front();
+        auto* out_scale_tensor =
+            out_scale_scope->FindMutableTensor(out_scale_name);
+        auto* out_scale_data = out_scale_tensor->data<float>();
+        std::vector<float> out_thresholds(
+            out_scale_data, out_scale_data + scale_tensor->data_size());
+        int out_bit_length =
+            out_scale_node->stmt()->op_info()->GetAttr<int>("bit_length");
+        std::vector<float> out_scales(out_thresholds.size(), 0);
+        std::transform(out_thresholds.begin(),
+                       out_thresholds.end(),
+                       out_scales.begin(),
+                       [&out_bit_length](float x) {
+                         return x / ((1 << (out_bit_length - 1)) - 1);
+                       });
+        op_info->SetOutputScale(op_out_var_node->arg()->name, out_scales);
+        break;
+      }
+    }
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges

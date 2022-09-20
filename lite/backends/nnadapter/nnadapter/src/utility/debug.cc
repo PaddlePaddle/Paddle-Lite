@@ -974,7 +974,6 @@ NNADAPTER_EXPORT std::string OperandValueToString(core::Operand* operand) {
 }
 
 NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
-  const uint32_t max_scale_display_size = 20;
   std::ostringstream os;
   os << " precision: " << OperandPrecisionCodeToString(type->precision)
      << std::endl;
@@ -996,13 +995,8 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
     case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       os << " scales: [";
-      for (uint32_t i = 0; i < max_scale_display_size &&
-                           i < type->symm_per_channel_params.scale_count;
-           i++) {
+      for (uint32_t i = 0; i < type->symm_per_channel_params.scale_count; i++) {
         os << type->symm_per_channel_params.scales[i] << ",";
-      }
-      if (type->symm_per_channel_params.scale_count > max_scale_display_size) {
-        os << "...";
       }
       os << "]";
       os << " channel_dim: " << type->symm_per_channel_params.channel_dim;

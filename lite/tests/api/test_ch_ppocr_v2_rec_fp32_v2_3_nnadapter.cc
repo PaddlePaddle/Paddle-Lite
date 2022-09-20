@@ -29,6 +29,9 @@ namespace paddle {
 namespace lite {
 
 TEST(ch_ppocr_v2_rec, test_ch_ppocr_v2_rec_fp32_v2_3_nnadapter) {
+  FLAGS_warmup = 1;
+  bool prepare_before_timing = true;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -47,6 +50,21 @@ TEST(ch_ppocr_v2_rec, test_ch_ppocr_v2_rec_fp32_v2_3_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  // 1. Not support dynamic shape
+  // 2. Reduce execute time
+  FLAGS_iteration = 1;
+  FLAGS_warmup = 0;
+  prepare_before_timing = false;
+  // TODO(zhupengyang): Last matmul is not supported on htp+fp16.
+  nnadapter_subgraph_partition_config_buffer =
+      "transpose2:lstm_1.tmp_0:transpose_2.tmp_0,transpose_2.tmp_1\n"
+      "matmul:transpose_2.tmp_0,student_ctc_head_1_w_attrn"
+      "elementwise_add:student_ctc_head_1.tmp_0,student_ctc_head_1_b_attr\n"
+      "matmul:student_ctc_head_1.tmp_1,student_ctc_head_2_w_attr\n"
+      "elementwise_add:student_ctc_head_2.tmp_0,student_ctc_head_2_b_attr\n"
+      "softmax:student_ctc_head_2.tmp_1:save_infer_model/scale_0.tmp_1";
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -58,6 +76,8 @@ TEST(ch_ppocr_v2_rec, test_ch_ppocr_v2_rec_fp32_v2_3_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -102,7 +122,7 @@ TEST(ch_ppocr_v2_rec, test_ch_ppocr_v2_rec_fp32_v2_3_nnadapter) {
   std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
     fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+    if (prepare_before_timing) predictor->Run();
 
     double start = GetCurrentUS();
     predictor->Run();

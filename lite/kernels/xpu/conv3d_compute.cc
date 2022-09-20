@@ -28,12 +28,13 @@ template <typename TGEMM,
           typename DY,
           PrecisionType PType>
 void Conv3DCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
   auto filter_ptr = param.filter->template data<float>();
   auto filter_dims = param.filter->dims();
   xpu_quant_filter_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-          filter_ptr, filter_dims, false);
+          filter_ptr, filter_dims, false, ctx.GetRawContext()->max_ptr_size());
 }
 
 template <typename TGEMM,

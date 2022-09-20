@@ -440,7 +440,7 @@ bool test_gemm_int8(bool tra,
     tensor_cmp_host(tc_basic_int8, tc_sve_int8, max_ratio, max_diff);
     LOG(INFO) << "sve int8 compare result, max diff: " << max_diff
               << ", max ratio: " << max_ratio;
-    if (0 && fabs(max_ratio) > 1e-4f) {
+    if (fabs(max_ratio) > 1e-4f) {
       Tensor tdiff;
       tdiff.Resize(tc_sve_int8.dims());
       tdiff.set_precision(PRECISION(kInt8));
@@ -485,11 +485,11 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
 #endif
-    for (auto& m : {1, 3, 8, 32, 33, 34, 35, 38, 41, 397}) {
-      for (auto& n : {1, 3, 13, 141, 512, 789}) {
+    for (auto& m : {1, 3, 6, 8, 32, 33, 34, 35, 38, 41, 397}) {
+      for (auto& n : {1, 3, 6, 13, 35, 141, 512, 789}) {
         for (auto& k : {1, 3, 8, 59, 60, 61, 62, 66, 67, 71}) {
           for (auto& tra : {false, true}) {
-            for (auto& trb : {false, true}) {
+            for (auto& trb : {true, false}) {
               for (auto& has_bias : {false, true}) {
                 for (auto& relu_type : {0, 1}) {
                   for (auto& th : {1, 2, 4}) {

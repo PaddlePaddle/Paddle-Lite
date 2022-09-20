@@ -55,13 +55,14 @@ void XPUBiGRUCompute::PrepareBiasForRun(bool forward) {
 void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
   auto& mul_quant_weight_ =
       forward ? fw_mul_quant_weight_ : bw_mul_quant_weight_;
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
   auto* weight = forward ? param.fw_mul_w : param.bw_mul_w;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
   mul_quant_weight_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-          weight_ptr, weight_dims, true);
+          weight_ptr, weight_dims, true, ctx.GetRawContext()->max_ptr_size());
 }
 
 void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {

@@ -82,11 +82,13 @@ xtcl::xExpr Converter::UpdateExprMap(core::Operand* operand, xtcl::xExpr expr) {
   return expr;
 }
 
-xtcl::xExpr Converter::AddInputTensor(const std::string& name,
+xtcl::xExpr Converter::AddInputTensor(std::string name,
                                       NNAdapterOperandPrecisionCode precision,
                                       const int32_t* dimensions_data,
                                       uint32_t dimensions_count) {
-  NNADAPTER_CHECK(!name.empty());
+  if (name.empty()) {
+    name = GetUniqueName();
+  }
   auto shape =
       ConvertToXTCLArray<xtcl::xIndexExpr>(dimensions_data, dimensions_count);
   auto dtype = ConvertToXTCLDataType(precision);

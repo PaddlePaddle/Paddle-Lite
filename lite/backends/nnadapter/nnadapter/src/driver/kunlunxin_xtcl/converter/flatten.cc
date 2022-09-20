@@ -36,7 +36,7 @@ int ConvertFlatten(Converter* converter, core::Operation* operation) {
     end_axis += input_rank;
   }
   NNADAPTER_CHECK_EQ(end_axis, input_rank - 1)
-      << "Only supports end_axis = -1 or rank - 1";
+      << "XTCL only support end_axis = -1 or rank - 1";
   auto flatten_expr =
       converter->builder()->CreateBatchFlatten(input_expr, start_axis);
   converter->UpdateExprMap(output_operand, flatten_expr);

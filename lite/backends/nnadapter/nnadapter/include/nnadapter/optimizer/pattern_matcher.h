@@ -98,6 +98,8 @@ class PatternMatcher {
                                      int index = -1);
     Pattern* IsOperationOutputOperand(NNAdapterOperationType type,
                                       int index = -1);
+    Pattern* CheckInputCount(int num);
+    Pattern* CheckOutputCount(int num);
     // Mark the pattern matched node to be deleted, so its inlinks and outlinks
     // should be inside a matched subgraph.
     Pattern* IsIntermediate();

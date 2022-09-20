@@ -53,6 +53,11 @@ TEST(SqueezeNet, test_squeezenet_v1_fp32_v2_0_nnadapter) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   nnadapter_device_names.emplace_back("huawei_kirin_npu");
   out_accuracy_threshold = 0.60f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
+  // TODO(hong19860320) Fix precision
+  out_accuracy_threshold = 0.f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

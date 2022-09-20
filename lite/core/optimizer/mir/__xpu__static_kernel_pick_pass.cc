@@ -42,13 +42,19 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   CHECK(graph) << "graph not valid";
 
 // Collect input data precision for each node in the graph
+// Collect XPU op type,which used in fp16/in8;
 #ifdef LITE_WITH_XPU
-  DicideUseFP16Optimizer(graph);
+  DataPrecisionDicide(graph);
   GetXPUDeviceType();
-  if (xpu_use_fp16_optimizer_) {
+  if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
+    CollectXPUSpecialOPType(graph);
     for (auto& node : graph->StmtTopologicalOrder()) {
       if (!node->IsStmt()) continue;
-      if (xpu_special_op_.count(node->AsStmt().op_type())) {
+
+      if ((xpu_use_fp16_optimizer_ &&
+           xpu_special_op_.count(node->AsStmt().op_type())) ||
+          (xpu_use_int8_optimizer_ &&
+           xpu_int8_special_op_.count(node->AsStmt().op_type()))) {
         SpecialNodeInputPrecision(node);
         continue;
       }
@@ -71,6 +77,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 #endif
 
+#ifdef LITE_WITH_XPU
   // sort kernels by the factors.
   VLOG(2) << "graph block_idx: " << graph->blockIdx();
   VLOG(2) << "graph->mutable_nodes().size(): " << graph->mutable_nodes().size();
@@ -107,6 +114,14 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto&& kernel : instruct.kernels()) {
       VLOG(2) << "current candidate kernel is: " << kernel->summary();
       VLOG(2) << "valid_places size is: " << graph->valid_places().size();
+      if (instruct.op_info()->HasAttr("enable_int8") &&
+          instruct.op_info()->GetAttr<bool>("enable_int8") &&
+          kernel->precision() != PrecisionType::kInt8 &&
+          instruct.op_type() != "__xpu__multi_encoder") {
+        VLOG(6) << "Ignore current kernel: " << kernel->summary()
+                << ", because we only want to pick int8 precision kernel.";
+        continue;
+      }
 
       float score = KernelGrade(node,
                                 *kernel,
@@ -121,119 +136,30 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::stable_sort(scored.begin(), scored.end(), XPUKernelScoreCmp);
     instruct.kernels().clear();
 
-    if (!instruct.op_info()->HasAttr("enable_int8")) {
-#ifdef LITE_WITH_XPU
-      if (xpu_use_fp16_optimizer_) {
-        if (xpu_special_op_.count(node->AsStmt().op_type())) {
-          SpecialNodeOutputPrecision(graph, node, scored.front().second);
-        } else if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
-          InplaceNodeOutputPrecision(node->AsStmt(),
-                                     instruct.op_info()->input_names(),
-                                     instruct.op_info()->output_names());
-        } else {
-          NodeOutputPrecision(graph, node);
-        }
+    if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
+      if ((xpu_use_fp16_optimizer_ &&
+           xpu_special_op_.count(node->AsStmt().op_type())) ||
+          (xpu_use_int8_optimizer_ &&
+           xpu_int8_special_op_.count(node->AsStmt().op_type()))) {
+        SpecialNodeOutputPrecision(graph, node, scored.front().second);
+      } else if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
+        InplaceNodeOutputPrecision(node);
+      } else {
+        NodeOutputPrecision(graph, node);
       }
-#endif
-
-      instruct.kernels().emplace_back(std::move(scored.front().second));
-      VLOG(2) << "the final pick kernel is "
-              << instruct.kernels().front()->summary() << "\n\n";
-    } else {
-      // TODO(quwei): consider XPU int8 data precision
-      bool out_type_int8 = true;
-      // Quantized lstm has fp32 output
-      if (instruct.op_type() == "lstm" || instruct.op_type() == "gru" ||
-          instruct.op_type() == "__xpu__multi_encoder" ||
-          instruct.op_type() == "__xpu__fc") {
-        out_type_int8 = false;
-      }
-      // Only if all ops linked to this op output has enable_int8 attr,
-      // then the op output type is int8, or fp32.
-      // Note, the quantized op linked to lstm and gru should output fp32
-      // tensor.
-      for (auto* out_n : node->outlinks) {
-        CHECK(out_n->IsArg());
-        for (auto* tmp_op : out_n->outlinks) {
-          CHECK(tmp_op->IsStmt());
-          auto* tmp_op_info = tmp_op->AsStmt().op_info();
-          if (!tmp_op_info->HasAttr("enable_int8") ||
-              tmp_op_info->Type() == "lstm" || tmp_op_info->Type() == "gru" ||
-              instruct.op_type() == "__xpu__multi_encoder" ||
-              instruct.op_type() == "__xpu__fc") {
-            out_type_int8 = false;
-            break;
-          }
-        }
-        if (!out_type_int8) break;
-      }
-      // If the out_type_int8 is true, it turns out that the output type of
-      // this
-      // op can be int8.
-      // So we need to specify output scale for this op.
-      if (out_type_int8) {
-        auto out_node = node->outlinks.front();
-        CHECK(out_node->IsArg());
-        auto out_node_name = out_node->arg()->name;
-        auto one_adj_op_node = out_node->outlinks.front();
-        CHECK(one_adj_op_node->IsStmt());
-        auto& one_adj_instruct = one_adj_op_node->AsStmt();
-        CHECK(one_adj_instruct.op_info()->HasAttr("enable_int8"));
-        CHECK(one_adj_instruct.op_info()->HasInputScale(out_node_name));
-
-        instruct.mutable_op_info()->SetOutputScale(
-            out_node_name,
-            one_adj_instruct.op_info()->GetInputScale(out_node_name));
-
-        auto update_desc = *instruct.mutable_op_info();
-        instruct.ResetOp(update_desc, graph->valid_places());
-        scored.clear();
-        for (auto&& kernel : instruct.kernels()) {
-          float score = KernelGrade(node,
-                                    *kernel,
-                                    graph->valid_places(),
-                                    in_types,
-                                    out_types,
-                                    instruct.op_info()->input_names(),
-                                    instruct.op_info()->output_names());
-          scored.emplace_back(score, std::move(kernel));
-        }
-        std::stable_sort(scored.begin(), scored.end(), XPUKernelScoreCmp);
-        instruct.kernels().clear();
-      }
-      // If the out_type_int8 is true, we should pick the kernel with the
-      // int8 input and int8 output.
-      // If the out_type_int8 is false, we should pick the kernel with the
-      // int8 input and fp32 output.
-      auto output_arguments = instruct.op_info()->OutputArgumentNames();
-      for (auto& candidate : scored) {
-        bool all_output_type_match = true;
-        auto expect_output_type =
-            out_type_int8 ? PRECISION(kInt8) : PRECISION(kFloat);
-
-        for (auto& arg_name : output_arguments) {
-          const Type* out_arg_ty =
-              candidate.second->GetOutputDeclType(arg_name);
-          if (out_arg_ty->precision() != expect_output_type) {
-            all_output_type_match = false;
-          }
-        }
-
-        if (all_output_type_match) {
-          instruct.kernels().emplace_back(std::move(candidate.second));
-          VLOG(2) << "instruct.kernels.emplace_back "
-                  << instruct.kernels().front()->name();
-          break;
-        }
-      }
-      CHECK(!instruct.kernels().empty()) << "No kernels found for "
-                                         << instruct.op_type();
     }
+
+    instruct.kernels().emplace_back(std::move(scored.front().second));
+    VLOG(2) << "the final pick kernel is "
+            << instruct.kernels().front()->summary() << "\n\n";
+    instruct.mutable_op_info()->SetAttr<std::string>(
+        "kernel_summary", instruct.kernels().front()->summary());
   }
+#endif
 }
 
 #ifdef LITE_WITH_XPU
-void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
+void XPUStaticKernelPickPass::DataPrecisionDicide(
     const std::unique_ptr<SSAGraph>& graph) {
   if (GetStringFromEnv("XPUForceUseFP16", "false") == "true") {
     xpu_use_fp16_optimizer_ = false;
@@ -241,38 +167,76 @@ void XPUStaticKernelPickPass::DicideUseFP16Optimizer(
     return;
   }
 
-  if (graph->valid_places()[0].precision == PrecisionType::kFP16) {
+  if (graph->valid_places()[0].precision == PrecisionType::kFP16 &&
+      graph->valid_places()[0].target == TargetType::kXPU) {
     xpu_use_fp16_optimizer_ = true;
     VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16 ";
+    return;
+  }
+
+  if (graph->valid_places()[0].precision == PrecisionType::kInt8 &&
+      graph->valid_places()[0].target == TargetType::kXPU) {
+    xpu_use_int8_optimizer_ = true;
+    VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16/INT8 ";
+
+    return;
   }
 }
 
-void XPUStaticKernelPickPass::ForceUseFP32Kernel(
+bool XPUStaticKernelPickPass::ForceUsePrecision(
     size_t* score,
     const lite::KernelBase& kernel,
     const paddle::lite::mir::Node::Stmt& instruct) {
   if (kernel.place().target != TARGET(kXPU)) {
-    return;
+    return false;
   }
 
-  // only use in FC，it will not use in future.
-  if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-      lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-    if (kernel.alias() == "XPU_Real_kFloat" &&
-        instruct.op_type() == "__xpu__fc") {
-      *score *= 2;
-      VLOG(6) << "__xpu__fc: force use PRECISON INT31: *2";
+  auto op_info = instruct.op_info();
+  bool int8_quant =
+      op_info->HasAttr("enable_int8") && op_info->GetAttr<bool>("enable_int8");
+  bool int16_quant = op_info->HasAttr("enable_int16") &&
+                     op_info->GetAttr<bool>("enable_int16");
+  CHECK(!(int8_quant && int16_quant))
+      << "You can only specify one quant type for an OP!";
+  bool xpu_local_quant =
+      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
+
+  if (instruct.op_type() == "__xpu__fc") {
+    if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use PRECISON INT8: *4";
+      return true;
+    } else if (int16_quant && kernel.alias() == "XPUFC_INT16_FP32_FP32") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use PRECISON INT16: *4";
+      return true;
+    } else if (xpu_local_quant && kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *4";
+      return true;
+    } else if ((GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+                lite::TargetWrapperXPU::multi_encoder_precision == "int31") &&
+               kernel.alias() == "XPU_Real_kFloat") {
+      *score *= 4;
+      VLOG(6) << "__xpu__fc: force use PRECISON INT31: *4";
+      return true;
     }
-    return;
+  }
+
+  if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int8") {
+    if (kernel.alias() == "XPU_Int8_Int8_Int8") {
+      *score *= 4;
+      VLOG(6) << instruct.op_type() << ": force use PRECISON INT8: *4";
+      return true;
+    }
   }
 
   if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int31") {
-    if (kernel.alias() == "XPU_Real_kFloat" &&
-        PRECISION_INT31_OP_.count(instruct.op_type())) {
-      *score *= 2;
-      VLOG(6) << instruct.op_type() << ": force use PRECISON INT31: *2";
+    if (kernel.alias() == "XPU_Real_kFloat") {
+      *score *= 4;
+      VLOG(6) << instruct.op_type() << ": force use PRECISON INT31: *4";
+      return true;
     }
-    return;
   }
 
   if (kernel.alias() == "XPU_Real_kFloat") {
@@ -280,48 +244,17 @@ void XPUStaticKernelPickPass::ForceUseFP32Kernel(
     VLOG(6) << "By default,XPU not use PRECISION INT31, so not pick "
                "current kernel: "
             << kernel.summary();
-  }
-}
-
-void XPUStaticKernelPickPass::ForceUseInt8Kernel(
-    size_t* score,
-    const lite::KernelBase& kernel,
-    const paddle::lite::mir::Node::Stmt& instruct) {
-  if (kernel.place().target != TARGET(kXPU)) {
-    return;
+    return true;
   }
 
-  // only use in FC，it will not use in future.
-  if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-      lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-    if (kernel.alias() == "XPU_Int8_FP32_FP32" &&
-        instruct.op_type() == "__xpu__fc") {
-      *score *= 2;
-      VLOG(6) << "__xpu__fc: force use PRECISON INT8: *2";
-    }
-    return;
-  }
-
-  if (GetStringFromEnv("XPU_COMPUTE_PRECISION", "int16") == "int8") {
-    if (kernel.alias() == "XPU_Int8_FP32_FP32" &&
-        PRECISION_INT8_OP_.count(instruct.op_type())) {
-      *score *= 2;
-      VLOG(6) << instruct.op_type() << ": force use PRECISON INT8: *2";
-    }
-    return;
-  }
-
-  if (kernel.alias() == "XPU_Int8_FP32_FP32") {
-    *score = 0;
-    VLOG(6) << "By default,XPU not use PRECISION INT8, so not pick "
-               "current kernel: "
-            << kernel.summary();
-  }
+  return false;
 }
 
 void XPUStaticKernelPickPass::GetScore(PrecisionType precision,
                                        size_t* score_tmp) {
-  if (precision == PrecisionType::kInt16) {
+  if (precision == PrecisionType::kInt8) {
+    *score_tmp = *score_tmp > 11 ? *score_tmp : 11;
+  } else if (precision == PrecisionType::kInt16) {
     *score_tmp = *score_tmp > 9 ? *score_tmp : 9;
   } else if (precision == PrecisionType::kFP16) {
     *score_tmp = *score_tmp > 7 ? *score_tmp : 7;
@@ -354,6 +287,9 @@ void XPUStaticKernelPickPass::NodeOutputPrecision(
               << "in current scope.";
       continue;
     }
+    if (!var_ptr->IsType<lite::Tensor>()) {
+      continue;
+    }
 
     PrecisionType precison = var_ptr->GetMutable<lite::Tensor>()->precision();
     xpu_output_type_.emplace(var_name, precison);
@@ -369,6 +305,7 @@ void XPUStaticKernelPickPass::SpecialNodeOutputPrecision(
   std::vector<std::string> out_var_names;
   const auto* op_info = inst.op_info();
   for (auto* out_node : node->outlinks) {
+    CHECK(out_node->IsArg());
     auto& var = out_node->AsArg();
     const auto& var_name = var.name;
     std::string arg_name;
@@ -376,7 +313,7 @@ void XPUStaticKernelPickPass::SpecialNodeOutputPrecision(
     CHECK(op_info->GetOutputArgname(var_name, &arg_name))
         << "Can not find the output argument, current var name : " << var_name;
     VLOG(6) << " output arg name:" << arg_name << " var name:" << var_name;
-    if (output_parameter_name_.count(arg_name) == 0) {
+    if (out_node->outlinks.empty()) {
       continue;
     }
 
@@ -388,29 +325,40 @@ void XPUStaticKernelPickPass::SpecialNodeOutputPrecision(
 }
 
 void XPUStaticKernelPickPass::InplaceNodeOutputPrecision(
-    const paddle::lite::mir::Node::Stmt& instruct,
-    const std::vector<std::string>& in_names,
-    const std::vector<std::string>& out_names) {
+    lite::mir::Node* node) {
   PrecisionType pre_op_output_precision = PrecisionType::kUnk;
-  for (size_t i = 0; i < in_names.size(); ++i) {
+  auto& instruct = node->AsStmt();
+  for (auto* in_var_node : node->inlinks) {
+    CHECK(in_var_node->IsArg());
+    auto& var = in_var_node->AsArg();
+    const auto& var_name = var.name;
+
     std::string tmp;
-    CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-    VLOG(6) << "current kernel input data variable name:" << in_names[i]
+    CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+    VLOG(6) << "current kernel input data variable name:" << var_name
             << "Parameter name:" << tmp;
-    if (input_parameter_name_.count(tmp) &&
-        xpu_output_type_.count(in_names[i])) {
-      pre_op_output_precision = xpu_output_type_[in_names[i]];
+    if (in_var_node->inlinks.empty()) {
+      continue;
+    }
+
+    if (xpu_output_type_.count(var_name)) {
+      pre_op_output_precision = xpu_output_type_[var_name];
     }
   }
 
   // collect inplace op output data precision
   if (pre_op_output_precision != PrecisionType::kUnk) {
-    for (size_t i = 0; i < out_names.size(); ++i) {
+    for (auto* out_var_node : node->outlinks) {
+      CHECK(out_var_node->IsArg());
+      auto& var = out_var_node->AsArg();
+      const auto& var_name = var.name;
       std::string tmp;
-      CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-      if (output_parameter_name_.count(tmp)) {
-        xpu_output_type_.emplace(out_names[i], pre_op_output_precision);
+      CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
+      if (out_var_node->outlinks.empty()) {
+        continue;
       }
+
+      xpu_output_type_.emplace(var_name, pre_op_output_precision);
     }
   }
 }
@@ -420,19 +368,32 @@ void XPUStaticKernelPickPass::InplaceNodeOutputPrecision(
 void XPUStaticKernelPickPass::SpecialNodeInputPrecision(lite::mir::Node* node) {
   auto& inst = node->AsStmt();
   const auto* op_info = inst.op_info();
-  for (auto* in_node : node->inlinks) {
-    auto& var = in_node->AsArg();
+  for (auto* in_var_node : node->inlinks) {
+    CHECK(in_var_node->IsArg());
+    auto& var = in_var_node->AsArg();
     const auto& var_name = var.name;
     std::string arg_name;
     CHECK(op_info->GetInputArgname(var_name, &arg_name))
         << "Can not find the input argument,current var name : " << var_name;
     VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
-    if (input_parameter_name_.count(arg_name) == 0) {
+    if (in_var_node->inlinks.empty()) {
+      VLOG(6) << "Ignore input arg name:" << arg_name
+              << ",var name:" << var_name;
       continue;
     }
 
     std::vector<std::map<std::string, PrecisionType>> kernel_input_type{};
     for (auto&& kernel : inst.kernels()) {
+      if (xpu_use_int8_optimizer_ &&
+          kernel->precision() != PrecisionType::kInt8) {
+        continue;
+      }
+
+      if (xpu_use_fp16_optimizer_ &&
+          kernel->precision() == PrecisionType::kInt8) {
+        continue;
+      }
+
       if (kernel->summary().find(xpu_disable_flag_) != std::string::npos) {
         VLOG(6) << " ignore collect current kernel:" << kernel->summary();
         continue;
@@ -461,6 +422,7 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
 
   const auto* op_info = inst.op_info();
   for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
     auto& var = in_node->AsArg();
     const auto& var_name = var.name;
     std::string arg_name;
@@ -480,6 +442,10 @@ void XPUStaticKernelPickPass::NodeInputPrecision(
       continue;
     }
 
+    if (!var_ptr->IsType<lite::Tensor>()) {
+      continue;
+    }
+
     precison = var_ptr->GetMutable<lite::Tensor>()->precision();
     tmp_map.emplace(inst.op_type(), precison);
     kernel_input_type.emplace_back(std::move(tmp_map));
@@ -494,18 +460,22 @@ void XPUStaticKernelPickPass::InplaceNodeInputPrecision(lite::mir::Node* node) {
   // inplace op only has one inpute variable.
   std::string inplace_op_input_name{"none"};
   for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
     auto& var = in_node->AsArg();
     const auto& var_name = var.name;
     std::string arg_name;
     CHECK(op_info->GetInputArgname(var_name, &arg_name))
         << "Can not find the input argument,current var name : " << var_name;
     VLOG(6) << " input arg name:" << arg_name << " var name:" << var_name;
-    if (input_parameter_name_.count(arg_name)) {
-      inplace_op_input_name = var_name;
+    if (in_node->inlinks.empty()) {
+      continue;
     }
+
+    inplace_op_input_name = var_name;
   }
 
   for (auto* out_node : node->outlinks) {
+    CHECK(out_node->IsArg());
     auto& var = out_node->AsArg();
     const auto& var_name = var.name;
     std::string arg_name;
@@ -517,7 +487,7 @@ void XPUStaticKernelPickPass::InplaceNodeInputPrecision(lite::mir::Node* node) {
     // inplace op only have one output variable,but ic can connect input
     // variables of multiple Ops
     int output_match_num = xpu_input_type_.count(var_name);
-    if (output_parameter_name_.count(arg_name) == 0 || output_match_num == 0) {
+    if (out_node->outlinks.empty() || output_match_num == 0) {
       continue;
     }
 
@@ -542,23 +512,33 @@ void XPUStaticKernelPickPass::InplaceNodeInputPrecision(lite::mir::Node* node) {
   }
 }
 
-void XPUStaticKernelPickPass::InplaceOpScore(
-    const lite::KernelBase& kernel,
-    const paddle::lite::mir::Node::Stmt& instruct,
-    const std::vector<std::string>& in_names,
-    const std::vector<std::string>& out_names,
-    bool* type_match,
-    size_t* score) {
+void XPUStaticKernelPickPass::InplaceOpScore(lite::mir::Node* node,
+                                             const lite::KernelBase& kernel,
+                                             bool* type_match,
+                                             size_t* score) {
+  auto& instruct = node->AsStmt();
   PrecisionType pre_op_output_precision = PrecisionType::kUnk;
-  for (size_t i = 0; i < in_names.size(); ++i) {
+  for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
     std::string tmp;
-    CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-    VLOG(6) << "current kernel input data variable name:" << in_names[i]
+
+    CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+    VLOG(6) << "current kernel input data variable name:" << var_name
             << "Parameter name:" << tmp;
-    if (input_parameter_name_.count(tmp) &&
-        xpu_output_type_.count(in_names[i])) {
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
+      continue;
+    }
+
+    // only to match input X
+    if (tmp != "X") {
+      continue;
+    }
+
+    if (xpu_output_type_.count(var_name)) {
       size_t score_tmp = 0;
-      pre_op_output_precision = xpu_output_type_[in_names[i]];
+      pre_op_output_precision = xpu_output_type_[var_name];
       if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kAny) {
         GetScore(PrecisionType::kAny, &score_tmp);
         VLOG(6) << "current inplace kernel input data precision:kAny";
@@ -578,28 +558,32 @@ void XPUStaticKernelPickPass::InplaceOpScore(
 
   // collect inplace op output data precision
   if (pre_op_output_precision != PrecisionType::kUnk) {
-    for (size_t i = 0; i < out_names.size(); ++i) {
+    for (auto* out_node : node->outlinks) {
+      CHECK(out_node->IsArg());
+      auto& var = out_node->AsArg();
+      const auto& var_name = var.name;
       std::string tmp;
-      CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-      if (output_parameter_name_.count(tmp)) {
-        xpu_output_type_.emplace(out_names[i], pre_op_output_precision);
+      CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
+      if (out_node->outlinks.empty() && xpu_input_type_.count(var_name) == 0) {
+        continue;
       }
+
+      xpu_output_type_.emplace(var_name, pre_op_output_precision);
     }
   }
 }
 
-void XPUStaticKernelPickPass::SpecialOpScore(
-    const lite::KernelBase& kernel,
-    const paddle::lite::mir::Node::Stmt& instruct,
-    const std::vector<std::string>& in_names,
-    const std::vector<std::string>& out_names,
-    bool* type_match,
-    size_t* score) {
+void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
+                                             const lite::KernelBase& kernel,
+                                             bool* type_match,
+                                             size_t* score) {
   size_t score_tmp_all = 0;
   bool intput_match = true;
   bool output_match = true;
   bool consider_cpu = false;
-  // delete??
+
+  auto& instruct = node->AsStmt();
+
   if (consider_cpu_op_.count(instruct.op_type())) {
     consider_cpu = true;
   }
@@ -608,19 +592,43 @@ void XPUStaticKernelPickPass::SpecialOpScore(
     return;
   }
 
-  // input data precision score
-  for (size_t i = 0; i < in_names.size(); ++i) {
+  // type cast bug，We temporarily add it here
+  for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
     std::string tmp;
-    CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-    if (input_parameter_name_.count(tmp) == 0) {
+    CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
+      if (kernel.GetInputDeclType(tmp)->precision() == PrecisionType::kFP16) {
+        *score = 0;
+        VLOG(6) << "not pick fp16 kernel ,because  input weight "
+                   "is not fp16.";
+        return;
+      }
+    }
+  }
+
+  // input data precision score
+  for (auto* in_node : node->inlinks) {
+    CHECK(in_node->IsArg());
+    auto& var = in_node->AsArg();
+    const auto& var_name = var.name;
+    std::string tmp;
+    CHECK(instruct.op_info()->GetInputArgname(var_name, &tmp));
+    if (in_node->inlinks.empty() && xpu_output_type_.count(var_name) == 0) {
       continue;
     }
 
-    if (xpu_output_type_.count(in_names[i]) == 0) {
+    if (tmp == "Branch") {
       continue;
     }
 
-    VLOG(6) << "current kernel input data variable name:" << in_names[i]
+    if (xpu_output_type_.count(var_name) == 0) {
+      continue;
+    }
+
+    VLOG(6) << "current kernel input data variable name:" << var_name
             << ", Parameter name:" << tmp;
 
     size_t score_tmp = 0;
@@ -629,26 +637,29 @@ void XPUStaticKernelPickPass::SpecialOpScore(
       VLOG(6) << "match input data precision:kAny";
     }
 
-    if (xpu_output_type_[in_names[i]] ==
+    if (xpu_output_type_[var_name] ==
             kernel.GetInputDeclType(tmp)->precision() ||
-        xpu_output_type_[in_names[i]] == PrecisionType::kAny) {
-      GetScore(xpu_output_type_[in_names[i]], &score_tmp);
+        xpu_output_type_[var_name] == PrecisionType::kAny) {
+      GetScore(xpu_output_type_[var_name], &score_tmp);
       VLOG(6) << "match input data precision";
     }
 
     if (score_tmp == 0) {
-      output_match = false;
+      intput_match = false;
     }
 
     score_tmp_all += score_tmp;
   }
 
   // output data precision score
-  for (size_t i = 0; i < out_names.size(); ++i) {
+  for (auto* out_node : node->outlinks) {
+    CHECK(out_node->IsArg());
+    auto& var = out_node->AsArg();
+    const auto& var_name = var.name;
     std::string tmp;
-    CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-    int output_match_num = xpu_input_type_.count(out_names[i]);
-    if (output_parameter_name_.count(tmp) == 0) {
+    CHECK(instruct.op_info()->GetOutputArgname(var_name, &tmp));
+    int output_match_num = xpu_input_type_.count(var_name);
+    if (out_node->outlinks.empty() && output_match_num == 0) {
       continue;
     }
 
@@ -656,7 +667,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(
       continue;
     }
 
-    VLOG(6) << "current kernel output data variable name:" << out_names[i]
+    VLOG(6) << "current kernel output data variable name:" << var_name
             << ", Parameter name:" << tmp;
     int num = 0;
     size_t score_tmp = 0;
@@ -666,7 +677,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(
         break;
       }
 
-      if (iter->first != out_names[i]) {
+      if (iter->first != var_name) {
         continue;
       }
 
@@ -701,6 +712,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(
     if (score_tmp == 0) {
       output_match = false;
     }
+
     score_tmp_all += score_tmp;
   }
 
@@ -730,6 +742,108 @@ void XPUStaticKernelPickPass::GetXPUDeviceType() {
     VLOG(4) << "invaid XPU device";
     xpu_disable_flag_ = "NONE";
   }
+}
+
+void XPUStaticKernelPickPass::GradeXPUKernelScore(
+    lite::mir::Node* node,
+    const lite::KernelBase& kernel,
+    const paddle::lite::mir::Node::Stmt& instruct,
+    const std::vector<std::string>& in_names,
+    const std::vector<std::string>& out_names,
+    const std::map<std::string, PrecisionType>& in_types,
+    const std::map<std::string, PrecisionType>& out_types,
+    size_t* score,
+    bool* type_match) {
+  // Some registered kernel cannot be used.
+  if (kernel.summary().find(xpu_disable_flag_) != std::string::npos) {
+    *score = 0;
+    VLOG(6) << " ignore pick current kernel:" << kernel.summary();
+    return;
+  }
+
+  bool kernel_force_use = ForceUsePrecision(score, kernel, instruct);
+  if (kernel_force_use) {
+    VLOG(4) << "[xpu kernel force use score s4]:" << score;
+    return;
+  }
+
+  // kernel compute precision:int8/int16,data precicion:int8/fp16/fp32
+  if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
+    if (xpu_inplace_op_.count(instruct.op_type())) {
+      InplaceOpScore(node, kernel, type_match, score);
+      return;
+    }
+
+    if ((xpu_use_fp16_optimizer_ &&
+         xpu_special_op_.count(instruct.op_type())) ||
+        (xpu_use_int8_optimizer_ &&
+         instruct.op_info()->HasAttr("enable_int8") &&
+         xpu_int8_special_op_.count(instruct.op_type()))) {
+      SpecialOpScore(node, kernel, type_match, score);
+      return;
+    }
+  }
+
+  // kernel compute precision:fp32(int16),data precicion:fp32
+  if (!instruct.op_info()->HasAttr("enable_int8") ||
+      xpu_int8_special_op_.count(instruct.op_type()) == 0) {
+    *type_match = true;
+    if (instruct.op_type() == "feed") {
+      for (size_t i = 0; i < out_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+        if (out_types.count(out_names[i]) &&
+            out_types.at(out_names[i]) !=
+                kernel.GetOutputDeclType(tmp)->precision()) {
+          *type_match = false;
+        }
+      }
+    } else {
+      for (size_t i = 0; i < in_names.size(); ++i) {
+        std::string tmp;
+        CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+        if (in_types.count(in_names[i])) {
+          if (!PrecTypeCompatible(in_types.at(in_names[i]),
+                                  kernel.GetInputDeclType(tmp)->precision())) {
+            *type_match = false;
+          } else {
+            *score += 1;
+          }
+        }
+      }
+    }
+  }
+
+  return;
+}
+
+void XPUStaticKernelPickPass::CollectXPUSpecialOPType(
+    const std::unique_ptr<SSAGraph>& graph) {
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    if (!node->IsStmt()) continue;
+
+    auto& instruct = node->AsStmt();
+    for (auto&& kernel : instruct.kernels()) {
+      if (kernel->place().target != TARGET(kXPU)) {
+        continue;
+      }
+
+      auto op_type = instruct.op_type();
+
+      if (xpu_use_fp16_optimizer_) {
+        if (kernel->precision() == PrecisionType::kFP16) {
+          xpu_special_op_.emplace(op_type);
+          continue;
+        }
+      }
+    }
+  }
+
+  for (auto op_type : xpu_special_op_) {
+    VLOG(6) << "Collected xpu fp16 precioson op:" << op_type;
+  }
+
+  return;
 }
 
 #endif

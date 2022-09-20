@@ -112,7 +112,8 @@ template <
 void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
                                     const DDimLite& dims,
                                     bool data_transpose,
-                                    size_t hashed_key) {
+                                    size_t hashed_key,
+                                    size_t max_ptr_len) {
   LOG(FATAL) << "Not support for Tcpu is " << CppTypeToString<Tcpu>();
 }
 
@@ -123,7 +124,8 @@ template <
 void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
                                     const DDimLite& dims,
                                     bool data_transpose,
-                                    size_t hashed_key) {
+                                    size_t hashed_key,
+                                    size_t max_ptr_len) {
   // transpose
   const Tcpu* cpu_ptr = nullptr;
   int numel = dims.production();
@@ -140,7 +142,7 @@ void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
   XPUScratchPadGuard weight_max_guard;
   XPUScratchPadGuard quant_weight_guard;
   float max_val = paddle::lite::xpu::math::FindMaxAbs(cpu_ptr, numel);
-  int max_ptr_size = XPUMemory::get_max_ptr_size();
+  size_t max_ptr_size = max_ptr_len;
   std::vector<float> max_vec(max_ptr_size, max_val);
   weight_max_guard =
       std::move(XPUMemory::MallocScratchPad(max_ptr_size * sizeof(float)));
@@ -162,11 +164,12 @@ template <typename T>
 void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
                                        const DDimLite& dims,
                                        bool data_transpose,
-                                       size_t hashed_key) {
+                                       size_t hashed_key,
+                                       size_t max_ptr_len) {
   // transpose
   const T* cpu_ptr = nullptr;
   int numel = dims.production();
-  int max_ptr_size = XPUMemory::get_max_ptr_size();
+  size_t max_ptr_size = max_ptr_len;
   std::vector<T> transpose_data(numel, 0);
   if (data_transpose) {
     CHECK(dims.size() == 2) << "Not support: dims.size = " << dims.size();
@@ -178,8 +181,9 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
   }
   // copy to XPU
   XPUScratchPadGuard weight_max_guard(new XPUScratchPad(nullptr, 0));
-  if (std::is_same<T, int8_t>::value) {
+  if (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value) {
     // prepare max_w space for slim int8 quant
+    // just allocate buffer, set max value in kernel
     weight_max_guard =
         std::move(XPUMemory::MallocScratchPad(max_ptr_size * sizeof(float)));
   }
@@ -196,7 +200,8 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
 template <typename Tcpu, typename Txpu>
 XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
                                  const DDimLite& dims,
-                                 bool data_transpose) {
+                                 bool data_transpose,
+                                 size_t max_ptr_len) {
   int numel = dims.production();
   const std::string cpu_dtype = CppTypeToString<Tcpu>();
   const std::string xpu_dtype = CppTypeToString<Txpu>();
@@ -206,7 +211,8 @@ XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
           << ", precision=" << precision << ", transpose=" << data_transpose
           << ", hashed_key=" << hashed_key;
   if (weight_cache_.find(hashed_key) == weight_cache_.end()) {
-    ConvertWrapper<Tcpu, Txpu>(cpu_data, dims, data_transpose, hashed_key);
+    ConvertWrapper<Tcpu, Txpu>(
+        cpu_data, dims, data_transpose, hashed_key, max_ptr_len);
   }
 
   float* max_ptr =
@@ -218,15 +224,23 @@ XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
 
 template XPUQuantData XPUQuantizer::quant<float, float>(const float*,
                                                         const DDimLite&,
-                                                        bool);
+                                                        bool,
+                                                        size_t);
 template XPUQuantData XPUQuantizer::quant<float, int16_t>(const float*,
                                                           const DDimLite&,
-                                                          bool);
+                                                          bool,
+                                                          size_t);
 template XPUQuantData XPUQuantizer::quant<float, int8_t>(const float*,
                                                          const DDimLite&,
-                                                         bool);
+                                                         bool,
+                                                         size_t);
 template XPUQuantData XPUQuantizer::quant<int8_t, int8_t>(const int8_t*,
                                                           const DDimLite&,
-                                                          bool);
+                                                          bool,
+                                                          size_t);
+template XPUQuantData XPUQuantizer::quant<int16_t, int16_t>(const int16_t*,
+                                                            const DDimLite&,
+                                                            bool,
+                                                            size_t);
 }  // namespace lite
 }  // namespace paddle

@@ -131,6 +131,8 @@ class TestSigmoidOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             self.run_and_statis(quant=False, max_examples=60)
+        elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            self.run_and_statis(quant=False, max_examples=200)
         else:
             self.run_and_statis(quant=False, max_examples=25)
 

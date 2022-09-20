@@ -30,6 +30,7 @@ namespace lite {
 TEST(ncf, test_ncf_fp32_v2_1_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<paddle::lite_api::Place> valid_places;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
@@ -46,6 +47,10 @@ TEST(ncf, test_ncf_fp32_v2_1_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  // Not support int64
+  nnadapter_subgraph_partition_config_buffer = "lookup_table_v2";
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -57,6 +62,8 @@ TEST(ncf, test_ncf_fp32_v2_1_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);

@@ -68,6 +68,8 @@ class Converter {
                                      int32_t* dimensions_data,
                                      uint32_t dimensions_count,
                                      bool copy = true);
+  uint32_t AddInt32ConstantOperand(const std::vector<int32_t>& values);
+  uint32_t AddFloat32ConstantOperand(const std::vector<float>& values);
   // Quant8 constant operand with symmetric per-channel quantizion
   uint32_t AddQuant8ConstantOperand(int8_t* values,
                                     uint32_t num_values,
@@ -82,6 +84,10 @@ class Converter {
                                     uint32_t quant_scale_count,
                                     uint32_t quant_channel_dim = 0,
                                     bool copy = true);
+  uint32_t AddQuant8ConstantOperand(const std::vector<int8_t>& values,
+                                    float* quant_scales,
+                                    uint32_t quant_scale_count,
+                                    uint32_t quant_channel_dim = 0);
   // Quant8 constant operand with asymmetric per-layer quantizion
   uint32_t AddQuant8ConstantOperand(uint8_t* values,
                                     uint32_t num_values,
@@ -94,6 +100,9 @@ class Converter {
                                     float quant_scale,
                                     int32_t zero_point,
                                     bool copy = true);
+  uint32_t AddQuant8ConstantOperand(const std::vector<uint8_t>& values,
+                                    float quant_scale,
+                                    int32_t zero_point);
   // Quant32 constant operand with symmetric per-layer quantizion
   uint32_t AddQuant32ConstantOperand(int32_t* values,
                                      uint32_t num_values,
@@ -104,6 +113,8 @@ class Converter {
                                      uint32_t dimensions_count,
                                      float quant_scale,
                                      bool copy = true);
+  uint32_t AddQuant32ConstantOperand(const std::vector<int32_t>& values,
+                                     float quant_scale);
   // Float32 variable operand
   uint32_t AddFloat32VariableOperand(int32_t* dimensions_data,
                                      uint32_t dimensions_count);
