@@ -29,8 +29,7 @@ void LodResetCompute::Run() {
 
   auto x = param.X;
   auto output = param.Out;
-  auto output_dims = output->dims();
-  // output->ShareDataWith(*x);
+
   int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
                              x->data<int8_t>(),
                              output->mutable_data<int8_t>(TARGET(kXPU)),
