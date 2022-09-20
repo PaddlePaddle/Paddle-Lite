@@ -440,15 +440,13 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
           if (device_version.find("Adreno(TM) 506") != std::string::npos) {
             local_work_size_ = cl::NDRange(4, 4, 16);
           }
-          global_work_size_ =
-              cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
           if (is_mali_ || is_apple_m1_) {
             local_work_size_ = cl::NDRange(4, 4, 16);
-            global_work_size_ =
-                cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
-                            local_work_size_[1],
-                            ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
           }
+          global_work_size_ =
+              cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
+                          local_work_size_[1],
+                          ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
         }
       } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
         local_work_size_ =
