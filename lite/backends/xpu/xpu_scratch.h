@@ -28,18 +28,18 @@ namespace paddle {
 namespace lite {
 
 struct XPUScratchPad {
-  XPUScratchPad(void* addr, size_t size) : addr_(addr), size_(size) {}
+  XPUScratchPad(void* addr, size_t size, int devid, void* xpu_stream)
+      : addr_(addr), size_(size), devid_(devid), xpu_stream_(xpu_stream) {}
+  ~XPUScratchPad();
   // XXX(miaotianxiang): |size_| increases monotonically
   void Reserve(size_t new_size);
   void* addr_{nullptr};
   size_t size_{0};
+  int devid_{-1};
+  void* xpu_stream_{nullptr};
 };
 
-struct XPUScratchPadDeleter {
-  void operator()(XPUScratchPad* sp) const;
-};
-
-using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
+using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad>;
 
 class XPUMemory {
  public:

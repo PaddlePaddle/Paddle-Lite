@@ -380,6 +380,7 @@ class LITE_API CxxConfig : public ConfigBase {
   float sparse_threshold_{0.6f};
   std::map<int, std::vector<std::shared_ptr<void>>>
       preferred_inputs_for_warmup_;
+  std::map<TargetType, std::shared_ptr<void>> runtime_option_;
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
 #endif
@@ -402,7 +403,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string mixed_precision_quantization_config_buffer_;
 
  public:
-  void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
+  void set_valid_places(const std::vector<Place>& x);
   void set_model_file(const std::string& path) { model_file_ = path; }
   void set_param_file(const std::string& path) { param_file_ = path; }
   void set_model_buffer(const char* model_buffer,
@@ -434,6 +435,15 @@ class LITE_API CxxConfig : public ConfigBase {
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
+  const std::shared_ptr<void> get_runtime_option() const {
+    for (auto i = runtime_option_.begin(); i != runtime_option_.end(); ++i) {
+      if (i->first == TARGET(kXPU)) {
+        return i->second;
+      }
+    }
+
+    return nullptr;
+  }
 
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }

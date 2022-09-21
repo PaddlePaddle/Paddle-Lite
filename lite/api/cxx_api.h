@@ -164,6 +164,12 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
+    if (lite::TargetWrapperXPU::xpu_runtime_ptr != &xpu_runtime_option_) {
+      lite::TargetWrapperXPU::xpu_runtime_ptr = &xpu_runtime_option_;
+      // thanks to rumtime context is thread_local,so we should set device when
+      // using different predictor in the same thread.
+      XPU_CALL(xpu_set_device(xpu_runtime_option_.xpu_dev_num));
+    }
     std::vector<std::vector<int64_t>> query_shape;
     for (size_t i = 0; i < input_names_.size(); i++) {
       query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
@@ -236,6 +242,15 @@ class LITE_API Predictor {
   /////////////////////////////////////////////////////////////////////////////
   void CheckPaddleOpVersions(
       const std::shared_ptr<cpp::ProgramDesc>& program_desc);
+  void SetRunTimeOption(const lite_api::CxxConfig& config) {
+#ifdef LITE_WITH_XPU
+    if (config.get_runtime_option()) {
+      xpu_runtime_option_.Set(reinterpret_cast<lite::XPURunTimeOption*>(
+          config.get_runtime_option().get()));
+      XPU_CALL(xpu_set_device(xpu_runtime_option_.xpu_dev_num));
+    }
+#endif
+  }
 
   // #ifdef LITE_WITH_TRAIN
   //   void Run(const std::vector<framework::Tensor>& tensors) {
@@ -254,6 +269,9 @@ class LITE_API Predictor {
       const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
 
  private:
+#ifdef LITE_WITH_XPU
+  XPURunTimeOption xpu_runtime_option_;
+#endif
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   Scope* exec_scope_;

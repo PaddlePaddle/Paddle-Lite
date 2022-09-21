@@ -44,6 +44,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   mode_ = config.power_mode();
   threads_ = config.threads();
+  raw_predictor_->SetRunTimeOption(config);
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {
