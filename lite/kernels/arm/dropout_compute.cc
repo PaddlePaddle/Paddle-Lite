@@ -26,7 +26,7 @@ void DropoutCompute::Run() {
   const float* x_data = param.x->data<float>();
   float* out_data = param.output->mutable_data<float>();
   int num = param.x->dims().production();
-  const float prob_data = param.dropout_prob.to<float>;
+  const float prob_data = param.dropout_prob.to<float>();
   if (param.dropout_implementation == "upscale_in_train") {
     lite::arm::math::dropout_up(x_data, out_data, num);
   } else {
