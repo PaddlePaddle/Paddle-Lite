@@ -29,7 +29,7 @@ void DropoutCompute::Run() {
   const float* x_data = param.x->data<float>();
   float* out_data = param.output->mutable_data<float>(TARGET(kCUDA));
   int num = param.x->dims().production();
-  const float prob_data = param.dropout_prob;
+  const float prob_data = param.dropout_prob.to<float>();
   float scale = 1.0f;
   if (param.dropout_implementation == "downgrade_in_infer") {
     scale = 1.0f - prob_data;

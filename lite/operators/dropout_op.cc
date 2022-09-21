@@ -46,7 +46,6 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   param_.x = GetVar<lite::Tensor>(scope, input);
   param_.output = GetMutableVar<lite::Tensor>(scope, out);
-
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
 
   auto is_test_type = op_desc.GetAttrType("is_test");

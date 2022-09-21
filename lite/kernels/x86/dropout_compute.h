@@ -40,11 +40,12 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<operators::DropoutParam>();
     const auto* x_data = param.x->template data<T>();
     auto* out_data = param.output->template mutable_data<T>();
+    float dropout_prob = param.dropout_prob.to<float>();
     if (!param.is_test) {
       auto* mask_data = param.mask->template mutable_data<T>();
       size_t size = param.mask->dims().production();
       // Special case when dropout_prob is 1.0
-      if (param.dropout_prob == 1.0f) {
+      if (dropout_prob == 1.0f) {
         std::memset(out_data, 0, size * sizeof(T));   // NOLINT
         std::memset(mask_data, 0, size * sizeof(T));  // NOLINT
         return;
@@ -63,13 +64,13 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       std::uniform_real_distribution<float> dist(0, 1);
 
       for (size_t i = 0; i < size; ++i) {
-        if (dist(engine) < param.dropout_prob) {
+        if (dist(engine) < dropout_prob) {
           mask_data[i] = 0;
           out_data[i] = 0;
         } else {
           mask_data[i] = 1;
           if (param.dropout_implementation == "upscale_in_train") {
-            out_data[i] = x_data[i] / static_cast<T>(1.0f - param.dropout_prob);
+            out_data[i] = x_data[i] / static_cast<T>(1.0f - dropout_prob);
           } else {
             out_data[i] = x_data[i];
           }
@@ -82,7 +83,7 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) = X;
       } else {
         Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) =
-            X * static_cast<T>(1.0f - param.dropout_prob);
+            X * static_cast<T>(1.0f - dropout_prob);
       }
     }
   }

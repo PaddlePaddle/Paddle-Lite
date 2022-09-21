@@ -28,7 +28,7 @@ void DropoutCompute::Run() {
   if (param.dropout_implementation == "upscale_in_train") {
     scale = 1.0f;
   } else {
-    scale = 1.0f - param.dropout_prob;
+    scale = 1.0f - param.dropout_prob.to<float>();
   }
   int r = xdnn::scale<float>(
       ctx.GetRawContext(),                             /* context */

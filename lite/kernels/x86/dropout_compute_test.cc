@@ -72,6 +72,24 @@ TEST(dropout_x86, run_test) {
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];
   }
+
+  // test for dropout_prob with Tensor
+  lite::Tensor prob_tensor;
+  std::vector<int64_t> prob_shape{1};
+  prob_tensor.Resize(lite::DDim(prob_shape));
+  auto prob_data = prob_tensor.mutable_data<float>();
+  prob_data[0] = 1.0;
+  param.dropout_prob = &prob_tensor;
+  float prob = param.dropout_prob.to<float>();
+  LOG(INFO) << "dropout prob: " << prob;
+  dropout.SetParam(param);
+  dropout.Run();
+
+  LOG(INFO) << "output: ";
+  for (int i = 0; i < out.dims().production(); i++) {
+    // all data will be 0. because prob = 1.0
+    LOG(INFO) << out_data[i];
+  }
 }
 
 }  // namespace x86

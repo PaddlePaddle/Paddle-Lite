@@ -19,7 +19,9 @@
 #include <vector>
 
 #include "lite/api/paddle_place.h"
+#include "lite/core/int_array.h"
 #include "lite/core/model/base/apis.h"
+#include "lite/core/scalar.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
@@ -491,7 +493,7 @@ struct DropoutParam : ParamBase {
   const lite::Tensor* seed_tensor{};
   lite::Tensor* output{};
   lite::Tensor* mask{};
-  float dropout_prob{.5f};
+  Scalar dropout_prob{.5f};
   bool is_test{false};
   bool fix_seed{false};
   int seed{0};

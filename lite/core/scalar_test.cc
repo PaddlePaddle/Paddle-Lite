@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/scalar.h"
+#include "lite/core/scalar.h"
 #include <gtest/gtest.h>
 #include <vector>
 

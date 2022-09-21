@@ -38,7 +38,7 @@ void DropoutCompute::PrepareForRun() {
   float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
   float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);
 
-  float scale_value = 1 - param.dropout_prob;
+  float scale_value = 1 - param.dropout_prob.to<float>();
   for (int i = 0; i < channel; ++i) {
     scale_data[i] = scale_value;
     bias_data[i] = 0.0f;
