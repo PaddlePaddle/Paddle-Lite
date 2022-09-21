@@ -245,8 +245,6 @@ add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)
 
-lite_cc_test(test_scalar SRCS scalar_test.cc)
-lite_cc_test(test_int_array SRCS int_array_test.cc)
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
         lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc)
