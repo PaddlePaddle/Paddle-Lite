@@ -168,6 +168,9 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
       } break;
+      case NNADAPTER_QUANTIZE:
+      case NNADAPTER_DEQUANTIZE:
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Missing the processing of "
                              << OperationTypeToString(operation->type)

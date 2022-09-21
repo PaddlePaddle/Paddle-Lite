@@ -42,7 +42,7 @@ ReadAutoCompleteScaleConfigsFromEnv() {
     }
   }
   if (data.empty()) {
-    data = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_DATA);
+    data = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER);
   }
   if (data.empty()) return std::unordered_map<std::string, float>();
   const auto& lines = Split(data, "\n");
@@ -358,6 +358,10 @@ void QuantizationParametersPropagationPass::Apply(
       in_scale_same_as_out_scale_ops{
           {"transpose", {{"X", "Out"}}},
           {"transpose2", {{"X", "Out"}}},
+          {"squeeze", {{"X", "Out"}}},
+          {"squeeze2", {{"X", "Out"}}},
+          {"unsqueeze", {{"X", "Out"}}},
+          {"unsqueeze2", {{"X", "Out"}}},
           {"reshape", {{"X", "Out"}}},
           {"reshape2", {{"X", "Out"}}},
           {"flatten", {{"X", "Out"}}},
