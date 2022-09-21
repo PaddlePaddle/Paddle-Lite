@@ -112,53 +112,24 @@ void Pool2DCompute<InType, PType>::Run() {
             ksize,
             param.strides,
             paddings,
-            true);
+            true,
+            nullptr,
+            nullptr,
+            false);
         CHECK_EQ(r, 0);
       } else {
-        const InType* xpu_x_padded = nullptr;
-        std::vector<int> xpu_x_padded_dims{static_cast<int>(x_dims[0]),
-                                           static_cast<int>(x_dims[1]),
-                                           static_cast<int>(x_dims[2]),
-                                           static_cast<int>(x_dims[3])};
-        XPUScratchPadGuard xpu_x_padded_guard_;
-        if (paddings[0] == 0 && paddings[1] == 0 && paddings[2] == 0 &&
-            paddings[3] == 0) {
-          xpu_x_padded = param.x->template data<InType>();
-        } else {
-          std::vector<int> pad_left{0, 0, paddings[0], paddings[2]};
-          std::vector<int> pad_right{0, 0, paddings[1], paddings[3]};
-          xpu_x_padded_dims[2] =
-              xpu_x_padded_dims[2] + paddings[0] + paddings[1];
-          xpu_x_padded_dims[3] =
-              xpu_x_padded_dims[3] + paddings[2] + paddings[3];
-          xpu_x_padded_guard_ = TargetWrapperXPU::MallocScratchPad(
-              sizeof(InType) * xpu_x_padded_dims[0] * xpu_x_padded_dims[1] *
-              xpu_x_padded_dims[2] * xpu_x_padded_dims[3]);
-          xpu_x_padded = reinterpret_cast<InType*>(xpu_x_padded_guard_->addr_);
-          int r = xdnn::pad<InType>(ctx.GetRawContext(),
-                                    param.x->template data<InType>(),
-                                    const_cast<InType*>(xpu_x_padded),
-                                    {static_cast<int>(x_dims[0]),
-                                     static_cast<int>(x_dims[1]),
-                                     static_cast<int>(x_dims[2]),
-                                     static_cast<int>(x_dims[3])},
-                                    pad_left,
-                                    pad_right,
-                                    -9999999.0f);
-          CHECK_EQ(r, 0);
-        }
         int r = xdnn::max_pool2d<InType>(
             ctx.GetRawContext(),
-            xpu_x_padded,
+            param.x->template data<InType>(),
             param.output->template mutable_data<InType>(TARGET(kXPU)),
             nullptr,
-            xpu_x_padded_dims[0],
-            xpu_x_padded_dims[1],
-            xpu_x_padded_dims[2],
-            xpu_x_padded_dims[3],
+            x_dims[0],
+            x_dims[1],
+            x_dims[2],
+            x_dims[3],
             ksize,
             param.strides,
-            {0, 0, 0, 0},
+            paddings,
             true);
         CHECK_EQ(r, 0);
       }
