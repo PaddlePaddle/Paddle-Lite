@@ -59,7 +59,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     if (param.dropout_implementation == "upscale_in_train") {
       dropout_prob = 0.0f;
     } else {
-      dropout_prob = param.dropout_prob.to<float>();
+      dropout_prob = param.dropout_prob.template to<float>();
     }
 
     int input_dims[4] = {1, 1, 1, 1};
