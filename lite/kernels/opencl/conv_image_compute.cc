@@ -1935,6 +1935,54 @@ void ConvImageCompute::Conv2dnxn() {
   CL_CHECK_FATAL(status_);
 }
 
+void ConvImageCompute::Conv2d3x3() {
+  use_lws_ = false;
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, filter_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(17, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(18, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(19, groups_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(20, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(21, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
+}
+
 void ConvImageCompute::DepthwiseConv2d3x3s1() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
