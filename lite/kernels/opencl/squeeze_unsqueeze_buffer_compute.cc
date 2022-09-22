@@ -36,6 +36,7 @@ class SqueezeUnsqueezeCompute
     return "squeeze using cl::Buffer, kFloat";
   }
   void Run() override {
+    std::cout << "SqueezeUnsqueezeCompute" << std::endl;
     const Tensor* x;
     Tensor* out;
 
@@ -119,10 +120,6 @@ REGISTER_LITE_KERNEL(squeeze2,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
-    .BindOutput("XShape",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(unsqueeze,
@@ -168,10 +165,6 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kNCHW))})
-    .BindOutput("XShape",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
