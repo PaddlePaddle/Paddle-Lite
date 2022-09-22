@@ -23,7 +23,7 @@ set (XPU_DOWNLOAD_DIR ${XPU_SOURCE_DIR}/download)
 set (XPU_INSTALL_DIR ${THIRD_PARTY_PATH}/install)
 
 if (NOT XPU_SDK_URL)
-  set (XPU_SDK_URL "https://baidu-kunlun-product.su.bcebos.com/KL-SDK/klsdk-dev/20220919")
+  set (XPU_SDK_URL "https://baidu-kunlun-product.su.bcebos.com/KL-SDK/klsdk-dev/20220923")
 endif ()
 
 if (NOT XPU_SDK_ENV)
