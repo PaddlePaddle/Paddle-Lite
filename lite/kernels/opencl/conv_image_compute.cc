@@ -1841,8 +1841,6 @@ void ConvImageCompute::Conv2d1x1opt() {
   }
 }
 
-void ConvImageCompute::Conv2d3x3() { LOG(FATAL) << "Not implement."; }
-
 void ConvImageCompute::Conv2dnxnopt() {
   int arg_idx = 0;
   status_ = kernel_.setArg(arg_idx++, c_blk_);
