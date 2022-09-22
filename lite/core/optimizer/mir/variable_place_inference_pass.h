@@ -176,7 +176,8 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           }
         } else if (!(*var_type)->place().is_valid()) {
-          if (var.is_weight && with_targets["kMetal"]) {
+          if (var.is_weight &&
+              (with_targets["kMetal"] || with_targets["kXPU"])) {
             SetWeightType(in_node, **var_type, with_targets);
           } else if (decl_type->precision() == PRECISION(kInt8) ||
                      (decl_type->precision() == PRECISION(kFP16) &&
@@ -205,10 +206,6 @@ class VariablePlaceInferencePass : public DebugPass {
         if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           *var_type = decl_type;
-          // If one op's out is anothor op's weight, its is_weight or is_persist
-          // attr should be false, otherwise an io_copy_once op may be insert.
-          var.is_weight = false;
-          var.is_persist = false;
         } else if (!(*var_type)->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8) ||
@@ -219,6 +216,10 @@ class VariablePlaceInferencePass : public DebugPass {
             UpdateTypeFrom(var_type, decl_type);
           }
         }
+        // If one op's out is anothor op's weight, its is_weight or is_persist
+        // attr should be false, otherwise an io_copy_once op may be insert.
+        var.is_weight = false;
+        var.is_persist = false;
       }
     }
   }
