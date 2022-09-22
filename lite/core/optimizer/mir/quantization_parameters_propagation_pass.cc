@@ -384,7 +384,7 @@ void QuantizationParametersPropagationPass::Apply(
     } while (found);
     do {
       found = SetInScaleFromCurOutScale(graph, in_scale_same_as_out_scale_ops);
-      SetOutScaleFromNextInScale(graph);
+      SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
     } while (found);
   }
   // (f) Complete the output scale according to the formula of some special ops
@@ -399,7 +399,7 @@ void QuantizationParametersPropagationPass::Apply(
     } while (found);
     do {
       found = SetInScaleFromCurOutScale(graph, in_scale_same_as_out_scale_ops);
-      SetOutScaleFromNextInScale(graph);
+      SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
     } while (found);
   }
   VLOG(5) << "\n" << Visualize(graph.get());
