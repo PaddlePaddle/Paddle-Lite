@@ -47,7 +47,7 @@ void Conv2DActivationFuser::BuildPattern() {
   // Operand patterns
   auto conv2d_input_pattern =
       CreatePattern("conv2d_input")->IsOperationInputOperand(conv2d_type_, 0);
-  int conv2d_fuse_code_index;
+  int conv2d_fuse_code_index = -1;
   if (conv2d_type_ == NNADAPTER_CONV_2D) {
     conv2d_fuse_code_index = 8;
   } else if (conv2d_type_ == NNADAPTER_CONV_2D_TRANSPOSE) {
