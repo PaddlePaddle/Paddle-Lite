@@ -20,8 +20,9 @@
 
 // The environment variables for the subgraph settings, use "SUBGRAPH_" as
 // prefix.
-// Specify the path of configuration file for the subgraph segmentation, an
-// example is shown as below:
+// Specify the configuration file path or buffer for the subgraph segmentation,
+// it lists the operators that are forced to use the CPU, an example is shown as
+// below:
 // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
 // op_type::out_var_name_0
 // op_type:in_var_name_0
@@ -71,6 +72,18 @@
   "QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE"
 #define QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER \
   "QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER"
+
+// Specify the configuration file path or buffer for the mixed precision
+// quantization, it lists the operators that enforce fp32 precision, an example
+// is shown as below:
+// op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+// op_type::out_var_name_0
+// op_type:in_var_name_0
+// op_type
+#define MIXED_PRECISION_QUANTIZATION_CONFIG_FILE \
+  "MIXED_PRECISION_QUANTIZATION_CONFIG_FILE"
+#define MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER \
+  "MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER"
 
 namespace paddle {
 namespace lite {
