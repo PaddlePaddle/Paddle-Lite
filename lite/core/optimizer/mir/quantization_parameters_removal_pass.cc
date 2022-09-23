@@ -57,6 +57,26 @@ void QuantizationParametersRemovalPass::Apply(
   }
 }
 
+static std::string ReadMixedPrecisionQuantizationConfigFromEnv() {
+  std::string configs;
+  auto path = GetStringFromEnv(MIXED_PRECISION_QUANTIZATION_CONFIG_FILE);
+  if (!path.empty()) {
+    std::vector<char> buffer;
+    if (ReadFile(path, &buffer, false)) {
+      if (!buffer.empty()) {
+        configs.insert(configs.begin(), buffer.begin(), buffer.end());
+      }
+    } else {
+      LOG(WARNING) << "Missing the mixed precision quantization config file "
+                   << path;
+    }
+  }
+  if (configs.empty()) {
+    configs = GetStringFromEnv(MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER);
+  }
+  return configs;
+}
+
 std::string
 QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     Scope* scope) {
@@ -88,6 +108,10 @@ QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     }
   }
 #endif
+  if (mixed_precision_quantization_config.empty()) {
+    mixed_precision_quantization_config =
+        ReadMixedPrecisionQuantizationConfigFromEnv();
+  }
   return mixed_precision_quantization_config;
 }
 
@@ -111,7 +135,6 @@ std::set<Node*> QuantizationParametersRemovalPass::
     if (node_info.size() > 2) {
       out_vars_name = Split(node_info.at(2), ",");
     }
-
     for (auto& node : graph->mutable_nodes()) {
       if (node.IsArg()) continue;
       auto stmt = node.stmt();
@@ -122,9 +145,7 @@ std::set<Node*> QuantizationParametersRemovalPass::
           out_vars_name.size() > out_nodes.size()) {
         continue;
       }
-
       bool matched = true;
-
       for (auto in_var_name : in_vars_name) {
         bool find_var = false;
         for (auto* in_node : in_nodes) {
