@@ -57,6 +57,26 @@ void QuantizationParametersRemovalPass::Apply(
   }
 }
 
+static std::string ReadMixedPrecisionQuantizationConfigFromEnv() {
+  std::string configs;
+  auto path = GetStringFromEnv(MIXED_PRECISION_QUANTIZATION_CONFIG_FILE);
+  if (!path.empty()) {
+    std::vector<char> buffer;
+    if (ReadFile(path, &buffer, false)) {
+      if (!buffer.empty()) {
+        configs.insert(configs.begin(), buffer.begin(), buffer.end());
+      }
+    } else {
+      LOG(WARNING) << "Missing the mixed precision quantization config file "
+                   << path;
+    }
+  }
+  if (configs.empty()) {
+    configs = GetStringFromEnv(MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER);
+  }
+  return configs;
+}
+
 std::string
 QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     Scope* scope) {
@@ -88,6 +108,10 @@ QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     }
   }
 #endif
+  if (mixed_precision_quantization_config.empty()) {
+    mixed_precision_quantization_config =
+        ReadMixedPrecisionQuantizationConfigFromEnv();
+  }
   return mixed_precision_quantization_config;
 }
 
