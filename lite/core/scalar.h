@@ -74,6 +74,7 @@ class Scalar {
         LOG(FATAL) << "Unsupported data type: the type of Scalar "
                       "should be bool/int/float/double, but received "
                    << static_cast<int>(dtype_);
+        return static_cast<RT>(0);
     }
   }
 
