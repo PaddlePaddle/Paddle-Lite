@@ -179,7 +179,7 @@ TEST(Expand, precision) {
 
   test_expand_3dim<float>(place, abs_error);
   test_expand_4dim<float>(place, abs_error);
-#ifndef LITE_WITH_NPU
+#if !defined(LITE_WITH_) && !defined(LITE_WITH_XPU)
   test_expand_3dim<int>(place, abs_error);
   test_expand_4dim<int>(place, abs_error);
   test_expand_4dim<float, true>(place, abs_error);
