@@ -32,7 +32,7 @@ bool XPUFcOp::CheckShape() const {
 
   int64_t w_dims_0 = w_dims[0];
   int64_t w_dims_1 = w_dims[1];
-  if (!param_.transpose_w) {
+  if (param_.transpose_w) {
     w_dims_1 = w_dims[0];
     w_dims_0 = w_dims[1];
   }
@@ -62,7 +62,7 @@ bool XPUFcOp::InferShapeImpl() const {
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
   int64_t w_dims_1 = w_dims[1];
-  if (!param_.transpose_w) {
+  if (param_.transpose_w) {
     w_dims_1 = w_dims[0];
   }
 
