@@ -29,13 +29,12 @@ void LodResetCompute::Run() {
 
   auto x = param.X;
   auto output = param.Out;
-
+  output->mutable_data(TARGET(kXPU), x->memory_size());
   int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
                              x->data<int8_t>(),
-                             output->mutable_data<int8_t>(TARGET(kXPU)),
+                             reinterpret_cast<int8_t*>(output->raw_data()),
                              x->memory_size());
   CHECK_EQ(r, 0);
-
   auto lod = output->mutable_lod();
   if (param.Y) {
     if (param.Y->lod().size()) {
@@ -59,7 +58,6 @@ void LodResetCompute::Run() {
       (*lod)[0].push_back(id);
     }
   }
-  output->set_precision(x->precision());
 }
 
 }  // namespace xpu
