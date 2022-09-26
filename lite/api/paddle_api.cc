@@ -623,6 +623,26 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 #endif
 }
 
+void CxxConfig::set_xpu_local_quant(bool local_quant) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::local_quant = local_quant;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_local_quant' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::compute_precision = precision;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'xpu_compute_precision' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 void CxxConfig::set_xpu_conv_autotune(bool autotune,
                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
@@ -635,6 +655,26 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_cluster_num(const int num) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::cluster_num = num;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_cluster_num' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_sdnn_num(const int num) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::sdnn_num = num;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_sdnn_num' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }

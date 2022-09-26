@@ -159,6 +159,9 @@ TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
 template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
     const int8_t*, const DDimLite&, bool, size_t);
+template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
+    const int16_t*, const DDimLite&, bool, size_t);
 
 // xpu context
 LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
@@ -169,6 +172,9 @@ LITE_THREAD_LOCAL std::shared_ptr<void> TargetWrapperXPU::xpu_stream_{nullptr};
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
+// local quant
+LITE_THREAD_LOCAL bool TargetWrapperXPU::local_quant{false};
+LITE_THREAD_LOCAL std::string TargetWrapperXPU::compute_precision;  // NOLINT
 // l3 cache config
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
@@ -188,6 +194,8 @@ LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
 // xpu quantizer
 LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> TargetWrapperXPU::quantizer_{
     nullptr};
-
+// xpu set cluster sdnn
+LITE_THREAD_LOCAL int TargetWrapperXPU::cluster_num{0};
+LITE_THREAD_LOCAL int TargetWrapperXPU::sdnn_num{0};
 }  // namespace lite
 }  // namespace paddle

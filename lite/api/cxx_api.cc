@@ -57,7 +57,14 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
                     quant_dequant_op.end(),
                     op_type) != quant_dequant_op.end()) {
         is_quantized_model = true;
+#ifdef LITE_WITH_XPU
+        if (op_desc->HasAttr("bit_length") &&
+            op_desc->GetAttr<int32_t>("bit_length") != 8) {
+          return false;
+        }
+#endif
       }
+
       if (std::find(dynamic_quant_op.begin(),
                     dynamic_quant_op.end(),
                     op_type) != dynamic_quant_op.end()) {
@@ -375,7 +382,15 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
       }
     }
   }
-
+  // XPU target must make sure to insert in front of others.
+  if (IsQuantizedMode(program_desc_)) {
+    for (auto &valid_place : valid_places) {
+      if (valid_place.target == TARGET(kXPU)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kXPU), PRECISION(kInt8)});
+      }
+    }
+  }
   Program program(program_desc_, scope_, inner_places);
   valid_places_ = inner_places;
 

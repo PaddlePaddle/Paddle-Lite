@@ -107,6 +107,7 @@ class XPUFcFuser : public FuseBase {
     const bool quant = op_info->HasAttr("enable_int8") &&
                        op_info->GetAttr<bool>("enable_int8");
     op_desc.SetAttr<bool>("enable_int8", quant);
+    // int 8
     // X0_scale is already in op_desc when copy from mul
     if (quant) {
       CHECK(op_info->HasAttr("Y0_scale")) << "quant model no Y0_scale";
@@ -135,9 +136,38 @@ class XPUFcFuser : public FuseBase {
         }
       }
       VLOG(3) << "weight_max size:" << weight_max.size();
-      op_desc.SetAttr<std::vector<float>>("Y0_max", weight_max);
+      op_desc.SetAttr<std::vector<float>>("Filter0_scale", weight_max);
       op_desc.SetAttr<bool>("per_channel", per_channel);
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {127 *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("x")->arg()->name)[0]});
+      // don't need * 127
+      op_desc.SetAttr<std::vector<float>>(
+          "Output0_scale",
+          {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
+              "out_threshold")});
     }
+
+    // conv2d int16
+    if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int16") &&
+        matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {
+      op_desc.SetAttr<bool>("enable_int16", true);
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("x")->arg()->name)[0]});
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Filter0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("W")->arg()->name)[0]});
+    }
+
     op_desc.SetOutput("Output", {output_name});
     std::map<std::string, int> act_map{{"linear", 0},
                                        {"relu", 1},

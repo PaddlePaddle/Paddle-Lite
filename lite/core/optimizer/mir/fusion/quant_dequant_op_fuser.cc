@@ -125,6 +125,41 @@ void QuantizeTensorInPlace(Tensor* input,
   }
 }
 
+// Per-layer cast tensor
+template <typename T>
+static void TensorCaster(Tensor* input) {
+  if (input->precision() != PRECISION(kFloat)) {
+    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
+               << PrecisionToStr(input->precision());
+  }
+  Tensor temp_tensor;
+  temp_tensor.CopyDataFrom(*input);
+  input->clear();
+  float* temp_data = temp_tensor.mutable_data<float>();
+  T* input_data = input->mutable_data<T>();
+  for (size_t i = 0; i < input->numel(); i++) {
+    input_data[i] = static_cast<T>(temp_data[i]);
+  }
+}
+
+void CastPersistableTensorInPlace(Tensor* input, int bit_length) {
+  switch (bit_length) {
+    case 8:
+      TensorCaster<int8_t>(input);
+      input->set_precision(PRECISION(kInt8));
+      break;
+    case 16:
+      TensorCaster<int16_t>(input);
+      input->set_precision(PRECISION(kInt16));
+      break;
+    default:
+      // not support
+      LOG(FATAL) << "Not support, bit_length= " << bit_length;
+      break;
+  }
+  input->set_persistable(true);
+}
+
 void DeleteQuantOpFuser::BuildPattern() {
   auto* input_scale_node = VarNode("input_scale_node")
                                ->assert_is_op_input(quant_op_type_, "InScale");
@@ -276,17 +311,24 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     weight_scale.push_back(whole_weight_scale);
   }
 #ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
+  switch (bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
-  // change the weight from the float type to int8 type.
+// change the weight from the float type to int8 type.
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
   size_t weight_num = quantized_weight_t->data_size();
 
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   for (size_t i = 0; i < weight_num; i++) {
     quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
@@ -294,12 +336,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kFloat));
 #else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
+  CastPersistableTensorInPlace(quantized_weight_t, bit_length);
 #endif
 
   // new op and relink nodes
@@ -390,7 +427,14 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
 
 #ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
+  switch (weight_bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
@@ -398,11 +442,11 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
-
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
   int weight_chw = quantized_weight_t->data_size() / channel;
@@ -414,12 +458,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   quantized_weight_t->set_precision(PRECISION(kFloat));
 
 #else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
+  CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
 #endif
 
   // new op and relink nodes
