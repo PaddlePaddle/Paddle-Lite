@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, PrecisionType PType>
-class LayerNormCompute : public KernelLite<TARGET(kXPU), PType> {
+class LodResetCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
-  using param_t = operators::LayerNormParam;
+  using param_t = operators::LodResetParam;
 
-  virtual void Run();
+  void Run() override;
 
-  virtual ~LayerNormCompute() = default;
+  virtual ~LodResetCompute() = default;
 };
 
 }  // namespace xpu

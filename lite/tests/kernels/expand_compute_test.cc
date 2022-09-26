@@ -169,6 +169,8 @@ TEST(Expand, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = Place(TARGET(kHost), PRECISION(kAny));
 #else
@@ -177,7 +179,7 @@ TEST(Expand, precision) {
 
   test_expand_3dim<float>(place, abs_error);
   test_expand_4dim<float>(place, abs_error);
-#ifndef LITE_WITH_NPU
+#if !defined(LITE_WITH_NPU) && !defined(LITE_WITH_XPU)
   test_expand_3dim<int>(place, abs_error);
   test_expand_4dim<int>(place, abs_error);
   test_expand_4dim<float, true>(place, abs_error);
