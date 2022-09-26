@@ -47,8 +47,7 @@ void ConcatCompute<InType, PType>::Run() {
       if (std::is_same<InType, int64_t>::value) {
         xdims_list[i].back() = xdims_list[i].back() * 2;
       }
-      x_list.push_back(
-          reinterpret_cast<const InType*>(ins[i]->template data<InType>()));
+      x_list.push_back(ins[i]->template data<InType>());
     }
   }
   if (x_list.size() > 1) {

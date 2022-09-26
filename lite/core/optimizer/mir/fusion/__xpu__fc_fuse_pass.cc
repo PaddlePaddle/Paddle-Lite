@@ -37,15 +37,22 @@ class XPUFcFuser : public FuseBase {
     auto* x = VarNode("x")->assert_is_op_input(mul_type_, "X")->AsInput();
     auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
     // check w.dims() == 2 and x.trans == false.
-    auto mul_input_check = [](const Node* node) -> bool {
+    auto mul_input_check = [this](const Node* node) -> bool {
       auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
       auto mul_input_y_name = op_desc.Input("Y").front();
       auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
       auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
-      return (
-          mul_y_shape.size() == 2 && (!op_desc.HasAttr("transpose_X") ||
-                                      !op_desc.GetAttr<bool>("transpose_X")) &&
-          (!op_desc.HasAttr("trans_x") || !op_desc.GetAttr<bool>("trans_x")));
+      if (this->mul_type_ == "mul") {
+        return mul_y_shape.size() == 2;
+      }
+      if (this->mul_type_ == "matmul") {
+        return (mul_y_shape.size() == 2 &&
+                !op_desc.GetAttr<bool>("transpose_X"));
+      }
+      if (this->mul_type_ == "matmul_v2") {
+        return (mul_y_shape.size() == 2 && !op_desc.GetAttr<bool>("trans_x"));
+      }
+      return false;
     };
     auto* mul = OpNode("mul", mul_type_)
                     ->AsIntermediate()
@@ -209,6 +216,7 @@ class XPUFcFuser : public FuseBase {
     if (mul_type_ == "mul") {
       op_desc.SetAttr("in_num_col_dims",
                       op_info->GetAttr<int>("x_num_col_dims"));
+      // trans_x and trans_y is not existed in mul op. set false
       op_desc.SetAttr("transpose_x", false);
       op_desc.SetAttr("transpose_w", false);
     } else if (mul_type_ == "matmul") {
