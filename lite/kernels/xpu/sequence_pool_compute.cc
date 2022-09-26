@@ -14,6 +14,7 @@
 
 #include "lite/kernels/xpu/sequence_pool_compute.h"
 #include <string>
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -42,6 +43,21 @@ void XPUSequencePoolCompute::Run() {
   for (size_t i = 0; i < in_lod.size(); ++i) {
     lod_cpu[i] = in_lod[i];
   }
+
+  int batch_size = in_lod.size() - 1;
+  std::vector<uint64_t> offset_new;
+  if (in->lod().size() == 2) {
+    offset_new.resize(in->lod()[0].size());
+    offset_new = in->lod()[0];
+  } else {
+    offset_new.resize(batch_size + 1);
+    for (int i = 0; i <= batch_size; i++) {
+      offset_new[i] = i;
+    }
+  }
+  out->mutable_lod()->clear();
+  out->mutable_lod()->push_back(offset_new);
+
   int lod_len = in_lod.size();
   int r = 0;
   if (pool_type_str == "MAX") {
