@@ -219,8 +219,10 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             UpdateTypeFrom(var_type, decl_type);
           }
-          var.is_weight = false;
-          var.is_persist = false;
+          if (with_targets["kXPU"]) {
+            var.is_weight = false;
+            var.is_persist = false;
+          }
         }
       }
     }
