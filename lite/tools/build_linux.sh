@@ -374,7 +374,6 @@ function build_opt {
     mkdir -p $build_dir
     cd $build_dir
     cmake $workspace \
-      -DWITH_LITE=ON \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
