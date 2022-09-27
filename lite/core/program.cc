@@ -753,20 +753,6 @@ void Program::PrepareWorkspace(
       const auto& var_type = var_desc->GetType();
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
-      // Collect precision info into var_type_map_
-      if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-        const auto& var_data_type =
-            VarDescType2PrecisionType(var_desc->GetDataType());
-        if (var_data_type != PRECISION(kUnk)) {
-          var_type_map_[var_name] = LiteType::GetTensorTy(
-              TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-        }
-        VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-      } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
-        var_type_map_[var_name] = LiteType::GetTensorListTy(
-            TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
-      }
-
       // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
@@ -800,6 +786,18 @@ void Program::PrepareWorkspace(
           var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        }
         if (var_name == "feed" || var_name == "fetch") continue;
         weights_.push_back(var_name);
         scope_->Var(var_name);
