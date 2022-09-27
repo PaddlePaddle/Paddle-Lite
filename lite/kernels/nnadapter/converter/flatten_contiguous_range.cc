@@ -29,11 +29,18 @@ int ConvertFlattenContiguousRange(Converter* converter,
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto out_name = op->Output("Out").front();
+  auto output_scale_name = "Out0_scale";
+  std::vector<float> output_scales;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    output_scales = op->GetOutputScale(output_scale_name, true);
+  }
+
   auto start_axis = op->GetAttr<int>("start_axis");
   auto end_axis = op->GetAttr<int>("stop_axis");
 
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
+  NNAdapterOperand* output_operand =
+      converter->AddOutputOperand(out_name, output_scales);
   auto start_axis_operand =
       converter->AddConstantOperand(static_cast<int32_t>(start_axis));
   auto end_axis_operand =
