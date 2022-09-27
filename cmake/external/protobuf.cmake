@@ -283,7 +283,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     endif()
 ENDFUNCTION()
 
-SET(PROTOBUF_VERSION 3.3.0)
+SET(PROTOBUF_VERSION 3.19.0)
 
 IF(LITE_WITH_ARM)
     build_protobuf(protobuf_host TRUE)
