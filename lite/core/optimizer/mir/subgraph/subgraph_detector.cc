@@ -319,8 +319,7 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
   // Find the op nodes that needs to be forced to run on the CPU according to
   // the configuration file.
-  auto excluded_nodes =
-      GetNodesFromConfigs(graph_, subgraph_partition_configs_);
+  auto op_nodes = GetNodesFromConfigs(graph_, subgraph_partition_configs_);
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -328,7 +327,7 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
     for (auto &out_node : it.first->outlinks) {
       it.second->outlinks.push_back((*nodes)[out_node]);
     }
-    if (teller_(it.first) && excluded_nodes.count(it.first) == 0) {
+    if (teller_(it.first) && op_nodes.count(it.first) == 0) {
       it.second->marked = true;
       if (it.first->IsStmt()) {
         // If a function is inside the subgraph, mark all the output variables

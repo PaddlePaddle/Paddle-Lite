@@ -47,34 +47,34 @@ std::set<Node*> GetNodesFromConfigs(SSAGraph* graph,
   std::vector<std::string> lines = Split(configs, "\n");
   for (const auto& line : lines) {
     if (line.empty()) continue;
-    std::vector<std::string> items = Split(line, "|");
-    for (const auto& item : items) {
-      if (item.empty()) continue;
-      std::vector<std::string> node_info = Split(item, ":");
-      std::string op_type = node_info.at(0);
+    std::vector<std::string> ops = Split(line, "-");
+    for (const auto& op : ops) {
+      if (op.empty()) continue;
+      std::vector<std::string> info = Split(op, ":");
+      std::string op_type = info.at(0);
       std::vector<std::string> in_vars_name;
-      if (node_info.size() > 1) {
-        in_vars_name = Split(node_info.at(1), ",");
+      if (info.size() > 1) {
+        in_vars_name = Split(info.at(1), ",");
       }
       std::vector<std::string> out_vars_name;
-      if (node_info.size() > 2) {
-        out_vars_name = Split(node_info.at(2), ",");
+      if (info.size() > 2) {
+        out_vars_name = Split(info.at(2), ",");
       }
       for (auto& node : graph->mutable_nodes()) {
         if (node.IsArg()) continue;
         auto stmt = node.stmt();
         if (op_type != stmt->op_type()) continue;
-        auto in_nodes = node.inlinks;
-        auto out_nodes = node.outlinks;
-        if (in_vars_name.size() > in_nodes.size() ||
-            out_vars_name.size() > out_nodes.size()) {
+        auto in_var_nodes = node.inlinks;
+        auto out_var_nodes = node.outlinks;
+        if (in_vars_name.size() > in_var_nodes.size() ||
+            out_vars_name.size() > out_var_nodes.size()) {
           continue;
         }
         bool matched = true;
         for (auto in_var_name : in_vars_name) {
           bool found = false;
-          for (auto* in_node : in_nodes) {
-            if (in_node->arg()->name == in_var_name) {
+          for (auto* in_var_node : in_var_nodes) {
+            if (in_var_node->arg()->name == in_var_name) {
               found = true;
               break;
             }
@@ -86,8 +86,8 @@ std::set<Node*> GetNodesFromConfigs(SSAGraph* graph,
         }
         for (auto out_var_name : out_vars_name) {
           bool found = false;
-          for (auto* out_node : out_nodes) {
-            if (out_node->arg()->name == out_var_name) {
+          for (auto* out_var_node : out_var_nodes) {
+            if (out_var_node->arg()->name == out_var_name) {
               found = true;
               break;
             }

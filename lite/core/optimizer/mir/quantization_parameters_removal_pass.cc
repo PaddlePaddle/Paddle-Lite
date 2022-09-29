@@ -131,33 +131,33 @@ void QuantizationParametersRemovalPass::Apply(
                           MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER);
   }
   if (mixed_precision_quantization_configs.empty()) return;
-  auto excluded_nodes =
+  auto op_nodes =
       GetNodesFromConfigs(graph.get(), mixed_precision_quantization_configs);
-  for (auto& node : excluded_nodes) {
-    CHECK(node->IsStmt());
-    auto op_desc = node->AsStmt().mutable_op_info();
+  for (auto& op_node : op_nodes) {
+    CHECK(op_node->IsStmt());
+    auto op_desc = op_node->AsStmt().mutable_op_info();
     const auto& op_type = op_desc->Type();
     // Restore the quantized weights of the target ops to fp32 precision
     if (op_type == "conv2d" || op_type == "depthwise_conv2d" ||
         op_type == "conv2d_transpose") {
-      RestoreConv2DFromInt8ToFp32(node);
+      RestoreConv2DFromInt8ToFp32(op_node);
     } else if (op_type == "mul" || op_type == "matmul" ||
                op_type == "matmul_v2") {
-      RestoreMatmulFromInt8ToFp32(node);
+      RestoreMatmulFromInt8ToFp32(op_node);
     }
     // Delete quantization-related attributes of the target ops
     op_desc->DeleteAttr("bit_length");
     op_desc->DeleteAttr("enable_int8");
-    for (auto in_node : node->inlinks) {
-      CHECK(in_node->IsArg());
-      auto var_name = in_node->AsArg().name;
+    for (auto in_var_node : op_node->inlinks) {
+      CHECK(in_var_node->IsArg());
+      auto var_name = in_var_node->AsArg().name;
       std::string arg_name;
       int arg_idx = -1;
       CHECK(op_desc->GetInputArgname(var_name, &arg_name));
       CHECK(op_desc->GetInputIndex(var_name, &arg_idx));
       std::string scale_name = arg_name + std::to_string(arg_idx) + "_scale";
       op_desc->DeleteAttr(scale_name);
-      auto& type = in_node->AsArg().type;
+      auto& type = in_var_node->AsArg().type;
       if (type->precision() == PRECISION(kInt8)) {
         // TODO(zhupengyang): Only support trans to kFloat now. Other precision
         // should be considered.
@@ -165,16 +165,16 @@ void QuantizationParametersRemovalPass::Apply(
             type->target(), PRECISION(kFloat), type->layout());
       }
     }
-    for (auto out_node : node->outlinks) {
-      CHECK(out_node->IsArg());
-      auto var_name = out_node->AsArg().name;
+    for (auto out_var_node : op_node->outlinks) {
+      CHECK(out_var_node->IsArg());
+      auto var_name = out_var_node->AsArg().name;
       std::string arg_name;
       int arg_idx = -1;
       CHECK(op_desc->GetOutputArgname(var_name, &arg_name));
       CHECK(op_desc->GetOutputIndex(var_name, &arg_idx));
       std::string scale_name = arg_name + std::to_string(arg_idx) + "_scale";
       op_desc->DeleteAttr(scale_name);
-      auto& type = out_node->AsArg().type;
+      auto& type = out_var_node->AsArg().type;
       if (type->precision() == PRECISION(kInt8)) {
         // TODO(zhupengyang): Only support trans to kFloat now. Other precision
         // should be considered.
@@ -182,7 +182,7 @@ void QuantizationParametersRemovalPass::Apply(
             type->target(), PRECISION(kFloat), type->layout());
       }
     }
-    VLOG(5) << op_desc->Type() << "'s quant params had been removed!";
+    VLOG(5) << op_type << "'s quant params had been removed!";
   }
 }
 
