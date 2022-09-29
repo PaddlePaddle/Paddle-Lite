@@ -76,9 +76,6 @@ class SubgraphDetector {
                    const std::function<bool(const node_dat_t*)>& enter,
                    const std::function<bool(const node_dat_t*)>& leave);
 
-  std::set<Node*> GetExcludedNodesFromSubgraphPartitionConfigs(
-      const std::string& subgraph_partition_configs);
-
   void InitNodes(node_map_t* nodes);
 
   std::vector<std::vector<Node*>> ExtractSubgraphs(node_map_t* nodes);

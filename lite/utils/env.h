@@ -17,6 +17,9 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <vector>
+#include "lite/utils/io.h"
+#include "lite/utils/log/cp_logging.h"
 
 // The environment variables for the subgraph settings, use "SUBGRAPH_" as
 // prefix.
@@ -121,6 +124,27 @@ static uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul) {
     return def;
   }
   return static_cast<uint64_t>(atol(variable));
+}
+
+static std::string GetConfigsFromEnv(const std::string& str1,
+                                     const std::string& str2,
+                                     const std::string& def = "") {
+  std::string configs;
+  auto path = GetStringFromEnv(str1);
+  if (!path.empty()) {
+    std::vector<char> buffer;
+    if (ReadFile(path, &buffer, false)) {
+      if (!buffer.empty()) {
+        configs.insert(configs.begin(), buffer.begin(), buffer.end());
+      }
+    } else {
+      LOG(WARNING) << "Missing the config file " << path;
+    }
+  }
+  if (configs.empty()) {
+    configs = GetStringFromEnv(str2);
+  }
+  return configs;
 }
 
 }  // namespace lite

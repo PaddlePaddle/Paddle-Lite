@@ -27,26 +27,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static std::string ReadSubgraphPartitionConfigsFromEnv() {
-  std::string configs;
-  auto path = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_FILE);
-  if (!path.empty()) {
-    std::vector<char> buffer;
-    if (ReadFile(path, &buffer, false)) {
-      if (!buffer.empty()) {
-        configs.insert(configs.begin(), buffer.begin(), buffer.end());
-      }
-    } else {
-      LOG(WARNING) << "Missing the subgraph partition configuration file "
-                   << path;
-    }
-  }
-  if (configs.empty()) {
-    configs = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_BUFFER);
-  }
-  return configs;
-}
-
 void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
@@ -57,7 +37,8 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& stmt = node->AsStmt();
     return supported_lists.count(stmt.op_type()) != 0;
   };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+  auto subgraph_partition_configs = GetConfigsFromEnv(
+      SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   SubgraphFuser fuser(graph.get(),
                       teller,
                       1 /* min_subgraph_size */,
@@ -75,7 +56,8 @@ void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& stmt = node->AsStmt();
     return supported_lists.count(stmt.op_type()) != 0;
   };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+  auto subgraph_partition_configs = GetConfigsFromEnv(
+      SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   SubgraphFuser fuser(graph.get(),
                       teller,
                       1 /* min_subgraph_size */,
@@ -93,7 +75,8 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     auto& stmt = node->AsStmt();
     return supported_lists.count(stmt.op_type()) != 0;
   };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+  auto subgraph_partition_configs = GetConfigsFromEnv(
+      SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   SubgraphFuser fuser(graph.get(),
                       teller,
                       1 /* min_subgraph_size */,
@@ -165,7 +148,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #endif
   // Read the config path from environment and load the partition configurations
   if (subgraph_partition_configs.empty()) {
-    subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+    subgraph_partition_configs = GetConfigsFromEnv(
+        SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   }
   std::set<std::string> all_supported_ops;
   std::map<std::string, std::set<std::string>> device_supported_ops;
