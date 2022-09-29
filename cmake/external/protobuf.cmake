@@ -179,11 +179,15 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
 
     # https://github.com/protocolbuffers/protobuf.git
     SET(PROTOBUF_REPO "")
-    SET(PROTOBUF_TAG "v3.19.0")
     SET(OPTIONAL_CACHE_ARGS "")
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
     set(PATCH_COMMAND "")
+    if(ANDROID AND ARM_TARGET_LANG STREQUAL "gcc")
+        set(PROTOBUF_TAG "v3.14.0")
+    else()
+        set(PROTOBUF_TAG "v3.19.0")
+    endif()
 
     IF(BUILD_FOR_HOST)
         # set for server compile.
@@ -199,6 +203,11 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             "-DZLIB_ROOT:FILEPATH=${ZLIB_ROOT}")
         SET(OPTIONAL_CACHE_ARGS "-DZLIB_ROOT:STRING=${ZLIB_ROOT}")
     ELSE()
+        # # protobuf have compile issue when use android stl c++_static
+        # # https://github.com/tensor-tang/protobuf.git
+        # SET(PROTOBUF_REPO "")
+        # SET(PROTOBUF_TAG "mobile")
+        # SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-mobile")
         SET(OPTIONAL_ARGS "-Dprotobuf_WITH_ZLIB=OFF"
                 ${CROSS_COMPILE_CMAKE_ARGS}
                 "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -278,7 +287,11 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     endif()
 ENDFUNCTION()
 
-SET(PROTOBUF_VERSION 3.19.0)
+if(ANDROID AND ARM_TARGET_LANG STREQUAL "gcc")
+    SET(PROTOBUF_VERSION 3.14.0)
+else()
+    SET(PROTOBUF_VERSION 3.19.0)
+endif()
 
 IF(LITE_WITH_ARM)
     build_protobuf(protobuf_host TRUE)
