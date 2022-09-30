@@ -183,8 +183,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
     set(PATCH_COMMAND "")
+    set(PROTOBUF_REPOSITORY https://github.com/protocolbuffers/protobuf.git)
     if(ANDROID AND ARM_TARGET_LANG STREQUAL "gcc")
-        set(PROTOBUF_TAG "v3.8.0")
+        set(PROTOBUF_TAG "v3.14.0")
+    elseif(WIN32)
+        # Change the tag to support building with vs2019
+        set(PROTOBUF_TAG 01a05a53f40ca2ac5f0af10c6cc0810bee39b792)
     else()
         set(PROTOBUF_TAG "v3.19.0")
     endif()
@@ -237,8 +241,8 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             PREFIX          ${PROTOBUF_SOURCES_DIR}
             SOURCE_SUBDIR   cmake
             UPDATE_COMMAND  ""
-	    PATCH_COMMAND   ${PATCH_COMMAND}
-            GIT_REPOSITORY  ""
+	        PATCH_COMMAND   ${PATCH_COMMAND}
+            GIT_REPOSITORY  ${PROTOBUF_REPOSITORY}
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
             CMAKE_ARGS
@@ -261,10 +265,10 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         ExternalProject_Add(
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
-            PREFIX          ${SOURCE_DIR}
+            PREFIX          ${PROTOBUF_SOURCES_DIR}
             UPDATE_COMMAND  ""
-	    PATCH_COMMAND   ${PATCH_COMMAND}
-            GIT_REPOSITORY  ""
+	        PATCH_COMMAND   ${PATCH_COMMAND}
+            GIT_REPOSITORY  ${PROTOBUF_REPOSITORY}
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
             BUILD_ALWAYS 1
@@ -289,6 +293,8 @@ ENDFUNCTION()
 
 if(ANDROID AND ARM_TARGET_LANG STREQUAL "gcc")
     SET(PROTOBUF_VERSION 3.14.0)
+elseif(WIN32)
+    SET(PROTOBUF_VERSION 3.1.0)
 else()
     SET(PROTOBUF_VERSION 3.19.0)
 endif()
