@@ -99,10 +99,25 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
-    auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
-    CHECK(data);
-    CHECK(param.x->raw_data());
-    h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    if (fp16_support_ && param.x->precision() == PRECISION(kFloat)) {
+      std::vector<half_t> x_source_half(param.x->dims().production());
+      for (size_t i = 0; i < param.x->dims().production(); ++i) {
+        x_source_half[i] = Float2Half(param.x->data<float>()[i]);
+      }
+      auto* data = param.y->mutable_data(
+          TARGET(kOpenCL), param.x->dims().production() * sizeof(half_t));
+      CHECK(data);
+      CHECK(param.x->raw_data());
+      h2d_duration_ =
+          CopyFromHostSync(data,
+                           x_source_half.data(),
+                           param.x->dims().production() * sizeof(half_t));
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
+      CHECK(data);
+      CHECK(param.x->raw_data());
+      h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    }
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -166,8 +181,21 @@ class IoCopykOpenCLToHostCompute
     VLOG(4) << "param.process_type:" << param.process_type;
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
-
-    d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+    if (fp16_support_ && param.x->precision() != PRECISION(kInt64) &&
+        param.x->precision() != PRECISION(kInt32)) {
+      std::vector<half_t> half_data(param.x->dims().production());
+      d2h_duration_ =
+          CopyToHostSync(half_data.data(),
+                         param.x->raw_data(),
+                         param.x->dims().production() * sizeof(half_t));
+      float* data = param.y->mutable_data<float>(TARGET(kHost), mem_size);
+      for (size_t i = 0; i < param.x->dims().production(); ++i) {
+        data[i] = Half2Float(half_data.data()[i]);
+      }
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+      d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+    }
   }
 
   std::string doc() const override { return "Copy IO from OpenCL to HOST"; }

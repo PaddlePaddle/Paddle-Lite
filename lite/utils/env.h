@@ -39,6 +39,16 @@
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
+// The environment variables for the opencl memory config settings
+// Specify the path of configuration file for the opencl buffer memory config,
+// an
+// example is shown as below:
+// op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+// op_type::out_var_name_0
+// op_type:in_var_name_0
+// op_type
+#define OPENCL_MEMORY_CONFIG_FILE "OPENCL_MEMORY_CONFIG_FILE"
+
 // Due to various reasons (such as bugs from PaddleSlim), some ops in the model
 // lack quantization parameters. Optionally, the missing quantization parameters
 // can be completed by the following rules.

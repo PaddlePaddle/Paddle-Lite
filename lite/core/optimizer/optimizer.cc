@@ -220,7 +220,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
 #ifdef LITE_WITH_XPU
        "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
 #endif
-
+       "opencl_memory_object_config_pass",
        "remove_tf_redundant_ops_pass",
        "variable_place_inference_pass",  // inference arg/var's
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",

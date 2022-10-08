@@ -544,6 +544,22 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 - 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
 - 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
+### 设置 OpenCL 混合内存对象推理
+OpenCL大部分算子支持cl::Image2D数据排布，少部分算子支持cl::Buffer（正在持续扩充），出于以下背景原因考虑
+1. 不同的设备采用 cl::Image2D 和 cl::Buffer 性能优势不同。
+2. 设备本身对 cl::Image2D 的 CL_DEVICE_IMAGE2D_MAX_HEIGHT 和 CL_DEVICE_IMAGE2D_MAX_WIDTH 有限制，导致部分op尺寸过大时会报错：malloc image is out of max image size(w,h)。
+3. 部分op采用 cl::Buffer 内存对象会有很好的性能，比如reshape，transpose，keep_dims 为 false 的 argmax，reduce等。
+支持两种内存对象可配置，通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』，实现人为指定部分op使用cl::Buffer实现；
+
+```shell
+$ cd /data/local/tmp/opencl
+$ cat ./RES-paddle2-PPLIteSegSTDC1.txt
+arg_max:bilinear_interp_v2_6.tmp_0:argmax_0.tmp_0
+$ export OPENCL_MEMORY_CONFIG_FILE=./RES-paddle2-PPLIteSegSTDC1.txt
+$ ./benchmark_bin  --model_file=./RES-paddle2-PPLIteSegSTDC1/inference.pdmodel \
+    --param_file=./RES-paddle2-PPLIteSegSTDC1/ inference.pdiparams \
+    --input_shape=1,3,1024,1024 --backend=opencl --repeats=20 --warmup=2
+```
 
 ## 9. 常见问题
 
