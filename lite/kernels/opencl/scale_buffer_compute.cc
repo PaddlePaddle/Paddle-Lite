@@ -59,7 +59,7 @@ class ScaleComputeBuffer
       first_epoch_for_reinit_ = false;
 
       size_t count = x_dims.production();
-      global_work_size_ = cl::NDRange{count};
+      global_work_size_ = cl::NDRange{(count + 7) / 8};
     }
   }
 

@@ -329,7 +329,9 @@ class NearestInterpComputeTester : public arena::TestCase {
   }
 };
 
-void TestInterpOuthw(Place place, float abs_error = 2e-5) {
+void TestInterpOuthw(Place place,
+                     float abs_error = 2e-5,
+                     std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (int out_h : {6, 8, 12}) {
@@ -348,7 +350,7 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
 #else
           std::unique_ptr<arena::TestCase> tester(
               new NearestInterpComputeTester(place,
-                                             "def",
+                                             alias,
                                              DDim(x_dims),
                                              interp_method,
                                              -1.f,
@@ -363,7 +365,9 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
   }
 }
 
-void TestInterpScale(Place place, float abs_error = 2e-5) {
+void TestInterpScale(Place place,
+                     float abs_error = 2e-5,
+                     std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       for (float scale : {0.3f, 1.f, 1.7f}) {
@@ -380,7 +384,7 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
                                            0));
 #else
         std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
-            place, "def", DDim(x_dims), interp_method, scale));
+            place, alias, DDim(x_dims), interp_method, scale));
 #endif
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
@@ -389,12 +393,14 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
   }
 }
 
-void TestInterpSizetensor(Place place, float abs_error = 2e-5) {
+void TestInterpSizetensor(Place place,
+                          float abs_error = 2e-5,
+                          std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          -1.f,
@@ -411,12 +417,14 @@ void TestInterpSizetensor(Place place, float abs_error = 2e-5) {
   }
 }
 
-void TestInterpInputScale(Place place, float abs_error = 2e-5) {
+void TestInterpInputScale(Place place,
+                          float abs_error = 2e-5,
+                          std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          0.7,
@@ -433,12 +441,14 @@ void TestInterpInputScale(Place place, float abs_error = 2e-5) {
   }
 }
 
-void TestInterpOutsize(Place place, float abs_error = 2e-5) {
+void TestInterpOutsize(Place place,
+                       float abs_error = 2e-5,
+                       std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          -1,
@@ -455,18 +465,22 @@ void TestInterpOutsize(Place place, float abs_error = 2e-5) {
   }
 }
 
-void TestInterpAlignCorners(Place place, float abs_error = 2e-5) {
+void TestInterpAlignCorners(Place place,
+                            float abs_error = 2e-5,
+                            std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (bool align_corners : {true, false}) {
       std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
-          place, "def", DDim(x_dims), "nearest", -1, 4, 4, align_corners));
+          place, alias, DDim(x_dims), "nearest", -1, 4, 4, align_corners));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
   }
 }
 
-void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
+void TestInterpAlignMode(Place place,
+                         float abs_error = 2e-5,
+                         std::string alias = "def") {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (bool align_corners : {true, false}) {
       for (int align_mode : {0, 1}) {
@@ -479,7 +493,7 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
 #endif
         std::unique_ptr<arena::TestCase> tester(
             new NearestInterpComputeTester(place,
-                                           "def",
+                                           alias,
                                            DDim(x_dims),
                                            "bilinear",
                                            -1.,
@@ -583,6 +597,16 @@ TEST(Interp, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error, "ImageDefault");
+  TestInterpScale(place, abs_error, "ImageDefault");
+  TestInterpInputScale(place, abs_error, "ImageDefault");
+  TestInterpOutsize(place, abs_error, "ImageDefault");
+  TestInterpAlignCorners(place, abs_error, "ImageDefault");
+  TestInterpAlignMode(place, abs_error, "ImageDefault");
+  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #ifdef ENABLE_ARM_FP16
