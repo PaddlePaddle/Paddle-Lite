@@ -45,9 +45,6 @@ class LayoutComputeBufferChwToImageDefault
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
-    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -183,9 +180,6 @@ class LayoutComputeImageDefaultToBufferChw
     auto& param = Param<param_t>();
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
-    }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
@@ -623,9 +617,6 @@ class LayoutComputeImageFolderToBufferChw
     if (x_dims.size() > 2) {
       kernel_func_name_ = "image2d_to_buffer";
     }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
-    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -767,9 +758,6 @@ class LayoutComputeBufferChwToImageFolder
     auto x_dims = param.x->dims();
     if (x_dims.size() > 2) {
       kernel_func_name_ = "buffer_to_image2d";
-    }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
