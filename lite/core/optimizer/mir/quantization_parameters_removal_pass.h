@@ -24,24 +24,24 @@ namespace lite {
 namespace mir {
 
 /*
- * Clear ops' quant information by config file
+ * Remove the quantization parameters of some operators in the model according
+ * to the configuration file, and force these operators to run on fp32/fp16
+ * precision for the mixed precision inference.
  *
- * for ops to clear quant info
- * before:
- *   in_var(int8) -> op(int8) -> out_var(int8)
- * after:
- *   in_var(int8) -> op -> out_var
+ *       w(int8)
+ *         |
+ *  in -> op(int8, with in_scale, out_scale and w_scale) -> out
+ *
+ * After applied:
+ *
+ *       w(fp32)
+ *         |
+ *  in -> op(fp32, without quant scale attrs) -> out
+ *
  */
-class QuantizationParametersRemovalPass : public ProgramPass {
+class QuantizationParametersRemovalPass : public mir::ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
- private:
-  std::string GetMixedPrecisionQuantizationConfig(Scope* scope);
-  std::set<Node*> GetTargetNodesFromMixedPrecisionQuantizationConfig(
-      const std::unique_ptr<SSAGraph>& graph,
-      const std::string& mixed_precision_quantization_config);
-  void ClearQuantInfo(paddle::lite::mir::Node* node);
 };
 
 }  // namespace mir
