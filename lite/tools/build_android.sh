@@ -86,13 +86,11 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                               -DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+readonly CMAKE_COMMON_OPTIONS="-DLITE_WITH_ARM=ON \
                                -DLITE_WITH_X86=OFF \
                                -DWITH_TESTING=OFF \
                                -DARM_TARGET_OS=android"
