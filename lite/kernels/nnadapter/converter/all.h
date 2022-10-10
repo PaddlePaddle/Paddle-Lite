@@ -225,7 +225,7 @@ REGISTER_CONVERTER(abs,
 REGISTER_CONVERTER(exp,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,nvidia_"
-                   "tensorrt,cambricon_mlu,kunlunxin_xtcl");
+                   "tensorrt,cambricon_mlu,kunlunxin_xtcl,qualcomm_qnn");
 REGISTER_CONVERTER(instance_norm,
                    ConvertInstanceNorm,
                    "huawei_ascend_npu,kunlunxin_xtcl");
@@ -239,7 +239,7 @@ REGISTER_CONVERTER(group_norm,
 REGISTER_CONVERTER(log,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,nvidia_"
-                   "tensorrt,intel_openvino,kunlunxin_xtcl");
+                   "tensorrt,intel_openvino,kunlunxin_xtcl,qualcomm_qnn");
 REGISTER_CONVERTER(swish,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,nvidia_tensorrt,intel_"
@@ -307,13 +307,13 @@ REGISTER_CONVERTER(
     reduce_mean,
     ConvertReduce,
     "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,intel_openvino,"
-    "kunlunxin_xtcl");
-REGISTER_CONVERTER(reduce_max, ConvertReduce, "intel_openvino");
+    "kunlunxin_xtcl,qualcomm_qnn");
+REGISTER_CONVERTER(reduce_max, ConvertReduce, "intel_openvino,qualcomm_qnn");
 REGISTER_CONVERTER(
     reduce_sum,
     ConvertReduce,
     "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt,"
-    "kunlunxin_xtcl");
+    "kunlunxin_xtcl,qualcomm_qnn");
 REGISTER_CONVERTER(top_k,
                    ConvertTopK,
                    "huawei_ascend_npu,cambricon_mlu,kunlunxin_xtcl");
@@ -459,9 +459,10 @@ REGISTER_CONVERTER(
     logical_and,
     ConvertBinaryLogicalOp,
     "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,kunlunxin_xtcl");
-REGISTER_CONVERTER(floor,
-                   ConvertUnaryActivations,
-                   "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl");
+REGISTER_CONVERTER(
+    floor,
+    ConvertUnaryActivations,
+    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,qualcomm_qnn");
 REGISTER_CONVERTER(meshgrid,
                    ConvertMeshgrid,
                    "huawei_ascend_npu,kunlunxin_xtcl");

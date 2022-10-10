@@ -728,19 +728,36 @@ void NCHW2NHWCDataLayoutConverter::ConvertReduce(core::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
   int input_dimensions_count = input_operand->type.dimensions.count;
-  auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  if (*axis < 0) {
-    *axis += input_dimensions_count;
+  size_t axes_size = input_operands[1]->length / sizeof(int32_t);
+  auto axes = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  for (size_t i = 0; i < axes_size; i++) {
+    if (axes[i] < 0) axes[i] += input_dimensions_count;
   }
+  bool keepdim = *reinterpret_cast<bool*>(input_operands[2]->buffer);
   auto output_operand = output_operands[0];
   // Recalculate the axis according to the dimorder vector of the input operand
   auto input_permutation = GetPermutation(input_operand);
-  *axis = TransposeAxis(*axis, input_permutation);
-  auto output_dimensions_count = output_operand->type.dimensions.count;
-  // Skip NCHW2NHWC conversion
-  // TODO(hong19860320) Transpose output operand according to the dimorder
-  // vector of the input operand
-  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+  if (keepdim) {
+    for (size_t i = 0; i < axes_size; i++) {
+      axes[i] = TransposeAxis(axes[i], input_permutation);
+    }
+    TransposeOperand(output_operand, input_permutation);
+    SetPermutation(output_operand, input_permutation);
+  } else {
+    // Force to restore the dimorder vector of the input operand
+    auto transpose_input_permutation = InversePermutation(input_permutation);
+    if (!IsIdentityPermutation(transpose_input_permutation)) {
+      auto transpose_input_operand = AppendTransposeOperation(
+          model_, input_operand, transpose_input_permutation);
+      UpdateOperationInputOperands(
+          {operation}, input_operand, transpose_input_operand);
+      SetPermutation(transpose_input_operand,
+                     IdentityPermutation(input_dimensions_count));
+    }
+    int output_dimensions_count = output_operand->type.dimensions.count;
+    SetPermutation(output_operand,
+                   IdentityPermutation(output_dimensions_count));
+  }
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertReshape(core::Operation* operation) {
@@ -947,6 +964,21 @@ void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(core::Operation* operation) {
   // Recalculate the axis according to the dimorder vector of the input operand
   auto input_permutation = GetPermutation(input_operand);
   *axis = TransposeAxis(*axis, input_permutation);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertSoftplus(core::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_GE(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
   TransposeOperand(output_operand, input_permutation);
   SetPermutation(output_operand, input_permutation);
 }
@@ -1343,6 +1375,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_QUANTIZE:
         ConvertQuantize(operation);
         break;
+      case NNADAPTER_REDUCE_MAX:
       case NNADAPTER_REDUCE_MEAN:
       case NNADAPTER_REDUCE_SUM:
         ConvertReduce(operation);
@@ -1353,6 +1386,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
       case NNADAPTER_RESIZE_LINEAR:
         ConvertResizeLinear(operation);
         break;
+      case NNADAPTER_FLOOR:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_TANH:
@@ -1376,6 +1410,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
+        break;
+      case NNADAPTER_SOFTPLUS:
+        ConvertSoftplus(operation);
         break;
       case NNADAPTER_SQUEEZE:
         ConvertSqueeze(operation);
