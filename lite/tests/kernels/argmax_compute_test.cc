@@ -215,6 +215,9 @@ TEST(Argmax, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   TestArgmax(place, aliases, {2});
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  TestArgmax(place, aliases, {2});
+  return;
 #else
   return;
 #endif
