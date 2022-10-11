@@ -188,11 +188,13 @@ void Tensor::CopyToCpu(T *data) const {
 }
 
 template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kHost>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kARM>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
