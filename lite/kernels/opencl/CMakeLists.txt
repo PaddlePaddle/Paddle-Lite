@@ -55,6 +55,7 @@ add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
 add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 add_kernel(layer_norm_opencl_image OPENCL basic SRCS layer_norm_image_compute.cc)
+add_kernel(argmax_opencl_buffer OPENCL basic SRCS argmax_buffer_compute.cc)
 # extra
 # wait to add ...
 

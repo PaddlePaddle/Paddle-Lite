@@ -311,7 +311,9 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
       } else {
         // kNCHW or kAny
         if (CLRuntime::Global()->get_precision() ==
-            lite_api::CL_PRECISION_FP16) {
+                lite_api::CL_PRECISION_FP16 &&
+            inst_tensor->precision() != PRECISION(kInt64) &&
+            inst_tensor->precision() != PRECISION(kInt32)) {
           std::vector<half_t> inst_host_tensor_half(
               inst_tensor->dims().production());
           TargetWrapperCL::MemcpySync(

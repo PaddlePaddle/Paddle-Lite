@@ -137,7 +137,7 @@ class ArgmaxComputeTester : public arena::TestCase {
       std::vector<float> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
-        data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
+        data[i] = sign * static_cast<float>(i % 2048) * 0.013f + 0.001;
       }
       SetCommonTensor(input_, dims_, data.data());
     } else if (alias_ == "int64") {
@@ -218,6 +218,10 @@ TEST(Argmax, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  TestArgmax(place, {"fp32"}, {-1, 2, 3});
+  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
