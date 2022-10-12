@@ -30,7 +30,12 @@ bool XPUFcOp::CheckShape() const {
   const auto w_dims = param_.w->dims();
   CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
 
+  int64_t w_dims_0 = w_dims[0];
   int64_t w_dims_1 = w_dims[1];
+  if (param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+    w_dims_0 = w_dims[1];
+  }
   if (param_.bias) {
     const auto bias_dims = param_.bias->dims();
     if (bias_dims.size() == 2) {
@@ -47,7 +52,7 @@ bool XPUFcOp::CheckShape() const {
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
   param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
-  CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
+  CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims_0);
 
   return true;
 }
@@ -57,6 +62,9 @@ bool XPUFcOp::InferShapeImpl() const {
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
   int64_t w_dims_1 = w_dims[1];
+  if (param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+  }
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -93,6 +101,9 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
   param_.transpose_x = op_desc.GetAttr<bool>("transpose_x");
   param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
+  if (op_desc.HasAttr("alpha")) {
+    param_.alpha = op_desc.GetAttr<float>("alpha");
+  }
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=

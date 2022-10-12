@@ -98,8 +98,6 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 
-
-
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
@@ -108,7 +106,7 @@ readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
 readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
 
 # absolute path of Paddle-Lite.
-readonly workspace=$PWD/$(dirname $0)/../../
+readonly workspace=$(dirname $(readlink -f "$0"))/../../
 # basic options for linux compiling.
 readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
@@ -253,9 +251,6 @@ function init_cmake_mutable_options {
 #####################################################################################################
 
 
-
-
-
 ####################################################################################################
 # 3. functions of prepare workspace before compiling
 ####################################################################################################
@@ -295,6 +290,7 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
+    cd $workspace
     if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
         if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
@@ -304,11 +300,9 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 ####################################################################################################
-
-
-
 
 
 ####################################################################################################
@@ -324,7 +318,10 @@ function make_publish_so {
         prepare_thirdparty
     else
         if [ ! -d third-party ] ; then
+            cd $workspace
+            rm -rf third-party
             git checkout third-party
+            cd -
         fi
     fi
 
@@ -345,6 +342,9 @@ function make_publish_so {
     mkdir -p $build_dir
     cd $build_dir
 
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+
     prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
@@ -362,8 +362,26 @@ function make_publish_so {
     fi
     cd - > /dev/null
 }
-####################################################################################################
 
+# 4.2 function of opt
+function build_opt {
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+    prepare_thirdparty
+
+    build_dir=$workspace/build.opt
+    rm -rf $build_dir
+    mkdir -p $build_dir
+    cd $build_dir
+    cmake $workspace \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make opt -j$NUM_PROC
+}
+
+####################################################################################################
 
 
 function print_usage {
@@ -756,6 +774,11 @@ function main {
             full_publish)
                 WITH_TINY_PUBLISH=OFF
                 make_publish_so
+                exit 0
+                ;;
+            # compile opt
+            build_optimize_tool)
+                build_opt
                 exit 0
                 ;;
             # print help info

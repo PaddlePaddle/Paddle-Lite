@@ -3,11 +3,9 @@ set -e
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
-                               -DWITH_LITE=ON \
                                -DLITE_WITH_CUDA=OFF \
                                -DLITE_WITH_X86=OFF \
-                               -DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
+                               -DLITE_WITH_ARM=ON"
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
@@ -135,9 +133,10 @@ function set_android_api_level {
 function build_opt {
     cd $workspace
     prepare_thirdparty
+    rm -rf build.opt
     mkdir -p build.opt
     cd build.opt
-    cmake .. -DWITH_LITE=ON \
+    cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
@@ -158,7 +157,7 @@ function build_opt_wasm {
     cd ..
     mkdir -p build.opt.wasm
     cd build.opt.wasm
-    emcmake cmake .. -DWITH_LITE=ON \
+    emcmake cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
@@ -273,13 +272,11 @@ function make_opencl {
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
       -DLITE_ON_TINY_PUBLISH=ON \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
@@ -463,7 +460,6 @@ function make_ios {
     cmake .. \
             -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DWITH_LITE=ON \
             -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
@@ -475,7 +471,6 @@ function make_ios {
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
@@ -507,8 +502,6 @@ function make_cuda {
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
             -DLITE_WITH_LTO=${WITH_LTO} \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_STATIC_CUDA=OFF \
@@ -558,8 +551,6 @@ function make_x86 {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
@@ -627,8 +618,6 @@ function make_x86_tests {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF   \
             -DLITE_WITH_X86=ON  \
-            -DWITH_LITE=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \

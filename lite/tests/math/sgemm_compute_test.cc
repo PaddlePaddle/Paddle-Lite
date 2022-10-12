@@ -122,7 +122,6 @@ bool test_sgemm(bool tra,
   auto da = ta.mutable_data<float>();
   auto db = tb.mutable_data<float>();
   auto dc = tc.mutable_data<float>();
-  auto dc_sve = tc_sve.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
   auto dc_backup = tc_backup.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
@@ -212,6 +211,7 @@ bool test_sgemm(bool tra,
   }
 #ifdef LITE_WITH_ARM8_SVE2
   // sve
+  auto dc_sve = tc_sve.mutable_data<float>();
   Timer t1;
   for (int i = 0; i < FLAGS_repeats; ++i) {
     if (i == FLAGS_repeats - 1) {

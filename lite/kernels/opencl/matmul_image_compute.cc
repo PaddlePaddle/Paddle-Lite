@@ -436,19 +436,20 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                           local_work_size_[1],
                           UP_DIV(m_, 4));
         } else {
-          local_work_size_ = cl::NDRange(8, 4, 16);
-          if (device_version.find("Adreno(TM) 506") != std::string::npos) {
-            local_work_size_ = cl::NDRange(4, 4, 16);
+          size_t max_work_group_size = 0;
+          kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                           CL_KERNEL_WORK_GROUP_SIZE,
+                                           &max_work_group_size);
+          local_work_size_ = cl::NDRange(
+              std::min(static_cast<int>(max_work_group_size / 64), 8), 4, 16);
+          if (is_mali_ || is_apple_m1_) {
+            local_work_size_ = cl::NDRange(
+                std::min(static_cast<int>(max_work_group_size / 64), 4), 4, 16);
           }
           global_work_size_ =
-              cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
-          if (is_mali_ || is_apple_m1_) {
-            local_work_size_ = cl::NDRange(4, 4, 16);
-            global_work_size_ =
-                cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
-                            local_work_size_[1],
-                            ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
-          }
+              cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
+                          local_work_size_[1],
+                          ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
         }
       } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
         local_work_size_ =

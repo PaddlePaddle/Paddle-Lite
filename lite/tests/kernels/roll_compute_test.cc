@@ -97,7 +97,6 @@ class RollComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override {
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<float>();
     std::vector<int64_t> shifts;
     if (!shifts_tensor_.empty()) {
       auto* shift = scope->FindTensor(shifts_tensor_);
@@ -121,7 +120,6 @@ class RollComputeTester : public arena::TestCase {
     out->CopyDataFrom(*x);
     auto* out_data = out->mutable_data<float>();
     for (size_t i = 0; i < nums; i++) {
-      int64_t input_size = input_dim.size();
       ShiftAlongDim(out_data, input_dim, axis_[i], shifts_[i]);
     }
   }

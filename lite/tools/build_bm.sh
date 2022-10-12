@@ -21,9 +21,7 @@ function print_usage {
 }
 
 # readonly variables with default value
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-                               -DWITH_PYTHON=OFF \
+readonly CMAKE_COMMON_OPTIONS="-DWITH_PYTHON=OFF \
                                -DLITE_WITH_ARM=OFF"
 
 readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}

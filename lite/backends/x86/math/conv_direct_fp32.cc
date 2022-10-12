@@ -180,10 +180,10 @@ void conv_direct::generate_code(int ic,
 
   // compute output whole line
   // three parts: [left, middle, right]
-  auto cal_out_whole_line = [=, &temp](int oc_group, int ic_group) {
+  auto cal_out_whole_line = [=](int oc_group, int ic_group) {
     int ow_bulk_i = ow / ow_bulk;
 
-    auto cal_bulk = [=, &temp](
+    auto cal_bulk = [=](
         int oc_group, int ic_group, int l_pad, int r_pad, int bulk) {
       load(oc_group, bulk);
 
@@ -255,7 +255,7 @@ void conv_direct::generate_code(int ic,
   };
 
   //
-  auto cal_with_ic_fixed = [=, &temp](int ic_group) {
+  auto cal_with_ic_fixed = [=](int ic_group) {
     // ic_group is fixed
     // according to oc !
     Xbyak::Label label_oc_remain;
