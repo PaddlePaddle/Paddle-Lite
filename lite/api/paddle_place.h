@@ -51,7 +51,6 @@ enum class TargetType : int {
   kOpenCL = 5,
   kAny = 6,  // any target
   kFPGA = 7,
-  kNPU = 8,
   kXPU = 9,
   kBM = 10,
   kMLU = 11,

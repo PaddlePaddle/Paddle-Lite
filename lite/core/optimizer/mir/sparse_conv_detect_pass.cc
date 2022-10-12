@@ -869,5 +869,4 @@ REGISTER_MIR_PASS(sparse_conv_detect_pass,
     .ExcludeTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kBM)})
     .ExcludeTargets({TARGET(kOpenCL)})
-    .ExcludeTargets({TARGET(kNPU)})
     .ExcludeTargets({TARGET(kX86)});

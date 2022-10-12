@@ -64,13 +64,6 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   raw_predictor_->ConfigMetalContext(config);
 #endif
 
-#ifdef LITE_WITH_NPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-#endif
-
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
   // Use scope to store the model-level configuration for the subgraph kernel

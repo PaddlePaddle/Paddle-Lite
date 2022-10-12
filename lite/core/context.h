@@ -63,7 +63,6 @@ class Context;
 using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
-using NPUContext = Context<TargetType::kNPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
@@ -83,33 +82,6 @@ class Context<TargetType::kHost> {
 
   std::string name() const { return "HostContext"; }
 };
-
-#ifdef LITE_WITH_NPU
-template <>
-class Context<TargetType::kNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(NPUContext* ctx) {}
-
-  NPUContext& operator=(const NPUContext& ctx) {}
-  std::string name() const { return "NPUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-};
-#endif
 
 #ifdef LITE_WITH_BM
 template <>
@@ -617,12 +589,6 @@ class ContextScheduler {
             &ctx->As<ARMContext>());
         break;
 #endif
-#ifdef LITE_WITH_NPU
-      case TARGET(kNPU):
-        kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
-            &ctx->As<NPUContext>());
-        break;
-#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -715,9 +681,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_INTEL_FPGA
     InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
-#endif
-#ifdef LITE_WITH_NPU
-    InitContext<TargetType::kNPU, NPUContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

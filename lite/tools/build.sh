@@ -33,8 +33,6 @@ BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
 # controls whether to support SVE2 instructions, default is OFF
 WITH_ARM8_SVE2=OFF
-BUILD_NPU=OFF
-NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
 BUILD_XTCL=OFF
 XPU_SDK_ROOT=""
@@ -222,8 +220,6 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -341,8 +337,6 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -420,8 +414,6 @@ function make_all_tests {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -816,14 +808,6 @@ function main {
                 ;;
             --build_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            --build_npu=*)
-                BUILD_NPU="${i#*=}"
-                shift
-                ;;
-            --npu_ddk_root=*)
-                NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             --build_xpu=*)

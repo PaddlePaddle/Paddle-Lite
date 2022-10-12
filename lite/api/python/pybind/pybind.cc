@@ -286,7 +286,6 @@ void BindLitePlace(py::module *m) {
       .value("OpenCL", TargetType::kOpenCL)
       .value("Any", TargetType::kAny)
       .value("FPGA", TargetType::kFPGA)
-      .value("NPU", TargetType::kNPU)
       .value("XPU", TargetType::kXPU)
       .value("BM", TargetType::kBM)
       .value("MLU", TargetType::kMLU)

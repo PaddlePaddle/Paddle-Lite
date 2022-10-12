@@ -83,7 +83,6 @@ function build_npu {
         -DWITH_MKL=OFF \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_NPU=OFF \
         -DLITE_WITH_JAVA=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
