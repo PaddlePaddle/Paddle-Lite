@@ -32,8 +32,8 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class ReshapeComputeFloatBuffer
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+class ReshapeComputekFP16Buffer
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ReshapeParam;
 
@@ -71,9 +71,9 @@ class ReshapeComputeFloatBuffer
 
 REGISTER_LITE_KERNEL(reshape,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
+                     paddle::lite::kernels::opencl::ReshapeComputekFP16Buffer,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -91,9 +91,9 @@ REGISTER_LITE_KERNEL(reshape,
 
 REGISTER_LITE_KERNEL(reshape2,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReshapeComputeFloatBuffer,
+                     paddle::lite::kernels::opencl::ReshapeComputekFP16Buffer,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

@@ -162,7 +162,6 @@ class IoCopykOpenCLToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
-    auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();
@@ -188,7 +187,7 @@ class IoCopykOpenCLToHostCompute
           CopyToHostSync(half_data.data(),
                          param.x->raw_data(),
                          param.x->dims().production() * sizeof(half_t));
-      float* data = param.y->mutable_data<float>(TARGET(kHost), mem_size);
+      auto* data = param.y->mutable_data<float>();
       for (size_t i = 0; i < param.x->dims().production(); ++i) {
         data[i] = Half2Float(half_data.data()[i]);
       }
