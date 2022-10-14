@@ -332,13 +332,10 @@ void Predictor::WeightFP32ToFP16() {
             Tensor tmp_tensor;
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
-
             if (input_tensor->precision() != PRECISION(kFloat)) continue;
-
             tmp_tensor.CopyDataFrom(*input_tensor);
             input_tensor->clear();
             input_tensor->set_precision(PRECISION(kFP16));
-
             float16_t *fp_data = input_tensor->mutable_data<float16_t>();
             const float *in_data = tmp_tensor.data<float>();
             lite::arm::math::fp16::fp32_to_fp16(
@@ -349,7 +346,7 @@ void Predictor::WeightFP32ToFP16() {
     }
   }
 }
-#endif
+#endif  // ENABLE_ARM_FP16
 
 void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
