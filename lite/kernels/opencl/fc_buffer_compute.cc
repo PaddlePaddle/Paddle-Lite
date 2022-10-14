@@ -144,13 +144,11 @@ class FcCompute
 
       int in_num_col_dims = fc_param_->in_num_col_dims;
       std::string op_type = fc_param_->op_type;
-      op_type = "matmul_v2";
       if (op_type == "matmul" || op_type == "matmul_v2") {
         in_num_col_dims = x_dims.size() - 1;
       }
-
-      m_ = x_dims.Slice(0, fc_param_->in_num_col_dims).production();
-      k_ = x_dims.Slice(fc_param_->in_num_col_dims, x_dims.size()).production();
+      m_ = x_dims.Slice(0, in_num_col_dims).production();
+      k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
@@ -163,18 +161,11 @@ class FcCompute
 #endif
 
       // choose kernel
-      if (is_adreno_) {
-        if (m_ == 1) {
-          kernel_func_name_ = "adreno_gemv_1x4";
-        } else {
-          kernel_func_name_ = "adreno_gemm_4x4";
-        }
+      // TODO(sprouteer): support mali later
+      if (m_ == 1) {
+        kernel_func_name_ = "adreno_gemv_1x4";
       } else {
-        if (m_ == 1) {
-          kernel_func_name_ = "adreno_gemv_1x4";
-        } else {
-          kernel_func_name_ = "adreno_gemm_4x4";
-        }
+        kernel_func_name_ = "adreno_gemm_4x4";
       }
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
