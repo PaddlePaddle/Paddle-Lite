@@ -23,6 +23,9 @@
 
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/type_trans_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -297,6 +300,57 @@ const cpp::ProgramDesc &Predictor::program_desc() const {
 }
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+void Predictor::WeightFP32ToFP16() {
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
+  std::vector<std::string> fp16_ops{"conv2d",
+                                    "depthwise_conv2d",
+                                    "conv2d_transpose",
+                                    "fc",
+                                    "mul",
+                                    "matmul",
+                                    "matmul_v2",
+                                    "gru",
+                                    "sequence_conv",
+                                    "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
+                                    "elementwise_mul",
+                                    "prelu"};
+  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+    auto *block = program_desc->GetBlock<cpp::BlockDesc>(i);
+    for (size_t k = 0; k < block->OpsSize(); ++k) {
+      auto *op_desc = block->GetOp<cpp::OpDesc>(k);
+      std::string op_type = op_desc->Type();
+      auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
+      if (iter != fp16_ops.end()) {
+        auto input_names = op_desc->input_vars();
+        for (auto &input_name : input_names) {
+          std::string input_weight_name = input_name + "_fp16";
+          if (op_desc->HasAttr(input_weight_name)) {  // the input is fp16
+            Tensor tmp_tensor;
+            auto input_tensor =
+                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+
+            tmp_tensor.CopyDataFrom(*input_tensor);
+            input_tensor->clear();
+            input_tensor->set_precision(PRECISION(kFP16));
+
+            float16_t *fp_data = input_tensor->mutable_data<float16_t>();
+            const float *in_data = tmp_tensor.data<float>();
+            lite::arm::math::fp16::fp32_to_fp16(
+                in_data, fp_data, input_tensor->numel());
+          }
+        }
+      }
+    }
+  }
+}
+#endif
+
 void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
@@ -413,6 +467,11 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   // Update the runtime program to program_desc only once
   program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
+
+#ifdef ENABLE_ARM_FP16
+  // fp16 Weight convert
+  WeightFP32ToFP16();
+#endif
 }
 
 void Predictor::GenRuntimeProgram() {

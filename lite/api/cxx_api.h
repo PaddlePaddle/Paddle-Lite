@@ -252,6 +252,9 @@ class LITE_API Predictor {
 
   void ClearTensorArray(
       const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
+#ifdef ENABLE_ARM_FP16
+  void WeightFP32ToFP16();
+#endif
 
  private:
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
