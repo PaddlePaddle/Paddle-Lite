@@ -240,6 +240,9 @@ class OpenCLMemoryObjectConfigPass : public ProgramPass {
         }
         new_place.layout = DATALAYOUT(kNCHW);
 
+        if (op_type.find("gather") != std::string::npos) {
+          new_place.target = TARGET(kHost);
+        }
         std::vector<Place> places;
         places.push_back(new_place);
         inst.ResetKernels(places);

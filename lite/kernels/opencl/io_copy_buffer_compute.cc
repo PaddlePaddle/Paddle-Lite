@@ -104,8 +104,7 @@ class IoCopyHostToOpenCLCompute
       for (size_t i = 0; i < param.x->dims().production(); ++i) {
         x_source_half[i] = Float2Half(param.x->data<float>()[i]);
       }
-      auto* data = param.y->mutable_data(
-          TARGET(kOpenCL), param.x->dims().production() * sizeof(half_t));
+      auto* data = param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL));
       CHECK(data);
       CHECK(param.x->raw_data());
       h2d_duration_ =
