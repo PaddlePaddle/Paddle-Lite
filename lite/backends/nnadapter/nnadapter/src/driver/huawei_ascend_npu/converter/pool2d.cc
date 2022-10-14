@@ -50,6 +50,9 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     pool2d_op->set_attr_pads(ge::Operator::OpListInt(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
     pool2d_op->set_attr_global_pooling(global_pooling);
+    if (IsDynamicShapeOperandType(input_operand->type)) {
+      pool2d_op->set_attr_global_pooling(false);
+    }
     pool2d_op->set_attr_ceil_mode(ceil_mode);
     if (flag) {
       pool2d_op->set_attr_exclusive(0);
@@ -57,6 +60,37 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     SET_INPUT(pool2d_op, x, input_operator);
     MAP_OUTPUT(pool2d_op, y, output_operand);
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 2)
+    auto pool2d_op = converter->AddOperator<ge::op::MaxPoolV3>(output_operand);
+    pool2d_op->set_attr_ksize(
+        ge::Operator::OpListInt({1, 1, kernel_height, kernel_width}));
+    pool2d_op->set_attr_pads(ge::Operator::OpListInt(
+        {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
+    pool2d_op->set_attr_strides(
+        ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
+    // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
+    pool2d_op->set_attr_ceil_mode(ceil_mode);
+    auto GetPoolingPaddingMode = [&](int32_t auto_pad) {
+      switch (auto_pad) {
+        case NNADAPTER_AUTO_PAD_VALID:
+          return "VALID";
+        case NNADAPTER_AUTO_PAD_SAME:
+          return "SAME";
+        case NNADAPTER_AUTO_PAD_NONE:
+        default:
+          return "CALCULATED";
+      }
+    };
+    pool2d_op->set_attr_padding_mode(
+        ge::Operator::OpString(GetPoolingPaddingMode(auto_pad)));
+    if (auto_pad == NNADAPTER_AUTO_PAD_VALID) {
+      pool2d_op->set_attr_ceil_mode(false);
+    }
+    pool2d_op->set_attr_global_pooling(global_pooling);
+    if (IsDynamicShapeOperandType(input_operand->type)) {
+      pool2d_op->set_attr_global_pooling(false);
+    }
+#else
     auto pool2d_op = converter->AddOperator<ge::op::Pooling>(output_operand);
     pool2d_op->set_attr_mode(0);
     pool2d_op->set_attr_global_pooling(global_pooling);
@@ -70,6 +104,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     if (!ceil_mode) {
       pool2d_op->set_attr_ceil_mode(1);
     }
+#endif
     SET_INPUT(pool2d_op, x, input_operator);
     MAP_OUTPUT(pool2d_op, y, output_operand);
   } else {
