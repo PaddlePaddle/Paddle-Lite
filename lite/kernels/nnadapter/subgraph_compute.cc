@@ -43,6 +43,20 @@ void SubgraphCompute::PrepareForRun() {
 void SubgraphCompute::Run() {
   CHECK(engine_);
   engine_->Run();
+  // Set output tensor lod
+  // 1. All input lods should be the same
+  // 2. All outputs share the input lod
+  auto& param = this->Param<param_t>();
+  auto scope = param.exec_scope;
+  for (auto input_data_name : param.input_data_names) {
+    auto lod = scope->FindTensor(input_data_name)->lod();
+    if (!lod.empty()) {
+      for (auto output_data_name : param.output_data_names) {
+        scope->FindMutableTensor(output_data_name)->set_lod(lod);
+      }
+      break;
+    }
+  }
 }
 
 }  // namespace nnadapter
