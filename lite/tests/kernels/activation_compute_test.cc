@@ -590,7 +590,6 @@ TEST(Activation_relu_clipped, precision) {
 }
 
 TEST(Activation_prelu, precision) {
-  LOG(INFO) << "test prelu op";
   Place place;
   float abs_error = 2e-5;
   std::vector<std::string> modes{"all", "channel", "element"};
@@ -600,6 +599,9 @@ TEST(Activation_prelu, precision) {
   abs_error = 1e-2;
   modes = {"all", "channel"};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-2;
   modes = {"all", "channel"};
 #else
