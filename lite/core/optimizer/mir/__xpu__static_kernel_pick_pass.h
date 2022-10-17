@@ -42,7 +42,17 @@ namespace mir {
  */
 class XPUStaticKernelPickPass : public mir::StmtPass {
  public:
-  XPUStaticKernelPickPass() {
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+  const core::KernelPickFactor& kernel_pick_factors() const {
+    return kernel_pick_factors_;
+  }
+  core::KernelPickFactor* mutable_kernel_pick_factors() {
+    return &kernel_pick_factors_;
+  }
+
+ private:
+  void Init() {
 #ifdef LITE_WITH_XPU
     // get xpu device type
     int cur_dev_idx = 0;
@@ -72,16 +82,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 #endif
   }
 
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
-  const core::KernelPickFactor& kernel_pick_factors() const {
-    return kernel_pick_factors_;
-  }
-  core::KernelPickFactor* mutable_kernel_pick_factors() {
-    return &kernel_pick_factors_;
-  }
-
- private:
   // Score the kernel.
   size_t KernelGrade(lite::mir::Node* node,
                      const lite::KernelBase& kernel,
@@ -242,6 +242,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     }
   }
   void DataPrecisionDicide(const std::unique_ptr<SSAGraph>& graph);
+  void GetInputThreshold(const std::unique_ptr<SSAGraph>& graph);
   bool ForceUsePrecision(size_t* score,
                          const lite::KernelBase& kernel,
                          const paddle::lite::mir::Node::Stmt& instruct);
@@ -264,6 +265,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                       const lite::KernelBase& kernel,
                       bool* type_match,
                       size_t* score);
+
+  void GeneralInt8OpScore(lite::mir::Node* node,
+                          const lite::KernelBase& kernel,
+                          bool* type_match,
+                          size_t* score);
+
   void InplaceOpScore(lite::mir::Node* node,
                       const lite::KernelBase& kernel,
                       bool* type_match,
@@ -300,7 +307,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "unsqueeze2"};
   bool xpu_use_int8_optimizer_{false};
   std::set<std::string> xpu_int8_special_op_{"__xpu__fc", "__xpu__conv2d"};
-
+  std::set<std::string> xpu_int8_general_op_{"pool2d"};
   bool local_quant_{false};
   std::string encode_precision_;
 };

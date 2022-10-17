@@ -512,22 +512,35 @@ class XPUConv2dFuser : public FuseBase {
           {127 *
            matched.at("conv")->stmt()->op_info()->GetInputScale(
                input_name)[0]});
+      bool per_channel = false;
+      std::vector<float> weight_max;
+      auto max_weight_vector =
+          matched.at("conv")->stmt()->op_info()->GetInputScale(filter_name);
 
-      op_desc.SetAttr<std::vector<float>>(
-          get_scale_name(filter_name),
-          {127 *
-           matched.at("conv")->stmt()->op_info()->GetInputScale(
-               filter_name)[0]});
+      if (is_per_tensor(max_weight_vector)) {
+        per_channel = false;
+        VLOG(4) << "xpu conv quant weight only use one  max value. ";
+        weight_max.push_back(max_weight_vector[0] * 127);
+      } else {
+        per_channel = true;
+        VLOG(4) << "xpu conv quant weight  use  max value per channel.";
+        for (auto wm : max_weight_vector) {
+          weight_max.push_back(wm * 127);
+        }
+      }
+
+      op_desc.SetAttr<bool>("per_channel", per_channel);
+      op_desc.SetAttr<std::vector<float>>(get_scale_name(filter_name),
+                                          weight_max);
 
       if (with_branch_) {
         std::string branch_name = matched.at("ew_branch_add_in")->arg()->name;
         op_desc.SetAttr<std::vector<float>>(
             "Branch0_scale",
-            {127 *
-             matched.at("ew_branch_add")
+            {(matched.at("ew_branch_add_in")->inlinks.front())
                  ->stmt()
                  ->op_info()
-                 ->GetInputScale(branch_name)[0]});
+                 ->GetAttr<float>("out_threshold")});
       }
 
       std::string op_name{};
@@ -577,6 +590,21 @@ class XPUConv2dFuser : public FuseBase {
       DirectedLink(matched.at("ew_branch_add_in"), new_op_node);
     }
     DirectedLink(new_op_node, matched.at(output_node_name));
+  }
+
+ private:
+  bool is_per_tensor(const std::vector<float>& weight_max) {
+    bool per_tensor = true;
+    CHECK_GT(weight_max.size(), 0) << "conv2d channel size: "
+                                   << weight_max.size();
+    auto first = weight_max[0];
+    for (size_t i = 1; i < weight_max.size(); ++i) {
+      if (std::abs(first - weight_max[i]) > 1e-6) {
+        per_tensor = false;
+        break;
+      }
+    }
+    return per_tensor;
   }
 
  private:

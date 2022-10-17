@@ -36,6 +36,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   auto filter_dims = param.filter->dims();
   bool quant_int8 = param.enable_int8;
   bool quant_int16 = param.enable_int16;
+  per_channel_ = param.per_channel;
   CHECK(!(quant_int8 && quant_int16))
       << "param enable_int8 and enable_int16 can't be both true";
   if (quant_int8 || quant_int16) {
@@ -46,6 +47,10 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
           TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
       branch_max_guard_ =
           TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+      if (per_channel_) {
+        weight_one_value_guard_ =
+            TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+      }
     }
   }
 
@@ -56,14 +61,29 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
             reinterpret_cast<const int8_t*>(filter_ptr),
             filter_dims,
             false,
-            max_ptr_size);
-    std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max);
-    CHECK(xpu_quant_filter_.max_ptr_ != nullptr)
-        << "slim int8 quant xpu_quant_filter_max_ptr should't be null";
-    lite::TargetWrapperXPU::MemcpySync(xpu_quant_filter_.max_ptr_,
-                                       cpu_w_max.data(),
-                                       sizeof(float) * max_ptr_size,
-                                       IoDirection::HtoD);
+            per_channel_ ? param.quant_w_max.size() : max_ptr_size);
+    if (per_channel_) {
+      lite::TargetWrapperXPU::MemcpySync(
+          xpu_quant_filter_.max_ptr_,
+          param.quant_w_max.data(),
+          sizeof(float) * param.quant_w_max.size(),
+          IoDirection::HtoD);
+      std::vector<float> cpu_weight_one_value(max_ptr_size, 1.0);
+      lite::TargetWrapperXPU::MemcpySync(weight_one_value_guard_->addr_,
+                                         cpu_weight_one_value.data(),
+                                         sizeof(float) * max_ptr_size,
+                                         IoDirection::HtoD);
+
+    } else {
+      std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max[0]);
+      CHECK(xpu_quant_filter_.max_ptr_ != nullptr)
+          << "slim int8 quant xpu_quant_filter_max_ptr should't be null";
+      lite::TargetWrapperXPU::MemcpySync(xpu_quant_filter_.max_ptr_,
+                                         cpu_w_max.data(),
+                                         sizeof(float) * max_ptr_size,
+                                         IoDirection::HtoD);
+    }
+
     std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
@@ -84,7 +104,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
     return;
   }
 
-  // for paddle slim int16 quant
+  // for paddle slim int16 quant,not support per channel
   if (quant_int16) {
     xpu_quant_filter_ =
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
@@ -92,7 +112,7 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
             filter_dims,
             false,
             max_ptr_size);
-    std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max);
+    std::vector<float> cpu_w_max(max_ptr_size, param.quant_w_max[0]);
     CHECK(xpu_quant_filter_.max_ptr_ != nullptr)
         << "slim int16 quant xpu_quant_filter_max_ptr should't be null";
     lite::TargetWrapperXPU::MemcpySync(xpu_quant_filter_.max_ptr_,
@@ -167,13 +187,22 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::Run() {
           ? reinterpret_cast<float*>(input_max_guard_->addr_)
           : (param.input_max ? param.input_max->template data<float>()
                              : nullptr);
-  // output_max,branch_maxs only set  when use int8
+  // output_max,branch_maxs only set  when use int8.
   float* output_max =
       quant_int8 ? reinterpret_cast<float*>(output_max_guard_->addr_)
                  : param.output_max->template mutable_data<float>(TARGET(kXPU));
   float* branch_max = (quant_int8 && (param.quant_branch_max != 0))
                           ? reinterpret_cast<float*>(branch_max_guard_->addr_)
                           : nullptr;
+  // per_channel only support int8 compute.
+  const float* weight_max =
+      (quant_int8 && per_channel_)
+          ? reinterpret_cast<const float*>(weight_one_value_guard_->addr_)
+          : reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_);
+  const float* scale_max =
+      (quant_int8 && per_channel_)
+          ? reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_)
+          : nullptr;
   const auto* bias =
       param.has_bias ? param.bias->template data<float>() : nullptr;
   const DY* branch =
@@ -211,13 +240,14 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::Run() {
         dilations,
         groups,
         input_max,
-        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
+        weight_max,
         output_max,
         true,
         bias,
         nullptr,
-        act);
-
+        act,
+        nullptr,
+        scale_max);
     CHECK_EQ(r, 0);
 
     auto conv_out_shape = param.output->dims().Vectorize();
@@ -255,13 +285,14 @@ void XPUConv2dCompute<TGEMM, TW, DX, DY, PType>::Run() {
         dilations,
         groups,
         input_max,
-        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
+        weight_max,
         output_max,
         true,
         bias,
         branch,
         act,
-        branch_max);
+        branch_max,
+        scale_max);
     CHECK_EQ(r, 0);
   }
 }

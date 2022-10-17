@@ -1712,9 +1712,10 @@ struct XPUBlockFuseParam : ParamBase {
   bool enable_int8{false};
   bool enable_int16{false};
   float quant_input_max{0.f};
-  float quant_w_max{0.f};
+  std::vector<float> quant_w_max{0.f};
   float quant_output_max{0.f};
   float quant_branch_max{0.f};
+  bool per_channel{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
