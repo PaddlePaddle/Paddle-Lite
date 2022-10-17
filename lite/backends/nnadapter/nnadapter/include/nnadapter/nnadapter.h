@@ -832,7 +832,7 @@ typedef enum {
    * the values must be in the bounds of the corresponding dimensions of
    * `input`.
    * * 2: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
-   * dimension along which softmax will be performed, should be in range [-R,
+   * dimension along which gather will be performed, should be in range [-R,
    * R), where R is the rank of input, negative value works the same way as
    * `axis`+R, defaults to -1.
    *
