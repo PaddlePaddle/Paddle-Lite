@@ -31,11 +31,11 @@ namespace kernels {
 namespace opencl {
 
 class PoolCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::PoolParam;
 
-  std::string doc() const override { return "Pool using cl::Buffer, kFloat"; }
+  std::string doc() const override { return "Pool using cl::Buffer, kFP16"; }
 
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
@@ -71,9 +71,9 @@ class PoolCompute
     }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    auto* input_buf = param.x->data<float, cl::Buffer>();
-    auto* output_buf =
-        param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto* input_buf = GET_BUFFER_GPU(param.x);
+    auto* output_buf = MUTABLE_BUFFER_GPU(param.output);
+    std::cout << "222222~~~" << std::endl;
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
@@ -130,7 +130,7 @@ class PoolCompute
 
  private:
   std::string kernel_func_name_{"pool_"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 
@@ -141,7 +141,7 @@ class PoolCompute
 
 REGISTER_LITE_KERNEL(pool2d,
                      kOpenCL,
-                     kFloat,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::opencl::PoolCompute,
                      def)

@@ -168,6 +168,10 @@ TEST(Concat, precision) {
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   use_axis_tensor = std::vector<bool>{false};
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+  use_axis_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
