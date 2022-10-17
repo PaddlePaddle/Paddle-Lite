@@ -172,8 +172,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
       valid_places_.emplace_back(TARGET(kMLU));
-    } else if (target_repr == "bm") {
-      valid_places_.emplace_back(TARGET(kBM));
     } else if (target_repr == "imagination_nna") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -873,7 +871,6 @@ void OptBase::InitSupportedOpInfo() {
 #define USE_SUBGRAPH_BRIDGE(op_type_, target_)        \
   target_supported_ops_[#target_].emplace(#op_type_); \
   all_supported_ops_[#op_type_].emplace(#target_);
-#include "lite/kernels/bm/bridges/paddle_use_bridges.h"
 #include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
 }

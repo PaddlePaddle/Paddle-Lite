@@ -199,10 +199,6 @@ if (LITE_WITH_INTEL_FPGA)
 add_definitions("-DLITE_WITH_INTEL_FPGA")
 endif()
 
-if (LITE_WITH_BM)
-add_definitions("-DLITE_WITH_BM")
-endif()
-
 if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
 endif()

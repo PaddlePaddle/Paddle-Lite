@@ -67,7 +67,6 @@ using NPUContext = Context<TargetType::kNPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
-using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
@@ -108,19 +107,6 @@ class Context<TargetType::kNPU> {
     if (!var) return "";
     return var->Get<std::string>();
   }
-};
-#endif
-
-#ifdef LITE_WITH_BM
-template <>
-class Context<TargetType::kBM> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
-  void CopySharedTo(BMContext* ctx) {}
-  void* GetHandle() { return TargetWrapperBM::GetHandle(); }
-
-  std::string name() const { return "BMContext"; }
 };
 #endif
 
@@ -654,12 +640,6 @@ class ContextScheduler {
             .CopySharedTo(&ctx->As<IntelFPGAContext>());
         break;
 #endif
-#ifdef LITE_WITH_BM
-      case TARGET(kBM):
-        kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
-            &ctx->As<BMContext>());
-        break;
-#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
@@ -721,9 +701,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
-#endif
-#ifdef LITE_WITH_BM
-    InitContext<TargetType::kBM, BMContext>();
 #endif
 #ifdef LITE_WITH_MLU
     InitContext<TargetType::kMLU, MLUContext>();

@@ -867,7 +867,6 @@ REGISTER_MIR_PASS(sparse_conv_detect_pass,
                   paddle::lite::mir::SparseConvDetectPass)
     .BindTargets({TARGET(kARM)})
     .ExcludeTargets({TARGET(kXPU)})
-    .ExcludeTargets({TARGET(kBM)})
     .ExcludeTargets({TARGET(kOpenCL)})
     .ExcludeTargets({TARGET(kNPU)})
     .ExcludeTargets({TARGET(kX86)});

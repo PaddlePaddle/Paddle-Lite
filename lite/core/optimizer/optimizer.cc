@@ -227,7 +227,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
        "npu_subgraph_pass",
-       "bm_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
