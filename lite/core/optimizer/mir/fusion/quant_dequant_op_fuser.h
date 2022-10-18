@@ -140,7 +140,9 @@ class DynamicQuantOpFuser : public FuseBase {
 */
 class QuantDequantLinearOpFuser : public FuseBase {
  public:
-  QuantDequantLinearOpFuser() {}
+  explicit QuantDequantLinearOpFuser(const bool shared_zero_point) {
+    shared_zero_point_ = shared_zero_point;
+  }
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
@@ -152,6 +154,7 @@ class QuantDequantLinearOpFuser : public FuseBase {
                                               "mul",
                                               "matmul",
                                               "matmul_v2"};
+  bool shared_zero_point_{};
 };
 
 /* The pattern like "dequantize_linear_op + quantized_op "
