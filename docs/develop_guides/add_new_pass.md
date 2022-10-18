@@ -454,10 +454,6 @@ namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA)
-#ifdef LITE_WITH_MLU
-  fusion::FcFuser fuser(false);
-  fuser(graph.get());
-#else
   fusion::FcFuser fuser(true);
   fuser(graph.get());
 #endif
@@ -477,7 +473,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .BindTargets({TARGET(kAny)}) // FcFusePass 可以在任何硬件平台执行
     .ExcludeTargets({TARGET(kXPU)})
-#if (!defined(LITE_WITH_MLU) && !defined(LITE_WITH_NNADAPTER) && \
+#if (!defined(LITE_WITH_NNADAPTER) && \
       !defined(LITE_WITH_METAL))
     .ExcludeTargets({TARGET(kX86)})
 #endif
