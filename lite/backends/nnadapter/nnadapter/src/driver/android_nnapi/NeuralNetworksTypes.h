@@ -272,16 +272,19 @@ enum {
  * a driver and/or the NNAPI runtime can implement.
  */
 enum {
-  /** NNAPI specification available in Android O-MR1, Android NNAPI feature
+  /** NNAPI specification available in Android O-MR1(8.1), Android NNAPI feature
      level 1 */
   ANEURALNETWORKS_FEATURE_LEVEL_1 = 27,
-  /** NNAPI specification available in Android P, Android NNAPI feature level 2
+  /** NNAPI specification available in Android P(9), Android NNAPI feature level
+   * 2
    */
   ANEURALNETWORKS_FEATURE_LEVEL_2 = 28,
-  /** NNAPI specification available in Android Q, Android NNAPI feature level 3
+  /** NNAPI specification available in Android Q(10), Android NNAPI feature
+   * level 3
    */
   ANEURALNETWORKS_FEATURE_LEVEL_3 = 29,
-  /** NNAPI specification available in Android R, Android NNAPI feature level 4
+  /** NNAPI specification available in Android R(11), Android NNAPI feature
+   * level 4
    */
   ANEURALNETWORKS_FEATURE_LEVEL_4 = 30,
   /**

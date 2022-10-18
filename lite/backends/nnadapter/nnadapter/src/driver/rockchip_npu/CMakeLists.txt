@@ -20,10 +20,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Os -fvisibility=hidden -fvis
 include(dependencies.cmake)
 
 include_directories(.)
-aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
-set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} engine.cc driver.cc)
-set(DEPS ${DEPS} nnadapter)
+set(SRCS utility.cc ${OPTIMIZERS} engine.cc driver.cc)
+
+add_subdirectory(../../model/onnx)
+set(DEPS ${DEPS} nnadapter_model_onnx nnadapter)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group -Wl,-exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-all")

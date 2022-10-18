@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,20 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
 #include <vector>
 #include "core/types.h"
 
 namespace nnadapter {
-namespace rockchip_npu {}  // namespace rockchip_npu
+namespace model {
+namespace onnx {
+
+// Convert core::Model to ONNX model and serialize it to buffer or file
+bool Serialize(core::Model* model,
+               std::vector<uint8_t>* buffer,
+               int32_t opset_version = 11);
+bool Serialize(core::Model* model,
+               const char* path,
+               int32_t opset_version = 11);
+}  // namespace onnx
+}  // namespace model
 }  // namespace nnadapter

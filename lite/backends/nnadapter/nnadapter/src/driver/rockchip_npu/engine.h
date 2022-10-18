@@ -62,15 +62,8 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to rknpu tensor
-  std::map<core::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>
-      tensors_;
-  std::shared_ptr<rk::nn::Graph> graph_{nullptr};
-  std::shared_ptr<rk::nn::Exection> execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  std::string dump_graph_path_;
-  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
 }  // namespace rockchip_npu

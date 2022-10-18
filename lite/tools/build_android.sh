@@ -39,13 +39,12 @@ WITH_THREAD_POOL=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
-# options of compiling APU lib.
-WITH_MEDIATEK_APU=OFF
-MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling NNAdapter lib
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_HUAWEI_KIRIN_NPU=OFF
 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/hiai_ddk_lib_330"
+NNADAPTER_WITH_ROCKCHIP_NPU=OFF
+NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/librknn_api" # Download RKNPU SDK from https://github.com/rockchip-linux/rknpu2/tree/master/runtime/RK3588/Android/librknn_api
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_MEDIATEK_APU=OFF
@@ -77,8 +76,6 @@ WITH_CONVERT_TO_SSA=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
-
-
 
 
 #####################################################################################################
@@ -251,11 +248,11 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
-      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
-      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
+      -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
       -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
@@ -347,11 +344,11 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
-      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
-      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
+      -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
       -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
@@ -444,13 +441,6 @@ function print_usage {
     echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
     echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
     echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
-    echo -e "|                                                                                                                                      |"
-    echo -e "|  arguments of apu library compiling:(armv8, gcc, c++_static)                                                                         |"
-    echo -e "|     ./lite/tools/build_android.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourApuSdkPath                                      |"
-    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                  |"
-    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek APU SDK file) required when compiling apu library                                     |"
-    echo -e "|             you can download mediatek APU SDK from:  https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz           |"
-    echo -e "|  detailed information about Paddle-Lite APU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html             |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
     echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
@@ -555,15 +545,6 @@ function main {
                 HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
-            # compiling lib which can operate on mediatek apu.
-            --with_mediatek_apu=*)
-                WITH_MEDIATEK_APU="${i#*=}"
-                shift
-                ;;
-            --mediatek_apu_sdk_root=*)
-                MEDIATEK_APU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
             # compiling lib which can operate on nnadapter.
             --with_nnadapter=*)
                 WITH_NNADAPTER="${i#*=}"
@@ -575,6 +556,14 @@ function main {
                 ;;
             --nnadapter_huawei_kirin_npu_sdk_root=*)
                 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_rockchip_npu=*)
+                NNADAPTER_WITH_ROCKCHIP_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_rockchip_npu_sdk_root=*)
+                NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_amlogic_npu=*)

@@ -11,3 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cmake_minimum_required(VERSION 3.10)
+
+include_directories(.)
+aux_source_directory(converter CONVERTERS)
+add_library(nnadapter_model_onnx STATIC ${CONVERTERS} onnx.cc)
+
+include(../../../cmake/external/protobuf.cmake)
+include(../../../cmake/external/onnx.cmake)
+
+set(NNADAPTER_MODEL ${NNADAPTER_MODEL} nnadapter_model_onnx CACHE INTERNAL "")

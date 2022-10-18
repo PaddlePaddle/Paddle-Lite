@@ -16,9 +16,9 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
-#include "driver/rockchip_npu/converter/converter.h"
-#include "driver/rockchip_npu/optimizer/fix_ops.h"
+#include "driver/rockchip_npu/optimizer/restrict_input_output_quant_params.h"
 #include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
+#include "model/onnx/onnx.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
@@ -35,7 +35,7 @@ namespace nnadapter {
 namespace rockchip_npu {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // TODO(hong19860320) create the raw context from rknpu_ddk
+  // TODO(hong19860320) create the raw context from rknn runtime
 }
 
 Context::~Context() {}
@@ -43,19 +43,12 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
-  tensors_.clear();
   input_types_.clear();
   output_types_.clear();
-  dump_graph_path_ = "";
-  dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
-  if (model && cache->dir && cache->token) {
-    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
-  }
-  dump_graph_buffer_ = &cache->buffer;
   return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
 }
 
@@ -67,104 +60,50 @@ int Program::BuildFromModel(core::Model* model) {
   FuseConv2DActivationIntoConv2D(model);
   FuseReshapeTransposeReshapeIntoChannelShuffle(model);
   UnpackOpFusion(model);
-  FixOps(model);
+  RestrictInputOutputQuantParams(model);
   FuseMatMulAddIntoFullyConnected(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  // Convert a NNAdapter model to a rknpu graph
-  graph_ = std::make_shared<rk::nn::Graph>();
-  if (!graph_) {
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  if (!dump_graph_path_.empty()) {
-    if (graph_->EnableCreateCache(dump_graph_path_) == rk::nn::RK_SUCCESS) {
-      NNADAPTER_VLOG(3) << "Dump the graph to " << dump_graph_path_
-                        << " when the first run";
-    } else {
-      NNADAPTER_LOG(WARNING) << "Failed to dump the graph to "
-                             << dump_graph_path_;
-    }
-  }
-  Converter converter(graph_.get(), &tensors_);
-  NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
+  // Convert a NNAdapter model to ONNX model
+  NNADAPTER_CHECK(cache->token && cache->dir);
+  std::string dump_onnx_file_path =
+      std::string(cache->dir) + "/" + std::string(cache->token) + ".onnx";
+  NNADAPTER_CHECK(model::onnx::Serialize(model, dump_onnx_file_path.str()));
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
   if (input_count > 0) {
-    input_tensors.resize(input_count);
     input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
-      NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-      input_tensors[i] = tensors_[operand].front();
-      NNADAPTER_CHECK(input_tensors[i]);
       input_types_[i] = type;
     }
   }
   auto output_count = model->output_operands.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
   output_types_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     const auto& type = operand->type;
-    NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-    output_tensors[i] = tensors_[operand].back();
-    NNADAPTER_CHECK(output_tensors[i]);
     output_types_[i] = type;
   }
-  graph_->SetInputsOutputs(input_tensors, output_tensors);
-  // Create an execution to build the graph to the device-related program.
-  execution_ = std::make_shared<rk::nn::Exection>(graph_.get());
-  execution_->Build();
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromCache(core::Cache* cache) {
-  graph_ = std::make_shared<rk::nn::Graph>();
-  if (!graph_) {
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  // Load graph from cache buffer
-  if (graph_->LoadCache(reinterpret_cast<const char*>(cache->buffer.data()),
-                        cache->buffer.size()) != rk::nn::RK_SUCCESS) {
-    NNADAPTER_LOG(FATAL) << "Failed to load cache graph from buffer!";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
-  NNADAPTER_VLOG(3) << "Load cache graph from buffer success.";
+  // Load rknn model from cache buffer
+  NNADAPTER_VLOG(3) << "Load rknn model from buffer success.";
   // Indentify the inputs and outputs
   auto input_count = cache->input_types.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
-  if (input_count > 0) {
-    input_tensors.resize(input_count);
-    input_types_ = cache->input_types;
-    for (size_t i = 0; i < input_count; i++) {
-      const auto& type = cache->input_types[i];
-      input_tensors[i] = CreateRknnTensor(
-          graph_.get(), string_format("model_input_%d", i), &type);
-      NNADAPTER_CHECK(input_tensors[i]);
-    }
-  }
+  input_types_ = cache->input_types;
   auto output_count = cache->output_types.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
   output_types_ = cache->output_types;
-  for (size_t i = 0; i < output_count; i++) {
-    const auto& type = cache->output_types[i];
-    output_tensors[i] = CreateRknnTensor(
-        graph_.get(), string_format("model_output_%d", i), &type);
-    NNADAPTER_CHECK(output_tensors[i]);
-  }
-  graph_->SetInputsOutputs(input_tensors, output_tensors);
-  // Create an execution to build the graph to the device-specific program.
-  execution_ = std::make_shared<rk::nn::Exection>(graph_.get());
-  execution_->Build();
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -206,8 +145,6 @@ int Program::Execute(uint32_t input_count,
   if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
   NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
-  std::vector<rk::nn::InputInfo> input_info(input_count);
-  std::vector<rk::nn::OutputInfo> output_info(output_count);
   for (uint32_t i = 0; i < input_count; i++) {
     auto& arg = input_arguments[i];
     NNADAPTER_CHECK_GE(arg.index, 0);
@@ -224,13 +161,6 @@ int Program::Execute(uint32_t input_count,
                      type.asymm_per_layer_params.zero_point,
                      reinterpret_cast<uint8_t*>(buffer));
     }
-    // Initialize the input info for the execution
-    input_info[arg.index].index = arg.index;
-    input_info[arg.index].buf = buffer;
-    input_info[arg.index].size = length;
-    input_info[arg.index].pass_through = false;
-    input_info[arg.index].type = ConvertToRknnPrecisionType(type.precision);
-    input_info[arg.index].layout = ConvertToRknnDataLayoutType(type.layout);
   }
   for (uint32_t i = 0; i < output_count; i++) {
     auto& arg = output_arguments[i];
@@ -239,47 +169,15 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
-    // TODO(hong19860320) Get the dimensions of the outputs from rknpu_ddk
+    // TODO(hong19860320) Get the dimensions of the outputs from rknn runtime
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
     auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
-    // Initialize the output info for the execution
-    output_info[arg.index].index = arg.index;
-    output_info[arg.index].buf = buffer;
-    output_info[arg.index].size = length;
-    output_info[arg.index].want_float = false;
-    output_info[arg.index].type = ConvertToRknnPrecisionType(type->precision);
-    output_info[arg.index].layout = ConvertToRknnDataLayoutType(type->layout);
   }
   auto start_time = GetCurrentUS();
-  NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info), rk::nn::RK_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info), rk::nn::RK_SUCCESS);
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
-  for (uint32_t i = 0; i < output_count; i++) {
-    auto type = &output_types_[i];
-    auto buffer = output_info[i].buf;
-    auto length = output_info[i].size;
-    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
-      Asymm2SymmData(reinterpret_cast<const uint8_t*>(buffer),
-                     length,
-                     type->asymm_per_layer_params.zero_point,
-                     reinterpret_cast<int8_t*>(buffer));
-    }
-  }
-  // Read data from the dump graph file and fill to cache
-  if (!dump_graph_path_.empty()) {
-    if (ReadFile(dump_graph_path_, dump_graph_buffer_)) {
-      NNADAPTER_LOG(INFO) << "Read the dump graph file " << dump_graph_path_
-                          << " success.";
-    } else {
-      NNADAPTER_LOG(INFO) << "Failed to read the dump graph file "
-                          << dump_graph_path_ << "!";
-    }
-    dump_graph_path_ = "";
-  }
   return NNADAPTER_NO_ERROR;
 }
 

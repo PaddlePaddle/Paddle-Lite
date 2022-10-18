@@ -31,13 +31,10 @@ WITH_AVX=ON
 WITH_OPENCL=OFF
 # options of compiling Metal lib for Mac OS.
 WITH_METAL=OFF
-# options of compiling rockchip NPU lib.
-WITH_ROCKCHIP_NPU=OFF
-ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 # options of compiling NNAdapter lib
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
-NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
+NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/librknn_api"  # Download RKNPU SDK from https://github.com/rockchip-linux/rknpu2/tree/master/runtime/RK3588/Linux/librknn_api
 NNADAPTER_WITH_EEASYTECH_NPU=OFF
 NNADAPTER_EEASYTECH_NPU_SDK_ROOT="$(pwd)/eznpu_ddk"
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
@@ -195,8 +192,6 @@ function init_cmake_mutable_options {
                         -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
                         -DLITE_WITH_METAL=$WITH_METAL \
-                        -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
-                        -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
                         -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
                         -DXPU_XDNN_URL=$KUNLUNXIN_XPU_XDNN_URL \
@@ -426,13 +421,6 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
     echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
     echo -e "|                                                                                                                                                      |"
-    echo -e "|  arguments of rockchip npu library compiling:                                                                                                        |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_rockchip_npu=ON --rockchip_npu_sdk_root=YourRockchipNpuSdkPath                                                |"
-    echo -e "|     --with_rockchip_npu: (OFF|ON); controls whether to compile lib for rockchip_npu, default is OFF                                                  |"
-    echo -e "|     --rockchip_npu_sdk_root: (path to rockchip_npu DDK file) required when compiling rockchip_npu library                                            |"
-    echo -e "|             you can download rockchip NPU SDK from:  https://github.com/airockchip/rknpu_ddk.git                                                     |"
-    echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
-    echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of cambricon mlu library compiling:                                                                                                       |"
     echo -e "|     ./lite/tools/build_linux.sh --with_cambricon_mlu=ON --cambricon_mlu_sdk_root=YourCambriconMluSdkPath                                             |"
     echo -e "|     --with_cambricon_mlu: (OFF|ON); controls whether to compile lib for cambricon_mlu, default is OFF                                                |"
@@ -535,15 +523,6 @@ function main {
             # compiling lib for Mac OS with GPU support.
             --with_metal=*)
                 WITH_METAL="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on rockchip npu.
-            --with_rockchip_npu=*)
-                WITH_ROCKCHIP_NPU="${i#*=}"
-                shift
-                ;;
-            --rockchip_npu_sdk_root=*)
-                ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on nnadapter.

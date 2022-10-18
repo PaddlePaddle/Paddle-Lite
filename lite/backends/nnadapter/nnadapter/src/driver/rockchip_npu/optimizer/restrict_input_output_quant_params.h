@@ -19,7 +19,9 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-void FixOps(core::Model* model);
+// Make the restriction that for int8 quantized concat, reshape, and transpose,
+// etc. the inputs and outputs must have the same quantization parameters.
+void RestrictInputOutputQuantParams(core::Model* model);
 
 }  // namespace rockchip_npu
 }  // namespace nnadapter
