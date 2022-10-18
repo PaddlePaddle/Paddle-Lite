@@ -795,8 +795,8 @@ bool DeviceInfo::SetCPUInfoByName() {
     little_core_ids_ = {0, 1, 2, 3};
     cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
     SetArchInfo(2, kA77, kA55);
-    SetCacheInfo(0, 2, 192 * 1024, 256 * 1024);
-    SetCacheInfo(1, 2, 768 * 1024, 512 * 1024);
+    SetCacheInfo(0, 3, 128 * 1024, 384 * 1024, 512 * 1024);
+    SetCacheInfo(1, 3, 512 * 1024, 768 * 1024, 512 * 1024);
     SetCacheInfo(2, 1, 4 * 1024 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(2, 1, 1);
@@ -808,8 +808,8 @@ bool DeviceInfo::SetCPUInfoByName() {
     little_core_ids_ = {0, 1, 2, 3};
     cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
     SetArchInfo(2, kA76, kA55);
-    SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
-    SetCacheInfo(1, 2, 256 * 1024, 128 * 1024);
+    SetCacheInfo(0, 3, 128 * 1024, 384 * 1024, 512 * 1024);
+    SetCacheInfo(1, 3, 512 * 1024, 768 * 1024, 512 * 1024);
     SetCacheInfo(2, 1, 2048 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(1, 1);
@@ -821,8 +821,8 @@ bool DeviceInfo::SetCPUInfoByName() {
     little_core_ids_ = {0, 1, 2, 3};
     cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
     SetArchInfo(2, kA75, kA55);
-    SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
-    SetCacheInfo(1, 2, 256 * 1024, 128 * 1024);
+    SetCacheInfo(0, 2, 512 * 1024, 512 * 1024);
+    SetCacheInfo(1, 2, 1024 * 1024, 512 * 1024);
     SetCacheInfo(2, 1, 2048 * 1024);
     SetFP16Info(1, 1);
     return true;
