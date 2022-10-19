@@ -742,15 +742,8 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     op_info->SetAttr<int>("bit_length", bit_length);
     std::string op_type = op_info->Type();
 #ifndef LITE_WITH_FPGA
-    std::vector<std::string> quant_op_types_tmp = {"conv2d",
-                                                   "depthwise_conv2d",
-                                                   "depthwise_conv2d_transpose",
-                                                   "mul",
-                                                   "matmul",
-                                                   "matmul_v2"};
-    if (std::find(quant_op_types_tmp.begin(),
-                  quant_op_types_tmp.end(),
-                  op_type) != quant_op_types_tmp.end()) {
+    if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
+        quant_op_types_.end()) {
       op_info->SetAttr("enable_int8", true);
     }
 #endif
