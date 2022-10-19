@@ -216,7 +216,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
        "bm_subgraph_pass",
-       "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 #ifdef LITE_WITH_XPU
@@ -228,7 +227,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "__fpga_kernel_place_correct_pass",
        // "opencl_kernel_place_correct_pass", // uncommit this pass
-       "mlu_postprocess_pass",
        // info(target/precision/layout/device)
        // using kernel info
        "argument_type_display_pass",  // debug pass: show arg-type-node's

@@ -101,6 +101,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_ABS:
+      case NNADAPTER_ARG_MAX:
+      case NNADAPTER_ARG_MIN:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:
@@ -114,11 +116,14 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_GELU:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_INSTANCE_NORMALIZATION:
       case NNADAPTER_LAYER_NORMALIZATION:
       case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_LOG:
+      case NNADAPTER_LP_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_PAD:
+      case NNADAPTER_PRELU:
       case NNADAPTER_REDUCE_MAX:
       case NNADAPTER_REDUCE_MEAN:
       case NNADAPTER_REDUCE_SUM:

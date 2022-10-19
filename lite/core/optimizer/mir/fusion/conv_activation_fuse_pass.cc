@@ -130,5 +130,4 @@ REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
-    .ExcludeTargets({TARGET(kMLU)})
     .BindKernel("conv2d");

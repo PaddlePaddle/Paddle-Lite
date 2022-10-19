@@ -24,10 +24,6 @@ if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-if(LITE_WITH_MLU)
-  include(mlu)
-endif()
-
 if(LITE_WITH_CUDA)
   include(cuda)
 endif()

@@ -347,6 +347,5 @@ REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
     .BindTargets({TARGET(kARM), TARGET(kOpenCL)})
     .ExcludeTargets({TARGET(kBM),
                      TARGET(kXPU),
-                     TARGET(kMLU),
                      TARGET(kMetal),
                      TARGET(kNNAdapter)});

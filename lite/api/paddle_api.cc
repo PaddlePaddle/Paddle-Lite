@@ -30,10 +30,6 @@
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
-#ifdef LITE_WITH_MLU
-#include "lite/backends/mlu/target_wrapper.h"
-#endif
-
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
@@ -166,13 +162,6 @@ void Tensor::CopyFromCpu(const T *src_data) {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
-  } else if (type == TargetType::kMLU) {
-#ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
-#else
-    LOG(FATAL) << "Please compile the lib with MLU.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -203,13 +192,6 @@ void Tensor::CopyToCpu(T *data) const {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
-  } else if (type == TargetType::kMLU) {
-#ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
-#else
-    LOG(FATAL) << "Please compile the lib with MLU.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -223,11 +205,13 @@ void Tensor::CopyToCpu(T *data) const {
 }
 
 template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kHost>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kARM>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
@@ -237,11 +221,6 @@ template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kCUDA>(const uint8_t *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
-
-template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
-template void Tensor::CopyFromCpu<int64_t, TargetType::kMLU>(const int64_t *);
-template void Tensor::CopyFromCpu<float, TargetType::kMLU>(const float *);
-template void Tensor::CopyFromCpu<int8_t, TargetType::kMLU>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
@@ -492,32 +471,6 @@ const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
   return *model_buffer_;
 }
-
-#ifdef LITE_WITH_MLU
-void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
-  mlu_core_version_ = core_version;
-}
-void CxxConfig::set_mlu_core_number(int core_number) {
-  mlu_core_number_ = core_number;
-}
-void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
-  mlu_input_layout_ = layout;
-}
-void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
-                                        const std::vector<float> &std) {
-  mlu_first_conv_mean_ = mean;
-  mlu_first_conv_std_ = std;
-}
-lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
-  return mlu_core_version_;
-}
-int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
-DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
-std::pair<std::vector<float>, std::vector<float>>
-CxxConfig::mlu_firstconv_param() const {
-  return std::make_pair(mlu_first_conv_mean_, mlu_first_conv_std_);
-}
-#endif
 
 // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {

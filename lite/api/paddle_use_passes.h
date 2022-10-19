@@ -68,8 +68,6 @@ USE_MIR_PASS(lite_inplace_fuse_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass);
 USE_MIR_PASS(nnadapter_subgraph_pass);
-USE_MIR_PASS(mlu_subgraph_pass);
-USE_MIR_PASS(mlu_postprocess_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
 USE_MIR_PASS(fp16_attribute_pass);
