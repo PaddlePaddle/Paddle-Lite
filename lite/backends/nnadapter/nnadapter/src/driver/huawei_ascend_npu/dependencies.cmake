@@ -58,7 +58,7 @@ add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION=${CANN_PATCH_VE
 
 include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/acllib/include")
 include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/atc/include")
-include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/opp")
+# include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/opp")
 
 # ACL libraries
 # libascendcl.so 
@@ -71,16 +71,17 @@ endif()
 add_library(acl_ascendcl SHARED IMPORTED GLOBAL)
 set_property(TARGET acl_ascendcl PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ACL_ASCENDCL_FILE})
 
-# ATC libraries
-# libge_compiler.so
-find_library(HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE NAMES ge_compiler
-  PATHS ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/atc/lib64
-  CMAKE_FIND_ROOT_PATH_BOTH)
-if(NOT HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE)
-  message(FATAL_ERROR "Missing libge_compiler.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/atc/lib64")
-endif()
-add_library(atc_ge_compiler SHARED IMPORTED GLOBAL)
-set_property(TARGET atc_ge_compiler PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE})
+# # ATC libraries
+# # libge_compiler.so
+# find_library(HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE NAMES ge_compiler
+#   PATHS ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/atc/lib64
+#   CMAKE_FIND_ROOT_PATH_BOTH)
+# if(NOT HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE)
+#   message(FATAL_ERROR "Missing libge_compiler.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/atc/lib64")
+# endif()
+# add_library(atc_ge_compiler SHARED IMPORTED GLOBAL)
+# set_property(TARGET atc_ge_compiler PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ATC_GE_COMPILER_FILE})
 
 # ACL libs should before ATC libs
-set(DEPS ${DEPS} acl_ascendcl atc_ge_compiler)
+# set(DEPS ${DEPS} acl_ascendcl atc_ge_compiler)
+set(DEPS ${DEPS} acl_ascendcl)

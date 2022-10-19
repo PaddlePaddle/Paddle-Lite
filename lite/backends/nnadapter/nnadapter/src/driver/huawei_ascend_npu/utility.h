@@ -20,9 +20,9 @@
 #include "core/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
 #include "ge/ge_api_types.h"
-#include "ge/ge_ir_build.h"
+// #include "ge/ge_ir_build.h"
 #include "graph/ge_error_codes.h"
-#include "graph/graph.h"
+// #include "graph/graph.h"
 #include "utility/logging.h"
 #include "utility/string.h"
 #include "utility/utility.h"
@@ -93,36 +93,37 @@ namespace huawei_ascend_npu {
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
 void InitializeAscendCL();
-// Initialize the resources of the model builder and register the finalizer to
-// be called at normal process termination
-void InitializeGraphBuilder(AscendConfigParams* config_params);
+// // Initialize the resources of the model builder and register the finalizer
+// to
+// // be called at normal process termination
+// void InitializeGraphBuilder(AscendConfigParams* config_params);
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
-const std::string ATCErrorToString(uint32_t error);
+// const std::string ATCErrorToString(uint32_t error);
 #define ACL_CALL(msg)                                                      \
   NNADAPTER_CHECK_EQ(reinterpret_cast<aclError>(msg), ACL_ERROR_NONE)      \
       << (msg) << " " << ::nnadapter::huawei_ascend_npu::ACLErrorToString( \
                              reinterpret_cast<int>(msg))
-#define ATC_CALL(msg)                                                      \
-  NNADAPTER_CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg),               \
-                     ge::GRAPH_SUCCESS)                                    \
-      << (msg) << " " << ::nnadapter::huawei_ascend_npu::ATCErrorToString( \
-                             reinterpret_cast<uint32_t>(msg))
+// #define ATC_CALL(msg)                                                      \
+//   NNADAPTER_CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg),               \
+//                      ge::GRAPH_SUCCESS)                                    \
+//       << (msg) << " " << ::nnadapter::huawei_ascend_npu::ATCErrorToString( \
+//                              reinterpret_cast<uint32_t>(msg))
 
 // Build and load OM model to/from memory
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
     const std::vector<uint8_t>& model_buffer,
     int device_id,
     AscendConfigParams* config_params);
-bool BuildOMModelToBuffer(
-    std::vector<ge::Operator>& input_operators,   // NOLINT
-    std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer,
-    const std::vector<std::string>& dynamic_shape_info,
-    const std::string& optional_shape_str,
-    const DynamicShapeMode dynamic_shape_mode,
-    AscendConfigParams* config_params);
+// bool BuildOMModelToBuffer(
+//     std::vector<ge::Operator>& input_operators,   // NOLINT
+//     std::vector<ge::Operator>& output_operators,  // NOLINT
+//     std::vector<uint8_t>* model_buffer,
+//     const std::vector<std::string>& dynamic_shape_info,
+//     const std::string& optional_shape_str,
+//     const DynamicShapeMode dynamic_shape_mode,
+//     AscendConfigParams* config_params);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);

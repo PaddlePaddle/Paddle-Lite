@@ -33,27 +33,28 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
-    int major_version = 0, minor_version = 0, patch_version = 0;
-    GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
-    auto current_version =
-        string_format("%d.%d.%d",
-                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
-                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
-                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION);
-    auto build_version =
-        string_format("%d.%d.%d", major_version, minor_version, patch_version);
-    NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
-                      << current_version;
-    NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
-                      << build_version;
-    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
-        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
-        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
-      NNADAPTER_LOG(WARNING)
-          << "CANN version mismatch. The build version is " << build_version
-          << ", but the current environment version is " << current_version
-          << ".";
-    }
+    // int major_version = 0, minor_version = 0, patch_version = 0;
+    // GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
+    // auto current_version =
+    //     string_format("%d.%d.%d",
+    //                   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
+    //                   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
+    //                   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION);
+    // auto build_version =
+    //     string_format("%d.%d.%d", major_version, minor_version,
+    //     patch_version);
+    // NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
+    //                   << current_version;
+    // NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
+    //                   << build_version;
+    // if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
+    //     minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+    //     patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
+    //   NNADAPTER_LOG(WARNING)
+    //       << "CANN version mismatch. The build version is " << build_version
+    //       << ", but the current environment version is " << current_version
+    //       << ".";
+    // }
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
     aclInit(NULL);
@@ -64,70 +65,72 @@ void InitializeAscendCL() {
   mtx.unlock();
 }
 
-static void FinalizeGraphBuilder() {
-  NNADAPTER_VLOG(5) << "Finalize Graph Builder.";
-  // The following APIs can only be called once in one process
-  // TODO(hong19860320) fix the problem destruction order that the resource of
-  // GE is released before the function is called.
-  // ge::aclgrphBuildFinalize();
-}
+// static void FinalizeGraphBuilder() {
+//   NNADAPTER_VLOG(5) << "Finalize Graph Builder.";
+//   // The following APIs can only be called once in one process
+//   // TODO(hong19860320) fix the problem destruction order that the resource
+//   of
+//   // GE is released before the function is called.
+//   // ge::aclgrphBuildFinalize();
+// }
 
-void InitializeGraphBuilder(AscendConfigParams* config_params) {
-  static std::mutex mtx;
-  static bool initialized = false;
-  mtx.lock();
-  if (!initialized) {
-    NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
-    // The following APIs can only be called once in one process
-    ge::AscendString soc_version = GetAscendSocName();
-    NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
-                      << soc_version.GetString();
-    std::map<ge::AscendString, ge::AscendString> global_options;
-    global_options.insert(
-        std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
-    global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
-    global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
-    auto precision_mode = config_params->precision_mode;
-    if (!precision_mode.empty()) {
-      global_options.insert(
-          std::make_pair(ge::ir_option::PRECISION_MODE,
-                         ge::AscendString(precision_mode.c_str())));
-      if (precision_mode == "allow_mix_precision" &&
-          !config_params->modify_mixlist_path.empty()) {
-        global_options.insert(std::make_pair(
-            ge::ir_option::MODIFY_MIXLIST,
-            ge::AscendString(config_params->modify_mixlist_path.c_str())));
-      }
-    }
-    if (!config_params->op_select_impl_mode.empty() &&
-        !config_params->op_type_list_for_impl_mode.empty()) {
-      global_options.insert(
-          std::make_pair(ge::ir_option::OP_SELECT_IMPL_MODE,
-                         config_params->op_select_impl_mode.c_str()));
-      global_options.insert(
-          std::make_pair(ge::ir_option::OPTYPELIST_FOR_IMPLMODE,
-                         config_params->op_type_list_for_impl_mode.c_str()));
-    }
-    if (!config_params->enable_compress_weight.empty()) {
-      global_options.insert(
-          std::make_pair(ge::ir_option::ENABLE_COMPRESS_WEIGHT,
-                         config_params->enable_compress_weight.c_str()));
-    }
-    if (!config_params->auto_tune_mode.empty()) {
-      global_options.insert(
-          std::make_pair(ge::ir_option::AUTO_TUNE_MODE,
-                         config_params->auto_tune_mode.c_str()));
-    }
-#endif
-    ge::aclgrphBuildInitialize(global_options);
-    // Register 'FinalizeGraphBuilder' to be called at normal process
-    // termination
-    atexit(FinalizeGraphBuilder);
-    initialized = true;
-  }
-  mtx.unlock();
-}
+// void InitializeGraphBuilder(AscendConfigParams* config_params) {
+//   static std::mutex mtx;
+//   static bool initialized = false;
+//   mtx.lock();
+//   if (!initialized) {
+//     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
+//     // The following APIs can only be called once in one process
+//     ge::AscendString soc_version = GetAscendSocName();
+//     NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
+//                       << soc_version.GetString();
+//     std::map<ge::AscendString, ge::AscendString> global_options;
+//     global_options.insert(
+//         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
+// #if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
+//     global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL,
+//     "0"));
+//     global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));
+//     auto precision_mode = config_params->precision_mode;
+//     if (!precision_mode.empty()) {
+//       global_options.insert(
+//           std::make_pair(ge::ir_option::PRECISION_MODE,
+//                          ge::AscendString(precision_mode.c_str())));
+//       if (precision_mode == "allow_mix_precision" &&
+//           !config_params->modify_mixlist_path.empty()) {
+//         global_options.insert(std::make_pair(
+//             ge::ir_option::MODIFY_MIXLIST,
+//             ge::AscendString(config_params->modify_mixlist_path.c_str())));
+//       }
+//     }
+//     if (!config_params->op_select_impl_mode.empty() &&
+//         !config_params->op_type_list_for_impl_mode.empty()) {
+//       global_options.insert(
+//           std::make_pair(ge::ir_option::OP_SELECT_IMPL_MODE,
+//                          config_params->op_select_impl_mode.c_str()));
+//       global_options.insert(
+//           std::make_pair(ge::ir_option::OPTYPELIST_FOR_IMPLMODE,
+//                          config_params->op_type_list_for_impl_mode.c_str()));
+//     }
+//     if (!config_params->enable_compress_weight.empty()) {
+//       global_options.insert(
+//           std::make_pair(ge::ir_option::ENABLE_COMPRESS_WEIGHT,
+//                          config_params->enable_compress_weight.c_str()));
+//     }
+//     if (!config_params->auto_tune_mode.empty()) {
+//       global_options.insert(
+//           std::make_pair(ge::ir_option::AUTO_TUNE_MODE,
+//                          config_params->auto_tune_mode.c_str()));
+//     }
+// #endif
+//     ge::aclgrphBuildInitialize(global_options);
+//     // Register 'FinalizeGraphBuilder' to be called at normal process
+//     // termination
+//     atexit(FinalizeGraphBuilder);
+//     initialized = true;
+//   }
+//   mtx.unlock();
+// }
 
 const std::string ACLErrorToString(int error) {
   switch (error) {
@@ -229,95 +232,97 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
   return nullptr;
 }
 
-bool BuildOMModelToBuffer(
-    std::vector<ge::Operator>& input_operators,   // NOLINT
-    std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer,
-    const std::vector<std::string>& dynamic_shape_info,
-    const std::string& optional_shape_str,
-    const DynamicShapeMode dynamic_shape_mode,
-    AscendConfigParams* config_params) {
-  // Should initialize the GE graph builder before model building
-  InitializeGraphBuilder(config_params);
-  // Convert the CANN IR graph to the CANN om model
-  ge::Graph ir_graph("graph");
-  // Set input operator attr index if node size > 1
-  auto input_count = input_operators.size();
-  auto output_count = output_operators.size();
-  NNADAPTER_VLOG(3) << "input_count: " << input_count;
-  NNADAPTER_VLOG(3) << "output_count: " << output_count;
-  NNADAPTER_CHECK_GE(output_count, 1);
-  if (input_count > 1) {
-    for (size_t i = 0; i < input_count; i++) {
-      input_operators[i].SetAttr("index", static_cast<int>(i));
-    }
-  }
-  ir_graph.SetInputs(input_operators).SetOutputs(output_operators);
-  // Build IR model
-  ge::ModelBufferData om_buffer;
-  std::map<ge::AscendString, ge::AscendString> options;
-  options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
-  options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
+// bool BuildOMModelToBuffer(
+//     std::vector<ge::Operator>& input_operators,   // NOLINT
+//     std::vector<ge::Operator>& output_operators,  // NOLINT
+//     std::vector<uint8_t>* model_buffer,
+//     const std::vector<std::string>& dynamic_shape_info,
+//     const std::string& optional_shape_str,
+//     const DynamicShapeMode dynamic_shape_mode,
+//     AscendConfigParams* config_params) {
+//   // Should initialize the GE graph builder before model building
+//   InitializeGraphBuilder(config_params);
+//   // Convert the CANN IR graph to the CANN om model
+//   ge::Graph ir_graph("graph");
+//   // Set input operator attr index if node size > 1
+//   auto input_count = input_operators.size();
+//   auto output_count = output_operators.size();
+//   NNADAPTER_VLOG(3) << "input_count: " << input_count;
+//   NNADAPTER_VLOG(3) << "output_count: " << output_count;
+//   NNADAPTER_CHECK_GE(output_count, 1);
+//   if (input_count > 1) {
+//     for (size_t i = 0; i < input_count; i++) {
+//       input_operators[i].SetAttr("index", static_cast<int>(i));
+//     }
+//   }
+//   ir_graph.SetInputs(input_operators).SetOutputs(output_operators);
+//   // Build IR model
+//   ge::ModelBufferData om_buffer;
+//   std::map<ge::AscendString, ge::AscendString> options;
+//   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
+//   options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
 
-  std::string input_shape_info;
-  for (size_t i = 0; i < dynamic_shape_info.size(); i++) {
-    if (!dynamic_shape_info[i].empty()) {
-      ge::AscendString name;
-      input_operators[i].GetName(name);
-      input_shape_info +=
-          std::string(name.GetString()) + ":" + dynamic_shape_info[i] + ";";
-    }
-  }
-  NNADAPTER_CHECK(!input_shape_info.empty());
-  input_shape_info.pop_back();
+//   std::string input_shape_info;
+//   for (size_t i = 0; i < dynamic_shape_info.size(); i++) {
+//     if (!dynamic_shape_info[i].empty()) {
+//       ge::AscendString name;
+//       input_operators[i].GetName(name);
+//       input_shape_info +=
+//           std::string(name.GetString()) + ":" + dynamic_shape_info[i] + ";";
+//     }
+//   }
+//   NNADAPTER_CHECK(!input_shape_info.empty());
+//   input_shape_info.pop_back();
 
-  if (!optional_shape_str.empty()) {
-    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BATCH_SIZE) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
-                                    optional_shape_str.data()));
-      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
-    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
-                                    optional_shape_str.data()));
-      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
-    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
-                                    optional_shape_str.data()));
-      options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "ND"));
-    }
-  } else {
-    options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
-  }
+//   if (!optional_shape_str.empty()) {
+//     if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BATCH_SIZE) {
+//       options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
+//                                     optional_shape_str.data()));
+//       options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
+//     } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
+//       options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
+//                                     optional_shape_str.data()));
+//       options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
+//     } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
+//       options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
+//                                     optional_shape_str.data()));
+//       options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "ND"));
+//     }
+//   } else {
+//     options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
+//   }
 
-  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
-    options.insert(std::make_pair(ge::ir_option::INPUT_SHAPE_RANGE,
-                                  input_shape_info.data()));
-#else
-    NNADAPTER_LOG(FATAL)
-        << "The dynamic shape range feature is only supported in CANN 5.1.1 "
-           "and above."
-        << "If you want to use, please upgrade CANN version and recompile the "
-           "library.";
-#endif
-  } else {
-    options.insert(
-        std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
-  }
-  ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
-  // For debug: save ascend offline model to local.
-  if (!config_params->dump_model_path.empty()) {
-    ATC_CALL(aclgrphSaveModel(
-        std::string(config_params->dump_model_path + "ir_graph_model").c_str(),
-        om_buffer));
-  }
-  // Copy from om model buffer
-  model_buffer->resize(om_buffer.length);
-  memcpy(reinterpret_cast<void*>(model_buffer->data()),
-         reinterpret_cast<void*>(om_buffer.data.get()),
-         om_buffer.length);
-  return true;
-}
+//   if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
+// #if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 1, 1)
+//     options.insert(std::make_pair(ge::ir_option::INPUT_SHAPE_RANGE,
+//                                   input_shape_info.data()));
+// #else
+//     NNADAPTER_LOG(FATAL)
+//         << "The dynamic shape range feature is only supported in CANN 5.1.1 "
+//            "and above."
+//         << "If you want to use, please upgrade CANN version and recompile the
+//         "
+//            "library.";
+// #endif
+//   } else {
+//     options.insert(
+//         std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
+//   }
+//   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
+//   // For debug: save ascend offline model to local.
+//   if (!config_params->dump_model_path.empty()) {
+//     ATC_CALL(aclgrphSaveModel(
+//         std::string(config_params->dump_model_path +
+//         "ir_graph_model").c_str(),
+//         om_buffer));
+//   }
+//   // Copy from om model buffer
+//   model_buffer->resize(om_buffer.length);
+//   memcpy(reinterpret_cast<void*>(model_buffer->data()),
+//          reinterpret_cast<void*>(om_buffer.data.get()),
+//          om_buffer.length);
+//   return true;
+// }
 
 const std::string GEDataTypeToString(ge::DataType data_type) {
   static const std::vector<std::string> datatype2strings{"DT_FLOAT=0",
@@ -612,80 +617,85 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
   return "bilinear";
 }
 
-bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
-  static std::mutex mtx;
-  std::lock_guard<std::mutex> lock(mtx);
-  static bool initialized = false;
-  static int major_version = 0;
-  static int minor_version = 0;
-  static int patch_version = 0;
-  if (!initialized) {
-    initialized = true;
-    std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
-    // Split the value of LD_LIBRARY_PATH by ":", and obtain the root directory
-    // of the Ascend CANN toolkit
-    std::vector<std::string> paths =
-        string_split<std::string>(ld_library_path, ":");
-    paths.push_back("/usr/local/Ascend/ascend-toolkit/latest");
-    for (auto path : paths) {
-      if (path.find("Ascend/ascend-toolkit") == std::string::npos &&
-          path.find("Ascend/nnrt") == std::string::npos)
-        continue;
-      auto ascend_cann_path = GetRealPath(path.c_str());
-      // Check if the file path is valid
-      if (ascend_cann_path.empty()) continue;
-      // Split ascend_cann_path string by "/"
-      auto tokens = string_split<std::string>(ascend_cann_path, "/");
-      std::string ascend_cann_version;
-      for (size_t i = 0; i < tokens.size(); i++) {
-        if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
-          if (i < tokens.size() - 1) {
-            ascend_cann_version = tokens[i + 1];
-            break;
-          }
-        }
-      }
-      if (ascend_cann_version.empty()) continue;
-      // Split ascend_cann_version string by "."
-      tokens = string_split<std::string>(ascend_cann_version, ".");
-      if (tokens.size() == 3 || tokens.size() == 4) {
-        major_version = atoi(tokens[0].c_str());
-        minor_version = atoi(tokens[1].c_str());
-        patch_version = atoi(tokens[2].c_str());
-        return true;
-      }
-    }
-    NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation path! "
-                            "Please install the Ascend CANN and add the root "
-                            "directory into LD_LIBRARY_PATH.";
-    return false;
-  }
-  *major = major_version;
-  *minor = minor_version;
-  *patch = patch_version;
-  return true;
-}
+// bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
+//   static std::mutex mtx;
+//   std::lock_guard<std::mutex> lock(mtx);
+//   static bool initialized = false;
+//   static int major_version = 0;
+//   static int minor_version = 0;
+//   static int patch_version = 0;
+//   if (!initialized) {
+//     initialized = true;
+//     std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
+//     // Split the value of LD_LIBRARY_PATH by ":", and obtain the root
+//     directory
+//     // of the Ascend CANN toolkit
+//     std::vector<std::string> paths =
+//         string_split<std::string>(ld_library_path, ":");
+//     paths.push_back("/usr/local/Ascend/ascend-toolkit/latest");
+//     for (auto path : paths) {
+//       if (path.find("Ascend/ascend-toolkit") == std::string::npos &&
+//           path.find("Ascend/nnrt") == std::string::npos)
+//         continue;
+//       auto ascend_cann_path = GetRealPath(path.c_str());
+//       // Check if the file path is valid
+//       if (ascend_cann_path.empty()) continue;
+//       // Split ascend_cann_path string by "/"
+//       auto tokens = string_split<std::string>(ascend_cann_path, "/");
+//       std::string ascend_cann_version;
+//       for (size_t i = 0; i < tokens.size(); i++) {
+//         if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
+//           if (i < tokens.size() - 1) {
+//             ascend_cann_version = tokens[i + 1];
+//             break;
+//           }
+//         }
+//       }
+//       if (ascend_cann_version.empty()) continue;
+//       // Split ascend_cann_version string by "."
+//       tokens = string_split<std::string>(ascend_cann_version, ".");
+//       if (tokens.size() == 3 || tokens.size() == 4) {
+//         major_version = atoi(tokens[0].c_str());
+//         minor_version = atoi(tokens[1].c_str());
+//         patch_version = atoi(tokens[2].c_str());
+//         return true;
+//       }
+//     }
+//     NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation
+//     path! "
+//                             "Please install the Ascend CANN and add the root
+//                             "
+//                             "directory into LD_LIBRARY_PATH.";
+//     return false;
+//   }
+//   *major = major_version;
+//   *minor = minor_version;
+//   *patch = patch_version;
+//   return true;
+// }
 
-ge::AscendString GetAscendSocName() {
-  ge::AscendString soc_version = "Ascend310";
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
-  const char* soc_name = aclrtGetSocName();
-  if (soc_name) {
-    soc_version = ge::AscendString(soc_name);
-  } else {
-    NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "
-                              "SoC name, so Ascend 310 is used by default.";
-  }
-#else
-  NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
-                            "CANN versions below 5.0.2, aclrtGetSocName "
-                            "cannot be called to obtain the SoC name of the "
-                            "current device, so Ascend 310 is used by default. "
-                            "If you want to use ascend 710, please recompile "
-                            "the library based on CANN 5.0.2 and above.";
-#endif
-  return soc_version;
-}
+// ge::AscendString GetAscendSocName() {
+//   ge::AscendString soc_version = "Ascend310";
+// #if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
+//   const char* soc_name = aclrtGetSocName();
+//   if (soc_name) {
+//     soc_version = ge::AscendString(soc_name);
+//   } else {
+//     NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "
+//                               "SoC name, so Ascend 310 is used by default.";
+//   }
+// #else
+//   NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
+//                             "CANN versions below 5.0.2, aclrtGetSocName "
+//                             "cannot be called to obtain the SoC name of the "
+//                             "current device, so Ascend 310 is used by
+//                             default. "
+//                             "If you want to use ascend 710, please recompile
+//                             "
+//                             "the library based on CANN 5.0.2 and above.";
+// #endif
+//   return soc_version;
+// }
 
 std::string ShapeToString(const std::vector<int32_t>& shape) {
   std::string shape_str;

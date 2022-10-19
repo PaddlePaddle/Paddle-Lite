@@ -21,7 +21,7 @@
 #include <vector>
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "driver/huawei_ascend_npu/utility.h"
-#include "op_proto/built-in/inc/all_ops.h"
+// #include "op_proto/built-in/inc/all_ops.h"
 #include "utility/string.h"
 
 namespace nnadapter {
@@ -70,7 +70,8 @@ class Program {
  private:
   Context* context_{nullptr};
   // Map NNAdapter operand to GE operator
-  std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
+  // std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>>
+  // operators_;
   std::shared_ptr<AclModelClient> model_client_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;

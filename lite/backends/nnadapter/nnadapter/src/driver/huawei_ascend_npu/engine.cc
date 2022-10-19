@@ -183,7 +183,7 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
-  operators_.clear();
+  // operators_.clear();
   model_client_ = nullptr;
   input_types_.clear();
   output_types_.clear();
@@ -226,67 +226,69 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
     output_types_ = cache->output_types;
-  } else {
-    // Build from model
-    NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-    FixMultipleOutputsOps(model);
-    FixNoInputsOps(model);
-    FixReduceOpsScalarOutput(model);
-    FuseConv2DBatchNormIntoConv2D(model);
-    FuseConv2DAddIntoConv2D(model);
-    FuseConv2DActivationIntoConv2D(model);
-    FuseMatMulDequantAddIntoFullyConnectedDequant(model);
-    FuseMatMulAddIntoFullyConnected(model, true);
-    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
-    FixQuantizedOps(model);
-    NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-    // Convert a NNAdapter model to a GE graph
-    Converter converter(&operators_);
-    NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
-    // Identify the inputs and outputs
-    auto input_count = model->input_operands.size();
-    NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    std::vector<ge::Operator> input_operators;
-    if (input_count > 0) {
-      input_operators.resize(input_count);
-      for (size_t i = 0; i < input_count; i++) {
-        auto operand = model->input_operands[i];
-        NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-        input_operators[i] = *operators_[operand].front()->op();
-      }
-    }
-    auto output_count = model->output_operands.size();
-    NNADAPTER_VLOG(3) << "Model output count: " << output_count;
-    NNADAPTER_CHECK_GT(output_count, 0);
-    std::vector<ge::Operator> output_operators(output_count);
-    output_types_.resize(output_count);
-    for (size_t i = 0; i < output_count; i++) {
-      auto operand = model->output_operands[i];
-      NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-      output_operators[i] = *operators_[operand].back()->op();
-      output_types_[i] = operand->type;
-    }
-    if (cache->token && cache->dir) {
-      model_buffer = &cache->buffer;
-    } else {
-      model_buffer = &model_content;
-    }
-    // Build a GE graph to a CANN OM model, and serialize it into a buffer
-    if (!BuildOMModelToBuffer(input_operators,
-                              output_operators,
-                              model_buffer,
-                              dynamic_shape_info,
-                              optional_shape_str,
-                              dynamic_shape_mode_,
-                              context_->ascend_config_params())) {
-      NNADAPTER_LOG(FATAL)
-          << "Failed to build a CANN OM model and serialize it into a buffer!";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    } else {
-      NNADAPTER_VLOG(3)
-          << "Build a CANN OM model and serialize it into a buffer success.";
-    }
   }
+  // } else {
+  //   // Build from model
+  //   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  //   FixMultipleOutputsOps(model);
+  //   FixNoInputsOps(model);
+  //   FixReduceOpsScalarOutput(model);
+  //   FuseConv2DBatchNormIntoConv2D(model);
+  //   FuseConv2DAddIntoConv2D(model);
+  //   FuseConv2DActivationIntoConv2D(model);
+  //   FuseMatMulDequantAddIntoFullyConnectedDequant(model);
+  //   FuseMatMulAddIntoFullyConnected(model, true);
+  //   FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+  //   FixQuantizedOps(model);
+  //   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
+  //   // Convert a NNAdapter model to a GE graph
+  //   Converter converter(&operators_);
+  //   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
+  //   // Identify the inputs and outputs
+  //   auto input_count = model->input_operands.size();
+  //   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  //   std::vector<ge::Operator> input_operators;
+  //   if (input_count > 0) {
+  //     input_operators.resize(input_count);
+  //     for (size_t i = 0; i < input_count; i++) {
+  //       auto operand = model->input_operands[i];
+  //       NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
+  //       input_operators[i] = *operators_[operand].front()->op();
+  //     }
+  //   }
+  //   auto output_count = model->output_operands.size();
+  //   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  //   NNADAPTER_CHECK_GT(output_count, 0);
+  //   std::vector<ge::Operator> output_operators(output_count);
+  //   output_types_.resize(output_count);
+  //   for (size_t i = 0; i < output_count; i++) {
+  //     auto operand = model->output_operands[i];
+  //     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
+  //     output_operators[i] = *operators_[operand].back()->op();
+  //     output_types_[i] = operand->type;
+  //   }
+  //   if (cache->token && cache->dir) {
+  //     model_buffer = &cache->buffer;
+  //   } else {
+  //     model_buffer = &model_content;
+  //   }
+  //   // Build a GE graph to a CANN OM model, and serialize it into a buffer
+  //   if (!BuildOMModelToBuffer(input_operators,
+  //                             output_operators,
+  //                             model_buffer,
+  //                             dynamic_shape_info,
+  //                             optional_shape_str,
+  //                             dynamic_shape_mode_,
+  //                             context_->ascend_config_params())) {
+  //     NNADAPTER_LOG(FATAL)
+  //         << "Failed to build a CANN OM model and serialize it into a
+  //         buffer!";
+  //     return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  //   } else {
+  //     NNADAPTER_VLOG(3)
+  //         << "Build a CANN OM model and serialize it into a buffer success.";
+  //   }
+  // }
   NNADAPTER_CHECK(model_buffer);
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
