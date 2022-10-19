@@ -125,7 +125,7 @@ TEST(LookupTable, precision) {
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
 #if defined(LITE_WITH_XPU)
       for (auto padding_idx :
-           std::vector<int64_t>{-1}) {  // XPU or NPU only support -1
+           std::vector<int64_t>{-1}) {  // XPU only support -1
 #else
       for (auto padding_idx : std::vector<int64_t>{-1, 0, w_dims[0] - 1}) {
 #endif
