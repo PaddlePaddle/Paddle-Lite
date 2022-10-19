@@ -235,7 +235,8 @@ class OpenCLMemoryObjectConfigPass : public ProgramPass {
         }
         new_place.target = new_target;
         new_place.precision = PRECISION(kFloat);
-        if (op_type.find("elementwise") != std::string::npos) {
+        if (op_type.find("elementwise") != std::string::npos &&
+            new_target == TARGET(kARM)) {
           new_place.precision = tmp_ptype;
         }
         new_place.layout = DATALAYOUT(kNCHW);
@@ -243,6 +244,12 @@ class OpenCLMemoryObjectConfigPass : public ProgramPass {
         if (op_type.find("gather") != std::string::npos) {
           new_place.target = TARGET(kHost);
         }
+
+        if (op_type.find("arg_max") != std::string::npos &&
+            new_target == TARGET(kX86)) {
+          new_place.target = TARGET(kHost);
+        }
+
         std::vector<Place> places;
         places.push_back(new_place);
         inst.ResetKernels(places);
