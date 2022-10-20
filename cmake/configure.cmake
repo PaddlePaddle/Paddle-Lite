@@ -203,10 +203,6 @@ if (LITE_WITH_BM)
 add_definitions("-DLITE_WITH_BM")
 endif()
 
-if (LITE_WITH_MLU)
-add_definitions("-DLITE_WITH_MLU")
-endif()
-
 if (LITE_WITH_NNADAPTER)
   add_definitions(-DLITE_WITH_NNADAPTER)
   # The following macros are only for unit test

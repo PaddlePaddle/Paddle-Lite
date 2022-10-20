@@ -16,13 +16,5 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
-
-#ifdef LITE_WITH_MLU
-int Context<TargetType::kMLU>::next_queue_id_{0};
-std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;
-std::mutex Context<TargetType::kMLU>::map_mutex_;
-#endif
-
-}  // namespace lite
+namespace lite {}  // namespace lite
 }  // namespace paddle
