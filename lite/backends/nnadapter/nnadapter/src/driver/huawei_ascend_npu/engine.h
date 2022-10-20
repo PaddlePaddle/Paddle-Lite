@@ -19,9 +19,11 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "driver/huawei_ascend_npu/utility.h"
-// #include "op_proto/built-in/inc/all_ops.h"
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "op_proto/built-in/inc/all_ops.h"
+#endif
 #include "utility/string.h"
 
 namespace nnadapter {
@@ -69,9 +71,10 @@ class Program {
 
  private:
   Context* context_{nullptr};
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
   // Map NNAdapter operand to GE operator
-  // std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>>
-  // operators_;
+  std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
+#endif
   std::shared_ptr<AclModelClient> model_client_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;

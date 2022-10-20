@@ -132,48 +132,48 @@ void AclModelClient::UnloadModel() {
                     << ")";
 }
 
-bool AclModelClient::GetModelIOTensorDim(
-    std::vector<ge::TensorDesc>* input_tensor_descs,
-    std::vector<ge::TensorDesc>* output_tensor_descs) {
-  if (!model_desc_) {
-    NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
-    return false;
-  }
-  NNADAPTER_CHECK(input_tensor_descs && output_tensor_descs);
-  input_tensor_descs->clear();
-  output_tensor_descs->clear();
-  auto input_count = aclmdlGetNumInputs(model_desc_);
-  NNADAPTER_VLOG(3) << "input_count: " << input_count;
-  for (size_t i = 0; i < input_count; i++) {
-    aclmdlIODims dims;
-    ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dims));
-    auto data_type = aclmdlGetInputDataType(model_desc_, i);
-    auto format = aclmdlGetInputFormat(model_desc_, i);
-    std::string name(aclmdlGetInputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
-                                  ConvertACLFormatToGEFormat(format),
-                                  ConvertACLDataTypeToGEDataType(data_type));
-    ge_tensor_desc.SetName(name.c_str());
-    input_tensor_descs->push_back(ge_tensor_desc);
-  }
-  auto output_count = aclmdlGetNumOutputs(model_desc_);
-  NNADAPTER_VLOG(3) << "output_count: " << output_count;
-  for (size_t i = 0; i < output_count; i++) {
-    aclmdlIODims dims;
-    ACL_CALL(aclmdlGetOutputDims(model_desc_, i, &dims));
-    auto data_type = aclmdlGetOutputDataType(model_desc_, i);
-    auto format = aclmdlGetOutputFormat(model_desc_, i);
-    std::string name(aclmdlGetOutputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
-                                  ConvertACLFormatToGEFormat(format),
-                                  ConvertACLDataTypeToGEDataType(data_type));
-    ge_tensor_desc.SetName(name.c_str());
-    output_tensor_descs->push_back(ge_tensor_desc);
-  }
-  NNADAPTER_VLOG(5)
-      << "Get input and output dimensions from a ACL model success.";
-  return true;
-}
+// bool AclModelClient::GetModelIOTensorDim(
+//     std::vector<ge::TensorDesc>* input_tensor_descs,
+//     std::vector<ge::TensorDesc>* output_tensor_descs) {
+//   if (!model_desc_) {
+//     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
+//     return false;
+//   }
+//   NNADAPTER_CHECK(input_tensor_descs && output_tensor_descs);
+//   input_tensor_descs->clear();
+//   output_tensor_descs->clear();
+//   auto input_count = aclmdlGetNumInputs(model_desc_);
+//   NNADAPTER_VLOG(3) << "input_count: " << input_count;
+//   for (size_t i = 0; i < input_count; i++) {
+//     aclmdlIODims dims;
+//     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dims));
+//     auto data_type = aclmdlGetInputDataType(model_desc_, i);
+//     auto format = aclmdlGetInputFormat(model_desc_, i);
+//     std::string name(aclmdlGetInputNameByIndex(model_desc_, i));
+//     ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+//                                   ConvertACLFormatToGEFormat(format),
+//                                   ConvertACLDataTypeToGEDataType(data_type));
+//     ge_tensor_desc.SetName(name.c_str());
+//     input_tensor_descs->push_back(ge_tensor_desc);
+//   }
+//   auto output_count = aclmdlGetNumOutputs(model_desc_);
+//   NNADAPTER_VLOG(3) << "output_count: " << output_count;
+//   for (size_t i = 0; i < output_count; i++) {
+//     aclmdlIODims dims;
+//     ACL_CALL(aclmdlGetOutputDims(model_desc_, i, &dims));
+//     auto data_type = aclmdlGetOutputDataType(model_desc_, i);
+//     auto format = aclmdlGetOutputFormat(model_desc_, i);
+//     std::string name(aclmdlGetOutputNameByIndex(model_desc_, i));
+//     ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+//                                   ConvertACLFormatToGEFormat(format),
+//                                   ConvertACLDataTypeToGEDataType(data_type));
+//     ge_tensor_desc.SetName(name.c_str());
+//     output_tensor_descs->push_back(ge_tensor_desc);
+//   }
+//   NNADAPTER_VLOG(5)
+//       << "Get input and output dimensions from a ACL model success.";
+//   return true;
+// }
 
 bool AclModelClient::CreateModelInputDataset(bool is_dynamic_shape_range,
                                              int64_t buffer_length) {

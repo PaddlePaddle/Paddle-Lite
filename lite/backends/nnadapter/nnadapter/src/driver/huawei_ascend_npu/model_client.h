@@ -20,8 +20,8 @@
 #include "acl/acl.h"
 #include "acl/acl_prof.h"
 #include "core/types.h"
-#include "graph/tensor.h"
-#include "graph/types.h"
+// #include "graph/tensor.h"
+// #include "graph/types.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
@@ -56,8 +56,8 @@ class AclModelClient {
                  size_t size,
                  AscendConfigParams* config_params);
   void UnloadModel();
-  bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
-                           std::vector<ge::TensorDesc>* output_tensor_descs);
+  // bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
+  //                          std::vector<ge::TensorDesc>* output_tensor_descs);
   bool Process(uint32_t input_count,
                std::vector<NNAdapterOperandType>* input_types,
                core::Argument* input_arguments,

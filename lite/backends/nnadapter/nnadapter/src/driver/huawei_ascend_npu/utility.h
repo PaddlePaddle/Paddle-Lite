@@ -19,10 +19,13 @@
 #include <vector>
 #include "core/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
+
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
 #include "ge/ge_api_types.h"
-// #include "ge/ge_ir_build.h"
+#include "ge/ge_ir_build.h"
 #include "graph/ge_error_codes.h"
-// #include "graph/graph.h"
+#include "graph/graph.h"
+#endif
 #include "utility/logging.h"
 #include "utility/string.h"
 #include "utility/utility.h"
@@ -94,36 +97,50 @@ namespace huawei_ascend_npu {
 // normal process termination
 void InitializeAscendCL();
 // // Initialize the resources of the model builder and register the finalizer
-// to
-// // be called at normal process termination
+// to be called at normal process termination
 // void InitializeGraphBuilder(AscendConfigParams* config_params);
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
-// const std::string ATCErrorToString(uint32_t error);
 #define ACL_CALL(msg)                                                      \
   NNADAPTER_CHECK_EQ(reinterpret_cast<aclError>(msg), ACL_ERROR_NONE)      \
       << (msg) << " " << ::nnadapter::huawei_ascend_npu::ACLErrorToString( \
                              reinterpret_cast<int>(msg))
-// #define ATC_CALL(msg)                                                      \
-//   NNADAPTER_CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg),               \
-//                      ge::GRAPH_SUCCESS)                                    \
-//       << (msg) << " " << ::nnadapter::huawei_ascend_npu::ATCErrorToString( \
-//                              reinterpret_cast<uint32_t>(msg))
 
 // Build and load OM model to/from memory
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
     const std::vector<uint8_t>& model_buffer,
     int device_id,
     AscendConfigParams* config_params);
-// bool BuildOMModelToBuffer(
-//     std::vector<ge::Operator>& input_operators,   // NOLINT
-//     std::vector<ge::Operator>& output_operators,  // NOLINT
-//     std::vector<uint8_t>* model_buffer,
-//     const std::vector<std::string>& dynamic_shape_info,
-//     const std::string& optional_shape_str,
-//     const DynamicShapeMode dynamic_shape_mode,
-//     AscendConfigParams* config_params);
+
+std::vector<int64_t> ConvertACLDimsToGEDims(
+    const aclmdlIODims& input_dimensions);
+void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
+                            int32_t* output_dimensions,
+                            uint32_t* output_dimensions_count);
+
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+const std::string ATCErrorToString(uint32_t error);
+#define ATC_CALL(msg)                                                      \
+  NNADAPTER_CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg),               \
+                     ge::GRAPH_SUCCESS)                                    \
+      << (msg) << " " << ::nnadapter::huawei_ascend_npu::ATCErrorToString( \
+                             reinterpret_cast<uint32_t>(msg))
+
+bool BuildOMModelToBuffer(
+    std::vector<ge::Operator>& input_operators,   // NOLINT
+    std::vector<ge::Operator>& output_operators,  // NOLINT
+    std::vector<uint8_t>* model_buffer,
+    const std::vector<std::string>& dynamic_shape_info,
+    const std::string& optional_shape_str,
+    const DynamicShapeMode dynamic_shape_mode,
+    AscendConfigParams* config_params);
+
+// Get Ascend CANN version
+bool GetAscendCANNVersion(int* major, int* minor, int* patch);
+
+// Get Ascend soc name
+ge::AscendString GetAscendSocName();
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
@@ -154,11 +171,6 @@ ge::DataType GetGEDataType<bool>();
 // Convert ACL types to GE types
 ge::DataType ConvertACLDataTypeToGEDataType(aclDataType input_data_type);
 ge::Format ConvertACLFormatToGEFormat(aclFormat input_format);
-std::vector<int64_t> ConvertACLDimsToGEDims(
-    const aclmdlIODims& input_dimensions);
-void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
-                            int32_t* output_dimensions,
-                            uint32_t* output_dimensions_count);
 
 // Convert NNAdapter types to GE types
 ge::DataType ConvertToGEPrecision(NNAdapterOperandPrecisionCode precision_code);
@@ -171,12 +183,6 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 std::string ConvertInterpolateModeCodeToGEInterpolateMode(
     int interpolate_mode_code);
 
-// Get Ascend CANN version
-bool GetAscendCANNVersion(int* major, int* minor, int* patch);
-
-// Get Ascend soc name
-ge::AscendString GetAscendSocName();
-
 // Generate shape strings for CANN
 std::string ShapeToString(const std::vector<int32_t>& shape);
 std::string MergeOptionalShapInfo(
@@ -186,6 +192,7 @@ void GetDynamicShapeInfo(const std::vector<NNAdapterOperandType>& input_types,
                          std::vector<std::string>* dynamic_shape_info,
                          std::string* optional_shape_str,
                          DynamicShapeMode* dynamic_shape_mode);
+#endif
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

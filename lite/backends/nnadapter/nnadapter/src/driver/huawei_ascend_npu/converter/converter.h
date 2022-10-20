@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include "driver/huawei_ascend_npu/utility.h"
-// #include "op_proto/built-in/inc/all_ops.h"
+#include "op_proto/built-in/inc/all_ops.h"
 #include "utility/debug.h"
 #include "utility/string.h"
 

@@ -191,30 +191,6 @@ void Program::Clear() {
 
 int Program::Build(core::Model* model, core::Cache* cache) {
   Clear();
-
-  // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
-  if (!cache->buffer.empty()) {
-    input_types_ = cache->input_types;
-  } else {
-    for (auto input_operand : model->input_operands) {
-      input_types_.push_back(input_operand->type);
-    }
-  }
-  std::vector<std::string> dynamic_shape_info;
-  std::string optional_shape_str;
-  if (context_->ascend_config_params()->enable_dynamic_shape_range == "true") {
-    dynamic_shape_mode_ = DYNAMIC_SHAPE_MODE_SHAPE_RANGE;
-  }
-  GetDynamicShapeInfo(input_types_,
-                      &dynamic_shape_info,
-                      &optional_shape_str,
-                      &dynamic_shape_mode_);
-  for (auto dynamic_shape : dynamic_shape_info) {
-    NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
-  }
-  NNADAPTER_VLOG(3) << "optional_shape_str: " << optional_shape_str;
-  NNADAPTER_VLOG(3) << "dynamic_shape_mode_: " << dynamic_shape_mode_;
-
   std::vector<uint8_t> model_content;
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
@@ -226,69 +202,94 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
     output_types_ = cache->output_types;
+#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
   }
-  // } else {
-  //   // Build from model
-  //   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  //   FixMultipleOutputsOps(model);
-  //   FixNoInputsOps(model);
-  //   FixReduceOpsScalarOutput(model);
-  //   FuseConv2DBatchNormIntoConv2D(model);
-  //   FuseConv2DAddIntoConv2D(model);
-  //   FuseConv2DActivationIntoConv2D(model);
-  //   FuseMatMulDequantAddIntoFullyConnectedDequant(model);
-  //   FuseMatMulAddIntoFullyConnected(model, true);
-  //   FuseReshapeTransposeReshapeIntoChannelShuffle(model);
-  //   FixQuantizedOps(model);
-  //   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  //   // Convert a NNAdapter model to a GE graph
-  //   Converter converter(&operators_);
-  //   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
-  //   // Identify the inputs and outputs
-  //   auto input_count = model->input_operands.size();
-  //   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-  //   std::vector<ge::Operator> input_operators;
-  //   if (input_count > 0) {
-  //     input_operators.resize(input_count);
-  //     for (size_t i = 0; i < input_count; i++) {
-  //       auto operand = model->input_operands[i];
-  //       NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-  //       input_operators[i] = *operators_[operand].front()->op();
-  //     }
-  //   }
-  //   auto output_count = model->output_operands.size();
-  //   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
-  //   NNADAPTER_CHECK_GT(output_count, 0);
-  //   std::vector<ge::Operator> output_operators(output_count);
-  //   output_types_.resize(output_count);
-  //   for (size_t i = 0; i < output_count; i++) {
-  //     auto operand = model->output_operands[i];
-  //     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-  //     output_operators[i] = *operators_[operand].back()->op();
-  //     output_types_[i] = operand->type;
-  //   }
-  //   if (cache->token && cache->dir) {
-  //     model_buffer = &cache->buffer;
-  //   } else {
-  //     model_buffer = &model_content;
-  //   }
-  //   // Build a GE graph to a CANN OM model, and serialize it into a buffer
-  //   if (!BuildOMModelToBuffer(input_operators,
-  //                             output_operators,
-  //                             model_buffer,
-  //                             dynamic_shape_info,
-  //                             optional_shape_str,
-  //                             dynamic_shape_mode_,
-  //                             context_->ascend_config_params())) {
-  //     NNADAPTER_LOG(FATAL)
-  //         << "Failed to build a CANN OM model and serialize it into a
-  //         buffer!";
-  //     return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  //   } else {
-  //     NNADAPTER_VLOG(3)
-  //         << "Build a CANN OM model and serialize it into a buffer success.";
-  //   }
-  // }
+#else
+  } else {
+    // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
+    if (!cache->buffer.empty()) {
+      input_types_ = cache->input_types;
+    } else {
+      for (auto input_operand : model->input_operands) {
+        input_types_.push_back(input_operand->type);
+      }
+    }
+    std::vector<std::string> dynamic_shape_info;
+    std::string optional_shape_str;
+    if (context_->ascend_config_params()->enable_dynamic_shape_range ==
+        "true") {
+      dynamic_shape_mode_ = DYNAMIC_SHAPE_MODE_SHAPE_RANGE;
+    }
+    GetDynamicShapeInfo(input_types_,
+                        &dynamic_shape_info,
+                        &optional_shape_str,
+                        &dynamic_shape_mode_);
+    for (auto dynamic_shape : dynamic_shape_info) {
+      NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
+    }
+    NNADAPTER_VLOG(3) << "optional_shape_str: " << optional_shape_str;
+    NNADAPTER_VLOG(3) << "dynamic_shape_mode_: " << dynamic_shape_mode_;
+    // Build from model
+    NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+    FixMultipleOutputsOps(model);
+    FixNoInputsOps(model);
+    FixReduceOpsScalarOutput(model);
+    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DActivationIntoConv2D(model);
+    FuseMatMulDequantAddIntoFullyConnectedDequant(model);
+    FuseMatMulAddIntoFullyConnected(model, true);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+    FixQuantizedOps(model);
+    NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
+    // Convert a NNAdapter model to a GE graph
+    Converter converter(&operators_);
+    NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
+    // Identify the inputs and outputs
+    auto input_count = model->input_operands.size();
+    NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    std::vector<ge::Operator> input_operators;
+    if (input_count > 0) {
+      input_operators.resize(input_count);
+      for (size_t i = 0; i < input_count; i++) {
+        auto operand = model->input_operands[i];
+        NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
+        input_operators[i] = *operators_[operand].front()->op();
+      }
+    }
+    auto output_count = model->output_operands.size();
+    NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+    NNADAPTER_CHECK_GT(output_count, 0);
+    std::vector<ge::Operator> output_operators(output_count);
+    output_types_.resize(output_count);
+    for (size_t i = 0; i < output_count; i++) {
+      auto operand = model->output_operands[i];
+      NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
+      output_operators[i] = *operators_[operand].back()->op();
+      output_types_[i] = operand->type;
+    }
+    if (cache->token && cache->dir) {
+      model_buffer = &cache->buffer;
+    } else {
+      model_buffer = &model_content;
+    }
+    // Build a GE graph to a CANN OM model, and serialize it into a buffer
+    if (!BuildOMModelToBuffer(input_operators,
+                              output_operators,
+                              model_buffer,
+                              dynamic_shape_info,
+                              optional_shape_str,
+                              dynamic_shape_mode_,
+                              context_->ascend_config_params())) {
+      NNADAPTER_LOG(FATAL)
+          << "Failed to build a CANN OM model and serialize it into a buffer !";
+      return NNADAPTER_DEVICE_INTERNAL_ERROR;
+    } else {
+      NNADAPTER_VLOG(3)
+          << "Build a CANN OM model and serialize it into a buffer success.";
+    }
+  }
+#endif
   NNADAPTER_CHECK(model_buffer);
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
@@ -300,59 +301,59 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   // Initialize the CANN input and output tensors
-  std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
-  if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
-                                          &output_tensor_descs)) {
-    NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
-                            "description of input and output tensors!";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
-  auto input_count = input_types_.size();
-  if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
-    NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
-  } else {
-    NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);
-  }
-  for (size_t i = 0; i < input_count; i++) {
-    auto type = &input_types_[i];
-    auto dimensions = input_tensor_descs[i].GetShape();
-    NNADAPTER_VLOG(3) << "CANN input tensors[" << i
-                      << "]: " << GEShapeToString(dimensions) << " "
-                      << DimensionsToString(type->dimensions.data,
-                                            type->dimensions.count);
-    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
-    for (size_t j = 0; j < type->dimensions.count; j++) {
-      auto dimension = type->dimensions.data[j];
-      if (dimension == NNADAPTER_UNKNOWN) {
-        // Check if the dimension of the model inputs is dynamic
-        NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
-            << "The " << j << "th dimension of the " << i
-            << "th input does not match, expect " << dimension
-            << " but recevied " << dimensions.GetDim(j);
-      }
-    }
-  }
-  auto output_count = output_types_.size();
-  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
-  for (size_t i = 0; i < output_count; i++) {
-    auto type = &output_types_[i];
-    auto dimensions = output_tensor_descs[i].GetShape();
-    NNADAPTER_VLOG(3) << "CANN output tensors[" << i
-                      << "]: " << GEShapeToString(dimensions) << " "
-                      << DimensionsToString(type->dimensions.data,
-                                            type->dimensions.count);
-    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
-    for (size_t j = 0; j < type->dimensions.count; j++) {
-      auto dimension = type->dimensions.data[j];
-      if (dimension > 0) {
-        // Check if the dimension of the model outputs is not dynamic
-        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
-            << "The " << j << "th dimension of the " << i
-            << "th input does not match, expect " << dimension
-            << " but recevied " << dimensions.GetDim(j);
-      }
-    }
-  }
+  // std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
+  // if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
+  //                                         &output_tensor_descs)) {
+  //   NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
+  //                           "description of input and output tensors!";
+  //   return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  // }
+  // auto input_count = input_types_.size();
+  // if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
+  //   NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
+  // } else {
+  //   NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);
+  // }
+  // for (size_t i = 0; i < input_count; i++) {
+  //   auto type = &input_types_[i];
+  //   auto dimensions = input_tensor_descs[i].GetShape();
+  //   NNADAPTER_VLOG(3) << "CANN input tensors[" << i
+  //                     << "]: " << GEShapeToString(dimensions) << " "
+  //                     << DimensionsToString(type->dimensions.data,
+  //                                           type->dimensions.count);
+  //   NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+  //   for (size_t j = 0; j < type->dimensions.count; j++) {
+  //     auto dimension = type->dimensions.data[j];
+  //     if (dimension == NNADAPTER_UNKNOWN) {
+  //       // Check if the dimension of the model inputs is dynamic
+  //       NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
+  //           << "The " << j << "th dimension of the " << i
+  //           << "th input does not match, expect " << dimension
+  //           << " but recevied " << dimensions.GetDim(j);
+  //     }
+  //   }
+  // }
+  // auto output_count = output_types_.size();
+  // NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
+  // for (size_t i = 0; i < output_count; i++) {
+  //   auto type = &output_types_[i];
+  //   auto dimensions = output_tensor_descs[i].GetShape();
+  //   NNADAPTER_VLOG(3) << "CANN output tensors[" << i
+  //                     << "]: " << GEShapeToString(dimensions) << " "
+  //                     << DimensionsToString(type->dimensions.data,
+  //                                           type->dimensions.count);
+  //   NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+  //   for (size_t j = 0; j < type->dimensions.count; j++) {
+  //     auto dimension = type->dimensions.data[j];
+  //     if (dimension > 0) {
+  //       // Check if the dimension of the model outputs is not dynamic
+  //       NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+  //           << "The " << j << "th dimension of the " << i
+  //           << "th input does not match, expect " << dimension
+  //           << " but recevied " << dimensions.GetDim(j);
+  //     }
+  //   }
+  // }
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
