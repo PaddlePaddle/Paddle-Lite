@@ -215,3 +215,21 @@ REGISTER_LITE_KERNEL(set_value,
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kBool))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(set_value,
+                     kX86,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SetValueCompute<double>,
+                     double)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP64))})
+    .BindInput("ValueTensor",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("StepsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP64))})
+    .Finalize();

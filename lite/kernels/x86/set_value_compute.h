@@ -317,6 +317,7 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
     pad_e.stridedSlice(starts_indices, ends_indices, strides_indices)
         .device(eigen_place) = slice_e;
     // Step 3: Set out tensor with value
+    out->mutable_data<T>();
     out_e.device(eigen_place) = out_e - pad_e;
   }
 
