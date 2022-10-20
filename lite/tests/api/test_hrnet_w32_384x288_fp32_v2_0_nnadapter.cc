@@ -35,6 +35,7 @@ TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
   FLAGS_warmup = 1;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<paddle::lite_api::Place> valid_places;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
@@ -55,6 +56,8 @@ TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
   nnadapter_device_names.emplace_back("qualcomm_qnn");
   FLAGS_warmup = 0;
   FLAGS_iteration = 1;
+  // Not support arg_max(int64)
+  nnadapter_subgraph_partition_config_buffer = "arg_max";
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -66,6 +69,8 @@ TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);

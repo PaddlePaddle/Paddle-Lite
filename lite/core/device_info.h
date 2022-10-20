@@ -26,15 +26,12 @@
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/target_wrapper.h"
 #endif
-#ifdef LITE_WITH_MLU
-#include "lite/backends/mlu/mlu_utils.h"
-#endif
 
 namespace paddle {
 namespace lite {
 
 using L3CacheSetMethod = lite_api::L3CacheSetMethod;
-#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
+#if defined LITE_WITH_ARM
 
 typedef enum {
   kAPPLE = 0,
@@ -233,9 +230,6 @@ class Env {
     return *devs;
   }
   static void Init(int max_stream = 6) {
-#ifdef LITE_WITH_MLU
-    CNRT_CALL(cnrtInit(0));
-#endif
     Devs& devs = Global();
     if (devs.size() > 0) {
       return;
@@ -258,41 +252,6 @@ class Env {
     LOG(INFO) << "dev size = " << devs.size();
   }
 };
-
-#ifdef LITE_WITH_MLU
-void SetMluDevice(int device_id);
-
-template <>
-class Device<TARGET(kMLU)> {
- public:
-  Device(int dev_id, int max_queue = 1) : idx_(dev_id), max_queue_(max_queue) {}
-  void Init();
-
-  int id() { return idx_; }
-  int max_queue() { return max_queue_; }
-  void SetId(int idx) { idx_ = idx; }
-  std::string name() { return "MLU"; }
-  int core_num() { return 16; }
-  float max_memory() { return 16 * 1024; }
-  std::vector<cnrtQueue_t> io_queues() { return io_queue_; }
-  std::vector<cnrtQueue_t> exec_queues() { return exec_queue_; }
-
- private:
-  void CreateQueue();
-  void GetInfo();
-
- private:
-  int idx_{0};
-  int max_queue_;
-  std::string device_name_;
-  float max_memory_;
-
-  std::vector<cnrtQueue_t> io_queue_;
-  std::vector<cnrtQueue_t> exec_queue_;
-};
-
-template class Env<TARGET(kMLU)>;
-#endif  // LITE_WITH_MLU
 
 #ifdef LITE_WITH_BM
 template <>

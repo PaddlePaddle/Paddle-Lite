@@ -397,6 +397,5 @@ REGISTER_MIR_PASS(xpu_memory_optimize_pass,
                      TARGET(kOpenCL),
                      TARGET(kBM),
                      TARGET(kRKNPU),
-                     TARGET(kMLU),
                      TARGET(kMetal),
                      TARGET(kNNAdapter)});

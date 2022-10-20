@@ -119,8 +119,6 @@ typedef enum {
   CL_PRECISION_FP16 = 2
 } CLPrecisionType;
 
-typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
-
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,
