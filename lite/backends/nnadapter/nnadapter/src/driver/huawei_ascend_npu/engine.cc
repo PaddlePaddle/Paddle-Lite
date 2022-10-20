@@ -300,60 +300,62 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
   // Initialize the CANN input and output tensors
-  // std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
-  // if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
-  //                                         &output_tensor_descs)) {
-  //   NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
-  //                           "description of input and output tensors!";
-  //   return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  // }
-  // auto input_count = input_types_.size();
-  // if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
-  //   NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
-  // } else {
-  //   NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);
-  // }
-  // for (size_t i = 0; i < input_count; i++) {
-  //   auto type = &input_types_[i];
-  //   auto dimensions = input_tensor_descs[i].GetShape();
-  //   NNADAPTER_VLOG(3) << "CANN input tensors[" << i
-  //                     << "]: " << GEShapeToString(dimensions) << " "
-  //                     << DimensionsToString(type->dimensions.data,
-  //                                           type->dimensions.count);
-  //   NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
-  //   for (size_t j = 0; j < type->dimensions.count; j++) {
-  //     auto dimension = type->dimensions.data[j];
-  //     if (dimension == NNADAPTER_UNKNOWN) {
-  //       // Check if the dimension of the model inputs is dynamic
-  //       NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
-  //           << "The " << j << "th dimension of the " << i
-  //           << "th input does not match, expect " << dimension
-  //           << " but recevied " << dimensions.GetDim(j);
-  //     }
-  //   }
-  // }
-  // auto output_count = output_types_.size();
-  // NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
-  // for (size_t i = 0; i < output_count; i++) {
-  //   auto type = &output_types_[i];
-  //   auto dimensions = output_tensor_descs[i].GetShape();
-  //   NNADAPTER_VLOG(3) << "CANN output tensors[" << i
-  //                     << "]: " << GEShapeToString(dimensions) << " "
-  //                     << DimensionsToString(type->dimensions.data,
-  //                                           type->dimensions.count);
-  //   NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
-  //   for (size_t j = 0; j < type->dimensions.count; j++) {
-  //     auto dimension = type->dimensions.data[j];
-  //     if (dimension > 0) {
-  //       // Check if the dimension of the model outputs is not dynamic
-  //       NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
-  //           << "The " << j << "th dimension of the " << i
-  //           << "th input does not match, expect " << dimension
-  //           << " but recevied " << dimensions.GetDim(j);
-  //     }
-  //   }
-  // }
+  std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
+  if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
+                                          &output_tensor_descs)) {
+    NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
+                            "description of input and output tensors!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  auto input_count = input_types_.size();
+  if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
+    NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
+  } else {
+    NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);
+  }
+  for (size_t i = 0; i < input_count; i++) {
+    auto type = &input_types_[i];
+    auto dimensions = input_tensor_descs[i].GetShape();
+    NNADAPTER_VLOG(3) << "CANN input tensors[" << i
+                      << "]: " << GEShapeToString(dimensions) << " "
+                      << DimensionsToString(type->dimensions.data,
+                                            type->dimensions.count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+    for (size_t j = 0; j < type->dimensions.count; j++) {
+      auto dimension = type->dimensions.data[j];
+      if (dimension == NNADAPTER_UNKNOWN) {
+        // Check if the dimension of the model inputs is dynamic
+        NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
+            << "The " << j << "th dimension of the " << i
+            << "th input does not match, expect " << dimension
+            << " but recevied " << dimensions.GetDim(j);
+      }
+    }
+  }
+  auto output_count = output_types_.size();
+  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
+  for (size_t i = 0; i < output_count; i++) {
+    auto type = &output_types_[i];
+    auto dimensions = output_tensor_descs[i].GetShape();
+    NNADAPTER_VLOG(3) << "CANN output tensors[" << i
+                      << "]: " << GEShapeToString(dimensions) << " "
+                      << DimensionsToString(type->dimensions.data,
+                                            type->dimensions.count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+    for (size_t j = 0; j < type->dimensions.count; j++) {
+      auto dimension = type->dimensions.data[j];
+      if (dimension > 0) {
+        // Check if the dimension of the model outputs is not dynamic
+        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+            << "The " << j << "th dimension of the " << i
+            << "th input does not match, expect " << dimension
+            << " but recevied " << dimensions.GetDim(j);
+      }
+    }
+  }
+#endif
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }

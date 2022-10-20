@@ -96,9 +96,6 @@ namespace huawei_ascend_npu {
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
 void InitializeAscendCL();
-// // Initialize the resources of the model builder and register the finalizer
-// to be called at normal process termination
-// void InitializeGraphBuilder(AscendConfigParams* config_params);
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
@@ -120,6 +117,10 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
                             uint32_t* output_dimensions_count);
 
 #ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+// Initialize the resources of the model builder and register the finalizer
+// to be called at normal process termination
+void InitializeGraphBuilder(AscendConfigParams* config_params);
+
 const std::string ATCErrorToString(uint32_t error);
 #define ATC_CALL(msg)                                                      \
   NNADAPTER_CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg),               \

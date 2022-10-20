@@ -27,7 +27,6 @@ else()
 endif()
 
 add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC=${NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC})
-
 # For Huawei MDC
 if (NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC)
   include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/include")
