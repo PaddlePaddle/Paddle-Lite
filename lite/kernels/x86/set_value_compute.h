@@ -201,6 +201,18 @@ inline DDim GetDecreasedDims(const DDim slice_dims,
   return decreased_dims;
 }
 
+static inline std::vector<int64_t> GetDataFromTensorList(
+    const std::vector<const lite::Tensor*>& tensor_list) {
+  // get tensor
+  std::vector<int64_t> vec_new_data;
+  for (size_t i = 0; i < tensor_list.size(); ++i) {
+    auto tensor = tensor_list[i];
+    CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
+    vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int>()));
+  }
+  return vec_new_data;
+}
+
 template <typename D>
 class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
  public:
@@ -249,7 +261,8 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
     }
 
     auto eigen_place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
-    out->mutable_data<T>();
+    out->Resize(in_dims);
+    out->CopyDataFrom(*input);
 
     lite::Tensor slice_tensor;
     lite::Tensor pad_tensor;
@@ -298,14 +311,11 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
         -1,
         SubtractFunctor<T>(),
         &slice_tensor);
-
     slice_tensor.Resize(slice_dims);
-
     // - Step 2.2 Pad slice tensor with 0
     pad_e.device(eigen_place) = pad_e.constant(T(0));
     pad_e.stridedSlice(starts_indices, ends_indices, strides_indices)
         .device(eigen_place) = slice_e;
-
     // Step 3: Set out tensor with value
     out_e.device(eigen_place) = out_e - pad_e;
   }
@@ -324,7 +334,9 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
     lite::Tensor value_tensor;
     value_tensor.Resize(shape);
     T* value_tensor_data = value_tensor.mutable_data<T>();
-    std::memcpy(value_tensor_data, &values, sizeof(T) * values.size());
+    std::memcpy(static_cast<void*>(value_tensor_data),
+                static_cast<const void*>(values.data()),
+                sizeof(T) * values.size());
     SetTensorValueKernel<T>(input,
                             &value_tensor,
                             starts,
@@ -372,19 +384,6 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
                    << rank;
         break;
     }
-  }
-
-  std::vector<int64_t> GetDataFromTensorList(
-      const std::vector<const lite::Tensor*>& tensor_list) {
-    // get tensor
-    std::vector<int64_t> vec_new_data;
-    for (size_t i = 0; i < tensor_list.size(); ++i) {
-      auto tensor = tensor_list[i];
-      CHECK_EQ(tensor->dims(), DDim({1}))
-          << "shape of dim tensor should be [1]";
-      vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int>()));
-    }
-    return vec_new_data;
   }
 
   void Run() override;

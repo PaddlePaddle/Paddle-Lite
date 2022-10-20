@@ -59,34 +59,34 @@ void SetValueCompute<D>::Run() {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
         SET_VALUE_WITH_TENSOR(starts, ends, steps)
         SET_VALUE(float, starts, ends, steps, param.fp32_values)
-        // SET_VALUE(starts, ends, steps, param.fp64_values)
+        SET_VALUE(double, starts, ends, steps, param.fp64_values)
         SET_VALUE(int, starts, ends, steps, param.int32_values)
         SET_VALUE(int64_t, starts, ends, steps, param.int64_values)
-        // SET_VALUE(starts, ends, steps, param.bool_values)
+        SET_VALUE(int, starts, ends, steps, param.bool_values)
       } else {
         SET_VALUE_WITH_TENSOR(starts, ends, param.steps)
         SET_VALUE(float, starts, ends, param.steps, param.fp32_values)
-        // SET_VALUE(starts, ends, param.steps, param.fp64_values)
+        SET_VALUE(double, starts, ends, param.steps, param.fp64_values)
         SET_VALUE(int, starts, ends, param.steps, param.int32_values)
         SET_VALUE(int64_t, starts, ends, param.steps, param.int64_values)
-        // SET_VALUE(starts, ends, param.steps, param.bool_values)
+        SET_VALUE(int, starts, ends, param.steps, param.bool_values)
       }
     } else {
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
         SET_VALUE_WITH_TENSOR(starts, param.ends, steps)
         SET_VALUE(float, starts, param.ends, steps, param.fp32_values)
-        // SET_VALUE(starts, param.ends, steps, param.fp64_values)
+        SET_VALUE(double, starts, param.ends, steps, param.fp64_values)
         SET_VALUE(int, starts, param.ends, steps, param.int32_values)
         SET_VALUE(int64_t, starts, param.ends, steps, param.int64_values)
-        // SET_VALUE(starts, param.ends, steps, param.bool_values)
+        SET_VALUE(int, starts, param.ends, steps, param.bool_values)
       } else {
         SET_VALUE_WITH_TENSOR(starts, param.ends, param.steps)
         SET_VALUE(float, starts, param.ends, param.steps, param.fp32_values)
-        // SET_VALUE(starts, param.ends, param.steps, param.fp64_values)
+        SET_VALUE(double, starts, param.ends, param.steps, param.fp64_values)
         SET_VALUE(int, starts, param.ends, param.steps, param.int32_values)
         SET_VALUE(int64_t, starts, param.ends, param.steps, param.int64_values)
-        // SET_VALUE(starts, param.ends, param.steps, param.bool_values)
+        SET_VALUE(int, starts, param.ends, param.steps, param.bool_values)
       }
     }
   } else {
@@ -96,37 +96,38 @@ void SetValueCompute<D>::Run() {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
         SET_VALUE_WITH_TENSOR(param.starts, ends, steps)
         SET_VALUE(float, param.starts, ends, steps, param.fp32_values)
-        // SET_VALUE(param.starts, ends, steps, param.fp64_values)
+        SET_VALUE(double, param.starts, ends, steps, param.fp64_values)
         SET_VALUE(int, param.starts, ends, steps, param.int32_values)
         SET_VALUE(int64_t, param.starts, ends, steps, param.int64_values)
-        // SET_VALUE(param.starts, ends, steps, param.bool_values)
+        SET_VALUE(int, param.starts, ends, steps, param.bool_values)
       } else {
         SET_VALUE_WITH_TENSOR(param.starts, ends, param.steps)
         SET_VALUE(float, param.starts, ends, param.steps, param.fp32_values)
-        // SET_VALUE(param.starts, ends, param.steps, param.fp64_values)
+        SET_VALUE(double, param.starts, ends, param.steps, param.fp64_values)
         SET_VALUE(int, param.starts, ends, param.steps, param.int32_values)
         SET_VALUE(int64_t, param.starts, ends, param.steps, param.int64_values)
-        // SET_VALUE(param.starts, ends, param.steps, param.bool_values)
+        SET_VALUE(int, param.starts, ends, param.steps, param.bool_values)
       }
     } else {
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
         SET_VALUE_WITH_TENSOR(param.starts, param.ends, steps)
         SET_VALUE(float, param.starts, param.ends, steps, param.fp32_values)
-        // SET_VALUE(param.starts, param.ends, steps, param.fp64_values)
-        SET_VALUE(int32_t, param.starts, param.ends, steps, param.int32_values)
+        SET_VALUE(double, param.starts, param.ends, steps, param.fp64_values)
+        SET_VALUE(int, param.starts, param.ends, steps, param.int32_values)
         SET_VALUE(int64_t, param.starts, param.ends, steps, param.int64_values)
-        // SET_VALUE(param.starts, param.ends, steps, param.bool_values)
+        SET_VALUE(int, param.starts, param.ends, steps, param.bool_values)
       } else {
         SET_VALUE_WITH_TENSOR(param.starts, param.ends, param.steps)
         SET_VALUE(
             float, param.starts, param.ends, param.steps, param.fp32_values)
-        // SET_VALUE(param.starts, param.ends, param.steps, param.fp64_values)
         SET_VALUE(
-            int32_t, param.starts, param.ends, param.steps, param.int32_values)
+            double, param.starts, param.ends, param.steps, param.fp64_values)
+        SET_VALUE(
+            int, param.starts, param.ends, param.steps, param.int32_values)
         SET_VALUE(
             int64_t, param.starts, param.ends, param.steps, param.int64_values)
-        // SET_VALUE(param.starts, param.ends, param.steps, param.bool_values)
+        SET_VALUE(int, param.starts, param.ends, param.steps, param.bool_values)
       }
     }
   }
@@ -142,10 +143,10 @@ void SetValueCompute<D>::Run() {
 // float
 REGISTER_LITE_KERNEL(set_value,
                      kX86,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::x86::SetValueCompute<float>,
-                     def)
+                     fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("ValueTensor",
@@ -161,10 +162,10 @@ REGISTER_LITE_KERNEL(set_value,
 
 REGISTER_LITE_KERNEL(set_value,
                      kX86,
-                     kInt32,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::x86::SetValueCompute<int>,
-                     def)
+                     int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("ValueTensor",
@@ -180,10 +181,10 @@ REGISTER_LITE_KERNEL(set_value,
 
 REGISTER_LITE_KERNEL(set_value,
                      kX86,
-                     kInt64,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::x86::SetValueCompute<int64_t>,
-                     def)
+                     int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("ValueTensor",
@@ -195,4 +196,22 @@ REGISTER_LITE_KERNEL(set_value,
     .BindInput("StepsTensorList",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(set_value,
+                     kX86,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SetValueCompute<int>,
+                     bool)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kBool))})
+    .BindInput("ValueTensor",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("StepsTensorList",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kBool))})
     .Finalize();

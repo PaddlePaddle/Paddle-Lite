@@ -40,7 +40,6 @@ bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
   param_.Out = GetMutableTensor(scope, out_name);
   // StartsTensorList
-  auto starts_tensor_list_name = opdesc.Input("StartsTensorList").front();
   param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
@@ -54,7 +53,6 @@ bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     }
   }
   // EndsTensorList
-  auto ends_tensor_list_name = opdesc.Input("EndsTensorList").front();
   param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
@@ -68,7 +66,6 @@ bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     }
   }
   // StepsTensorList
-  auto steps_tensor_list_name = opdesc.Input("StepsTensorList").front();
   param_.StepsTensorList.clear();
   if (opdesc.HasInput("StepsTensorList") &&
       !opdesc.Input("StepsTensorList").empty()) {
@@ -87,11 +84,11 @@ bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   }
   // Ends
   if (opdesc.HasAttr("ends")) {
-    param_.ends = opdesc.GetAttr<std::vector<int64_t>>("starts");
+    param_.ends = opdesc.GetAttr<std::vector<int64_t>>("ends");
   }
   // Steps
   if (opdesc.HasAttr("steps")) {
-    param_.steps = opdesc.GetAttr<std::vector<int64_t>>("starts");
+    param_.steps = opdesc.GetAttr<std::vector<int64_t>>("steps");
   }
   // Decrease_axes
   if (opdesc.HasAttr("decrease_axes")) {
@@ -107,17 +104,29 @@ bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   // Axes
   param_.axes = opdesc.GetAttr<std::vector<int64_t>>("axes");
   // Bool_values
-  param_.bool_values = opdesc.GetAttr<std::vector<int>>("bool_values");
+  if (opdesc.HasAttr("bool_values")) {
+    param_.bool_values = opdesc.GetAttr<std::vector<int>>("bool_values");
+  }
   // Fp32_values
-  param_.fp32_values = opdesc.GetAttr<std::vector<float>>("fp32_values");
+  if (opdesc.HasAttr("fp32_values")) {
+    param_.fp32_values = opdesc.GetAttr<std::vector<float>>("fp32_values");
+  }
   // Int32_values
-  param_.int32_values = opdesc.GetAttr<std::vector<int>>("int32_values");
+  if (opdesc.HasAttr("int32_values")) {
+    param_.int32_values = opdesc.GetAttr<std::vector<int>>("int32_values");
+  }
   // Int64_values
-  param_.int64_values = opdesc.GetAttr<std::vector<int64_t>>("int64_values");
+  if (opdesc.HasAttr("int64_values")) {
+    param_.int64_values = opdesc.GetAttr<std::vector<int64_t>>("int64_values");
+  }
   // Fp64_values
-  // param_.fp64_values = opdesc.GetAttr<std::vector<double>>("fp64_values");
+  if (opdesc.HasAttr("fp64_values")) {
+    param_.fp64_values = opdesc.GetAttr<std::vector<double>>("fp64_values");
+  }
   // Fp16_values
-  param_.fp16_values = opdesc.GetAttr<std::vector<float>>("fp16_values");
+  if (opdesc.HasAttr("fp16_values")) {
+    param_.fp16_values = opdesc.GetAttr<std::vector<float>>("fp16_values");
+  }
   // Shape
   param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
 
