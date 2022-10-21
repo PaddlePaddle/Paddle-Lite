@@ -18,6 +18,7 @@
 
 namespace nnadapter {
 
-// void FuseReshapeTransposeSlice3(core::Model *model);
+void FuseReshapeTransposeSlice3Squeeze3IntoReshapeTransposeSlice3(
+    core::Model* model);
 
 }  // namespace nnadapter

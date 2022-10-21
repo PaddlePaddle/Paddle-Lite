@@ -412,7 +412,7 @@ typedef enum {
    * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
-   * dimension along which softmax will be performed, should be in range [-R,
+   * dimension along which concat will be performed, should be in range [-R,
    * R), where R is the rank of `input`, negative value works the same way as
    * `axis`+R, defaults to -1.
    *
@@ -547,7 +547,7 @@ typedef enum {
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
-   * dimension along which softmax will be performed, should be in range [-R,
+   * dimension along which cum_sum will be performed, should be in range [-R,
    * R), where R is the rank of input, negative value works the same way as
    * `axis`+R, defaults to -1.
    * * 2: exclusive, a NNADAPTER_BOOL8 tensor of shape [1], whether to exclude
@@ -1127,7 +1127,8 @@ typedef enum {
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
    * tensor.
    * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
-   * dimension along which softmax will be performed, should be in range [-R,
+   * dimension along which log_softmax will be performed, should be in range
+   * [-R,
    * R), where R is the rank of `input`, negative value works the same way as
    * `axis`+R.
    *
@@ -1148,9 +1149,9 @@ typedef enum {
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
-   * dimension along which softmax will be performed, should be in range [-R,
-   * R), where R is the rank of input, negative value works the same way as
-   * `axis`+R, defaults to 1.
+   * dimension along which lp_normalization will be performed, should be in
+   * range [-R, R), where R is the rank of input, negative value works the same
+   * way as `axis`+R, defaults to 1.
    * * 2: p, a NNADAPTER_INT32 tensor of shape [1], represents the exponent
    * value in the formula, only 1 or 2 is supported, defaults to 2.
    * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added

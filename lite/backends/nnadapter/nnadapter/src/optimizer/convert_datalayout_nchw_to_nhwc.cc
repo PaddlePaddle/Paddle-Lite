@@ -1334,21 +1334,14 @@ void NCHW2NHWCDataLayoutConverter::ConvertTranspose(
   auto perm_data = reinterpret_cast<int32_t*>(perm_operand->buffer);
   auto output_operand = output_operands[0];
   // Recalculate the perm according to the dimorder vector of the input operand
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 0";
   auto input_permutation = GetPermutation(input_operand);
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 1";
   std::vector<int32_t> perm(perm_data, perm_data + perm_count);
   perm = MultiplyPermutation(
       MultiplyPermutation(InversePermutation(input_permutation), perm),
       input_permutation);
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 2";
   memcpy(perm_data, &perm[0], perm_operand->length);
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 3";
   TransposeOperand(output_operand, input_permutation);
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 4";
   SetPermutation(output_operand, input_permutation);
-  NNADAPTER_LOG(INFO) << "---- ConvertTranspose, 5, "
-                      << OperandIdToString(output_operand);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertUnsqueeze(
@@ -1561,10 +1554,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(core::Model* model) {
   // Restore all of the model output operands if they have non-identity
   // permutation
   for (auto& output_operand : model_->output_operands) {
-    NNADAPTER_LOG(INFO) << "---- convert out, 0, "
-                        << OperandIdToString(output_operand);
     auto output_permutation = GetPermutation(output_operand);
-    NNADAPTER_LOG(INFO) << "---- convert out, 1";
     auto transpose_output_permutation = InversePermutation(output_permutation);
     if (!IsIdentityPermutation(transpose_output_permutation)) {
       auto transpose_output_operand = AppendTransposeOperation(
