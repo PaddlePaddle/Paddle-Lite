@@ -134,7 +134,7 @@ void AclModelClient::UnloadModel() {
                     << ")";
 }
 
-#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
 
 #else
 bool AclModelClient::GetModelIOTensorDim(

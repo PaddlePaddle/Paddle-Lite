@@ -183,7 +183,9 @@ Context::~Context() {}
 Program::~Program() { Clear(); }
 
 void Program::Clear() {
-  // operators_.clear();
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
+  operators_.clear();
+#endif
   model_client_ = nullptr;
   input_types_.clear();
   output_types_.clear();
@@ -195,6 +197,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
     // Build from cache
+    input_types_ = cache->input_types;
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
@@ -202,18 +205,14 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
     output_types_ = cache->output_types;
-#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
   }
 #else
   } else {
-    // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
-    if (!cache->buffer.empty()) {
-      input_types_ = cache->input_types;
-    } else {
-      for (auto input_operand : model->input_operands) {
-        input_types_.push_back(input_operand->type);
-      }
+    for (auto input_operand : model->input_operands) {
+      input_types_.push_back(input_operand->type);
     }
+    // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
     std::vector<std::string> dynamic_shape_info;
     std::string optional_shape_str;
     if (context_->ascend_config_params()->enable_dynamic_shape_range ==
@@ -300,7 +299,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
   // Initialize the CANN input and output tensors
   std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
   if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,

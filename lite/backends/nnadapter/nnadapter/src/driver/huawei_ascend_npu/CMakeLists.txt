@@ -20,7 +20,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Os -fvisibility=hidden -fvis
 include(dependencies.cmake)
 
 include_directories(.)
-if (NOT NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC)
+if (NOT NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
     aux_source_directory(converter CONVERTERS)
     aux_source_directory(optimizer OPTIMIZERS)
 endif()

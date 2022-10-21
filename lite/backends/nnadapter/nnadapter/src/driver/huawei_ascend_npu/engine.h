@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include "driver/huawei_ascend_npu/utility.h"
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "op_proto/built-in/inc/all_ops.h"
 #endif
@@ -71,7 +71,7 @@ class Program {
 
  private:
   Context* context_{nullptr};
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
   // Map NNAdapter operand to GE operator
   std::map<core::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
 #endif

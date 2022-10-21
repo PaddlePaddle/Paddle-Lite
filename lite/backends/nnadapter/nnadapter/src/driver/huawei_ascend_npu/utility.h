@@ -20,7 +20,7 @@
 #include "core/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
 
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
 #include "ge/ge_api_types.h"
 #include "ge/ge_ir_build.h"
 #include "graph/ge_error_codes.h"
@@ -116,7 +116,7 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
                             int32_t* output_dimensions,
                             uint32_t* output_dimensions_count);
 
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
 // Initialize the resources of the model builder and register the finalizer
 // to be called at normal process termination
 void InitializeGraphBuilder(AscendConfigParams* config_params);

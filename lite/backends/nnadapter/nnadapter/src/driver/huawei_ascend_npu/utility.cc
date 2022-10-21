@@ -17,7 +17,8 @@
 #include <map>
 #include <mutex>  // NOLINT
 #include <utility>
-#ifdef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#if defined(NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC) && \
+    defined(NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
 #include "driver/ascend_hal.h"
 #endif
 
@@ -38,17 +39,19 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
-    int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
-    if (ret != DRV_ERROR_NONE) {
-      NNADAPTER_LOG(FATAL) << "hal group attach failed, error code is " << ret;
-    }
+#if defined(NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC) && \
+    defined(NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
+// int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
+// if (ret != DRV_ERROR_NONE) {
+//   NNADAPTER_LOG(FATAL) << "hal group attach failed, error code is " << ret;
+// }
 
-    BuffCfg buffcfg = {0};
-    ret = halBuffInit(&buffcfg);
-    if (ret != DRV_ERROR_NONE) {
-      NNADAPTER_LOG(FATAL) << "hal buff init failed, error code is " << ret;
-    }
-
+// BuffCfg buffcfg = {0};
+// ret = halBuffInit(&buffcfg);
+// if (ret != DRV_ERROR_NONE) {
+//   NNADAPTER_LOG(FATAL) << "hal buff init failed, error code is " << ret;
+// }
+#endif
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
     aclInit(NULL);
@@ -161,7 +164,7 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
   }
 }
 
-#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
 std::string ShapeToString(const std::vector<int32_t>& shape) {
   std::string shape_str;
   for (size_t i = 0; i < shape.size(); i++) {
@@ -497,8 +500,7 @@ static void FinalizeGraphBuilder() {
   NNADAPTER_VLOG(5) << "Finalize Graph Builder.";
   // The following APIs can only be called once in one process
   // TODO(hong19860320) fix the problem destruction order that the resource
-  of
-  // GE is released before the function is called.
+  // of GE is released before the function is called.
   // ge::aclgrphBuildFinalize();
 }
 
