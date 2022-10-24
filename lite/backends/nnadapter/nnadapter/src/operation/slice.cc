@@ -84,11 +84,11 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
       int dim = output_dimensions[axes[i]];
       if (dim > 0) {
         int start = starts[i] < 0 ? (starts[i] + dim) : starts[i];
+        ends[i] = std::min(ends[i], dim);
         int end = ends[i] < 0 ? (ends[i] + dim) : ends[i];
         int step = std::abs(steps[i]);
         start = std::max(start, 0);
         end = std::max(end, 0);
-        end = std::min(end, dim);
         output_dimensions[axes[i]] = (std::abs(end - start) + step - 1) / step;
       }
     }
