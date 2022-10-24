@@ -70,7 +70,6 @@ class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~LeakyReluCompute() = default;
 };
 
-
 class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;

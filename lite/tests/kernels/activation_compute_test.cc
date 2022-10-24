@@ -675,7 +675,7 @@ TEST(Activation_sigmoid, precision) {
 
   for (auto dims : test_dims) {
     TestAct(place,
-            "def",
+            "sigmoid_fp32_precision",
             0.01,
             6.,
             "all",
@@ -685,6 +685,25 @@ TEST(Activation_sigmoid, precision) {
             "sigmoid",
             SIGMOID,
             abs_error);
+  }
+}
+
+TEST(Activation_sigmoid, performance) {
+  Place place(TARGET(kARM), PRECISION(kFloat));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 640, 640}}) {
+    TestActPerformance(place,
+                       "sigmoid_fp32_performance",
+                       0.01,
+                       6,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
   }
 }
 
@@ -1475,6 +1494,45 @@ TEST(Activation_relu_fp16, precision) {
                        "relu",
                        RELU,
                        abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct<float16_t>(place,
+                       "sigmoid_fp16_precision",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp16, performance) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 640, 640}}) {
+    TestActPerformance<float16_t>(place,
+                                  "sigmoid_fp16_performance",
+                                  0.01,
+                                  6,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "sigmoid",
+                                  SIGMOID,
+                                  abs_error);
   }
 }
 
