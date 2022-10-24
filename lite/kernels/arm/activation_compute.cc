@@ -186,12 +186,13 @@ void EluCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 #ifdef ENABLE_ARM_FP16
-REGISTER_LITE_KERNEL(sigmoid,
-                     kARM,
-                     kFP16,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SigmoidCompute<PRECISION(kFP16)>,
-                     def)
+REGISTER_LITE_KERNEL(
+    sigmoid,
+    kARM,
+    kFP16,
+    kNCHW,
+    paddle::lite::kernels::arm::SigmoidCompute<PRECISION(kFP16)>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
@@ -228,12 +229,13 @@ REGISTER_LITE_KERNEL(tanh,
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-REGISTER_LITE_KERNEL(sigmoid,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SigmoidCompute<PRECISION(kFloat)>,
-                     def)
+REGISTER_LITE_KERNEL(
+    sigmoid,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::SigmoidCompute<PRECISION(kFloat)>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
