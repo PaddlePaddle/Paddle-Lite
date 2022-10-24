@@ -54,7 +54,6 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
   }
   SpecifyKernelPickTactic(kernel_pick_factor_);
   InitTargetTypeTransformPass();
-  InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
 
   ApplyPasses(&graphs_);
@@ -82,16 +81,6 @@ void Optimizer::InitTargetTypeTransformPass() {
   CHECK(pass);
   CHECK(!valid_places_.empty());
   pass->SetValidPlaces(valid_places_);
-}
-
-void Optimizer::InitControlFlowOpUnusedInputsAndOutputsEliminatePass() {
-  auto* pass =
-      mir::PassManager::Global()
-          .LookUp<mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass>(
-              "control_flow_op_unused_inputs_and_outputs_eliminate_pass");
-  CHECK(pass);
-  CHECK(!graphs_.empty());
-  pass->SetAllGraphs(&graphs_);
 }
 
 void Optimizer::InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass() {
@@ -226,10 +215,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
-       "npu_subgraph_pass",
        "bm_subgraph_pass",
        "fpga_concat_fuse_pass",
-       "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 #ifdef LITE_WITH_XPU
        "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
