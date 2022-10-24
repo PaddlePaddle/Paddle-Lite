@@ -177,9 +177,6 @@ TEST(Scale, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-1;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 5e-2;  // Using fp16 in OPENCL

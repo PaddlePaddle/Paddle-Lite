@@ -472,9 +472,6 @@ TEST(Elementwise, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #ifdef ENABLE_ARM_FP16

@@ -396,7 +396,6 @@ REGISTER_MIR_PASS(xpu_memory_optimize_pass,
                   paddle::lite::mir::XPUMemoryOptimizePass)
     .BindTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kARM),
-                     TARGET(kNPU),
                      TARGET(kOpenCL),
                      TARGET(kBM),
                      TARGET(kRKNPU),
