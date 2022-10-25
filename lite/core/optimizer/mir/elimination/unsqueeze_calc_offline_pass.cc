@@ -108,4 +108,4 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
 
 REGISTER_MIR_PASS(unsqueeze_calc_offline_pass,
                   paddle::lite::mir::UnsqueezeCalcOfflinePass)
-    .BindTargets({TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kNNAdapter), TARGET(kARM)});
