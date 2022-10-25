@@ -409,18 +409,14 @@ void ConvImageCompute::PrepareForRun() {
       }
     } else if (groups_ == 1) {
       if (is_mali_ && input_tensor_n_ == 1) {
-        kernel_func_names_.push_back("conv2d_3x3_opt_mali");
+        kernel_func_names_.push_back("conv2d_nxn_opt_mali");
+        kernel_func_paths_.push_back("image/conv2d_opt_mali_kernel.cl");
         bias_buffer_flag = true;
       } else {
-        kernel_func_names_.push_back(
-            input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
+        kernel_func_names_.push_back("conv2d_nxn_opt_adreno");
+        kernel_func_paths_.push_back("image/conv2d_opt_adreno_kernel.cl");
       }
-      if (kernel_func_names_.back() != "conv2d_3x3_multi_batch") {
-        kernel_func_paths_.push_back("image/conv2d_3x3_default_kernel.cl");
-      } else {
-        kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
-      }
-      impl_ = &ConvImageCompute::Conv2d3x3opt;
+      impl_ = &ConvImageCompute::Conv2dnxnopt;
 
       CLImageConverterNBlock converter;
       const DDim& filter_image_dims =
@@ -466,14 +462,13 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_h_,
                        filter_image_data);
     }
-  } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5 && pad_equal &&
+  } else if (filter_tensor_h_ == filter_tensor_w_ && pad_equal &&
              stride_equal && dilation_equal && dilation_h_ == 1 &&
              groups_ == 1) {
-#define CONV_5x5_OPT
-#ifndef CONV_5x5_OPT
-    // conv2d_5x5
-    kernel_func_names_.push_back("conv2d_5x5");
-    kernel_func_paths_.push_back("image/conv2d_5x5_kernel.cl");
+#define CONV_OPT
+#ifndef CONV_OPT
+    kernel_func_names_.push_back("conv2d_nxn");
+    kernel_func_paths_.push_back("image/conv2d_nxn_kernel.cl");
 
     CLImageConverterFolder converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
@@ -486,60 +481,16 @@ void ConvImageCompute::PrepareForRun() {
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
 
-    impl_ = &ConvImageCompute::Conv2d5x5;
+    impl_ = &ConvImageCompute::Conv2dnxn;
 #else
-    // conv2d_5x5_opt
-
-    kernel_func_names_.push_back(input_tensor_n_ > 1 ? "conv2d_5x5_multi_batch"
-                                                     : "conv2d_5x5_opt");
-    kernel_func_paths_.push_back("image/conv2d_5x5_opt_kernel.cl");
-
-    CLImageConverterFolder converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    filter_image_h_ = filter_image_dims[1];
-    filter_image_w_ = filter_image_dims[0];
-    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-
-    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
-
-    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    MUTABLE_DATA_GPU(
-        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-
-    impl_ = &ConvImageCompute::Conv2d5x5opt;
-#endif
-#undef CONV_5x5_OPT
-  } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7 && pad_equal &&
-             stride_equal && dilation_equal && dilation_h_ == 1 &&
-             groups_ == 1) {
-#define CONV_7x7_OPT
-#ifndef CONV_7x7_OPT
-    // conv2d_7x7
-    kernel_func_names_.push_back("conv2d_7x7");
-    kernel_func_paths_.push_back("image/conv2d_7x7_kernel.cl");
-
-    CLImageConverterFolder converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    filter_image_h_ = filter_image_dims[1];
-    filter_image_w_ = filter_image_dims[0];
-    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-
-    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
-    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    MUTABLE_DATA_GPU(
-        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-    impl_ = &ConvImageCompute::Conv2d7x7;
-
-#else
-    // conv2d_7x7
     if (is_mali_ && input_tensor_n_ == 1) {
-      kernel_func_names_.push_back("conv2d_7x7_opt_mali");
+      kernel_func_names_.push_back("conv2d_nxn_opt_mali");
+      kernel_func_paths_.push_back("image/conv2d_opt_mali_kernel.cl");
       bias_buffer_flag = true;
     } else {
-      kernel_func_names_.push_back(
-          input_tensor_n_ > 1 ? "conv2d_7x7_multi_batch" : "conv2d_7x7_opt");
+      kernel_func_names_.push_back("conv2d_nxn_opt_adreno");
+      kernel_func_paths_.push_back("image/conv2d_opt_adreno_kernel.cl");
     }
-    kernel_func_paths_.push_back("image/conv2d_7x7_opt_kernel.cl");
 
     CLImageConverterNBlock converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
@@ -564,9 +515,9 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_data);
     }
 
-    impl_ = &ConvImageCompute::Conv2d7x7opt;
+    impl_ = &ConvImageCompute::Conv2dnxnopt;
 #endif
-#undef CONV_7x7_OPT
+#undef CONV_OPT
   } else if (groups_ == 1) {
     // conv2d_common
     kernel_func_names_.push_back("conv2d_common");
@@ -1607,22 +1558,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
         static_cast<size_t>(output_channel_blocks * round_up_ouptut_width),
         static_cast<size_t>(batch_round_h),
         1};
-  } else if (kernel_func_names_[0] == "conv2d_3x3_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_3x3_opt") {
-    int w_blk_size = 5;
-    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-    int h_blk_size = 1;
-    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-    c_blk_ = default_c_blk_;
-    w_blk_ = w_blk;
-    nh_blk_ = h_blk;
-
-    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                    static_cast<size_t>(w_blk_),
-                                    static_cast<size_t>(nh_blk_)};
-  } else if (kernel_func_names_[0] == "conv2d_3x3_opt_mali") {
+  } else if (kernel_func_names_[0] == "conv2d_nxn_opt_mali") {
     int w_blk_size = 2;
     int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
 
@@ -1636,36 +1572,8 @@ void ConvImageCompute::SetGlobalWorkSize() {
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
-  } else if (kernel_func_names_[0] == "conv2d_5x5_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_5x5_opt") {
+  } else if (kernel_func_names_[0] == "conv2d_nxn_opt_adreno") {
     int w_blk_size = 5;
-    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-    int h_blk_size = 1;
-    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-    c_blk_ = default_c_blk_;
-    w_blk_ = w_blk;
-    nh_blk_ = h_blk;
-    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                    static_cast<size_t>(w_blk_),
-                                    static_cast<size_t>(nh_blk_)};
-  } else if (kernel_func_names_[0] == "conv2d_7x7_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_7x7_opt") {
-    int w_blk_size = 5;
-    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
-
-    int h_blk_size = 1;
-    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
-
-    c_blk_ = default_c_blk_;
-    w_blk_ = w_blk;
-    nh_blk_ = h_blk;
-    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
-                                    static_cast<size_t>(w_blk_),
-                                    static_cast<size_t>(nh_blk_)};
-  } else if (kernel_func_names_[0] == "conv2d_7x7_opt_mali") {
-    int w_blk_size = 2;
     int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
 
     int h_blk_size = 1;
@@ -1933,6 +1841,98 @@ void ConvImageCompute::Conv2d1x1opt() {
   }
 }
 
+void ConvImageCompute::Conv2dnxnopt() {
+  int arg_idx = 0;
+  status_ = kernel_.setArg(arg_idx++, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  if (is_mali_ && input_tensor_n_ == 1) {
+    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
+    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
+    status_ = kernel_.setArg(arg_idx++, *filter_buffer_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(arg_idx++, *bias_buffer_p_);
+    CL_CHECK_FATAL(status_);
+  } else {
+    status_ = kernel_.setArg(arg_idx++, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(arg_idx++, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
+  status_ = kernel_.setArg(arg_idx++, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_n_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
+}
+
+void ConvImageCompute::Conv2dnxn() {
+  use_lws_ = false;
+  int arg_idx = 0;
+  status_ = kernel_.setArg(arg_idx++, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(arg_idx++, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
+}
+
 void ConvImageCompute::Conv2d3x3() {
   use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
@@ -1978,207 +1978,6 @@ void ConvImageCompute::Conv2d3x3() {
   status_ = kernel_.setArg(20, input_tensor_c_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(21, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
-}
-
-void ConvImageCompute::Conv2d3x3opt() {
-  status_ = kernel_.setArg(0, default_c_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
-  CL_CHECK_FATAL(status_);
-  if (is_mali_ && input_tensor_n_ == 1) {
-    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
-    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
-    status_ = kernel_.setArg(4, *filter_buffer_p_);
-    CL_CHECK_FATAL(status_);
-    status_ = kernel_.setArg(5, *bias_buffer_p_);
-    CL_CHECK_FATAL(status_);
-  } else {
-    status_ = kernel_.setArg(4, *filter_image_p_);
-    CL_CHECK_FATAL(status_);
-    status_ = kernel_.setArg(5, *bias_image_p_);
-    CL_CHECK_FATAL(status_);
-  }
-  status_ = kernel_.setArg(6, *output_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, pad_left_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_tensor_n_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, input_tensor_c_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(16, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
-}
-
-void ConvImageCompute::Conv2d5x5() {
-  use_lws_ = false;
-  status_ = kernel_.setArg(0, c_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, offset_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, input_c_block_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
-}
-
-void ConvImageCompute::Conv2d5x5opt() {
-  status_ = kernel_.setArg(0, c_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, pad_left_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_tensor_n_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, input_tensor_c_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(16, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
-}
-
-void ConvImageCompute::Conv2d7x7() {
-  use_lws_ = false;
-  status_ = kernel_.setArg(0, c_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, offset_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, input_c_block_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
-}
-
-void ConvImageCompute::Conv2d7x7opt() {
-  status_ = kernel_.setArg(0, c_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
-  CL_CHECK_FATAL(status_);
-  if (is_mali_ && input_tensor_n_ == 1) {
-    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
-    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
-    status_ = kernel_.setArg(4, *filter_buffer_p_);
-    CL_CHECK_FATAL(status_);
-    status_ = kernel_.setArg(5, *bias_buffer_p_);
-    CL_CHECK_FATAL(status_);
-  } else {
-    status_ = kernel_.setArg(4, *filter_image_p_);
-    CL_CHECK_FATAL(status_);
-    status_ = kernel_.setArg(5, *bias_image_p_);
-    CL_CHECK_FATAL(status_);
-  }
-  status_ = kernel_.setArg(6, *output_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, pad_left_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_tensor_n_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, input_tensor_c_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(16, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 

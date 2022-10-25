@@ -33,7 +33,7 @@ static int slice(const T* input_data,
   std::vector<int32_t> output_shape(input_shape);
   std::vector<int> real_starts(input_shape.size(), 0);
   std::vector<int> real_ends(input_shape.size(), 0);
-  std::vector<int> real_step(input_shape.size(), 0);
+  std::vector<int> real_step(input_shape.size(), 1);
   for (size_t i = 0; i < input_shape.size(); i++) {
     real_ends[i] = input_shape[i];
   }

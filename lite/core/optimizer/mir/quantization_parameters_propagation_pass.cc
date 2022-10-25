@@ -25,45 +25,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static std::unordered_map<std::string, float>
-ReadAutoCompleteScaleConfigsFromEnv() {
-  std::unordered_map<std::string, float> configs;
-  const auto& path = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE);
-  std::string data;
-  if (!path.empty()) {
-    std::vector<char> buffer;
-    if (ReadFile(path, &buffer, false)) {
-      if (!buffer.empty()) {
-        data.insert(data.begin(), buffer.begin(), buffer.end());
-      }
-    } else {
-      LOG(WARNING) << "Missing the user-defined configuration file " << path
-                   << " for auto completing the quantization parameters.";
-    }
-  }
-  if (data.empty()) {
-    data = GetStringFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_DATA);
-  }
-  if (data.empty()) return std::unordered_map<std::string, float>();
-  const auto& lines = Split(data, "\n");
-  for (const auto& line : lines) {
-    const auto& items = Split(line, ",");
-    if (items.empty()) continue;
-    for (const auto& item : items) {
-      if (item.empty()) continue;
-      auto out_var_name_and_out_threshold = Split(item, ":");
-      CHECK_EQ(out_var_name_and_out_threshold.size(), 2);
-      auto& out_var_name = out_var_name_and_out_threshold[0];
-      auto out_threshold =
-          parse_string<float>(out_var_name_and_out_threshold[1]);
-      CHECK_GT(out_threshold, 0);
-      CHECK(!configs.count(out_var_name));
-      configs[out_var_name] = out_threshold;
-    }
-  }
-  return configs;
-}
-
 static bool HasOutputThreshold(const OpInfo* op_info,
                                const std::string& name,
                                bool is_threshold_name) {
@@ -139,11 +100,31 @@ static bool SetOutScaleFromNextInScale(
 }
 
 // Complete the output scale from the user-defined configurations.
-static bool SetOutScaleFromConfigs(const std::unique_ptr<SSAGraph>& graph,
-                                   const std::unordered_map<std::string, float>&
-                                       auto_complete_quant_scale_configs) {
+static bool SetOutScaleFromConfigs(
+    const std::unique_ptr<SSAGraph>& graph,
+    const std::string& auto_complete_quant_scale_configs) {
+  if (auto_complete_quant_scale_configs.empty()) return false;
+  std::unordered_map<std::string, float> var_nodes;
+  const auto& lines = Split(auto_complete_quant_scale_configs, "\n");
+  for (const auto& line : lines) {
+    const auto& items = Split(line, "-");
+    if (items.empty()) continue;
+    for (const auto& item : items) {
+      if (item.empty()) continue;
+      const auto& vars = Split(item, ",");
+      for (const auto& var : vars) {
+        auto info = Split(var, ":");
+        CHECK_EQ(info.size(), 2);
+        auto& out_var_name = info[0];
+        auto out_threshold = parse_string<float>(info[1]);
+        CHECK_GT(out_threshold, 0);
+        CHECK(!var_nodes.count(out_var_name));
+        var_nodes[out_var_name] = out_threshold;
+      }
+    }
+  }
+  if (var_nodes.empty()) return false;
   bool found = false;
-  if (auto_complete_quant_scale_configs.empty()) return found;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
@@ -151,11 +132,11 @@ static bool SetOutScaleFromConfigs(const std::unique_ptr<SSAGraph>& graph,
       CHECK(out_var_node->IsArg());
       auto out_var_name = out_var_node->arg()->name;
       if (op_info->HasOutputScale(out_var_name)) continue;
-      if (!auto_complete_quant_scale_configs.count(out_var_name)) continue;
+      if (!var_nodes.count(out_var_name)) continue;
       int bit_length = 8;  // op_info->GetAttr<int>("bit_length");
       int range = (1 << (bit_length - 1)) - 1;
-      auto out_var_scale = std::vector<float>{
-          auto_complete_quant_scale_configs.at(out_var_name) / range};
+      auto out_var_scale =
+          std::vector<float>{var_nodes.at(out_var_name) / range};
       op_info->SetOutputScale(out_var_name, out_var_scale);
       found = true;
     }
@@ -344,8 +325,11 @@ void QuantizationParametersPropagationPass::Apply(
   SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
   // (b) Complete the output scale from the user-defined configurations.
   auto auto_complete_quant_scale_configs =
-      ReadAutoCompleteScaleConfigsFromEnv();
-  SetOutScaleFromConfigs(graph, auto_complete_quant_scale_configs);
+      GetConfigsFromEnv(QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE,
+                        QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER);
+  if (!auto_complete_quant_scale_configs.empty()) {
+    SetOutScaleFromConfigs(graph, auto_complete_quant_scale_configs);
+  }
   // (c) Complete the output scale from its out_threshold attribute.
   SetOutScaleFromCurOutThreshold(graph);
   // (d) Complete the input scale from the output scale of its producer op.
@@ -358,6 +342,10 @@ void QuantizationParametersPropagationPass::Apply(
       in_scale_same_as_out_scale_ops{
           {"transpose", {{"X", "Out"}}},
           {"transpose2", {{"X", "Out"}}},
+          {"squeeze", {{"X", "Out"}}},
+          {"squeeze2", {{"X", "Out"}}},
+          {"unsqueeze", {{"X", "Out"}}},
+          {"unsqueeze2", {{"X", "Out"}}},
           {"reshape", {{"X", "Out"}}},
           {"reshape2", {{"X", "Out"}}},
           {"flatten", {{"X", "Out"}}},
@@ -380,7 +368,7 @@ void QuantizationParametersPropagationPass::Apply(
     } while (found);
     do {
       found = SetInScaleFromCurOutScale(graph, in_scale_same_as_out_scale_ops);
-      SetOutScaleFromNextInScale(graph);
+      SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
     } while (found);
   }
   // (f) Complete the output scale according to the formula of some special ops
@@ -395,7 +383,7 @@ void QuantizationParametersPropagationPass::Apply(
     } while (found);
     do {
       found = SetInScaleFromCurOutScale(graph, in_scale_same_as_out_scale_ops);
-      SetOutScaleFromNextInScale(graph);
+      SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
     } while (found);
   }
   VLOG(5) << "\n" << Visualize(graph.get());

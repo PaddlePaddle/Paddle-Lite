@@ -57,7 +57,7 @@ if (LITE_WITH_PROFILE)
   endif()
 endif()
 
-if (LITE_WITH_NPU OR LITE_WITH_BM OR LITE_WITH_MLU OR LITE_WITH_NNADAPTER)
+if (LITE_WITH_BM OR LITE_WITH_NNADAPTER)
   set(CORE_SRC  ${CORE_SRC} ${SUBGRAPH_SRC})
 endif ()
 
@@ -71,7 +71,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   FPGA_DEPS fpga_target_wrapper
   INTEL_FPGA_DEPS intel_fpga_target_wrapper
   BM_DEPS target_wrapper_bm
-  MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -125,3 +124,5 @@ lite_cc_test (test_type_system SRCS type_system_test.cc)
 lite_cc_test (test_types SRCS types_test.cc)
 lite_cc_test (test_memory SRCS memory_test.cc)
 lite_cc_test (test_context SRCS context_test.cc)
+lite_cc_test(test_scalar SRCS scalar_test.cc)
+lite_cc_test(test_int_array SRCS int_array_test.cc)

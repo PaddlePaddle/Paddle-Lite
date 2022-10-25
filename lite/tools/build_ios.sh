@@ -86,7 +86,6 @@ function make_ios {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace $cmake_common_options \
-            -DWITH_LITE=ON \
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_XCODE=$WITH_XCODE \
@@ -94,7 +93,6 @@ function make_ios {
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \

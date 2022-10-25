@@ -67,13 +67,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       }
     }
 #endif
-#ifdef LITE_WITH_MLU
-    Env<TARGET(kMLU)>::Init();
-    lite::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
-                                          config.mlu_core_number(),
-                                          config.mlu_input_layout(),
-                                          config.mlu_firstconv_param());
-#endif  // LITE_WITH_MLU
 
 #ifdef LITE_WITH_BM
     Env<TARGET(kBM)>::Init();
@@ -152,13 +145,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
 #ifdef LITE_WITH_METAL
   raw_predictor_->ConfigMetalContext(config);
-#endif
-
-#ifdef LITE_WITH_NPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \

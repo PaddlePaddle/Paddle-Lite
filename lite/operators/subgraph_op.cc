@@ -22,7 +22,22 @@ namespace operators {
 
 bool SubgraphOp::CheckShape() const { return true; }
 
-bool SubgraphOp::InferShapeImpl() const { return CheckShape(); /* enrich me */ }
+bool SubgraphOp::InferShapeImpl() const {
+  // Set output tensor lod
+  // 1. All input lods should be the same
+  // 2. All outputs share the input lod
+  auto scope = param_.exec_scope;
+  for (auto input_data_name : param_.input_data_names) {
+    auto lod = scope->FindTensor(input_data_name)->lod();
+    if (!lod.empty()) {
+      for (auto output_data_name : param_.output_data_names) {
+        scope->FindMutableTensor(output_data_name)->set_lod(lod);
+      }
+      break;
+    }
+  }
+  return CheckShape();
+}
 
 bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.input_names = op_desc.Input("Inputs");

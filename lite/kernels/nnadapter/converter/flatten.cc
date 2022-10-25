@@ -27,6 +27,11 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto out_name = op->Output("Out").front();
+  auto output_scale_name = "Out0_scale";
+  std::vector<float> output_scales;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    output_scales = op->GetOutputScale(output_scale_name, true);
+  }
   auto axis = op->GetAttr<int>("axis");
 
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
@@ -37,18 +42,20 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     // Directly convert to reshape with shape[1,-1],
     auto shape_operand =
         converter->AddConstantOperand(std::vector<int32_t>{1, -1});
-    output_operand = converter->AddOutputOperand(out_name);
+    output_operand = converter->AddOutputOperand(out_name, output_scales);
     converter->AddOperation(
         NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
   } else if (axis == input_type->dimensions.count - 1) {
-    converter->AddFlattenOperation(input_operand, 0, axis - 1, out_name);
+    converter->AddFlattenOperation(
+        input_operand, 0, axis - 1, out_name, output_scales);
   } else {
     // step1: flatten [0, axis)
     output_operand = converter->AddFlattenOperation(
         input_operand, 0, axis - 1, out_name + "/flatten_0_axis");
     // step2: flatten [axis, -1)
     int32_t start_axis = axis == 1 ? axis : axis - 1;
-    converter->AddFlattenOperation(output_operand, start_axis, -1, out_name);
+    converter->AddFlattenOperation(
+        output_operand, start_axis, -1, out_name, output_scales);
   }
   return NO_ERROR;
 }

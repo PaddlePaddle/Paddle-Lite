@@ -425,23 +425,36 @@ class PrecisionProfiler {
           return;
         }
         case DATALAYOUT(kNCHW): {
-          std::vector<float> in_data_v(in->numel(), 0);
-          TargetWrapperCL::MemcpySync(in_data_v.data(),
-                                      in->data<float>(),
-                                      in->numel() * sizeof(float),
-                                      IoDirection::DtoH);
+          auto* in_data_v =
+              use_fp16
+                  ? static_cast<void*>(calloc(in->numel(), sizeof(uint16_t)))
+                  : static_cast<void*>(calloc(in->numel(), sizeof(float)));
+          std::vector<float> real_out_v(in->numel());
+          TargetWrapperCL::MemcpySync(
+              in_data_v,
+              use_fp16 ? in->data<half_t, cl::Buffer>()
+                       : in->data<float, cl::Buffer>(),
+              in->numel() * (use_fp16 ? sizeof(uint16_t) : sizeof(float)),
+              IoDirection::DtoH);
           VLOG(1) << name << ":" << in->numel();
-          *mean = compute_mean<float>(in_data_v.data(), in->numel());
+          if (use_fp16) {
+            HalfArray2FloatArray(static_cast<half_t*>(in_data_v),
+                                 real_out_v.data(),
+                                 in->numel());
+          } else {
+            memcpy(real_out_v.data(), in_data_v, in->numel() * sizeof(float));
+          }
+          *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
-              in_data_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate =
-              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
+              real_out_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
+                                                            real_out_v.size());
           std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
           real_out_t->Resize(in->dims());
           float* real_out_data = real_out_t->mutable_data<float>();
           memcpy(real_out_data,
-                 in_data_v.data(),
-                 in_data_v.size() * sizeof(float));
+                 real_out_v.data(),
+                 real_out_v.size() * sizeof(float));
           if (write_result_to_file) {
             write_tensorfile<float>(real_out_t.get(), name, log_dir_);
           }

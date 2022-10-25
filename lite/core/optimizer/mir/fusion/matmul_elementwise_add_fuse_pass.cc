@@ -30,13 +30,8 @@ void MatmulElementwiseAddFusePass::Apply(
     }
   }
 #if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
-#ifdef LITE_WITH_MLU
-  fusion::MatmulElementwiseAddFuser fuser(false, graph);
-  fuser(graph.get());
-#else
   fusion::MatmulElementwiseAddFuser fuser(true, graph);
   fuser(graph.get());
-#endif
 #endif
   fusion::MatmulElementwiseAddFuser fuser2(false, graph);
   fuser2(graph.get());

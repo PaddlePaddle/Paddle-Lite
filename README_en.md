@@ -18,7 +18,7 @@ For tutorials, please see [PaddleLite Document](https://paddle-lite.readthedocs.
 
 ## Architecture
 
-Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and leight-weighted applications on devices.
+Paddle Lite is designed to support a wide range of hardwares and devices, and it enables mixed execution of a single model on multiple devices, optimization on various phases, and light-weighted applications on devices.
 
 ![img](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
 

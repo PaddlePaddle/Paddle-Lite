@@ -441,7 +441,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     }
     ```
 
-- 在 Paddle-Lite/lite/backends/host/math/CMakeLists.txt 中的 ```math_host library``` 中添加 argmax.cc，在 Paddle-Lite/lite/backends/host/math/funcs.h 中添加 ```#include "lite/backends/host/math/argmax.h"```
+- 在 Paddle-Lite/lite/backends/host/math/CMakeLists.txt 中的 ```math_host library``` 中添加 argmax.cc。
 
 ### 4.2 ARM 端
 

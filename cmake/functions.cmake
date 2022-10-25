@@ -46,7 +46,7 @@ file(WRITE ${fake_kernels_src_list} "") # clean
 # add a kernel for some specific device
 set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
 set(cuda_kernels CACHE INTERNAL "cuda kernels")
-# device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
+# device: one of (Host, ARM, X86, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
     set(options "")
@@ -67,7 +67,7 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
-    # strp lib according to useful kernel names.
+    # strip lib according to useful kernel names.
     if(LITE_BUILD_TAILOR)
       set(dst_file "")
       foreach(src ${args_SRCS})
@@ -126,7 +126,7 @@ function(lite_cc_test TARGET)
   set(oneValueArgs "")
 
   set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
-        IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+        IMAGINATION_NNA_DEPS RKNPU_DEPS XPU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
         COMPILE_LEVEL # (basic|extra)
@@ -142,7 +142,6 @@ function(lite_cc_test TARGET)
             ARM_DEPS ${args_ARM_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
             INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
             APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}
@@ -153,7 +152,6 @@ function(lite_cc_test TARGET)
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${args_CV_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
             HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
   if(LITE_WITH_ARM)
@@ -180,9 +178,6 @@ function(lite_cc_test TARGET)
   # link to dynamic runtime lib
   if(LITE_WITH_XPU)
       target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
-  endif()
-  if(LITE_WITH_NPU)
-      target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
   endif()
   if(LITE_WITH_CUDA)
       get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)

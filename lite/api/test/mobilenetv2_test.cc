@@ -96,7 +96,7 @@ void TestModel(const std::vector<Place>& valid_places,
   auto first_target = valid_places[0].target;
 
   float relative_err_max = 0.f;
-  if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
+  if (first_target == TARGET(kOpenCL)) {
     ASSERT_EQ(out->dims().production(), 1000);
     double eps = first_target == TARGET(kOpenCL) ? 0.25 : 0.1;
     for (int i = 0; i < ref.size(); ++i) {
@@ -155,19 +155,6 @@ void TestModel(const std::vector<Place>& valid_places,
     }
   }
 }
-
-#ifdef LITE_WITH_NPU
-TEST(MobileNetV2, test_npu) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kNPU), PRECISION(kFloat)},
-  });
-
-  TestModel(valid_places, FLAGS_model_dir, true /* save_model*/);
-
-  TestModel(valid_places, FLAGS_optimized_model, false /* save model */);
-}
-#endif  // LITE_WITH_NPU
 
 TEST(MobileNetV2, test_arm) {
   std::vector<Place> valid_places({

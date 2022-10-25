@@ -117,6 +117,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
@@ -168,8 +170,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
-    } else if (target_repr == "mlu") {
-      valid_places_.emplace_back(TARGET(kMLU));
     } else if (target_repr == "bm") {
       valid_places_.emplace_back(TARGET(kBM));
     } else if (target_repr == "imagination_nna") {
@@ -872,7 +872,6 @@ void OptBase::InitSupportedOpInfo() {
   target_supported_ops_[#target_].emplace(#op_type_); \
   all_supported_ops_[#op_type_].emplace(#target_);
 #include "lite/kernels/bm/bridges/paddle_use_bridges.h"
-#include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
 }
 

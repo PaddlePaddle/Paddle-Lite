@@ -426,14 +426,14 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
     ![ssd_mobilenet_v1_relu_voc_fp32_300_opt_auto_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_opt_auto_split_netron.jpeg)
 
-  - 步骤4：为了获得正确的推理结果，我们需强制设置两个 `transpose2` 算子运行在 ARM CPU 上。那么，我们就需要通过环境变量 `SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE` 设置『自定义子图分割配置文件』，实现人为干预分割结果；
+  - 步骤4：为了获得正确的推理结果，我们需强制设置两个 `transpose2` 算子运行在 ARM CPU 上。那么，我们就需要通过环境变量 `SUBGRAPH_PARTITION_CONFIG_FILE` 设置『自定义子图分割配置文件』，实现人为干预分割结果；
 
     ```shell
     $ cd PaddleLite-generic-demo/ssd_detection_demo/assets/models
     $ cat ./ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_custom_partition_config_file.txt
       transpose2:conv2d_22.tmp_1:transpose_0.tmp_0,transpose_0.tmp_1
       transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
-    $ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_partition_config_file.txt
+    $ export SUBGRAPH_PARTITION_CONFIG_FILE=./ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_partition_config_file.txt
     $ GLOG_v=5 ./opt --model_dir=./ssd_mobilenet_v1_relu_voc_fp32_300 \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \

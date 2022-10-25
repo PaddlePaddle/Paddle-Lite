@@ -322,13 +322,12 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
 #endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
-  // change the weight from the float type to int8 type.
+// change the weight from the float type to int8 type.
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
   size_t weight_num = quantized_weight_t->data_size();
-
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   for (size_t i = 0; i < weight_num; i++) {
     quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
@@ -442,11 +441,10 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+#ifdef LITE_WITH_FPGA
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
-
-#ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
   int weight_chw = quantized_weight_t->data_size() / channel;
@@ -456,7 +454,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kFloat));
-
 #else
   CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
 #endif
@@ -744,6 +741,32 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     }
 #endif
     op_info->SetInputScale(input_var_name, scales);
+    for (auto op_out_var_node : quantized_node->outlinks) {
+      CHECK(op_out_var_node->IsArg());
+      for (auto out_scale_node : op_out_var_node->outlinks) {
+        if (!out_scale_node->IsStmt()) continue;
+        auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
+        auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (!out_scale_op_info->HasInput("Scale")) continue;
+        std::string out_scale_name = out_scale_op_info->Input("Scale").front();
+        auto* out_scale_tensor =
+            out_scale_scope->FindMutableTensor(out_scale_name);
+        auto* out_scale_data = out_scale_tensor->data<float>();
+        std::vector<float> out_thresholds(
+            out_scale_data, out_scale_data + scale_tensor->data_size());
+        int out_bit_length =
+            out_scale_node->stmt()->op_info()->GetAttr<int>("bit_length");
+        std::vector<float> out_scales(out_thresholds.size(), 0);
+        std::transform(out_thresholds.begin(),
+                       out_thresholds.end(),
+                       out_scales.begin(),
+                       [&out_bit_length](float x) {
+                         return x / ((1 << (out_bit_length - 1)) - 1);
+                       });
+        op_info->SetOutputScale(op_out_var_node->arg()->name, out_scales);
+        break;
+      }
+    }
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
