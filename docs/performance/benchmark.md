@@ -29,7 +29,7 @@
         * [picodet](http://10.127.28.26:8879/bridge/picodet_m_320_coco_75.tar)
 
 * 测试机器
-   ||骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
+   |骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
    |:----|----:|----:|----:|----:|----:|----:|----:|----:|
    |设备|Xiaomi MI10 |Xiaomi MI9 |Xiaomi MI8 |Xiaomi mi6 |Xiaomi Redmi6 Pro |Huawei Mate 30 |Huawei Mate 20 |瑞芯微RK3399开发板 |
    |CPU|1xA77 @2.84GHz + 3xA77 @2.42GHz + 4xA55 @1.8GHz |1xA76 @2.84GHz + 3xA76 @2.42GHz + 4xA55 @1.78GHz |4xA75 @2.8GHz + 4xA75 @1.7GHz |4xA73 @2.45GHz + 4xA53 @1.9GHz |4xA53 @1.8GHz + 4xA53 @1.6GHz |2xA76 @2.86GHz + 2xA76 @2.09GHz + 4xA55 @1.86GHz |2xA76 @2.6GHz + 2xA76 @1.92Ghz + 4xA55 @1.8Ghz |2xA72 @1.8GHz + 4xA53 @1.4Ghz | 
