@@ -69,7 +69,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   CL_DEPS cl_target_wrapper cl_context
   METAL_DEPS metal_target_wrapper
   FPGA_DEPS fpga_target_wrapper
-  INTEL_FPGA_DEPS intel_fpga_target_wrapper
   BM_DEPS target_wrapper_bm
   NNADAPTER_DEPS nnadapter_wrapper)
 
