@@ -29,6 +29,7 @@
         * [picodet](http://10.127.28.26:8879/bridge/picodet_m_320_coco_75.tar)
 
 * 测试机器
+
    |骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
    |:----|----:|----:|----:|----:|----:|----:|----:|----:|
    |设备|Xiaomi MI10 |Xiaomi MI9 |Xiaomi MI8 |Xiaomi mi6 |Xiaomi Redmi6 Pro |Huawei Mate 30 |Huawei Mate 20 |瑞芯微RK3399开发板 |
