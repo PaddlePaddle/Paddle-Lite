@@ -405,7 +405,9 @@ void CommonElementwiseBroadcastForward(const Tensor *x,
                                        int axis,
                                        const bool is_xsize_larger = true) {
   int max_dim = std::max(x_dims.size(), y_dims.size());
-  axis = (axis == -1 ? std::abs(x_dims.size() - y_dims.size()) : axis);
+  axis = (axis == -1 ? std::abs(static_cast<int>(x_dims.size()) -
+                                static_cast<int>(y_dims.size()))
+                     : axis);
   CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
   CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
 
