@@ -51,7 +51,6 @@ void AclModelClient::InitAclClientEnv(int device_id) {
   ACL_CALL(aclrtSetDevice(device_id_));
   NNADAPTER_VLOG(5) << "ACL create context";
   ACL_CALL(aclrtCreateContext(&context_, device_id_));
-  NNADAPTER_VLOG(5) << "ACL end context";
 }
 
 void AclModelClient::FinalizeAclClientEnv() {
@@ -90,7 +89,6 @@ void AclModelClient::FinalizeAclProfilingEnv() {
 bool AclModelClient::LoadModel(const void* data,
                                size_t size,
                                AscendConfigParams* config_params) {
-  NNADAPTER_LOG(INFO) << "[debug] LoadModel";
   if (model_desc_) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;
