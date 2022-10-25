@@ -19,7 +19,7 @@
 #include <utility>
 #if defined(NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC) && \
     defined(NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
-#include "driver/ascend_hal.h"
+#include "ascend_hal.h"  //NOLINT
 #endif
 
 #include "utility/debug.h"
@@ -41,16 +41,18 @@ void InitializeAscendCL() {
   if (!initialized) {
 #if defined(NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC) && \
     defined(NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
-// int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
-// if (ret != DRV_ERROR_NONE) {
-//   NNADAPTER_LOG(FATAL) << "hal group attach failed, error code is " << ret;
-// }
+    int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
+    if (ret != DRV_ERROR_NONE) {
+      NNADAPTER_LOG(FATAL) << "Ascend hal group attach failed, error code is "
+                           << ret;
+    }
 
-// BuffCfg buffcfg = {0};
-// ret = halBuffInit(&buffcfg);
-// if (ret != DRV_ERROR_NONE) {
-//   NNADAPTER_LOG(FATAL) << "hal buff init failed, error code is " << ret;
-// }
+    BuffCfg buffcfg = {0};
+    ret = halBuffInit(&buffcfg);
+    if (ret != DRV_ERROR_NONE) {
+      NNADAPTER_LOG(FATAL) << "Ascend hal buffer init failed, error code is "
+                           << ret;
+    }
 #endif
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
@@ -416,10 +418,9 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
     initialized = true;
     std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
     // Split the value of LD_LIBRARY_PATH by ":", and obtain the root
-    directory
-        // of the Ascend CANN toolkit
-        std::vector<std::string>
-            paths = string_split<std::string>(ld_library_path, ":");
+    // directory of the Ascend CANN toolkit
+    std::vector<std::string> paths =
+        string_split<std::string>(ld_library_path, ":");
     paths.push_back("/usr/local/Ascend/ascend-toolkit/latest");
     for (auto path : paths) {
       if (path.find("Ascend/ascend-toolkit") == std::string::npos &&
@@ -440,18 +441,26 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
         }
       }
       if (ascend_cann_version.empty()) continue;
+      ascend_cann_version.erase(
+          std::remove_if(
+              ascend_cann_version.begin(), ascend_cann_version.end(), &isalpha),
+          ascend_cann_version.end());
       // Split ascend_cann_version string by "."
       tokens = string_split<std::string>(ascend_cann_version, ".");
       if (tokens.size() == 3 || tokens.size() == 4) {
-        major_version = atoi(tokens[0].c_str());
-        minor_version = atoi(tokens[1].c_str());
-        patch_version = atoi(tokens[2].c_str());
+        major_version = stoi(tokens[0]);
+        minor_version = stoi(tokens[1]);
+        patch_version = stoi(tokens[2]);
+        *major = major_version;
+        *minor = minor_version;
+        *patch = patch_version;
         return true;
       }
     }
-    NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation path! "
-                            "Please install the Ascend CANN and add the root"
-                            "directory into LD_LIBRARY_PATH.";
+    NNADAPTER_LOG(WARNING)
+        << "Unable to find the Ascend CANN installation path! "
+           "Please install the Ascend CANN and add the root"
+           "directory into LD_LIBRARY_PATH.";
     return false;
   }
   *major = major_version;
@@ -522,8 +531,8 @@ void InitializeGraphBuilder(AscendConfigParams* config_params) {
                       << current_version;
     NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
                       << build_version;
-    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
-        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION ||
+        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION ||
         patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
       NNADAPTER_LOG(WARNING)
           << "CANN version mismatch. The build version is " << build_version
@@ -532,12 +541,16 @@ void InitializeGraphBuilder(AscendConfigParams* config_params) {
     }
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
-    ge::AscendString soc_version = GetAscendSocName();
+    ge::AscendString soc_name;
+    if (config_params->device_soc_name.empty()) {
+      soc_name = GetAscendSocName();
+    } else {
+      soc_name = ge::AscendString(config_params->device_soc_name.c_str());
+    }
     NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
-                      << soc_version.GetString();
+                      << soc_name.GetString();
     std::map<ge::AscendString, ge::AscendString> global_options;
-    global_options.insert(
-        std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
+    global_options.insert(std::make_pair(ge::ir_option::SOC_VERSION, soc_name));
 #if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
     global_options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
     global_options.insert(std::make_pair(ge::ir_option::DEBUG_DIR, "/tmp/"));

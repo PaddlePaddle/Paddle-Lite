@@ -20,8 +20,10 @@
 #include "acl/acl.h"
 #include "acl/acl_prof.h"
 #include "core/types.h"
-// #include "graph/tensor.h"
-// #include "graph/types.h"
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
+#include "graph/tensor.h"
+#include "graph/types.h"
+#endif
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
@@ -45,6 +47,8 @@ typedef struct AscendConfigParams {
   std::string auto_tune_mode = "";
   std::string enable_dynamic_shape_range = "";
   int64_t initial_buffer_length_of_dynamic_shape_range = -1;
+  std::string generate_model_cache_only = "";
+  std::string device_soc_name = "";
 } AscendConfigParams;
 
 class AclModelClient {
@@ -56,8 +60,6 @@ class AclModelClient {
                  size_t size,
                  AscendConfigParams* config_params);
   void UnloadModel();
-  // bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
-  //                          std::vector<ge::TensorDesc>* output_tensor_descs);
   bool Process(uint32_t input_count,
                std::vector<NNAdapterOperandType>* input_types,
                core::Argument* input_arguments,
@@ -65,6 +67,10 @@ class AclModelClient {
                std::vector<NNAdapterOperandType>* output_types,
                core::Argument* output_arguments,
                DynamicShapeMode dynamic_shape_mode);
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY
+  bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
+                           std::vector<ge::TensorDesc>* output_tensor_descs);
+#endif
 
  private:
   void InitAclClientEnv(int device_id);

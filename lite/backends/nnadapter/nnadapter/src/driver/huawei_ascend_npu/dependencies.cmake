@@ -28,31 +28,37 @@ endif()
 
 # For Huawei MDC
 if (NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC)
+  message(STATUS "NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION: 5")
+  message(STATUS "NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION: 0")
+  message(STATUS "NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION: 4")
+  add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION=5)
+  add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION=0)
+  add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION=4)
   add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC=${NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC})
   if (NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
     add_definitions(-DNNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
     include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/include")
-    include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/include/")
-    # libascendcl.so 
-    find_library(HUAWEI_ASCEND_NPU_SDK_ASCENDCL_HAL_FILE NAMES ascend_hal
+    include_directories("${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/include/driver")
+    # libascend_hal.so
+    find_library(HUAWEI_ASCEND_NPU_SDK_ASCEND_HAL_FILE NAMES ascend_hal
       PATHS ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/lib/driver
       CMAKE_FIND_ROOT_PATH_BOTH)
-    if(NOT HUAWEI_ASCEND_NPU_SDK_ASCENDCL_HAL_FILE)
-      message(FATAL_ERROR "Missing libascend_hal.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/include/driver")
+    if(NOT HUAWEI_ASCEND_NPU_SDK_ASCEND_HAL_FILE)
+      message(FATAL_ERROR "Missing libascend_hal.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/lib/driver")
     endif()
     add_library(ascend_hal SHARED IMPORTED GLOBAL)
-    set_property(TARGET ascend_hal PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ASCENDCL_HAL_FILE})
+    set_property(TARGET ascend_hal PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ASCEND_HAL_FILE})
 
-    # libascend_hal.so 
+    # libascendcl.so 
     find_library(HUAWEI_ASCEND_NPU_SDK_ACL_ASCENDCL_FILE NAMES ascendcl
-      PATHS ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/lib64
+      PATHS ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/lib64/stub
       CMAKE_FIND_ROOT_PATH_BOTH)
     if(NOT HUAWEI_ASCEND_NPU_SDK_ACL_ASCENDCL_FILE)
-      message(FATAL_ERROR "Missing libascendcl.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/lib64")
+      message(FATAL_ERROR "Missing libascendcl.so in ${NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT}/sysroot/usr/local/Ascend/runtime/lib64/stub")
     endif()
-    add_library(acl_ascendcl SHARED IMPORTED GLOBAL)
-    set_property(TARGET acl_ascendcl PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ACL_ASCENDCL_FILE})
-    set(DEPS ${DEPS} ascend_hal acl_ascendcl)
+    add_library(ascendcl SHARED IMPORTED GLOBAL)
+    set_property(TARGET ascendcl PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_SDK_ACL_ASCENDCL_FILE})
+    set(DEPS ${DEPS} ascendcl ascend_hal)
   else()
     # TODO(shentanyue): Add compile use x86 libs
   endif()

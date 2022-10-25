@@ -79,6 +79,13 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE \
   "HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE"
 
+// Specify the function for generating model cache only
+#define HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY \
+  "HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY"
+
+// Specify the soc name for GraphBuilder
+#define HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME "HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME"
+
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
     major, minor, patch)                                         \
   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \

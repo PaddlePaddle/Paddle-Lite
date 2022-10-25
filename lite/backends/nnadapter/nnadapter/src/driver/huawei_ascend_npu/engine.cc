@@ -176,6 +176,26 @@ Context::Context(void* device, const char* properties) : device_(device) {
   NNADAPTER_LOG(INFO)
       << "initial buffer length of dynamic shape range: "
       << ascend_config_params_.initial_buffer_length_of_dynamic_shape_range;
+  // HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY
+  if (key_values.count(HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY)) {
+    ascend_config_params_.generate_model_cache_only =
+        key_values[HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY];
+  } else {
+    ascend_config_params_.generate_model_cache_only =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_GENERATE_MODEL_CACHE_ONLY);
+  }
+  NNADAPTER_LOG(INFO) << "generate model cache only: "
+                      << ascend_config_params_.generate_model_cache_only;
+  // HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME
+  if (key_values.count(HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME)) {
+    ascend_config_params_.device_soc_name =
+        key_values[HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME];
+  } else {
+    ascend_config_params_.device_soc_name =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME);
+  }
+  NNADAPTER_LOG(INFO) << "device soc name: "
+                      << ascend_config_params_.device_soc_name;
 }
 
 Context::~Context() {}
@@ -412,14 +432,18 @@ int Program::Execute(uint32_t input_count,
   int ret = CheckInputsAndOutputs(
       input_count, input_arguments, output_count, output_arguments);
   if (ret != NNADAPTER_NO_ERROR) return ret;
-  NNADAPTER_CHECK(model_client_->Process(input_count,
-                                         &input_types_,
-                                         input_arguments,
-                                         output_count,
-                                         &output_types_,
-                                         output_arguments,
-                                         dynamic_shape_mode_));
-  return NNADAPTER_NO_ERROR;
+  if (context_->ascend_config_params()->generate_model_cache_only == "true") {
+    return NNADAPTER_NO_ERROR;
+  } else {
+    NNADAPTER_CHECK(model_client_->Process(input_count,
+                                           &input_types_,
+                                           input_arguments,
+                                           output_count,
+                                           &output_types_,
+                                           output_arguments,
+                                           dynamic_shape_mode_));
+    return NNADAPTER_NO_ERROR;
+  }
 }
 
 }  // namespace huawei_ascend_npu
