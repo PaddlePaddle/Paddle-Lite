@@ -62,7 +62,7 @@ lite_option(LITE_WITH_TRAIN                    "Enable training operators and ke
 lite_option(LITE_WITH_OPENMP                   "Enable OpenMP in lite framework"                                      ON)
 lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"                                        OFF)
 lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
-lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)                                 OFF)
+lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)
 lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in profile mode ON in lite"                  OFF)
 lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)
