@@ -33,22 +33,34 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
   auto strides = ConvertToXTCLArray<xtcl::xIndexExpr>(
       std::vector<int>({stride_height, stride_width}));
   auto paddings = ConvertToXTCLArray<xtcl::xIndexExpr>(std::vector<int>(
-      {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
+      {pad_height_top, pad_width_left, pad_height_bottom, pad_width_right}));
+  auto output_height = output_operand->type.dimensions.data[2];
+  auto output_width = output_operand->type.dimensions.data[3];
+  auto output_size = ConvertToXTCLArray<xtcl::xIndexExpr>(
+      std::vector<int>({output_height, output_width}));
   xtcl::xExpr pool2d_expr;
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     if (global_pooling) {
-      pool2d_expr = converter->builder()->CreateGlobalAvgPool2D(input_expr);
+      pool2d_expr =
+          converter->builder()->CreateGlobalAvgPool2D(input_expr, "NCHW");
     } else {
       pool2d_expr = converter->builder()->CreateAvgPool2D(
           input_expr, ksize, strides, paddings, "NCHW", ceil_mode, flag);
     }
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     if (global_pooling) {
-      pool2d_expr = converter->builder()->CreateGlobalMaxPool2D(input_expr);
+      pool2d_expr =
+          converter->builder()->CreateGlobalMaxPool2D(input_expr, "NCHW");
     } else {
       pool2d_expr = converter->builder()->CreateMaxPool2D(
           input_expr, ksize, strides, paddings, "NCHW", ceil_mode);
     }
+  } else if (operation->type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {
+    pool2d_expr = converter->builder()->CreateAdaptiveAvgPool2D(
+        input_expr, output_size, "NCHW");
+  } else if (operation->type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {
+    pool2d_expr = converter->builder()->CreateAdaptiveMaxPool2D(
+        input_expr, output_size, "NCHW");
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)

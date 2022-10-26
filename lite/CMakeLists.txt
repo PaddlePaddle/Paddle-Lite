@@ -8,7 +8,6 @@ message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
 message(STATUS "LITE_WITH_METAL:\t${LITE_WITH_METAL}")
 message(STATUS "LITE_WITH_XPU:\t${LITE_WITH_XPU}")
 message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
-message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_NNADAPTER:\t${LITE_WITH_NNADAPTER}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
@@ -195,9 +194,6 @@ if (LITE_WITH_ARM)
     if (LITE_WITH_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.fpga")
     endif(LITE_WITH_FPGA)
-    if (LITE_WITH_BM)
-        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.bm")
-    endif(LITE_WITH_BM)
     if (LITE_WITH_NNADAPTER)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.nnadapter")
     endif(LITE_WITH_NNADAPTER)
@@ -694,25 +690,6 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
         )
     endif()
     add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
-endif()
-
-if (LITE_WITH_BM)
-    add_custom_target(publish_inference_bm_cxx_demos ${TARGET}
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND cp "${PADDLE_SOURCE_DIR}/lite/demo/cxx/bm_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/"
-        COMMAND cp "${BM_SDK_ROOT}/lib/bmcompiler/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
-        COMMAND cp "${BM_SDK_ROOT}/lib/bmnn/pcie/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
-        COMMAND cp "${PADDLE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include/"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-    )
-    add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_bm_cxx_demos)
 endif()
 
 if(LITE_WITH_NNADAPTER)

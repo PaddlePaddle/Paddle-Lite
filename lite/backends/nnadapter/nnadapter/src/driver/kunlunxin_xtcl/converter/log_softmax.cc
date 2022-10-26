@@ -22,6 +22,8 @@ namespace kunlunxin_xtcl {
 
 int ConvertLogSoftmax(Converter* converter, core::Operation* operation) {
   LOG_SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(axis, input_operand->type.dimensions.count - 1)
+      << "log_softmax currently only works on last dimension";
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

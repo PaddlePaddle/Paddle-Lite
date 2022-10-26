@@ -397,7 +397,6 @@ REGISTER_MIR_PASS(xpu_memory_optimize_pass,
     .BindTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kARM),
                      TARGET(kOpenCL),
-                     TARGET(kBM),
                      TARGET(kRKNPU),
                      TARGET(kMetal),
                      TARGET(kNNAdapter)});

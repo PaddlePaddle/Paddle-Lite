@@ -94,7 +94,6 @@ add_subdirectory(x86)
 add_subdirectory(opencl)
 add_subdirectory(fpga)
 add_subdirectory(xpu)
-add_subdirectory(bm)
 add_subdirectory(metal)
 add_subdirectory(nnadapter)
 

@@ -22,7 +22,7 @@ namespace kunlunxin_xtcl {
 
 int ConvertTopK(Converter* converter, core::Operation* operation) {
   TOP_K_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_NE(k, NNADAPTER_UNKNOWN) << "";
+  NNADAPTER_CHECK_NE(k, NNADAPTER_UNKNOWN) << "Not support unknown";
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

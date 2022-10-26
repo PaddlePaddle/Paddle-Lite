@@ -45,8 +45,14 @@ int ConvertFullyConnected(Converter* converter, core::Operation* operation) {
   auto matmul2d_expr = converter->builder()->CreateMatmul2D(
       flatten_input_expr, weight_expr, true);
   auto bias_add_expr =
-      matmul2d_expr;  // converter->builder()->CreateBiasAdd(matmul2d_expr, 1,
-                      // bias_expr);
+      converter->builder()->CreateBiasAdd(matmul2d_expr, 1, bias_expr);
+  if (output_operand->type.dimensions.count != 2) {
+    bias_add_expr = converter->builder()->CreateReshape(
+        bias_add_expr,
+        ConvertToXTCLArray<xtcl::Integer>(
+            output_operand->type.dimensions.data,
+            output_operand->type.dimensions.count));
+  }
   converter->UpdateExprMap(output_operand, bias_add_expr);
   // fuse activations
   switch (fuse_code) {

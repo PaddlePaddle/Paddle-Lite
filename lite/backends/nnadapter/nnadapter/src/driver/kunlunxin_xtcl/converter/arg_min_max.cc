@@ -22,9 +22,6 @@ namespace kunlunxin_xtcl {
 
 int ConvertArgMinMax(Converter* converter, core::Operation* operation) {
   ARG_MIN_MAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.count, 1)
-      << "Expect input dimensions count: 1"
-      << ", but receive: " << input_operand->type.dimensions.count;
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

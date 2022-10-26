@@ -24,10 +24,6 @@ if(LITE_WITH_CUDA)
   include(cuda)
 endif()
 
-if(LITE_WITH_BM)
-  include(bm)
-endif()
-
 include(backends/x86)
 
 # Add dependencies

@@ -60,7 +60,6 @@ using ARMContext = Context<TargetType::kARM>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
-using BMContext = Context<TargetType::kBM>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -75,19 +74,6 @@ class Context<TargetType::kHost> {
 
   std::string name() const { return "HostContext"; }
 };
-
-#ifdef LITE_WITH_BM
-template <>
-class Context<TargetType::kBM> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
-  void CopySharedTo(BMContext* ctx) {}
-  void* GetHandle() { return TargetWrapperBM::GetHandle(); }
-
-  std::string name() const { return "BMContext"; }
-};
-#endif
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
@@ -510,12 +496,6 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
-#ifdef LITE_WITH_BM
-      case TARGET(kBM):
-        kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
-            &ctx->As<BMContext>());
-        break;
-#endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
       case TARGET(kNNAdapter):
@@ -561,9 +541,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
-#endif
-#ifdef LITE_WITH_BM
-    InitContext<TargetType::kBM, BMContext>();
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)

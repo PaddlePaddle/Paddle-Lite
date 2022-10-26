@@ -57,7 +57,7 @@ if (LITE_WITH_PROFILE)
   endif()
 endif()
 
-if (LITE_WITH_BM OR LITE_WITH_NNADAPTER)
+if (LITE_WITH_NNADAPTER)
   set(CORE_SRC  ${CORE_SRC} ${SUBGRAPH_SRC})
 endif ()
 
@@ -69,7 +69,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   CL_DEPS cl_target_wrapper cl_context
   METAL_DEPS metal_target_wrapper
   FPGA_DEPS fpga_target_wrapper
-  BM_DEPS target_wrapper_bm
   NNADAPTER_DEPS nnadapter_wrapper)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
