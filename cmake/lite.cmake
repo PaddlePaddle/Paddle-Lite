@@ -113,12 +113,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_BM)
-    foreach(var ${lite_deps_BM_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
   if (LITE_WITH_NNADAPTER)
     foreach(var ${lite_deps_NNADAPTER_DEPS})
       set(deps ${deps} ${var})
