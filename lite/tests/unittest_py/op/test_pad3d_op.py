@@ -37,7 +37,8 @@ class TestPad3dOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
+        self.enable_devices_on_nnadapter(
+            device_names=["intel_openvino", "kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -48,7 +49,7 @@ class TestPad3dOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=5, max_size=5))
+                    min_value=1, max_value=32), min_size=5, max_size=5))
         mode = draw(
             st.sampled_from(["constant", "reflect", "replicate", "circular"]))
         value_data = draw(st.floats(min_value=0.0, max_value=4.0))
@@ -99,7 +100,15 @@ class TestPad3dOp(AutoScanTest):
         return self.get_predictor_configs(), ["pad3d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                mode = program_config.ops[0].attrs["mode"]
+                if mode != "constant":
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite only support constant mode on kunlunxin_xtcl")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

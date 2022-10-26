@@ -60,6 +60,17 @@ int ConvertConv2DTranspose(Converter* converter, core::Operation* operation) {
       << expect_output_height << ", " << expect_output_width
       << ",  but receive: " << output_shape_height << ", "
       << output_shape_width;
+  NNADAPTER_CHECK((filter_channel_size % group == 0) &&
+                  (output_channel_size % group == 0))
+      << "filter_channel_size and output_channel_size must be divisible by "
+         "group";
+  NNADAPTER_CHECK_EQ(group, 1) << "XTCL only support group == 1";
+  NNADAPTER_CHECK_EQ(output_padding_height, 0)
+      << "XTCL not support output_padding_height. Expect: 0,"
+      << "but receive: " << output_padding_height;
+  NNADAPTER_CHECK_EQ(output_padding_width, 0)
+      << "XTCL not support output_padding_width. Expect: 0,"
+      << "but receive: " << output_padding_width;
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
