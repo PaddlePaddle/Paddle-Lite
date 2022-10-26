@@ -46,7 +46,7 @@ file(WRITE ${fake_kernels_src_list} "") # clean
 # add a kernel for some specific device
 set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
 set(cuda_kernels CACHE INTERNAL "cuda kernels")
-# device: one of (Host, ARM, X86, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
+# device: one of (Host, ARM, X86, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, RKNPU IMAGINATION_NNA)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
     set(options "")
@@ -125,7 +125,7 @@ function(lite_cc_test TARGET)
   set(options "")
   set(oneValueArgs "")
 
-  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
+  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS
         IMAGINATION_NNA_DEPS RKNPU_DEPS XPU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
@@ -145,7 +145,6 @@ function(lite_cc_test TARGET)
             APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}
-            BM_DEPS ${args_BM_DEPS}
             IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
