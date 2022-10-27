@@ -64,8 +64,9 @@ class TestMatmulV2Op(AutoScanTest):
             thread=[1, 4])
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["nvidia_tensorrt", "intel_openvino"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "nvidia_tensorrt", "intel_openvino", "kunlunxin_xtcl"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -239,7 +240,8 @@ class TestMatmulV2Op(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-1, 1e-1
-
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            atol, rtol = 1e-2, 1e-2
         return self.get_predictor_configs(), ["matmul_v2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
@@ -280,6 +282,18 @@ class TestMatmulV2Op(AutoScanTest):
         self.add_ignore_check_case(
             _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'x_shape_size != y_shape_size' or 'x_shape_size < 3' on nvidia_tensorrt."
+        )
+
+        def teller4(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                x_shape = program_config.inputs["input_data_x"].shape
+                y_shape = program_config.inputs["input_data_y"].shape
+                if len(x_shape) == 1 or len(y_shape) == 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'len(x_shape) == 1 or len(y_shape) == 1' on kunlunxin_xtcl."
         )
 
     def test(self, *args, **kwargs):

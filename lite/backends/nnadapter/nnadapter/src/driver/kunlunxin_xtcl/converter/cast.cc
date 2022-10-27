@@ -22,11 +22,6 @@ namespace kunlunxin_xtcl {
 
 int ConvertCast(Converter* converter, core::Operation* operation) {
   CAST_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Not support same type
-  NNADAPTER_CHECK_NE(input_operand->type.precision, dtype)
-      << "Expect input type: " << OperandPrecisionCodeToString(dtype)
-      << ", but receive: "
-      << OperandPrecisionCodeToString(input_operand->type.precision);
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
