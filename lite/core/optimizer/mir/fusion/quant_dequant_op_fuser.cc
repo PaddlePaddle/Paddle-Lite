@@ -705,6 +705,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         if (!out_scale_node->IsStmt()) continue;
         auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
         auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (out_scale_op_info->Type() != "quantize_linear") continue;
         if (!out_scale_op_info->HasInput("Scale")) continue;
         std::string out_scale_name = out_scale_op_info->Input("Scale").front();
         auto* out_scale_tensor =
