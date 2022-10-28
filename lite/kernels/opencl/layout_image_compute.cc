@@ -1035,4 +1035,21 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
+// [ImageFolder] -> [NCHW]
+REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kAny,
+    kNCHW,
+    paddle::lite::kernels::opencl::LayoutComputeImageFolderToBufferChw,
+    ImageFolder_to_Any)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageFolder))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
 #define LITE_WITH_LOG

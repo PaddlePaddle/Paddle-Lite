@@ -111,4 +111,42 @@ REGISTER_LITE_KERNEL(reshape2,
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(flatten,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ReshapeComputekFP16Buffer,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flatten2,
+                     kOpenCL,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::ReshapeComputekFP16Buffer,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
 #define LITE_WITH_LOG

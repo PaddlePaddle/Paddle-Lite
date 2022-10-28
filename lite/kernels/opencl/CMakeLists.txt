@@ -24,7 +24,7 @@ add_kernel(elementwise_opencl_image OPENCL basic SRCS elementwise_image_compute.
 
 add_kernel(pool_opencl_image OPENCL basic SRCS pool_image_compute.cc)
 add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc)
-add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc)
+# add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc)
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc)
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc)
 add_kernel(conv_transpose_opencl_image OPENCL basic SRCS conv_transpose_image_compute.cc)
@@ -88,8 +88,8 @@ lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
-             DEPS kernels core)
+# lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
+#              DEPS kernels core)
 
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
              DEPS kernels core)

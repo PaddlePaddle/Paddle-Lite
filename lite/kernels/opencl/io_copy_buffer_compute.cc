@@ -165,6 +165,12 @@ class IoCopykOpenCLToHostCompute
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();
       param.y->set_precision(PRECISION(kUInt8));
+    } else if (param.x->precision() == PRECISION(kInt64)) {
+      x_ptr = param.x->data<int64_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kInt64));
+    } else if (param.x->precision() == PRECISION(kInt32)) {
+      x_ptr = param.x->data<int32_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kInt32));
     } else {
       x_ptr = param.x->data<float, cl::Buffer>();
       param.y->set_precision(PRECISION(kFloat));
