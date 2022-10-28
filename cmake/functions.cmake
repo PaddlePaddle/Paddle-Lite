@@ -125,7 +125,7 @@ function(lite_cc_test TARGET)
   set(options "")
   set(oneValueArgs "")
 
-  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS
+  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS
         IMAGINATION_NNA_DEPS RKNPU_DEPS XPU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
@@ -141,7 +141,6 @@ function(lite_cc_test TARGET)
             METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
             APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}

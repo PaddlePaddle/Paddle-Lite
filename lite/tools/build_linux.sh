@@ -78,9 +78,6 @@ KUNLUNXIN_XPU_XDNN_URL=""
 KUNLUNXIN_XPU_XRE_URL=""
 KUNLUNXIN_XPU_SDK_ENV=""
 KUNLUNXIN_XPU_SDK_ROOT=""
-# options of compiling intel fpga.
-WITH_INTEL_FPGA=OFF
-INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
@@ -239,8 +236,6 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_INTEL_OPENVINO_SDK_VERSION=$NNADAPTER_INTEL_OPENVINO_SDK_VERSION \
                         -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
-                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
-                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
@@ -733,15 +728,6 @@ function main {
                 if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
                     KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
                 fi
-                shift
-                ;;
-            # compiling lib which can operate on intel fpga.
-            --with_intel_fpga=*)
-                WITH_INTEL_FPGA="${i#*=}"
-                shift
-                ;;
-            --intel_fpga_sdk_root=*)
-                INTEL_FPGA_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF
