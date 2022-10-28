@@ -73,7 +73,6 @@ class PoolCompute
     CHECK(context.cl_context() != nullptr);
     auto* input_buf = GET_BUFFER_GPU(param.x);
     auto* output_buf = MUTABLE_BUFFER_GPU(param.output);
-    std::cout << "222222~~~" << std::endl;
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());

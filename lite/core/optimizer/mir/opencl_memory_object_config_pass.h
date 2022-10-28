@@ -69,6 +69,7 @@ class OpenCLMemoryObjectConfigPass : public ProgramPass {
 
  private:
   bool input_shape_default_ = false;
+  int image2d_max_width_size_ = 65536;
 };
 
 }  // namespace mir

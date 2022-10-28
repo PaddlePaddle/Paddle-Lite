@@ -142,9 +142,6 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
       // 2. image2d unsupport dims.size() > 4
       // 3. if input_shape_default_, according CL_DEVICE_IMAGE2D_MAX_WIDTH
       // change target
-      auto device_info = CLRuntime::Global()->GetDeviceInfo();
-      int image2d_max_height_size = device_info["CL_DEVICE_IMAGE2D_MAX_HEIGHT"];
-      int image2d_max_width_size = device_info["CL_DEVICE_IMAGE2D_MAX_WIDTH"];
       for (auto& var_name : op_info->output_names()) {
         auto* var = scope->FindVar(var_name);
         CHECK(var) << "no variable called " << var_name << " found";
@@ -157,9 +154,9 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         if (input_shape_default_) {
           auto max_dim =
               *std::max_element(dims.data().begin(), dims.data().end());
-          if ((max_dim > image2d_max_width_size) ||
+          if ((max_dim > image2d_max_width_size_) ||
               (dims.size() == 4 &&
-               dims[1] * dims[3] / 4 > image2d_max_width_size)) {
+               dims[1] * dims[3] / 4 > image2d_max_width_size_)) {
             change_image2d_to_cpu = true;
             break;
           }
@@ -176,9 +173,9 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         if (input_shape_default_) {
           auto max_dim =
               *std::max_element(dims.data().begin(), dims.data().end());
-          if ((max_dim > image2d_max_width_size) ||
+          if ((max_dim > image2d_max_width_size_) ||
               (dims.size() == 4 &&
-               dims[1] * dims[3] / 4 > image2d_max_width_size)) {
+               dims[1] * dims[3] / 4 > image2d_max_width_size_)) {
             change_image2d_to_cpu = true;
             break;
           }
@@ -403,24 +400,24 @@ void OpenCLMemoryObjectConfigPass::SeparateOclMemoryObject(
   auto config_file_end = ocl_memory_object_configs.rfind("\n");
 
   if (gpu_op_begin != std::string::npos && cpu_op_begin == std::string::npos) {
-    opencl_op_config = ocl_memory_object_configs.substr(
+    *opencl_op_config = ocl_memory_object_configs.substr(
         gpu_op_begin + buffer_flag_size, config_file_end - buffer_flag_size);
   } else if (gpu_op_begin == std::string::npos &&
              cpu_op_begin != std::string::npos) {
-    cpu_op_config = ocl_memory_object_configs.substr(
+    *cpu_op_config = ocl_memory_object_configs.substr(
         cpu_op_begin + cpu_flag_size, config_file_end - cpu_flag_size);
   } else if (gpu_op_begin != std::string::npos &&
              cpu_op_begin != std::string::npos) {
     if (cpu_op_begin > gpu_op_begin) {
-      opencl_op_config = ocl_memory_object_configs.substr(
+      *opencl_op_config = ocl_memory_object_configs.substr(
           gpu_op_begin + buffer_flag_size, cpu_op_begin - buffer_flag_size - 1);
-      cpu_op_config = ocl_memory_object_configs.substr(
+      *cpu_op_config = ocl_memory_object_configs.substr(
           cpu_op_begin + cpu_flag_size,
           config_file_end - cpu_op_begin - cpu_flag_size);
     } else {
-      cpu_op_config = ocl_memory_object_configs.substr(
+      *cpu_op_config = ocl_memory_object_configs.substr(
           cpu_op_begin + cpu_flag_size, gpu_op_begin - cpu_flag_size - 1);
-      opencl_op_config = ocl_memory_object_configs.substr(
+      *opencl_op_config = ocl_memory_object_configs.substr(
           gpu_op_begin + buffer_flag_size,
           config_file_end - gpu_op_begin - buffer_flag_size);
     }
@@ -436,6 +433,8 @@ void OpenCLMemoryObjectConfigPass::MemoryObjectConfig(SSAGraph* graph) {
   if (ocl_memory_object_configs.find("input shape:default") !=
       std::string::npos) {
     input_shape_default_ = true;
+    if (ocl_memory_object_configs.find("gpu:Adreno"))
+      image2d_max_width_size_ = 16384;
   }
 
   std::string opencl_op_config = "";

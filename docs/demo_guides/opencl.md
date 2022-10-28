@@ -551,7 +551,7 @@ OpenCL大部分算子支持cl::Image2D数据排布，少部分算子支持cl::Bu
 3. 部分op采用 cl::Buffer 内存对象会有很好的性能，比如reshape，transpose，keep_dims 为 false 的 argmax，reduce等。
 支持两种内存对象可配置，通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』，实现人为指定部分op使用cl::Buffer实现；
 ### 设置 OpenCL 与 CPU 异构推理
-对于cl::Image2D和cl::Buffer均无法支持或者性能差的算子，可以人为指定部分op跑cpu的实现，可通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』实现。
+对于cl::Image2D和cl::Buffer均无法支持或者性能差的算子，可以人为指定部分op跑CPU的实现，可通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』实现。
 如下的例子，网络模型为ch_PP-OCRv3_rec_infer，其中reshape2 和 transpose2跑cl::Buffer实现，conv2d，depthwise_conv2d 和 pool2d跑CPU实现，剩余大部分op跑cl::Image2D实现。
 
 ```shell
@@ -574,7 +574,7 @@ $ ./benchmark_bin  --model_file=./ch_PP-OCRv3_rec_infer/inference.pdmodel \
 
 ## 9. 常见问题
 
-1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会会在日志中输出超限提示。
+1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会在日志中输出超限提示。
 2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
 3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
