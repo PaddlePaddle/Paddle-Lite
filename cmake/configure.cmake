@@ -191,10 +191,6 @@ if (LITE_WITH_FPGA)
 add_definitions("-DLITE_WITH_FPGA")
 endif()
 
-if (LITE_WITH_INTEL_FPGA)
-add_definitions("-DLITE_WITH_INTEL_FPGA")
-endif()
-
 if (LITE_WITH_NNADAPTER)
   add_definitions(-DLITE_WITH_NNADAPTER)
   # The following macros are only for unit test

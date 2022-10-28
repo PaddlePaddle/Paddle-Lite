@@ -353,21 +353,6 @@ class Context<TargetType::kFPGA> {
 };
 #endif
 
-#ifdef LITE_WITH_INTEL_FPGA
-// TODO(xbeu): add needed implementation to context
-template <>
-class Context<TargetType::kIntelFPGA> {
- public:
-  void InitOnce() {}
-
-  IntelFPGAContext& operator=(const IntelFPGAContext& ctx) {}
-
-  void CopySharedTo(IntelFPGAContext* ctx) {}
-
-  std::string name() const { return "IntelFPGAContext"; }
-};
-#endif
-
 #ifdef LITE_WITH_X86
 template <>
 class Context<TargetType::kX86> {
@@ -511,13 +496,6 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
-#ifdef LITE_WITH_INTEL_FPGA
-      case TARGET(kIntelFPGA):
-        kernel_contexts_[TargetType::kIntelFPGA]
-            .As<IntelFPGAContext>()
-            .CopySharedTo(&ctx->As<IntelFPGAContext>());
-        break;
-#endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
       case TARGET(kNNAdapter):
@@ -560,9 +538,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
-#endif
-#ifdef LITE_WITH_INTEL_FPGA
-    InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
