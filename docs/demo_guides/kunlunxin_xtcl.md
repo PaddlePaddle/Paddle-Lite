@@ -250,7 +250,8 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器上进行预测部�
     - full_publish 编译
 
       ```shell
-      $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root> full_publish
+      # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+      $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
       ```
 
     - 替换头文件和库
@@ -276,9 +277,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器上进行预测部�
 
       ```shell
       # arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+      # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
       $ export CC=<path_to_your_c_compiler>
       $ export CXX=<path_to_your_c++_compiler>
-      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root> full_publish
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
       ```
 
     - 替换头文件和库
@@ -313,13 +315,18 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器上进行预测部�
     指定昆仑芯 XPU 的不同类型的推理卡。例如KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1或者KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2
 
   **使用方式：**
-
+  c++代码示例
   ```c++
   // Run inference by using light api with MobileConfig
   paddle::lite_api::MobileConfig mobile_config;
   // nnadapter_context_properties, 多个参数之间使用;进行分割
   std::string nnadapter_context_properties = "KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0;KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1"
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  ```
+  shell脚本示例
+  ```shell
+  export KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0
+  export KUNLUNXIN_XTCL_DEVICE_TARGET="xpu -libs=xdnn -device-type=xpu1"
   ```
 
 
