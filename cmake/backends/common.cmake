@@ -20,24 +20,12 @@ if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()
 
-if(LITE_WITH_NPU)
-  include(backends/npu)
-endif()
-
 if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-if(LITE_WITH_MLU)
-  include(mlu)
-endif()
-
 if(LITE_WITH_CUDA)
   include(cuda)
-endif()
-
-if(LITE_WITH_BM)
-  include(bm)
 endif()
 
 include(backends/x86)

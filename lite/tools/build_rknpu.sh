@@ -84,7 +84,6 @@ function build_npu {
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_NPU=OFF \
         -DLITE_WITH_JAVA=OFF \
         -DLITE_WITH_ARM=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON	\

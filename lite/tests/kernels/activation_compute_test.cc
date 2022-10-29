@@ -470,9 +470,6 @@ TEST(Activation_relu, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -529,9 +526,6 @@ TEST(Activation_leaky_relu, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -560,10 +554,7 @@ TEST(Activation_leaky_relu, precision) {
 TEST(Activation_relu_clipped, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -655,9 +646,6 @@ TEST(Activation_sigmoid, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -713,9 +701,6 @@ TEST(Activation_tanh, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -825,9 +810,6 @@ TEST(Activation_relu6, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -879,9 +861,6 @@ TEST(Activation_log, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -1066,9 +1045,6 @@ TEST(Activation_square, precision) {
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -1275,10 +1251,7 @@ TEST(activation_reciprocal, precision) {
 TEST(Activation_thresholded_relu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;

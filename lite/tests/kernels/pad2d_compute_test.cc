@@ -187,9 +187,6 @@ TEST(Pad2d, precision) {
   place = TARGET(kXPU);
   pad_mode_list = {"constant",
                    "reflect"};  // XPU support constant and reflect now
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)

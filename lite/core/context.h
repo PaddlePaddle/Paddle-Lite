@@ -26,12 +26,6 @@
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
-#ifdef LITE_WITH_MLU
-#include <cnml.h>
-#include <cnrt.h>
-#include <mutex>  // NOLINT
-#include "lite/backends/mlu/mlu_utils.h"
-#endif
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #endif
@@ -63,12 +57,9 @@ class Context;
 using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
-using NPUContext = Context<TargetType::kNPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
-using BMContext = Context<TargetType::kBM>;
-using MLUContext = Context<TargetType::kMLU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -83,46 +74,6 @@ class Context<TargetType::kHost> {
 
   std::string name() const { return "HostContext"; }
 };
-
-#ifdef LITE_WITH_NPU
-template <>
-class Context<TargetType::kNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(NPUContext* ctx) {}
-
-  NPUContext& operator=(const NPUContext& ctx) {}
-  std::string name() const { return "NPUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-};
-#endif
-
-#ifdef LITE_WITH_BM
-template <>
-class Context<TargetType::kBM> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
-  void CopySharedTo(BMContext* ctx) {}
-  void* GetHandle() { return TargetWrapperBM::GetHandle(); }
-
-  std::string name() const { return "BMContext"; }
-};
-#endif
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
@@ -417,87 +368,6 @@ class Context<TargetType::kIntelFPGA> {
 };
 #endif
 
-#ifdef LITE_WITH_MLU
-template <>
-class Context<TargetType::kMLU> {
- public:
-  typename Env<TargetType::kMLU>::Devs& devs = Env<TargetType::kMLU>::Global();
-
-  void InitOnce() {}
-
-  MLUContext& operator=(const MLUContext& ctx) {
-    this->Init(ctx.device_id_, ctx.exec_queue_id_);
-    return *this;
-  }
-
-  void Init(int dev_id, int exec_queue_id = 0) {
-    CHECK_GT(devs.size(), 0UL)
-        << "Env is not initialized or current target is not exit!";
-    if (dev_id >= static_cast<int>(devs.size())) {
-      LOG(WARNING) << "device index exceeds the number of devices, set to "
-                      "default device(0)!";
-      device_id_ = 0;
-    } else {
-      device_id_ = dev_id;
-    }
-    SetMluDevice(device_id_);
-
-    // get queue id from map
-    std::unique_lock<std::mutex> lk(map_mutex_);
-    if (queue_id_map_.find(exec_queue_id) == queue_id_map_.end()) {
-      queue_id_map_[exec_queue_id] =
-          next_queue_id_++ % devs[dev_id].max_queue();
-    }
-    exec_queue_id_ = queue_id_map_[exec_queue_id];
-    VLOG(4) << "pick mlu queue id: " << exec_queue_id_;
-    lk.unlock();
-
-    io_queue_ = devs[dev_id].io_queues()[exec_queue_id_];
-    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id_];
-  }
-
-  void CopySharedTo(MLUContext* ctx) { ctx->forward_param_ = forward_param_; }
-
-  const cnrtQueue_t& exec_queue() const { return exec_queue_; }
-  void SetExecQueue(cnrtQueue_t queue) { exec_queue_ = queue; }
-
-  const cnrtQueue_t& io_queue() const { return io_queue_; }
-  void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
-
-  cnmlCoreVersion_t MLUCoreVersion() {
-    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
-  }
-
-  int MLUCoreNumber() {
-    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
-  }
-
-  u32_t affinity() { return affinity_; }
-
-  cnrtInvokeFuncParam_t forward_param() { return forward_param_; }
-
-  int device_id() { return device_id_; }
-
-  std::string name() const { return "MLUContext"; }
-
- private:
-  static int next_queue_id_;
-  static std::map<int, int> queue_id_map_;
-  static std::mutex map_mutex_;
-  int device_id_;
-  // overall information
-  int exec_queue_id_;
-  cnrtQueue_t io_queue_;
-  cnrtQueue_t exec_queue_;
-
-  std::vector<cnrtNotifier_t> input_notifiers_;
-  std::vector<cnrtNotifier_t> output_notifiers_;
-
-  cnrtInvokeFuncParam_t forward_param_;
-  u32_t affinity_ = 0x01;
-};
-#endif  // LITE_WITH_MLU
-
 #ifdef LITE_WITH_X86
 template <>
 class Context<TargetType::kX86> {
@@ -617,12 +487,6 @@ class ContextScheduler {
             &ctx->As<ARMContext>());
         break;
 #endif
-#ifdef LITE_WITH_NPU
-      case TARGET(kNPU):
-        kernel_contexts_[TargetType::kNPU].As<NPUContext>().CopySharedTo(
-            &ctx->As<NPUContext>());
-        break;
-#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -653,22 +517,6 @@ class ContextScheduler {
             .As<IntelFPGAContext>()
             .CopySharedTo(&ctx->As<IntelFPGAContext>());
         break;
-#endif
-#ifdef LITE_WITH_BM
-      case TARGET(kBM):
-        kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
-            &ctx->As<BMContext>());
-        break;
-#endif
-#ifdef LITE_WITH_MLU
-      case TARGET(kMLU): {
-        int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
-        auto& context = ctx->As<MLUContext>();
-        context.Init(dev_id, exec_stream_id);
-        kernel_contexts_[TargetType::kMLU].As<MLUContext>().CopySharedTo(
-            &context);
-        LOG(INFO) << "New Context for MLU";
-      } break;
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
@@ -716,17 +564,8 @@ class ContextScheduler {
 #ifdef LITE_WITH_INTEL_FPGA
     InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
-#ifdef LITE_WITH_NPU
-    InitContext<TargetType::kNPU, NPUContext>();
-#endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();
-#endif
-#ifdef LITE_WITH_BM
-    InitContext<TargetType::kBM, BMContext>();
-#endif
-#ifdef LITE_WITH_MLU
-    InitContext<TargetType::kMLU, MLUContext>();
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
