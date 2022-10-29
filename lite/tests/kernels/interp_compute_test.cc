@@ -345,6 +345,15 @@ void TestInterpOuthw(Place place, float abs_error = 2e-5) {
                                              out_w,
                                              false,
                                              0));
+#elif defined(LITE_WITH_OPENCL)
+          std::unique_ptr<arena::TestCase> tester(
+              new NearestInterpComputeTester(place,
+                                             "ImageDefault",
+                                             DDim(x_dims),
+                                             interp_method,
+                                             -1.f,
+                                             out_h,
+                                             out_w));
 #else
           std::unique_ptr<arena::TestCase> tester(
               new NearestInterpComputeTester(place,
@@ -378,6 +387,9 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
                                            -1,
                                            false,
                                            0));
+#elif defined(LITE_WITH_OPENCL)
+        std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
+            place, "ImageDefault", DDim(x_dims), interp_method, scale));
 #else
         std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
             place, "def", DDim(x_dims), interp_method, scale));
@@ -392,9 +404,13 @@ void TestInterpScale(Place place, float abs_error = 2e-5) {
 void TestInterpSizetensor(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
+      std::string alias = "def";
+#if defined(LITE_WITH_OPENCL)
+      alias = "ImageDefault";
+#endif
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          -1.f,
@@ -414,9 +430,13 @@ void TestInterpSizetensor(Place place, float abs_error = 2e-5) {
 void TestInterpInputScale(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
+      std::string alias = "def";
+#if defined(LITE_WITH_OPENCL)
+      alias = "ImageDefault";
+#endif
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          0.7,
@@ -436,9 +456,13 @@ void TestInterpInputScale(Place place, float abs_error = 2e-5) {
 void TestInterpOutsize(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
+      std::string alias = "def";
+#if defined(LITE_WITH_OPENCL)
+      alias = "ImageDefault";
+#endif
       std::unique_ptr<arena::TestCase> tester(
           new NearestInterpComputeTester(place,
-                                         "def",
+                                         alias,
                                          DDim(x_dims),
                                          interp_method,
                                          -1,
@@ -458,8 +482,12 @@ void TestInterpOutsize(Place place, float abs_error = 2e-5) {
 void TestInterpAlignCorners(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (bool align_corners : {true, false}) {
+      std::string alias = "def";
+#if defined(LITE_WITH_OPENCL)
+      alias = "ImageDefault";
+#endif
       std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
-          place, "def", DDim(x_dims), "nearest", -1, 4, 4, align_corners));
+          place, alias, DDim(x_dims), "nearest", -1, 4, 4, align_corners));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
@@ -477,9 +505,13 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
 #if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (align_mode == 0 && align_corners) continue;
 #endif
+        std::string alias = "def";
+#if defined(LITE_WITH_OPENCL)
+        alias = "ImageDefault";
+#endif
         std::unique_ptr<arena::TestCase> tester(
             new NearestInterpComputeTester(place,
-                                           "def",
+                                           alias,
                                            DDim(x_dims),
                                            "bilinear",
                                            -1.,
@@ -583,6 +615,16 @@ TEST(Interp, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #ifdef ENABLE_ARM_FP16

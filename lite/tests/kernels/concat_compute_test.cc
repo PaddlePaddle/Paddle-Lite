@@ -193,6 +193,17 @@ TEST(Concat, precision) {
       arena.TestPrecision();
     }
   }
+
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;
+  for (int axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ConcateComputeTester(place, "ImageDefault", axis, false));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+#endif
 }
 
 }  // namespace lite

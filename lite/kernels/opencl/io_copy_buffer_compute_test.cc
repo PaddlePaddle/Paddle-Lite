@@ -28,8 +28,11 @@ TEST(io_copy, compute) {
       "io_copy", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
   ASSERT_FALSE(h2d_kernels.empty());
 
+  auto d2h_kernels = KernelRegistry::Global().Create(
+      "io_copy", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
+  ASSERT_FALSE(d2h_kernels.empty());
   auto h2d_kernel = std::move(h2d_kernels.front());
-  auto d2h_kernel = std::move(*std::next(h2d_kernels.begin(), 1));
+  auto d2h_kernel = std::move(*std::next(d2h_kernels.begin(), 1));
   LOG(INFO) << "get first kernel: " << h2d_kernel->doc();
   LOG(INFO) << "get second kernel: " << d2h_kernel->doc();
   lite::Tensor h_x, d_y, h_y;
@@ -69,7 +72,7 @@ TEST(io_copy, compute) {
   auto* h_y_data = h_y.data<float>();
 
   for (int i = 0; i < 3 * 9 * 28 * 28; i++) {
-    EXPECT_NEAR(h_x_data[i], h_y_data[i], 1e-6);
+    EXPECT_NEAR(h_x_data[i], h_y_data[i], 1e-1);
   }
 }
 
