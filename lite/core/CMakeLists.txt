@@ -27,17 +27,9 @@ FILE(GLOB CORE_BASE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 LIST(REMOVE_ITEM CORE_BASE_SRC ${UNIT_TEST_SRC})
 
 set (tensor_extra_deps "")
-if (LITE_WITH_FPGA)
-  set (tensor_extra_deps lite_tensor_fpga)
-endif ()
-
 
 set(CORE_SRC ${CORE_BASE_SRC} ${MODEL_SRC})
 set(CORE_DEPS "")
-
-if (LITE_WITH_FPGA)
-  set (CORE_DEPS ${CORE_DEPS} lite_tensor_fpga)
-endif ()
 
 if(WITH_TESTING)
   lite_cc_library(core_tester SRCS ${TESTER_SRC} DEPS gtest gflags)
@@ -68,7 +60,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper cl_context
   METAL_DEPS metal_target_wrapper
-  FPGA_DEPS fpga_target_wrapper
   NNADAPTER_DEPS nnadapter_wrapper)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------

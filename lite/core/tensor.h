@@ -14,12 +14,6 @@
 
 #pragma once
 
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/lite_tensor.h"
-#endif
-
-#ifndef LITE_WITH_FPGA
-
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/target_wrapper.h"
 #endif  // LITE_WITH_METAL
@@ -131,7 +125,7 @@ class TensorLite {
       bool reuse = true) {
     dims_ = dim;
     target_ = TARGET(kMetal);
-    long ptr_this = reinterpret_cast<long>(this);
+    int64_t ptr_this = reinterpret_cast<int64_t>(this);
     std::string ptr;
     std::stringstream stream;
     stream << ptr_this;
@@ -328,5 +322,3 @@ metal_image *TensorLite::mutable_data<uint16_t, metal_image>();
 
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // #ifndef LITE_WITH_FPGA

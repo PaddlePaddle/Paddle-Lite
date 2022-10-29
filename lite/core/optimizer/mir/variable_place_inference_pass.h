@@ -63,10 +63,7 @@ class VariablePlaceInferencePass : public DebugPass {
                      const LiteType& type,
                      const std::map<std::string, bool>& with_targets) {
     VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
-    if (with_targets.at("kFPGA")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kOpenCL")) {
+    if (with_targets.at("kOpenCL")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else if (with_targets.at("kCUDA")) {
@@ -130,12 +127,10 @@ class VariablePlaceInferencePass : public DebugPass {
     std::map<std::string, bool> with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
         {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
-        {"kFPGA", valid_places_has_target(TARGET(kFPGA))},
         {"kMetal", valid_places_has_target(TARGET(kMetal))},
         {"kXPU", valid_places_has_target(TARGET(kXPU))},
     };
     VLOG(4) << "with_targets['kOpenCL']:" << with_targets["kOpenCL"];
-    VLOG(4) << "with_targets['kFPGA']:" << with_targets["kFPGA"];
     VLOG(4) << "with_targets['kXPU']:" << with_targets["kXPU"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
@@ -146,10 +141,8 @@ class VariablePlaceInferencePass : public DebugPass {
       auto& kernel = inst.picked_kernel();
 
       // The IoCopyOp is a tool operator, it won't support the type inference.
-      // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
-      // for tool operator
-      if (with_targets["kFPGA"] || with_targets["kOpenCL"]) {
-        VLOG(3) << "skip 'io_copy' if target is FPGA or OpenCL";
+      if (with_targets["kOpenCL"]) {
+        VLOG(3) << "skip 'io_copy' if target is OpenCL";
         if (op_type == "io_copy") continue;
       }
 

@@ -215,7 +215,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
-       "fpga_concat_fuse_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 #ifdef LITE_WITH_XPU
        "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
@@ -224,7 +223,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "remove_tf_redundant_ops_pass",
        "variable_place_inference_pass",  // inference arg/var's
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
-       "__fpga_kernel_place_correct_pass",
        // "opencl_kernel_place_correct_pass", // uncommit this pass
        // info(target/precision/layout/device)
        // using kernel info
@@ -262,7 +260,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "runtime_context_assign_pass",
        "argument_type_display_pass",
        "lite_inplace_fuse_pass",
-#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
+#if !(defined(LITE_WITH_PRECISION_PROFILE))
        "memory_optimize_pass",
        "xpu_memory_optimize_pass"
 #endif

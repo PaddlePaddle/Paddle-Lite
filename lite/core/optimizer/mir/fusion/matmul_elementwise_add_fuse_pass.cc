@@ -35,10 +35,6 @@ void MatmulElementwiseAddFusePass::Apply(
 #endif
   fusion::MatmulElementwiseAddFuser fuser2(false, graph);
   fuser2(graph.get());
-#ifdef LITE_WITH_FPGA
-  fusion::MatmulElementwiseAddFuser fpga_fuser(true, graph);
-  fpga_fuser(graph.get());
-#endif
 }
 
 }  // namespace mir
