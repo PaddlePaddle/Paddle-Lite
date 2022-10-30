@@ -1478,6 +1478,26 @@ TEST(Activation_relu_fp16, precision) {
   }
 }
 
+TEST(Activation_sigmoid_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct<float16_t>(place,
+                       "sigmoid_fp16_test",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       Sigmoid,
+                       abs_error);
+  }
+}
+
 TEST(Activation_hard_sigmoid_fp16, precision) {
   Place place;
   float abs_error = 2e-3;
