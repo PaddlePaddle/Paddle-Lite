@@ -1493,7 +1493,7 @@ TEST(Activation_sigmoid_fp16, precision) {
                        1.0,
                        DDim(dims),
                        "sigmoid",
-                       Sigmoid,
+                       SIGMOID,
                        abs_error);
   }
 }
