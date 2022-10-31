@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "optimizer/fuse_sigmoid_eltmul_into_swish.h"
+#include "optimizer/fuse_sigmoid_mul_into_swish.h"
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -25,20 +25,19 @@
 
 namespace nnadapter {
 
-class SigmoidEltmulFuser : public PatternMatcher {
+class SigmoidMulFuser : public PatternMatcher {
  public:
-  SigmoidEltmulFuser() {}
+  SigmoidMulFuser() {}
   void BuildPattern() override;
   bool HandleMatchedResults(core::Model* model,
                             const std::map<std::string, Node*>& nodes) override;
 };
 
-void SigmoidEltmulFuser::BuildPattern() {
+void SigmoidMulFuser::BuildPattern() {
   // Operation patterns
   auto sigmoid_pattern =
       CreatePattern("sigmoid", NNADAPTER_SIGMOID)->IsIntermediate();
-  auto eltmul_pattern =
-      CreatePattern("eltmul", NNADAPTER_MUL)->IsIntermediate();
+  auto mul_pattern = CreatePattern("mul", NNADAPTER_MUL)->IsIntermediate();
   // Operand patterns
   auto sigmoid_input_pattern =
       CreatePattern("sigmoid_input")
@@ -49,41 +48,40 @@ void SigmoidEltmulFuser::BuildPattern() {
           ->IsOperationOutputOperand(NNADAPTER_SIGMOID, 0)
           ->IsOperationInputOperand(NNADAPTER_MUL, 1)
           ->IsIntermediate();
-  auto eltmul_fuse_code_pattern =
-      CreatePattern("eltmul_fuse_code")
-          ->IsOperationInputOperand(NNADAPTER_MUL, 2)
-          ->IsIntermediate();
-  auto eltmul_output_pattern = CreatePattern("eltmul_output")
-                                   ->IsOperationOutputOperand(NNADAPTER_MUL, 0);
+  auto mul_fuse_code_pattern = CreatePattern("mul_fuse_code")
+                                   ->IsOperationInputOperand(NNADAPTER_MUL, 2)
+                                   ->IsIntermediate();
+  auto mul_output_pattern =
+      CreatePattern("mul_output")->IsOperationOutputOperand(NNADAPTER_MUL, 0);
   // Create the topological connections for the above patterns
-  std::vector<Pattern*> eltmul_input_patterns{
-      sigmoid_input_pattern, eltmul_fuse_code_pattern, sigmoid_output_pattern};
+  std::vector<Pattern*> mul_input_patterns{
+      sigmoid_input_pattern, mul_fuse_code_pattern, sigmoid_output_pattern};
   *sigmoid_input_pattern >> *sigmoid_pattern >> *sigmoid_output_pattern;
-  eltmul_input_patterns >> *eltmul_pattern >> *eltmul_output_pattern;
+  mul_input_patterns >> *mul_pattern >> *mul_output_pattern;
 }
 
-bool SigmoidEltmulFuser::HandleMatchedResults(
+bool SigmoidMulFuser::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
   // Get the operands and operations from the matched subgraph nodes.
   auto sigmoid_input_operand = nodes.at("sigmoid_input")->operand;
-  auto eltmul_output_operand = nodes.at("eltmul_output")->operand;
+  auto mul_output_operand = nodes.at("mul_output")->operand;
   // Create a new NNADAPTER_SWISH operation and replace the matched
   // subgraph nodes.
   auto* swish_operation = AddOperation(model);
   swish_operation->type = NNADAPTER_SWISH;
   swish_operation->input_operands = {sigmoid_input_operand};
-  swish_operation->output_operands = {eltmul_output_operand};
+  swish_operation->output_operands = {mul_output_operand};
   // The matched intermediate operands and operations will be deleted only when
   // it returns true.
   return true;
 }
 
-NNADAPTER_EXPORT void FuseSigmoidEltmulIntoSwish(core::Model* model) {
-  NNADAPTER_VLOG(5) << "Apply SigmoidEltmulFuser";
+NNADAPTER_EXPORT void FuseSigmoidMulIntoSwish(core::Model* model) {
+  NNADAPTER_VLOG(5) << "Apply SigmoidMulFuser";
   bool stop;
   do {
-    SigmoidEltmulFuser sigmoid_eltmul_fuser;
-    stop = sigmoid_eltmul_fuser.Apply(model) == 0;
+    SigmoidMulFuser sigmoid_mul_fuser;
+    stop = sigmoid_mul_fuser.Apply(model) == 0;
   } while (!stop);
 }
 
