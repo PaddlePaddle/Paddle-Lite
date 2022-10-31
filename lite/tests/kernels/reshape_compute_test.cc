@@ -211,6 +211,8 @@ TEST(Reshape, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif

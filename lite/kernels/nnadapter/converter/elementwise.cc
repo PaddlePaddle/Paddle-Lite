@@ -101,6 +101,8 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
     act_type = "";
+  } else {
+    CHECK(act_type.empty()) << "Not support fuse act type: " << act_type;
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
 

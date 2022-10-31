@@ -101,27 +101,39 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_ABS:
+      case NNADAPTER_ARG_MAX:
+      case NNADAPTER_ARG_MIN:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:
       case NNADAPTER_CHANNEL_SHUFFLE:
       case NNADAPTER_CLIP:
       case NNADAPTER_CUM_SUM:
+      case NNADAPTER_EXP:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
+      case NNADAPTER_FLOOR:
       case NNADAPTER_GELU:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_INSTANCE_NORMALIZATION:
       case NNADAPTER_LAYER_NORMALIZATION:
       case NNADAPTER_LEAKY_RELU:
+      case NNADAPTER_LOG:
+      case NNADAPTER_LP_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_PAD:
+      case NNADAPTER_PRELU:
+      case NNADAPTER_REDUCE_MAX:
+      case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_SUM:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
       case NNADAPTER_SLICE:
+      case NNADAPTER_SOFTPLUS:
       case NNADAPTER_SQUEEZE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:

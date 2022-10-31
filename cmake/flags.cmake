@@ -119,6 +119,7 @@ if (NOT WIN32)
 set(COMMON_FLAGS
     -fPIC
     -fno-omit-frame-pointer
+    -Werror
     -Wall
     -Wextra
     -Wnon-virtual-dtor
@@ -139,10 +140,14 @@ set(COMMON_FLAGS
     -Wno-error=maybe-uninitialized # Warning in boost gcc 7.2
 )
 
-if (NOT EMSCRIPTEN)
-  # disable -Werror for Emscripten
-  set(COMMON_FLAGS "${COMMON_FLAGS} -Werror")
-endif(NOT EMSCRIPTEN)
+if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR EMSCRIPTEN)
+  # disable -Werror
+  list(REMOVE_ITEM COMMON_FLAGS "-Werror")
+endif()
+
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.3))
+  list(APPEND COMMON_FLAGS "-Wno-error=deprecated-copy") # Warning in Eigen
+endif()
 
 set(GPU_COMMON_FLAGS
     -fPIC
