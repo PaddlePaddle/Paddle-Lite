@@ -6,12 +6,9 @@ message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_SW:\t${LITE_WITH_SW}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
 message(STATUS "LITE_WITH_METAL:\t${LITE_WITH_METAL}")
-message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
 message(STATUS "LITE_WITH_XPU:\t${LITE_WITH_XPU}")
 message(STATUS "LITE_WITH_FPGA:\t${LITE_WITH_FPGA}")
 message(STATUS "LITE_WITH_INTEL_FPGA:\t${LITE_WITH_INTEL_FPGA}")
-message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
-message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_NNADAPTER:\t${LITE_WITH_NNADAPTER}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
@@ -192,18 +189,12 @@ if (LITE_WITH_ARM)
     if (LITE_WITH_METAL)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.metal")
     endif(LITE_WITH_METAL)
-    if (LITE_WITH_NPU)
-        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.npu")
-    endif(LITE_WITH_NPU)
     if (LITE_WITH_XPU)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.xpu")
     endif(LITE_WITH_XPU)
     if (LITE_WITH_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.fpga")
     endif(LITE_WITH_FPGA)
-    if (LITE_WITH_BM)
-        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.bm")
-    endif(LITE_WITH_BM)
     if (LITE_WITH_INTEL_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.intel_fpga")
     endif(LITE_WITH_INTEL_FPGA)
@@ -703,39 +694,6 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
         )
     endif()
     add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
-endif()
-
-if (LITE_WITH_BM)
-    add_custom_target(publish_inference_bm_cxx_demos ${TARGET}
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND cp "${PADDLE_SOURCE_DIR}/lite/demo/cxx/bm_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/"
-        COMMAND cp "${BM_SDK_ROOT}/lib/bmcompiler/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
-        COMMAND cp "${BM_SDK_ROOT}/lib/bmnn/pcie/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
-        COMMAND cp "${PADDLE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include/"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-        COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-    )
-    add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_bm_cxx_demos)
-endif()
-
-if (LITE_WITH_MLU)
-    add_custom_target(publish_inference_mlu_cxx_demos ${TARGET}
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/mlu_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/lib"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
-        COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/lib"
-        COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
-        COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
-    )
-    add_dependencies(publish_inference_mlu_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_mlu_cxx_demos)
 endif()
 
 if(LITE_WITH_NNADAPTER)

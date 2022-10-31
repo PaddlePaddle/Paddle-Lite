@@ -143,9 +143,10 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
   param_.per_channel = op_desc.GetAttr<bool>("per_channel");
-  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8") ||
-      op_desc.HasAttr("enable_int16") &&
-          op_desc.GetAttr<bool>("enable_int16")) {
+  if ((op_desc.HasAttr("enable_int8") &&
+       op_desc.GetAttr<bool>("enable_int8")) ||
+      (op_desc.HasAttr("enable_int16") &&
+       op_desc.GetAttr<bool>("enable_int16"))) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
   }
   param_.weight_max.clear();

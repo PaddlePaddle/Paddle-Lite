@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,11 @@
 
 #pragma once
 
-#include <math.h>
-#include <memory>
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/tensor.h"
+#include "core/types.h"
 
-namespace paddle {
-namespace lite {
-namespace subgraph {
-namespace bm {
+namespace nnadapter {
 
-std::string UniqueName(const std::string& prefix);
+void FuseReshapeTransposeSlice3Squeeze3IntoReshapeTransposeSlice3(
+    core::Model* model);
 
-bool HasInputArg(const OpInfo* op_info,
-                 const Scope* scope,
-                 const std::string& argname);
-
-}  // namespace bm
-}  // namespace subgraph
-}  // namespace lite
-}  // namespace paddle
+}  // namespace nnadapter

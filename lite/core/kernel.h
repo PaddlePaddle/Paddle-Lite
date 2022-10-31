@@ -103,9 +103,6 @@ class KernelBase {
 #if defined(LITE_WITH_METAL)
     WorkSpace::Global_METAL().AllocReset();
 #endif
-#if defined(LITE_WITH_MLU)
-    WorkSpace::Global_MLU().AllocReset();
-#endif
 
 #ifdef LITE_WITH_PROFILE
     if (!is_kernel_test_) {
@@ -234,7 +231,7 @@ template <TargetType Target,
 class KernelLite : public KernelBase {
  public:
   // Run the kernel.
-  virtual void Run() override { CHECK(false) << "Not Implemented"; }
+  void Run() override { CHECK(false) << "Not Implemented"; }
 
   TargetType target() const override { return Target; }
   PrecisionType precision() const override { return Precision; }
