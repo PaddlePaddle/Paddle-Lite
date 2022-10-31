@@ -86,7 +86,7 @@ class TestSetValueOp(AutoScanTest):
             inputs=inputs_dict,
             outputs={"Out": ["output_data"]},
             attrs={
-                'shape': in_shape,
+                'shape': [1],
                 'axes': [0],
                 'starts': [0],
                 'ends': [1],

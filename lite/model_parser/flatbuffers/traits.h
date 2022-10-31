@@ -112,6 +112,10 @@ inline lite::OpAttrType ConvertAttrType(proto::AttrType type) {
     CASE(LONG);
     CASE(BLOCKS);
     CASE(LONGS);
+    CASE(FLOAT64S);
+    CASE(VAR);
+    CASE(VARS);
+    CASE(FLOAT64);
     default:
       LOG(FATAL) << "Illegal flatbuffer AttrType.";
       return lite::OpAttrType();
@@ -137,6 +141,10 @@ inline proto::AttrType ConvertAttrType(lite::OpAttrType type) {
     CASE(LONG);
     CASE(BLOCKS);
     CASE(LONGS);
+    CASE(FLOAT64S);
+    CASE(VAR);
+    CASE(VARS);
+    CASE(FLOAT64);
     default:
       LOG(FATAL) << "Illegal flatbuffer AttrType.";
       return proto::AttrType();
