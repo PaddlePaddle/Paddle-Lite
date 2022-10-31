@@ -104,8 +104,8 @@ void ReshapeCalcOfflinePass::RemoveReshapePattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "Unsupported for op output var containing multiple producers";
+      VLOG(5) << "WARNING: Unsupported for op output var containing multiple "
+                 "producers";
       continue;
     }
 
@@ -118,20 +118,19 @@ void ReshapeCalcOfflinePass::RemoveReshapePattern(
     auto input_t = input_var->GetMutable<lite::Tensor>();
     auto input_dims = input_t->dims();
     if (!input_t->persistable()) {
-      LOG(WARNING) << "ReshapeCalcOfflinePass does not support input("
-                   << op_desc->Input("X").front()
-                   << ") that is not persistable";
+      VLOG(5) << "WARNING: ReshapeCalcOfflinePass does not support input("
+              << op_desc->Input("X").front() << ") that is not persistable";
       continue;
     }
     // Get reshape's shape
     if ((op_desc->HasInput("ShapeTensor") &&
          !op_desc->Input("ShapeTensor").empty()) ||
         (op_desc->HasInput("Shape") && !op_desc->Input("Shape").empty())) {
-      LOG(WARNING) << "Unsupported Shape or ShapeTensor input for "
-                      "reshape op.";
+      VLOG(5)
+          << "WARNING: Unsupported Shape or ShapeTensor input for reshape op.";
       continue;
     } else if (!op_desc->HasAttr("shape")) {
-      LOG(WARNING) << "shape(attr) must be set for ReshapeCalcOfflinePass.";
+      VLOG(5) << "WARNING: shape(attr) must be set for ReshapeCalcOfflinePass.";
       continue;
     }
     auto shape = op_desc->GetAttr<std::vector<int>>("shape");
