@@ -732,6 +732,7 @@ NNADAPTER_EXPORT core::Operand* InsertReshapeOperation(
 
 core::Operand* AddDummyOperation(core::Model* model,
                                  core::Operand* reference_operand,
+                                 NNAdapterOperationType operation_type,
                                  bool after = true) {
   auto target_operand = AddOperand(model);
   CopyOperandType(&target_operand->type, reference_operand->type);
@@ -754,7 +755,7 @@ core::Operand* AddDummyOperation(core::Model* model,
   auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
   // Insert a new ADD operation
   auto dummy_add_operation = AddOperation(model);
-  dummy_add_operation->type = NNADAPTER_ADD;
+  dummy_add_operation->type = operation_type;
   dummy_add_operation->input_operands = {
       after ? reference_operand : target_operand,
       zero_operand,
@@ -764,14 +765,24 @@ core::Operand* AddDummyOperation(core::Model* model,
   return target_operand;
 }
 
-NNADAPTER_EXPORT core::Operand* AppendDummyOperation(
+NNADAPTER_EXPORT core::Operand* AppendDummyAddOperation(
     core::Model* model, core::Operand* input_operand) {
-  return AddDummyOperation(model, input_operand, true);
+  return AddDummyOperation(model, input_operand, NNADAPTER_ADD, true);
 }
 
-NNADAPTER_EXPORT core::Operand* InsertDummyOperation(
+NNADAPTER_EXPORT core::Operand* InsertDummyAddOperation(
     core::Model* model, core::Operand* output_operand) {
-  return AddDummyOperation(model, output_operand, false);
+  return AddDummyOperation(model, output_operand, NNADAPTER_ADD, false);
+}
+
+NNADAPTER_EXPORT core::Operand* AppendDummySubOperation(
+    core::Model* model, core::Operand* input_operand) {
+  return AddDummyOperation(model, input_operand, NNADAPTER_SUB, true);
+}
+
+NNADAPTER_EXPORT core::Operand* InsertDummySubOperation(
+    core::Model* model, core::Operand* output_operand) {
+  return AddDummyOperation(model, output_operand, NNADAPTER_SUB, false);
 }
 
 core::Operand* AddUnaryOperation(core::Model* model,
