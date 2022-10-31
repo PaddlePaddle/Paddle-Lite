@@ -43,8 +43,6 @@ $ docker run -it --name <yourname> --net=host --privileged -v <your-directory-pa
 ```shell
 #!/bin/bash
 cmake .. \
-    -DWITH_GPU=OFF \
-    -DLITE_WITH_CUDA=OFF \
     -DLITE_WITH_X86=OFF \
     -DLITE_WITH_ARM=ON \
     -DWITH_TESTING=ON \

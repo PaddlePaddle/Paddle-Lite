@@ -4,7 +4,6 @@ elseif(LITE_ON_MODEL_OPTIMIZE_TOOL)
   return()
 endif ()
 
-configure_file (cupti_lib_path.h.in ${CMAKE_CURRENT_BINARY_DIR}/cupti_lib_path.h)
 configure_file (warpctc_lib_path.h.in ${CMAKE_CURRENT_BINARY_DIR}/warpctc_lib_path.h)
 
 # source code and dependencies of x86_math static lib

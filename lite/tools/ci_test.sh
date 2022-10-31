@@ -406,9 +406,7 @@ function android_cpu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
@@ -465,9 +463,7 @@ function armlinux_cpu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
@@ -546,7 +542,6 @@ function baidu_xpu_build_and_test() {
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \
-        -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \

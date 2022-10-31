@@ -20,11 +20,6 @@
 #include "lite/api/paddle_place.h"
 #include "lite/utils/log/cp_logging.h"
 
-#ifdef LITE_WITH_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#endif  // LITE_WITH_CUDA
-
 namespace paddle {
 namespace lite {
 

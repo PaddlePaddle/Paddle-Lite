@@ -53,20 +53,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   if (!status_is_cloned_) {
     auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
-#ifdef LITE_WITH_CUDA
-    // if kCUDA is included in valid places, it should be initialized first,
-    // otherwise skip this step.
-    for (auto &p : places) {
-      if (p.target == TARGET(kCUDA)) {
-        Env<TARGET(kCUDA)>::Init();
-        if (config_.multi_stream()) {
-          passes.push_back("multi_stream_analysis_pass");
-          VLOG(3) << "add pass: " << passes[0];
-        }
-        break;
-      }
-    }
-#endif
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)

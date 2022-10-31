@@ -166,8 +166,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
        "lite_conv_activation_fuse_pass",              //
-       "lite_var_conv_2d_activation_fuse_pass",       //
-       "lite_match_matrix_activation_fuse_pass",      //
        "lite_squeeze2_matmul_fuse_pass",              //
        "lite_reshape2_matmul_fuse_pass",              //
        "lite_matmul_element_add_fuse_pass",           //
@@ -178,9 +176,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_interpolate_fuse_pass",                  //
        "identity_scale_eliminate_pass",               //
        "lite_scales_fuse_pass",                       //
-       "lite_sequence_reverse_embedding_fuse_pass",   //
        "elementwise_mul_constant_eliminate_pass",     //
-       "lite_sequence_pool_concat_fuse_pass",         //
        "lite_scale_activation_fuse_pass",             //
        "lite_scaleacts_fuse_pass",                    //
        "lite_elementwise_scale_fuse_pass",            //
@@ -296,23 +292,15 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
               << program.block_size() << "]";
   }
 
-  // multi_stream_analysis_pass must be in the front of
-  // runtime_context_assign_pass
   // post_quant_dynamic_pass must be in the behind of
   // lite_quant_dequant_fuse_pass
-  const std::string msa_pass{"multi_stream_analysis_pass"};
   const std::string msa_depend_pass{"runtime_context_assign_pass"};
   const std::string pqd_pass{"post_quant_dynamic_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
 
   for (const std::string& pass : passes) {
-    if (pass == msa_pass) {
-      auto iter =
-          std::find(passes_local.begin(), passes_local.end(), msa_depend_pass);
-      CHECK(iter != passes_local.end()) << "No find " << msa_depend_pass;
-      passes_local.insert(iter, msa_pass);
-    } else if (pass == pqd_pass) {
+    if (pass == pqd_pass) {
       auto iter =
           std::find(passes_local.begin(), passes_local.end(), pqd_depend_pass);
       CHECK(iter != passes_local.end()) << "No find " << pqd_depend_pass;

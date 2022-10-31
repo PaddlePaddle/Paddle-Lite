@@ -66,9 +66,6 @@ class VariablePlaceInferencePass : public DebugPass {
     if (with_targets.at("kOpenCL")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kCUDA")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else if (with_targets.at("kMetal") &&
                type.precision() == PRECISION(kUnk)) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
@@ -126,7 +123,6 @@ class VariablePlaceInferencePass : public DebugPass {
     };
     std::map<std::string, bool> with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
-        {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
         {"kMetal", valid_places_has_target(TARGET(kMetal))},
         {"kXPU", valid_places_has_target(TARGET(kXPU))},
     };

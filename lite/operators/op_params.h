@@ -262,7 +262,6 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
-  bool use_cudnn{true};
   bool eleminate_success{false};
 };
 

@@ -54,9 +54,6 @@ lite_cc_test(test_utils_string SRCS string_test.cc)
 lite_cc_test(test_fast_type_id SRCS fast_type_id_test.cc)
 # fp16 unit test
 if (WITH_TESTING)
-    if (LITE_WITH_CUDA)
-      nv_test(float16_gpu_test SRCS float16_test.cu)
-    endif()
     lite_cc_test(float16_test SRCS float16_test.cc)
 endif()
 

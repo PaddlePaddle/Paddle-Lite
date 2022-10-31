@@ -29,7 +29,7 @@ void MatmulElementwiseAddFusePass::Apply(
       return;
     }
   }
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   fusion::MatmulElementwiseAddFuser fuser(true, graph);
   fuser(graph.get());
 #endif

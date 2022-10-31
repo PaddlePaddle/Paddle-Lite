@@ -14,7 +14,7 @@
 
 /*
  * This file defines PaddlePredictor, the api for lite. It supports multiple
- * hardware including ARM, X86, OpenCL, CUDA and so on.
+ * hardware including ARM, X86, OpenCL and so on.
  */
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
@@ -380,9 +380,6 @@ class LITE_API CxxConfig : public ConfigBase {
   float sparse_threshold_{0.6f};
   std::map<int, std::vector<std::shared_ptr<void>>>
       preferred_inputs_for_warmup_;
-#ifdef LITE_WITH_CUDA
-  bool multi_stream_{false};
-#endif
   // The custom configuration file or buffer for the NNAdapter subgraph
   // partition, here is an example:
   // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
@@ -427,11 +424,6 @@ class LITE_API CxxConfig : public ConfigBase {
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
-
-#ifdef LITE_WITH_CUDA
-  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  bool multi_stream() const { return multi_stream_; }
-#endif
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
