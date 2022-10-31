@@ -159,7 +159,7 @@ struct Instruction {
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
 #endif
       profile::OpCharacter ch;
@@ -172,7 +172,7 @@ struct Instruction {
       // append `ch.kernel_func_name` in StopTiming
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     }
 #endif
   }

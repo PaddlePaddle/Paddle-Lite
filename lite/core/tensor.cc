@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_WITH_FPGA
-
 #include "lite/core/tensor.h"
 #include <string>
 #include "lite/utils/string.h"
@@ -88,5 +86,3 @@ const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const {
 
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // #ifndef LITE_WITH_FPGA

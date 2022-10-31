@@ -205,10 +205,6 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
 
-#ifdef LITE_WITH_FPGA
-    op_desc.SetAttr("fpga_static_quant", true);
-#endif
-
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
@@ -310,7 +306,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-#ifndef LITE_WITH_FPGA
   switch (bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
@@ -319,24 +314,10 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
       op_desc.SetAttr("enable_int16", true);
       break;
   }
-#endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
-// change the weight from the float type to int8 type.
-#ifdef LITE_WITH_FPGA
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-  size_t weight_num = quantized_weight_t->data_size();
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-#else
+  // change the weight from the float type to int8 type.
   CastPersistableTensorInPlace(quantized_weight_t, bit_length);
-#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -425,7 +406,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
 
-#ifndef LITE_WITH_FPGA
   switch (weight_bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
@@ -434,29 +414,13 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
       op_desc.SetAttr("enable_int16", true);
       break;
   }
-#endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
-#ifdef LITE_WITH_FPGA
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  int channel = channel_scale_tensor->data_size();
-  int weight_chw = quantized_weight_t->data_size() / channel;
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_chw;
-    quantized_weight_data[i] = temp_data[i] * weight_scale[c];
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-#else
   CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
-#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -559,14 +523,12 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
 
-#ifndef LITE_WITH_FPGA
     std::string op_type = op_info.Type();
     if (std::find(input_activation_quant_op.begin(),
                   input_activation_quant_op.end(),
                   op_type) != input_activation_quant_op.end()) {
       op_info.SetAttr("enable_int8", true);
     }
-#endif
 
     if (input_var_is_activation) {
       op_info.SetInputScale(input_var_name, scales);
@@ -590,9 +552,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       if (op_type == "mul" || op_type == "matmul" || op_type == "matmul_v2" ||
           op_type == "conv2d" || op_type == "depthwise_conv2d" ||
           op_type == "conv2d_transpose") {
-#ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
-#endif
         if (scales.size() == 1) {
           QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
         } else {
@@ -734,12 +694,10 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     op_info->UpdateAllInputs(output_var_name, input_var_name);
     op_info->SetAttr<int>("bit_length", bit_length);
     std::string op_type = op_info->Type();
-#ifndef LITE_WITH_FPGA
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
       op_info->SetAttr("enable_int8", true);
     }
-#endif
     op_info->SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
       CHECK(op_out_var_node->IsArg());

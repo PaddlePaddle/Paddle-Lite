@@ -90,11 +90,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperMetal::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_METAL
-#ifdef LITE_WITH_FPGA
-    case TARGET(kFPGA):
-      TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
-      break;
-#endif
 #ifdef LITE_WITH_XPU
     case TARGET(kXPU):
       TargetWrapperXPU::MemcpySync(dst, src, size, dir);

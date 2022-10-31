@@ -31,10 +31,6 @@ endif()
 # 2.opencv-source code will be included if LITE_WITH_CV
 if(LITE_WITH_CV AND LITE_WITH_ARM)
   set(UTILS_SRC ${UTILS_SRC} ${CV_ARM_SRC})
-  if(LITE_WITH_FPGA)
-    set(UTILS_SRC ${UTILS_SRC} ${CV_FPGA_SRC})
-    set(UTILS_DEPS ${UTILS_DEPS} ${kernel_fpga})
-  endif()
 endif()
 
 # 3. self-defined log will be included in tiny_publish mode

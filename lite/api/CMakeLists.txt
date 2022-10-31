@@ -46,10 +46,6 @@ if(MSVC)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
-
-if(LITE_WITH_FPGA)
-    set(external_libs_DEPS ${external_libs_DEPS} ${fpga_deps})
-endif()
 if(LITE_WITH_NNADAPTER)
     set(external_libs_DEPS ${external_libs_DEPS} ${nnadapter_deps})
 endif()

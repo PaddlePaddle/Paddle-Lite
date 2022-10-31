@@ -22,7 +22,6 @@ USE_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass);
 USE_MIR_PASS(op_transformation_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);
-USE_MIR_PASS(__fpga_kernel_place_correct_pass);
 USE_MIR_PASS(opencl_kernel_place_correct_pass);
 USE_MIR_PASS(generate_program_pass);
 
@@ -72,7 +71,6 @@ USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
 USE_MIR_PASS(fp16_attribute_pass);
-USE_MIR_PASS(fpga_concat_fuse_pass);
 USE_MIR_PASS(quantization_parameters_propagation_pass);
 USE_MIR_PASS(quantization_parameters_removal_pass);
 USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
