@@ -121,22 +121,45 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
     auto* scope = op->scope();
     bool change_image2d_to_buffer = false;
     bool change_image2d_to_cpu = false;
+
+    auto get_argname = [&](
+        const std::string& node_name,
+        const std::map<std::string, std::vector<std::string>>& argname_map)
+        -> std::string {
+          for (auto& ele : argname_map) {
+            auto it =
+                std::find(ele.second.begin(), ele.second.end(), node_name);
+            if (it != ele.second.end()) return ele.first;
+          }
+          return "";
+        };
+
     // 1. op unsupport persistable
-    const std::vector<std::string> op_type_persistable{
-        "unsqueeze2", "slice", "reshape2"};
-    if (std::find(op_type_persistable.begin(),
-                  op_type_persistable.end(),
-                  op_type) != op_type_persistable.end()) {
-      for (auto& var_name : op_info->input_names()) {
-        auto* var = scope->FindVar(var_name);
-        CHECK(var) << "no variable called " << var_name << " found";
-        if (var->Get<Tensor>().persistable()) {
-          change_image2d_to_cpu = true;
-          break;
+    if (op_type == "reshape2" || op_type == "unsqueeze2") {
+      for (std::list<Node*>::iterator i = x->inlinks.begin();
+           i != x->inlinks.end();
+           ++i) {
+        std::string in_name =
+            get_argname((*i)->AsArg().name, inst.op_info()->inputs());
+        if (in_name == "X") {
+          auto* var = scope->FindVar((*i)->arg()->name);
+          if (var->Get<Tensor>().persistable()) change_image2d_to_cpu = true;
         }
       }
     }
 
+    if (op_type == "slice") {
+      for (std::list<Node*>::iterator i = x->inlinks.begin();
+           i != x->inlinks.end();
+           ++i) {
+        std::string in_name =
+            get_argname((*i)->AsArg().name, inst.op_info()->inputs());
+        if (in_name == "Input") {
+          auto* var = scope->FindVar((*i)->arg()->name);
+          if (var->Get<Tensor>().persistable()) change_image2d_to_cpu = true;
+        }
+      }
+    }
     if (inst.place().layout == DATALAYOUT(kImageDefault) ||
         inst.place().layout == DATALAYOUT(kImageFolder)) {
       // 2. image2d unsupport dims.size() > 4
@@ -147,6 +170,10 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         CHECK(var) << "no variable called " << var_name << " found";
         const auto& tensor = var->Get<Tensor>();
         const auto dims = tensor.dims();
+        std::string in_name = get_argname(var_name, inst.op_info()->outputs());
+        if (in_name == "XShape") {
+          continue;
+        }
         if (dims.size() >= 5) {
           change_image2d_to_cpu = true;
           break;
@@ -248,17 +275,6 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
 
       // 6. gather X.dims.size() == 2
       if (op_type == "gather") {
-        auto get_argname = [&](
-            const std::string& node_name,
-            const std::map<std::string, std::vector<std::string>>& argname_map)
-            -> std::string {
-              for (auto& ele : argname_map) {
-                auto it =
-                    std::find(ele.second.begin(), ele.second.end(), node_name);
-                if (it != ele.second.end()) return ele.first;
-              }
-              return "";
-            };
         for (std::list<Node*>::iterator i = x->inlinks.begin();
              i != x->inlinks.end();
              ++i) {
@@ -272,6 +288,7 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         }
       }
     }
+
     if (change_image2d_to_cpu) {
       UpdateTargetToCPU(x, graph->valid_places());
     } else if (change_image2d_to_buffer) {
