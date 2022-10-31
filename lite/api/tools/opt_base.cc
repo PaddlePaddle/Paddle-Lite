@@ -256,6 +256,7 @@ void OptBase::Run() {
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
   opt_config_.set_valid_places(valid_places_);
+
   if (model_set_dir_ != "") {
     RunOptimizeFromModelSet(record_strip_info_);
   } else {
