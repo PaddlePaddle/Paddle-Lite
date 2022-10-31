@@ -59,8 +59,6 @@ using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
-using FPGAContext = Context<TargetType::kFPGA>;
-using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
 
@@ -338,21 +336,6 @@ class Context<TargetType::kARM> {
 };
 #endif
 
-#ifdef LITE_WITH_FPGA
-// TODO(tianxiaogang): add needed implementation to context
-template <>
-class Context<TargetType::kFPGA> {
- public:
-  void InitOnce() {}
-
-  FPGAContext& operator=(const FPGAContext& ctx) {}
-
-  void CopySharedTo(FPGAContext* ctx) {}
-
-  std::string name() const { return "FPGAContext"; }
-};
-#endif
-
 #ifdef LITE_WITH_X86
 template <>
 class Context<TargetType::kX86> {
@@ -490,12 +473,6 @@ class ContextScheduler {
             &ctx->As<MTLContext>());
         break;
 #endif
-#ifdef LITE_WITH_FPGA
-      case TARGET(kFPGA):
-        kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
-            &ctx->As<FPGAContext>());
-        break;
-#endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
       case TARGET(kNNAdapter):
@@ -535,9 +512,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_METAL
     InitContext<TargetType::kMetal, MTLContext>();
-#endif
-#ifdef LITE_WITH_FPGA
-    InitContext<TargetType::kFPGA, FPGAContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

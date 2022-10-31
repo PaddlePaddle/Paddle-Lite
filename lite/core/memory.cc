@@ -40,11 +40,6 @@ void* TargetMalloc(TargetType target, size_t size) {
       data = TargetWrapperCL::Malloc(size);
       break;
 #endif  // LITE_WITH_OPENCL
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      data = TargetWrapper<TARGET(kFPGA)>::Malloc(size);
-      break;
-#endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_XPU
     case TargetType::kXPU:
       data = TargetWrapperXPU::Malloc(size);
@@ -84,11 +79,6 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
       }
       break;
 #endif  // LITE_WITH_OPENCL
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      TargetWrapper<TARGET(kFPGA)>::Free(data);
-      break;
-#endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_XPU
     case TargetType::kXPU:
       TargetWrapperXPU::Free(data);
@@ -120,12 +110,6 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
 #ifdef LITE_WITH_CUDA
     case TargetType::kCUDA:
       TargetWrapper<TARGET(kCUDA)>::MemcpySync(
-          dst, src, size, IoDirection::DtoD);
-      break;
-#endif
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      TargetWrapper<TARGET(kFPGA)>::MemcpySync(
           dst, src, size, IoDirection::DtoD);
       break;
 #endif
