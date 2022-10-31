@@ -169,9 +169,25 @@ TEST(Concat, precision) {
   place = TARGET(kXPU);
   use_axis_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_OPENCL)
+  // opencl buffer op_test
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
-  use_axis_tensor = std::vector<bool>{false};
+  for (int axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ConcateComputeTester(place, "def", axis, false));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+
+  // opencl image2d op_test
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  for (int axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ConcateComputeTester(place, "ImageDefault", axis, false));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -193,17 +209,6 @@ TEST(Concat, precision) {
       arena.TestPrecision();
     }
   }
-
-#if defined(LITE_WITH_OPENCL)
-  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_error = 1e-2;
-  for (int axis : axes) {
-    std::unique_ptr<arena::TestCase> tester(
-        new ConcateComputeTester(place, "ImageDefault", axis, false));
-    arena::Arena arena(std::move(tester), place, abs_error);
-    arena.TestPrecision();
-  }
-#endif
 }
 
 }  // namespace lite

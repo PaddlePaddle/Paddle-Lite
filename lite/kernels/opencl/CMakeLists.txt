@@ -88,6 +88,7 @@ lite_cc_test(test_depthwise_conv2d_transpose_image_opencl SRCS depthwise_conv2d_
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS kernels core)
 
+# The buffer version can support more model shapes, but needs to evaluate the performance of the supported models
 # lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
 #              DEPS kernels core)
 
