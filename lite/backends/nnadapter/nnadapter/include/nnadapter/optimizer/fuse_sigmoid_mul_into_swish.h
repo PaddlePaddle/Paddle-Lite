@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void FuseSigmoidEltmulIntoSwish(core::Model *model);
+void FuseSigmoidMulIntoSwish(core::Model *model);
 
 }  // namespace nnadapter
