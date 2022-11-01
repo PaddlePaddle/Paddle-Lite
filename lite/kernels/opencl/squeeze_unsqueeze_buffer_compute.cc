@@ -52,20 +52,16 @@ class SqueezeUnsqueezeCompute
       kernel_inplace = kernel_param->inplace;
     }
 
-    auto* x_data = x->data<float, cl::Buffer>();
     if (kernel_inplace) {
       auto out_dims = out->dims();
       out->ShareDataWith(*x);
       out->Resize(out_dims);
     } else {
-      auto* out_data = out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-      d2d_duration_ =
-          CopyFromDeviceToDeviceSync(out_data, x_data, out->memory_size());
+      auto out_dims = out->dims();
+      out->CopyDataFrom(*x);
+      out->Resize(out_dims);
     }
 #ifdef LITE_WITH_LOG
-    size_t buffer_size;
-    x_data->getInfo(CL_MEM_SIZE, &buffer_size);
-    VLOG(4) << "out of squeeze, opencl buffer size: " << buffer_size;
     VLOG(4) << "squeeze out dims: " << out->dims();
     VLOG(4) << "out->memory_size():" << out->memory_size();
 #endif

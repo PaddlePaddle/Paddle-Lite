@@ -43,6 +43,10 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   auto has_x86_opencl = [&]() -> bool {
     bool has_x86{false};
     bool has_opencl{false};
+    auto path = GetStringFromEnv(OPENCL_MEMORY_CONFIG_FILE);
+    if (!path.empty()) {
+      return true;
+    }
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;

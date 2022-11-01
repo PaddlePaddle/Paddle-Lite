@@ -45,9 +45,6 @@ class LayoutComputeBufferChwToImageDefault
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
-    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -170,7 +167,7 @@ class LayoutComputeBufferChwToImageDefault
  private:
   std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"buffer_to_image2d"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{""};
 };
 
 // [ImageDefault] -> [NCHW]
@@ -183,9 +180,6 @@ class LayoutComputeImageDefaultToBufferChw
     auto& param = Param<param_t>();
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
-    }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
@@ -209,7 +203,9 @@ class LayoutComputeImageDefaultToBufferChw
     if (param.process_type == 1) {
       y_data = param.y->mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
     } else {
-      y_data = param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      y_data = fp16_support_
+                   ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+                   : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     }
     auto* x_data = GET_DATA_GPU(param.x);
     auto x_dims = param.x->dims();
@@ -300,7 +296,7 @@ class LayoutComputeImageDefaultToBufferChw
  private:
   std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"image2d_to_buffer"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{""};
 };
 
 // [NCHW] -> [ImageDW]
@@ -414,7 +410,7 @@ class LayoutComputeBufferChwToImage2DNw
   std::string time_stamp_{GetTimeStamp()};
 
   std::string kernel_func_name_{"buffer_to_image2d_nw"};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{""};
 };
 
 // [ImageDefault] -> [ImageFolder]
@@ -621,9 +617,6 @@ class LayoutComputeImageFolderToBufferChw
     if (x_dims.size() > 2) {
       kernel_func_name_ = "image2d_to_buffer";
     }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
-    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -653,9 +646,10 @@ class LayoutComputeImageFolderToBufferChw
       CLImageConverterFolder folder_converter;
       x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
     }
-
-    const cl::Buffer* y_data =
-        param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto* y_data =
+        fp16_support_
+            ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
+            : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto* x_data = GET_DATA_GPU(param.x);
 
     // out info
@@ -748,7 +742,7 @@ class LayoutComputeImageFolderToBufferChw
  private:
   std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"image2d_folder_to_buffer"};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{""};
 };
 
 // [NCHW] -> [ImageFolder]
@@ -764,9 +758,6 @@ class LayoutComputeBufferChwToImageFolder
     auto x_dims = param.x->dims();
     if (x_dims.size() > 2) {
       kernel_func_name_ = "buffer_to_image2d";
-    }
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
@@ -876,7 +867,7 @@ class LayoutComputeBufferChwToImageFolder
  private:
   std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"buffer_to_image2d_folder"};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{""};
   cl::NDRange gws_;
 };
 
@@ -1044,4 +1035,21 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
+// [ImageFolder] -> [NCHW]
+REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kAny,
+    kNCHW,
+    paddle::lite::kernels::opencl::LayoutComputeImageFolderToBufferChw,
+    ImageFolder_to_Any)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageFolder))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
 #define LITE_WITH_LOG

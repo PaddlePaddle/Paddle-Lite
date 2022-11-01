@@ -386,9 +386,37 @@ __kernel void image2d_folder_to_image2d_default(__read_only image2d_t input,
 // image2d_folder -> buffer
 ////////////////////////////////////////////////////////
 __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
-                                       __global float* output,
+                                       __global CL_DTYPE* output,
                                        __private const int out_h,
                                        __private const int out_w) {
+  const int pos_x = get_global_id(0);
+  const int pos_y = get_global_id(1);
+
+  CL_DTYPE4 in =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
+
+  CL_DTYPE4 out = in;
+  int outpos_base = out_w * pos_y + pos_x * 4;
+
+  output[outpos_base] = out.x;
+  if (pos_x * 4 + 1 < out_w) {
+    output[outpos_base + 1] = out.y;
+  }
+  if (pos_x * 4 + 2 < out_w) {
+    output[outpos_base + 2] = out.z;
+  }
+  if (pos_x * 4 + 3 < out_w) {
+    output[outpos_base + 3] = out.w;
+  }
+}
+
+////////////////////////////////////////////////////////
+// image2d_folder -> buffer
+////////////////////////////////////////////////////////
+__kernel void image2d_folder_to_buffer_half2float(__read_only image2d_t input,
+                                                  __global float* output,
+                                                  __private const int out_h,
+                                                  __private const int out_w) {
   const int pos_x = get_global_id(0);
   const int pos_y = get_global_id(1);
 

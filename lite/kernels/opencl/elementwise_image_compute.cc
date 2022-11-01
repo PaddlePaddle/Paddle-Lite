@@ -197,7 +197,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
     } else if (elementwise_compute_type == "elementwise_mod") {
       build_options_ += " -DOPERATOR(in,bias)=fmod(in,bias) ";
     } else if (elementwise_compute_type == "elementwise_floordiv") {
-      build_options_ += " -DOPERATOR(in,bias)=(int4)(in/bias) ";
+      build_options_ += " -DOPERATOR(in,bias)=trunc(in/bias) ";
     }
 
     if (ele_param_->fuse_scale) {
