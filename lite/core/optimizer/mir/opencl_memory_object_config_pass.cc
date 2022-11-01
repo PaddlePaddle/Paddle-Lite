@@ -334,6 +334,7 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
                                         "squeeze2",
                                         "squeeze",
                                         "split"};
+  std::vector<std::string> x86_host_ops{"arg_max"};
   auto& inst = x->AsStmt();
   auto new_place = inst.place();
   new_place.layout = DATALAYOUT(kNCHW);
@@ -354,16 +355,13 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
   }
 
   if (new_target == TARGET(kARM)) {
-    if (op_type.find("elementwise") != std::string::npos) {
-      auto tmp_ptype = in->AsArg().type->precision();
-      new_place.precision = tmp_ptype;
-    }
     if (std::find(arm_host_ops.begin(), arm_host_ops.end(), op_type) !=
         arm_host_ops.end()) {
       new_target = TARGET(kHost);
     }
   } else if (new_target == TARGET(kX86)) {
-    if (op_type.find("arg_max") != std::string::npos) {
+    if (std::find(x86_host_ops.begin(), x86_host_ops.end(), op_type) !=
+        x86_host_ops.end()) {
       new_target = TARGET(kHost);
     }
   }
@@ -402,6 +400,9 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
   std::stable_sort(scored.begin(), scored.end(), KernelScoreCmp);
   inst.kernels().clear();
   inst.kernels().emplace_back(std::move(scored.front().second));
+  for (auto&& kernel : inst.kernels()) {
+    VLOG(2) << "opencl last candidate kernel is: " << kernel->summary();
+  }
 }
 
 void OpenCLMemoryObjectConfigPass::SeparateOclMemoryObject(
