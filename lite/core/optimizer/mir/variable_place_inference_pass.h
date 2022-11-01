@@ -176,7 +176,8 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           }
         } else if (!(*var_type)->place().is_valid()) {
-          if (var.is_weight && with_targets["kMetal"]) {
+          if (var.is_weight &&
+              (with_targets["kMetal"] || with_targets["kXPU"])) {
             SetWeightType(in_node, **var_type, with_targets);
           } else if (decl_type->precision() == PRECISION(kInt8) ||
                      (decl_type->precision() == PRECISION(kFP16) &&
@@ -217,6 +218,10 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
+          }
+          if (with_targets["kXPU"]) {
+            var.is_weight = false;
+            var.is_persist = false;
           }
         }
       }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,29 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
+#include <memory>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUEmbeddingWithEltwiseAddCompute
+class SequenceSoftmaxCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUEmbeddingWithEltwiseAddParam;
+  using param_t = operators::SequenceSoftmaxParam;
 
   void PrepareForRun() override;
-
   void Run() override;
 
  private:
-  std::vector<const float*> arg_tables_;
-  std::vector<int> table_lens_cpu_;
-  int padding_idx_;
+  std::unique_ptr<int[]> lod_cpu_;
 };
 
 }  // namespace xpu

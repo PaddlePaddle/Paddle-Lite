@@ -51,7 +51,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
             reinterpret_cast<const int8_t*>(w_ptr),
             weight_dims,
-            w_trans,
+            !w_trans,
             per_channel_ ? param.weight_max.size() : max_ptr_size);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_weight_max_ptr should't be null";
@@ -83,7 +83,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
             reinterpret_cast<const int16_t*>(w_ptr),
             weight_dims,
-            w_trans,
+            !w_trans,
             max_ptr_size);
     std::vector<float> cpu_w_max(max_ptr_size, param.weight_max[0]);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
@@ -102,7 +102,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
 
   xpu_quant_weight_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-          w_ptr, weight_dims, w_trans, max_ptr_size);
+          w_ptr, weight_dims, !w_trans, max_ptr_size);
   if (std::is_same<TW, float>::value) {
     VLOG(6) << "If fc compute precision is int31,must check weight max should "
                "be null ";
@@ -133,8 +133,11 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
 
   bool x_trans = param.transpose_x;
   bool w_trans = param.transpose_w;
+  if (w_trans) {
+    n = param.w->dims()[0];
+  }
   int ldx = (x_trans ? m : k);
-  int ldw = (w_trans ? k : n);
+  int ldw = k;
   int ldy = n;
 
   float* output_max =
@@ -168,14 +171,14 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                         // n
         k,                                                         // k
         x_trans,                                                   // x_trans
-        w_trans,                                                   // w_trans
+        true,                                                      // w_trans
         input_max,                                                 // x_maxptr
         nullptr,                                                   // w_maxptr
         output_max,                                                // y_maxptr
         ldx,                                                       // ldx
         ldw,                                                       // ldw
         ldy,                                                       // ldy
-        1.0f,                                                      // alpha
+        param.alpha,                                               // alpha
         0.0f,                                                      // beta
         bias,                                                      // bias
         reinterpret_cast<const float*>(
@@ -191,14 +194,14 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
         n,                                                           // n
         k,                                                           // k
         x_trans,                                                     // x_trans
-        w_trans,                                                     // w_trans
+        true,                                                        // w_trans
         input_max,                                                   // x_maxptr
         reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
         output_max,                                                  // y_maxptr
         ldx,                                                         // ldx
         ldw,                                                         // ldw
         ldy,                                                         // ldy
-        1.0f,                                                        // alpha
+        param.alpha,                                                 // alpha
         0.0f,                                                        // beta
         bias,                                                        // bias
         act);
