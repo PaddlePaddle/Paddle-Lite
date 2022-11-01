@@ -88,12 +88,14 @@ class IoCopyHostToOpenCLCompute
   }
 #endif
   void PrepareForRun() override {
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/precision_cast_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    if (fp16_support_) {
+      VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+      auto& context = ctx_->As<OpenCLContext>();
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "buffer/precision_cast_kernel.cl",
+                                      build_options_,
+                                      time_stamp_);
+    }
   }
 
   void Run() override {
@@ -197,12 +199,14 @@ class IoCopykOpenCLToHostCompute
   }
 #endif
   void PrepareForRun() override {
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/precision_cast_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    if (fp16_support_) {
+      VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+      auto& context = ctx_->As<OpenCLContext>();
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "buffer/precision_cast_kernel.cl",
+                                      build_options_,
+                                      time_stamp_);
+    }
   }
 
   void Run() override {
