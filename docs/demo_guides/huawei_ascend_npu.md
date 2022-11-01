@@ -490,7 +490,7 @@ $ npu-smi info
 
     CANN 早期版本实现的不是真正意义上的动态 shape，而是基于档位方式提供有限的模型输入 shape 范围。
 
-    **使用方式：**假设模型有三个输入，输入名分别为 x1、x2 和 x3（模型实际输入名需用 Netron 可视化模型后查看），模型想在 64，128，192，224 四个档位下推理。
+    **使用方式：** 假设模型有三个输入，输入名分别为 x1、x2 和 x3（模型实际输入名需用 Netron 可视化模型后查看），模型想在 64，128，192，224 四个档位下推理。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -507,7 +507,7 @@ $ npu-smi info
 
     在最新的 CANN 版本，昇腾提供了 Shape Range 特性，实现了更广泛意义上的动态 shape。但该特性还未成熟，调通的模型有限，开发者若有兴趣可自行尝试。
 
-    **使用方式一：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
+    **使用方式一：** 假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
 
     下例表示 x1 输入的最后一个维度在[100,150]的范围变化，x2 输入的最后一个维度在[25,50]的范围变化。
 
@@ -523,7 +523,7 @@ $ npu-smi info
     mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
     ```
 
-    **使用方式二：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置输入 shape 范围时，如果用户不想指定维度的取值，则可以将其设置为-1，表示此维度可以使用>=1的任意取值，需设置nnadapter_context_properties，开启DYNAMIC_SHAPE_RANGE特性。
+    **使用方式二：** 假设模型有两个输入，输入名分别为 x1 和 x2 ，设置输入 shape 范围时，如果用户不想指定维度的取值，则可以将其设置为-1，表示此维度可以使用>=1的任意取值，需设置nnadapter_context_properties，开启DYNAMIC_SHAPE_RANGE特性。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -532,7 +532,7 @@ $ npu-smi info
     std::map<std::string, std::vector<std::vector<int64_t>>> dynamic_shape_info;
     std::string nnadapter_context_properties = "HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE=true"
     dynamic_shape_info["x1"] = {{1,3,32,-1}};
-    dynamic_shape_info["x2"] = {{1,3,-1};
+    dynamic_shape_info["x2"] = {{1,3,-1}};
     mobile_config.set_nnadapter_dynamic_shape_info(dynamic_shape_info);
     mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
     ```
