@@ -689,7 +689,7 @@ TEST(Activation_sigmoid, precision) {
 }
 
 TEST(Activation_sigmoid, performance) {
-  Place place(TARGET(kARM), PRECISION(kFloat));
+  Place place(TARGET(kARM));
   float abs_error = 2e-5;
 
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 640, 640}}) {
