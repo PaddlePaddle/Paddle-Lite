@@ -338,7 +338,6 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
   auto& inst = x->AsStmt();
   auto new_place = inst.place();
   new_place.layout = DATALAYOUT(kNCHW);
-  auto in = x->inlinks.front();
   const auto& op_type = inst.op_type();
 
   new_place.precision = PRECISION(kFloat);
