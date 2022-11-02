@@ -56,8 +56,8 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "Unsupported for op output var containing multiple producers";
+      VLOG(5) << "WARNING: Unsupported for op output var containing multiple "
+                 "producers";
       continue;
     }
     std::set<const Node*> nodes2rm_;
@@ -68,24 +68,24 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
          !op_desc->Input("ValueTensor").empty()) ||
         (op_desc->HasInput("str_value") &&
          !op_desc->GetAttr<std::string>("str_value").empty())) {
-      LOG(WARNING) << "Unsupported ValueTensor input or str_value input for "
-                      "fill_contant op.";
+      VLOG(5) << "WARNING: Unsupported ValueTensor input or str_value input "
+                 "for fill_contant op.";
       continue;
     } else if (!op_desc->HasAttr("value")) {
-      LOG(WARNING)
-          << "One of ValueTensor, str_value(attr) or value(attr) must be set.";
+      VLOG(5) << "WARNING: One of ValueTensor, str_value(attr) or value(attr) "
+                 "must be set.";
       continue;
     }
     if ((op_desc->HasInput("ShapeTensor") &&
          !op_desc->Input("ShapeTensor").empty()) ||
         (op_desc->HasInput("ShapeTensorList") &&
          !op_desc->Input("ShapeTensorList").empty())) {
-      LOG(WARNING) << "Unsupported ShapeTensor or ShapeTensorList input for "
-                      "fill_contant op.";
+      VLOG(5) << "WARNING: Unsupported ShapeTensor or ShapeTensorList input "
+                 "for fill_contant op.";
       continue;
     } else if (!op_desc->HasAttr("shape")) {
-      LOG(WARNING)
-          << "One of ShapeTensor, ShapeTensorList or shape(attr) must be set.";
+      VLOG(5) << "WARNING: One of ShapeTensor, ShapeTensorList or shape(attr) "
+                 "must be set.";
       continue;
     }
     // Get fill_constant's attr
@@ -110,7 +110,7 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
         FillConstData<float>(out_t, static_cast<float>(value));
         break;
       default:
-        LOG(WARNING) << "Unsupported dtype for fill_constant op: " << dtype;
+        VLOG(5) << "WARNING: Unsupported dtype for fill_constant op: " << dtype;
         continue;
     }
     // Offline calc fill_constant, only retain output tensor as persistable

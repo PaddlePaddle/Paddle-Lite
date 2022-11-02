@@ -22,6 +22,13 @@ namespace kunlunxin_xtcl {
 
 int ConvertConcat(Converter* converter, core::Operation* operation) {
   CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  auto dims_count_0 = input_operands[0]->type.dimensions.count;
+  for (int i = 1; i < input_count - 1; i++) {
+    auto dims_count = input_operands[i]->type.dimensions.count;
+    NNADAPTER_CHECK_EQ(dims_count_0, dims_count)
+        << "Expect all inputs have the same dimensions count, but receive: "
+        << dims_count_0 << ", " << dims_count;
+  }
 
   // Convert to XTCL exprs
   auto N = input_count - 1;

@@ -38,16 +38,7 @@ std::map<Type, std::string> TypeStr{
 
 StatisUnit::StatisUnit(const OpCharacter& ch) : character(ch) {
   create_t.reset(new DeviceTimer<TargetType::kHost>());
-  if (ch.target == TargetType::kCUDA) {
-#ifdef LITE_WITH_CUDA
-    dispatch_t.reset(new DeviceTimer<TargetType::kCUDA>());
-#else
-    LOG(ERROR) << "The timer type specified as cuda is uninitialized, so the "
-                  "default x86 timer is used instead.";
-#endif
-  } else {
-    dispatch_t.reset(new DeviceTimer<TargetType::kHost>());
-  }
+  dispatch_t.reset(new DeviceTimer<TargetType::kHost>());
 }
 
 lite::profile::Timer* StatisUnit::Timer(Type type) {

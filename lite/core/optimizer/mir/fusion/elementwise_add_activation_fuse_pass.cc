@@ -68,7 +68,6 @@ REGISTER_MIR_PASS(lite_elementwise_activation_fuse_pass,
                   paddle::lite::mir::ElementwiseActivationFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
-    .ExcludeTargets({TARGET(kBM)})
     .ExcludeTargets({TARGET(kNNAdapter)})
     .BindKernel("fusion_elementwise_add_activation")
     .BindKernel("fusion_elementwise_sub_activation");

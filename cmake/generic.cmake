@@ -19,11 +19,11 @@
 #
 #
 # -------------------------------------------
-#     C++        CUDA C++       Go
+#     C++         Go
 # -------------------------------------------
-# cc_library    nv_library   go_library
-# cc_binary     nv_binary    go_binary
-# cc_test       nv_test      go_test
+# cc_library    go_library
+# cc_binary     go_binary
+# cc_test       go_test
 # -------------------------------------------
 #
 # To build a static library example.a from example.cc using the system
@@ -40,11 +40,6 @@
 #
 #   cc_library(example SHARED SRCS example.cc)
 #
-# To build a library using Nvidia's NVCC from .cu file(s), use the nv_
-# prefixed version:
-#
-#   nv_library(example SRCS example.cu)
-#
 # To specify that a library new_example.a depends on other libraies:
 #
 #   cc_library(new_example SRCS new_example.cc DEPS example)
@@ -58,19 +53,10 @@
 #
 #   cc_binary(example SRCS main.cc something.cc DEPS example1 example2)
 #
-# To build an executable binary file using NVCC, use the nv_ prefixed
-# version:
-#
-#   nv_binary(example SRCS main.cc something.cu DEPS example1 example2)
-#
 # To build a unit test binary, which is an executable binary with
 # GoogleTest linked:
 #
 #   cc_test(example_test SRCS example_test.cc DEPS example)
-#
-# To build a unit test binary using NVCC, use the nv_ prefixed version:
-#
-#   nv_test(example_test SRCS example_test.cu DEPS example)
 #
 # It is pretty often that executable and test binaries depend on
 # pre-defined external libaries like glog and gflags defined in
@@ -367,83 +353,10 @@ function(cc_test TARGET_NAME)
     set_property(TEST ${TARGET_NAME} PROPERTY ENVIRONMENT FLAGS_cpu_deterministic=true)
     set_property(TEST ${TARGET_NAME} PROPERTY ENVIRONMENT FLAGS_init_allocated_mem=true)
     set_property(TEST ${TARGET_NAME} PROPERTY ENVIRONMENT FLAGS_limit_of_tmp_allocation=4294967296) # 4G
-    set_property(TEST ${TARGET_NAME} PROPERTY ENVIRONMENT FLAGS_cudnn_deterministic=true)
     # No unit test should exceed 10 minutes.
     set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 600)
   endif()
 endfunction(cc_test)
-
-function(nv_library TARGET_NAME)
-  if (LITE_WITH_CUDA)
-    set(options STATIC static SHARED shared)
-    set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS)
-    cmake_parse_arguments(nv_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    if(nv_library_SRCS)
-      if (nv_library_SHARED OR nv_library_shared) # build *.so
-        cuda_add_library(${TARGET_NAME} SHARED ${nv_library_SRCS})
-      else()
-        cuda_add_library(${TARGET_NAME} STATIC ${nv_library_SRCS})
-        find_fluid_modules(${TARGET_NAME})
-      endif()
-      if (nv_library_DEPS)
-        add_dependencies(${TARGET_NAME} ${nv_library_DEPS})
-        target_link_libraries(${TARGET_NAME} ${nv_library_DEPS})
-      endif()
-      # cpplint code style
-      foreach(source_file ${nv_library_SRCS})
-        string(REGEX REPLACE "\\.[^.]*$" "" source ${source_file})
-        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
-          list(APPEND nv_library_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
-        endif()
-      endforeach()
-    else(nv_library_SRCS)
-      if (nv_library_DEPS)
-        merge_static_libs(${TARGET_NAME} ${nv_library_DEPS})
-      else()
-        message(FATAL "Please specify source file or library in nv_library.")
-      endif()
-    endif(nv_library_SRCS)
-  endif()
-endfunction(nv_library)
-
-function(nv_binary TARGET_NAME)
-  if (LITE_WITH_CUDA)
-    set(options "")
-    set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS)
-    cmake_parse_arguments(nv_binary "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    cuda_add_executable(${TARGET_NAME} ${nv_binary_SRCS})
-    target_link_libraries(${TARGET_NAME} ${CUDNN_LIBRARY} ${CUBLAS_LIBRARIES})
-    get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-    target_link_libraries(${TARGET_NAME} ${os_dependency_modules})
-    if(nv_binary_DEPS)
-      target_link_libraries(${TARGET_NAME} ${nv_binary_DEPS})
-      add_dependencies(${TARGET_NAME} ${nv_binary_DEPS})
-      common_link(${TARGET_NAME})
-    endif()
-  endif()
-endfunction(nv_binary)
-
-function(nv_test TARGET_NAME)
-  if (LITE_WITH_CUDA AND WITH_TESTING)
-    set(options SERIAL)
-    set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS)
-    cmake_parse_arguments(nv_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    cuda_add_executable(${TARGET_NAME} ${nv_test_SRCS})
-    get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-    target_link_libraries(${TARGET_NAME} ${nv_test_DEPS} core gtest
-       gflags glog ${os_dependency_modules} ${CUDNN_LIBRARY} ${CUBLAS_LIBRARIES} )
-    add_dependencies(${TARGET_NAME} ${nv_test_DEPS} core gtest gflags glog)
-    common_link(${TARGET_NAME})
-    add_test(${TARGET_NAME} ${TARGET_NAME})
-    if (nv_test_SERIAL)
-        set_property(TEST ${TARGET_NAME} PROPERTY RUN_SERIAL 1)
-    endif()
-  endif()
-endfunction(nv_test)
-
 
 # Modification of standard 'protobuf_generate_cpp()' with protobuf-lite support
 # Usage:

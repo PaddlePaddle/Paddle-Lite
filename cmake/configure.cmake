@@ -64,32 +64,7 @@ if(WIN32)
 
 endif(WIN32)
 
-if(LITE_WITH_CUDA)
-    add_definitions(-DLITE_WITH_CUDA)
-    add_definitions(-DEIGEN_USE_GPU)
-
-    FIND_PACKAGE(CUDA REQUIRED)
-
-    if(${CUDA_VERSION_MAJOR} VERSION_LESS 7)
-        message(FATAL_ERROR "Paddle needs CUDA >= 7.0 to compile")
-    endif()
-
-    if(NOT CUDNN_FOUND)
-        message(FATAL_ERROR "Paddle needs cudnn to compile")
-    endif()
-    if(CUPTI_FOUND)
-        include_directories(${CUPTI_INCLUDE_DIR})
-        add_definitions(-DPADDLE_WITH_CUPTI)
-    else()
-        message(STATUS "Cannot find CUPTI, GPU Profiling is incorrect.")
-    endif()
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "-Xcompiler ${SIMD_FLAG}")
-
-    # Include cuda and cudnn
-    include_directories(${CUDNN_INCLUDE_DIR})
-    include_directories(${CUDA_TOOLKIT_INCLUDE})
-
-elseif(WITH_AMD_GPU)
+if(WITH_AMD_GPU)
     add_definitions(-DPADDLE_WITH_HIP)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__HIP_PLATFORM_HCC__")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__HIP_PLATFORM_HCC__")
@@ -170,10 +145,6 @@ if (WITH_ARM_DOTPROD)
     add_definitions("-DWITH_ARM_DOTPROD")
 endif()
 
-if (LITE_WITH_NPU)
-    add_definitions("-DLITE_WITH_NPU")
-endif()
-
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
 endif()
@@ -188,19 +159,6 @@ if (LITE_WITH_METAL)
     find_library(MPS_LIBRARY MetalPerformanceShaders REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation)
     add_definitions("-DLITE_WITH_METAL")
-endif()
-
-
-if (LITE_WITH_FPGA)
-add_definitions("-DLITE_WITH_FPGA")
-endif()
-
-if (LITE_WITH_INTEL_FPGA)
-add_definitions("-DLITE_WITH_INTEL_FPGA")
-endif()
-
-if (LITE_WITH_BM)
-add_definitions("-DLITE_WITH_BM")
 endif()
 
 if (LITE_WITH_NNADAPTER)
