@@ -117,6 +117,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
