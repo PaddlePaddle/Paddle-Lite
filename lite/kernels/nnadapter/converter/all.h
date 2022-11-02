@@ -472,7 +472,7 @@ REGISTER_CONVERTER(
 REGISTER_CONVERTER(meshgrid,
                    ConvertMeshgrid,
                    "huawei_ascend_npu,kunlunxin_xtcl");
-REGISTER_CONVERTER(sqrt, ConvertSqrt, "intel_openvino");
+REGISTER_CONVERTER(sqrt, ConvertSqrt, "intel_openvino,huawei_ascend_npu");
 REGISTER_CONVERTER(square,
                    ConvertUnaryActivations,
                    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl");
