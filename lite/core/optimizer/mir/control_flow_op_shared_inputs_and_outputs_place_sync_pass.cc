@@ -27,6 +27,9 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+std::unordered_map<std::string, const Type*>
+    ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::ref_var_types_{};
+
 void CheckAndSyncTypeOfVarNode(
     Node* sub_var_node,
     const std::unordered_map<std::string, const Type*>& ref_var_types) {
@@ -56,13 +59,12 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
     int sub_block_idx = op_info->GetAttr<int32_t>("sub_block");
     CHECK_GE(sub_block_idx, 0);
     CHECK_LT(sub_block_idx, block_size);
-    std::unordered_map<std::string, const Type*> ref_var_types;
     for (auto* var_node : op_node->inlinks) {
       CHECK(var_node->IsArg());
       if (var_node->inlinks.empty()) continue;
       auto& var_name = var_node->AsArg().name;
-      if (!ref_var_types.count(var_name)) {
-        ref_var_types.insert(std::pair<std::string, const Type*>(
+      if (!ref_var_types_.count(var_name)) {
+        ref_var_types_.insert(std::pair<std::string, const Type*>(
             var_name, var_node->AsArg().type));
       }
     }
@@ -72,21 +74,22 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
          (*graphs_)[sub_block_idx]->StmtTopologicalOrder()) {
       if (!sub_op_node->IsStmt()) continue;
       for (auto* sub_var_node : sub_op_node->inlinks) {
-        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
+        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types_);
       }
       for (auto* sub_var_node : sub_op_node->outlinks) {
         auto& var_name = sub_var_node->AsArg().name;
-        if (!ref_var_types.count(var_name)) {
-          ref_var_types.insert(std::pair<std::string, const Type*>(
+        if (!ref_var_types_.count(var_name)) {
+          ref_var_types_.insert(std::pair<std::string, const Type*>(
               var_name, sub_var_node->AsArg().type));
         }
+        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types_);
       }
     }
 
     // sync output var
     for (auto* var_node : op_node->outlinks) {
       CHECK(var_node->IsArg());
-      CheckAndSyncTypeOfVarNode(var_node, ref_var_types);
+      CheckAndSyncTypeOfVarNode(var_node, ref_var_types_);
     }
   }
 }

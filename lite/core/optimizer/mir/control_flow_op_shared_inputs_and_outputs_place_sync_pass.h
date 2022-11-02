@@ -86,6 +86,7 @@ class ControlFlowOpSharedInputsAndOutputsPlaceSyncPass : public mir::StmtPass {
 
  private:
   std::vector<std::unique_ptr<mir::SSAGraph>> *graphs_;
+  static std::unordered_map<std::string, const Type *> ref_var_types_;
 };
 
 }  // namespace mir
