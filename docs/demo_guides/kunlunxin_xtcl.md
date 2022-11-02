@@ -194,7 +194,51 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
       - ssd_detection_demo # 基于 ssd 的目标检测示例程序
   ```
 
-#### 更新支持昆仑芯XTCL的Paddle Lite库
+#### 编译示例程序
+- 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
+- 编译示例程序
+
+  ```shell
+  # amd64
+  $ ./build.sh linux amd64
+  # arm64
+  $ ./build.sh linux arm64
+  ```
+
+#### 运行示例程序
+- 执行以下命令比较 mobilenet_v1_fp32_224 模型的性能和结果；
+  ```shell
+  #运行 mobilenet_v1_fp32_224 模型
+
+  For amd64
+  (intel x86 cpu only)
+  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
+
+  (intel x86 cpu + kunlunxin xtcl)
+  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 kunlunxin_xtcl
+
+   For arm64
+  (arm cpu only)
+  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
+
+  (arm cpu + kunlunxin xtcl)
+  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 kunlunxin_xtcl
+  ```
+
+- 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
+
+  ```shell
+  (intel x86 cpu + kunlunxin xtcl)
+  $ ./run.sh resnet50_fp32_224 linux amd64 kunlunxin_xtcl
+
+  (arm cpu + kunlunxin xtcl)
+  $ ./run.sh resnet50_fp32_224 linux arm64 kunlunxin_xtcl
+  ```
+
+- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
+
+
+### 更新支持昆仑芯XTCL的Paddle Lite库
 
 - 下载 Paddle Lite 源码
   ```shell
@@ -252,50 +296,6 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
     # 替换 libpaddle_light_api_shared.so
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
     ```
-
-#### 编译示例程序
-- 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
-- 编译示例程序
-
-  ```shell
-  # amd64
-  $ ./build.sh linux amd64
-  # arm64
-  $ ./build.sh linux arm64
-  ```
-
-#### 运行示例程序
-- 执行以下命令比较 mobilenet_v1_fp32_224 模型的性能和结果；
-
-  ```shell
-  #运行 mobilenet_v1_fp32_224 模型
-
-  For amd64
-  (intel x86 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
-
-  (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 kunlunxin_xtcl
-
-   For arm64
-  (arm cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
-
-  (arm cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 kunlunxin_xtcl
-  ```
-
-- 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
-
-  ```shell
-  (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux amd64 kunlunxin_xtcl
-
-  (arm cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux arm64 kunlunxin_xtcl
-  ```
-
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
 
 ## 高级特性
 本节主要说明在不同的昆仑芯AI加速卡上如何设置不同的参数。以下列出了paddle lite下支持的两种高级参数。
