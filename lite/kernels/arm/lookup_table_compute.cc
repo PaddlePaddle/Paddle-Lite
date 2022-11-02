@@ -70,10 +70,10 @@ void LookupTableCompute<T_W, T_IDS>::Run() {
         memcpy(dout + i * row_width, table_data, row_width * sizeof(float));
       }
 #else
-      auto table_data = w->template data<float>();
+      auto table_data = w->template data<T_W>();
       memcpy(dout + i * row_width,
              table_data + ids_int * row_width,
-             row_width * sizeof(float));
+             row_width * sizeof(T_W));
 #endif
     }
   }

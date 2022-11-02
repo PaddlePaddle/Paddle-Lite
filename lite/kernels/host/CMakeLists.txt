@@ -117,6 +117,7 @@ add_kernel(merge_lod_tensor_compute Host extra SRCS merge_lod_tensor_compute.cc)
 add_kernel(im2sequence_compute Host extra SRCS im2sequence_compute.cc)
 add_kernel(log_softmax_compute Host extra SRCS log_softmax_compute.cc)
 add_kernel(roll_compute Host extra SRCS roll_compute.cc)
+add_kernel(dequantize_log_compute Host extra SRCS dequantize_log_compute.cc)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)
