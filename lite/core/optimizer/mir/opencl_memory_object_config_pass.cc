@@ -287,6 +287,10 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
           }
         }
       }
+
+      // 7. reshape change target
+      if (op_type == "reshape" || op_type == "reshape2")
+        change_image2d_to_buffer = true;
     }
 
     if (change_image2d_to_cpu) {
