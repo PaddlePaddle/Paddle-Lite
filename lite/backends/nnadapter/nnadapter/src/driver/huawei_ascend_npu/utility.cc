@@ -518,6 +518,7 @@ void InitializeGraphBuilder(AscendConfigParams* config_params) {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
+#ifndef NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC
     int major_version = 0, minor_version = 0, patch_version = 0;
     GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
     auto current_version =
@@ -539,6 +540,7 @@ void InitializeGraphBuilder(AscendConfigParams* config_params) {
           << ", but the current environment version is " << current_version
           << ".";
     }
+#endif
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
     ge::AscendString soc_name;
