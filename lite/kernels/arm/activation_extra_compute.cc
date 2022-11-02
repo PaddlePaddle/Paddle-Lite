@@ -297,8 +297,8 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     swish, kARM, kFP16, kNCHW, paddle::lite::kernels::arm::SwishCompute<PRECISION(kFP16)>, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM), , PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), , PRECISION(kFP16))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
