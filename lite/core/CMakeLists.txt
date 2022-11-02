@@ -56,7 +56,6 @@ endif ()
 lite_cc_library(core SRCS ${CORE_SRC}
   DEPS target_wrapper_host fbs_headers ${CORE_DEPS}
   X86_DEPS eigen3
-  CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper cl_context
   METAL_DEPS metal_target_wrapper

@@ -31,11 +31,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
    set(MODEL_PAESER_DEPS ${MODEL_PAESER_DEPS} framework_proto)
 endif()
 
-if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
-    set(MODEL_PARSER_SRC ${MODEL_PARSER_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.cc)
-endif()
-
-
 lite_cc_library(model_parser SRCS ${MODEL_PARSER_SRC} DEPS ${MODEL_PAESER_DEPS})
 add_dependencies(model_parser fbs_headers)
 
@@ -54,9 +49,4 @@ if(NOT LITE_ON_MOBILE AND NOT LITE_ON_TINY_PUBLISH)
     if(WITH_TESTING)
         add_dependencies(test_model_parser extern_lite_download_lite_naive_model_tar_gz)
     endif(WITH_TESTING)
-endif()
-
-
-if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
-    lite_cc_test(test_compatibility SRCS compatibility_test.cc)
 endif()

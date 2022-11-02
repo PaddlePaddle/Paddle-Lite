@@ -30,11 +30,6 @@ void* TargetMalloc(TargetType target, size_t size) {
     case TargetType::kARM:
       data = TargetWrapper<TARGET(kHost)>::Malloc(size);
       break;
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      data = TargetWrapper<TARGET(kCUDA)>::Malloc(size);
-      break;
-#endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       data = TargetWrapperCL::Malloc(size);
@@ -65,11 +60,6 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
       TargetWrapper<TARGET(kHost)>::Free(data);
       break;
 
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      TargetWrapper<TARGET(kCUDA)>::Free(data);
-      break;
-#endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       if (free_flag == "cl_use_image2d_") {
@@ -107,12 +97,6 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
           dst, src, size, IoDirection::DtoD);
       break;
 
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      TargetWrapper<TARGET(kCUDA)>::MemcpySync(
-          dst, src, size, IoDirection::DtoD);
-      break;
-#endif
 #ifdef LITE_WITH_XPU
     case TargetType::kXPU:
       TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);

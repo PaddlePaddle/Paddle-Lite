@@ -19,9 +19,6 @@
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/context.h"
 #endif
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/context.h"
-#endif
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
@@ -440,15 +437,6 @@ class ContextScheduler {
             &ctx->As<X86Context>());
         break;
 #endif
-#ifdef LITE_WITH_CUDA
-      case TARGET(kCUDA): {
-        int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
-        auto& context = ctx->As<CUDAContext>();
-        context.Init(dev_id, exec_stream_id);
-        kernel_contexts_[TargetType::kCUDA].As<CUDAContext>().CopySharedTo(
-            &context);
-      } break;
-#endif
 #ifdef LITE_WITH_ARM
       case TARGET(kARM):
         kernel_contexts_[TargetType::kARM].As<ARMContext>().CopySharedTo(
@@ -500,9 +488,6 @@ class ContextScheduler {
     InitContext<TargetType::kHost, HostContext>();
 #ifdef LITE_WITH_X86
     InitContext<TargetType::kX86, X86Context>();
-#endif
-#ifdef LITE_WITH_CUDA
-    InitContext<TargetType::kCUDA, CUDAContext>();
 #endif
 #ifdef LITE_WITH_ARM
     InitContext<TargetType::kARM, ARMContext>();

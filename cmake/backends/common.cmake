@@ -20,10 +20,6 @@ if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-if(LITE_WITH_CUDA)
-  include(cuda)
-endif()
-
 include(backends/x86)
 
 # Add dependencies
@@ -46,7 +42,6 @@ else()
   include(external/protobuf)    # download, build, install protobuf
   include(external/openblas)    # download, build, install openblas
   include(external/eigen)       # download eigen3
-  include(cudnn)
   include(ccache)               # set ccache for compilation
   include(util)                 # set unittest and link libs
   include(version)              # set PADDLE_VERSION

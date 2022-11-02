@@ -79,10 +79,7 @@ function build_npu {
     # NPU libs need API LEVEL 24 above
     prepare_workspace
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_JAVA=OFF \
         -DLITE_WITH_ARM=ON \
