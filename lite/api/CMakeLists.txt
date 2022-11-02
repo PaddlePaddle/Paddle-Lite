@@ -50,11 +50,6 @@ if(LITE_WITH_NNADAPTER)
     set(external_libs_DEPS ${external_libs_DEPS} ${nnadapter_deps})
 endif()
 # for light api
-if(LITE_WITH_CUDA)
-    get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
-    set(external_libs_DEPS ${external_libs_DEPS} target_wrapper_cuda)
-endif()
-
 
 lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${external_libs_DEPS})
 if(NOT LITE_ON_TINY_PUBLISH)
@@ -68,9 +63,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_full_api_shared SHARED SRCS ${FULL_API_SRC}
                   DEPS ${full_lib_DEPS} ${external_libs_DEPS} paddle_api_full)
     add_dependencies(paddle_full_api_shared fbs_headers)
-    if (LITE_WITH_CUDA)
-        target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
-    endif()
     if(LITE_WITH_METAL)
         target_link_libraries(paddle_full_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
     endif()

@@ -1,6 +1,5 @@
 include(lite)
 
-message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_SW:\t${LITE_WITH_SW}")
@@ -271,7 +270,7 @@ if (LITE_WITH_PYTHON)
     endif(WIN32)
 endif()
 
-if (LITE_WITH_CUDA OR LITE_WITH_X86)
+if (LITE_WITH_X86)
     if(APPLE)
         add_custom_target(publish_inference_cxx_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
@@ -305,12 +304,6 @@ if (LITE_WITH_CUDA OR LITE_WITH_X86)
             COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
             )
-        if (LITE_WITH_CUDA)
-            add_custom_target(publish_inference_third_party ${TARGET}
-                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-                    COMMAND cp -r "${PADDLE_BINARY_DIR}/third_party/install/*" "${INFER_LITE_PUBLISH_ROOT}/third_party")
-            add_dependencies(publish_inference publish_inference_third_party)
-        endif()
         add_dependencies(publish_inference_cxx_lib bundle_full_api)
         add_dependencies(publish_inference_cxx_lib bundle_light_api)
         add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
@@ -408,15 +401,6 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference publish_inference_x86_cxx_demos)
   endif()
 endif()
-
-if(LITE_WITH_CUDA)
-    add_custom_target(publish_inference_cuda_cxx_demos ${TARGET}
-           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-           COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/cuda_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-           )
-    add_dependencies(publish_inference_cuda_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_cuda_cxx_demos)
-endif(LITE_WITH_CUDA)
 
 if (LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)

@@ -28,7 +28,6 @@ namespace fluid {
 // range defined by a pair of iterators.
 //
 // - The specialization for CPU calls std::transform.
-// - The specialization for CUDA calls thrust::tranform.
 //
 // NOTE: We need to define InputIter and OutputIter defined as
 //       different types, because the InputIter points op's inputs and
