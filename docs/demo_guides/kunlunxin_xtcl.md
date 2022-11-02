@@ -135,7 +135,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 - 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译](../source_compile/linux_x86_compile_linux_x86.rst)或[ linux(ARM) 编译](../source_compile/arm_linux_compile_arm_linux.rst)中的``准备编译环境``进行环境配置
 
 ### 运行图像分类示例程序
-#### 下载示例程序
+
 - 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz),解压后清单如下：
 
   ```shell
@@ -194,21 +194,11 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
       - ssd_detection_demo # 基于 ssd 的目标检测示例程序
   ```
 
-#### 编译示例程序
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
-- 编译示例程序
 
-  ```shell
-  # amd64
-  $ ./build.sh linux amd64
-  # arm64
-  $ ./build.sh linux arm64
-  ```
-
-#### 运行示例程序
 - 执行以下命令比较 mobilenet_v1_fp32_224 模型的性能和结果；
   ```shell
-  #运行 mobilenet_v1_fp32_224 模型
+  运行 mobilenet_v1_fp32_224 模型
 
   For amd64
   (intel x86 cpu only)
@@ -237,6 +227,14 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 - 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
 
+- 如果需要重新编译示例程序，直接运行
+
+  ```shell
+  # amd64
+  $ ./build.sh linux amd64
+  # arm64
+  $ ./build.sh linux arm64
+  ```
 
 ### 更新支持昆仑芯XTCL的Paddle Lite库
 
