@@ -134,6 +134,50 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
   }
 }
 
+// swish: x /(1 + exp(-(b * x)))
+template <>
+void act_swish<float16_t>(const float16_t* din,
+                            float16_t* dout,
+                            int size,
+                            float coef,
+                            int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim8 = nums_per_thread >> 3;
+  int neon_loop_remain_dim8 = nums_per_thread - (neon_loop_cnt_dim8 << 3);
+  const float beta = coef;
+  float16x8_t vbeta = vdupq_n_f16(beta);
+  float16x8_t vone = vdupq_n_f16(1.f);
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
+    const float16_t* ptr_in_thread = din + i * nums_per_thread;
+    float16_t* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim8; ++k) {
+      float16x8_t va = vld1q_f16(ptr_in_thread); //x
+      float16x8_t vb = vnegq_f16(vld1q_f16(ptr_in_thread)); //-x
+      float16x8_t vsum = vmulq_f16(vb, vbeta);
+      vsum = exp_ps(vsum);
+      float16x8_t vc = vaddq_f16(vone, vsum);
+      float16x8_t vrst = vdivq_f16(va, vc);
+      vst1q_f16(ptr_out_thread, vrst);
+      ptr_out_thread += 8;
+      ptr_in_thread += 8;
+    }
+    for (int j = 0; j < neon_loop_remain_dim8; ++j) {
+      ptr_out_thread[0] = ptr_in_thread[0] / (1 + expf(-ptr_in_thread[0] * beta));
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  LITE_PARALLEL_END();
+  float16_t* ptr_out = dout + threads * nums_per_thread;
+  const float16_t* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = ptr_in[0] / (1 + expf(-ptr_in[0]));
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 template <>
 void act_hard_swish<float16_t>(const float16_t* din,
                                float16_t* dout,
