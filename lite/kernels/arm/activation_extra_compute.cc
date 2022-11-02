@@ -296,9 +296,9 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     swish, kARM, kFP16, kNCHW, paddle::lite::kernels::arm::SwishCompute<PRECISION(kFP16)>, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM), , PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), , PRECISION(kFP16))})
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
@@ -315,9 +315,9 @@ REGISTER_LITE_KERNEL(relu_clipped,
 
 REGISTER_LITE_KERNEL(
     swish, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SwishCompute<PRECISION(kFloat)>, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     log, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::LogCompute, def)
