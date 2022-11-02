@@ -78,6 +78,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
   demo_guides/kunlunxin_xpu
+  demo_guides/kunlunxin_xtcl
   demo_guides/qualcomm_qnn
   demo_guides/cambricon_mlu
   demo_guides/verisilicon_timvx
