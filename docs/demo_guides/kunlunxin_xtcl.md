@@ -123,7 +123,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ### 测试设备( 昆仑芯AI加速卡R200)
 
-<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 50%;" />
+<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 33%;" />
 
 ### 准备设备环境
 
