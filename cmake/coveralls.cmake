@@ -76,11 +76,7 @@ if(WITH_COVERAGE)
         ".test_env/"
     )
 
-    if(WITH_GPU)
-        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${PROJECT_SOURCE_DIR}" "*.cpp" "*.cc" ".c" "*.cu")
-    else()
-        file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${PROJECT_SOURCE_DIR}" "*.cpp" "*.cc" "*.c")
-    endif()
+    file(GLOB_RECURSE PADDLE_SOURCES RELATIVE "${PROJECT_SOURCE_DIR}" "*.cpp" "*.cc" "*.c")
 
     # exclude trivial files in PADDLE_SOURCES
     foreach(EXCLUDE_DIR ${EXCLUDE_DIRS})

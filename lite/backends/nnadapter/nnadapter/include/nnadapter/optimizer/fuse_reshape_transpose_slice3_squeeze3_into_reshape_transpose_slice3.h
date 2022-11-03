@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/memory.h"
-#include <gtest/gtest.h>
+#pragma once
 
-namespace paddle {
-namespace lite {
+#include "core/types.h"
 
-TEST(memory, test) {
-  auto* buf = TargetMalloc(TARGET(kX86), 10);
-  ASSERT_TRUE(buf);
-  TargetFree(TARGET(kX86), buf);
+namespace nnadapter {
 
-#ifdef LITE_WITH_OPENCL
-  auto* buf_cl = TargetMalloc(TARGET(kOpenCL), 10);
-  ASSERT_TRUE(buf_cl);
-  TargetFree(TARGET(kOpenCL), buf_cl);
-#endif
-}
+void FuseReshapeTransposeSlice3Squeeze3IntoReshapeTransposeSlice3(
+    core::Model* model);
 
-}  // namespace lite
-}  // namespace paddle
+}  // namespace nnadapter

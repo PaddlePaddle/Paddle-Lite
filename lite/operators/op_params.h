@@ -262,7 +262,6 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
-  bool use_cudnn{true};
   bool eleminate_success{false};
 };
 
@@ -417,19 +416,6 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
-
-#ifdef LITE_WITH_FPGA
-  lite::Tensor* scale{nullptr};
-  struct StrideInfo {
-    bool wd_enable_ = false;
-    int wd_offset_ = -1;
-    int fuse_idx_ = -1;
-    int original_out_channel_ = -1;
-    int start_idx_ = 0;
-    int end_idx_ = 0;
-  };
-  StrideInfo stride_info_;
-#endif
 
   // for int8
   WITH_INT8_CONFIG

@@ -22,6 +22,10 @@ namespace kunlunxin_xtcl {
 
 int ConvertTranspose(Converter* converter, core::Operation* operation) {
   TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  auto input_dims_count = input_operand->type.dimensions.count;
+  NNADAPTER_CHECK_EQ(input_dims_count, perm_count)
+      << "Dimension mismatch, input_dims_count: " << input_dims_count
+      << ", axes_dims_count: " << perm_count;
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);

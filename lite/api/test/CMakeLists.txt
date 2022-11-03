@@ -35,12 +35,6 @@ if(WITH_TESTING)
                ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
             add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
         endif()
-        if(LITE_WITH_BM)
-           lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
-              ARGS --model_dir=${LITE_MODEL_DIR}/classify)
-           lite_cc_test(test_yolov3_lite_bm SRCS test_yolov3_lite_bm.cc
-              ARGS --model_dir=${LITE_MODEL_DIR}/yolov3)
-        endif()
     endif()
 endif()
 
@@ -77,8 +71,6 @@ if(LITE_WITH_ARM AND WITH_TESTING)
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
-
-    lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc)
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)

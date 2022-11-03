@@ -95,7 +95,7 @@ void TestModel(const std::vector<Place>& valid_places,
   auto first_target = valid_places[0].target;
 
   float relative_err_max = 0.f;
-  if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
+  if (first_target == TARGET(kOpenCL)) {
     ASSERT_EQ(out->dims().production(), 1000);
     double eps = first_target == TARGET(kOpenCL) ? 0.13 : 0.1;
     for (int i = 0; i < ref.size(); ++i) {

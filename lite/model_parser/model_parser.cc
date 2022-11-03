@@ -304,10 +304,6 @@ void SaveModelPb(const std::string &model_dir,
       model_parser::pb::LoDTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
-      if (tensor.target() == TARGET(kCUDA)) {
-        LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
-                      "please copy it to the Host Tensor temporarily.";
-      }
       saver.ForwardWrite(tensor, &file);
     }
   }
@@ -335,10 +331,6 @@ void SaveCombinedParamsPb(const std::string &path,
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();
-    if (tensor.target() == TARGET(kCUDA)) {
-      LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
-                    "please copy it to the Host Tensor temporarily.";
-    }
     saver.ForwardWrite(tensor, &file);
   }
 }
@@ -386,30 +378,6 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
       << "Index overflow when writing tensor";
 
-#ifdef LITE_WITH_CUDA
-  if (tensor.target() == TARGET(kCUDA)) {
-    switch (tensor.precision()) {
-#define DO(precision, type)                                         \
-  case precision: {                                                 \
-    std::unique_ptr<type> tmp_buffer(new type[tensor.data_size()]); \
-    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),                 \
-                                  tensor.data<type>(),              \
-                                  tensor.data_size(),               \
-                                  IoDirection::DtoH);               \
-    desc.SetData<type>(tmp_buffer.get(), tensor.data_size());       \
-  } break;
-      DO(PRECISION(kFloat), float);
-      DO(PRECISION(kInt8), int8_t);
-      DO(PRECISION(kInt16), int16_t);
-      DO(PRECISION(kInt32), int32_t);
-      DO(PRECISION(kInt64), int64_t);
-#undef DO
-      default:
-        LOG(FATAL) << "unknown precision type: "
-                   << PrecisionToStr(tensor.precision());
-    }
-  } else  // NOLINT
-#endif    // LITE_WITH_CUDA
   {
     switch (tensor.precision()) {
 #define DO(precision, type)                                      \

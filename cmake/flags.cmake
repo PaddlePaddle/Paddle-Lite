@@ -59,17 +59,6 @@ macro(safe_set_cxxflag src_list flag_name)
     safe_set_flag(OFF ${src_list} ${flag_name})
 endmacro()
 
-# helper macro to set nvcc flag
-macro(safe_set_nvflag flag_name)
-    string(REPLACE "-" "_" safe_name ${flag_name})
-    string(REPLACE "=" "_" safe_name ${safe_name})
-    CHECK_C_COMPILER_FLAG(${flag_name} C_COMPILER_SUPPORT_FLAG_${safe_name})
-    set(safe_name C_COMPILER_SUPPORT_FLAG_${safe_name})
-    if(${safe_name})
-        LIST(APPEND CUDA_NVCC_FLAGS -Xcompiler ${flag_name})
-    endif()
-endmacro()
-
 macro(safe_set_static_flag) # set c_flags and cxx_flags to static or shared
     if (BUILD_SHARED_LIBS) 
         return() # if build shared libs, the flags keep same with '/MD'
@@ -163,7 +152,7 @@ set(GPU_COMMON_FLAGS
     -Wno-error=array-bounds # Warnings in Eigen::array
     -gencode arch=compute_62,code=sm_62
 )
-if(NOT LITE_WITH_CUDA AND NOT LITE_WITH_SW AND NOT EMSCRIPTEN)
+if(LITE_WITH_SW AND NOT EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 endif()
 endif(NOT WIN32)
@@ -192,10 +181,6 @@ foreach(flag ${COMMON_FLAGS})
     safe_set_cflag(CMAKE_C_FLAGS ${flag})
     safe_set_cxxflag(CMAKE_CXX_FLAGS ${flag})
 
-endforeach()
-
-foreach(flag ${GPU_COMMON_FLAGS})
-    safe_set_nvflag(${flag})
 endforeach()
 
 if(WIN32)

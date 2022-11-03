@@ -21,9 +21,6 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/target_wrapper.h"
-#endif
 #ifdef LITE_WITH_XPU
 #include <functional>
 #include <mutex>  // NOLINT
@@ -155,13 +152,6 @@ void Tensor::CopyFromCpu(const T *src_data) {
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
-  } else if (type == TargetType::kCUDA) {
-#ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
-#else
-    LOG(FATAL) << "Please compile the lib with CUDA.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -170,7 +160,7 @@ void Tensor::CopyFromCpu(const T *src_data) {
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
   } else {
-    LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM, kCUDA";
+    LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM";
   }
 }
 template <typename T>
@@ -185,13 +175,6 @@ void Tensor::CopyToCpu(T *data) const {
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
-  } else if (type == TargetType::kCUDA) {
-#ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
-#else
-    LOG(FATAL) << "Please compile the lib with CUDA.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -200,7 +183,7 @@ void Tensor::CopyToCpu(T *data) const {
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
   } else {
-    LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM, kCUDA";
+    LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM";
   }
 }
 
@@ -215,12 +198,6 @@ template void Tensor::CopyFromCpu<int64_t, TargetType::kARM>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
-
-template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
-template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
-template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
-template void Tensor::CopyFromCpu<uint8_t, TargetType::kCUDA>(const uint8_t *);
-template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
