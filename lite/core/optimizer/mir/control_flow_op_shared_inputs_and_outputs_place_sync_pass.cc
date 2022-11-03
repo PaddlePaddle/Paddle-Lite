@@ -27,9 +27,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-std::unordered_map<std::string, const Type*>
-    ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::ref_var_types_{};
-
 void CheckAndSyncTypeOfVarNode(
     Node* sub_var_node,
     const std::unordered_map<std::string, const Type*>& ref_var_types) {
@@ -53,18 +50,22 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
   auto block_size = graphs_->size();
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
+
     auto op_info = op_node->AsStmt().mutable_op_info();
     auto op_type = op_info->Type();
     if (!control_flow_op_types.count(op_type)) continue;
     int sub_block_idx = op_info->GetAttr<int32_t>("sub_block");
     CHECK_GE(sub_block_idx, 0);
     CHECK_LT(sub_block_idx, block_size);
+    std::unordered_map<std::string, const Type*> ref_var_types;
     for (auto* var_node : op_node->inlinks) {
       CHECK(var_node->IsArg());
-      if (var_node->inlinks.empty()) continue;
+      if (var_node->AsArg().is_weight) continue;
+      bool has_already_infer =
+          var_node->AsArg().type->target() == TargetType::kUnk ? false : true;
       auto& var_name = var_node->AsArg().name;
-      if (!ref_var_types_.count(var_name)) {
-        ref_var_types_.insert(std::pair<std::string, const Type*>(
+      if (has_already_infer && !ref_var_types.count(var_name)) {
+        ref_var_types.insert(std::pair<std::string, const Type*>(
             var_name, var_node->AsArg().type));
       }
     }
@@ -74,22 +75,22 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
          (*graphs_)[sub_block_idx]->StmtTopologicalOrder()) {
       if (!sub_op_node->IsStmt()) continue;
       for (auto* sub_var_node : sub_op_node->inlinks) {
-        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types_);
+        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
       }
       for (auto* sub_var_node : sub_op_node->outlinks) {
         auto& var_name = sub_var_node->AsArg().name;
-        if (!ref_var_types_.count(var_name)) {
-          ref_var_types_.insert(std::pair<std::string, const Type*>(
+        if (!ref_var_types.count(var_name)) {
+          ref_var_types.insert(std::pair<std::string, const Type*>(
               var_name, sub_var_node->AsArg().type));
         }
-        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types_);
+        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
       }
     }
 
     // sync output var
     for (auto* var_node : op_node->outlinks) {
       CHECK(var_node->IsArg());
-      CheckAndSyncTypeOfVarNode(var_node, ref_var_types_);
+      CheckAndSyncTypeOfVarNode(var_node, ref_var_types);
     }
   }
 }
