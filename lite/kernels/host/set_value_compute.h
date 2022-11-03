@@ -17,23 +17,12 @@
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/x86/elementwise_op_function.h"
+#include "lite/kernels/host/elementwise_op_func.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
-
-template <typename T,
-          size_t D,
-          int MajorType = Eigen::RowMajor,
-          typename IndexType = Eigen::DenseIndex>
-using EigenTensor = lite::fluid::EigenTensor<T, D, MajorType, IndexType>;
-
-template <typename T>
-struct SubtractFunctor {
-  inline T operator()(const T a, const T b) const { return a - b; }
-};
+namespace host {
 
 // check whether the tensor with dimension of second can assign to the
 // tensor with dimension of first
@@ -211,8 +200,43 @@ static inline std::vector<int64_t> GetDataFromTensorList(
   return vec_new_data;
 }
 
+template <typename T>
+void stride_slice_reverse_assign(T* input,
+                  T* out,
+                  std::vector<int64_t> in_dims,
+                  std::vector<int64_t> out_dims,
+                  std::vector<int64_t> starts_indices,
+                  std::vector<int64_t> ends_indices,
+                  std::vector<int64_t> strides_indices) {
+  size_t in_dims_size = in_dims.size();
+  std::vector<int> dst_step;
+  std::vector<int> src_step;
+  for (size_t i = 0; i < in_dims_size; ++i) {
+    dst_step.push_back(1);
+    src_step.push_back(1);
+  }
+  int out_num = out_dims[in_dims_size - 1];
+  for (int i = in_dims_size - 2; i >= 0; i--) {
+    dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
+    src_step[i] = in_dims[i + 1] * src_step[i + 1];
+    out_num *= out_dims[i];
+  }
+
+  for (int dst_id = 0; dst_id < out_num; dst_id++) {
+    int src_id = 0;
+    int index_id = dst_id;
+    for (size_t j = 0; j < out_dims.size(); j++) {
+      int cur_id = index_id / dst_step[j];
+      index_id = index_id % dst_step[j];
+      src_id += (cur_id * strides_indices[j] + starts_indices[j]) * src_step[j];
+    }
+    // out[dst_id] = input[src_id];
+    input[src_id] = out[dst_id];
+  }
+}
+
 template <typename D>
-class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
+class SetValueCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::SetValueParam;
 
@@ -258,7 +282,6 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
       slice_dims_for_assign = DDim(slice_dims_with_none);
     }
 
-    auto eigen_place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
     out->Resize(in_dims);
     out->CopyDataFrom(*input);
 
@@ -269,54 +292,29 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
     pad_tensor.Resize(in_dims);
     pad_tensor.mutable_data<T>();
 
-    auto pad_e = EigenTensor<T, RANK>::From(pad_tensor, in_dims);
-    auto out_e = EigenTensor<T, RANK>::From(*out);
-    auto slice_e = EigenTensor<T, RANK>::From(slice_tensor, slice_dims);
+    std::function<T (T, T)> SubFunc = naive_sub<T>;
+
     // Step 1: Set the value of out at `_index` to zero
-    slice_e.device(eigen_place) = slice_e.constant(T(0));
-
-    auto starts_indices = Eigen::DSizes<Eigen::DenseIndex, RANK>();
-    auto ends_indices = Eigen::DSizes<Eigen::DenseIndex, RANK>();
-    auto strides_indices = Eigen::DSizes<Eigen::DenseIndex, RANK>();
-
-    for (size_t i = 0; i < RANK; ++i) {
-      starts_indices[i] = 0;
-      ends_indices[i] = slice_dims[i];
-      strides_indices[i] = 1;
-    }
-    for (size_t i = 0; i < axes.size(); i++) {
-      int axis_index = axes[i];
-      starts_indices[axis_index] = starts[i];
-      ends_indices[axis_index] = ends[i];
-      strides_indices[axis_index] = steps[i];
-      if (starts[i] == ends[i]) {  // slice is empty, data will not be changed
-        return;
-      }
-    }
-
-    out_e.stridedSlice(starts_indices, ends_indices, strides_indices)
-        .device(eigen_place) = slice_e;
+    memset(slice_tensor.mutable_data<T>(), 0, slice_tensor.memory_size());
+    stride_slice_reverse_assign(out->mutable_data<T>(), slice_tensor.mutable_data<T>(), in_dims.data(), slice_dims.data(), starts, ends, steps); 
 
     // Step 2: Set a tensor with the same shape as out tensor. And its data at
     // '_index' is the same as value, and data out of '_index' to zero
     slice_tensor.Resize(slice_dims_for_assign);
     CheckIsDimsMatch(slice_dims_for_assign, value->dims());
     // ElementwiseComputeEx can do broadcasting
-    ElementwiseComputeEx<SubtractFunctor<T>, lite::TargetType::kX86, T, T>(
-        ctx_->As<X86Context>(),
-        &slice_tensor,
-        value,
-        -1,
-        SubtractFunctor<T>(),
-        &slice_tensor);
+    auto batch_arg0 =
+        lite::kernels::host::GenBatchElementWiseArg<T>(&slice_tensor, value, &slice_tensor);
+    common_elmentwise_op_naive_cpu(batch_arg0, SubFunc);
     slice_tensor.Resize(slice_dims);
     // - Step 2.2 Pad slice tensor with 0
-    pad_e.device(eigen_place) = pad_e.constant(T(0));
-    pad_e.stridedSlice(starts_indices, ends_indices, strides_indices)
-        .device(eigen_place) = slice_e;
+    memset(pad_tensor.mutable_data<T>(), 0, pad_tensor.memory_size());
+    stride_slice_reverse_assign(pad_tensor.mutable_data<T>(), slice_tensor.mutable_data<T>(), in_dims.data(), slice_dims.data(), starts, ends, steps);
+
     // Step 3: Set out tensor with value
-    out->mutable_data<T>();
-    out_e.device(eigen_place) = out_e - pad_e;
+    auto batch_arg1 =
+        lite::kernels::host::GenBatchElementWiseArg<T>(out, &pad_tensor, out);
+    common_elmentwise_op_naive_cpu(batch_arg1, SubFunc);
   }
 
   template <typename T>
@@ -390,7 +388,7 @@ class SetValueCompute : public KernelLite<TARGET(kX86), PRECISION(kAny)> {
   virtual ~SetValueCompute() = default;
 };
 
-}  // namespace x86
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

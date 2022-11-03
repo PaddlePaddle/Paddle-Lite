@@ -18,6 +18,7 @@
 #include <functional>
 #include <utility>
 #include <vector>
+#include <cmath>
 
 namespace paddle {
 namespace lite {
@@ -410,6 +411,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
       }
       break;
     }
+
     default: {
       return;  // code should never goes to here
     }
@@ -524,6 +526,9 @@ void common_elmentwise_op_naive_cpu(
                                     op);
       }
       break;
+    }
+	  default: {
+      return; 
     }
   }
 }
