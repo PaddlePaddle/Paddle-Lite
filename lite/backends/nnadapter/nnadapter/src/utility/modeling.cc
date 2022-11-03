@@ -895,6 +895,35 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
   return AddRequantOperation(model, output_operand, input_quant_params, false);
 }
 
+core::Operand* AddSoftmaxOperation(core::Model* model,
+                                   core::Operand* reference_operand,
+                                   int32_t axis = -1,
+                                   bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  auto softmax_operation = AddOperation(model);
+  softmax_operation->type = NNADAPTER_SOFTMAX;
+  auto axis_operand = AddInt32ConstantOperand(model, axis);
+  softmax_operation->input_operands = {
+      after ? reference_operand : target_operand, axis_operand};
+  softmax_operation->output_operands = {after ? target_operand
+                                              : reference_operand};
+  return target_operand;
+}
+
+NNADAPTER_EXPORT core::Operand* AppendSoftmaxOperation(
+    core::Model* model, core::Operand* input_operand, int32_t axis) {
+  return AddSoftmaxOperation(model, input_operand, axis, true);
+}
+
+NNADAPTER_EXPORT core::Operand* InsertSoftmaxOperation(
+    core::Model* model, core::Operand* output_operand, int32_t axis) {
+  return AddSoftmaxOperation(model, output_operand, axis, false);
+}
+
 #define SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(T)                               \
   NNADAPTER_EXPORT std::vector<T core::Operation*>                            \
   SortOperationsInTopologicalOrder(T core::Model* model) {                    \

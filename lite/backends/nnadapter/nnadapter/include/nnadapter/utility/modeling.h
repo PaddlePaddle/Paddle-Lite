@@ -210,6 +210,13 @@ core::Operand* AppendRequantOperation(core::Model* model,
 core::Operand* InsertRequantOperation(core::Model* model,
                                       core::Operand* output_operand,
                                       void* input_quant_params);
+// Append or insert a softmax operation
+core::Operand* AppendSoftmaxOperation(core::Model* model,
+                                      core::Operand* input_operand,
+                                      int32_t axis);
+core::Operand* InsertSoftmaxOperation(core::Model* model,
+                                      core::Operand* output_operand,
+                                      int32_t axis);
 
 // Sort the operations of the specified model in topological order
 std::vector<const core::Operation*> SortOperationsInTopologicalOrder(
