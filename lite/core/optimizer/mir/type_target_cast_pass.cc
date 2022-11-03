@@ -261,11 +261,8 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
   // So there will be a new Argument node and a new IoCopy Statement Node.
 
   CHECK(in->IsArg());
-
-  // auto node_id = [&] { return graph->nodes().size(); };.
   auto io_copy_output_name =
       string_format("%s/target_trans", in->AsArg().name.c_str());
-  // string_format("%s/target_trans/%d", in->AsArg().name.c_str(), node_id());
 
   if (copied_nodes->count(in->AsArg().name)) {
     // Remove the old link
