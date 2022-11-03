@@ -141,6 +141,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.n_layers = op_desc.GetAttr<int>("n_layers");
   param_.hidden_dim = op_desc.GetAttr<int>("hidden_dim");
   param_.head_num = op_desc.GetAttr<int>("head_num");
+  param_.ffn_hidden_dim_scale = op_desc.GetAttr<int>("ffn_hidden_dim_scale");
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
