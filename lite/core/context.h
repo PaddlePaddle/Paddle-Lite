@@ -19,9 +19,6 @@
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/context.h"
 #endif
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/context.h"
-#endif
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
@@ -59,8 +56,6 @@ using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
-using FPGAContext = Context<TargetType::kFPGA>;
-using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
 
@@ -338,36 +333,6 @@ class Context<TargetType::kARM> {
 };
 #endif
 
-#ifdef LITE_WITH_FPGA
-// TODO(tianxiaogang): add needed implementation to context
-template <>
-class Context<TargetType::kFPGA> {
- public:
-  void InitOnce() {}
-
-  FPGAContext& operator=(const FPGAContext& ctx) {}
-
-  void CopySharedTo(FPGAContext* ctx) {}
-
-  std::string name() const { return "FPGAContext"; }
-};
-#endif
-
-#ifdef LITE_WITH_INTEL_FPGA
-// TODO(xbeu): add needed implementation to context
-template <>
-class Context<TargetType::kIntelFPGA> {
- public:
-  void InitOnce() {}
-
-  IntelFPGAContext& operator=(const IntelFPGAContext& ctx) {}
-
-  void CopySharedTo(IntelFPGAContext* ctx) {}
-
-  std::string name() const { return "IntelFPGAContext"; }
-};
-#endif
-
 #ifdef LITE_WITH_X86
 template <>
 class Context<TargetType::kX86> {
@@ -472,15 +437,6 @@ class ContextScheduler {
             &ctx->As<X86Context>());
         break;
 #endif
-#ifdef LITE_WITH_CUDA
-      case TARGET(kCUDA): {
-        int dev_id = TargetWrapper<TargetType::kCUDA>::GetCurDevice();
-        auto& context = ctx->As<CUDAContext>();
-        context.Init(dev_id, exec_stream_id);
-        kernel_contexts_[TargetType::kCUDA].As<CUDAContext>().CopySharedTo(
-            &context);
-      } break;
-#endif
 #ifdef LITE_WITH_ARM
       case TARGET(kARM):
         kernel_contexts_[TargetType::kARM].As<ARMContext>().CopySharedTo(
@@ -503,19 +459,6 @@ class ContextScheduler {
       case TARGET(kMetal):
         kernel_contexts_[TargetType::kMetal].As<MTLContext>().CopySharedTo(
             &ctx->As<MTLContext>());
-        break;
-#endif
-#ifdef LITE_WITH_FPGA
-      case TARGET(kFPGA):
-        kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
-            &ctx->As<FPGAContext>());
-        break;
-#endif
-#ifdef LITE_WITH_INTEL_FPGA
-      case TARGET(kIntelFPGA):
-        kernel_contexts_[TargetType::kIntelFPGA]
-            .As<IntelFPGAContext>()
-            .CopySharedTo(&ctx->As<IntelFPGAContext>());
         break;
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
@@ -546,9 +489,6 @@ class ContextScheduler {
 #ifdef LITE_WITH_X86
     InitContext<TargetType::kX86, X86Context>();
 #endif
-#ifdef LITE_WITH_CUDA
-    InitContext<TargetType::kCUDA, CUDAContext>();
-#endif
 #ifdef LITE_WITH_ARM
     InitContext<TargetType::kARM, ARMContext>();
 #endif
@@ -557,12 +497,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_METAL
     InitContext<TargetType::kMetal, MTLContext>();
-#endif
-#ifdef LITE_WITH_FPGA
-    InitContext<TargetType::kFPGA, FPGAContext>();
-#endif
-#ifdef LITE_WITH_INTEL_FPGA
-    InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
 #ifdef LITE_WITH_XPU
     InitContext<TargetType::kXPU, XPUContext>();

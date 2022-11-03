@@ -177,7 +177,7 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
           << kpf_path;
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -249,7 +249,7 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"

@@ -280,7 +280,6 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \

@@ -1,10 +1,7 @@
 #!/bin/bash
 set -e
 
-readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
-                               -DWITH_MKL=OFF \
-                               -DWITH_LITE=ON \
-                               -DLITE_WITH_CUDA=OFF \
+readonly CMAKE_COMMON_OPTIONS="-DWITH_MKL=OFF \
                                -DLITE_WITH_X86=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
@@ -268,10 +265,7 @@ function make_opencl {
   cmake .. \
       ${CMAKE_API_LEVEL_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
-      -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
-      -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
@@ -454,10 +448,7 @@ function make_ios {
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     cmake .. \
-            -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
@@ -477,47 +468,6 @@ function make_ios {
 
     make publish_inference -j$NUM_PROC
     cd -
-}
-
-function make_cuda {
-  prepare_thirdparty
-
-  root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_cuda
-
-  if [ -d $build_directory ]
-  then
-    rm -rf $build_directory
-  fi
-  mkdir -p $build_directory
-  cd $build_directory
-
-  prepare_workspace $root_dir $build_directory
-
-  cmake ..  -DWITH_MKL=OFF       \
-            -DLITE_WITH_CUDA=ON  \
-            -DWITH_MKLDNN=OFF    \
-            -DLITE_WITH_X86=OFF  \
-            -DLITE_WITH_PROFILE=OFF \
-            -DLITE_WITH_LTO=${WITH_LTO} \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-            -DWITH_TESTING=OFF \
-            -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_STATIC_CUDA=OFF \
-            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON \
-            -DLITE_WITH_LOG=${WITH_LOG} \
-            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-            -DLITE_WITH_XPU=$BUILD_XPU \
-            -DLITE_WITH_XTCL=$BUILD_XTCL \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DXPU_SDK_URL=$XPU_SDK_URL \
-            -DXPU_SDK_ENV=$XPU_SDK_ENV
-
-  make -j$NUM_PROC
-  make publish_inference -j$NUM_PROC
-  cd -
 }
 
 function make_x86 {
@@ -555,7 +505,6 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -624,7 +573,6 @@ function make_x86_tests {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -907,10 +855,6 @@ function main {
                 ;;
             opencl)
                 make_opencl $ARM_OS $ARM_ABI $ARM_LANG
-                shift
-                ;;
-            cuda)
-                make_cuda
                 shift
                 ;;
             x86)

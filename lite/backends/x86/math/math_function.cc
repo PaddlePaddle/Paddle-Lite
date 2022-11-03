@@ -81,14 +81,6 @@ void set_constant_with_place<lite::TargetType::kX86>(
   TensorSetConstantCPU(tensor, value).apply<float>();
 }
 
-// template <>
-// void set_constant_with_place<platform::CUDAPinnedPlace>(
-//    const platform::DeviceContext& context, framework::Tensor* tensor,
-//    float value) {
-//  framework::VisitDataType(tensor->type(), TensorSetConstantCPU(tensor,
-//  value));
-//}
-
 template <lite::TargetType Target>
 struct TensorSetConstantWithTarget /*: public boost::static_visitor<void>*/ {
   TensorSetConstantWithTarget(const lite::Context<Target>& context,
