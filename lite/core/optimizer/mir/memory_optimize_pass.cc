@@ -147,12 +147,17 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       }
       if (inplace) {
         for (auto& in_param_name : inplace_op_node->second.first) {
-          const auto& in_arg_names = op_info->Input(in_param_name);
-          invalid_var_names.insert(in_arg_names.begin(), in_arg_names.end());
+          if (op_info->HasInput(in_param_name)) {
+            const auto& in_arg_names = op_info->Input(in_param_name);
+            invalid_var_names.insert(in_arg_names.begin(), in_arg_names.end());
+          }
         }
         for (auto& out_param_name : inplace_op_node->second.second) {
-          const auto& out_arg_names = op_info->Output(out_param_name);
-          invalid_var_names.insert(out_arg_names.begin(), out_arg_names.end());
+          if (op_info->HasOutput(out_param_name)) {
+            const auto& out_arg_names = op_info->Output(out_param_name);
+            invalid_var_names.insert(out_arg_names.begin(),
+                                     out_arg_names.end());
+          }
         }
       }
     }
