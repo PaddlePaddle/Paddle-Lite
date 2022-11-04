@@ -24,7 +24,7 @@ set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-set THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+set THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null

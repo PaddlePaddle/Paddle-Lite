@@ -37,7 +37,11 @@ class OpDesc : public StructBuilder {
     BLOCK,
     LONG,
     BLOCKS,
-    LONGS
+    LONGS,
+    FLOAT64S,
+    VAR,
+    VARS,
+    FLOAT64
   };
 
   class Attr : public StructBuilder {

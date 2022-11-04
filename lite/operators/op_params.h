@@ -2285,6 +2285,29 @@ struct RollParam : ParamBase {
   std::vector<int64_t> axis{};
 };
 
+struct SetValueParam : ParamBase {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ValueTensor{};
+  std::vector<const lite::Tensor*> StartsTensorList{};
+  std::vector<const lite::Tensor*> EndsTensorList{};
+  std::vector<const lite::Tensor*> StepsTensorList{};
+  lite::Tensor* Out{};
+  int dtype{5};
+  std::vector<int64_t> axes{};
+  std::vector<int64_t> starts{};
+  std::vector<int64_t> ends{};
+  std::vector<int64_t> steps{};
+  std::vector<int64_t> decrease_axes{};
+  std::vector<int64_t> none_axes{};
+  std::vector<int> bool_values{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<double> fp64_values{};
+  std::vector<float> fp16_values{};
+  std::vector<int64_t> shape{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
