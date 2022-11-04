@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
 #include <vector>
 #include "lite/backends/x86/fluid/eigen.h"
@@ -60,7 +61,7 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     }
     for (size_t i = 0; i < y_dims.size(); ++i) {
       if (x_dims[i + axis] != y_dims[i]) {
-        CHECK_EQ(y_dims[i] == 1 || x_dims[i + axis] == 1, true)
+        CHECK_EQ((y_dims[i] == 1 || x_dims[i + axis] == 1), true)
             << "Broadcast y or x dimension is not 1.";
         *mid_flag = 1;
         return;
@@ -322,8 +323,8 @@ inline void GetBroadcastDimsArrays(const DDim &x_dims,
   }
 
   for (int i = 0; i < max_dim; i++) {
-    CHECK_EQ(x_dims_array[i] == y_dims_array[i] || x_dims_array[i] <= 1 ||
-                 y_dims_array[i] <= 1,
+    CHECK_EQ((x_dims_array[i] == y_dims_array[i] || x_dims_array[i] <= 1 ||
+              y_dims_array[i] <= 1),
              true)
         << "Broadcast dimension mismatch. Operands could not be broadcast.";
 
@@ -374,8 +375,8 @@ void CommonForwardBroadcastCPU(const Tensor *x,
   std::vector<int> index_array(max_dim, 0);
   const T *x_data = x->data<T>();
   const T *y_data = y->data<T>();
-  CHECK_EQ(x_data != nullptr, true) << "The input X should not be empty.";
-  CHECK_EQ(y_data != nullptr, true) << "The input Y should not be empty.";
+  CHECK_EQ((x_data != nullptr), true) << "The input X should not be empty.";
+  CHECK_EQ((y_data != nullptr), true) << "The input Y should not be empty.";
 
   OutType *out_data = z->mutable_data<OutType>();
   const int out_size = std::accumulate(
@@ -404,7 +405,9 @@ void CommonElementwiseBroadcastForward(const Tensor *x,
                                        int axis,
                                        const bool is_xsize_larger = true) {
   int max_dim = std::max(x_dims.size(), y_dims.size());
-  axis = (axis == -1 ? std::abs(x_dims.size() - y_dims.size()) : axis);
+  axis = (axis == -1 ? std::abs(static_cast<int>(x_dims.size()) -
+                                static_cast<int>(y_dims.size()))
+                     : axis);
   CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
   CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
 

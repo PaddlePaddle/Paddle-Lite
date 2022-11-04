@@ -58,6 +58,7 @@ add_operator(flatten_op basic SRCS flatten_op.cc)
 add_operator(write_back_op basic SRCS write_back_op.cc)
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc)
 add_operator(unbind_op basic SRCS unbind_op.cc)
+add_operator(set_value basic SRCS set_value_op.cc)
 
 add_operator(pow_op extra SRCS pow_op.cc)
 add_operator(sign_op extra SRCS sign_op.cc)
