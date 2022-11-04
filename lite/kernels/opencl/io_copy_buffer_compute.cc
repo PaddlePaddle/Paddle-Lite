@@ -104,7 +104,8 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
 
-    auto mem_size = param.x->memory_size();
+    auto mem_size = param.x->dims().production() *
+                    PrecisionTypeLength(param.x->precision());
 #ifdef LITE_WITH_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
@@ -212,7 +213,8 @@ class IoCopykOpenCLToHostCompute
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
-    auto mem_size = param.x->memory_size();
+    auto mem_size = param.x->dims().production() *
+                    PrecisionTypeLength(param.x->precision());
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();

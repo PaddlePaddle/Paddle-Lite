@@ -135,7 +135,20 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         };
 
     // 1. op unsupport persistable
-    if (op_type == "reshape2" || op_type == "unsqueeze2") {
+    const std::vector<std::string> op_cases_unsupport_persistable{
+        "elementwise_floordiv",
+        "elementwise_add",
+        "elementwise_sub",
+        "elementwise_mul",
+        "elementwise_div",
+        "elementwise_pow",
+        "elementwise_mod",
+        "reshape2",
+        "unsqueeze2",
+        "split"};
+    if (std::find(op_cases_unsupport_persistable.begin(),
+                  op_cases_unsupport_persistable.end(),
+                  op_type) != op_cases_unsupport_persistable.end()) {
       for (std::list<Node*>::iterator i = x->inlinks.begin();
            i != x->inlinks.end();
            ++i) {
@@ -287,6 +300,10 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
           }
         }
       }
+
+      // 7. reshape change target
+      if (op_type == "reshape" || op_type == "reshape2")
+        change_image2d_to_buffer = true;
     }
 
     if (change_image2d_to_cpu) {
