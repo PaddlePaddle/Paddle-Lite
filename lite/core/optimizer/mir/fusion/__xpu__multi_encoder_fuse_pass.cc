@@ -699,7 +699,8 @@ class XPUSingleEncoderFuser : public FuseBase {
             weight_max.push_back(127 * weight_scales[j]);
           }
           // create max tensor
-          weight_max_tensor = scope->NewTensor(weight_max_tensor_name[i]);
+          weight_max_tensor =
+              scope->MutableParent()->NewTensor(weight_max_tensor_name[i]);
           weight_max_tensor->Resize({weight_scale_size});
           memcpy(weight_max_tensor->mutable_data<float>(),
                  weight_max.data(),
@@ -1210,7 +1211,7 @@ class XPUMultiEncoderFuser {
       weight_tensor_vec[0]->Resize({weight_dim1_acc, weight_dims_vec[0][0]});
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_qkv_trans.get(), qkv_len);
-      auto max_tensor = scope->NewTensor(max_tensor_name);
+      auto max_tensor = scope->MutableParent()->NewTensor(max_tensor_name);
       max_tensor->mutable_data<float>(TargetType::kHost, 1)[0] = max_f;
       VLOG(3) << "Lite find max: " << start << "th fc , weight_max:" << max_f;
       VLOG(3) << "Set " << max_tensor_name << " " << max_f;
