@@ -62,7 +62,7 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
       CHECK(var_node->IsArg());
       if (var_node->AsArg().is_weight) continue;
       bool has_already_infer =
-          var_node->AsArg().type->target() == TargetType::kUnk ? false : true;
+      var_node->AsArg().type->target() != TargetType::kUnk;
       auto& var_name = var_node->AsArg().name;
       if (has_already_infer && !ref_var_types.count(var_name)) {
         ref_var_types.insert(std::pair<std::string, const Type*>(
