@@ -202,12 +202,12 @@ static inline std::vector<int64_t> GetDataFromTensorList(
 
 template <typename T>
 void stride_slice_reverse_assign(T* input,
-                  T* out,
-                  std::vector<int64_t> in_dims,
-                  std::vector<int64_t> out_dims,
-                  std::vector<int64_t> starts_indices,
-                  std::vector<int64_t> ends_indices,
-                  std::vector<int64_t> strides_indices) {
+                                 T* val,
+                                 std::vector<int64_t> in_dims,
+                                 std::vector<int64_t> val_dims,
+                                 std::vector<int64_t> starts_indices,
+                                 std::vector<int64_t> ends_indices,
+                                 std::vector<int64_t> strides_indices) {
   size_t in_dims_size = in_dims.size();
   std::vector<int> dst_step;
   std::vector<int> src_step;
@@ -215,23 +215,22 @@ void stride_slice_reverse_assign(T* input,
     dst_step.push_back(1);
     src_step.push_back(1);
   }
-  int out_num = out_dims[in_dims_size - 1];
+  int val_num = val_dims[in_dims_size - 1];
   for (int i = in_dims_size - 2; i >= 0; i--) {
-    dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
+    dst_step[i] = val_dims[i + 1] * dst_step[i + 1];
     src_step[i] = in_dims[i + 1] * src_step[i + 1];
-    out_num *= out_dims[i];
+    val_num *= val_dims[i];
   }
 
-  for (int dst_id = 0; dst_id < out_num; dst_id++) {
+  for (int dst_id = 0; dst_id < val_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
-    for (size_t j = 0; j < out_dims.size(); j++) {
+    for (size_t j = 0; j < val_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id += (cur_id * strides_indices[j] + starts_indices[j]) * src_step[j];
     }
-    // out[dst_id] = input[src_id];
-    input[src_id] = out[dst_id];
+    input[src_id] = val[dst_id];
   }
 }
 
@@ -251,6 +250,7 @@ class SetValueCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
                     const std::vector<int64_t>& none_axes,
                     lite::Tensor* out) {
     auto in_dims = input->dims();
+
     CheckAndUpdateSliceAttrs<int64_t>(in_dims, axes, &starts, &ends, &steps);
     auto slice_dims =
         GetSliceDims<int64_t>(in_dims, axes, starts, ends, &steps);
@@ -292,24 +292,51 @@ class SetValueCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
     pad_tensor.Resize(in_dims);
     pad_tensor.mutable_data<T>();
 
-    std::function<T (T, T)> SubFunc = naive_sub<T>;
+    std::function<T(T, T)> SubFunc = naive_sub<T>;
 
     // Step 1: Set the value of out at `_index` to zero
+    std::vector<int64_t> starts_indices;
+    std::vector<int64_t> ends_indices;
+    std::vector<int64_t> strides_indices;
+    for (size_t axis = 0; axis < in_dims.size(); axis++) {
+      starts_indices.push_back(0);
+      ends_indices.push_back(slice_dims[axis]);
+      strides_indices.push_back(1);
+    }
+    for (size_t axis = 0; axis < axes.size(); axis++) {
+      int axis_index = axes[axis];
+      starts_indices[axis_index] = starts[axis];
+      ends_indices[axis_index] = ends[axis];
+      strides_indices[axis_index] = steps[axis];
+    }
     memset(slice_tensor.mutable_data<T>(), 0, slice_tensor.memory_size());
-    stride_slice_reverse_assign(out->mutable_data<T>(), slice_tensor.mutable_data<T>(), in_dims.data(), slice_dims.data(), starts, ends, steps); 
+    stride_slice_reverse_assign(out->mutable_data<T>(),
+                                slice_tensor.mutable_data<T>(),
+                                in_dims.data(),
+                                slice_dims.data(),
+                                starts_indices,
+                                ends_indices,
+                                strides_indices);
 
     // Step 2: Set a tensor with the same shape as out tensor. And its data at
     // '_index' is the same as value, and data out of '_index' to zero
     slice_tensor.Resize(slice_dims_for_assign);
     CheckIsDimsMatch(slice_dims_for_assign, value->dims());
     // ElementwiseComputeEx can do broadcasting
-    auto batch_arg0 =
-        lite::kernels::host::GenBatchElementWiseArg<T>(&slice_tensor, value, &slice_tensor);
+    auto batch_arg0 = lite::kernels::host::GenBatchElementWiseArg<T>(
+        &slice_tensor, value, &slice_tensor);
     common_elmentwise_op_naive_cpu(batch_arg0, SubFunc);
     slice_tensor.Resize(slice_dims);
     // - Step 2.2 Pad slice tensor with 0
     memset(pad_tensor.mutable_data<T>(), 0, pad_tensor.memory_size());
-    stride_slice_reverse_assign(pad_tensor.mutable_data<T>(), slice_tensor.mutable_data<T>(), in_dims.data(), slice_dims.data(), starts, ends, steps);
+
+    stride_slice_reverse_assign(pad_tensor.mutable_data<T>(),
+                                slice_tensor.mutable_data<T>(),
+                                in_dims.data(),
+                                slice_dims.data(),
+                                starts_indices,
+                                ends_indices,
+                                strides_indices);
 
     // Step 3: Set out tensor with value
     auto batch_arg1 =
