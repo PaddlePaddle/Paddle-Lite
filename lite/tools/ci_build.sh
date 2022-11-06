@@ -4,7 +4,6 @@ set -e
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-CUDNN_ROOT="/usr/local/cudnn"
 LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 NUM_PROC=4
 
@@ -13,7 +12,7 @@ readonly common_flags="-DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 readonly workspace=$PWD
 
@@ -116,8 +115,7 @@ function check_coverage() {
 
 function cmake_x86 {
     prepare_workspace
-    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
+    cmake ..  -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
 function cmake_opencl {
@@ -127,9 +125,7 @@ function cmake_opencl {
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
         -DLITE_WITH_OPENCL=ON \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -216,7 +212,7 @@ function build_opencl {
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
+    cmake ..  -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON -DWITH_AVX=ON
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
@@ -225,16 +221,6 @@ function cmake_x86_for_CI {
     # ctest -R test_cxx_api
     # ctest -R test_gen_code
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
-}
-
-function cmake_cuda_for_CI {
-    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
-}
-
-function cmake_gpu {
-    prepare_workspace
-    cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
 }
 
 function check_style {
@@ -317,24 +303,12 @@ function build_test_coverage {
     test_server
 }
 
-# The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
-# The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
-function build_test_cuda_server {
-    mkdir -p ./build
-    cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    cmake_cuda_for_CI
-    make -j$NUM_CORES_FOR_COMPILE
-    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
-    # ctest -R "/*_cuda_test" -V
-}
-
 function build_test_train {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_ARM=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+    cmake .. -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_ARM=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
         -DLITE_BUILD_EXTRA=ON \
 
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -383,7 +357,6 @@ function build_test_xpu {
     prepare_workspace
     cmake .. \
         ${common_flags} \
-        -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
@@ -741,9 +714,7 @@ function armlinux_build_target {
     cd ./build
     prepare_workspace
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -938,9 +909,7 @@ function cmake_arm {
     # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -995,9 +964,7 @@ function build_ios {
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     cmake .. \
-            -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
@@ -1278,9 +1245,7 @@ function mobile_publish {
     cd $build_dir
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_TESTING=OFF \
@@ -1299,7 +1264,6 @@ function print_usage {
     echo
     echo "----------------------------------------"
     echo -e "cmake_x86: run cmake with X86 mode"
-    echo -e "cmake_cuda: run cmake with CUDA mode"
     echo -e "--arm_os=<os> --arm_abi=<abi> cmake_arm: run cmake with ARM mode"
     echo
     echo -e "build: compile the tests"
@@ -1383,10 +1347,6 @@ function main {
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
-            cmake_cuda)
-                cmake_cuda
-                shift
-                ;;
             cmake_arm)
                 cmake_arm $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -1413,10 +1373,6 @@ function main {
                 ;;
             test_huawei_ascend_npu)
                 test_huawei_ascend_npu
-                shift
-                ;;
-            build_test_cuda_server)
-                build_test_cuda_server
                 shift
                 ;;
             build_test_server)

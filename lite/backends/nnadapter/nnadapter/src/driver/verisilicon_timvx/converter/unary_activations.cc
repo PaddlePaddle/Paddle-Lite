@@ -40,6 +40,7 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
     CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
+    CONVERT_UNARY_ACTIVATION(SWISH, Swish);
     CONVERT_UNARY_ACTIVATION(TANH, Tanh);
 #undef CONVERT_UNARY_ACTIVATION
     default:

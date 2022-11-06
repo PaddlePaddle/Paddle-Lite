@@ -100,6 +100,7 @@ class LITE_API OptBase {
                          "eeasytech_npu",
                          "android_nnapi",
                          "qualcomm_qnn",
+                         "kunlunxin_xtcl",
                          "kUnK"});  // print supported ops on target_types
   void PrintAllOps();               // print all ops
   void PrintSupportedOps();         // print ops supported on valid_places_

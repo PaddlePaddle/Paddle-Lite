@@ -58,6 +58,7 @@ add_operator(flatten_op basic SRCS flatten_op.cc)
 add_operator(write_back_op basic SRCS write_back_op.cc)
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc)
 add_operator(unbind_op basic SRCS unbind_op.cc)
+add_operator(set_value basic SRCS set_value_op.cc)
 
 add_operator(pow_op extra SRCS pow_op.cc)
 add_operator(sign_op extra SRCS sign_op.cc)
@@ -238,9 +239,6 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
-
-# Only for FPGA
-add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)

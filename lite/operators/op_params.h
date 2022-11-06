@@ -262,7 +262,6 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
-  bool use_cudnn{true};
   bool eleminate_success{false};
 };
 
@@ -417,19 +416,6 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
-
-#ifdef LITE_WITH_FPGA
-  lite::Tensor* scale{nullptr};
-  struct StrideInfo {
-    bool wd_enable_ = false;
-    int wd_offset_ = -1;
-    int fuse_idx_ = -1;
-    int original_out_channel_ = -1;
-    int start_idx_ = 0;
-    int end_idx_ = 0;
-  };
-  StrideInfo stride_info_;
-#endif
 
   // for int8
   WITH_INT8_CONFIG
@@ -2291,6 +2277,29 @@ struct RollParam : ParamBase {
   lite::Tensor* Out{};
   std::vector<int64_t> shifts{};
   std::vector<int64_t> axis{};
+};
+
+struct SetValueParam : ParamBase {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ValueTensor{};
+  std::vector<const lite::Tensor*> StartsTensorList{};
+  std::vector<const lite::Tensor*> EndsTensorList{};
+  std::vector<const lite::Tensor*> StepsTensorList{};
+  lite::Tensor* Out{};
+  int dtype{5};
+  std::vector<int64_t> axes{};
+  std::vector<int64_t> starts{};
+  std::vector<int64_t> ends{};
+  std::vector<int64_t> steps{};
+  std::vector<int64_t> decrease_axes{};
+  std::vector<int64_t> none_axes{};
+  std::vector<int> bool_values{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<double> fp64_values{};
+  std::vector<float> fp16_values{};
+  std::vector<int64_t> shape{};
 };
 
 }  // namespace operators

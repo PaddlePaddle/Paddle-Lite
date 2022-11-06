@@ -50,6 +50,7 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
   auto block_size = graphs_->size();
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
+
     auto op_info = op_node->AsStmt().mutable_op_info();
     auto op_type = op_info->Type();
     if (!control_flow_op_types.count(op_type)) continue;
@@ -59,9 +60,11 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
     std::unordered_map<std::string, const Type*> ref_var_types;
     for (auto* var_node : op_node->inlinks) {
       CHECK(var_node->IsArg());
-      if (var_node->inlinks.empty()) continue;
+      if (var_node->AsArg().is_weight) continue;
+      bool has_already_infer =
+          var_node->AsArg().type->target() != TargetType::kUnk;
       auto& var_name = var_node->AsArg().name;
-      if (!ref_var_types.count(var_name)) {
+      if (has_already_infer && !ref_var_types.count(var_name)) {
         ref_var_types.insert(std::pair<std::string, const Type*>(
             var_name, var_node->AsArg().type));
       }
@@ -80,6 +83,7 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
           ref_var_types.insert(std::pair<std::string, const Type*>(
               var_name, sub_var_node->AsArg().type));
         }
+        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
       }
     }
 

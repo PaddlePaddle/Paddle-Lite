@@ -72,8 +72,6 @@ if(LITE_WITH_ARM AND WITH_TESTING)
        ARGS --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
-    lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc)
-
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)

@@ -72,6 +72,7 @@ add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc)
 add_kernel(pow_compute_x86 X86 extra SRCS pow_compute.cc)
 add_kernel(rnn_compute_x86 X86 basic SRCS rnn_compute.cc)
 add_kernel(conv_transpose_x86 X86 basic SRCS conv_transpose_compute.cc)
+add_kernel(set_value X86 basic SRCS set_value_compute.cc)
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc)
