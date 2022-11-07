@@ -77,9 +77,12 @@ GET_ATTR_IMPL(int16_t, block_idx);
 GET_ATTR_IMPL(float, f);
 GET_ATTR_IMPL(bool, b);
 GET_ATTR_IMPL(int64_t, l);
+GET_ATTR_IMPL(double, float64);
 GET_ATTRS_IMPL(std::vector<int>, ints);
 GET_ATTRS_IMPL(std::vector<float>, floats);
 GET_ATTRS_IMPL(std::vector<int64_t>, longs);
+GET_ATTRS_IMPL(std::vector<double>, float64s);
+
 #undef GET_ATTR_IMPL
 #undef GET_ATTRS_IMPL
 
@@ -104,11 +107,13 @@ ATTR_IMPL(int16_t, block_idx);
 ATTR_IMPL(float, f);
 ATTR_IMPL(bool, b);
 ATTR_IMPL(int64_t, l);
+ATTR_IMPL(double, float64);
 ATTR_IMPL(std::string, s);
 ATTR_IMPL(std::vector<int>, ints);
 ATTR_IMPL(std::vector<float>, floats);
 ATTR_IMPL(std::vector<int64_t>, longs);
 ATTR_IMPL(std::vector<std::string>, strings);
+ATTR_IMPL(std::vector<double>, float64s);
 #undef GET_ATTRS_IMPL
 #endif  // LITE_WITH_FLATBUFFERS_DESC
 

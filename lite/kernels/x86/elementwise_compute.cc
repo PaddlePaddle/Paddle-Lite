@@ -30,7 +30,7 @@ namespace x86 {
 namespace x86_math = paddle::lite::x86::math;
 
 // Remove trailing dimensions of size 1 for y
-DDim trim_trailing_singular_dims(const DDim& dims) {
+static DDim trim_trailing_singular_dims(const DDim& dims) {
   auto actual_dims_size = dims.size();
   for (; actual_dims_size != 0; --actual_dims_size) {
     if (dims[actual_dims_size - 1] != 1) break;

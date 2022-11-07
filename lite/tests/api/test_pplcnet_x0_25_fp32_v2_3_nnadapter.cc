@@ -50,6 +50,11 @@ TEST(PPLCNet, test_pplcnet_x0_25_fp32_v2_3_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
   out_accuracy_threshold = 0.56f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
+  // TODO(hong19860320) Fix precision
+  out_accuracy_threshold = 0.f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

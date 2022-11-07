@@ -136,7 +136,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     };
     ```
 
-- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/host/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/bachends/host/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
+- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/host/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/host/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
 
     ```c++
     template <typename T>
@@ -215,7 +215,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     };
     ```
 
-- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/arm/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/bachends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
+- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/arm/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
 
     ```c++
     template <typename T>
@@ -441,7 +441,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     }
     ```
 
-- 在 Paddle-Lite/lite/backends/host/math/CMakeLists.txt 中的 ```math_host library``` 中添加 argmax.cc，在 Paddle-Lite/lite/backends/host/math/funcs.h 中添加 ```#include "lite/backends/host/math/argmax.h"```
+- 在 Paddle-Lite/lite/backends/host/math/CMakeLists.txt 中的 ```math_host library``` 中添加 argmax.cc。
 
 ### 4.2 ARM 端
 

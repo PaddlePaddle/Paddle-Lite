@@ -26,7 +26,8 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
                     bool use_quantizer,
                     std::string pooling_type,
                     const std::vector<int>& thread_num,
-                    const std::vector<int>& power_mode) {
+                    const std::vector<int>& power_mode,
+                    std::vector<DDim> output_dims = {}) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
@@ -64,6 +65,9 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
 
       for (auto& dim_in : input_dims) {
         DDim dim_out = compute_out_dim(dim_in, param);
+        if (adaptive) {
+          dim_out = output_dims[0];
+        }
         if (dim_out[2] < 1 || dim_out[3] < 1) {
           continue;
         }
@@ -258,7 +262,55 @@ TEST(TestPoolRand, test_pool_rand) {
 }
 #endif  /// random param conv
 
-#if 1  /// custom
+#ifdef LITE_WITH_ARM8_SVE2  /// global_pool
+TEST(TesPoolGlobal, test_pool_fp16_global) {
+  for (auto& h : {51})
+    test_pool_fp16({DDim({1, 64, h, h})},
+                   {2, 2},
+                   {1, 1},
+                   {1, 1, 1, 1},
+                   false,
+                   true,
+                   false,
+                   false,
+                   false,
+                   "avg",
+                   {1},
+                   {1});
+}
+#endif  // global_pool
+
+TEST(TesPoolBasicAdaptive, test_pool_fp16_adaptive_size) {
+  test_pool_fp16(
+      {DDim({4, 32, 80, 80}), DDim({4, 32, 32, 32}), DDim({4, 32, 16, 16})},
+      {4, 4},
+      {5, 5},
+      {0, 0, 0, 0},
+      FLAGS_ceil_mode,
+      false,
+      true,
+      true,
+      false,
+      "avg",
+      {1},
+      {0},
+      {DDim({4, 32, 4, 4})});
+  test_pool_fp16(
+      {DDim({1, 3, 80, 80}), DDim({1, 3, 32, 32}), DDim({1, 3, 16, 16})},
+      {4, 4},
+      {5, 5},
+      {0, 0, 0, 0},
+      FLAGS_ceil_mode,
+      false,
+      true,
+      true,
+      false,
+      "avg",
+      {1},
+      {0},
+      {DDim({1, 3, 2, 2})});
+}
+
 TEST(TesPoolCustom, test_pool_fp16_custom_size) {
   test_pool_fp16(
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
@@ -274,4 +326,3 @@ TEST(TesPoolCustom, test_pool_fp16_custom_size) {
       {FLAGS_threads},
       {FLAGS_power_mode});
 }
-#endif  // custom

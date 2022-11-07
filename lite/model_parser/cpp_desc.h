@@ -26,9 +26,10 @@ using ProgramDesc = fbs::ProgramDescView;
 using BlockDesc = fbs::BlockDescView;
 using OpDesc = fbs::OpDescView;
 using VarDesc = fbs::VarDescView;
+using OpDescWrite = fbs::OpDesc;
 }
 }
-}
+}  // namespace paddle
 #else
 #include "lite/core/model/general/block_desc.h"
 #include "lite/core/model/general/op_desc.h"
@@ -36,7 +37,13 @@ using VarDesc = fbs::VarDescView;
 #include "lite/core/model/general/var_desc.h"
 namespace paddle {
 namespace lite {
-namespace cpp = general;
+namespace cpp {
+using ProgramDesc = general::ProgramDesc;
+using BlockDesc = general::BlockDesc;
+using OpDesc = general::OpDesc;
+using VarDesc = general::VarDesc;
+using OpDescWrite = general::OpDesc;
 }
 }
+}  // namespace paddle
 #endif  // LITE_ON_FLATBUFFERS_DESC_VIEW

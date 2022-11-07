@@ -21,14 +21,45 @@ __kernel void transpose_general_buffer(__global const CL_DTYPE* src,
                                        __private const int out_tensor_h,
                                        __private const int out_tensor_w,
                                        __private const int out_tensor_hw) {
-  int hidx = get_global_id(0);   // [0, h) columns of dst
+  int idx0 = get_global_id(0);   // [0, nh) columns of dst
   int widx = get_global_id(1);   // [0, w) rows of dst
   int chidx = get_global_id(2);  // [0, ch) channels of dst
 
-  // idx = chidx * out_tensor_hw + hidx * out_tensor_w + widx
-  const int idx = mad((CL_DTYPE)chidx,
+  int nidx = idx0 / out_tensor_h;
+  int hidx = idx0 % out_tensor_h;
+
+  const int idx = nidx * out_tensor_c * out_tensor_hw +
+                  mad((CL_DTYPE)chidx,
                       (CL_DTYPE)out_tensor_hw,
                       (CL_DTYPE)(mul24(hidx, out_tensor_w) + widx));
 
   dst[out_idxs[idx]] = src[idx];
+}
+
+__kernel void transpose_0213_buffer(__global const CL_DTYPE* src,
+                                    __global CL_DTYPE* dst,
+                                    __global const int* out_idxs,
+                                    __private const int out_tensor_c,
+                                    __private const int out_tensor_h,
+                                    __private const int out_tensor_w,
+                                    __private const int out_tensor_hw) {
+  int idx0 = get_global_id(0);       // [0, nh) columns of dst src_c
+  int widx = get_global_id(1) << 3;  // [0, w) rows of dst
+  int chidx = get_global_id(2);      // [0, ch) channels of dst src_h
+
+  int nidx = idx0 / out_tensor_h;
+  int hidx = idx0 % out_tensor_h;
+
+  const int idx = nidx * out_tensor_c * out_tensor_hw +
+                  hidx * out_tensor_c * out_tensor_w + chidx * out_tensor_w;
+  const int dst_idx = nidx * out_tensor_c * out_tensor_hw +
+                      chidx * out_tensor_w * out_tensor_h + hidx * out_tensor_w;
+  if (widx + 8 < out_tensor_w) {
+    CL_DTYPE8 src_w8 = vload8(0, src + idx + widx);
+    vstore8(src_w8, 0, dst + dst_idx + widx);
+  } else {
+    for (int i = widx; i < out_tensor_w; i++) {
+      dst[dst_idx + i] = src[idx + i];
+    }
+  }
 }

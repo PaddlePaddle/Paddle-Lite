@@ -35,16 +35,22 @@ namespace lite {
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
   if (config.lite_model_file().empty()) {
-    raw_predictor_.reset(
-        new LightPredictor(config.model_dir(),
-                           config.model_buffer(),
-                           config.param_buffer(),
-                           config.is_model_from_memory(),
-                           lite_api::LiteModelType::kNaiveBuffer));
+    raw_predictor_.reset(new LightPredictor(
+        config.model_dir(),
+        config.model_buffer(),
+        config.param_buffer(),
+        config.is_model_from_memory(),
+        lite_api::LiteModelType::kNaiveBuffer,
+        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
+                                                                  : false));
   } else {
-    raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
-                                            config.is_model_from_memory()));
+    raw_predictor_.reset(new LightPredictor(
+        config.lite_model_file(),
+        config.is_model_from_memory(),
+        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
+                                                                  : false));
   }
+
   mode_ = config.power_mode();
   threads_ = config.threads();
 #ifdef LITE_USE_THREAD_POOL
@@ -56,13 +62,6 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 
 #ifdef LITE_WITH_METAL
   raw_predictor_->ConfigMetalContext(config);
-#endif
-
-#ifdef LITE_WITH_NPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \

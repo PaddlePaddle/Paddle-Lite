@@ -111,7 +111,6 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseConv2DBatchNormIntoConv2D(model);
     FuseConv2DAddIntoConv2D(model);
     FuseConv2DActivationIntoConv2D(model);
-    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     Converter converter(&parameter_node_map_, &tensor_map_);
     NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);

@@ -24,7 +24,7 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 Android/iOS/X86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://paddle-lite.readthedocs.io/zh/develop/quick_start/release_lib.html)。
+Paddle Lite 提供了 Android/iOS/X86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://paddle-lite.readthedocs.io/zh/develop/quick_start/release_lib.html)，或者从 Release notes 处获取最新的[预编译编译库](https://github.com/PaddlePaddle/Paddle-Lite/releases)。
 
 Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://paddle-lite.readthedocs.io/zh/develop/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译方法](https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
 
@@ -114,12 +114,12 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 - 飞桨推理 AI 硬件统一适配框架 NNAdapter：点击[了解一下](https://paddle-lite.readthedocs.io/zh/develop/develop_guides/nnadapter.html)
 ### FAQ
 - FAQ：常见问题，可以访问 [FAQ](https://paddle-lite.readthedocs.io/zh/develop/quick_start/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
-###贡献代码
+### 贡献代码
 - 贡献代码：如果您想一起参与 Paddle Lite 的开发，贡献代码，请访问[开发者共享文档](https://paddle-lite.readthedocs.io/zh/develop/develop_guides/for-developer.html)
 
 
 ##  交流与反馈
-* AIStuio 实训平台端测部署系列课程：https://aistudio.baidu.com/aistudio/course/introduce/22690
+* AIStudio 实训平台端测部署系列课程：https://aistudio.baidu.com/aistudio/course/introduce/22690
 * 欢迎您通过 [Github Issues](https://github.com/PaddlePaddle/Paddle-Lite/issues) 来提交问题、报告与建议
 * 技术交流微信群：添加 wechat id:baidupaddle或扫描下方微信二维码，添加并回复小助手“端侧”，系统自动邀请加入；技术群 QQ 群: 一群696965088（已满） ；二群，959308808；
 

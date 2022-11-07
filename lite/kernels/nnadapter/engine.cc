@@ -90,7 +90,7 @@ void* AccessModelOutput(void* memory,
                         1,
                         std::multiplies<int32_t>());
     std::shared_ptr<Buffer> buffer(
-        new Buffer(device_buffer, TARGET(kCUDA), size));
+        new Buffer(device_buffer, TARGET(kNNAdapter), size));
     tensor->ResetBuffer(buffer, size);
   } else {
 #define TENSOR_MUTABLE_DATA(ptype, dtype) \

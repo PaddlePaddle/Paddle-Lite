@@ -51,6 +51,12 @@ int ConvertBatchNormalization(Converter* converter,
     alpha[i] = coeff;
     beta[i] = -mean_data[i] * coeff + bias_data[i];
   }
+  for (uint32_t i = 0; i < scale_count && i < 8; i++) {
+    NNADAPTER_VLOG(5) << "alpha[" << i << "]=" << alpha[i];
+  }
+  for (uint32_t i = 0; i < scale_count && i < 8; i++) {
+    NNADAPTER_VLOG(5) << "beta[" << i << "]=" << beta[i];
+  }
   uint32_t alpha_index = INVALID_INDEX;
   uint32_t beta_index = INVALID_INDEX;
   uint32_t intermediate_index = INVALID_INDEX;
@@ -80,6 +86,12 @@ int ConvertBatchNormalization(Converter* converter,
         alpha_min_value, alpha_max_value, &alpha_scale, &alpha_zero_point));
     NNADAPTER_CHECK(CalcAsymmQuantParams(
         beta_min_value, beta_max_value, &beta_scale, &beta_zero_point));
+    NNADAPTER_VLOG(5) << "alpha=[" << alpha_min_value << "," << alpha_max_value
+                      << "] scale=" << alpha_scale
+                      << " zero_point=" << alpha_zero_point;
+    NNADAPTER_VLOG(5) << "beta=[" << beta_min_value << "," << beta_max_value
+                      << "] scale=" << beta_scale
+                      << " zero_point=" << beta_zero_point;
     NNADAPTER_CHECK(QuantizeData<uint8_t>(alpha.data(),
                                           &scale_count,
                                           1,
@@ -98,6 +110,14 @@ int ConvertBatchNormalization(Converter* converter,
                                           0,
                                           255,
                                           quantized_beta.data()));
+    for (uint32_t i = 0; i < scale_count && i < 8; i++) {
+      NNADAPTER_VLOG(5) << "quantized_alpha[" << i
+                        << "]=" << static_cast<int32_t>(quantized_alpha[i]);
+    }
+    for (uint32_t i = 0; i < scale_count && i < 8; i++) {
+      NNADAPTER_VLOG(5) << "quantized_beta[" << i
+                        << "]=" << static_cast<int32_t>(quantized_beta[i]);
+    }
     alpha_index = converter->AddQuant8ConstantOperand(
         quantized_alpha.data(), scale_count, alpha_scale, alpha_zero_point);
     beta_index = converter->AddQuant8ConstantOperand(

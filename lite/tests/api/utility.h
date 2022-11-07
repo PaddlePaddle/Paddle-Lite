@@ -32,10 +32,7 @@ T CalOutAccuracy(const std::vector<std::vector<T>>& out,
   size_t right_count = 0;
   size_t all_count = 0;
   for (size_t i = 0; i < out.size(); i++) {
-    if (out[i].size() != ref_out[i].size()) {
-      LOG(FATAL) << "size error: out_size = " << out[i].size()
-                 << ", ref_out_size = " << ref_out[i].size() << ", i = " << i;
-    }
+    CHECK_EQ(out[i].size(), ref_out[i].size()) << "Size error, i: " << i;
     for (size_t j = 0; j < out[i].size(); j++) {
       if (std::abs(out[i][j] - ref_out[i][j]) < abs_error) {
         right_count++;

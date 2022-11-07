@@ -68,6 +68,14 @@ class ConvOpLite : public OpLite {
   }
 #endif
 
+  bool AttachInput(const cpp::OpDescWrite& op_desc,
+                   lite::Scope* scope) override {
+    auto X = op_desc.Input("Input").front();
+    param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
+    CHECK(param_.x);
+    return true;
+  }
+
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
     auto X = op_desc.Input("Input").front();
@@ -207,30 +215,6 @@ class ConvOpLite : public OpLite {
             op_info->GetOutputScale(output_scale_name, true)[0];
       }
     }
-
-#ifdef LITE_WITH_FPGA
-    if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
-      param_.enable_int8 = op_info->GetAttr<bool>("fpga_static_quant");
-      auto input_scale_name = "Input0_scale";
-      if (op_info->HasInputScale(input_scale_name, true)) {
-        param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-      }
-    }
-#endif
-
-#ifdef LITE_WITH_FPGA
-    if (std::find(input_arg_names.begin(), input_arg_names.end(), "Scale") !=
-        input_arg_names.end()) {
-      auto scale_arguments = op_desc.Input("Scale");
-      if (scale_arguments.size() > 0) {
-        auto scale_var = scope->FindVar(scale_arguments.front());
-        if (scale_var != nullptr) {
-          param_.scale =
-              const_cast<lite::Tensor*>(&(scale_var->Get<lite::Tensor>()));
-        }
-      }
-    }
-#endif
 
     // conv3d: 3-pad to 6-pad, or conv2d: 2-pad to 4-pad
     if (paddings.size() == 2L || paddings.size() == 3L) {

@@ -69,12 +69,19 @@ class TargetWrapper<TARGET(kXPU)> {
   template <typename Tcpu, typename Txpu>
   static XPUQuantData ConvertCPUWeightToXPUQuantWeight(const Tcpu* cpu_data,
                                                        const DDimLite& dims,
-                                                       bool data_transpose);
+                                                       bool data_transpose,
+                                                       size_t max_ptr_len);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_.get() == nullptr) {
       tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
       CHECK(tls_raw_ctx_.get());
+      if (cluster_num != 0) {
+        tls_raw_ctx_->set_ncluster(cluster_num);
+      }
+      if (sdnn_num != 0) {
+        tls_raw_ctx_->set_nsdnn(sdnn_num);
+      }
       if (!enable_multi_stream_) {
         CHECK(xpu_stream_.get() == nullptr)
             << " xpu default stream should be nullptr: " << xpu_stream_.get();
@@ -165,6 +172,9 @@ class TargetWrapper<TARGET(kXPU)> {
   // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
   static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
+  static LITE_THREAD_LOCAL std::string compute_precision;  // NOLINT
+  // only for R200
+  static LITE_THREAD_LOCAL bool local_quant;
   // l3 cache config
   static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
   static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
@@ -173,6 +183,8 @@ class TargetWrapper<TARGET(kXPU)> {
   static size_t shared_l3_size;  // model level l3 size
   static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
       l3_block_dict;  // l3 cache block used between op layers
+  static LITE_THREAD_LOCAL int cluster_num;
+  static LITE_THREAD_LOCAL int sdnn_num;
 
  private:
   static void ScatterL3Cache(

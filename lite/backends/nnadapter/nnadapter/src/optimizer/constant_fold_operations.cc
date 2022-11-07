@@ -50,7 +50,7 @@ class ConstantFoldOperationsFuser : public PatternMatcher {
 
 void ConstantFoldOperationsFuser::BuildPattern() {
   // Create patterns
-  auto operation = CreatePattern("operation")->IsOperation();
+  CreatePattern("operation")->IsOperation();
 }
 
 bool ConstantFoldOperationsFuser::HandleMatchedResults(
@@ -64,10 +64,18 @@ bool ConstantFoldOperationsFuser::HandleMatchedResults(
       break;
     }
   }
-  // Shape should be considered separately
+  // Some ops should be considered separately
   auto op_type = operation->type;
-  if (op_type == NNADAPTER_SHAPE) {
-    is_input_constant = !IsDynamicShapeOperandType(input_operands[0]->type);
+  switch (op_type) {
+    case NNADAPTER_SHAPE:
+      is_input_constant = !IsDynamicShapeOperandType(input_operands[0]->type);
+      break;
+    case NNADAPTER_FILL_LIKE:
+      is_input_constant = !IsDynamicShapeOperandType(input_operands[0]->type) &&
+                          IsConstantOperand(input_operands[1]);
+      break;
+    default:
+      break;
   }
   if (!is_input_constant) return false;
 

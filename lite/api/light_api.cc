@@ -38,7 +38,7 @@ void LightPredictor::Build(const std::string& lite_model_file,
   // fp16 Weight convert
   WeightFP32ToFP16();
 #endif
-  BuildRuntimeProgram(program_desc_);
+  BuildRuntimeProgram(program_desc_, use_low_precision_);
   PrepareFeedFetch();
 }
 
@@ -72,11 +72,11 @@ void LightPredictor::Build(const std::string& model_dir,
   // fp16 Weight convert
   WeightFP32ToFP16();
 #endif
-  BuildRuntimeProgram(program_desc_);
+  BuildRuntimeProgram(program_desc_, use_low_precision_);
   PrepareFeedFetch();
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
 Tensor* LightPredictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -194,7 +194,8 @@ void LightPredictor::PrepareFeedFetch() {
 }
 
 void LightPredictor::BuildRuntimeProgram(
-    const std::shared_ptr<const cpp::ProgramDesc>& program_desc) {
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+    bool use_precision_low) {
   auto* exe_scope = &scope_->NewScope();
   // Prepare workspace
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
@@ -226,14 +227,73 @@ void LightPredictor::BuildRuntimeProgram(
       if (op_desc->Type() == "lod_array_length") bool_clear_tensor_ = true;
     }
   }
+
+#ifdef ENABLE_ARM_FP16
+  int low_precision = 1;
+  std::string old_op;
+
+  if (lite::DeviceInfo::Global().has_fp16()) {
+    for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+      auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(i);
+      for (size_t op_idx = 0; op_idx < block_desc->OpsSize(); op_idx++) {
+        auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+        CHECK(op_desc);
+        std::string op_type = op_desc->Type();
+
+        auto op = LiteOpRegistry::Global().Create(op_type);
+
+        std::unique_ptr<KernelBase> kernel;
+        if (op_desc->HasAttr(kKernelTypeAttr)) {
+          // Create op and pick up the best kernel according to the
+          // kKernelTypeAttr attribute
+          auto kernel_type = op_desc->GetAttr<std::string>(kKernelTypeAttr);
+          std::string alias;
+          Place place;
+          KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
+          op->Attach(*op_desc, exe_scope);
+          if (op_type != "feed" && op_type != "fetch") {
+            if (place.precision == PRECISION(kFloat)) {
+              place.precision = PRECISION(kFP16);
+            } else if (place.precision == PRECISION(kAny)) {
+              place.precision = PRECISION(kFP16);
+            } else {
+              low_precision = 0;
+            }
+          }
+          auto kernels = op->CreateKernels({place});
+          if (kernels.size() == 0) {
+            low_precision = 0;
+          }
+        }
+        if (old_op == "feed") {
+          if (op_type != "conv2d") {
+            low_precision = 0;
+          }
+        }
+        old_op = op_type;
+      }
+    }
+  } else {
+    low_precision = 0;
+  }
+  if (low_precision == 1 && use_precision_low) {
+    use_low_precision_ = true;
+    LOG(INFO) << "Inference with low precision!";
+  } else {
+    use_low_precision_ = false;
+  }
+#endif
+
   // Only extracting the ops and generate the runtime program from the main
   // block desc
-  program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIdx));
+  program_.reset(new RuntimeProgram(
+      program_desc, exe_scope, kRootBlockIdx, use_low_precision_));
 }
 
 void LightPredictor::DequantizeWeight() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
   CHECK(program_desc != nullptr);
+
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \

@@ -48,14 +48,6 @@ double fraction_of_cpu_memory_to_use =
 uint64_t initial_cpu_memory_in_mb =
     paddle::lite::GetUInt64FromEnv("initial_cpu_memory_in_mb", 500ul);
 
-// DEFINE_double(
-//     fraction_of_cuda_pinned_memory_to_use,
-//     0.5,
-//     "Default use 50% of CPU memory as the pinned_memory for PaddlePaddle,"
-//     "reserve the rest for page tables, etc");
-double fraction_of_cuda_pinned_memory_to_use = paddle::lite::GetDoubleFromEnv(
-    "fraction_of_cuda_pinned_memory_to_use", 0.5);
-
 // If use_pinned_memory is true, CPUAllocator calls mlock, which
 // returns pinned and locked memory as staging areas for data exchange
 // between host and device.  Allocates too much would reduce the amount
@@ -107,23 +99,6 @@ size_t CpuMaxChunkSize() {
   // or the initial_cpu_memory_in_mb.
   return std::min(static_cast<size_t>(CpuMaxAllocSize() / 32),
                   static_cast<size_t>(initial_cpu_memory_in_mb * 1 << 20));
-}
-
-size_t CUDAPinnedMaxAllocSize() {
-  // For distributed systems, it requires configuring and limiting
-  // the fraction of memory to use.
-  return fraction_of_cuda_pinned_memory_to_use * CpuTotalPhysicalMemory();
-}
-
-size_t CUDAPinnedMinChunkSize() {
-  // Allow to allocate the minimum chunk size is 64 KB.
-  return 1 << 16;
-}
-
-size_t CUDAPinnedMaxChunkSize() {
-  // Allow to allocate the maximum chunk size is roughly 1/256 of CUDA_PINNED
-  // memory.
-  return CUDAPinnedMaxAllocSize() / 256;
 }
 
 #ifdef PADDLE_WITH_XBYAK

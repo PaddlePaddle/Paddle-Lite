@@ -14,8 +14,9 @@
 
 #include "lite/kernels/xpu/multiclass_nms_compute.h"
 #include <vector>
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -49,9 +50,7 @@ void MulticlassNmsCompute::Run() {
   int b = 0;
   int class_num = scores->dims()[1];
   int out_dim = boxes->dims()[2] + 2;
-  CHECK(class_num <= 80)
-      << "xpu MulticlassNms only support class_num <= 80 which is "
-      << class_num;
+  CHECK_LE(class_num, 80);
   int boxes_count = 0;
   std::vector<int> rois_num_vec;
   rois_num_vec.clear();
@@ -105,24 +104,60 @@ void MulticlassNmsCompute::Run() {
                                           return_index,
                                           is_lod);
   } else {
-    r = xdnn::multiclass_nms2<float, int>(ctx.GetRawContext(),
-                                          boxes->data<float>(),
-                                          scores->data<float>(),
-                                          outs_vec,
-                                          out_index_vec,
-                                          batch_starts,
-                                          n,
-                                          b,
-                                          class_num,
-                                          out_dim,
-                                          nms_top_k,
-                                          score_threshold,
-                                          keep_top_k,
-                                          nms_threshold,
-                                          background_label,
-                                          normalized,
-                                          nms_eta,
-                                          return_index);
+    if (((nms_top_k > 512 || keep_top_k > 100) &&
+         ctx.GetRawContext()->dev().type() == xdnn::kXPU1) ||
+        ((nms_top_k > 6400 || keep_top_k > 120) &&
+         ctx.GetRawContext()->dev().type() == xdnn::kXPU2)) {
+      xdnn::Context ctx_cpu(xdnn::kCPU);
+      std::vector<float> tmp_boxes_cpu(boxes_count * boxes->dims()[2], 0);
+      std::vector<float> tmp_scores_cpu(n * class_num * b, 0);
+      TargetWrapperXPU::MemcpySync(
+          tmp_boxes_cpu.data(),
+          boxes->data<float>(),
+          sizeof(float) * boxes_count * boxes->dims()[2],
+          IoDirection::DtoH);
+      TargetWrapperXPU::MemcpySync(tmp_scores_cpu.data(),
+                                   scores->data<float>(),
+                                   sizeof(float) * n * class_num * b,
+                                   IoDirection::DtoH);
+      r = xdnn::multiclass_nms2<float, int>(&ctx_cpu,
+                                            tmp_boxes_cpu.data(),
+                                            tmp_scores_cpu.data(),
+                                            outs_vec,
+                                            out_index_vec,
+                                            batch_starts,
+                                            n,
+                                            b,
+                                            class_num,
+                                            out_dim,
+                                            nms_top_k,
+                                            score_threshold,
+                                            keep_top_k,
+                                            nms_threshold,
+                                            background_label,
+                                            normalized,
+                                            nms_eta,
+                                            return_index);
+    } else {
+      r = xdnn::multiclass_nms2<float, int>(ctx.GetRawContext(),
+                                            boxes->data<float>(),
+                                            scores->data<float>(),
+                                            outs_vec,
+                                            out_index_vec,
+                                            batch_starts,
+                                            n,
+                                            b,
+                                            class_num,
+                                            out_dim,
+                                            nms_top_k,
+                                            score_threshold,
+                                            keep_top_k,
+                                            nms_threshold,
+                                            background_label,
+                                            normalized,
+                                            nms_eta,
+                                            return_index);
+    }
   }
 
   CHECK_EQ(r, 0);
@@ -173,32 +208,29 @@ void MulticlassNmsCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-/* The current multiclass_nms2 op in xdnn only support topk_nms <= 512
-   Comment this to avoid yolov3_darknet53_fp32_baidu run error. */
+REGISTER_LITE_KERNEL(multiclass_nms,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
 
-// REGISTER_LITE_KERNEL(multiclass_nms,
-//                      kXPU,
-//                      kFloat,
-//                      kNCHW,
-//                      paddle::lite::kernels::xpu::MulticlassNmsCompute,
-//                      def)
-//     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
-//     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
-//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .Finalize();
-
-// REGISTER_LITE_KERNEL(multiclass_nms2,
-//                      kXPU,
-//                      kFloat,
-//                      kNCHW,
-//                      paddle::lite::kernels::xpu::MulticlassNmsCompute,
-//                      def)
-//     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
-//     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
-//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-//     .BindOutput("Index",
-//                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-//     .Finalize();
+REGISTER_LITE_KERNEL(multiclass_nms2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(multiclass_nms3,
                      kXPU,

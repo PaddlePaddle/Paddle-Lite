@@ -177,6 +177,9 @@ TEST(Pad2d, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
   pad_mode_list = {"constant", "reflect"};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  pad_mode_list = {"constant", "reflect"};
 #else
   return;
 #endif
@@ -184,9 +187,6 @@ TEST(Pad2d, precision) {
   place = TARGET(kXPU);
   pad_mode_list = {"constant",
                    "reflect"};  // XPU support constant and reflect now
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -207,6 +207,9 @@ TEST(Pad2d, precision) {
               if (std::abs(pad_value - 1) < 1e-6 ||
                   ((pad_top == 1 || pad_bottom == 1) && pad_left == 0 &&
                    pad_right == 0))
+                continue;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+              if (pad_mode == "reflect" && pad_left == 0 && pad_right == 0)
                 continue;
 #endif
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "

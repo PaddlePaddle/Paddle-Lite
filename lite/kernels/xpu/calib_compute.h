@@ -21,15 +21,18 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType, typename OutType>
-class CalibCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+template <typename InType, typename OutType, PrecisionType PType>
+class CalibCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::CalibParam;
 
+  void PrepareForRun() override;
   void Run() override;
 
   ~CalibCompute() override{};
+
+ private:
+  XPUScratchPadGuard calib_max_guard_;
 };
 
 }  // namespace xpu

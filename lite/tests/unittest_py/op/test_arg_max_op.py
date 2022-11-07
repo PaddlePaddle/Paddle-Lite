@@ -58,8 +58,9 @@ class TestArgMaxOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["nvidia_tensorrt", "intel_openvino"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "nvidia_tensorrt", "intel_openvino", "kunlunxin_xtcl"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -132,6 +133,14 @@ class TestArgMaxOp(AutoScanTest):
                 if len(in_shape) == 1:
                     return True
 
+        def _teller5(program_config, predictor_config):
+            if "kunlunxin_xtcl" in self.get_nnadapter_device_name():
+                set_dtype = program_config.ops[0].attrs["dtype"]
+                in_shape = program_config.inputs["input_data"].shape
+                axis = program_config.ops[0].attrs["axis"]
+                if len(in_shape) == 1:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
@@ -148,6 +157,10 @@ class TestArgMaxOp(AutoScanTest):
             _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")
 
+        self.add_ignore_check_case(
+            _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 100
@@ -156,6 +169,8 @@ class TestArgMaxOp(AutoScanTest):
             max_examples = 200
         if target_str == "Metal":
             max_examples = 1000
+        if "kunlunxin_xtcl" in self.get_nnadapter_device_name():
+            max_examples = 200
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)
 

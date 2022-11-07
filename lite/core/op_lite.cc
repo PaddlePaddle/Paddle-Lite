@@ -72,8 +72,8 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   auto pick_kernel = [&](const Place &place) {
     auto ks = KernelRegistry::Global().Create(
         op_type_, place.target, place.precision, place.layout);
-    VLOG(5) << "pick kernel for " << op_info()->Type() << " "
-            << place.DebugString() << " get " << ks.size() << " kernels";
+    VLOG(5) << "pick kernel for " << op_type_ << " " << place.DebugString()
+            << " get " << ks.size() << " kernels";
     for (auto &&it : ks) {
       AttachKernel(it.get());
       kernels.emplace_back(std::move(it));
@@ -129,6 +129,14 @@ bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       new OpInfo(opdesc));  // Force clean the out-of-date infomation.
   return AttachImpl(*op_info(), scope);
 }
+
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+bool OpLite::Attach(const cpp::OpDescWrite &opdesc, lite::Scope *scope) {
+  CHECK(scope != nullptr);
+  scope_ = scope;
+  return AttachImpl(opdesc, scope);
+}
+#endif
 
 const Tensor *OpLite::GetTensor(lite::Scope *scope,
                                 const std::string &name) const {

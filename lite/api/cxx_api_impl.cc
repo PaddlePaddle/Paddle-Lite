@@ -53,36 +53,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   if (!status_is_cloned_) {
     auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
-#ifdef LITE_WITH_CUDA
-    // if kCUDA is included in valid places, it should be initialized first,
-    // otherwise skip this step.
-    for (auto &p : places) {
-      if (p.target == TARGET(kCUDA)) {
-        Env<TARGET(kCUDA)>::Init();
-        if (config_.multi_stream()) {
-          passes.push_back("multi_stream_analysis_pass");
-          VLOG(3) << "add pass: " << passes[0];
-        }
-        break;
-      }
-    }
-#endif
-#ifdef LITE_WITH_MLU
-    Env<TARGET(kMLU)>::Init();
-    lite::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
-                                          config.mlu_core_number(),
-                                          config.mlu_input_layout(),
-                                          config.mlu_firstconv_param());
-#endif  // LITE_WITH_MLU
-
-#ifdef LITE_WITH_BM
-    Env<TARGET(kBM)>::Init();
-    int device_id = 0;
-    if (const char *c_id = getenv("BM_VISIBLE_DEVICES")) {
-      device_id = static_cast<int>(*c_id) - 48;
-    }
-    TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
-#endif  // LITE_WITH_BM
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
@@ -152,13 +122,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
 #ifdef LITE_WITH_METAL
   raw_predictor_->ConfigMetalContext(config);
-#endif
-
-#ifdef LITE_WITH_NPU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \

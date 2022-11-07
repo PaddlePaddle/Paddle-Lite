@@ -228,6 +228,24 @@ TEST(TestPoolRand, test_pool_rand) {
 }
 #endif  /// random param conv
 
+#ifdef LITE_WITH_ARM8_SVE2  // global_pool
+TEST(TesPoolGlobal, test_pool_fp32_global) {
+  for (auto& h : {51})
+    test_pool_fp32({DDim({1, 64, h, h})},
+                   {2, 2},
+                   {1, 1},
+                   {1, 1, 1, 1},
+                   false,
+                   true,
+                   false,
+                   false,
+                   false,
+                   "avg",
+                   {1},
+                   {1});
+}
+#endif  // global_pool
+
 #if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp32_custom_size) {
   test_pool_fp32(

@@ -43,7 +43,12 @@ int ConvertBmm(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto output_scale_name = "Out0_scale";
+  std::vector<float> output_scales;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    output_scales = op->GetOutputScale(output_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, output_scales);
 
   // Mat_mul operation
   converter->AddOperation(

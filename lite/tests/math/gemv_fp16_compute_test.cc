@@ -136,7 +136,7 @@ bool test_sgemv_fp16(bool tra,
                dc_basic,
                static_cast<float16_t>(1.f),
                static_cast<float16_t>(0.f),
-               false,
+               tra,
                has_bias,
                flag_act,
                alpha);
@@ -211,7 +211,7 @@ TEST(TestLiteGemvFP16, gemv_fp16) {
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {3, 8, 32, 397}) {
       for (auto& n : {3, 13, 141, 512, 789}) {
-        for (auto& tra : {false}) {
+        for (auto& tra : {false, true}) {
           for (auto& has_bias : {false, true}) {
             for (auto& flag_act : {0, 1}) {
               for (auto& th : {1, 2, 4}) {

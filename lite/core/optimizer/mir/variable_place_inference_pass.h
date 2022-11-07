@@ -63,17 +63,14 @@ class VariablePlaceInferencePass : public DebugPass {
                      const LiteType& type,
                      const std::map<std::string, bool>& with_targets) {
     VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
-    if (with_targets.at("kFPGA")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kOpenCL")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kCUDA")) {
+    if (with_targets.at("kOpenCL")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else if (with_targets.at("kMetal") &&
                type.precision() == PRECISION(kUnk)) {
+      weight_node->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else if (with_targets.at("kXPU")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
@@ -126,12 +123,11 @@ class VariablePlaceInferencePass : public DebugPass {
     };
     std::map<std::string, bool> with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
-        {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
-        {"kFPGA", valid_places_has_target(TARGET(kFPGA))},
         {"kMetal", valid_places_has_target(TARGET(kMetal))},
+        {"kXPU", valid_places_has_target(TARGET(kXPU))},
     };
     VLOG(4) << "with_targets['kOpenCL']:" << with_targets["kOpenCL"];
-    VLOG(4) << "with_targets['kFPGA']:" << with_targets["kFPGA"];
+    VLOG(4) << "with_targets['kXPU']:" << with_targets["kXPU"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& node : graph->StmtTopologicalOrder()) {
@@ -141,10 +137,8 @@ class VariablePlaceInferencePass : public DebugPass {
       auto& kernel = inst.picked_kernel();
 
       // The IoCopyOp is a tool operator, it won't support the type inference.
-      // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
-      // for tool operator
-      if (with_targets["kFPGA"] || with_targets["kOpenCL"]) {
-        VLOG(3) << "skip 'io_copy' if target is FPGA or OpenCL";
+      if (with_targets["kOpenCL"]) {
+        VLOG(3) << "skip 'io_copy' if target is OpenCL";
         if (op_type == "io_copy") continue;
       }
 
@@ -171,7 +165,8 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           }
         } else if (!(*var_type)->place().is_valid()) {
-          if (var.is_weight && with_targets["kMetal"]) {
+          if (var.is_weight &&
+              (with_targets["kMetal"] || with_targets["kXPU"])) {
             SetWeightType(in_node, **var_type, with_targets);
           } else if (decl_type->precision() == PRECISION(kInt8) ||
                      (decl_type->precision() == PRECISION(kFP16) &&
@@ -212,6 +207,10 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
+          }
+          if (with_targets["kXPU"]) {
+            var.is_weight = false;
+            var.is_persist = false;
           }
         }
       }

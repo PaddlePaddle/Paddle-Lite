@@ -46,7 +46,6 @@ using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
 using lite::LightPredictorImpl;
 using lite_api::CxxConfig;
 using lite_api::DataLayoutType;
-using lite_api::MLUCoreVersion;
 using lite_api::MobileConfig;
 using lite_api::OptBase;
 using lite_api::Place;
@@ -100,7 +99,6 @@ static void BindLitePlace(py::module *m);
 static void BindLiteCLTuneMode(py::module *m);
 static void BindLiteCLPrecisionType(py::module *m);
 static void BindLiteTensor(py::module *m);
-static void BindLiteMLUCoreVersion(py::module *m);
 
 void BindLiteApi(py::module *m) {
   BindLiteCxxConfig(m);
@@ -110,7 +108,6 @@ void BindLiteApi(py::module *m) {
   BindLiteCLTuneMode(m);
   BindLiteCLPrecisionType(m);
   BindLiteTensor(m);
-  BindLiteMLUCoreVersion(m);
 #ifndef LITE_ON_TINY_PUBLISH
   BindLiteCxxPredictor(m);
 #endif
@@ -189,15 +186,6 @@ void BindLiteCxxConfig(py::module *m) {
            &CxxConfig::nnadapter_subgraph_partition_config_path)
       .def("nnadapter_mixed_precision_quantization_config_path",
            &CxxConfig::nnadapter_mixed_precision_quantization_config_path);
-
-#ifdef LITE_WITH_MLU
-  cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
-      .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
-      .def("set_mlu_input_layout", &CxxConfig::set_mlu_input_layout)
-      .def("set_mlu_use_first_conv", &CxxConfig::set_mlu_use_first_conv)
-      .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
-      .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
-#endif
 }
 
 // TODO(sangoly): Should MobileConfig be renamed to LightConfig ??
@@ -269,24 +257,16 @@ void BindLiteCLPrecisionType(py::module *m) {
       .value("CL_PRECISION_FP16", CLPrecisionType::CL_PRECISION_FP16);
 }
 
-void BindLiteMLUCoreVersion(py::module *m) {
-  py::enum_<MLUCoreVersion>(*m, "MLUCoreVersion")
-      .value("LITE_MLU_220", MLUCoreVersion::MLU_220)
-      .value("LITE_MLU_270", MLUCoreVersion::MLU_270);
-}
-
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
       .value("Unk", TargetType::kUnk)
       .value("Host", TargetType::kHost)
       .value("X86", TargetType::kX86)
-      .value("CUDA", TargetType::kCUDA)
       .value("ARM", TargetType::kARM)
       .value("OpenCL", TargetType::kOpenCL)
       .value("Any", TargetType::kAny)
       .value("FPGA", TargetType::kFPGA)
-      .value("NPU", TargetType::kNPU)
       .value("XPU", TargetType::kXPU)
       .value("BM", TargetType::kBM)
       .value("MLU", TargetType::kMLU)
@@ -375,8 +355,6 @@ void BindLiteTensor(py::module *m) {
          TargetType type = TargetType::kHost) {                          \
         if (type == TargetType::kHost || type == TargetType::kARM) {     \
           self.CopyFromCpu<data_type__, TargetType::kHost>(data.data()); \
-        } else if (type == TargetType::kCUDA) {                          \
-          self.CopyFromCpu<data_type__, TargetType::kCUDA>(data.data()); \
         }                                                                \
       },                                                                 \
       py::arg("data"),                                                   \

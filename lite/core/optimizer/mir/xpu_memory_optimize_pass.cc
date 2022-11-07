@@ -131,7 +131,10 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph) {
         if (inplace) {
           auto in_arg_name = op_info->Input("X")[0];
           auto out_arg_name = op_info->Output("Out")[0];
-          if (invalid_var_names.count(in_arg_name)) continue;
+          if (invalid_var_names.count(in_arg_name)) {
+            invalid_var_names.insert(out_arg_name);
+            continue;
+          }
           if (invalid_var_names.count(out_arg_name)) continue;
           bool reuse = false;
           int i = 0;
@@ -393,10 +396,7 @@ REGISTER_MIR_PASS(xpu_memory_optimize_pass,
                   paddle::lite::mir::XPUMemoryOptimizePass)
     .BindTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kARM),
-                     TARGET(kNPU),
                      TARGET(kOpenCL),
-                     TARGET(kBM),
                      TARGET(kRKNPU),
-                     TARGET(kMLU),
                      TARGET(kMetal),
                      TARGET(kNNAdapter)});

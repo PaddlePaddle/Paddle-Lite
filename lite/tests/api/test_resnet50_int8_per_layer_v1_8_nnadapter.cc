@@ -62,6 +62,10 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   nnadapter_device_names.emplace_back("google_xnnpack");
   out_accuracy_threshold = 0.99f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 1;
+  out_accuracy_threshold = 1.f;
 #else
   return;
 #endif

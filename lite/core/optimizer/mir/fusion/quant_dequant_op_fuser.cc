@@ -125,6 +125,41 @@ void QuantizeTensorInPlace(Tensor* input,
   }
 }
 
+// Per-layer cast tensor
+template <typename T>
+static void TensorCaster(Tensor* input) {
+  if (input->precision() != PRECISION(kFloat)) {
+    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
+               << PrecisionToStr(input->precision());
+  }
+  Tensor temp_tensor;
+  temp_tensor.CopyDataFrom(*input);
+  input->clear();
+  float* temp_data = temp_tensor.mutable_data<float>();
+  T* input_data = input->mutable_data<T>();
+  for (size_t i = 0; i < input->numel(); i++) {
+    input_data[i] = static_cast<T>(temp_data[i]);
+  }
+}
+
+void CastPersistableTensorInPlace(Tensor* input, int bit_length) {
+  switch (bit_length) {
+    case 8:
+      TensorCaster<int8_t>(input);
+      input->set_precision(PRECISION(kInt8));
+      break;
+    case 16:
+      TensorCaster<int16_t>(input);
+      input->set_precision(PRECISION(kInt16));
+      break;
+    default:
+      // not support
+      LOG(FATAL) << "Not support, bit_length= " << bit_length;
+      break;
+  }
+  input->set_persistable(true);
+}
+
 void DeleteQuantOpFuser::BuildPattern() {
   auto* input_scale_node = VarNode("input_scale_node")
                                ->assert_is_op_input(quant_op_type_, "InScale");
@@ -169,10 +204,6 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
-
-#ifdef LITE_WITH_FPGA
-    op_desc.SetAttr("fpga_static_quant", true);
-#endif
 
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
@@ -275,32 +306,18 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-#ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
-#endif
+  switch (bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-  size_t weight_num = quantized_weight_t->data_size();
-
-#ifdef LITE_WITH_FPGA
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-#else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
-#endif
+  CastPersistableTensorInPlace(quantized_weight_t, bit_length);
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -389,38 +406,21 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
 
-#ifndef LITE_WITH_FPGA
-  op_desc.SetAttr("enable_int8", true);
-#endif
+  switch (weight_bit_length) {
+    case 8:
+      op_desc.SetAttr("enable_int8", true);
+      break;
+    case 16:
+      op_desc.SetAttr("enable_int16", true);
+      break;
+  }
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-
-#ifdef LITE_WITH_FPGA
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  int channel = channel_scale_tensor->data_size();
-  int weight_chw = quantized_weight_t->data_size() / channel;
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_chw;
-    quantized_weight_data[i] = temp_data[i] * weight_scale[c];
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-
-#else
-  int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kInt8));
-#endif
+  CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -523,14 +523,12 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
 
-#ifndef LITE_WITH_FPGA
     std::string op_type = op_info.Type();
     if (std::find(input_activation_quant_op.begin(),
                   input_activation_quant_op.end(),
                   op_type) != input_activation_quant_op.end()) {
       op_info.SetAttr("enable_int8", true);
     }
-#endif
 
     if (input_var_is_activation) {
       op_info.SetInputScale(input_var_name, scales);
@@ -554,9 +552,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       if (op_type == "mul" || op_type == "matmul" || op_type == "matmul_v2" ||
           op_type == "conv2d" || op_type == "depthwise_conv2d" ||
           op_type == "conv2d_transpose") {
-#ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
-#endif
         if (scales.size() == 1) {
           QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
         } else {
@@ -698,13 +694,38 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     op_info->UpdateAllInputs(output_var_name, input_var_name);
     op_info->SetAttr<int>("bit_length", bit_length);
     std::string op_type = op_info->Type();
-#ifndef LITE_WITH_FPGA
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
       op_info->SetAttr("enable_int8", true);
     }
-#endif
     op_info->SetInputScale(input_var_name, scales);
+    for (auto op_out_var_node : quantized_node->outlinks) {
+      CHECK(op_out_var_node->IsArg());
+      for (auto out_scale_node : op_out_var_node->outlinks) {
+        if (!out_scale_node->IsStmt()) continue;
+        auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
+        auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (out_scale_op_info->Type() != "quantize_linear") continue;
+        if (!out_scale_op_info->HasInput("Scale")) continue;
+        std::string out_scale_name = out_scale_op_info->Input("Scale").front();
+        auto* out_scale_tensor =
+            out_scale_scope->FindMutableTensor(out_scale_name);
+        auto* out_scale_data = out_scale_tensor->data<float>();
+        std::vector<float> out_thresholds(
+            out_scale_data, out_scale_data + scale_tensor->data_size());
+        int out_bit_length =
+            out_scale_node->stmt()->op_info()->GetAttr<int>("bit_length");
+        std::vector<float> out_scales(out_thresholds.size(), 0);
+        std::transform(out_thresholds.begin(),
+                       out_thresholds.end(),
+                       out_scales.begin(),
+                       [&out_bit_length](float x) {
+                         return x / ((1 << (out_bit_length - 1)) - 1);
+                       });
+        op_info->SetOutputScale(op_out_var_node->arg()->name, out_scales);
+        break;
+      }
+    }
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges

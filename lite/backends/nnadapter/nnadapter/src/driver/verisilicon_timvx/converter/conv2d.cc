@@ -57,6 +57,10 @@ int ConvertConv2D(Converter* converter, core::Operation* operation) {
     // Oc,1,H,W -> 1,Oc,H,W
     filter_dimensions[0] = filter_dimensions[1];
     filter_dimensions[1] = output_channel_size;
+    if (filter_operand->type.precision ==
+        NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL) {
+      filter_operand->type.symm_per_channel_params.channel_dim = 1;
+    }
   }
   auto filter_tensor =
       converter->ConvertOperand(filter_operand, filter_dimensions);

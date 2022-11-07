@@ -67,8 +67,9 @@ class TestSwishOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["nvidia_tensorrt", "intel_openvino"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "nvidia_tensorrt", "intel_openvino", "kunlunxin_xtcl"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -101,6 +102,8 @@ class TestSwishOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 1e-2, 1e-2
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            atol, rtol = 1e-4, 1e-4
         return self.get_predictor_configs(), ["swish"], (atol, rtol)
 
     def add_ignore_pass_case(self):
@@ -128,6 +131,8 @@ class TestSwishOp(AutoScanTest):
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         if target_str == "Metal":
+            self.run_and_statis(quant=False, max_examples=300)
+        elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
             self.run_and_statis(quant=False, max_examples=300)
         else:
             self.run_and_statis(quant=False, max_examples=25)

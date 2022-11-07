@@ -124,12 +124,7 @@ TEST(Mul, precision) {
   LOG(INFO) << "test mul op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
-#else
   return;
-#endif
   TestMul({4, 5}, {5, 4}, 1, 1, place, abs_error);
   TestMul({4, 5}, {5, 4, 3, 2}, 1, 1, place, abs_error);
   TestMul({4, 20}, {5, 4, 3, 2}, 1, 2, place, abs_error);

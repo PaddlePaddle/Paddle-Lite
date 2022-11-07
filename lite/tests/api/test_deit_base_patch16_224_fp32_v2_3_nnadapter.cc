@@ -50,6 +50,15 @@ TEST(DeiT, test_deit_base_patch16_224_fp32_v2_3_nnadapter) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   nnadapter_device_names.emplace_back("intel_openvino");
   out_accuracy_threshold = 0.87f;
+// TODO(hong19860320) Fix core dump
+// 1. Failed at "linear_49.tmp_1"
+// 2. error info: A single op (1f7a00000016) requires 0x704800 bytes of TCM,
+// which is greater than the TCM size of 0x400000
+// 3. Shape may be too large?
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
+//   FLAGS_iteration = 1;
+//   out_accuracy_threshold = 0.f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

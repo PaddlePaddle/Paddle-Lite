@@ -19,12 +19,14 @@
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
+#include "optimizer/constant_fold_operations.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
+#include "optimizer/fuse_sigmoid_mul_into_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -35,7 +37,21 @@ namespace nnadapter {
 namespace verisilicon_timvx {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // TODO(hong19860320) create the raw context from tim-vx
+  // By dafault, set the
+  // TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
+  // as 1000, user can modify the threshold by context_property or ENV
+  NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
+  auto key_values = GetKeyValues(properties);
+  if (key_values.count(
+          TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = string_parse<double>(
+        key_values[TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);
+  } else {
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = GetDoubleFromEnv(
+        TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION, 1000.f);
+  }
+  NNADAPTER_LOG(INFO) << "bn_fusion_max_allowed_quant_scale_deviation: "
+                      << batchnorm_fusion_max_allowed_quant_scale_deviation_;
 }
 
 Context::~Context() {}
@@ -99,12 +115,17 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DBatchNormIntoConv2D(
+        model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DAddIntoConv2D(model);
+    FuseConv2DBatchNormIntoConv2D(
+        model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+    FuseSigmoidMulIntoSwish(model);
     ConvertFillLikeIntoMulAdd(model);
+    ConstantFoldOperations(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);

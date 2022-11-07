@@ -339,8 +339,8 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
           }
         }
 
-        gemv_fp16(weights_group,
-                  din_group,
+        gemv_fp16(din_group,
+                  weights_group,
                   dout_group,
                   true,
                   n,
@@ -454,8 +454,8 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
           }
         }
 
-        gemv_fp16(weights_group,
-                  dB,
+        gemv_fp16(dB,
+                  weights_group,
                   dout_group,
                   true,
                   n,

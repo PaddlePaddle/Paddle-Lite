@@ -77,6 +77,12 @@ struct CalibParam : ParamBase {
   float scale;
 };
 
+struct CalibInplaceParam : ParamBase {
+  lite::Tensor* input{};
+  lite::Tensor* output{};
+  float scale;
+};
+
 struct SubgraphParam : ParamBase {
   std::vector<std::string> input_names{};
   std::vector<std::string> output_names{};
@@ -256,7 +262,6 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
-  bool use_cudnn{true};
   bool eleminate_success{false};
 };
 
@@ -411,19 +416,6 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
-
-#ifdef LITE_WITH_FPGA
-  lite::Tensor* scale{nullptr};
-  struct StrideInfo {
-    bool wd_enable_ = false;
-    int wd_offset_ = -1;
-    int fuse_idx_ = -1;
-    int original_out_channel_ = -1;
-    int start_idx_ = 0;
-    int end_idx_ = 0;
-  };
-  StrideInfo stride_info_;
-#endif
 
   // for int8
   WITH_INT8_CONFIG
@@ -1716,6 +1708,13 @@ struct XPUBlockFuseParam : ParamBase {
   std::vector<int> block_lod;
   bool has_bias{false};
   bool has_branch{false};
+  // for int8/int16
+  bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
+  float quant_output_max{0.f};
+  float quant_branch_max{0.f};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1724,7 +1723,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
-  lite::Tensor* fc_weight_max{};
+  std::vector<lite::Tensor*> roformer_embedding;
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
@@ -1735,16 +1734,20 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
-  std::vector<float> weight_max{};
+  std::vector<lite::Tensor*> weight_max{};
+  std::vector<std::string> quant_types{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
   int hidden_dim{};
   std::string act_type{};
+  int relative_type{0};
+  int max_pos_len{512};  // relative embedding [max_pos_len, head_dim]
   std::string precision{};
   bool enable_qkv_fusion{false};
   bool norm_before{false};
   bool adaptive_seqlen{false};
+  bool per_channel{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -1768,13 +1771,28 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
-  float quant_input_max{0.f};
-  float quant_w_max{0.f};
+  std::vector<float> weight_max{};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
   bool transpose_x{false};
   bool transpose_w{true};
+
+  // int8/int16
+  bool enable_int8{false};
+  bool enable_int16{false};
+  float quant_input_max{0.f};
+  float quant_output_max{0.f};
+  bool per_channel{false};
+  float alpha{1.0f};
+};
+
+struct XPURoformerRelativeEmbeddingParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* cos_embedding{nullptr};
+  lite::Tensor* sin_embedding{nullptr};
+  lite::Tensor* output{nullptr};
+  int max_pos_len{512};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -2270,6 +2288,29 @@ struct RollParam : ParamBase {
   lite::Tensor* Out{};
   std::vector<int64_t> shifts{};
   std::vector<int64_t> axis{};
+};
+
+struct SetValueParam : ParamBase {
+  const lite::Tensor* Input{};
+  const lite::Tensor* ValueTensor{};
+  std::vector<const lite::Tensor*> StartsTensorList{};
+  std::vector<const lite::Tensor*> EndsTensorList{};
+  std::vector<const lite::Tensor*> StepsTensorList{};
+  lite::Tensor* Out{};
+  int dtype{5};
+  std::vector<int64_t> axes{};
+  std::vector<int64_t> starts{};
+  std::vector<int64_t> ends{};
+  std::vector<int64_t> steps{};
+  std::vector<int64_t> decrease_axes{};
+  std::vector<int64_t> none_axes{};
+  std::vector<int> bool_values{};
+  std::vector<float> fp32_values{};
+  std::vector<int> int32_values{};
+  std::vector<int64_t> int64_values{};
+  std::vector<double> fp64_values{};
+  std::vector<float> fp16_values{};
+  std::vector<int64_t> shape{};
 };
 
 }  // namespace operators

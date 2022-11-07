@@ -19,6 +19,10 @@
 #include "lite/backends/arm/math/activation.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/log/logging.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -28,13 +32,25 @@ void add_bias_rowwise(Tensor* input,
                       const Tensor* bias,
                       int start_w,
                       int end_w);
+void vector_dot(float* out,
+                const float* in,
+                const float* v1,
+                int size,
+                const float* v2 = nullptr);
+#ifdef ENABLE_ARM_FP16
+void add_bias_rowwise_fp16(Tensor* input,
+                           const Tensor* bias,
+                           int start_w,
+                           int end_w);
+void vector_dot_fp16(float16_t* out,
+                     const float16_t* in,
+                     const float16_t* v1,
+                     int size,
+                     const float16_t* v2 = nullptr);
+#endif
 
-inline float* row_offset(Tensor& input, int start) {  // NOLINT
-  auto in_dim = input.dims();
-  int width = input.numel() / in_dim[0];
-  int offset = start < in_dim[0] ? start * width : input.numel();
-  return input.mutable_data<float>() + offset;
-}
+float* row_offset(Tensor& input, int start);  // NOLINT
+
 template <class T>
 struct LstmMetaValue {
   T* gate_value;
@@ -89,11 +105,20 @@ void activation(const T* din,
   }
 }
 
-void vector_dot(float* out,
-                const float* in,
-                const float* v1,
-                int size,
-                const float* v2 = nullptr);
+#ifdef ENABLE_ARM_FP16
+template <>
+void activation<float16_t>(const float16_t* din,
+                           float16_t* dout,
+                           int size,
+                           std::string act_str,
+                           int threads);
+template <>
+void activation<float16_t>(const float16_t* din,
+                           float16_t* dout,
+                           int size,
+                           lite_api::ActivationType act_type,
+                           int threads);
+#endif
 
 template <typename T>
 struct LstmUnitFunctor {
@@ -107,8 +132,8 @@ struct LstmUnitFunctor {
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;
-      float zero_ptr[temp_len];  // NOLINT
-      memset(zero_ptr, 0, sizeof(float) * temp_len);
+      T zero_ptr[temp_len];  // NOLINT
+      memset(zero_ptr, 0, sizeof(T) * temp_len);
 
       T* value_in = value.gate_value;
       T* value_ig = value_in + frame_size;
@@ -171,8 +196,8 @@ struct RnnLstmUnitFunctor {
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;
-      float zero_ptr[temp_len];  // NOLINT
-      memset(zero_ptr, 0, sizeof(float) * temp_len);
+      T zero_ptr[temp_len];  // NOLINT
+      memset(zero_ptr, 0, sizeof(T) * temp_len);
 
       T* value_ig = value.gate_value;
       T* value_fg = value_ig + frame_size;
@@ -222,6 +247,72 @@ struct RnnLstmUnitFunctor {
     }
   }
 };
+
+#ifdef ENABLE_ARM_FP16
+
+struct RnnLstmUnitFunctorFP16 {
+  static void compute(LstmMetaValue<float16_t> value,
+                      int frame_size,
+                      int batch_size,
+                      float16_t cell_clip,
+                      lite_api::ActivationType gate_act,
+                      lite_api::ActivationType cell_act,
+                      lite_api::ActivationType cand_act,
+                      int threads) {
+    for (int b = 0; b < batch_size; ++b) {
+      const int temp_len = frame_size;
+      float16_t zero_ptr[temp_len];  // NOLINT
+      memset(zero_ptr, 0, sizeof(float16_t) * temp_len);
+
+      float16_t* value_ig = value.gate_value;
+      float16_t* value_fg = value_ig + frame_size;
+      float16_t* value_in = value_fg + frame_size;
+      float16_t* value_og = value_in + frame_size;
+      float16_t* state = value.state_value;
+      float16_t* state_act = value.state_active_value;
+      float16_t* output = value.output_value;
+
+      float16_t* check_i = value.check_ig ? value.check_ig : zero_ptr;
+      float16_t* check_f = value.check_fg ? value.check_fg : zero_ptr;
+      float16_t* check_o = value.check_og ? value.check_og : zero_ptr;
+      float16_t* prev_state =
+          value.prev_state_value ? value.prev_state_value : zero_ptr;
+
+      activation<float16_t>(value_in, value_in, frame_size, gate_act, threads);
+      vector_dot_fp16(value_ig, value_ig, prev_state, frame_size, check_i);
+      vector_dot_fp16(value_fg, value_fg, prev_state, frame_size, check_f);
+      activation<float16_t>(value_ig, value_ig, frame_size, cell_act, threads);
+      activation<float16_t>(value_fg, value_fg, frame_size, cell_act, threads);
+      vector_dot_fp16(state, value_in, value_ig, frame_size);
+      vector_dot_fp16(state, state, prev_state, frame_size, value_fg);
+
+      for (int i = 0; i < frame_size; ++i) {
+        if (cell_clip > 0.0) {
+          if (state[i] < -1.0 * cell_clip) {
+            state[i] = -1.0 * cell_clip;
+          }
+          if (state[i] > cell_clip) {
+            state[i] = cell_clip;
+          }
+        }
+      }
+
+      vector_dot_fp16(value_og, value_og, state, frame_size, check_o);
+      activation<float16_t>(value_og, value_og, frame_size, cell_act, threads);
+      activation<float16_t>(state, state_act, frame_size, cand_act, threads);
+      vector_dot_fp16(value.output_value, value_og, state_act, frame_size);
+
+      value.gate_value += frame_size * 4;
+      value.state_value += frame_size;
+      value.state_active_value += frame_size;
+      value.output_value += frame_size;
+      if (value.prev_state_value) {
+        value.prev_state_value += frame_size;
+      }
+    }
+  }
+};
+#endif
 
 }  // namespace math
 }  // namespace arm
