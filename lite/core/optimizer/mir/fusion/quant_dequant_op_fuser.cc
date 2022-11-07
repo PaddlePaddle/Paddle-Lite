@@ -56,8 +56,12 @@ static float FindAbsMax(const float* input, int size) {
 template <typename T>
 void QuantizeTensorInPlace(Tensor* input, float scale) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*input);
@@ -76,24 +80,22 @@ void QuantizeTensorInPlace(Tensor* input,
                            const std::vector<float>& scales,
                            int quant_axis) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
-  if (quant_axis != 0 && quant_axis != 1) {
-    LOG(FATAL) << "Input error: quant_axis should be 0 or 1.";
-  }
+
   Tensor origin_tensor;
   origin_tensor.CopyDataFrom(*input);
   input->clear();
 
   auto dims = origin_tensor.dims();
   const int64_t channel = dims[quant_axis];
-  if (dims.size() < 2) {
-    LOG(FATAL) << "Error: the rank of input tensor should at least be 2.";
-  }
-  if (scales.size() != channel) {
-    LOG(FATAL) << "Params Error: scale size should be equal to channel.";
-  }
+  CHECK_GE(dims.size(), 2);
+  CHECK_EQ(scales.size(), channel);
   float* origin_data = origin_tensor.mutable_data<float>();
   T* quantized_data = input->mutable_data<T>();
 
@@ -122,6 +124,10 @@ void QuantizeTensorInPlace(Tensor* input,
         });
       }
     }
+  } else {
+    LOG(FATAL)
+        << "Only support quant_axis is 0 or 1, but received quant_axis is "
+        << quant_axis;
   }
 }
 
@@ -129,8 +135,12 @@ void QuantizeTensorInPlace(Tensor* input,
 template <typename T>
 static void TensorCaster(Tensor* input) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*input);
