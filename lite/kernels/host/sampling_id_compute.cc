@@ -19,12 +19,12 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <class T>
+template <typename T>
 void SamplingIdCompute<T>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   int seed = param.seed;
 
-  auto engine_ = std::make_shared<std::mt19937_64>();
+  engine_ = std::make_shared<std::mt19937_64>();
   if (seed == 0) {
     std::random_device rd;
     seed = ((((uint64_t)rd()) << 32) + rd()) & 0x1FFFFFFFFFFFFF;
@@ -32,7 +32,7 @@ void SamplingIdCompute<T>::PrepareForRun() {
   engine_->seed(seed);
 }
 
-template <class T>
+template <typename T>
 void SamplingIdCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   const lite::Tensor* x = param.x;
@@ -44,6 +44,10 @@ void SamplingIdCompute<T>::Run() {
   auto out_data = out->mutable_data<int64_t>();
   std::uniform_real_distribution<T> dist(static_cast<T>(param.min),
                                          static_cast<T>(param.max));
+  int seed = param.seed;
+  if (seed != 0) {
+    engine_->seed(seed);
+  }
 
   for (int64_t i = 0; i < batch_size; ++i) {
     T r = dist(*engine_);
