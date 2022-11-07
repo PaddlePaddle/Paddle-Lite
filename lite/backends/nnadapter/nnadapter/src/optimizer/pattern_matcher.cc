@@ -179,6 +179,42 @@ PatternMatcher::Pattern::IsOperationOutputOperand(NNAdapterOperationType type,
   return this;
 }
 
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsModelInputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsModelInputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsModelOutputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsModelOutputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsNotModelInputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return !nnadapter::IsModelInputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsNotModelOutputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return !nnadapter::IsModelOutputOperand(node->operand);
+  });
+  return this;
+}
+
 NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
     NNAdapterOperationType type) {
   conditions.emplace_back([type](const Node *node) {

@@ -56,7 +56,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
