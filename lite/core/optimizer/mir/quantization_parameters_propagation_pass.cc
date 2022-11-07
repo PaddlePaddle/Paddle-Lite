@@ -332,6 +332,24 @@ static bool SetOutScaleFromSpecialOps(const std::unique_ptr<SSAGraph>& graph) {
   return found;
 }
 
+// Print variables without outscale
+static void PrintVariablesWithoutOutScale(
+    const std::unique_ptr<SSAGraph>& graph) {
+  std::ostringstream os;
+  for (auto& op_node : graph->StmtTopologicalOrder()) {
+    if (!op_node->IsStmt()) continue;
+    auto op_info = op_node->AsStmt().mutable_op_info();
+    auto op_type = op_info->Type();
+    for (auto out_var_node : op_node->outlinks) {
+      CHECK(out_var_node->IsArg());
+      auto out_var_name = out_var_node->arg()->name;
+      if (op_info->HasOutputScale(out_var_name)) continue;
+      if (out_var_node->outlinks.size() > 0) os << out_var_name << "\n";
+    }
+  }
+  VLOG(5) << "\nVariables without outscale:\n" << os.str();
+}
+
 void QuantizationParametersPropagationPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
@@ -402,6 +420,8 @@ void QuantizationParametersPropagationPass::Apply(
       SetOutScaleFromNextInScale(graph, auto_complete_quant_scale_level);
     } while (found);
   }
+  // Print variables without outscale to help users set out threshold manually
+  PrintVariablesWithoutOutScale(graph);
   VLOG(5) << "\n" << Visualize(graph.get());
 }
 

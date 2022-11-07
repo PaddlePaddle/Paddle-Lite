@@ -732,6 +732,7 @@ NNADAPTER_EXPORT core::Operand* InsertReshapeOperation(
 
 core::Operand* AddDummyOperation(core::Model* model,
                                  core::Operand* reference_operand,
+                                 NNAdapterOperationType operation_type,
                                  bool after = true) {
   auto target_operand = AddOperand(model);
   CopyOperandType(&target_operand->type, reference_operand->type);
@@ -754,7 +755,7 @@ core::Operand* AddDummyOperation(core::Model* model,
   auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
   // Insert a new ADD operation
   auto dummy_add_operation = AddOperation(model);
-  dummy_add_operation->type = NNADAPTER_ADD;
+  dummy_add_operation->type = operation_type;
   dummy_add_operation->input_operands = {
       after ? reference_operand : target_operand,
       zero_operand,
@@ -764,14 +765,24 @@ core::Operand* AddDummyOperation(core::Model* model,
   return target_operand;
 }
 
-NNADAPTER_EXPORT core::Operand* AppendDummyOperation(
+NNADAPTER_EXPORT core::Operand* AppendDummyAddOperation(
     core::Model* model, core::Operand* input_operand) {
-  return AddDummyOperation(model, input_operand, true);
+  return AddDummyOperation(model, input_operand, NNADAPTER_ADD, true);
 }
 
-NNADAPTER_EXPORT core::Operand* InsertDummyOperation(
+NNADAPTER_EXPORT core::Operand* InsertDummyAddOperation(
     core::Model* model, core::Operand* output_operand) {
-  return AddDummyOperation(model, output_operand, false);
+  return AddDummyOperation(model, output_operand, NNADAPTER_ADD, false);
+}
+
+NNADAPTER_EXPORT core::Operand* AppendDummySubOperation(
+    core::Model* model, core::Operand* input_operand) {
+  return AddDummyOperation(model, input_operand, NNADAPTER_SUB, true);
+}
+
+NNADAPTER_EXPORT core::Operand* InsertDummySubOperation(
+    core::Model* model, core::Operand* output_operand) {
+  return AddDummyOperation(model, output_operand, NNADAPTER_SUB, false);
 }
 
 core::Operand* AddUnaryOperation(core::Model* model,
@@ -882,6 +893,35 @@ NNADAPTER_EXPORT core::Operand* InsertRequantOperation(
     core::Operand* output_operand,
     void* input_quant_params) {
   return AddRequantOperation(model, output_operand, input_quant_params, false);
+}
+
+core::Operand* AddSoftmaxOperation(core::Model* model,
+                                   core::Operand* reference_operand,
+                                   int32_t axis = -1,
+                                   bool after = true) {
+  auto target_operand = AddOperand(model);
+  CopyOperandType(&target_operand->type, reference_operand->type);
+  if (!IsTemporaryShapeOperand(reference_operand)) {
+    target_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
+  auto softmax_operation = AddOperation(model);
+  softmax_operation->type = NNADAPTER_SOFTMAX;
+  auto axis_operand = AddInt32ConstantOperand(model, axis);
+  softmax_operation->input_operands = {
+      after ? reference_operand : target_operand, axis_operand};
+  softmax_operation->output_operands = {after ? target_operand
+                                              : reference_operand};
+  return target_operand;
+}
+
+NNADAPTER_EXPORT core::Operand* AppendSoftmaxOperation(
+    core::Model* model, core::Operand* input_operand, int32_t axis) {
+  return AddSoftmaxOperation(model, input_operand, axis, true);
+}
+
+NNADAPTER_EXPORT core::Operand* InsertSoftmaxOperation(
+    core::Model* model, core::Operand* output_operand, int32_t axis) {
+  return AddSoftmaxOperation(model, output_operand, axis, false);
 }
 
 #define SORT_OPERATIONS_IN_TOPOLOGICAL_ORDER(T)                               \
