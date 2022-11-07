@@ -1729,6 +1729,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
+  std::vector<lite::Tensor*> roformer_embedding;
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
@@ -1746,6 +1747,8 @@ struct XPUMultiEncoderParam : ParamBase {
   int size_per_head{};
   int hidden_dim{};
   std::string act_type{};
+  int relative_type{0};
+  int max_pos_len{512};  // relative embedding [max_pos_len, head_dim]
   std::string precision{};
   bool enable_qkv_fusion{false};
   bool norm_before{false};
@@ -1788,6 +1791,14 @@ struct XPUFcParam : ParamBase {
   float quant_output_max{0.f};
   bool per_channel{false};
   float alpha{1.0f};
+};
+
+struct XPURoformerRelativeEmbeddingParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* cos_embedding{nullptr};
+  lite::Tensor* sin_embedding{nullptr};
+  lite::Tensor* output{nullptr};
+  int max_pos_len{512};
 };
 
 struct XPUResNetCbamParam : ParamBase {
