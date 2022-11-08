@@ -327,6 +327,8 @@ class LayoutComputeBufferChwToImage2DNw
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "buffer/layout_kernel.cl",
                                     build_options_,
@@ -443,6 +445,8 @@ class LayoutComputeImageDefaultToImageFolder
     auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/layout_kernel.cl",
                                     build_options_,
@@ -538,6 +542,8 @@ class LayoutComputeImageFolderToImageDefault
     auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/layout_kernel.cl",
                                     build_options_,
