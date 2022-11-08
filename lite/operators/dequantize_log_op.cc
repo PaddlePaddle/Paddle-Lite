@@ -17,7 +17,21 @@
 
 namespace paddle {
 namespace lite {
-namespace operators {}  // namespace operators
+namespace operators {
+
+bool DequantizeLogOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
+  return true;
+}
+
+bool DequantizeLogOpLite::InferShape() {
+  lite::DDim x_dims = param_.X->dims();
+  param_.Out->Resize(x_dims);
+
+  return true;
+}
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 

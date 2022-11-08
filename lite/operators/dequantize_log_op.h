@@ -33,10 +33,9 @@ class DequantizeLogOpLite : public OpLite {
 
   explicit DequantizeLogOpLite(const std::string &type) : OpLite(type) {}
 
-  bool CheckShape() const override { return true; }
+  bool CheckShape() const override;
 
-  bool InferShapeImpl() const override { return true; }
-
+  bool InferShape() override;
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
     auto x = op_desc.Input("X").front();
     auto dict = op_desc.Input("Dict").front();

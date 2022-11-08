@@ -16,7 +16,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/dequantize.h"
 
 namespace paddle {
 namespace lite {
@@ -25,7 +24,6 @@ namespace arm {
 
 template <typename T>
 void DequantizeLogCompute<T>::Run() {
-  std::cout << "DequantizeLogCompute::Run" << std::endl;
   auto& param = Param<operators::QuantizeLogParam>();
   auto x = param.X;
   auto dict = param.Dict;
@@ -41,7 +39,6 @@ void DequantizeLogCompute<T>::Run() {
       output_data[i] = dict_data[input_data[i]];
     }
   }
-  lite::arm::math::dequantize_log(input_data, dict_data, output_data);
 }
 
 }  // namespace arm
