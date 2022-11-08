@@ -265,11 +265,6 @@ class VariablePlaceInferencePass : public DebugPass {
                                     ->Var(in_arg_name)
                                     ->GetMutable<lite::Tensor>();
               in_tensor->set_precision(in->AsArg().type->precision());
-              if (op_type == "reshape2") {
-                LOG(INFO) << "--- in precision: "
-                          << PrecisionToStr(in_tensor->precision())
-                          << ", in_name: " << in_arg_name;
-              }
             }
           }
           // update op's output precision from input precision by applying
@@ -290,10 +285,6 @@ class VariablePlaceInferencePass : public DebugPass {
                   LiteType::GetTensorTy(out->AsArg().type->target(),
                                         out_tensor->precision(),
                                         out->AsArg().type->layout());
-            }
-            if (op_type == "reshape2") {
-              LOG(INFO) << "--- out precision: "
-                        << PrecisionToStr(out->AsArg().type->precision());
             }
           }
         }

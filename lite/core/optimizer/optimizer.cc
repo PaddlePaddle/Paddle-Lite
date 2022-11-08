@@ -224,8 +224,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // debug pass: show arg-type-node's info (target/precision/layout/device)
        "argument_type_display_pass",
 
-       // add io_copy/io_copy_once if meet different targets when last and next
-       // node
+       // add io_copy/io_copy_once
        "type_target_cast_pass",
        "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
@@ -242,8 +241,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "argument_type_display_pass",
-       // add layout/layout_once op if meet different layout when last and next
-       // node
+
+       // add layout/layout_once op
        "type_layout_cast_pass",
        "argument_type_display_pass",
 
