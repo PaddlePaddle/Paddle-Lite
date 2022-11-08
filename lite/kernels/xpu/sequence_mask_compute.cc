@@ -77,7 +77,13 @@ void SequenceMaskCompute<T>::Run() {
       break;
     }
     case lite::core::FluidType::INT64: {
-      LOG(FATAL) << "XPU unsupported out data type: " << out_type;
+      int ret = xdnn::sequence_mask<int64_t, int64_t>(
+          ctx.GetRawContext(),
+          x_xpu_ptr,
+          y->template mutable_data<int64_t>(TARGET(kXPU)),
+          x_size,
+          max_len);
+      CHECK_EQ(ret, 0) << "call xdnn::sequence_mask failed!";
       break;
     }
     default:
