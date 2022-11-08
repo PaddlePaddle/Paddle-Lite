@@ -8,12 +8,12 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ### 已支持的芯片
 
-- 昆仑芯1代AI芯片CK10/CK20
-- 昆仑芯2代AI芯片CR20
+- 昆仑芯1代 AI 芯片 CK10 / CK20
+- 昆仑芯2代 AI 芯片 CR20
 
-### 已支持的AI加速卡
+### 已支持的 AI 加速卡
 
-- 昆仑芯 AI 加速卡 K100/K200
+- 昆仑芯 AI 加速卡 K100 / K200
 - 昆仑芯 AI 加速卡 R200
 
 ### 已验证支持的 Paddle 模型
@@ -74,7 +74,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 - [开源模型支持列表](../quick_start/support_model_list.md)
 
-**Note: 以上全部模型目前只在R200上测试验证通过，部分模型支持K100/K200.**
+**Note: 以上全部模型目前只在 R200 上测试验证通过，部分模型支持 K100 / K200.**
 
 
 
@@ -82,7 +82,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 性能仅供参考,以实际运行效果为准。
 
-| 模型                                                         | Intel CPU性能 (ms) | x86 + R200 性能 (ms） |
+| 模型                                                         | Intel CPU 性能 (ms) | x86 + R200 性能 (ms） |
 | ------------------------------------------------------------ | ------------------ | -------------------------- |
 | [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz) | 37.777400              | 0.689400                     |
 | [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz) | 76.767599             | 4.015600                      |
@@ -123,13 +123,13 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ## 参考示例演示
 
-### 测试设备( 昆仑芯AI加速卡R200)
+### 测试设备(昆仑芯 AI 加速卡 R200)
 
 <img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 100%;" />
 
 ### 准备设备环境
 
-- 昆仑芯AI加速卡R200[产品手册](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200%20%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C%E5%A4%96%E9%83%A8%E7%89%88_0923.pdf)；
+- 昆仑芯 AI 加速卡 R200 [产品手册](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200%20%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C%E5%A4%96%E9%83%A8%E7%89%88_0923.pdf)；
 - R200 为全高全长 PCI-E 卡，要求使用 PCIe4.0 x16 插槽，且需要单独的 8 针供电线进行供电；
 - 安装 [R200 XRE 驱动](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/XRE%20%E5%AE%89%E8%A3%85%E6%89%8B%E5%86%8C_v1.0.pdf)，目前支持 Ubuntu 和 CentOS 系统，由于驱动依赖 Linux kernel 版本，请正确安装对应版本的驱动安装包。
 
@@ -238,7 +238,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
   $ ./build.sh linux arm64
   ```
 
-### 更新支持昆仑芯XTCL的Paddle Lite库
+### 更新支持昆仑芯 XTCL 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
   ```shell
@@ -247,11 +247,11 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
   $ git checkout <release-version-tag>
   ```
 
-- 编译并生成 PaddleLite+NNAdapter+kunlunxin_xtcl for amd64 and arm64 的部署库
+- 编译并生成 PaddleLite + NNAdapter + kunlunxin_xtcl for amd64 and arm64 的部署库
 	- For amd64
 	    - full_publish 编译
       ```shell
-      # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+      # 默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
       $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
       ```
 
@@ -275,7 +275,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 	  - full_publish 编译
     ```shell
     # arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
-    # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+    # 默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
     $ export CC=<path_to_your_c_compiler>
     $ export CXX=<path_to_your_c++_compiler>
     $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
@@ -298,21 +298,21 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
     ```
 
 ## 高级特性
-本节主要说明在不同的昆仑芯AI加速卡上如何设置不同的参数。以下列出了paddle lite下支持的两种高级参数。
+本节主要说明在不同的昆仑芯AI加速卡上如何设置不同的参数。以下列出了 Paddle Lite 下支持的两种高级参数。
 
 - 高级参数
 
   - KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS
 
-    指定昆仑芯产品的 ID号。例如KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0或KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0,1,2,3
+    指定昆仑芯产品的 ID 号。例如 KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0 或 KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0,1,2,3
 
   - KUNLUNXIN_XTCL_DEVICE_TARGET
 
-    指定昆仑芯的不同类型的AI加速卡。例如KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1或者KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2。XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括K100和K200；XPU2 用在昆仑芯 2 代系列产品，包括R200等。
+    指定昆仑芯的不同类型的 AI 加速卡。例如 KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1 或者 KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2。XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括 K100 和 K200；XPU2 用在昆仑芯 2 代系列产品，包括 R200 等。
 
 
 - 使用方式
-  -  c++代码示例
+  -  c++ 代码示例
   ```c++
   // Run inference by using light api with MobileConfig
   paddle::lite_api::MobileConfig mobile_config;
@@ -321,7 +321,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   ```
 
-  - shell脚本示例
+  - shell 脚本示例
   ```shell
   export KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0
   export KUNLUNXIN_XTCL_DEVICE_TARGET="xpu -libs=xdnn -device-type=xpu1"
