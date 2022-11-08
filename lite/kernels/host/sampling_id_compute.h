@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <class T>
+template <typename T>
 class SamplingIdCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
