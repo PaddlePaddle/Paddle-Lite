@@ -1746,6 +1746,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   int hidden_dim{};
+  int ffn_hidden_dim_scale{4};
   std::string act_type{};
   int relative_type{0};
   int max_pos_len{512};  // relative embedding [max_pos_len, head_dim]

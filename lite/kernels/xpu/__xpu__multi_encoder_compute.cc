@@ -239,7 +239,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
       qkv_attn_param.relative_pos.assign(roformer_embedding_.begin(),
                                          roformer_embedding_.end());
     }
-
+    qkv_attn_param.scale_of_hidden_units = param.ffn_hidden_dim_scale;
     if (std::is_same<TGEMM, int8_t>::value) {
       CHECK_GT(fc_input_max_.size(), 0);
     }
@@ -262,7 +262,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());
-
+    CHECK_EQ(param.ffn_hidden_dim_scale, 4)
+        << "xpu don't support ffn_hidden_dim_scale!=4 when no vsl";
     xdnn::QKVAttnParam qkv_attn_param(batch,
                                       max_seqlen,
                                       param.head_num,
