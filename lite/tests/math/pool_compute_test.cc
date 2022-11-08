@@ -246,7 +246,7 @@ TEST(TesPoolGlobal, test_pool_fp32_global) {
 }
 #endif  // global_pool
 
-#if 1  /// custom
+#if 1  /// 5x5s1p2Max
 TEST(TesPool5x5s1p2Max, test_pool_fp32_5x5s1p2_max) {
   for (int h = 1; h <= 50; h++)
     test_pool_fp32({DDim({1, 1, h, h})},
@@ -262,7 +262,7 @@ TEST(TesPool5x5s1p2Max, test_pool_fp32_5x5s1p2_max) {
                    {1, 2, 4},
                    {FLAGS_power_mode});
 }
-#endif  // custom
+#endif  // 5x5s1p2Max
 
 #if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp32_custom_size) {
