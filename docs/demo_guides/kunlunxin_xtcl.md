@@ -1,3 +1,5 @@
+[TOC]
+
 # 昆仑芯 XTCL 部署示例
 
 Paddle Lite 已支持昆仑芯系列芯片及板卡 在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
@@ -181,10 +183,10 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
                   - libiomp5.so # Intel OpenMP 库
                   - libmklml_intel.so # Intel MKL 库
                   - libmklml_gnu.so # GNU MKL 库
-                - kunlunxin_xtcl #昆仑芯 XTCL 库、NNAdapter 运行时库、device HAL 库
+                - kunlunxin_xtcl # 昆仑芯 XTCL 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libkunlunxin_xtcl.so # NNAdapter device HAL 库
-                  - libxtcl.so #昆仑芯 XTCL 库
+                  - libxtcl.so # 昆仑芯 XTCL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
