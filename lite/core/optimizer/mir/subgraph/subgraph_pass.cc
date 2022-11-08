@@ -27,26 +27,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static std::string ReadSubgraphPartitionConfigsFromEnv() {
-  std::string configs;
-  auto path = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_FILE);
-  if (!path.empty()) {
-    std::vector<char> buffer;
-    if (ReadFile(path, &buffer, false)) {
-      if (!buffer.empty()) {
-        configs.insert(configs.begin(), buffer.begin(), buffer.end());
-      }
-    } else {
-      LOG(WARNING) << "Missing the subgraph partition configuration file "
-                   << path;
-    }
-  }
-  if (configs.empty()) {
-    configs = GetStringFromEnv(SUBGRAPH_PARTITION_CONFIG_BUFFER);
-  }
-  return configs;
-}
-
 bool NNAdapterSubgraphOpTeller(const std::string& device_name,
                                SSAGraph* graph,
                                Node* node,
@@ -111,7 +91,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #endif
   // Read the config path from environment and load the partition configurations
   if (subgraph_partition_configs.empty()) {
-    subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+    subgraph_partition_configs = GetConfigsFromEnv(
+        SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   }
   std::set<std::string> all_supported_ops;
   std::map<std::string, std::set<std::string>> device_supported_ops;

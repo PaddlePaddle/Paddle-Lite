@@ -125,17 +125,23 @@ class TensorFormatter {
 
  private:
   template <typename T>
+  void FormatItem(T print_value, std::stringstream& log_stream) {
+    log_stream << " " << print_value;
+  }
+
+  template <typename T>
   void FormatData(const Tensor& print_tensor, std::stringstream& log_stream) {
     int64_t print_size = summarize_ == -1
                              ? print_tensor.numel()
                              : (std::min)(summarize_, print_tensor.numel());
-    const T* data = print_tensor.data<T>();  // Always kHost, so unnessary to
-                                             // copy the data from device
+    const T* print_data = print_tensor.data<
+        T>();  // Always kHost, so unnessary to copy the data from device
     log_stream << "  - data: [";
     if (print_size > 0) {
-      log_stream << data[0];
+      FormatItem<T>(print_data[0], log_stream);
       for (int64_t i = 1; i < print_size; ++i) {
-        log_stream << " " << data[i];
+        log_stream << " ";
+        FormatItem<T>(print_data[i], log_stream);
       }
     }
     log_stream << "]" << std::endl;
@@ -147,6 +153,12 @@ class TensorFormatter {
   bool print_tensor_lod_ = true;
   bool print_tensor_layout_ = true;
 };
+
+template <>
+void TensorFormatter::FormatItem<int8_t>(int8_t print_value,
+                                         std::stringstream& log_stream) {
+  log_stream << " " << static_cast<int32_t>(print_value);
+}
 
 void PrintCompute::Run() {
   auto& param = Param<param_t>();
