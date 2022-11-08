@@ -1,6 +1,7 @@
 # 昆仑芯 XTCL 部署示例
 
 Paddle Lite 已支持昆仑芯系列芯片及板卡 在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
+
 XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实践而提供的图编译引擎库，可提供基于昆仑芯硬件相关的图层分析框架和加速优化能力。
 
 ## 支持现状
@@ -80,6 +81,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 #### 性能
 
 性能仅供参考,以实际运行效果为准。
+
 | 模型                                                         | Intel CPU性能 (ms) | x86 + R200 性能 (ms） |
 | ------------------------------------------------------------ | ------------------ | -------------------------- |
 | [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz) | 37.777400              | 0.689400                     |
@@ -123,7 +125,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ### 测试设备( 昆仑芯AI加速卡R200)
 
-<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 33%;" />
+<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 100%;" />
 
 ### 准备设备环境
 
@@ -301,11 +303,12 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 - 高级参数
 
   - KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS
+
     指定昆仑芯产品的 ID号。例如KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0或KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0,1,2,3
 
   - KUNLUNXIN_XTCL_DEVICE_TARGET
-    指定昆仑芯的不同类型的AI加速卡。例如KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1或者KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2
-    XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括K100和K200；XPU2 用在昆仑芯 2 代系列产品，包括R200等。
+
+    指定昆仑芯的不同类型的AI加速卡。例如KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1或者KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2。XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括K100和K200；XPU2 用在昆仑芯 2 代系列产品，包括R200等。
 
 
 - 使用方式
