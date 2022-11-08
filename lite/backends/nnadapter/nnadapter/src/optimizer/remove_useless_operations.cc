@@ -36,7 +36,7 @@ class RemoveUselessCastFuser : public PatternMatcher {
 
 void RemoveUselessCastFuser::BuildPattern() {
   // Create patterns
-  auto cast = CreatePattern("cast", NNADAPTER_CAST);
+  CreatePattern("cast", NNADAPTER_CAST);
 }
 
 bool RemoveUselessCastFuser::HandleMatchedResults(
@@ -149,7 +149,6 @@ void RemoveUselessMulFuser::BuildPattern() {
 bool RemoveUselessMulFuser::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
   auto mul_x = nodes.at("mul_x")->operand;
-  auto mul = nodes.at("mul")->operation;
   auto mul_out = nodes.at("mul_out")->operand;
   if (IsModelInputOperand(mul_x) && IsModelOutputOperand(mul_out)) return false;
 

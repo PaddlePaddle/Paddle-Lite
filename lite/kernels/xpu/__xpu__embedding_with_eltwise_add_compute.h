@@ -35,6 +35,7 @@ class XPUEmbeddingWithEltwiseAddCompute
  private:
   std::vector<const float*> arg_tables_;
   std::vector<int> table_lens_cpu_;
+  int padding_idx_;
 };
 
 }  // namespace xpu

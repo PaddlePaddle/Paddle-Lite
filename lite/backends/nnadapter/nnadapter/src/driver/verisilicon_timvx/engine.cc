@@ -26,6 +26,7 @@
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
+#include "optimizer/fuse_sigmoid_mul_into_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -122,6 +123,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+    FuseSigmoidMulIntoSwish(model);
     ConvertFillLikeIntoMulAdd(model);
     ConstantFoldOperations(model);
     UnpackOpFusion(model);

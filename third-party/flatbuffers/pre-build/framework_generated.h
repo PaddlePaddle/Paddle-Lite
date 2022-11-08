@@ -189,11 +189,15 @@ enum AttrType {
   AttrType_LONG = 9,
   AttrType_BLOCKS = 10,
   AttrType_LONGS = 11,
+  AttrType_FLOAT64S = 12,
+  AttrType_VAR = 13,
+  AttrType_VARS = 14,
+  AttrType_FLOAT64 = 15,
   AttrType_MIN = AttrType_INT,
-  AttrType_MAX = AttrType_LONGS
+  AttrType_MAX = AttrType_FLOAT64
 };
 
-inline const AttrType (&EnumValuesAttrType())[12] {
+inline const AttrType (&EnumValuesAttrType())[16] {
   static const AttrType values[] = {
     AttrType_INT,
     AttrType_FLOAT,
@@ -206,13 +210,17 @@ inline const AttrType (&EnumValuesAttrType())[12] {
     AttrType_BLOCK,
     AttrType_LONG,
     AttrType_BLOCKS,
-    AttrType_LONGS
+    AttrType_LONGS,
+    AttrType_FLOAT64S,
+    AttrType_VAR,
+    AttrType_VARS,
+    AttrType_FLOAT64
   };
   return values;
 }
 
 inline const char * const *EnumNamesAttrType() {
-  static const char * const names[13] = {
+  static const char * const names[17] = {
     "INT",
     "FLOAT",
     "STRING",
@@ -225,13 +233,17 @@ inline const char * const *EnumNamesAttrType() {
     "LONG",
     "BLOCKS",
     "LONGS",
+    "FLOAT64S",
+    "VAR",
+    "VARS",
+    "FLOAT64",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameAttrType(AttrType e) {
-  if (flatbuffers::IsOutRange(e, AttrType_INT, AttrType_LONGS)) return "";
+  if (flatbuffers::IsOutRange(e, AttrType_INT, AttrType_FLOAT64)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesAttrType()[index];
 }
@@ -621,13 +633,16 @@ struct AttrT : public flatbuffers::NativeTable {
   int64_t l;
   std::vector<int32_t> blocks_idx;
   std::vector<int64_t> longs;
+  double float64;
+  std::vector<double> float64s;
   AttrT()
       : type(paddle::lite::fbs::proto::AttrType_INT),
         i(0),
         f(0.0f),
         b(false),
         block_idx(0),
-        l(0) {
+        l(0),
+        float64(0.0) {
   }
 };
 
@@ -646,7 +661,9 @@ inline bool operator==(const AttrT &lhs, const AttrT &rhs) {
       (lhs.block_idx == rhs.block_idx) &&
       (lhs.l == rhs.l) &&
       (lhs.blocks_idx == rhs.blocks_idx) &&
-      (lhs.longs == rhs.longs);
+      (lhs.longs == rhs.longs) &&
+      (lhs.float64 == rhs.float64) &&
+      (lhs.float64s == rhs.float64s);
 }
 
 inline bool operator!=(const AttrT &lhs, const AttrT &rhs) {
@@ -674,7 +691,9 @@ struct Attr FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_BLOCK_IDX = 24,
     VT_L = 26,
     VT_BLOCKS_IDX = 28,
-    VT_LONGS = 30
+    VT_LONGS = 30,
+    VT_FLOAT64 = 32,
+    VT_FLOAT64S = 34
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -766,6 +785,18 @@ struct Attr FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   flatbuffers::Vector<int64_t> *mutable_longs() {
     return GetPointer<flatbuffers::Vector<int64_t> *>(VT_LONGS);
   }
+  double float64() const {
+    return GetField<double>(VT_FLOAT64, 0.0);
+  }
+  bool mutate_float64(double _float64) {
+    return SetField<double>(VT_FLOAT64, _float64, 0.0);
+  }
+  const flatbuffers::Vector<double> *float64s() const {
+    return GetPointer<const flatbuffers::Vector<double> *>(VT_FLOAT64S);
+  }
+  flatbuffers::Vector<double> *mutable_float64s() {
+    return GetPointer<flatbuffers::Vector<double> *>(VT_FLOAT64S);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
@@ -791,6 +822,9 @@ struct Attr FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyVector(blocks_idx()) &&
            VerifyOffset(verifier, VT_LONGS) &&
            verifier.VerifyVector(longs()) &&
+           VerifyField<double>(verifier, VT_FLOAT64) &&
+           VerifyOffset(verifier, VT_FLOAT64S) &&
+           verifier.VerifyVector(float64s()) &&
            verifier.EndTable();
   }
   AttrT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -844,6 +878,12 @@ struct AttrBuilder {
   void add_longs(flatbuffers::Offset<flatbuffers::Vector<int64_t>> longs) {
     fbb_.AddOffset(Attr::VT_LONGS, longs);
   }
+  void add_float64(double float64) {
+    fbb_.AddElement<double>(Attr::VT_FLOAT64, float64, 0.0);
+  }
+  void add_float64s(flatbuffers::Offset<flatbuffers::Vector<double>> float64s) {
+    fbb_.AddOffset(Attr::VT_FLOAT64S, float64s);
+  }
   explicit AttrBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -872,9 +912,13 @@ inline flatbuffers::Offset<Attr> CreateAttr(
     int32_t block_idx = 0,
     int64_t l = 0,
     flatbuffers::Offset<flatbuffers::Vector<int32_t>> blocks_idx = 0,
-    flatbuffers::Offset<flatbuffers::Vector<int64_t>> longs = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<int64_t>> longs = 0,
+    double float64 = 0.0,
+    flatbuffers::Offset<flatbuffers::Vector<double>> float64s = 0) {
   AttrBuilder builder_(_fbb);
+  builder_.add_float64(float64);
   builder_.add_l(l);
+  builder_.add_float64s(float64s);
   builder_.add_longs(longs);
   builder_.add_blocks_idx(blocks_idx);
   builder_.add_block_idx(block_idx);
@@ -906,7 +950,9 @@ inline flatbuffers::Offset<Attr> CreateAttrDirect(
     int32_t block_idx = 0,
     int64_t l = 0,
     const std::vector<int32_t> *blocks_idx = nullptr,
-    const std::vector<int64_t> *longs = nullptr) {
+    const std::vector<int64_t> *longs = nullptr,
+    double float64 = 0.0,
+    const std::vector<double> *float64s = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto s__ = s ? _fbb.CreateString(s) : 0;
   auto ints__ = ints ? _fbb.CreateVector<int32_t>(*ints) : 0;
@@ -915,6 +961,7 @@ inline flatbuffers::Offset<Attr> CreateAttrDirect(
   auto bools__ = bools ? _fbb.CreateVector<uint8_t>(*bools) : 0;
   auto blocks_idx__ = blocks_idx ? _fbb.CreateVector<int32_t>(*blocks_idx) : 0;
   auto longs__ = longs ? _fbb.CreateVector<int64_t>(*longs) : 0;
+  auto float64s__ = float64s ? _fbb.CreateVector<double>(*float64s) : 0;
   return paddle::lite::fbs::proto::OpDesc_::CreateAttr(
       _fbb,
       name__,
@@ -930,7 +977,9 @@ inline flatbuffers::Offset<Attr> CreateAttrDirect(
       block_idx,
       l,
       blocks_idx__,
-      longs__);
+      longs__,
+      float64,
+      float64s__);
 }
 
 flatbuffers::Offset<Attr> CreateAttr(flatbuffers::FlatBufferBuilder &_fbb, const AttrT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -2412,6 +2461,8 @@ inline void Attr::UnPackTo(AttrT *_o, const flatbuffers::resolver_function_t *_r
   { auto _e = l(); _o->l = _e; }
   { auto _e = blocks_idx(); if (_e) { _o->blocks_idx.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->blocks_idx[_i] = _e->Get(_i); } } }
   { auto _e = longs(); if (_e) { _o->longs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->longs[_i] = _e->Get(_i); } } }
+  { auto _e = float64(); _o->float64 = _e; }
+  { auto _e = float64s(); if (_e) { _o->float64s.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->float64s[_i] = _e->Get(_i); } } }
 }
 
 inline flatbuffers::Offset<Attr> Attr::Pack(flatbuffers::FlatBufferBuilder &_fbb, const AttrT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2436,6 +2487,8 @@ inline flatbuffers::Offset<Attr> CreateAttr(flatbuffers::FlatBufferBuilder &_fbb
   auto _l = _o->l;
   auto _blocks_idx = _fbb.CreateVector(_o->blocks_idx);
   auto _longs = _fbb.CreateVector(_o->longs);
+  auto _float64 = _o->float64;
+  auto _float64s = _fbb.CreateVector(_o->float64s);
   return paddle::lite::fbs::proto::OpDesc_::CreateAttr(
       _fbb,
       _name,
@@ -2451,7 +2504,9 @@ inline flatbuffers::Offset<Attr> CreateAttr(flatbuffers::FlatBufferBuilder &_fbb
       _block_idx,
       _l,
       _blocks_idx,
-      _longs);
+      _longs,
+      _float64,
+      _float64s);
 }
 
 inline VarT *Var::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
@@ -2872,6 +2927,10 @@ inline const flatbuffers::TypeTable *AttrTypeTypeTable() {
     { flatbuffers::ET_INT, 0, 0 },
     { flatbuffers::ET_INT, 0, 0 },
     { flatbuffers::ET_INT, 0, 0 },
+    { flatbuffers::ET_INT, 0, 0 },
+    { flatbuffers::ET_INT, 0, 0 },
+    { flatbuffers::ET_INT, 0, 0 },
+    { flatbuffers::ET_INT, 0, 0 },
     { flatbuffers::ET_INT, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
@@ -2889,10 +2948,14 @@ inline const flatbuffers::TypeTable *AttrTypeTypeTable() {
     "BLOCK",
     "LONG",
     "BLOCKS",
-    "LONGS"
+    "LONGS",
+    "FLOAT64S",
+    "VAR",
+    "VARS",
+    "FLOAT64"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_ENUM, 12, type_codes, type_refs, nullptr, names
+    flatbuffers::ST_ENUM, 16, type_codes, type_refs, nullptr, names
   };
   return &tt;
 }
@@ -3041,7 +3104,9 @@ inline const flatbuffers::TypeTable *AttrTypeTable() {
     { flatbuffers::ET_INT, 0, -1 },
     { flatbuffers::ET_LONG, 0, -1 },
     { flatbuffers::ET_INT, 1, -1 },
-    { flatbuffers::ET_LONG, 1, -1 }
+    { flatbuffers::ET_LONG, 1, -1 },
+    { flatbuffers::ET_DOUBLE, 0, -1 },
+    { flatbuffers::ET_DOUBLE, 1, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
     paddle::lite::fbs::proto::AttrTypeTypeTable
@@ -3060,10 +3125,12 @@ inline const flatbuffers::TypeTable *AttrTypeTable() {
     "block_idx",
     "l",
     "blocks_idx",
-    "longs"
+    "longs",
+    "float64",
+    "float64s"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_TABLE, 14, type_codes, type_refs, nullptr, names
+    flatbuffers::ST_TABLE, 16, type_codes, type_refs, nullptr, names
   };
   return &tt;
 }

@@ -24,7 +24,7 @@ set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-set THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+set THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -171,10 +171,8 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
-            -DWITH_LITE=ON ^
             -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
             -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
@@ -190,7 +188,7 @@ if "%BUILD_FOR_CI%"=="ON" (
     call "%vcvarsall_dir%" amd64
     msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\lite_compile_deps.vcxproj
     call:test_server
-    cmake ..   -G "%CMAKE_GENERATOR% Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
+    cmake ..   -G "%CMAKE_GENERATOR% Win64" -T host=x64 -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
@@ -218,12 +216,10 @@ goto:eof
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
-            -DWITH_LITE=ON ^
             -DLITE_WITH_XPU=%WITH_KUNLUNXIN_XPU% ^
             -DXPU_SDK_ROOT=%KUNLUNXIN_XPU_SDK_ROOT%  ^
             -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
             -DTHIRD_PARTY_BUILD_TYPE=Release ^
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^

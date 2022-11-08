@@ -8,7 +8,7 @@ LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -406,9 +406,7 @@ function android_cpu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
@@ -465,9 +463,7 @@ function armlinux_cpu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
@@ -480,89 +476,6 @@ function armlinux_cpu_build_target() {
 
 function armlinux_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
-}
-
-# Huawei Kirin NPU
-function huawei_kirin_npu_prepare_device() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local remote_device_name=$4
-    local remote_device_work_dir=$5
-    local remote_device_check=$6
-    local remote_device_run=$7
-    local sdk_root_dir=$8
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Only root user can use HiAI runtime libraries in the android shell executables
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-
-    # Copy the runtime libraries of HiAI DDK to the target device
-    local sdk_lib_dir=""
-    if [[ $arch == "armv8" ]]; then
-        sdk_lib_dir="$sdk_root_dir/lib64"
-    elif [[ $arch == "armv7" ]]; then
-        sdk_lib_dir="$sdk_root_dir/lib"
-    else
-        echo "$arch isn't supported by HiAI DDK!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
-}
-
-function huawei_kirin_npu_build_target() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local sdk_root_dir=$4
-
-    # Build all of tests
-    rm -rf $BUILD_DIRECTORY
-    mkdir -p $BUILD_DIRECTORY
-    cd $BUILD_DIRECTORY
-    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DANDROID_STL_TYPE="c++_shared" \
-        -DLITE_WITH_NPU=ON \
-        -DNPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function huawei_kirin_npu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
 }
 
 # Rockchip NPU
@@ -629,7 +542,6 @@ function baidu_xpu_build_and_test() {
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \
-        -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
@@ -735,10 +647,6 @@ function main() {
             ;;
         armlinux_cpu_build_and_test)
             armlinux_cpu_build_and_test
-            shift
-            ;;
-        huawei_kirin_npu_build_and_test)
-            huawei_kirin_npu_build_and_test
             shift
             ;;
         huawei_ascend_npu_build_and_test)

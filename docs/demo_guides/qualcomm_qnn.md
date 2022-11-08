@@ -422,6 +422,10 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   - QUALCOMM_QNN_DEVICE_TYPE:
 
     指定使用的高通设备，Options: "CPU", "GPU", "DSP", "HTP"。
+  
+  - QUALCOMM_QNN_DEVICE_ID:
+
+    指定使用选择的高通设备 "id" 号。
 
   - QUALCOMM_QNN_LOG_LEVEL:
 
@@ -435,6 +439,96 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
     指定是否开启 FP16 功能，Options:  "true", "false", "1", "0"。
 
+- 其他
+  - 子图分割配置
+    ```
+    Description:
+        Specify the configuration file path or buffer for the subgraph segmentation,
+    it lists the operators that are forced to use the CPU, an example is shown as
+    below:
+        op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+        op_type::out_var_name_0
+        op_type:in_var_name_0
+    ```
+
+    - SUBGRAPH_PARTITION_CONFIG_FILE 
+  
+      设置子图分割配置文件路径, 强制某些算子运行在 cpu 上。
+  
+    - SUBGRAPH_PARTITION_CONFIG_BUFFER
+    
+      设置子图分割配置缓冲区, 强制某些算子运行在 cpu 上。
+
+
+  - subgraph 算子参数保存设置
+     ```
+      Description:
+        The original weight/local/unused variables in the subblock of the subgraph op
+      will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to true(default) during
+      the analysis phase, it ensure the ops in the subblock can be converted to the
+      target device model online during the execution phase.
+    ```
+
+    - SUBGRAPH_ONLINE_MODE
+
+      当 SUBGRAPH_ONLINE_MODE 设置为 true 时, subgraph 算子会保存原始模型权重、变量等信息存储到 nb 模型中。  
+      当 SUBGRAPH_ONLINE_MODE 设置为 false 时, subgraph 算子不会保存原始模型权重、变量等信息存储到 nb 模型中。
+
+  - 量化相关配置
+    ```
+    Description:
+      Due to various reasons (such as bugs from PaddleSlim), some ops in the model
+    lack quantization parameters. Optionally, the missing quantization parameters
+    can be completed by the following rules.
+    (a) Complete the output scale from the input scale of its consumer ops.
+    (b) Complete the output scale from the user-defined configurations.
+    (c) Complete the output scale from its out_threshold attribute.
+    (d) Complete the input scale from the output scale of its producer op.
+    (e) Complete the output scale according to the input scale, or complete the
+    input scale according to the output scale, because the input scale and output
+    scale of some ops should be the same.
+    (f) Complete the output scale according to the formula of some special ops
+    themselves.
+    QUANT_AUTO_COMPLETE_SCALE_LEVEL support the following level:
+    "0", default to apply the rule (a)(c)(d);
+    "1", apply the rule (a)(c)(d) and set the output scale even if the op has no
+    out_thresold attribute;
+    "2", apply the rule (a)(c)(d)(e) and set the output scale even if the op has
+    no out_thresold attribute;
+    "3", apply the rule (a)(c)(d)(e)(f) and set the output scale even if the op
+    has no out_thresold attribute;
+    ```
+    - QUANT_AUTO_COMPLETE_SCALE_LEVEL
+
+      设置量化信息补全方式的算法。
+
+    - QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE
+
+      量化信息补全自定义配置文件路径设置。
+
+    - QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER
+
+      量化信息补全自定义配置缓冲区设置。
+
+  - 混合精度相关配置
+    ```
+    Description:
+      Specify the configuration file path or buffer for the mixed precision
+      quantization, it lists the operators that enforce fp32 precision, an example
+      is shown as below:
+      op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+      op_type::out_var_name_0
+      op_type:in_var_name_0
+      op_type
+    ```
+    - MIXED_PRECISION_QUANTIZATION_CONFIG_FILE
+
+      混合精度自定义配置文件路径设置。
+
+    - MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER
+    
+      混合精度自定义配置缓冲区设置。
+
 ## FAQ
 ### 1. 在 QNX 系统上面使用 HTP 推理, 设置 DSP 运行库路径变量
 - 指定 DSP 运行库设置如下变量
@@ -446,6 +540,19 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   ```
 
 - 如果设置上述变量后，还是会有环境问题导致推理异常（非 Demo 本身问题），该问题一般发生在 QNN SDK 版本切换时(例如: QNN SDK v1.12 <-> QNN SDK v1.15 版本之间的切换)，可以将 <path/to/qnn-v1.15.0.220706112757_38277>/target/hexagon-v68/lib/unsigned/libQnnHtp* 拷贝到板子上 /mnt/etc/images/cdsp0 路径下。如果遇到权限问题拷贝失败，可以通过在 QNX 中执行 `mount -uw /mnt` 命令解决。
+
+### 2. 使用 UINTT8 类型和 NHWC 格式数据进行模型部署
+
+  - Step1. 使用 [insert_transpose_op_for_qnn_int8_nhwc_deploy.py](https://paddlelite-demo.bj.bcebos.com/devices/qualcomm_qnn/insert_transpose_op_for_qnn_int8_nhwc_deploy.py) 更改模型输入输出的 tensor 类型，将原始 float32 类型改写成 int8 类型，并且插入 transpose 算子。
+  - Step2. 部署 demo 中创建输入输出 tensor 时，使用 mutable_tensor<int8>() 分配 buffer, 然后将 uint8 类型的数据写入到该 tensor buffer 中。
+  - Step3.（可选）在执行部署 demo 时，根据实际情况，看是否需要对模型量化信息进行自动补全，设置相应的环境变量。例如： 
+    `export QUANT_AUTO_COMPLETE_SCALE_LEVEL=3`
+  - Step4. 额外设置 QUALCOMM_QNN_SKIP_SYMM2ASYMM=1, Demo 执行时通过 NNADAPTER_CONTEXT_PROPERTIES 变量设置。
+  
+### 3. 使用 cache 文件部署，减小模型运行时内存占用。
+  - Step1. 参考 demo 部署示例中相关接口 (set_nnadapter_model_cache_dir) 设置 model_cache_dir, 执行 demo 运行成功后，会生成目标硬件的 cache 文件(.nnc文件) 和未被精简优化的 nb 文件。
+  - Step2. 将生成的 cache 文件(.nnc 文件) 推送到目标硬件上进行部署，并且设置 SUBGRAPH_ONLINE_MODE=false (nb 模型不保存权重等信息，仅保留网络拓扑结构，因为权重相关信息已经在模型生成阶段存储到 cache 文件中), 生成精简过的 nb 文件，观察 nb 文件大小是否显著减小。
+  - Step3. 使用 Step2 执行后产生精简过的 nb 模型替换 Step1 未被精简优化过的模型再次进行加载推理，观察内存变化。
 
 ## 其它说明
 

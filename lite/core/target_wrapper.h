@@ -20,11 +20,6 @@
 #include "lite/api/paddle_place.h"
 #include "lite/utils/log/cp_logging.h"
 
-#ifdef LITE_WITH_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#endif  // LITE_WITH_CUDA
-
 namespace paddle {
 namespace lite {
 
@@ -178,44 +173,6 @@ class TargetWrapper<TARGET(kHost)> {
     MemcpySync(dst, src, size, dir);
   }
 };
-
-#ifdef LITE_WITH_FPGA
-template <>
-class TargetWrapper<TARGET(kFPGA)> {
- public:
-  using stream_t = int;
-  using event_t = int;
-
-  static size_t num_devices() { return 0; }
-  static size_t maximum_stream() { return 0; }
-
-  static void CreateStream(stream_t* stream) {}
-  static void DestroyStream(const stream_t& stream) {}
-
-  static void CreateEvent(event_t* event) {}
-  static void DestroyEvent(const event_t& event) {}
-
-  static void RecordEvent(const event_t& event) {}
-  static void SyncEvent(const event_t& event) {}
-
-  static void StreamSync(const stream_t& stream) {}
-
-  static void* Malloc(size_t size);
-  static void Free(void* ptr);
-
-  static void MemcpySync(void* dst,
-                         const void* src,
-                         size_t size,
-                         IoDirection dir);
-  static void MemcpyAsync(void* dst,
-                          const void* src,
-                          size_t size,
-                          IoDirection dir,
-                          const stream_t& stream) {
-    MemcpySync(dst, src, size, dir);
-  }
-};
-#endif
 
 }  // namespace lite
 }  // namespace paddle

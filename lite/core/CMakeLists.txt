@@ -27,17 +27,9 @@ FILE(GLOB CORE_BASE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 LIST(REMOVE_ITEM CORE_BASE_SRC ${UNIT_TEST_SRC})
 
 set (tensor_extra_deps "")
-if (LITE_WITH_FPGA)
-  set (tensor_extra_deps lite_tensor_fpga)
-endif ()
-
 
 set(CORE_SRC ${CORE_BASE_SRC} ${MODEL_SRC})
 set(CORE_DEPS "")
-
-if (LITE_WITH_FPGA)
-  set (CORE_DEPS ${CORE_DEPS} lite_tensor_fpga)
-endif ()
 
 if(WITH_TESTING)
   lite_cc_library(core_tester SRCS ${TESTER_SRC} DEPS gtest gflags)
@@ -57,21 +49,16 @@ if (LITE_WITH_PROFILE)
   endif()
 endif()
 
-if (LITE_WITH_NPU OR LITE_WITH_BM OR LITE_WITH_MLU OR LITE_WITH_NNADAPTER)
+if (LITE_WITH_NNADAPTER)
   set(CORE_SRC  ${CORE_SRC} ${SUBGRAPH_SRC})
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
   DEPS target_wrapper_host fbs_headers ${CORE_DEPS}
   X86_DEPS eigen3
-  CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper cl_context
   METAL_DEPS metal_target_wrapper
-  FPGA_DEPS fpga_target_wrapper
-  INTEL_FPGA_DEPS intel_fpga_target_wrapper
-  BM_DEPS target_wrapper_bm
-  MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -125,3 +112,5 @@ lite_cc_test (test_type_system SRCS type_system_test.cc)
 lite_cc_test (test_types SRCS types_test.cc)
 lite_cc_test (test_memory SRCS memory_test.cc)
 lite_cc_test (test_context SRCS context_test.cc)
+lite_cc_test(test_scalar SRCS scalar_test.cc)
+lite_cc_test(test_int_array SRCS int_array_test.cc)

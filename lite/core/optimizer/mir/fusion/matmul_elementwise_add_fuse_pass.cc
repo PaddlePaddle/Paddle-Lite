@@ -29,21 +29,12 @@ void MatmulElementwiseAddFusePass::Apply(
       return;
     }
   }
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
-#ifdef LITE_WITH_MLU
-  fusion::MatmulElementwiseAddFuser fuser(false, graph);
-  fuser(graph.get());
-#else
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   fusion::MatmulElementwiseAddFuser fuser(true, graph);
   fuser(graph.get());
 #endif
-#endif
   fusion::MatmulElementwiseAddFuser fuser2(false, graph);
   fuser2(graph.get());
-#ifdef LITE_WITH_FPGA
-  fusion::MatmulElementwiseAddFuser fpga_fuser(true, graph);
-  fpga_fuser(graph.get());
-#endif
 }
 
 }  // namespace mir

@@ -472,16 +472,8 @@ TEST(Elementwise, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kX86);
-#else
-  return;
-#endif
 #ifdef ENABLE_ARM_FP16
   Place place1(TARGET(kARM), PRECISION(kFP16));
   TestFp16EltDims(place1, abs_error, "add");
@@ -493,13 +485,16 @@ TEST(Elementwise, precision) {
   TestFp16EltDims(place1, abs_error, "div");
   TestFp16EltFuseAct(place1, abs_error, "div");
 #endif
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  TestEltFuseActFloat(place, abs_error);
+#else
+  return;
+#endif
 
   TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
-#ifdef LITE_WITH_X86
-  TestEltFuseActFloat(place, abs_error);
-#endif
 }
 
 }  // namespace lite

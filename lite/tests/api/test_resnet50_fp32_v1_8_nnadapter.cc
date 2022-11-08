@@ -59,7 +59,7 @@ TEST(ResNet50, test_resnet50_fp32_v1_8_nndapter) {
   out_accuracy_threshold = 0.76f;
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   nnadapter_device_names.emplace_back("kunlunxin_xtcl");
-  out_accuracy_threshold = 0.77f;
+  out_accuracy_threshold = 0.76f;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   nnadapter_device_names.emplace_back("android_nnapi");
   out_accuracy_threshold = 0.99f;

@@ -185,13 +185,12 @@ TEST(InstanceNorm, precision) {
   ignored_outs = {"saved_mean", "saved_variance"};
   // TODO(liusiyuan): support later
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-1;
+  ignored_outs = {"saved_mean", "saved_variance"};
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-  ignored_outs = {"saved_mean", "saved_variance"};
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)

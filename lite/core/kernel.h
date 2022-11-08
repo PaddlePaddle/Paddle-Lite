@@ -97,14 +97,8 @@ class KernelBase {
 #if defined(LITE_WITH_X86)
     WorkSpace::Global_X86().AllocReset();
 #endif
-#if defined(LITE_WITH_CUDA)
-    WorkSpace::Global_CUDA().AllocReset();
-#endif
 #if defined(LITE_WITH_METAL)
     WorkSpace::Global_METAL().AllocReset();
-#endif
-#if defined(LITE_WITH_MLU)
-    WorkSpace::Global_MLU().AllocReset();
 #endif
 
 #ifdef LITE_WITH_PROFILE
@@ -226,15 +220,13 @@ class KernelBase {
 // Light-weight kernel implementation.
 // The OpKernel is designed to implement the specific algorithm on a target
 // device.
-// TODO(Superjomn) Consider to add a Platform type to differentiate CUDNN,
-// MKLDNN, plain CUDA C implementations.
 template <TargetType Target,
           PrecisionType Precision,
           DataLayoutType DataLayout = DataLayoutType::kNCHW>
 class KernelLite : public KernelBase {
  public:
   // Run the kernel.
-  virtual void Run() override { CHECK(false) << "Not Implemented"; }
+  void Run() override { CHECK(false) << "Not Implemented"; }
 
   TargetType target() const override { return Target; }
   PrecisionType precision() const override { return Precision; }

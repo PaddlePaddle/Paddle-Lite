@@ -27,18 +27,6 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #endif  // LITE_WITH_OPENCL
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/target_wrapper.h"
-#endif  // LITE_WITH_CUDA
-
-#ifdef LITE_WITH_BM
-#include "lite/backends/bm/target_wrapper.h"
-#endif  // LITE_WITH_BM
-
-#ifdef LITE_WITH_MLU
-#include "lite/backends/mlu/target_wrapper.h"
-#endif  // LITE_WITH_MLU
-
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 #endif  // LITE_WITH_XPU
@@ -83,11 +71,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapper<TARGET(kHost)>::MemcpySync(
           dst, src, size, IoDirection::HtoH);
       break;
-#ifdef LITE_WITH_CUDA
-    case TARGET(kCUDA):
-      TargetWrapperCuda::MemcpySync(dst, src, size, dir);
-      break;
-#endif
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
@@ -98,21 +81,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperMetal::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_METAL
-#ifdef LITE_WITH_MLU
-    case TARGET(kMLU):
-      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
-      break;
-#endif
-#ifdef LITE_WITH_FPGA
-    case TARGET(kFPGA):
-      TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
-      break;
-#endif
-#ifdef LITE_WITH_BM
-    case TARGET(kBM):
-      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
-      break;
-#endif
 #ifdef LITE_WITH_XPU
     case TARGET(kXPU):
       TargetWrapperXPU::MemcpySync(dst, src, size, dir);

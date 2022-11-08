@@ -17,33 +17,33 @@
 namespace nnadapter {
 namespace operation {
 
-#define LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS              \
-  auto& input_operands = operation->input_operands;                    \
-  auto& output_operands = operation->output_operands;                  \
-  auto input_count = input_operands.size();                            \
-  auto output_count = output_operands.size();                          \
-  NNADAPTER_CHECK_EQ(input_count, 4);                                  \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                 \
-  /* Input */                                                          \
-  auto input_operand = input_operands[0];                              \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);    \
-  /* Output */                                                         \
-  auto output_operand = output_operands[0];                            \
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);  \
-  /* Axis */                                                           \
-  auto axis_operand = input_operands[1];                               \
-  auto axis_count = axis_operand->length / sizeof(int32_t);            \
-  auto axis_data = reinterpret_cast<int32_t*>(axis_operand->buffer);   \
-  for (uint32_t i = 0; i < axis_count; i++) {                          \
-    NNADAPTER_VLOG(5) << "axis[" << i << "]=" << axis_data[i];         \
-  }                                                                    \
-  /* P */                                                              \
-  auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);     \
-  NNADAPTER_VLOG(5) << "p: " << p;                                     \
-  NNADAPTER_CHECK(p == 1 || p == 2)                                    \
-      << "lp normalization only support p = 1 or p = 2.";              \
-  /* Epsilon */                                                        \
-  auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer); \
+#define LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS                     \
+  auto& input_operands = operation->input_operands;                           \
+  auto& output_operands = operation->output_operands;                         \
+  auto input_count = input_operands.size();                                   \
+  auto output_count = output_operands.size();                                 \
+  NNADAPTER_CHECK_EQ(input_count, 4);                                         \
+  NNADAPTER_CHECK_EQ(output_count, 1);                                        \
+  /* Input */                                                                 \
+  auto input_operand = input_operands[0];                                     \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
+  /* Output */                                                                \
+  auto output_operand = output_operands[0];                                   \
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);         \
+  /* Axis */                                                                  \
+  auto axis_operand = input_operands[1];                                      \
+  auto axis_count = axis_operand->length / sizeof(int32_t);                   \
+  auto axis_data = reinterpret_cast<int32_t*>(axis_operand->buffer);          \
+  for (uint32_t i = 0; i < axis_count; i++) {                                 \
+    NNADAPTER_VLOG(5) << "axis[" << i << "]=" << axis_data[i];                \
+  }                                                                           \
+  /* P */                                                                     \
+  auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);            \
+  NNADAPTER_VLOG(5) << "p: " << p;                                            \
+  NNADAPTER_CHECK(p == 1 || p == 2)                                           \
+      << "lp normalization only support p = 1 or p = 2. Received p is " << p; \
+  /* Epsilon */                                                               \
+  auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer);        \
   NNADAPTER_VLOG(5) << "epsilon: " << epsilon;
 
 }  // namespace operation

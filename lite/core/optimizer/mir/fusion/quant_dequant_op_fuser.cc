@@ -56,8 +56,12 @@ static float FindAbsMax(const float* input, int size) {
 template <typename T>
 void QuantizeTensorInPlace(Tensor* input, float scale) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*input);
@@ -76,24 +80,22 @@ void QuantizeTensorInPlace(Tensor* input,
                            const std::vector<float>& scales,
                            int quant_axis) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
-  if (quant_axis != 0 && quant_axis != 1) {
-    LOG(FATAL) << "Input error: quant_axis should be 0 or 1.";
-  }
+
   Tensor origin_tensor;
   origin_tensor.CopyDataFrom(*input);
   input->clear();
 
   auto dims = origin_tensor.dims();
   const int64_t channel = dims[quant_axis];
-  if (dims.size() < 2) {
-    LOG(FATAL) << "Error: the rank of input tensor should at least be 2.";
-  }
-  if (scales.size() != channel) {
-    LOG(FATAL) << "Params Error: scale size should be equal to channel.";
-  }
+  CHECK_GE(dims.size(), 2);
+  CHECK_EQ(scales.size(), channel);
   float* origin_data = origin_tensor.mutable_data<float>();
   T* quantized_data = input->mutable_data<T>();
 
@@ -122,6 +124,10 @@ void QuantizeTensorInPlace(Tensor* input,
         });
       }
     }
+  } else {
+    LOG(FATAL)
+        << "Only support quant_axis is 0 or 1, but received quant_axis is "
+        << quant_axis;
   }
 }
 
@@ -129,8 +135,12 @@ void QuantizeTensorInPlace(Tensor* input,
 template <typename T>
 static void TensorCaster(Tensor* input) {
   if (input->precision() != PRECISION(kFloat)) {
-    LOG(FATAL) << "Error: the precision of input should be float.  actual is "
-               << PrecisionToStr(input->precision());
+    LOG(WARNING)
+        << "Warning: the precision of input should be float, but actual is "
+        << PrecisionToStr(input->precision())
+        << ". There may be several ops share the same weight and the weight "
+           "has already been transed to int8.";
+    return;
   }
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*input);
@@ -204,10 +214,6 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
-
-#ifdef LITE_WITH_FPGA
-    op_desc.SetAttr("fpga_static_quant", true);
-#endif
 
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
@@ -310,7 +316,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-#ifndef LITE_WITH_FPGA
   switch (bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
@@ -319,25 +324,10 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
       op_desc.SetAttr("enable_int16", true);
       break;
   }
-#endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-  size_t weight_num = quantized_weight_t->data_size();
-
-#ifdef LITE_WITH_FPGA
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  for (size_t i = 0; i < weight_num; i++) {
-    quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-#else
   CastPersistableTensorInPlace(quantized_weight_t, bit_length);
-#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -426,7 +416,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
 
-#ifndef LITE_WITH_FPGA
   switch (weight_bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
@@ -435,31 +424,13 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
       op_desc.SetAttr("enable_int16", true);
       break;
   }
-#endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
-  Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*quantized_weight_t);
-  float* temp_data = temp_tensor.mutable_data<float>();
-
-#ifdef LITE_WITH_FPGA
-  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
-  int channel = channel_scale_tensor->data_size();
-  int weight_chw = quantized_weight_t->data_size() / channel;
-  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_chw;
-    quantized_weight_data[i] = temp_data[i] * weight_scale[c];
-  }
-  quantized_weight_t->set_persistable(true);
-  quantized_weight_t->set_precision(PRECISION(kFloat));
-
-#else
   CastPersistableTensorInPlace(quantized_weight_t, weight_bit_length);
-#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -562,14 +533,12 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
 
-#ifndef LITE_WITH_FPGA
     std::string op_type = op_info.Type();
     if (std::find(input_activation_quant_op.begin(),
                   input_activation_quant_op.end(),
                   op_type) != input_activation_quant_op.end()) {
       op_info.SetAttr("enable_int8", true);
     }
-#endif
 
     if (input_var_is_activation) {
       op_info.SetInputScale(input_var_name, scales);
@@ -593,9 +562,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       if (op_type == "mul" || op_type == "matmul" || op_type == "matmul_v2" ||
           op_type == "conv2d" || op_type == "depthwise_conv2d" ||
           op_type == "conv2d_transpose") {
-#ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
-#endif
         if (scales.size() == 1) {
           QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
         } else {
@@ -683,9 +650,6 @@ void QuantDequantLinearOpFuser::BuildPattern() {
           ->assert_is_op_input("quantize_linear", "ZeroPoint");
   auto* quant_op_output =
       VarNode("quant_op_output")->assert_is_op_output("quantize_linear", "Y");
-  auto* dequant_op_zero_point =
-      VarNode("dequant_op_zero_point")
-          ->assert_is_op_input("dequantize_linear", "ZeroPoint");
   auto* dequant_op_out =
       VarNode("dequant_op_out")->assert_is_op_output("dequantize_linear", "Y");
 
@@ -696,9 +660,19 @@ void QuantDequantLinearOpFuser::BuildPattern() {
 
   quant_op->LinksFrom({quant_op_input, quant_op_scale, quant_op_zero_point})
       .LinksTo({quant_op_output});
-  dequant_op
-      ->LinksFrom({quant_op_output, quant_op_scale, dequant_op_zero_point})
-      .LinksTo({dequant_op_out});
+
+  if (shared_zero_point_) {
+    dequant_op
+        ->LinksFrom({quant_op_output, quant_op_scale, quant_op_zero_point})
+        .LinksTo({dequant_op_out});
+  } else {
+    auto* dequant_op_zero_point =
+        VarNode("dequant_op_zero_point")
+            ->assert_is_op_input("dequantize_linear", "ZeroPoint");
+    dequant_op
+        ->LinksFrom({quant_op_output, quant_op_scale, dequant_op_zero_point})
+        .LinksTo({dequant_op_out});
+  }
   VLOG(4) << "QuantDequantLinearOpFuser";
 }
 
@@ -737,12 +711,10 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     op_info->UpdateAllInputs(output_var_name, input_var_name);
     op_info->SetAttr<int>("bit_length", bit_length);
     std::string op_type = op_info->Type();
-#ifndef LITE_WITH_FPGA
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
       op_info->SetAttr("enable_int8", true);
     }
-#endif
     op_info->SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
       CHECK(op_out_var_node->IsArg());
@@ -750,6 +722,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         if (!out_scale_node->IsStmt()) continue;
         auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
         auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (out_scale_op_info->Type() != "quantize_linear") continue;
         if (!out_scale_op_info->HasInput("Scale")) continue;
         std::string out_scale_name = out_scale_op_info->Input("Scale").front();
         auto* out_scale_tensor =

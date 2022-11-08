@@ -46,8 +46,6 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
-# option of light weight framework, default is OFF
-WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -58,17 +56,16 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                            -DCMAKE_BUILD_TYPE=Release \
-                            -DWITH_MKL=OFF \
-                            -DWITH_MKLDNN=OFF \
-                            -DWITH_TESTING=OFF \
-                            -DLITE_WITH_OPENMP=OFF"
+readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
+                               -DWITH_MKL=OFF \
+                               -DWITH_MKLDNN=OFF \
+                               -DWITH_TESTING=OFF \
+                               -DLITE_WITH_OPENMP=OFF"
 
 # function of set options for benchmark
 function set_benchmark_options {
@@ -80,9 +77,7 @@ function set_benchmark_options {
     # Linux. Otherwise opencl is not supported on Linux. See link for more info:
     # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
     WITH_OPENCL=OFF
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
-    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
     WITH_OPENCL=ON
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -110,7 +105,6 @@ function init_cmake_mutable_options {
 
     arm_arch=$ARCH
     arm_target_os=qnx
-    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
     WITH_AVX=OFF
 
     if [ "${WITH_STRIP}" == "ON" ]; then
@@ -126,7 +120,6 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$WITH_LIGHT_WEIGHT_FRAMEWORK \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \

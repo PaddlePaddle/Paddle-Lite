@@ -15,11 +15,13 @@
 #include "lite/core/optimizer/mir/subgraph/subgraph_detector.h"
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/optimizer/mir/dot.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/ssa_graph_utils.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/utils/env.h"
 #include "lite/utils/io.h"
@@ -314,78 +316,11 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
-std::set<Node *> SubgraphDetector::GetExcludedNodesFromSubgraphPartitionConfigs(
-    const std::string &subgraph_partition_configs) {
-  // Get the excluded nodes from the custom partition configurations
-  std::set<Node *> excluded_nodes;
-  std::vector<std::string> lines = Split(subgraph_partition_configs, "\n");
-  for (const auto &line : lines) {
-    if (line.empty()) continue;
-    std::vector<std::string> node_info = Split(line, ":");
-    std::string op_type = node_info.at(0);
-    std::vector<std::string> in_vars_name;
-    if (node_info.size() > 1) {
-      in_vars_name = Split(node_info.at(1), ",");
-    }
-    std::vector<std::string> out_vars_name;
-    if (node_info.size() > 2) {
-      out_vars_name = Split(node_info.at(2), ",");
-    }
-
-    for (auto &node : graph_->mutable_nodes()) {
-      if (node.IsArg()) continue;
-      auto stmt = node.stmt();
-      if (op_type != stmt->op_type()) continue;
-      auto in_nodes = node.inlinks;
-      auto out_nodes = node.outlinks;
-      if (in_vars_name.size() > in_nodes.size() ||
-          out_vars_name.size() > out_nodes.size()) {
-        continue;
-      }
-
-      bool matched = true;
-
-      for (auto in_var_name : in_vars_name) {
-        bool find_var = false;
-        for (auto *in_node : in_nodes) {
-          if (in_node->arg()->name == in_var_name) {
-            find_var = true;
-            break;
-          }
-        }
-        if (!find_var) {
-          matched = false;
-          break;
-        }
-      }
-
-      for (auto out_var_name : out_vars_name) {
-        bool find_var = false;
-        for (auto *out_node : out_nodes) {
-          if (out_node->arg()->name == out_var_name) {
-            find_var = true;
-            break;
-          }
-        }
-        if (!find_var) {
-          matched = false;
-          break;
-        }
-      }
-
-      if (matched) {
-        excluded_nodes.insert(&node);
-      }
-    }
-  }
-
-  return excluded_nodes;
-}
-
 void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
-  auto excluded_nodes =
-      GetExcludedNodesFromSubgraphPartitionConfigs(subgraph_partition_configs_);
+  // Find the op nodes that needs to be forced to run on the CPU according to
+  // the configuration file.
+  auto op_nodes = GetNodesFromConfigs(graph_, subgraph_partition_configs_);
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -393,7 +328,7 @@ void SubgraphDetector::InitNodes(node_map_t *nodes) {
     for (auto &out_node : it.first->outlinks) {
       it.second->outlinks.push_back((*nodes)[out_node]);
     }
-    if (teller_(it.first) && excluded_nodes.count(it.first) == 0) {
+    if (teller_(it.first) && op_nodes.count(it.first) == 0) {
       it.second->marked = true;
       if (it.first->IsStmt()) {
         // If a function is inside the subgraph, mark all the output variables
@@ -644,12 +579,12 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(
 void SubgraphFuser::operator()() {
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph_, teller_, subgraph_partition_configs_)();
+  SubgraphVisualizer(graph_, subgraphs)();
   if (support_mixed_precision_) {
     MixedPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
         graph_, &subgraphs);
     mixed_precision_auto_insert_calib_fuser();
   }
-  SubgraphVisualizer(graph_, subgraphs)();
   ReplaceNodesWithSubgraphs(graph_, subgraphs, min_subgraph_size_);
 }
 
@@ -673,6 +608,21 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
   std::map<std::string, Node *> transed_arg_nodes;
   // Skip if pre op is calib, ...
   std::vector<std::string> skip_pre_ops{"calib"};
+  // Skip special ops' inputs.
+  // For example: "repeat_times_tensor" of "tile" op is int32 datatype and
+  // should not be quanted.
+  const std::unordered_map<std::string, std::vector<std::string>>
+      skip_op_inputs{
+          {"tile", {"RepeatTimes", "repeat_times_tensor"}},
+          {"bilinear_interp", {"OutSize", "SizeTensor", "scale"}},
+          {"nearest_interp", {"OutSize", "SizeTensor", "scale"}},
+          {"bilinear_interp_v2", {"OutSize", "SizeTensor", "scale"}},
+          {"nearest_interp_v2", {"OutSize", "SizeTensor", "scale"}},
+          {"expand", {"ExpandTimes", "expand_times_tensor"}},
+          {"concat", {"AxisTensor"}},
+          {"split", {"AxisTensor", "SectionsTensorList"}},
+          {"gather", {"Axis"}},
+      };
 
   std::vector<Node *> nodes_org = *nodes;
   for (auto node : nodes_org) {
@@ -680,6 +630,14 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
     auto in_nodes = node->inlinks;
     for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;
+      auto op_info = node->AsStmt().op_info();
+      auto op_type = op_info->Type();
+      if (skip_op_inputs.count(op_type)) {
+        std::string in_var_name = pre_arg_node->arg()->name;
+        std::string in_arg_name;
+        op_info->GetInputArgname(in_var_name, &in_arg_name);
+        if (HasItem(skip_op_inputs.at(op_type), in_arg_name)) continue;
+      }
       auto pre_inst_node = pre_arg_node->inlinks.front();
       auto pre_op_type = pre_inst_node->AsStmt().op_type();
       if (!HasItem(nodes_org, pre_inst_node) ||
@@ -710,7 +668,6 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
         transed_arg_nodes[calib_in_name] = calib_out_arg;
 
         // Create calib node
-        auto op_info = node->AsStmt().op_info();
         CHECK(op_info->HasInputScale(calib_in_name));
         auto scales = op_info->GetInputScale(calib_in_name);
         CHECK_EQ(scales.size(), 1UL);
@@ -738,12 +695,15 @@ void MixedPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
     SSAGraph *graph, std::vector<Node *> *nodes) {
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node *> transed_arg_nodes;
+  // Skip if op is shape, ...
+  std::vector<std::string> skip_ops{"shape"};
   // Skip if pre op is calib, ...
   std::vector<std::string> skip_pre_ops{"calib"};
 
   std::vector<Node *> nodes_org = *nodes;
   for (auto node : nodes_org) {
-    if (IsQuantInstNode(node)) continue;
+    auto op_type = node->AsStmt().op_info()->Type();
+    if (HasItem(skip_ops, op_type) || IsQuantInstNode(node)) continue;
     auto in_nodes = node->inlinks;
     for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;

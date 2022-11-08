@@ -115,6 +115,8 @@ TEST(Norm, precision) {
   abs_error = 1e-2;
   axis_vec = std::vector<int>{1};
   epsilon = {1e-4};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
