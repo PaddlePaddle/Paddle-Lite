@@ -520,6 +520,89 @@ void pooling_basic(const float* din,
   "st1  {v10.4s}, [%[dr_out]], #16\n" /* store 4 out, dr_out */              \
   "bne       1b\n"                    /* bne s3_max_loop_mid */
 
+#define P5X5S1P2_MAX_0                             \
+  "fmax v25.4s, v0.4s, v5.4s\n"                    \
+  "fmax v26.4s, v1.4s, v6.4s\n"                    \
+  "fmax v27.4s, v2.4s, v7.4s\n"                    \
+  "fmax v28.4s, v3.4s, v8.4s\n"                    \
+  "fmax v29.4s, v4.4s, v9.4s\n"                    \
+  "ext v10.16b, v0.16b, v5.16b, #4\n" /* 1,2,3,4*/ \
+  "ext v11.16b, v1.16b, v6.16b, #4\n"              \
+  "ext v12.16b, v2.16b, v7.16b, #4\n"              \
+  "ext v13.16b, v3.16b, v8.16b, #4\n"              \
+  "ext v14.16b, v4.16b, v9.16b, #4\n"              \
+  "fmax v25.4s, v25.4s, v10.4s\n"                  \
+  "fmax v26.4s, v26.4s, v11.4s\n"                  \
+  "fmax v27.4s, v27.4s, v12.4s\n"                  \
+  "fmax v28.4s, v28.4s, v13.4s\n"                  \
+  "fmax v29.4s, v29.4s, v14.4s\n"                  \
+  "ext v15.16b, v0.16b, v5.16b, #8\n" /*2,3,4,5*/  \
+  "ext v16.16b, v1.16b, v6.16b, #8\n"              \
+  "ext v17.16b, v2.16b, v7.16b, #8\n"              \
+  "ext v18.16b, v3.16b, v8.16b, #8\n"              \
+  "ext v19.16b, v4.16b, v9.16b, #8\n"              \
+  "fmax v25.4s, v25.4s, v15.4s\n"                  \
+  "fmax v26.4s, v26.4s, v16.4s\n"                  \
+  "fmax v27.4s, v27.4s, v17.4s\n"                  \
+  "fmax v28.4s, v28.4s, v18.4s\n"                  \
+  "fmax v29.4s, v29.4s, v19.4s\n"                  \
+  "ext v20.16b, v0.16b, v5.16b, #12\n" /*3,4,5,6*/ \
+  "ext v21.16b, v1.16b, v6.16b, #12\n"             \
+  "ext v22.16b, v2.16b, v7.16b, #12\n"             \
+  "ext v23.16b, v3.16b, v8.16b, #12\n"             \
+  "ext v24.16b, v4.16b, v9.16b, #12\n"             \
+  "fmax v25.4s, v25.4s, v20.4s\n"                  \
+  "fmax v26.4s, v26.4s, v21.4s\n"                  \
+  "fmax v27.4s, v27.4s, v22.4s\n"                  \
+  "fmax v28.4s, v28.4s, v23.4s\n"                  \
+  "fmax v29.4s, v29.4s, v24.4s\n"                  \
+  "fmax v25.4s, v25.4s, v26.4s\n"                  \
+  "fmax v27.4s, v27.4s, v28.4s\n"                  \
+  "fmax v25.4s, v25.4s, v27.4s\n"                  \
+  "fmax v25.4s, v25.4s, v29.4s\n"                  \
+  "st1 {v25.4s}, [%[dr_out]], #16\n"
+
+#define P5X5S1P2_MAX_1                             \
+  "fmax v25.4s, v0.4s, v5.4s\n"                    \
+  "fmax v26.4s, v1.4s, v6.4s\n"                    \
+  "fmax v27.4s, v2.4s, v7.4s\n"                    \
+  "fmax v28.4s, v3.4s, v8.4s\n"                    \
+  "fmax v29.4s, v4.4s, v9.4s\n"                    \
+  "ext v10.16b, v5.16b, v0.16b, #4\n" /* 1,2,3,4*/ \
+  "ext v11.16b, v6.16b, v1.16b, #4\n"              \
+  "ext v12.16b, v7.16b, v2.16b, #4\n"              \
+  "ext v13.16b, v8.16b, v3.16b, #4\n"              \
+  "ext v14.16b, v9.16b, v4.16b, #4\n"              \
+  "fmax v25.4s, v25.4s, v10.4s\n"                  \
+  "fmax v26.4s, v26.4s, v11.4s\n"                  \
+  "fmax v27.4s, v27.4s, v12.4s\n"                  \
+  "fmax v28.4s, v28.4s, v13.4s\n"                  \
+  "fmax v29.4s, v29.4s, v14.4s\n"                  \
+  "ext v15.16b, v5.16b, v0.16b, #8\n" /*2,3,4,5*/  \
+  "ext v16.16b, v6.16b, v1.16b, #8\n"              \
+  "ext v17.16b, v7.16b, v2.16b, #8\n"              \
+  "ext v18.16b, v8.16b, v3.16b, #8\n"              \
+  "ext v19.16b, v9.16b, v4.16b, #8\n"              \
+  "fmax v25.4s, v25.4s, v15.4s\n"                  \
+  "fmax v26.4s, v26.4s, v16.4s\n"                  \
+  "fmax v27.4s, v27.4s, v17.4s\n"                  \
+  "fmax v28.4s, v28.4s, v18.4s\n"                  \
+  "fmax v29.4s, v29.4s, v19.4s\n"                  \
+  "ext v20.16b, v5.16b, v0.16b, #12\n" /*3,4,5,6*/ \
+  "ext v21.16b, v6.16b, v1.16b, #12\n"             \
+  "ext v22.16b, v7.16b, v2.16b, #12\n"             \
+  "ext v23.16b, v8.16b, v3.16b, #12\n"             \
+  "ext v24.16b, v9.16b, v4.16b, #12\n"             \
+  "fmax v25.4s, v25.4s, v20.4s\n"                  \
+  "fmax v26.4s, v26.4s, v21.4s\n"                  \
+  "fmax v27.4s, v27.4s, v22.4s\n"                  \
+  "fmax v28.4s, v28.4s, v23.4s\n"                  \
+  "fmax v29.4s, v29.4s, v24.4s\n"                  \
+  "fmax v25.4s, v25.4s, v26.4s\n"                  \
+  "fmax v27.4s, v27.4s, v28.4s\n"                  \
+  "fmax v25.4s, v25.4s, v27.4s\n"                  \
+  "fmax v25.4s, v25.4s, v29.4s\n"                  \
+  "st1 {v25.4s}, [%[dr_out]], #16\n"
 #else
 #define GLOBAL_INIT                                                 \
   "vld1.f32   {d0-d3}, [%[data_in_channel]]!        @ load data \n" \
@@ -868,6 +951,90 @@ void pooling_basic(const float* din,
                                                                        \
   "vst1.32  {d22-d23}, [%[dr_out]]!\n" /* store 4 out, dr_out */       \
   "bne       1b\n"                     /* bne s3_max_loop_mid */
+
+#define P5X5S1P2_MAX_0                     \
+  "vmax.f32 q15, q0, q5\n"                 \
+  "vmax.f32 q15, q15, q1\n"                \
+  "vmax.f32 q15, q15, q2\n"                \
+  "vmax.f32 q15, q15, q3\n"                \
+  "vmax.f32 q15, q15, q4\n"                \
+  "vmax.f32 q15, q15, q6\n"                \
+  "vmax.f32 q15, q15, q7\n"                \
+  "vmax.f32 q15, q15, q8\n"                \
+  "vmax.f32 q15, q15, q9\n"                \
+  "vext.32 q10, q0, q5, #1\n" /* 1,2,3,4*/ \
+  "vext.32 q11, q1, q6, #1\n"              \
+  "vext.32 q12, q2, q7, #1\n"              \
+  "vext.32 q13, q3, q8, #1\n"              \
+  "vext.32 q14, q4, q9, #1\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vext.32 q10, q0, q5, #2\n" /*2,3,4,5*/  \
+  "vext.32 q11, q1, q6, #2\n"              \
+  "vext.32 q12, q2, q7, #2\n"              \
+  "vext.32 q13, q3, q8, #2\n"              \
+  "vext.32 q14, q4, q9, #2\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vext.32 q10, q0, q5, #3\n" /*3,4,5,6*/  \
+  "vext.32 q11, q1, q6, #3\n"              \
+  "vext.32 q12, q2, q7, #3\n"              \
+  "vext.32 q13, q3, q8, #3\n"              \
+  "vext.32 q14, q4, q9, #3\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vst1.32 {d30,d31}, [%[dr_out]]!\n"
+
+#define P5X5S1P2_MAX_1                     \
+  "vmax.f32 q15, q0, q5\n"                 \
+  "vmax.f32 q15, q15, q1\n"                \
+  "vmax.f32 q15, q15, q2\n"                \
+  "vmax.f32 q15, q15, q3\n"                \
+  "vmax.f32 q15, q15, q4\n"                \
+  "vmax.f32 q15, q15, q6\n"                \
+  "vmax.f32 q15, q15, q7\n"                \
+  "vmax.f32 q15, q15, q8\n"                \
+  "vmax.f32 q15, q15, q9\n"                \
+  "vext.32 q10, q5, q0, #1\n" /* 1,2,3,4*/ \
+  "vext.32 q11, q6, q1, #1\n"              \
+  "vext.32 q12, q7, q2, #1\n"              \
+  "vext.32 q13, q8, q3, #1\n"              \
+  "vext.32 q14, q9, q4, #1\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vext.32 q10, q5, q0, #2\n" /*2,3,4,5*/  \
+  "vext.32 q11, q6, q1, #2\n"              \
+  "vext.32 q12, q7, q2, #2\n"              \
+  "vext.32 q13, q8, q3, #2\n"              \
+  "vext.32 q14, q9, q4, #2\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vext.32 q10, q5, q0, #3\n" /*3,4,5,6*/  \
+  "vext.32 q11, q6, q1, #3\n"              \
+  "vext.32 q12, q7, q2, #3\n"              \
+  "vext.32 q13, q8, q3, #3\n"              \
+  "vext.32 q14, q9, q4, #3\n"              \
+  "vmax.f32 q15, q15, q10\n"               \
+  "vmax.f32 q15, q15, q11\n"               \
+  "vmax.f32 q15, q15, q12\n"               \
+  "vmax.f32 q15, q15, q13\n"               \
+  "vmax.f32 q15, q15, q14\n"               \
+  "vst1.32 {d30,d31}, [%[dr_out]]!\n"
 
 #endif
 
@@ -2915,6 +3082,272 @@ void pooling3x3s2p0_avg(const float* din,
     LITE_PARALLEL_END();
   }
   TargetFree(TARGET(kARM), zero_ptr);
+}
+
+void pooling5x5s1p2_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win,
+                        int pad_bottom,
+                        int pad_right) {
+  int size_channel_out = wout * hout;
+  int size_channel_in = win * hin;
+  auto data_out = static_cast<float*>(dout);
+  auto data_in = static_cast<const float*>(din);
+  const int K = 5;
+  const int P = 2;
+  const int S = 1;
+  const int WUNROLL = 4;
+  int w_unroll_size =
+      (wout - 4) / WUNROLL;  // reserve 4 data to prevent overread
+  w_unroll_size = std::max(w_unroll_size, 0);
+  int w_unroll_remian = wout - w_unroll_size * WUNROLL;
+  float min_val[4] = {};
+  for (int i = 0; i < 4; i++) min_val[i] = std::numeric_limits<float>::lowest();
+
+  for (int n = 0; n < num; ++n) {
+    float* data_out_batch = data_out + n * chout * size_channel_out;
+    const float* data_in_batch = data_in + n * chin * size_channel_in;
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
+      float* data_out_channel = data_out_batch + c * size_channel_out;
+      const float* data_in_channel = data_in_batch + c * size_channel_in;
+      const float* r0 = data_in_channel;
+      const float* r1 = r0 + win;
+      const float* r2 = r1 + win;
+      const float* r3 = r2 + win;
+      const float* r4 = r3 + win;
+      for (int h = 0; h < hout; h++) {
+        float* dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        auto dr2 = r2;
+        auto dr3 = r3;
+        auto dr4 = r4;
+        if (h == 0) {  // pad_top
+          dr0 = r0;
+          dr1 = r0;
+          dr2 = r0;
+          dr3 = r1;
+          dr4 = r2;
+        } else if (h == 1) {
+          dr0 = r0;
+          dr1 = r0;
+          dr2 = r1;
+          dr3 = r2;
+          dr4 = r3;
+        } else {
+          r0 = r1;
+          r1 = r2;
+          r2 = r3;
+          r3 = r4;
+          r4 = r4 + win;
+        }
+        if (h * S + K - P > hin) {  // pad_bottom
+          switch (h * S + K - P - hin) {
+            case 2:
+              dr3 = dr0;
+              dr4 = dr0;
+            case 1:
+              dr4 = dr0;
+            default:
+              break;
+          }
+        }
+        int cnt_num = w_unroll_size;
+        if (w_unroll_size > 0) {
+#ifdef __aarch64__
+          asm volatile(
+              // left 2 pad (q0-q4)
+              "ldr q30, [%[min_val]]\n"
+              "ldr q0, [%[dr0]]\n"  // pad,pad,0,1
+              "ext v0.16b, v30.16b, v0.16b, #8\n"
+              "add %[dr0], %[dr0], #8\n"
+              "ldr q1, [%[dr1]]\n"
+              "ext v1.16b, v30.16b, v1.16b, #8\n"
+              "add %[dr1], %[dr1], #8\n"
+              "ldr q2, [%[dr2]]\n"
+              "ext v2.16b, v30.16b, v2.16b, #8\n"
+              "add %[dr2], %[dr2], #8\n"
+              "ldr q3, [%[dr3]]\n"
+              "ext v3.16b, v30.16b, v3.16b, #8\n"
+              "add %[dr3], %[dr3], #8\n"
+              "ldr q4, [%[dr4]]\n"
+              "ext v4.16b, v30.16b, v4.16b, #8\n"
+              "add %[dr4], %[dr4], #8\n"
+              "ldr q5, [%[dr0]], #16\n"  // 2,3,4,5
+              "ldr q6, [%[dr1]], #16\n"
+              "ldr q7, [%[dr2]], #16\n"
+              "ldr q8, [%[dr3]], #16\n"
+              "ldr q9, [%[dr4]], #16\n" P5X5S1P2_MAX_0
+              "subs %w[cnt_num], %w[cnt_num], #1\n"
+              "ble       2f\n"
+              // load 5x8 -> 5x4
+              "1:\n"
+              "ldr q0, [%[dr0]], #16\n"  // 6,7,8,9
+              "ldr q1, [%[dr1]], #16\n"
+              "ldr q2, [%[dr2]], #16\n"
+              "ldr q3, [%[dr3]], #16\n"
+              "ldr q4, [%[dr4]], #16\n" P5X5S1P2_MAX_1
+              "subs %w[cnt_num], %w[cnt_num], #1\n"
+              "ble       2f\n"
+              "ldr q5, [%[dr0]], #16\n"
+              "ldr q6, [%[dr1]], #16\n"
+              "ldr q7, [%[dr2]], #16\n"
+              "ldr q8, [%[dr3]], #16\n"
+              "ldr q9, [%[dr4]], #16\n" P5X5S1P2_MAX_0
+              "subs %w[cnt_num], %w[cnt_num], #1\n"
+              "bne       1b\n"
+              "2:\n"
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr2] "+r"(dr2),
+                [dr3] "+r"(dr3),
+                [dr4] "+r"(dr4),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [min_val] "r"(min_val)
+              : "cc",
+                "memory",
+                "v0",
+                "v1",
+                "v2",
+                "v3",
+                "v4",
+                "v5",
+                "v6",
+                "v7",
+                "v8",
+                "v9",
+                "v10",
+                "v11",
+                "v12",
+                "v13",
+                "v14",
+                "v15",
+                "v16",
+                "v17",
+                "v18",
+                "v19",
+                "v20",
+                "v21",
+                "v22",
+                "v23",
+                "v24",
+                "v25",
+                "v26",
+                "v27",
+                "v28",
+                "v29",
+                "v30");
+#else
+          asm volatile(
+              // left 2 pad (q0-q4)
+              "vld1.f32 {d30, d31}, [%[min_val]]\n"  // q15
+              "vld1.f32 {d0, d1}, [%[dr0]]\n"        // pad,pad,0,1 (q0-q4)
+              "vext.32  q0, q15, q0, #2\n"
+              "add %[dr0], #8\n"
+              "vld1.f32 {d2,d3}, [%[dr1]]\n"
+              "vext.32 q1, q15, q1, #2\n"
+              "add %[dr1], #8\n"
+              "vld1.f32 {d4,d5}, [%[dr2]]\n"
+              "vext.32 q2, q15, q2, #2\n"
+              "add %[dr2], #8\n"
+              "vld1.f32 {d6,d7}, [%[dr3]]\n"
+              "vext.32 q3, q15, q3, #2\n"
+              "add %[dr3], #8\n"
+              "vld1.f32 {d8,d9}, [%[dr4]]\n"
+              "vext.32 q4, q15, q4, #2\n"
+              "add %[dr4], #8\n"
+              "vld1.f32 {d10,d11}, [%[dr0]]!\n"  // 2,3,4,5 (q5-q9)
+              "vld1.f32 {d12,d13}, [%[dr1]]!\n"
+              "vld1.f32 {d14,d15}, [%[dr2]]!\n"
+              "vld1.f32 {d16,d17}, [%[dr3]]!\n"
+              "vld1.f32 {d18,d19}, [%[dr4]]!\n" P5X5S1P2_MAX_0
+              "subs %[cnt_num], #1\n"
+              "ble       2f\n"
+              // load 5x8 -> 5x4
+              "1:\n"
+              "vld1.f32 {d0,d1}, [%[dr0]]!\n"
+              "vld1.f32 {d2,d3}, [%[dr1]]!\n"
+              "vld1.f32 {d4,d5}, [%[dr2]]!\n"
+              "vld1.f32 {d6,d7}, [%[dr3]]!\n"
+              "vld1.f32 {d8,d9}, [%[dr4]]!\n" P5X5S1P2_MAX_1
+              "subs %[cnt_num], #1\n"
+              "ble       2f\n"
+              "vld1.f32 {d10,d11}, [%[dr0]]!\n"
+              "vld1.f32 {d12,d13}, [%[dr1]]!\n"
+              "vld1.f32 {d14,d15}, [%[dr2]]!\n"
+              "vld1.f32 {d16,d17}, [%[dr3]]!\n"
+              "vld1.f32 {d18,d19}, [%[dr4]]!\n" P5X5S1P2_MAX_0
+              "subs %[cnt_num], #1\n"
+              "bne       1b\n"
+              "2:\n"
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr2] "+r"(dr2),
+                [dr3] "+r"(dr3),
+                [dr4] "+r"(dr4),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              : [min_val] "r"(min_val)
+              : "cc",
+                "memory",
+                "q0",
+                "q1",
+                "q2",
+                "q3",
+                "q4",
+                "q5",
+                "q6",
+                "q7",
+                "q8",
+                "q9",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15");
+#endif
+          dr0 -= 4;
+          dr1 -= 4;
+          dr2 -= 4;
+          dr3 -= 4;
+          dr4 -= 4;
+        }
+        // deal with right pad
+        int wstart = w_unroll_size * 4 * S - P;
+        for (int j = 0; j < w_unroll_remian; ++j) {
+          int wend = std::min(wstart + K, win);
+          int st = wstart > 0 ? wstart : 0;
+          float tmp = dr0[0];
+          for (int i = 0; i < wend - st; i++) {
+            tmp = std::max(tmp, dr0[i]);
+            tmp = std::max(tmp, dr1[i]);
+            tmp = std::max(tmp, dr2[i]);
+            tmp = std::max(tmp, dr3[i]);
+            tmp = std::max(tmp, dr4[i]);
+          }
+          *(dr_out++) = tmp;
+          int stride = S - (st - wstart);
+          stride = std::max(stride, 0);
+          dr0 += stride;
+          dr1 += stride;
+          dr2 += stride;
+          dr3 += stride;
+          dr4 += stride;
+          wstart += S;
+        }
+        data_out_channel += wout;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
 }
 
 }  // namespace math

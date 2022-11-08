@@ -226,6 +226,18 @@ void pooling3x3s2p0_avg(const float* din,
                         int pad_bottom,
                         int pad_right);
 
+void pooling5x5s1p2_max(const float* din,
+                        float* dout,
+                        int num,
+                        int chout,
+                        int hout,
+                        int wout,
+                        int chin,
+                        int hin,
+                        int win,
+                        int pad_bottom,
+                        int pad_right);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
