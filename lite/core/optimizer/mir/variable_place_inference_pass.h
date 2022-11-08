@@ -256,47 +256,46 @@ class VariablePlaceInferencePass : public DebugPass {
           // update op's input variables precision from graph nodes info
           //    ps. op's input variables are stored in exec_scope, while
           //        graph node info is a temporary structure.
-          auto UpdateOpInputsFromNodeInfo = [&]() {
-            for (auto* in : node->inlinks) {
-              if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
-                auto in_arg_name = in->AsArg().name;
-                auto* tmp_tensor = node->AsStmt()
-                                       .op()
-                                       ->scope()
-                                       ->Var(in_arg_name)
-                                       ->GetMutable<lite::Tensor>();
-                tmp_tensor->set_precision(in->AsArg().type->precision());
+          for (auto* in : node->inlinks) {
+            if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
+              auto in_arg_name = in->AsArg().name;
+              auto* in_tensor = node->AsStmt()
+                                    .op()
+                                    ->scope()
+                                    ->Var(in_arg_name)
+                                    ->GetMutable<lite::Tensor>();
+              in_tensor->set_precision(in->AsArg().type->precision());
+              if (op_type == "reshape2") {
+                LOG(INFO) << "--- in precision: "
+                          << PrecisionToStr(in_tensor->precision())
+                          << ", in_name: " << in_arg_name;
               }
             }
-          };
-
-          // update graph nodes precision info from op's output variables
-          //    ps. op's output variables are stored in exec_scope, while
-          //        graph node info is a temporary structure.
-          auto UpdateNodeInfoFromOpOutputs = [&] {
-            for (auto* out : node->outlinks) {
-              if (!(out->AsArg().is_weight) && out->AsArg().type->IsTensor()) {
-                auto out_arg_name = out->AsArg().name;
-                auto* tmp_tensor = node->AsStmt()
-                                       .op()
-                                       ->scope()
-                                       ->Var(out_arg_name)
-                                       ->GetMutable<lite::Tensor>();
-                out->AsArg().type =
-                    LiteType::GetTensorTy(out->AsArg().type->target(),
-                                          tmp_tensor->precision(),
-                                          out->AsArg().type->layout());
-              }
-            }
-          };
-
-          // update op's input variables precision from graph nodes info
-          UpdateOpInputsFromNodeInfo();
+          }
           // update op's output precision from input precision by applying
           // InferType
           inst.op()->InferType();
           // update graph nodes precision info from op's output variables
-          UpdateNodeInfoFromOpOutputs();
+          //    ps. op's output variables are stored in exec_scope, while
+          //        graph node info is a temporary structure.
+          for (auto* out : node->outlinks) {
+            if (!(out->AsArg().is_weight) && out->AsArg().type->IsTensor()) {
+              auto out_arg_name = out->AsArg().name;
+              auto* out_tensor = node->AsStmt()
+                                     .op()
+                                     ->scope()
+                                     ->Var(out_arg_name)
+                                     ->GetMutable<lite::Tensor>();
+              out->AsArg().type =
+                  LiteType::GetTensorTy(out->AsArg().type->target(),
+                                        out_tensor->precision(),
+                                        out->AsArg().type->layout());
+            }
+            if (op_type == "reshape2") {
+              LOG(INFO) << "--- out precision: "
+                        << PrecisionToStr(out->AsArg().type->precision());
+            }
+          }
         }
       }
     }
