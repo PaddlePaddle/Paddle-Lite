@@ -340,9 +340,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     };
     auto* qkv_mul_3_y =
         VarNode("qkv_mul_3_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)
-                          ->assert_node_satisfied(qkv_weight_teller)
-                          ->AsIntermediate();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)->AsIntermediate();
     auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
                               ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
@@ -572,8 +570,17 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* scope = matched.at("q_mul")->stmt()->op()->scope();
     auto q_mul_y_shape = scope->FindMutableTensor(q_mul_input_y_name)->dims();
     hidden_dim = q_mul_y_shape[0];
+    int scale_hidden_dim = 4;
+    {
+      auto* ffn0_mul_op_info = matched.at("qkv_mul_3")->stmt()->op_info();
+      auto ffn0_mul_y_name = ffn0_mul_op_info->Input("Y").front();
+      auto ffn0_mul_y_shape = scope->FindMutableTensor(ffn0_mul_y_name)->dims();
+      CHECK_EQ(ffn0_mul_y_shape.size(), 2);
+      scale_hidden_dim = ffn0_mul_y_shape[1] / ffn0_mul_y_shape[0];
+    }
     VLOG(3) << "q mul Y shape: " << q_mul_y_shape
-            << ", hidden_dim:" << hidden_dim;
+            << ", hidden_dim:" << hidden_dim
+            << ", ffn0 Y shape[1]/shape[0]:" << scale_hidden_dim;
     auto* qkv_mul_op_info = matched.at("qkv_mul")->stmt()->op_info();
     auto qkv_mul_input_y_name = qkv_mul_op_info->Input("Y").front();
     auto qkv_mul_y_shape =
@@ -625,6 +632,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     } else {
       op_desc.SetAttr<int>("relative_type", 0);
     }
+    op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
+
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
     sub_program_desc->AddBlock<cpp::BlockDesc>();
@@ -961,6 +970,8 @@ class XPUMultiEncoderFuser {
         per_channel = first_encoder_op_info->GetAttr<bool>("per_channel");
       }
       const int hidden_dim = first_encoder_op_info->GetAttr<int>("hidden_dim");
+      const int scale_hidden_dim =
+          first_encoder_op_info->GetAttr<int>("ffn_hidden_dim_scale");
       std::string in_name, out_name;
       std::vector<std::string> arg_names{
           "FCWeight", "FCBias", "LNScale", "LNBias"};
@@ -1073,6 +1084,7 @@ class XPUMultiEncoderFuser {
       op_desc.SetAttr<int>("hidden_dim", hidden_dim);
       op_desc.SetAttr<int>("head_num",
                            first_encoder_op_info->GetAttr<int>("head_num"));
+      op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
       op_desc.SetAttr<int>(
           "size_per_head",
           first_encoder_op_info->GetAttr<int>("size_per_head"));
