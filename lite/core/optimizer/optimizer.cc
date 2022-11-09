@@ -212,52 +212,48 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
-       "static_kernel_pick_pass",  // pick original kernel from graph
-#ifdef LITE_WITH_XPU
-       "__xpu__static_kernel_pick_pass",  // xpu pick original kernel from graph
-#endif
-
+       // pick original kernel from graph (exclude xpu)
+       "static_kernel_pick_pass",
+       // xpu pick original kernel from graph
+       "__xpu__static_kernel_pick_pass",
        "remove_tf_redundant_ops_pass",
-       "variable_place_inference_pass",  // inference arg/var's
+       // inference arg/var's info(target/precision/layout/device)
+       "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
-       // "opencl_kernel_place_correct_pass", // uncommit this pass
-       // info(target/precision/layout/device)
-       // using kernel info
-       "argument_type_display_pass",  // debug pass: show arg-type-node's
-                                      // info
-                                      // (target/precision/layout/device)
+       "opencl_kernel_place_correct_pass",
+       // debug pass: show arg-type-node's info (target/precision/layout/device)
+       "argument_type_display_pass",
 
-       "type_target_cast_pass",          // add io_copy/io_copy_once if meet
-                                         // different targets when last and next
-                                         // node
-       "variable_place_inference_pass",  //
+       // add io_copy/io_copy_once
+       "type_target_cast_pass",
+       "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
-       "argument_type_display_pass",  //
+       "argument_type_display_pass",
 
-       "io_copy_kernel_pick_pass",    //
-       "argument_type_display_pass",  //
+       "io_copy_kernel_pick_pass",
+       "argument_type_display_pass",
 
-       "variable_place_inference_pass",  //
+       "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
-       "argument_type_display_pass",  //
+       "argument_type_display_pass",
 
-       "type_precision_cast_pass",       //
-       "variable_place_inference_pass",  //
+       "type_precision_cast_pass",
+       "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
-       "argument_type_display_pass",  //
+       "argument_type_display_pass",
 
-       "type_layout_cast_pass",  // add layout/layout_once op if meet
-                                 // different layout when last and next node
-       "argument_type_display_pass",  //
+       // add layout/layout_once op
+       "type_layout_cast_pass",
+       "argument_type_display_pass",
 
-       "variable_place_inference_pass",  //
+       "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "argument_type_display_pass",
 
        "runtime_context_assign_pass",
        "argument_type_display_pass",
        "lite_inplace_fuse_pass",
-#if !(defined(LITE_WITH_PRECISION_PROFILE))
+#ifndef LITE_WITH_PRECISION_PROFILE
        "memory_optimize_pass",
        "xpu_memory_optimize_pass"
 #endif

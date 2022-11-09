@@ -743,6 +743,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         break;
       }
     }
+    quantized_node->stmt()->op()->Attach(*op_info, scope);
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
