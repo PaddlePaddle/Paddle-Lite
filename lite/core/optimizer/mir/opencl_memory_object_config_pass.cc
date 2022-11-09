@@ -307,8 +307,10 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         change_image2d_to_buffer = true;
       }
 
+      bool transpose_buffer =
+          false;  // TODO(@sprouteer) transpose buffer poor performance
       if ((op_type == "transpose" || op_type == "transpose2") &&
-          input_shape_default_) {
+          transpose_buffer) {
         for (std::list<Node*>::iterator i = x->inlinks.begin();
              i != x->inlinks.end();
              ++i) {
