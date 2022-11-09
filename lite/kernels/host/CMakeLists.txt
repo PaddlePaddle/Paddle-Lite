@@ -29,6 +29,8 @@ add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc)
 add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc)
 add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc)
 add_kernel(cast_compute_host Host basic SRCS cast_compute.cc)
+add_kernel(share_data_compute_host Host basic SRCS share_data_compute.cc)
+add_kernel(round_compute_host Host basic SRCS round_compute.cc)
 
 # extra kernels
 add_kernel(reverse_compute_host Host extra SRCS reverse_compute.cc)
