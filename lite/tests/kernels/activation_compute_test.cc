@@ -659,9 +659,6 @@ TEST(Activation_sigmoid, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -689,10 +686,15 @@ TEST(Activation_sigmoid, precision) {
 }
 
 TEST(Activation_sigmoid, performance) {
-  Place place(TARGET(kARM));
+  Place place;
   float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 640, 640}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
     TestActPerformance(place,
                        "sigmoid_fp32_performance",
                        0.01,
@@ -1498,11 +1500,16 @@ TEST(Activation_relu_fp16, precision) {
 }
 
 TEST(Activation_sigmoid_fp16, precision) {
-  Place place(TARGET(kARM), PRECISION(kFP16));
+  Place place;
   float abs_error = 2e-3;
-
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 4, 5}, {1, 3, 5}, {5, 4}, {8}};
+  for (auto dims : test_dims) {
     TestAct<float16_t>(place,
                        "sigmoid_fp16_precision",
                        0.01,
@@ -1518,10 +1525,15 @@ TEST(Activation_sigmoid_fp16, precision) {
 }
 
 TEST(Activation_sigmoid_fp16, performance) {
-  Place place(TARGET(kARM), PRECISION(kFP16));
+  Place place;
   float abs_error = 2e-3;
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 640, 640}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
     TestActPerformance<float16_t>(place,
                                   "sigmoid_fp16_performance",
                                   0.01,
