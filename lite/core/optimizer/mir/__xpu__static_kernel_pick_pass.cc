@@ -46,7 +46,6 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   DataPrecisionDicide(graph);
   if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
     CollectXPUSpecialOPType(graph);
-    GetInputThreshold(graph);
     for (auto& node : graph->StmtTopologicalOrder()) {
       if (!node->IsStmt()) continue;
 
@@ -177,43 +176,6 @@ void XPUStaticKernelPickPass::DataPrecisionDicide(
     VLOG(2) << "XPU auto use data precision: FP16/FP32/INT16/INT8 ";
 
     return;
-  }
-}
-void GetInputThreshold(const std::unique_ptr<SSAGraph>& graph) {
-  for (auto& node : graph->StmtTopologicalOrder()) {
-    if (!node->IsStmt()) continue;
-
-    auto& instruct = node->AsStmt();
-    if (instruct.op_type() != "pool2d") {
-      continue;
-    }
-
-    for (auto* in_node : node->inlinks) {
-      CHECK(in_node->IsArg());
-      if (in_node->inlinks.empty()) {
-        continue;
-      }
-
-      if (!(in_node->inlinks.front()->IsStmt())) continue;
-      auto& pre_op_inst = in_node->inlinks.front()->AsStmt();
-
-      // pre link op is normal op
-      if (pre_op_inst.op_info()->HasAttr("out_threshold")) {
-        float pre_op_out_threshold =
-            pre_op_inst.op_info()->GetAttr<float>("out_threshold");
-        instruct.mutable_op_info()->SetAttr<float>("input_threshold",
-                                                   pre_op_out_threshold);
-      }
-
-      // pre link op is fused conv2d/fc.
-      if (pre_op_inst.op_info()->HasAttr("Output0_scale")) {
-        float pre_op_out_threshold =
-            pre_op_inst.op_info()->GetAttr<std::vector<float>>(
-                "Output0_scale")[0];
-        instruct.mutable_op_info()->SetAttr<float>("input_threshold",
-                                                   pre_op_out_threshold);
-      }
-    }
   }
 }
 

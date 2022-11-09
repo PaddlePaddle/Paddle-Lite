@@ -242,7 +242,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     }
   }
   void DataPrecisionDicide(const std::unique_ptr<SSAGraph>& graph);
-  void GetInputThreshold(const std::unique_ptr<SSAGraph>& graph);
   bool ForceUsePrecision(size_t* score,
                          const lite::KernelBase& kernel,
                          const paddle::lite::mir::Node::Stmt& instruct);
