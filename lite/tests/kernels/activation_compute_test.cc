@@ -732,7 +732,7 @@ TEST(Activation_tanh, precision) {
 TEST(Activation_swish, precision) {
   Place place;
   float abs_error = 2e-5;
-  std::vector<float> coefs{0.01, 0.1};
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
   std::vector<std::vector<int64_t>> test_dims{
       {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
@@ -779,6 +779,33 @@ TEST(Activation_swish, precision) {
               "swish",
               SWISH,
               abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp32, performance) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1,3,320,320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
     }
   }
 }
@@ -1562,17 +1589,14 @@ TEST(Activation_swish_fp16, precision) {
   Place place;
   float abs_error = 2e-3;
   std::vector<float> coefs{0.1, 1.0, 10.0};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 1, 4, 8}, {1, 1, 1, 10}, {1, 1, 2, 2}, {5, 4}, {8}};
 #ifdef LITE_WITH_ARM
   place = Place(TARGET(kARM), PRECISION(kFP16));
 #else
   return;
 #endif
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 64, 160, 260},
-                                                     {1, 64, 80, 80},
-                                                     {1, 3, 2, 4},
-                                                     {2, 3, 4},
-                                                     {5, 4},
-                                                     {8}}) {
+  for (auto dims : test_dims) {
     for (auto coef : coefs) {
       TestAct<float16_t>(place,
                         "def",
@@ -1592,18 +1616,13 @@ TEST(Activation_swish_fp16, precision) {
 TEST(Activation_swish_fp16, performance) {
   Place place;
   float abs_error = 2e-3;
-  std::vector<float> coefs{0.1, 1.0, 10.0};
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
 #ifdef LITE_WITH_ARM
   place = Place(TARGET(kARM), PRECISION(kFP16));
 #else
   return;
 #endif
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 64, 160, 260},
-                                                     {1, 64, 80, 80},
-                                                     {1, 3, 2, 4},
-                                                     {2, 3, 4},
-                                                     {5, 4},
-                                                     {8}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
     for (auto coef : coefs) {
       TestActPerformance<float16_t>(place,
                                     "def",
