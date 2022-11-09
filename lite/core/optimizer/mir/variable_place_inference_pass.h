@@ -145,6 +145,7 @@ class VariablePlaceInferencePass : public DebugPass {
       // Infering the input and output variable's place according to the
       // declaration of I/O arguments of the picked kernel of the op
       VLOG(4) << "Op " << op_info->Repr();
+      std::map<std::string, Node*> variable_nodes;
       for (auto* in_node : node->inlinks) {
         auto& var = in_node->AsArg();
         const auto& var_name = var.name;
@@ -181,6 +182,9 @@ class VariablePlaceInferencePass : public DebugPass {
             }
           }
         }
+        if (!variable_nodes.count(var_name)) {
+          variable_nodes[var_name] = in_node;
+        }
       }
       for (auto* out_node : node->outlinks) {
         auto& var = out_node->AsArg();
@@ -192,6 +196,16 @@ class VariablePlaceInferencePass : public DebugPass {
         VLOG(4) << " - output arg name:" << arg_name
                 << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
+        if (op_type == "batch_norm") {
+          if (variable_nodes.count(var_name)) {
+             if (variable_nodes[var_name]->AsArg().is_weight) {
+                var.is_weight = true;
+                var.is_persist = true;
+                *var_type = variable_nodes[var_name]->AsArg().type;
+             }
+             continue;
+          }
+        }
         if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           *var_type = decl_type;
