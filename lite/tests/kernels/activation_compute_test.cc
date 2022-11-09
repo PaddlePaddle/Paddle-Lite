@@ -661,7 +661,7 @@ TEST(Activation_sigmoid, precision) {
 
   for (auto dims : test_dims) {
     TestAct(place,
-            "def",
+            "sigmoid_fp32_precision",
             0.01,
             6.,
             "all",
@@ -671,6 +671,30 @@ TEST(Activation_sigmoid, precision) {
             "sigmoid",
             SIGMOID,
             abs_error);
+  }
+}
+
+TEST(Activation_sigmoid, performance) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    TestActPerformance(place,
+                       "sigmoid_fp32_performance",
+                       0.01,
+                       6,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
   }
 }
 
@@ -732,7 +756,7 @@ TEST(Activation_tanh, precision) {
 TEST(Activation_swish, precision) {
   Place place;
   float abs_error = 2e-5;
-  std::vector<float> coefs{0.01, 0.1};
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
   std::vector<std::vector<int64_t>> test_dims{
       {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
 #if defined(LITE_WITH_NNADAPTER)
@@ -779,6 +803,33 @@ TEST(Activation_swish, precision) {
               "swish",
               SWISH,
               abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp32, performance) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1,3,320,320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
     }
   }
 }
