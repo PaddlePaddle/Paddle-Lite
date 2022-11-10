@@ -1074,7 +1074,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   #inst " z23.s,  p0/m, z23.s, z0.s\n"
 
 #define SMMLA_LEAKYRELU_8x4                           \
-  "mov z0.s, #0x0    \n"                              \
+  "eor z0.s, z0.s, z0.s\n"                            \
   "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"                \
   "movprfx z4, z30\n  fmin z4.s,  p0/m, z4.s, z0.s\n" \
   "movprfx z5, z29\n  fmin z5.s,  p0/m, z5.s, z0.s\n" \
@@ -1089,7 +1089,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmul z6.s,  p0/m, z6.s,   z1.s\n"                  \
   "fmul z7.s,  p0/m, z7.s,   z1.s\n"                  \
   "fadd z30.s, p0/m, z30.s,  z4.s\n"                  \
-  "fadd z29.s, p0/m, z29.s,  z4.s\n"                  \
+  "fadd z29.s, p0/m, z29.s,  z5.s\n"                  \
   "fadd z28.s, p0/m, z28.s,  z6.s\n"                  \
   "fadd z27.s, p0/m, z27.s,  z7.s\n"                  \
   "movprfx z4, z26\n  fmin z4.s,  p0/m, z4.s, z0.s\n" \
@@ -1105,7 +1105,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmul z6.s,  p0/m, z6.s,   z1.s\n"                  \
   "fmul z7.s,  p0/m, z7.s,   z1.s\n"                  \
   "fadd z26.s, p0/m, z26.s,  z4.s\n"                  \
-  "fadd z25.s, p0/m, z25.s,  z4.s\n"                  \
+  "fadd z25.s, p0/m, z25.s,  z5.s\n"                  \
   "fadd z24.s, p0/m, z24.s,  z6.s\n"                  \
   "fadd z23.s, p0/m, z23.s,  z7.s\n"
 
@@ -1763,7 +1763,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   #inst " z24.s,  p0/m, z24.s, z0.s\n"
 
 #define SMMLA_LEAKYRELU_8x12                             \
-  "mov z0.s, #0x0    \n"                                 \
+  "eor z0.s, z0.s, z0.s   \n"                            \
   "ld1rqw {z1.s}, p0/Z, [%x[alpha]]\n"                   \
   "movprfx z21, z29\n  fmin z21.s,  p0/m, z21.s, z0.s\n" \
   "movprfx z23, z30\n  fmin z23.s,  p0/m, z23.s, z0.s\n" \
