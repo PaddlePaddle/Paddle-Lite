@@ -42,7 +42,17 @@ namespace mir {
  */
 class XPUStaticKernelPickPass : public mir::StmtPass {
  public:
-  XPUStaticKernelPickPass() {
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+  const core::KernelPickFactor& kernel_pick_factors() const {
+    return kernel_pick_factors_;
+  }
+  core::KernelPickFactor* mutable_kernel_pick_factors() {
+    return &kernel_pick_factors_;
+  }
+
+ private:
+  void Init() {
 #ifdef LITE_WITH_XPU
     // get xpu device type
     int cur_dev_idx = 0;
@@ -72,16 +82,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
 #endif
   }
 
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
-  const core::KernelPickFactor& kernel_pick_factors() const {
-    return kernel_pick_factors_;
-  }
-  core::KernelPickFactor* mutable_kernel_pick_factors() {
-    return &kernel_pick_factors_;
-  }
-
- private:
   // Score the kernel.
   size_t KernelGrade(lite::mir::Node* node,
                      const lite::KernelBase& kernel,
