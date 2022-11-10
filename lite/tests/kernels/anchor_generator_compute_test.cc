@@ -119,7 +119,7 @@ class AnchorGeneratorComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("anchor_generator");
     op_desc->SetInput("Input", {input_str_});
     op_desc->SetAttr("anchor_sizes", anchor_sizes_);

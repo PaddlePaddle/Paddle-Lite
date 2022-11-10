@@ -377,7 +377,7 @@ class StridedSliceComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("strided_slice");
     op_desc->SetInput("Input", {input_});
 

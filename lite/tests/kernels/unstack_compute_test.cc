@@ -99,7 +99,7 @@ class UnstackComputeTester : public arena::TestCase {
     SplitComputeRef<T>(scope->FindTensor(x_), outs, axis);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("unstack");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Y", outs_);

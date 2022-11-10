@@ -72,7 +72,7 @@ class ExpandComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("expand");
     op_desc->SetInput("X", {x_});
     if (has_expandtimes) {
@@ -99,13 +99,17 @@ class ExpandComputeTester : public arena::TestCase {
     if (has_expandtimes) {
       SetCommonTensor(expandtimes_,
                       DDim{{static_cast<int64_t>(expand_times_.size())}},
-                      expand_times_.data());
+                      expand_times_.data(),
+                      {},
+                      true);
     }
     if (has_expand_times_tensor) {
       for (size_t i = 0; i < expand_times_.size(); ++i) {
         SetCommonTensor("expand_times_tensor_" + paddle::lite::to_string(i),
                         DDim({1}),
-                        &expand_times_[i]);
+                        &expand_times_[i],
+                        {},
+                        true);
       }
     }
   }
@@ -166,8 +170,40 @@ void test_expand_4dim(Place place, float abs_error) {
 TEST(Expand, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  test_expand_3dim<float>(place, abs_error);
+  test_expand_4dim<float>(place, abs_error);
+  test_expand_4dim<float, true>(place, abs_error);
+  test_expand_4dim<float, false, true>(place, abs_error);
+  test_expand_4dim<int, true, true>(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  test_expand_3dim<float>(place, abs_error);
+  test_expand_4dim<float>(place, abs_error);
+  test_expand_4dim<float, true>(place, abs_error);
+  test_expand_4dim<float, false, true>(place, abs_error);
+  test_expand_4dim<int, true, true>(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  test_expand_3dim<float>(place, abs_error);
+  test_expand_4dim<float>(place, abs_error);
+  test_expand_4dim<float, true>(place, abs_error);
+  test_expand_4dim<float, false, true>(place, abs_error);
+  test_expand_4dim<int, true, true>(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+  test_expand_3dim<float>(place, abs_error);
+  test_expand_4dim<float>(place, abs_error);
+  return;
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = Place(TARGET(kHost), PRECISION(kAny));
 #else
@@ -176,13 +212,11 @@ TEST(Expand, precision) {
 
   test_expand_3dim<float>(place, abs_error);
   test_expand_4dim<float>(place, abs_error);
-#if !defined(LITE_WITH_XPU)
   test_expand_3dim<int>(place, abs_error);
   test_expand_4dim<int>(place, abs_error);
   test_expand_4dim<float, true>(place, abs_error);
   test_expand_4dim<float, false, true>(place, abs_error);
   test_expand_4dim<int, true, true>(place, abs_error);
-#endif
 }
 
 }  // namespace lite

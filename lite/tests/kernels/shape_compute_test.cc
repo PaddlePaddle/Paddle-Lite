@@ -44,7 +44,7 @@ class ShapeComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("shape");
     op_desc->SetInput("Input", {input_});
     op_desc->SetOutput("Out", {out_});

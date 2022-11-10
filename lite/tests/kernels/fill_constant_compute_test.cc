@@ -128,7 +128,7 @@ class FillConstantComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("fill_constant");
     if (!tensor_value_.empty()) {
       op_desc->SetInput("ValueTensor", {value_tensor_});
