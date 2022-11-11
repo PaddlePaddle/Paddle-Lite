@@ -81,6 +81,7 @@ float CopyFromDeviceToDeviceSync(void* target,
 class IoCopyHostToOpenCLCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::IoCopyParam;
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = "HostToOpenCL";
@@ -88,7 +89,8 @@ class IoCopyHostToOpenCLCompute
   }
 #endif
   void PrepareForRun() override {
-    if (fp16_support_) {
+    auto& param = Param<param_t>();
+    if (fp16_support_ && param.process_type != 2) {
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
@@ -104,8 +106,7 @@ class IoCopyHostToOpenCLCompute
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
 
-    auto mem_size = param.x->dims().production() *
-                    PrecisionTypeLength(param.x->precision());
+    auto mem_size = param.x->memory_size();
 #ifdef LITE_WITH_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
     VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
@@ -113,13 +114,15 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
-    if (fp16_support_ && param.x->precision() == PRECISION(kFloat)) {
+    if (fp16_support_ && param.x->precision() == PRECISION(kFloat) &&
+        param.process_type != 2) {
       std::unique_ptr<Tensor> precision_cast_t =
           std::unique_ptr<Tensor>(new Tensor);
       precision_cast_t->Resize(param.x->dims());
       auto* data_fp32 =
           precision_cast_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
       CHECK(param.x->raw_data());
+      mem_size = param.x->dims().production() * sizeof(float);
       h2d_duration_ =
           CopyFromHostSync(data_fp32, param.x->raw_data(), mem_size);
 
@@ -193,6 +196,7 @@ class IoCopyHostToOpenCLCompute
 class IoCopykOpenCLToHostCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::IoCopyParam;
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = "OpenCLToHost";
@@ -200,7 +204,8 @@ class IoCopykOpenCLToHostCompute
   }
 #endif
   void PrepareForRun() override {
-    if (fp16_support_) {
+    auto& param = Param<param_t>();
+    if (fp16_support_ && param.process_type != 2) {
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
@@ -213,8 +218,7 @@ class IoCopykOpenCLToHostCompute
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
-    auto mem_size = param.x->dims().production() *
-                    PrecisionTypeLength(param.x->precision());
+    auto mem_size = param.x->memory_size();
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();
@@ -240,7 +244,7 @@ class IoCopykOpenCLToHostCompute
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
     if (fp16_support_ && param.x->precision() != PRECISION(kInt64) &&
-        param.x->precision() != PRECISION(kInt32)) {
+        param.x->precision() != PRECISION(kInt32) && param.process_type != 2) {
       mem_size = param.x->dims().production() * sizeof(float);
       std::unique_ptr<Tensor> precision_cast_t =
           std::unique_ptr<Tensor>(new Tensor);
