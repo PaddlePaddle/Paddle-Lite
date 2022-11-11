@@ -109,6 +109,7 @@ add_operator(fake_channel_wise_quantize_dequantize_abs_max_op extra SRCS fake_ch
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc)
 add_operator(quantize_linear_op extra SRCS quantize_linear_op.cc)
 add_operator(dequantize_linear_op extra SRCS dequantize_linear_op.cc)
+add_operator(dequantize_log_op extra SRCS dequantize_log_op.cc)
 add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc)
 add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc)
 add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc)
