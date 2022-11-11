@@ -301,9 +301,37 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         }
       }
 
-      // 7. reshape change target
-      if (op_type == "reshape" || op_type == "reshape2")
+      // 7. reshape transpose change target
+      if ((op_type == "reshape" || op_type == "reshape2") &&
+          input_shape_default_) {
         change_image2d_to_buffer = true;
+      }
+
+      bool transpose_buffer =
+          false;  // TODO(@sprouteer) transpose buffer poor performance
+      if ((op_type == "transpose" || op_type == "transpose2") &&
+          transpose_buffer) {
+        for (std::list<Node*>::iterator i = x->inlinks.begin();
+             i != x->inlinks.end();
+             ++i) {
+          std::string in_name =
+              get_argname((*i)->AsArg().name, inst.op_info()->inputs());
+          if (in_name == "X" && (*i)->inlinks.front()->IsStmt() &&
+              (*i)->inlinks.front()->AsStmt().op_type() == "reshape2") {
+            change_image2d_to_buffer = true;
+          }
+        }
+        for (std::list<Node*>::iterator i = x->outlinks.begin();
+             i != x->outlinks.end();
+             ++i) {
+          std::string out_name =
+              get_argname((*i)->AsArg().name, inst.op_info()->outputs());
+          if (out_name == "Out" && (*i)->outlinks.front()->IsStmt() &&
+              (*i)->outlinks.front()->AsStmt().op_type() == "reshape2") {
+            change_image2d_to_buffer = true;
+          }
+        }
+      }
     }
 
     if (change_image2d_to_cpu) {

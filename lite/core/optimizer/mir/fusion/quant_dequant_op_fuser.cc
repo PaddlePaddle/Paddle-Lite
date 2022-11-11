@@ -650,9 +650,6 @@ void QuantDequantLinearOpFuser::BuildPattern() {
           ->assert_is_op_input("quantize_linear", "ZeroPoint");
   auto* quant_op_output =
       VarNode("quant_op_output")->assert_is_op_output("quantize_linear", "Y");
-  auto* dequant_op_zero_point =
-      VarNode("dequant_op_zero_point")
-          ->assert_is_op_input("dequantize_linear", "ZeroPoint");
   auto* dequant_op_out =
       VarNode("dequant_op_out")->assert_is_op_output("dequantize_linear", "Y");
 
@@ -663,9 +660,19 @@ void QuantDequantLinearOpFuser::BuildPattern() {
 
   quant_op->LinksFrom({quant_op_input, quant_op_scale, quant_op_zero_point})
       .LinksTo({quant_op_output});
-  dequant_op
-      ->LinksFrom({quant_op_output, quant_op_scale, dequant_op_zero_point})
-      .LinksTo({dequant_op_out});
+
+  if (shared_zero_point_) {
+    dequant_op
+        ->LinksFrom({quant_op_output, quant_op_scale, quant_op_zero_point})
+        .LinksTo({dequant_op_out});
+  } else {
+    auto* dequant_op_zero_point =
+        VarNode("dequant_op_zero_point")
+            ->assert_is_op_input("dequantize_linear", "ZeroPoint");
+    dequant_op
+        ->LinksFrom({quant_op_output, quant_op_scale, dequant_op_zero_point})
+        .LinksTo({dequant_op_out});
+  }
   VLOG(4) << "QuantDequantLinearOpFuser";
 }
 
@@ -715,6 +722,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         if (!out_scale_node->IsStmt()) continue;
         auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
         auto* out_scale_op_info = out_scale_node->stmt()->op_info();
+        if (out_scale_op_info->Type() != "quantize_linear") continue;
         if (!out_scale_op_info->HasInput("Scale")) continue;
         std::string out_scale_name = out_scale_op_info->Input("Scale").front();
         auto* out_scale_tensor =
@@ -735,6 +743,7 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         break;
       }
     }
+    quantized_node->stmt()->op()->Attach(*op_info, scope);
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
