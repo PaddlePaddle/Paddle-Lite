@@ -138,17 +138,22 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz),解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz),解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -158,12 +163,12 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
           - build.linux.arm64 # 已编译好的，适用于 arm64
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -185,6 +190,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
                   - libnnadapter.so # NNAdapter 运行时库
                   - libkunlunxin_xtcl.so # NNAdapter device HAL 库
                   - libxtcl.so # 昆仑芯 XTCL 库
+                  ...
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -193,7 +199,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
             - armhf
               ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
@@ -204,30 +210,57 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 Egyptian cat - 0.482870
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 3.133000 ms, avg 3.133000 ms, max 3.133000 ms, min 3.133000 ms
+    Prediction time: 12.594000 ms, avg 12.594000 ms, max 12.594000 ms, min 12.594000 ms
+    Postprocess time: 4.235000 ms, avg 4.235000 ms, max 4.235000 ms, min 4.235000 ms
 
   (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 kunlunxin_xtcl
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 kunlunxin_xtcl
+
+    Top1 Egyptian cat - 0.482607
+    Top2 tabby, tabby cat - 0.471841
+    Top3 tiger cat - 0.039819
+    Top4 lynx, catamount - 0.002419
+    Top5 ping-pong ball - 0.000505
+    Preprocess time: 2.653000 ms, avg 2.653000 ms, max 2.653000 ms, min 2.653000 ms
+    Prediction time: 0.524000 ms, avg 0.524000 ms, max 0.524000 ms, min 0.524000 ms
+    Postprocess time: 4.077000 ms, avg 4.077000 ms, max 4.077000 ms, min 4.077000 ms
 
    For arm64
   (arm cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 8.241000 ms, avg 8.241000 ms, max 8.241000 ms, min 8.241000 ms
+    Prediction time: 78.550000 ms, avg 78.550000 ms, max 78.550000 ms, min 78.550000 ms
+    Postprocess time: 8.621000 ms, avg 8.621000 ms, max 8.621000 ms, min 8.621000 ms
 
   (arm cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 kunlunxin_xtcl
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
 
   ```shell
   (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux amd64 kunlunxin_xtcl
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 kunlunxin_xtcl
 
   (arm cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux arm64 kunlunxin_xtcl
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下即可；
 
 - 如果需要重新编译示例程序，直接运行
 
