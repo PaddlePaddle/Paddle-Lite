@@ -667,6 +667,12 @@ struct QuantizeLinearParam : ParamBase {
   int bit_length;
 };
 
+struct QuantizeLogParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Dict{};
+  lite::Tensor* Out{};
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
