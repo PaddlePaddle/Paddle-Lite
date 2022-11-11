@@ -33,6 +33,8 @@ bool XPUKernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
 }
 
 void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  Init();
+
   kernel_pick_factors_.ConsiderTarget();
   kernel_pick_factors_.ConsiderPrecision();
   kernel_pick_factors_.ConsiderDataLayout();
