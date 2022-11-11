@@ -46,6 +46,11 @@ class LayoutComputeBufferChwToImageDefault
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+    if (param.process_type != 2 && fp16_support_) {
+      build_options_ += " -DMUTABLE_TYPE=half ";
+    } else {
+      build_options_ += " -DMUTABLE_TYPE=float ";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/layout_kernel.cl",
@@ -74,7 +79,10 @@ class LayoutComputeBufferChwToImageDefault
     auto* y_data = MUTABLE_DATA_GPU(
         param.y, image_shape["width"], image_shape["height"], nullptr);
     auto y_dims = param.y->dims();
-
+    if (fp16_support_)
+      param.y->set_precision(PRECISION(kFP16));
+    else
+      param.y->set_precision(PRECISION(kFloat));
     // out info
     std::vector<size_t> new_dims = {1, 1, 1, 1};
     if (x_dims.size() == 5) {
@@ -181,6 +189,11 @@ class LayoutComputeImageDefaultToBufferChw
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
     }
+    if (param.process_type != 2 && fp16_support_) {
+      build_options_ += " -DMUTABLE_TYPE=half ";
+    } else {
+      build_options_ += " -DMUTABLE_TYPE=float ";
+    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -202,10 +215,15 @@ class LayoutComputeImageDefaultToBufferChw
     const cl::Buffer* y_data;
     if (param.process_type == 1) {
       y_data = param.y->mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
+      param.y->set_precision(PRECISION(kInt8));
     } else {
-      y_data = fp16_support_
+      y_data = (fp16_support_ && param.process_type != 2)
                    ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
                    : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      if (fp16_support_ && param.process_type != 2)
+        param.y->set_precision(PRECISION(kFP16));
+      else
+        param.y->set_precision(PRECISION(kFloat));
     }
     auto* x_data = GET_DATA_GPU(param.x);
     auto x_dims = param.x->dims();
@@ -309,6 +327,8 @@ class LayoutComputeBufferChwToImage2DNw
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "buffer/layout_kernel.cl",
                                     build_options_,
@@ -425,6 +445,8 @@ class LayoutComputeImageDefaultToImageFolder
     auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/layout_kernel.cl",
                                     build_options_,
@@ -461,7 +483,6 @@ class LayoutComputeImageDefaultToImageFolder
     VLOG(2) << "y_image_shape(w,h):" << y_image_shape[0] << " "
             << y_image_shape[1];
 #endif
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     STL::stringstream kernel_key;
@@ -521,6 +542,8 @@ class LayoutComputeImageFolderToImageDefault
     auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
+    build_options_ +=
+        fp16_support_ ? " -DMUTABLE_TYPE=half " : " -DMUTABLE_TYPE=float ";
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/layout_kernel.cl",
                                     build_options_,
@@ -548,7 +571,6 @@ class LayoutComputeImageFolderToImageDefault
     const cl::Image2D* y_data =
         MUTABLE_DATA_GPU(param.y, y_image_shape[0], y_image_shape[1], nullptr);
     auto* x_data = GET_DATA_GPU(param.x);
-
 #ifdef LITE_WITH_LOG
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "y_dims:" << y_dims;
@@ -617,6 +639,11 @@ class LayoutComputeImageFolderToBufferChw
     if (x_dims.size() > 2) {
       kernel_func_name_ = "image2d_to_buffer";
     }
+    if (param.process_type != 2 && fp16_support_) {
+      build_options_ += " -DMUTABLE_TYPE=half ";
+    } else {
+      build_options_ += " -DMUTABLE_TYPE=float ";
+    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -647,11 +674,14 @@ class LayoutComputeImageFolderToBufferChw
       x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
     }
     auto* y_data =
-        fp16_support_
+        (fp16_support_ && param.process_type != 2)
             ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
             : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto* x_data = GET_DATA_GPU(param.x);
-
+    if (fp16_support_ && param.process_type != 2)
+      param.y->set_precision(PRECISION(kFP16));
+    else
+      param.y->set_precision(PRECISION(kFloat));
     // out info
     std::vector<size_t> new_dims = {1, 1, 1, 1};
     for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
@@ -759,6 +789,11 @@ class LayoutComputeBufferChwToImageFolder
     if (x_dims.size() > 2) {
       kernel_func_name_ = "buffer_to_image2d";
     }
+    if (param.process_type != 2 && fp16_support_) {
+      build_options_ += " -DMUTABLE_TYPE=half ";
+    } else {
+      build_options_ += " -DMUTABLE_TYPE=float ";
+    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -782,7 +817,10 @@ class LayoutComputeBufferChwToImageFolder
     auto* y_data =
         MUTABLE_DATA_GPU(param.y, image_shape[0], image_shape[1], nullptr);
     auto* x_data = GET_BUFFER_GPU(param.x);
-
+    if (fp16_support_)
+      param.y->set_precision(PRECISION(kFP16));
+    else
+      param.y->set_precision(PRECISION(kFloat));
     // out info
     std::vector<size_t> new_dims = {1, 1, 1, 1};
     for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
