@@ -25,6 +25,9 @@ template <typename T>
 void act_relu(const T* din, T* dout, int size, int threads);
 
 template <typename T>
+void act_swish(const T* din, T* dout, int size, float coef, int threads);
+
+template <typename T>
 void act_hard_sigmoid(const T* din,
                       T* dout,
                       const int size,

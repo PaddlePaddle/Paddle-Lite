@@ -34,7 +34,8 @@ void ReluClippedCompute::Run() {
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
 
-void SwishCompute::Run() {
+template <>
+void SwishCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -89,6 +90,18 @@ void HardSigmoidCompute<PRECISION(kFloat)>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
+template <>
+void SwishCompute<PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float16_t>();
+  auto beta = param.Swish_beta;
+  auto output_data = param.Out->mutable_data<float16_t>();
+  lite::arm::math::fp16::act_swish<float16_t>(
+      x_data, output_data, x_dims.production(), beta, ctx.threads());
+}
+
 template <>
 void HardSigmoidCompute<PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
@@ -280,6 +293,17 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(swish,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::SwishCompute<PRECISION(kFP16)>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
 #endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(relu_clipped,
@@ -294,7 +318,12 @@ REGISTER_LITE_KERNEL(relu_clipped,
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    swish, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SwishCompute, def)
+    swish,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::SwishCompute<PRECISION(kFloat)>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("beta", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
