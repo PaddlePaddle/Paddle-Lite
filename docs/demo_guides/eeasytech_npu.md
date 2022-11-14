@@ -118,7 +118,7 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
             ...
           - android
         - OpenCV # OpenCV 预编译库
-      - object_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 按照以下命令分别运行转换后的 ARM CPU 模型和 亿智 NPU 模型，比较它们的性能和结果；
