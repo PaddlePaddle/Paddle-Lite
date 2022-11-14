@@ -47,6 +47,7 @@ SET_IMPL_ONE(int, INT, i);
 SET_IMPL_ONE(float, FLOAT, f);
 SET_IMPL_ONE(bool, BOOLEAN, b);
 SET_IMPL_ONE(int64_t, LONG, l);
+SET_IMPL_ONE(double, FLOAT64, float64);
 
 template <>
 void OpDesc::SetAttr<std::vector<int>>(const std::string &name,
@@ -75,6 +76,17 @@ void OpDesc::SetAttr<std::vector<float>>(const std::string &name,
   it->clear_floats();
   for (auto &i : v) {
     it->add_floats(i);
+  }
+}
+
+template <>
+void OpDesc::SetAttr<std::vector<double>>(const std::string &name,
+                                          const std::vector<double> &v) {
+  auto it = FindAttr(desc_, name);
+  it->set_type(framework::proto::FLOAT64S);
+  it->clear_floats();
+  for (auto &i : v) {
+    it->add_float64s(i);
   }
 }
 
@@ -132,11 +144,13 @@ GET_ATTR_IMPL(int16_t, block_idx);
 GET_ATTR_IMPL(float, f);
 GET_ATTR_IMPL(bool, b);
 GET_ATTR_IMPL(int64_t, l);
+GET_ATTR_IMPL(double, float64);
 GET_ATTRS_IMPL(std::vector<int>, ints);
 GET_ATTRS_IMPL(std::vector<float>, floats);
 GET_ATTRS_IMPL(std::vector<std::string>, strings);
 GET_ATTR_IMPL(std::string, s);
 GET_ATTRS_IMPL(std::vector<int64_t>, longs);
+GET_ATTRS_IMPL(std::vector<double>, float64s);
 
 }  // namespace pb
 }  // namespace lite

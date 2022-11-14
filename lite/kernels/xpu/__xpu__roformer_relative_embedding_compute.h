@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/opencl_kernel_place_correct_pass.h"
-#include <memory>
-#include "lite/core/optimizer/mir/pass_registry.h"
+#pragma once
+
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace kernels {
+namespace xpu {
 
-void OpenCLKernelPlaceCorrectPass::Apply(
-    const std::unique_ptr<SSAGraph> &graph) {
-  CorrectArgumentPlace(graph.get());
-}
+class RoformerRelativeEmbeddingCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::XPURoformerRelativeEmbeddingParam;
 
-}  // namespace mir
+  virtual void Run();
+
+  virtual ~RoformerRelativeEmbeddingCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(opencl_kernel_place_correct_pass,
-                  paddle::lite::mir::OpenCLKernelPlaceCorrectPass);

@@ -409,6 +409,144 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
   }
 }
 
+#define MatMulV2ComputeKernel(func)                                        \
+  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&                        \
+      (x_dims.size() != 2 || y_dims.size() != 2)) {                        \
+    int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];   \
+    int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];   \
+    int out_inner = o_dims[o_dims.size() - 2] * o_dims[o_dims.size() - 1]; \
+    if (x_dims.size() > 2 && y_dims.size() > 2) {                          \
+      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {    \
+        lite::arm::math::gemm_##func(x_transpose,                          \
+                                     y_transpose,                          \
+                                     m_,                                   \
+                                     n_,                                   \
+                                     k_,                                   \
+                                     x_data + i * x_inner,                 \
+                                     y_data + i * y_inner,                 \
+                                     o_data + i * out_inner,               \
+                                     nullptr,                              \
+                                     false,                                \
+                                     scale_one.data(),                     \
+                                     act_param,                            \
+                                     &ctx);                                \
+        matmulv2_add_n_scale_bias(                                         \
+            o_data + i * out_inner, scale_.data(), m_, n_);                \
+      }                                                                    \
+    } else if (x_dims.size() > 2 && y_dims.size() == 2) {                  \
+      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {    \
+        lite::arm::math::gemm_##func(x_transpose,                          \
+                                     y_transpose,                          \
+                                     m_,                                   \
+                                     n_,                                   \
+                                     k_,                                   \
+                                     x_data + i * x_inner,                 \
+                                     y_data,                               \
+                                     o_data + i * out_inner,               \
+                                     nullptr,                              \
+                                     false,                                \
+                                     scale_one.data(),                     \
+                                     act_param,                            \
+                                     &ctx);                                \
+        matmulv2_add_n_scale_bias(                                         \
+            o_data + i * out_inner, scale_.data(), m_, n_);                \
+      }                                                                    \
+    } else if (x_dims.size() == 2 && y_dims.size() > 2) {                  \
+      for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {    \
+        lite::arm::math::gemm_##func(x_transpose,                          \
+                                     y_transpose,                          \
+                                     m_,                                   \
+                                     n_,                                   \
+                                     k_,                                   \
+                                     x_data,                               \
+                                     y_data + i * y_inner,                 \
+                                     o_data + i * out_inner,               \
+                                     nullptr,                              \
+                                     false,                                \
+                                     scale_one.data(),                     \
+                                     act_param,                            \
+                                     &ctx);                                \
+        matmulv2_add_n_scale_bias(                                         \
+            o_data + i * out_inner, scale_.data(), m_, n_);                \
+      }                                                                    \
+    }                                                                      \
+  } else if ((x_dims.size() == 2 && y_dims.size() == 2)) {                 \
+    lite::arm::math::gemm_##func(x_transpose,                              \
+                                 y_transpose,                              \
+                                 m_,                                       \
+                                 n_,                                       \
+                                 k_,                                       \
+                                 x_data,                                   \
+                                 y_data,                                   \
+                                 o_data,                                   \
+                                 nullptr,                                  \
+                                 false,                                    \
+                                 scale_one.data(),                         \
+                                 act_param,                                \
+                                 &ctx);                                    \
+    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);              \
+  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {                   \
+    lite::arm::math::gemm_##func(x_transpose,                              \
+                                 false,                                    \
+                                 m_,                                       \
+                                 n_,                                       \
+                                 k_,                                       \
+                                 x_data,                                   \
+                                 y_data,                                   \
+                                 o_data,                                   \
+                                 nullptr,                                  \
+                                 false,                                    \
+                                 scale_one.data(),                         \
+                                 act_param,                                \
+                                 &ctx);                                    \
+    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);              \
+  } else if (y_dims.size() >= 2 && x_dims.size() == 1) {                   \
+    lite::arm::math::gemm_##func(false,                                    \
+                                 y_transpose,                              \
+                                 m_,                                       \
+                                 n_,                                       \
+                                 k_,                                       \
+                                 x_data,                                   \
+                                 y_data,                                   \
+                                 o_data,                                   \
+                                 nullptr,                                  \
+                                 false,                                    \
+                                 scale_one.data(),                         \
+                                 act_param,                                \
+                                 &ctx);                                    \
+    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);              \
+  } else if (x_dims.size() == 1 && y_dims.size() == 1) {                   \
+    if (x_transpose == false && y_transpose == false) {                    \
+      o_data[0] = 0.;                                                      \
+      for (size_t i = 0; i < x_dims[0]; ++i) {                             \
+        o_data[0] += x_data[i] * y_data[i];                                \
+      }                                                                    \
+    } else if (x_transpose == true && y_transpose == true) {               \
+      lite::arm::math::gemm_##func(false,                                  \
+                                   false,                                  \
+                                   m_,                                     \
+                                   n_,                                     \
+                                   k_,                                     \
+                                   x_data,                                 \
+                                   y_data,                                 \
+                                   o_data,                                 \
+                                   nullptr,                                \
+                                   false,                                  \
+                                   scale_one.data(),                       \
+                                   act_param,                              \
+                                   &ctx);                                  \
+    } else {                                                               \
+      LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("  \
+                 << y_dims << ")"                                          \
+                 << ", and x_transpose: " << x_transpose                   \
+                 << ", y_transpose: " << y_transpose;                      \
+    }                                                                      \
+    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);              \
+  } else {                                                                 \
+    LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims("     \
+               << y_dims << ")";                                           \
+  }
+
 template <>
 void MatMulV2Compute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& param = Param<param_t>();
@@ -425,152 +563,13 @@ void MatMulV2Compute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   operators::ActivationParam act_param;
   act_param.has_active = false;
 
-  if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
-      (x_dims.size() != 2 || y_dims.size() != 2)) {
-    // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
-    // x: [B, M, K], y: [K, N], out: [B, M, N]
-    // or
-    // x: [M, K], y: [B, ..., K, N], out: [B, ..., M, N]
-    // x: [M, K], y: [B, K, N], out: [B, M, N]
-    int x_inner = x_dims[x_dims.size() - 2] * x_dims[x_dims.size() - 1];
-    int y_inner = y_dims[y_dims.size() - 2] * y_dims[y_dims.size() - 1];
-    int out_inner = o_dims[o_dims.size() - 2] * o_dims[o_dims.size() - 1];
-
-    if (x_dims.size() > 2 && y_dims.size() > 2) {
-      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
-                                 y_transpose,
-                                 m_,
-                                 n_,
-                                 k_,
-                                 x_data + i * x_inner,
-                                 y_data + i * y_inner,
-                                 o_data + i * out_inner,
-                                 nullptr,
-                                 false,
-                                 scale_one.data(),
-                                 act_param,
-                                 &ctx);
-        matmulv2_add_n_scale_bias(
-            o_data + i * out_inner, scale_.data(), m_, n_);
-      }
-    } else if (x_dims.size() > 2 && y_dims.size() == 2) {
-      for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
-                                 y_transpose,
-                                 m_,
-                                 n_,
-                                 k_,
-                                 x_data + i * x_inner,
-                                 y_data,
-                                 o_data + i * out_inner,
-                                 nullptr,
-                                 false,
-                                 scale_one.data(),
-                                 act_param,
-                                 &ctx);
-        matmulv2_add_n_scale_bias(
-            o_data + i * out_inner, scale_.data(), m_, n_);
-      }
-    } else if (x_dims.size() == 2 && y_dims.size() > 2) {
-      for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
-                                 y_transpose,
-                                 m_,
-                                 n_,
-                                 k_,
-                                 x_data,
-                                 y_data + i * y_inner,
-                                 o_data + i * out_inner,
-                                 nullptr,
-                                 false,
-                                 scale_one.data(),
-                                 act_param,
-                                 &ctx);
-        matmulv2_add_n_scale_bias(
-            o_data + i * out_inner, scale_.data(), m_, n_);
-      }
-    }
-  } else if ((x_dims.size() == 2 && y_dims.size() == 2)) {
-    // x: [M, K], y: [K, N], out: [M, N]
-    lite::arm::math::gemm_s8(x_transpose,
-                             y_transpose,
-                             m_,
-                             n_,
-                             k_,
-                             x_data,
-                             y_data,
-                             o_data,
-                             nullptr,
-                             false,
-                             scale_one.data(),
-                             act_param,
-                             &ctx);
-    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);
-  } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
-    // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::gemm_s8(x_transpose,
-                             false,
-                             m_,
-                             n_,
-                             k_,
-                             x_data,
-                             y_data,
-                             o_data,
-                             nullptr,
-                             false,
-                             scale_one.data(),
-                             act_param,
-                             &ctx);
-    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);
-  } else if (y_dims.size() >= 2 && x_dims.size() == 1) {
-    // x: [B, M, K], y: [K], out: [B, M]
-    lite::arm::math::gemm_s8(false,
-                             y_transpose,
-                             m_,
-                             n_,
-                             k_,
-                             x_data,
-                             y_data,
-                             o_data,
-                             nullptr,
-                             false,
-                             scale_one.data(),
-                             act_param,
-                             &ctx);
-    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);
-  } else if (x_dims.size() == 1 && y_dims.size() == 1) {
-    // x: [K], y: [K], out: [1]
-    if (x_transpose == false && y_transpose == false) {
-      o_data[0] = 0.;
-      for (size_t i = 0; i < x_dims[0]; ++i) {
-        o_data[0] += x_data[i] * y_data[i];
-      }
-    } else if (x_transpose == true && y_transpose == true) {
-      lite::arm::math::gemm_s8(false,
-                               false,
-                               m_,
-                               n_,
-                               k_,
-                               x_data,
-                               y_data,
-                               o_data,
-                               nullptr,
-                               false,
-                               scale_one.data(),
-                               act_param,
-                               &ctx);
-    } else {
-      LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
-                 << y_dims << ")"
-                 << ", and x_transpose: " << x_transpose
-                 << ", y_transpose: " << y_transpose;
-    }
-    matmulv2_add_n_scale_bias(o_data, scale_.data(), m_, n_);
-  } else {
-    LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
-               << ")";
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+  if (ctx.has_sve2_i8mm()) {
+    MatMulV2ComputeKernel(sve);
+    return;
   }
+#endif
+  MatMulV2ComputeKernel(s8);
 }
 
 #ifdef ENABLE_ARM_FP16
