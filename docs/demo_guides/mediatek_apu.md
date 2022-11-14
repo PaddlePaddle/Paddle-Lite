@@ -71,19 +71,24 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
-            - mobilenet_v1_int8_224_per_layer # Paddle non-combined 格式的 mobilenet_v1 int8 全量化模型
+            - mobilenet_v1_int8_224_per_layer
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
               — conv1_weights # Paddle fluid 模型参数文件
               - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid 模型量化参数文件
@@ -92,12 +97,12 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.android.arm64-v8a # arm64-v8a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 amd64-v8a 的示例程序
+            - demo # 已编译好的，适用于 amd64-v8a 的示例程序
           - build.android.armeabi-v7a # armeabi-v7a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run_with_adb.sh # 示例程序 adb 运行脚本
           — run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -113,7 +118,6 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
                   - libmediatek_apu.so # NNAdapter device HAL 库
               - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
               - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
-              - libc++_shared.so
             ...
         - OpenCV # OpenCV 预编译库
   ```
@@ -131,43 +135,33 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
     在 ARM CPU 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
-    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu 0123456789ABCDEF
-      ...
-      iter 0 cost: 128.673004 ms
-      iter 1 cost: 128.539001 ms
-      iter 2 cost: 128.505005 ms
-      iter 3 cost: 128.626007 ms
-      iter 4 cost: 128.735992 ms
-      warmup: 1 repeat: 5, average: 128.615802 ms, max: 128.735992 ms, min: 128.505005 ms
-      results: 3
-      Top0  Egyptian cat - 0.512545
-      Top1  tabby, tabby cat - 0.402567
-      Top2  tiger cat - 0.067904
-      Preprocess time: 2.070000 ms
-      Prediction time: 128.615802 ms
-      Postprocess time: 0.280000 ms
+    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu 0123456789ABCDEF
+
+    Top1 Egyptian cat - 0.502124
+    Top2 tabby, tabby cat - 0.413927
+    Top3 tiger cat - 0.071703
+    Top4 lynx, catamount - 0.008436
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000563
+    Preprocess time: 18.868000 ms, avg 18.868000 ms, max 18.868000 ms, min 18.868000 ms
+    Prediction time: 127.107000 ms, avg 127.107000 ms, max 127.107000 ms, min 127.107000 ms
+    Postprocess time: 15.878000 ms, avg 15.878000 ms, max 15.878000 ms, min 15.878000 ms
 
     在 MediaTeK APU 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
-    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a mediatek_apu 0123456789ABCDEF
-      ...
-      iter 0 cost: 26.193001 ms
-      iter 1 cost: 26.142000 ms
-      iter 2 cost: 26.538000 ms
-      iter 3 cost: 26.292000 ms
-      iter 4 cost: 26.304001 ms
-      warmup: 1 repeat: 5, average: 26.293800 ms, max: 26.538000 ms, min: 26.142000 ms
-      results: 3
-      Top0  Egyptian cat - 0.672723
-      Top1  tabby, tabby cat - 0.672723
-      Top2  tiger cat - 0.128695
-      Preprocess time: 2.098000 ms
-      Prediction time: 26.293800 ms
-      Postprocess time: 0.260000 ms
+    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a mediatek_apu 0123456789ABCDEF
+
+    Top1 Egyptian cat - 0.690272
+    Top2 tabby, tabby cat - 0.690272
+    Top3 tiger cat - 0.087746
+    Top4 lynx, catamount - 0.023399
+    Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
+    Preprocess time: 18.846000 ms, avg 18.846000 ms, max 18.846000 ms, min 18.846000 ms
+    Prediction time: 26.371000 ms, avg 26.371000 ms, max 26.371000 ms, min 26.371000 ms
+    Postprocess time: 15.773000 ms, avg 15.773000 ms, max 15.773000 ms, min 15.773000 ms
     ```
 
-  - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh` 的 IMAGE_NAME 变量即可；
-  - 重新编译示例程序：
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
+- 重新编译示例程序：
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。

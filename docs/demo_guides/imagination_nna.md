@@ -82,19 +82,24 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
-            - mobilenet_v1_int8_224_per_layer # Paddle non-combined 格式的 mobilenet_v1 int8 全量化模型
+            - mobilenet_v1_int8_224_per_layer
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
               — conv1_weights # Paddle fluid 模型参数文件
               - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid 模型量化参数文件
@@ -103,10 +108,10 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.arm64 # arm64 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run_with_ssh.sh # 示例程序 adb 运行脚本
           - run_with_adb.sh # 示例程序 ssh 运行脚本
@@ -142,43 +147,32 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
   在 ARM CPU 上运行 mobilenetv1 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.100.10 22 img imgroc1
-  ...
-  iter 0 cost: 61.130001 ms
-  iter 1 cost: 61.073002 ms
-  iter 2 cost: 61.081001 ms
-  iter 3 cost: 61.088001 ms
-  iter 4 cost: 61.096001 ms
-  warmup: 1 repeat: 5, average: 61.093601 ms, max: 61.130001 ms, min: 61.073002 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.490191
-  Top1  Egyptian cat - 0.441032
-  Top2  tiger cat - 0.060051
-  Preprocess time: 0.798000 ms
-  Prediction time: 61.093601 ms
-  Postprocess time: 0.167000 ms
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu 192.168.100.10 22 img imgroc1
 
+    Top1 Egyptian cat - 0.503239
+    Top2 tabby, tabby cat - 0.419854
+    Top3 tiger cat - 0.065506
+    Top4 lynx, catamount - 0.007992
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+    Preprocess time: 7.667000 ms, avg 7.667000 ms, max 7.667000 ms, min 7.667000 ms
+    Prediction time: 60.589000 ms, avg 60.589000 ms, max 60.589000 ms, min 60.589000 ms
+    Postprocess time: 8.914000 ms, avg 8.914000 ms, max 8.914000 ms, min 8.914000 ms
 
   在 Imagination NNA 上运行 mobilenetv1 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 imagination_nna 192.168.100.10 22 img imgroc1
-  ...
-  iter 0 cost: 3.288000 ms
-  iter 1 cost: 3.220000 ms
-  iter 2 cost: 3.167000 ms
-  iter 3 cost: 3.268000 ms
-  iter 4 cost: 3.146000 ms
-  warmup: 1 repeat: 5, average: 3.217800 ms, max: 3.288000 ms, min: 3.146000 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.514779
-  Top1  Egyptian cat - 0.421183
-  Top2  tiger cat - 0.052648
-  Preprocess time: 0.818000 ms
-  Prediction time: 3.217800 ms
-  Postprocess time: 0.157000 ms
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 imagination_nna 192.168.100.10 22 img imgroc1
+
+    Top1 tabby, tabby cat - 0.462131
+    Top2 Egyptian cat - 0.462131
+    Top3 tiger cat - 0.058498
+    Top4 lynx, catamount - 0.011700
+    Top5 tiger shark, Galeocerdo cuvieri - 0.000000
+    Preprocess time: 7.547000 ms, avg 7.547000 ms, max 7.547000 ms, min 7.547000 ms
+    Prediction time: 4.026000 ms, avg 4.026000 ms, max 4.026000 ms, min 4.026000 ms
+    Postprocess time: 8.780000 ms, avg 8.780000 ms, max 8.780000 ms, min 8.780000 ms
   ```
 
-  - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh` 的 IMAGE_NAME 变量即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。

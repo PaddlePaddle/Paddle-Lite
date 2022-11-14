@@ -72,26 +72,31 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.android.arm64-v8a # arm64-v8a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 amd64-v8a 的示例程序
+            - demo # 已编译好的，适用于 amd64-v8a 的示例程序
           - build.android.armeabi-v7a # armeabi-v7a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run_with_adb.sh # 示例程序 adb 运行脚本
           — run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -107,7 +112,6 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
                   - libandroid_nnapi.so # NNAdapter device HAL 库
               - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
               - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
-              - libc++_shared.so
             ...
         - OpenCV # OpenCV 预编译库
   ```
@@ -125,43 +129,33 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
     6）下述命令行示例中涉及的设备序列号等均为示例环境，请用户根据自身实际设备环境修改。
     在 ARM CPU 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
-    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu d3869b25
-      ...
-      iter 0 cost: 102.673004 ms
-      iter 1 cost: 102.539001 ms
-      iter 2 cost: 102.505005 ms
-      iter 3 cost: 102.626007 ms
-      iter 4 cost: 102.735992 ms
-      warmup: 1 repeat: 5, average: 102.615802 ms, max: 102.735992 ms, min: 102.505005 ms
-      results: 3
-      Top0  Egyptian cat - 0.512545
-      Top1  tabby, tabby cat - 0.402567
-      Top2  tiger cat - 0.067904
-      Preprocess time: 2.070000 ms
-      Prediction time: 102.615802 ms
-      Postprocess time: 0.280000 ms
+    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu d3869b25
+
+      Top1 Egyptian cat - 0.502124
+      Top2 tabby, tabby cat - 0.413927
+      Top3 tiger cat - 0.071703
+      Top4 lynx, catamount - 0.008436
+      Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000563
+      Preprocess time: 4.948000 ms, avg 4.948000 ms, max 4.948000 ms, min 4.948000 ms
+      Prediction time: 34.962000 ms, avg 34.962000 ms, max 34.962000 ms, min 34.962000 ms
+      Postprocess time: 4.715000 ms, avg 4.715000 ms, max 4.715000 ms, min 4.715000 ms
 
     基于 Android NNAPI 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
-    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a android_nnapi d3869b25
-      ...
-      iter 0 cost: 10.193001 ms
-      iter 1 cost: 10.142000 ms
-      iter 2 cost: 11.538000 ms
-      iter 3 cost: 9.292000 ms
-      iter 4 cost: 10.304001 ms
-      warmup: 1 repeat: 5, average: 10.293800 ms, max: 14.538000 ms, min: 9.292000 ms
-      results: 3
-      Top0  Egyptian cat - 0.672723
-      Top1  tabby, tabby cat - 0.672723
-      Top2  tiger cat - 0.128695
-      Preprocess time: 2.098000 ms
-      Prediction time: 10.293800 ms
-      Postprocess time: 0.260000 ms
+    $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a android_nnapi d3869b25
+
+      Top1 Egyptian cat - 0.497230
+      Top2 tabby, tabby cat - 0.403634
+      Top3 tiger cat - 0.076047
+      Top4 lynx, catamount - 0.005850
+      Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
+      Preprocess time: 5.271000 ms, avg 5.271000 ms, max 5.271000 ms, min 5.271000 ms
+      Prediction time: 6.877000 ms, avg 6.877000 ms, max 6.877000 ms, min 6.877000 ms
+      Postprocess time: 5.083000 ms, avg 5.083000 ms, max 5.083000 ms, min 5.083000 ms
     ```
 
-  - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh` 的 IMAGE_NAME 变量即可；
-  - 重新编译示例程序：
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
+- 重新编译示例程序：
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。
