@@ -64,7 +64,7 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -154,18 +154,18 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 
   For SH506 NPU
   $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 imagenet_224.txt test linux armhf eeasytech_npu adb设备号
-    (SH596)
-    warmup: 1 repeat: 5, average: 52.715000 ms, max: 54.652100 ms, min: 51.233000 ms
-    results: 3
-    Top0  tabby, tabby cat - 0.708991
-    Top1  Egyptian cat - 0.125688
-    Top2  tiger cat - 0.051297
-    Preprocess time: 6.935000 ms
-    Prediction time: 50.715000 ms
-    Postprocess time: 0.897000 ms
+
+    Top1 tabby, tabby cat - 0.725007
+    Top2 Egyptian cat - 0.183262
+    Top3 tiger cat - 0.054423
+    Top4 ping-pong ball - 0.003798
+    Top5 lynx, catamount - 0.003338
+    Preprocess time: 61.407000 ms, avg 61.407000 ms, max 61.407000 ms, min 61.407000 ms
+    Prediction time: 48.100000 ms, avg 48.100000 ms, max 48.100000 ms, min 48.100000 ms
+    Postprocess time: 59.201000 ms, avg 59.201000 ms, max 59.201000 ms, min 59.201000 ms
   ```
 
-- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 重新编译示例程序：  
   ```shell
   注意：
