@@ -343,7 +343,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
         - OpenCV # OpenCV 预编译库
-      - object_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 按照以下命令分别运行转换后的ARM CPU模型和 芯原 TIM-VX 模型，比较它们的性能和结果；
