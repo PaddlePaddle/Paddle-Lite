@@ -128,7 +128,7 @@ $ cnmon
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -170,6 +170,10 @@ $ cnmon
             - amd64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
+                - cpu
+                  - libiomp5.so # Intel OpenMP 库
+                  - libmklml_intel.so # Intel MKL 库
+                  - libmklml_gnu.so # GNU MKL 库
                 - cambricon_mlu # 寒武纪MLU neuware 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libcambricon_mlu.so # NNAdapter device HAL 库
@@ -223,7 +227,7 @@ $ cnmon
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 cambricon_mlu
   ```
 
-- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell

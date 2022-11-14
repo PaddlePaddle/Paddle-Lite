@@ -40,7 +40,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
 ### 运行图像分类示例程序
 
-- 下载示例程序 [ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后清单如下：
+- 下载示例程序 [ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -170,14 +170,14 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       # 上板远程执行
       $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
 
-      Top1 Egyptian cat - 0.491380
-      Top2 tabby, tabby cat - 0.397784
-      Top3 tiger cat - 0.093596
-      Top4 lynx, catamount - 0.011700
-      Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
-      Preprocess time: 9.000000 ms, avg 9.000000 ms, max 9.000000 ms, min 9.000000 ms
-      Prediction time: 1.000000 ms, avg 1.000000 ms, max 1.000000 ms, min 1.000000 ms
-      Postprocess time: 12.000000 ms, avg 12.000000 ms, max 12.000000 ms, min 12.000000 ms
+        Top1 Egyptian cat - 0.491380
+        Top2 tabby, tabby cat - 0.397784
+        Top3 tiger cat - 0.093596
+        Top4 lynx, catamount - 0.011700
+        Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
+        Preprocess time: 9.265000 ms, avg 9.265000 ms, max 9.265000 ms, min 9.265000 ms
+        Prediction time: 1.009000 ms, avg 1.009000 ms, max 1.009000 ms, min 1.009000 ms
+        Postprocess time: 11.492000 ms, avg 11.492000 ms, max 11.492000 ms, min 11.492000 ms
       ```
 
   - 将测试模型改为 **mobilenet_v1_fp32_224**，执行命令：
@@ -242,27 +242,26 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Top3 tiger cat - 0.039779
         Top4 lynx, catamount - 0.002430
         Top5 ping-pong ball - 0.000508
-        Preprocess time: 34.116000 ms, avg 34.116000 ms, max 34.116000 ms, min 34.116000 ms
-        Prediction time: 8694.885000 ms, avg 8694.885000 ms, max 8694.885000 ms, min 8694.885000 ms
-        Postprocess time: 14.000000 ms, avg 14.000000 ms, max 14.000000 ms, min 14.000000 ms
+        Preprocess time: 38.618000 ms, avg 38.618000 ms, max 38.618000 ms, min 38.618000 ms
+        Prediction time: 8472.844000 ms, avg 8472.844000 ms, max 8472.844000 ms, min 8472.844000 ms
+        Postprocess time: 13.605000 ms, avg 13.605000 ms, max 13.605000 ms, min 13.605000 ms
       
       # 以 FP16 方式运行
       $ rm -rf ../assets/models/cache
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
       $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
 
-      Top1 Egyptian cat - 0.482910
-      Top2 tabby, tabby cat - 0.471924
-      Top3 tiger cat - 0.039612
-      Top4 lynx, catamount - 0.002340
-      Top5 ping-pong ball - 0.000490
-      Preprocess time: 9.000000 ms, avg 9.000000 ms, max 9.000000 ms, min 9.000000 ms
-      Prediction time: 1.000000 ms, avg 1.000000 ms, max 1.000000 ms, min 1.000000 ms
-      Postprocess time: 11.000000 ms, avg 11.000000 ms, max 11.000000 ms, min 11.000000 ms
+        Top1 Egyptian cat - 0.482910
+        Top2 tabby, tabby cat - 0.471924
+        Top3 tiger cat - 0.039612
+        Top4 lynx, catamount - 0.002340
+        Top5 ping-pong ball - 0.000490
+        Preprocess time: 8.393000 ms, avg 8.393000 ms, max 8.393000 ms, min 8.393000 ms
+        Prediction time: 1.689000 ms, avg 1.689000 ms, max 1.689000 ms, min 1.689000 ms
+        Postprocess time: 10.612000 ms, avg 10.612000 ms, max 10.612000 ms, min 10.612000 ms
       ```
 
-- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
