@@ -134,11 +134,16 @@ $ cnmon
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -148,10 +153,10 @@ $ cnmon
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -165,12 +170,13 @@ $ cnmon
             - amd64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
+                - cpu
+                  - libiomp5.so # Intel OpenMP 库
+                  - libmklml_intel.so # Intel MKL 库
+                  - libmklml_gnu.so # GNU MKL 库
                 - cambricon_mlu # 寒武纪MLU neuware 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libcambricon_mlu.so # NNAdapter device HAL 库
-                - libiomp5.so # Intel OpenMP 库
-                - libmklml_intel.so # Intel MKL 库
-                - libmklml_gnu.so # GNU MKL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -179,10 +185,8 @@ $ cnmon
             - armhf
               ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
-
-  
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
@@ -193,35 +197,37 @@ $ cnmon
     
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh resnet50_fp32_224 linux amd64
-      warmup: 1 repeat: 1, average: 44.949001 ms, max: 44.949001 ms, min: 44.949001 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529132
-      Top1  Egyptian cat - 0.419680
-      Top2  tiger cat - 0.045172
-      Preprocess time: 1.017000 ms
-      Prediction time: 44.949001 ms
-      Postprocess time: 0.171000 ms
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 tabby, tabby cat - 0.705223
+    Top2 tiger cat - 0.134570
+    Top3 Egyptian cat - 0.121521
+    Top4 lynx, catamount - 0.028652
+    Top5 ping-pong ball - 0.001043
+    Preprocess time: 3.711000 ms, avg 3.711000 ms, max 3.711000 ms, min 3.711000 ms
+    Prediction time: 174.218000 ms, avg 174.218000 ms, max 174.218000 ms, min 174.218000 ms
+    Postprocess time: 4.920000 ms, avg 4.920000 ms, max 4.920000 ms, min 4.920000 ms
+
   (intel x86 cpu + cambricon mlu)
-  $ ./run.sh resnet50_fp32_224 linux amd64 cambricon_mlu
-      warmup: 1 repeat: 1, average: 2.079000 ms, max: 2.079000 ms, min: 2.079000 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529785
-      Top1  Egyptian cat - 0.418945
-      Top2  tiger cat - 0.045227
-      Preprocess time: 1.132000 ms
-      Prediction time: 2.079000 ms
-      Postprocess time: 0.251000 ms
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 cambricon_mlu
+
+    Top1 tabby, tabby cat - 0.705225
+    Top2 tiger cat - 0.134570
+    Top3 Egyptian cat - 0.121520
+    Top4 lynx, catamount - 0.028652
+    Top5 ping-pong ball - 0.001043
+    Preprocess time: 4.269000 ms, avg 4.269000 ms, max 4.269000 ms, min 4.269000 ms
+    Prediction time: 6.133000 ms, avg 6.133000 ms, max 6.133000 ms, min 6.133000 ms
+    Postprocess time: 5.005000 ms, avg 5.005000 ms, max 5.005000 ms, min 5.005000 ms
   
 - 如果需要更改测试模型，可以将 `run.sh` 里的 MODEL_NAME 改成比如 mobilenet_v1_fp32_224，或执行命令：
 
   ```shell
   (intel x86 cpu + cambricon mlu)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 cambricon_mlu
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 cambricon_mlu
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
