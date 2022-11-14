@@ -124,7 +124,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后清单如下：
 
 ```shell
     - PaddleLite-generic-demo

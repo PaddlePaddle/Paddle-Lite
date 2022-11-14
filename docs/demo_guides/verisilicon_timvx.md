@@ -117,8 +117,8 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - 有两种方式可以修改当前的 NPU 驱动版本及其依赖库：
     - 『方法 1』：手动替换 NPU 驱动版本及其依赖库。（**推荐**）
     - 『方法 2』：刷机，刷取 NPU 驱动版本符合要求的固件。
-  - 我们首先描述『方法 1』手动替换驱动文件和依赖库，先行下载并解压[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，其中包含不同版本、不同芯片型号的 galcore.ko（既 NPU 驱动文件）和 NPU 依赖库。
-    - 下表会罗列部分市面常见开发板的情况，以及我们在 [PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 中提供的现成的驱动文件和依赖库。请照着下表格，找到自己手中对应设备的芯片、开发板、Linux Kernel 版本（可命令行输入 uname -a 查看），从而获取到真正需要的 1）galcore.ko（既 NPU 驱动文件）；2）NPU 依赖库。并且分别将 galcore.ko 上传至开发板后，insmod galcore.ko，以及输入表格中的命令刷取正确的NPU 依赖库（软链接）。更加详细易懂的使用步骤会在下表格后描述。
+  - 我们首先描述『方法 1』手动替换驱动文件和依赖库，先行下载并解压[PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，其中包含不同版本、不同芯片型号的 galcore.ko（既 NPU 驱动文件）和 NPU 依赖库。
+    - 下表会罗列部分市面常见开发板的情况，以及我们在 [PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz) 中提供的现成的驱动文件和依赖库。请照着下表格，找到自己手中对应设备的芯片、开发板、Linux Kernel 版本（可命令行输入 uname -a 查看），从而获取到真正需要的 1）galcore.ko（既 NPU 驱动文件）；2）NPU 依赖库。并且分别将 galcore.ko 上传至开发板后，insmod galcore.ko，以及输入表格中的命令刷取正确的NPU 依赖库（软链接）。更加详细易懂的使用步骤会在下表格后描述。
 
 |SoC 型号 | 开发板厂家 |开发板型号|OS |推荐Linux Kernl 版本|推荐NPU驱动版本 |是否提供galcore.ko驱动文件 |galcore.ko驱动文件路径 |是否提供 NPU 依赖库|刷取 NPU 依赖库软链接命令|
 |---|---|---|---|---|---|---|---|---|---|
@@ -148,7 +148,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       - 第三步：在表格里找到对应行中 galcore.ko 文件的路径，将 galcore.ko 其上传至开发板。
       - 第四步：登录开发板，命令行输入 `sudo rmmod galcore` 来卸载原始驱动，输入 `sudo insmod galcore.ko` 来加载传上设备的驱动。（是否需要 sudo 根据开发板实际情况，部分 adb 链接的设备请提前 adb root）。此步骤如果操作失败，请跳转至『方法 2』.
       - 第五步：在开发板中输入 `dmesg | grep Galcore` 查询 NPU 驱动版本，确定为：晶晨6.4.4.3，瑞芯微6.4.6.5，NXP 6.4.3.p1。
-      - 第六步：在表格里找到对应设备行的最后一列，在下载了[PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)的PC目录下输入表中命令，切换成对应的 NPU 依赖库软链接。
+      - 第六步：在表格里找到对应设备行的最后一列，在下载了[PaddleLite-generic-demo](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)的PC目录下输入表中命令，切换成对应的 NPU 依赖库软链接。
       - 至此，前期的环境准备就已经完成，恭喜您，可以完美复现我们需要的环境。
       - 最后，所有开发板都有开机默认加载路径，建议用户把之前上传的 galcore.ko 文件放在开发板的系统默认加载目录下（一般情况为 XXX/lib/modules/ 下，用户可以在开发板的 / 目录下 `find -name galcore.ko` 来得知应该放在哪里），如此下次开机便能自动加载我们需要的 NPU 驱动。
 
@@ -177,7 +177,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下（注意其中软链接为 switch_viv_sdk.sh 根据芯片型号和 NPU 驱动版本创建依赖库的软链接）：
+- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下（注意其中软链接为 switch_viv_sdk.sh 根据芯片型号和 NPU 驱动版本创建依赖库的软链接）：
 
   ```shell
     - PaddleLite-generic-demo

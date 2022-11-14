@@ -82,7 +82,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
