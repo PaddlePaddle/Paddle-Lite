@@ -85,7 +85,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
   demo_guides/bitmain
-  demo_guides/openvino
+  demo_guides/intel_openvino
   demo_guides/eeasytech_npu
 
 .. toctree::
