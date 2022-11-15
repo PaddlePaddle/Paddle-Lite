@@ -583,15 +583,24 @@ TEST(StrideSlice, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
-#endif
 
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  abs_error = 1e-2;
   test_slice(place, abs_error);
   test_slice_axes(place, abs_error);
   test_slice_decrease_axis(place, abs_error);
   test_slice_tensor(place, abs_error);
   test_slice_tensor_list(place, abs_error);
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+  abs_error = 1e-2;
+  test_slice(place, abs_error);
+  test_slice_axes(place, abs_error);
+  test_slice_decrease_axis(place, abs_error);
+  test_slice_tensor(place, abs_error);
+  test_slice_tensor_list(place, abs_error);
+#endif
 }
 
 }  // namespace lite
