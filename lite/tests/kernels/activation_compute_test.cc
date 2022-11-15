@@ -817,7 +817,7 @@ TEST(Activation_swish_fp32, performance) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{{1,3,320,320}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
     for (auto coef : coefs) {
       TestActPerformance(place,
                          "def",

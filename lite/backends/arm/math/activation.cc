@@ -516,8 +516,7 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread += 4;
     }
     for (; i < nums_per_thread; i++) {
-      ptr_out_thread[0] =
-          1.f / (1.f + expf(-ptr_in_thread[0]));
+      ptr_out_thread[0] = 1.f / (1.f + expf(-ptr_in_thread[0]));
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -596,10 +595,14 @@ void act_swish<float>(
       float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
       float32x4_t v_p2 = vld1q_f32(ptr_in_thread + 8);
       float32x4_t v_p3 = vld1q_f32(ptr_in_thread + 12);
-      v_p0 = div_ps(v_p0, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
-      v_p1 = div_ps(v_p1, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
-      v_p2 = div_ps(v_p2, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p2)))));
-      v_p3 = div_ps(v_p3, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p3)))));
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      v_p1 = div_ps(v_p1,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
+      v_p2 = div_ps(v_p2,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p2)))));
+      v_p3 = div_ps(v_p3,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p3)))));
       vst1q_f32(ptr_out_thread, v_p0);
       vst1q_f32(ptr_out_thread + 4, v_p1);
       vst1q_f32(ptr_out_thread + 8, v_p2);
@@ -610,8 +613,10 @@ void act_swish<float>(
     for (; i + 7 < nums_per_thread; i += 8) {
       float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
       float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
-      v_p0 = div_ps(v_p0, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
-      v_p1 = div_ps(v_p1, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      v_p1 = div_ps(v_p1,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
       vst1q_f32(ptr_out_thread, v_p0);
       vst1q_f32(ptr_out_thread + 4, v_p1);
       ptr_in_thread += 8;
@@ -619,7 +624,8 @@ void act_swish<float>(
     }
     for (; i + 3 < nums_per_thread; i += 4) {
       float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
-      v_p0 = div_ps(v_p0, vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
       vst1q_f32(ptr_out_thread, v_p0);
       ptr_in_thread += 4;
       ptr_out_thread += 4;
