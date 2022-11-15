@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+=======
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+>>>>>>> a65477dcc (add strided-slice op on XPU.)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -371,7 +375,10 @@ void StridedSliceCompute<T, PType>::Run() {
 
 using StridedSliceFloat32 =
     paddle::lite::kernels::xpu::StridedSliceCompute<float, PRECISION(kFloat)>;
+<<<<<<< HEAD
 
+=======
+>>>>>>> a65477dcc (add strided-slice op on XPU.)
 REGISTER_LITE_KERNEL(
     strided_slice, kXPU, kFloat, kNCHW, StridedSliceFloat32, def)
     .BindInput("Input",
@@ -405,9 +412,15 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using StridedSliceInt32 =
+<<<<<<< HEAD
     paddle::lite::kernels::xpu::StridedSliceCompute<int32_t, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(
     strided_slice, kXPU, kInt32, kNCHW, StridedSliceInt32, def_int32)
+=======
+    paddle::lite::kernels::xpu::StridedSliceCompute<int32_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    strided_slice, kXPU, kFloat, kNCHW, StridedSliceInt32, def_int32)
+>>>>>>> a65477dcc (add strided-slice op on XPU.)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("StartsTensor",

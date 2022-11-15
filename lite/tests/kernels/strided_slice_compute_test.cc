@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -583,10 +583,20 @@ TEST(StrideSlice, precision) {
 #else
   return;
 #endif
+<<<<<<< HEAD
 
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   abs_error = 1e-2;
+=======
+
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+#endif
+
+  place = TARGET(kHost);
+>>>>>>> a65477dcc (add strided-slice op on XPU.)
   test_slice(place, abs_error);
   test_slice_axes(place, abs_error);
   test_slice_decrease_axis(place, abs_error);
