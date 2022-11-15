@@ -72,6 +72,8 @@ bool TransposeInverseTransposeFuser::HandleMatchedResults(
   // Get the operands and operations from the matched subgraph nodes.
   auto transpose_operation = nodes.at("transpose")->operation;
   auto transpose_perm_operand = nodes.at("transpose_perm")->operand;
+  auto inverse_transpose_perm_operand =
+      nodes.at("inverse_transpose_perm")->operand;
   auto inverse_transpose_output_operand =
       nodes.at("inverse_transpose_output")->operand;
   // Modify the permutation of the first transpose operation to an identity
@@ -79,6 +81,22 @@ bool TransposeInverseTransposeFuser::HandleMatchedResults(
   auto transpose_perm_count = transpose_perm_operand->length / sizeof(int32_t);
   auto transpose_perm_data =
       reinterpret_cast<int32_t*>(transpose_perm_operand->buffer);
+  auto inverse_transpose_perm_count =
+      inverse_transpose_perm_operand->length / sizeof(int32_t);
+  auto inverse_transpose_perm_data =
+      reinterpret_cast<int32_t*>(inverse_transpose_perm_operand->buffer);
+  if (transpose_perm_count != inverse_transpose_perm_count) {
+    return false;
+  }
+  std::vector<int32_t> transpose_perm(
+      transpose_perm_data, transpose_perm_data + transpose_perm_count);
+  std::vector<int32_t> inverse_transpose_perm(
+      inverse_transpose_perm_data,
+      inverse_transpose_perm_data + inverse_transpose_perm_count);
+  if (!IsIdentityPermutation(
+          MultiplyPermutation(transpose_perm, inverse_transpose_perm)))
+    return false;
+  // Set an identity permutation
   for (uint32_t i = 0; i < transpose_perm_count; i++) {
     transpose_perm_data[i] = i;
   }
