@@ -74,6 +74,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       "fetch",
       "cast",
       "expand",
+      "share_data",
   };
 
   auto insert_invalid_op_nodes_for_specific_target = [&](

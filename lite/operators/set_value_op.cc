@@ -21,18 +21,23 @@ namespace lite {
 namespace operators {
 
 bool SetValueOp::CheckShape() const {
+  CHECK(param_.Input);
   CHECK(param_.Out);
   return true;
 }
 
-bool SetValueOp::InferShapeImpl() const { return true; }
+bool SetValueOp::InferShapeImpl() const {
+  param_.Out->Resize(param_.Input->dims());
+  return true;
+}
 
 bool SetValueOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   // Input
   auto input_name = opdesc.Input("Input").front();
   param_.Input = GetTensor(scope, input_name);
+
   // ValueTensor
-  if (opdesc.HasInput("ValueTensor")) {
+  if (opdesc.HasInput("ValueTensor") && !opdesc.Input("ValueTensor").empty()) {
     auto value_tensor_name = opdesc.Input("ValueTensor").front();
     param_.ValueTensor = GetTensor(scope, value_tensor_name);
   }
