@@ -1,4 +1,4 @@
-# Android NNAPI 部署示例
+# Android NNAPI
 
 Paddle Lite 已支持 Android NNAPI 的预测部署。
 其接入原理是加载并分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Android NNAPI 进行网络构建，在线生成并执行模型。
