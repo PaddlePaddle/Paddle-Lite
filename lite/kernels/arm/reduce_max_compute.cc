@@ -158,3 +158,8 @@ REGISTER_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, int64_reduce_max, i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+using int32_reduce_max = paddle::lite::kernels::arm::ReduceMaxCompute<int32_t>;
+REGISTER_LITE_KERNEL(reduce_max, kARM, kFloat, kNCHW, int32_reduce_max, i32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
