@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertExpand(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -40,13 +40,13 @@ int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Repeats operand
   NNAdapterOperand* repeats_operand = nullptr;
-  if (HasInput(op, scope, "RepeatTimes") && !op->Input("RepeatTimes").empty()) {
-    auto repeats_name = op->Input("RepeatTimes").front();
+  if (HasInput(op, scope, "ExpandTimes") && !op->Input("ExpandTimes").empty()) {
+    auto repeats_name = op->Input("ExpandTimes").front();
     repeats_operand = converter->AddInputOperand(scope, repeats_name);
-  } else if (HasInput(op, scope, "repeat_times_tensor") &&
-             !op->Input("repeat_times_tensor").empty()) {
+  } else if (HasInput(op, scope, "expand_times_tensor") &&
+             !op->Input("expand_times_tensor").empty()) {
     std::vector<NNAdapterOperand*> repeat_operands;
-    for (auto repeat_tensor_name : op->Input("repeat_times_tensor")) {
+    for (auto repeat_tensor_name : op->Input("expand_times_tensor")) {
       auto repeat_operand =
           converter->AddInputOperand(scope, repeat_tensor_name);
       repeat_operands.push_back(repeat_operand);
@@ -57,7 +57,7 @@ int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(
         NNADAPTER_CONCAT, repeat_operands, {repeats_operand});
   } else {
-    auto repeats = op->GetAttr<std::vector<int>>("repeat_times");
+    auto repeats = op->GetAttr<std::vector<int>>("expand_times");
     repeats_operand = converter->AddConstantOperand(repeats);
   }
 

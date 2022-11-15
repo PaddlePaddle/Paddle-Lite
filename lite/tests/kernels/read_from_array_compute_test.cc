@@ -48,7 +48,7 @@ class ReadFromArrayComputeTester : public arena::TestCase {
     out->CopyDataFrom(x->at(id));
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("read_from_array");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("I", {idn_});

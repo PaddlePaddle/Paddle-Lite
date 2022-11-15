@@ -96,7 +96,7 @@ class TopkV2ComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("top_k_v2");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});

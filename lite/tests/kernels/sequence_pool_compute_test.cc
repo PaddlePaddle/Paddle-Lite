@@ -128,7 +128,7 @@ class SequencePoolComputeTester : public arena::TestCase {
     (out->mutable_lod())->push_back(offset_new);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sequence_pool");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
