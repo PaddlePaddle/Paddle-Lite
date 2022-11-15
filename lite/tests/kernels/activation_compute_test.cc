@@ -551,78 +551,6 @@ TEST(Activation_leaky_relu, precision) {
   }
 }
 
-TEST(Activation_relu_clipped, precision) {
-  Place place;
-  float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    for (auto coef : {0.5, 6.}) {
-      TestAct(place,
-              "def",
-              0.01,
-              coef,
-              "all",
-              0.,
-              1.0,
-              DDim(dims),
-              "relu_clipped",
-              RELU_CLIPPED,
-              abs_error);
-    }
-  }
-}
-
-TEST(Activation_prelu, precision) {
-  Place place;
-  float abs_error = 2e-5;
-  std::vector<std::string> modes{"all", "channel", "element"};
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-  modes = {"all", "channel"};
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 1e-2;
-  modes = {"all", "channel"};
-#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-2;
-  modes = {"all", "channel"};
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_OPENCL)
-  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_error = 1e-2;  // Using fp16 in OPENCL
-#elif defined(LITE_WITH_XPU)
-  place = TARGET(kXPU);
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
-    for (auto mode : modes) {
-      TestAct(place,
-              "def",
-              0.01,
-              6,
-              mode,
-              0.,
-              1.0,
-              DDim(dims),
-              "prelu",
-              PRELU,
-              abs_error);
-    }
-  }
-}
-
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -695,6 +623,78 @@ TEST(Activation_sigmoid, performance) {
                        "sigmoid",
                        SIGMOID,
                        abs_error);
+  }
+}
+
+TEST(Activation_relu_clipped, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    for (auto coef : {0.5, 6.}) {
+      TestAct(place,
+              "def",
+              0.01,
+              coef,
+              "all",
+              0.,
+              1.0,
+              DDim(dims),
+              "relu_clipped",
+              RELU_CLIPPED,
+              abs_error);
+    }
+  }
+}
+
+TEST(Activation_prelu, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::string> modes{"all", "channel", "element"};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
+    for (auto mode : modes) {
+      TestAct(place,
+              "def",
+              0.01,
+              6,
+              mode,
+              0.,
+              1.0,
+              DDim(dims),
+              "prelu",
+              PRELU,
+              abs_error);
+    }
   }
 }
 
@@ -817,7 +817,7 @@ TEST(Activation_swish_fp32, performance) {
   return;
 #endif
 
-  for (auto dims : std::vector<std::vector<int64_t>>{{1,3,320,320}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
     for (auto coef : coefs) {
       TestActPerformance(place,
                          "def",
