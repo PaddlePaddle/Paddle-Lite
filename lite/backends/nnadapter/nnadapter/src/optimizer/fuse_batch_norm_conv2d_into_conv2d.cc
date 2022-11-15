@@ -147,9 +147,16 @@ bool BatchNormConv2DFuser::HandleMatchedResults(
     batch_norm_beta[i] =
         -batch_norm_mean_data[i] * coeff + batch_norm_bias_data[i];
   }
-  if (conv2d_input_type.precision == NNADAPTER_FLOAT32 &&
-      conv2d_filter_type.precision == NNADAPTER_FLOAT32 &&
-      conv2d_output_type.precision == NNADAPTER_FLOAT32) {
+  if (IsInt8SymmPerLayerQuantType(conv2d_input_type.precision) &&
+      (IsInt8SymmPerLayerQuantType(conv2d_filter_type.precision) ||
+       IsInt8SymmPerChannelQuantType(conv2d_filter_type.precision)) &&
+      IsInt8SymmPerLayerQuantType(conv2d_output_type.precision)) {
+    // TODO(hong19860320) Add bn+conv2d fusion for the quantized conv2d
+    return false;
+  } else {
+    NNADAPTER_CHECK_EQ(conv2d_input_type.precision, NNADAPTER_FLOAT32);
+    NNADAPTER_CHECK_EQ(conv2d_filter_type.precision, NNADAPTER_FLOAT32);
+    NNADAPTER_CHECK_EQ(conv2d_output_type.precision, NNADAPTER_FLOAT32);
     auto conv2d_filter_data =
         reinterpret_cast<float*>(conv2d_filter_operand->buffer);
     auto conv2d_bias_data =

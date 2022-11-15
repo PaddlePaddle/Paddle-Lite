@@ -85,9 +85,7 @@ bool TransposeInverseTransposeFuser::HandleMatchedResults(
       inverse_transpose_perm_operand->length / sizeof(int32_t);
   auto inverse_transpose_perm_data =
       reinterpret_cast<int32_t*>(inverse_transpose_perm_operand->buffer);
-  if (transpose_perm_count != inverse_transpose_perm_count) {
-    return false;
-  }
+  if (transpose_perm_count != inverse_transpose_perm_count) return false;
   std::vector<int32_t> transpose_perm(
       transpose_perm_data, transpose_perm_data + transpose_perm_count);
   std::vector<int32_t> inverse_transpose_perm(
