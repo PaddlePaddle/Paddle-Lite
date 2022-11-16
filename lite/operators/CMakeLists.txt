@@ -3,6 +3,7 @@ set(op_DEPS core op_params)
 # 1.basic ops used in basic models
 add_operator(conv_op basic SRCS conv_op.cc)
 add_operator(pool_op basic SRCS pool_op.cc)
+add_operator(pool3d_op basic SRCS pool3d_op.cc)
 add_operator(fc_op basic SRCS fc_op.cc)
 add_operator(bmm_op basic SRCS bmm_op.cc)
 add_operator(mul_op basic SRCS mul_op.cc)

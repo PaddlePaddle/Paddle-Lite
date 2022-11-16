@@ -471,6 +471,35 @@ struct PoolParam : ParamBase {
 #endif
 };
 
+// For Pool3D op
+struct Pool3DParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* mask{};
+  std::string pooling_type{""};
+  std::vector<int> ksize{};
+  bool global_pooling{
+      false};  // if true, knernel size and paddings will be ignored
+  std::vector<int> strides{1, 1, 1};
+  /* paddings type change
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
+  std::shared_ptr<std::vector<int>> paddings;
+  bool exclusive{true};
+  bool adaptive{false};
+  bool ceil_mode{false};
+  bool use_quantizer{false};
+  std::string padding_algorithm{"EXPLICIT"};
+  std::string data_format{"AnyLayout"};
+  // for int8
+  WITH_INT8_CONFIG
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
+};
+
 // For Dropout op
 struct DropoutParam : ParamBase {
   const lite::Tensor* x{};
