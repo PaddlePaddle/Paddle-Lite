@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <numeric>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/test/arena/framework.h"
@@ -143,6 +144,34 @@ void reduce_sum_all(const float* src,
   dst[0] = sum;
 }
 
+void reduce_sum_baseline_dim_single(const float* x_data,
+                                    float* out_data,
+                                    const DDim input_dims,
+                                    const DDim output_dims,
+                                    int axis) {
+  const int size = input_dims[axis];
+  const int in_channel = input_dims.count(axis, input_dims.size());
+  const int out_channel = output_dims.count(axis, output_dims.size());
+  const int in_stride = input_dims.count(axis + 1, input_dims.size());
+  const int out_stride = input_dims.count(0, axis);
+
+  for (int n = 0; n < out_stride; n++) {
+    for (int k = 0; k < in_stride; k++) {
+      const float* in_ptr = x_data + n * in_channel + k;
+      std::vector<float> vec;
+      vec.resize(size);
+      for (int i = 0; i < size; i++) {
+        vec[i] = in_ptr[i * in_stride];
+      }
+      float sum_of_elems = std::accumulate(vec.begin(), vec.end(), 0.f);
+
+      // out
+      auto* out_ptr = out_data + n * out_channel + k;
+      *out_ptr = sum_of_elems;
+    }
+  }
+}
+
 void reduce_sum_nc(const float* src,
                    float* dst,
                    int num_in,
@@ -262,6 +291,13 @@ class ReduceSumComputeTester : public arena::TestCase {
 
     if (reduce_all_) {
       reduce_sum_all(x_data, out_data, in_n, in_c, in_h, in_w);
+    } else if (x_dims_.size() > 4) {
+      if (dim_.size() == 1) {
+        reduce_sum_baseline_dim_single(
+            x_data, out_data, x_dims_, DDim(out_dims), dim_[0]);
+      } else {
+        LOG(FATAL) << "error!!!";
+      }
     } else if (dim_.size() == 1) {
       switch (dim_[0]) {
         case 0:
@@ -347,6 +383,23 @@ void test_reduce_sum(Place place,
   }
 }
 
+void test_reduce_sum_high_dim(Place place,
+                              float abs_error,
+                              const std::vector<bool>& keep_dim_vec) {
+  std::vector<std::vector<int>> reduce_dim{{1}, {2}, {3}, {4}, {0}};
+  for (bool keep_dim : keep_dim_vec) {
+    for (bool reduce_all : {false}) {
+      for (auto dim : reduce_dim) {
+        auto x_dims = DDim(std::vector<int64_t>({2, 3, 4, 5, 6}));
+        std::unique_ptr<arena::TestCase> tester(new ReduceSumComputeTester(
+            place, "def", dim, keep_dim, reduce_all, x_dims));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
 TEST(ReduceSum, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -376,6 +429,9 @@ TEST(ReduceSum, precision) {
 #endif
 
   test_reduce_sum(place, abs_error, keep_dim_vec);
+#if defined(LITE_WITH_ARM)
+  test_reduce_sum_high_dim(place, abs_error, keep_dim_vec);
+#endif
 }
 
 }  // namespace lite

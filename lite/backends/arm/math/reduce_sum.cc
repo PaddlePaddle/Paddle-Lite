@@ -307,6 +307,120 @@ void reduce_sum_all<float>(const float* src, float* dst, int all_size) {
 }
 
 template <>
+void reduce_sum_high_dim<int32_t>(const int32_t* src,
+                                  int32_t* dst,
+                                  int before_dim,
+                                  int reduce_dim,
+                                  int after_dim) {
+  int after_dim_n = after_dim >> 2;
+  int after_dim_rem = after_dim & 3;
+  int reduce_dim_n = reduce_dim >> 2;
+  int reduce_dim_rem = reduce_dim & 3;
+  int stride = after_dim << 2;
+  int stride_no_after_dim = 0;
+  for (int i = 0; i < before_dim; ++i) {
+    stride_no_after_dim = i * after_dim * reduce_dim;
+    for (int k = 0; k < after_dim_n; ++k) {
+      int32x4_t vsum0 = vdupq_n_s32(0);
+      int32x4_t vsum1 = vdupq_n_s32(0);
+      int32x4_t vsum2 = vdupq_n_s32(0);
+      int32x4_t vsum3 = vdupq_n_s32(0);
+      const int32_t* din_ptr0 = src + stride_no_after_dim;
+      const int32_t* din_ptr1 = din_ptr0 + after_dim;
+      const int32_t* din_ptr2 = din_ptr1 + after_dim;
+      const int32_t* din_ptr3 = din_ptr2 + after_dim;
+      for (int j = 0; j < reduce_dim_n; ++j) {
+        int32x4_t reduce_dim_va0 = vld1q_s32(din_ptr0);
+        int32x4_t reduce_dim_va1 = vld1q_s32(din_ptr1);
+        int32x4_t reduce_dim_va2 = vld1q_s32(din_ptr2);
+        int32x4_t reduce_dim_va3 = vld1q_s32(din_ptr3);
+        int32x4_t vs01 = vaddq_s32(reduce_dim_va0, reduce_dim_va1);
+        int32x4_t vs23 = vaddq_s32(reduce_dim_va2, reduce_dim_va3);
+        vsum0 = vaddq_s32(vsum0, vs01);
+        vsum0 = vaddq_s32(vsum0, vs23);
+        din_ptr0 += stride;
+        din_ptr1 += stride;
+        din_ptr2 += stride;
+        din_ptr3 += stride;
+      }
+      for (int n = 0; n < reduce_dim_rem; n++) {
+        int32x4_t reduce_dim_va0 = vld1q_s32(din_ptr0);
+        vsum0 = vaddq_s32(vsum0, reduce_dim_va0);
+        din_ptr0 += after_dim;
+      }
+      vst1q_s32(dst, vsum0);
+      dst += 4;
+      stride_no_after_dim += 4;
+    }
+    for (int k = 0; k < after_dim_rem; k++) {
+      int32_t sum = 0;
+      for (int j = 0; j < reduce_dim; ++j) {
+        sum += src[stride_no_after_dim + j * after_dim + k];
+      }
+      dst[0] = sum;
+      dst++;
+    }
+  }
+}
+
+template <>
+void reduce_sum_high_dim<float>(const float* src,
+                                float* dst,
+                                int before_dim,
+                                int reduce_dim,
+                                int after_dim) {
+  int after_dim_n = after_dim >> 2;
+  int after_dim_rem = after_dim & 3;
+  int reduce_dim_n = reduce_dim >> 2;
+  int reduce_dim_rem = reduce_dim & 3;
+  int stride = after_dim << 2;
+  int stride_no_after_dim = 0;
+  for (int i = 0; i < before_dim; ++i) {
+    stride_no_after_dim = i * after_dim * reduce_dim;
+    for (int k = 0; k < after_dim_n; ++k) {
+      float32x4_t vsum0 = vdupq_n_f32(0.f);
+      float32x4_t vsum1 = vdupq_n_f32(0.f);
+      float32x4_t vsum2 = vdupq_n_f32(0.f);
+      float32x4_t vsum3 = vdupq_n_f32(0.f);
+      const float* din_ptr0 = src + stride_no_after_dim;
+      const float* din_ptr1 = din_ptr0 + after_dim;
+      const float* din_ptr2 = din_ptr1 + after_dim;
+      const float* din_ptr3 = din_ptr2 + after_dim;
+      for (int j = 0; j < reduce_dim_n; ++j) {
+        float32x4_t reduce_dim_va0 = vld1q_f32(din_ptr0);
+        float32x4_t reduce_dim_va1 = vld1q_f32(din_ptr1);
+        float32x4_t reduce_dim_va2 = vld1q_f32(din_ptr2);
+        float32x4_t reduce_dim_va3 = vld1q_f32(din_ptr3);
+        float32x4_t vs01 = vaddq_f32(reduce_dim_va0, reduce_dim_va1);
+        float32x4_t vs23 = vaddq_f32(reduce_dim_va2, reduce_dim_va3);
+        vsum0 = vaddq_f32(vsum0, vs01);
+        vsum0 = vaddq_f32(vsum0, vs23);
+        din_ptr0 += stride;
+        din_ptr1 += stride;
+        din_ptr2 += stride;
+        din_ptr3 += stride;
+      }
+      for (int n = 0; n < reduce_dim_rem; n++) {
+        float32x4_t reduce_dim_va0 = vld1q_f32(din_ptr0);
+        vsum0 = vaddq_f32(vsum0, reduce_dim_va0);
+        din_ptr0 += after_dim;
+      }
+      vst1q_f32(dst, vsum0);
+      dst += 4;
+      stride_no_after_dim += 4;
+    }
+    for (int k = 0; k < after_dim_rem; k++) {
+      float sum = 0.f;
+      for (int j = 0; j < reduce_dim; ++j) {
+        sum += src[stride_no_after_dim + j * after_dim + k];
+      }
+      dst[0] = sum;
+      dst++;
+    }
+  }
+}
+
+template <>
 void reduce_sum_n<int32_t>(const int32_t* src,
                            int32_t* dst,
                            int num_in,
@@ -710,6 +824,7 @@ void reduce_sum_hw(const T* src,
   int nc_size = num_in * channel_in;
   reduce_sum_w(src, dst, nc_size, 1, 1, hw_size);
 }
+
 template void reduce_sum_c<float>(const float* src,
                                   float* dst,
                                   int num_in,

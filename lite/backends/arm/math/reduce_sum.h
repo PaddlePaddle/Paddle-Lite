@@ -78,6 +78,10 @@ void reduce_sum_hw(const T* src,
 template <typename T>
 void reduce_sum_all(const T* src, T* dst, int all_size);
 
+template <typename T>
+void reduce_sum_high_dim(
+    const T* src, T* dst, int before_dim, int reduce_dim, int after_dim);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

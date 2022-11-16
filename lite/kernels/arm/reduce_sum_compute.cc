@@ -45,13 +45,31 @@ void ReduceSumCompute<T, Ptype>::Run() {
     if (x_vec.size() >= 5 && x_vec[0] == 1) {
       x_vec.erase(x_vec.begin());
       for (auto& val : dim) val--;
-    } else
+    } else {
       break;
+    }
   }
   auto x_dims = lite::DDim(x_vec);
 
   if (reduce_all) {
     lite::arm::math::reduce_sum_all(input, Out, x_dims.production());
+  } else if (x_dims.size() > 4) {
+    if (dim.size() == 1) {
+      int before_dim = 1;
+      for (int i = 0; i < dim[0]; ++i) {
+        before_dim *= x_dims[i];
+      }
+      int reduce_dim = x_dims[dim[0]];
+      int after_dim = 1;
+      for (int i = dim[0] + 1; i < x_dims.size(); ++i) {
+        after_dim *= x_dims[i];
+      }
+      lite::arm::math::reduce_sum_high_dim(
+          input, Out, before_dim, reduce_dim, after_dim);
+    } else {
+      LOG(FATAL) << "dim's size: " << dim.size()
+                 << " over than 2, which is not supported now!!";
+    }
   } else {
     int n_in = 1;
     int c_in = 1;
