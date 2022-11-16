@@ -253,6 +253,10 @@ class SetValueCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
     CheckAndUpdateSliceAttrs<int64_t>(in_dims, axes, &starts, &ends, &steps);
     auto slice_dims =
         GetSliceDims<int64_t>(in_dims, axes, starts, ends, &steps);
+    if (!slice_dims.production()) {
+      out->CopyDataFrom(*input);
+      return;
+    }
     auto decrease_slice_dims =
         GetDecreasedDims<int64_t>(slice_dims, decrease_axes);
     auto slice_dims_for_assign = decrease_slice_dims;
