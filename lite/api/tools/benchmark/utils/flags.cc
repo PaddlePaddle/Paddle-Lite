@@ -24,6 +24,8 @@ DEFINE_string(model_file, "", model_file_msg);
 DEFINE_string(param_file, "", param_file_msg);
 DEFINE_string(input_shape, "", input_shape_msg);
 DEFINE_string(input_data_path, "", input_data_path_msg);
+DEFINE_string(input_data_type, "", input_data_type_msg);
+DEFINE_string(output_data_path, "", output_data_path_msg);
 DEFINE_string(validation_set, "", validation_set_msg);
 DEFINE_bool(show_output_elem, false, show_output_elem_msg);
 

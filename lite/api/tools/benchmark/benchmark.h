@@ -144,6 +144,16 @@ void StoreBenchmarkResult(const std::string res) {
   }
 }
 
+void StoreOutputTensor(const std::stringstream &data, std::string path) {
+    std::ofstream fs(path);
+    if (!fs.is_open()) {
+      std::cerr << "Fail to open output data file: " << FLAGS_result_path
+                << std::endl;
+    }
+    fs << data.rdbuf();
+    fs.close();
+}
+
 bool CheckFlagsValid() {
   bool ret = true;
   bool is_opt_model =
@@ -412,6 +422,32 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
   StoreBenchmarkResult(ss.str());
   return saved_opt_model_file;
 }
+
+template<typename T>
+void setInputValue(const std::unique_ptr<paddle::lite_api::Tensor> &input_tensor,
+                   std::vector<int64_t> tensor_shape, std::string input_path)
+{
+  input_tensor->Resize(tensor_shape);
+  auto input_data = input_tensor->mutable_data<T>();
+  auto input_num = lite::ShapeProduction(tensor_shape);
+
+  if (input_path.empty()) {
+    for (auto i = 0; i < input_num; i++) {
+        input_data[i] = T(1);
+    }
+  } else {
+    std::ifstream fs(input_path);
+    if (!fs.is_open()) {
+      std::cerr << "Open input image " << input_path << " error."
+                << std::endl;
+    }
+    for (auto i = 0; i < input_num; i++) {
+        fs >> input_data[i];
+    }
+    fs.close();
+  }
+}
+
 
 }  // namespace lite_api
 }  // namespace paddle
