@@ -1044,6 +1044,14 @@ class XPUMultiEncoderFuser {
         }
       }
       GraphSafeRemoveNodes(graph, to_remove);
+      bool skip_quant_op = false;
+      CHECK_GT(quant_types.size(), 1);
+      for (int i = 1; i < quant_types.size(); ++i) {
+        if (quant_types[i] != quant_types[0]) {
+          skip_quant_op = true;
+          break;
+        }
+      }
 
       cpp::OpDesc op_desc;
       op_desc.SetType("__xpu__multi_encoder");
@@ -1120,8 +1128,13 @@ class XPUMultiEncoderFuser {
           scope->NewTensor(update_tag);
           // Update weight, including tranpose\convert type\fuse qkv
           // weight\findmax.
-          update_weight(
-              scope, fc_weight_names, start, end, quant_type, max_tensor_name);
+          update_weight(scope,
+                        fc_weight_names,
+                        start,
+                        end,
+                        quant_type,
+                        max_tensor_name,
+                        skip_quant_op);
         }
       }
 
@@ -1238,7 +1251,8 @@ class XPUMultiEncoderFuser {
                      int start,
                      int end,
                      std::string quant_type,
-                     std::string max_tensor_name) {
+                     std::string max_tensor_name,
+                     bool skip_quant_op = false) {
     CHECK(start >= 0 && end <= fc_weight_names.size());
     CHECK(start < end) << " start:" << start << ", end:" << end;
     std::vector<Tensor*> weight_tensor_vec(end - start, nullptr);
@@ -1331,8 +1345,16 @@ class XPUMultiEncoderFuser {
         memcpy(weight_tensor_vec[0]->mutable_data<float>(),
                weight_qkv_trans.get(),
                qkv_len * sizeof(float));
-      } else if (fc_precision_ == "int8") {
+      } else if (fc_precision_ == "int8" && !skip_quant_op) {
         // quant the weight here, not from the quanted-model
+        // quant model without skip op or fp32 model, skip_quant_op=false;
+        // why check skip_quant_op here? we need to distinguish 3 cases
+        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find scale
+        // in xdnn), convert weight to int8
+        // 2 quant model skip op in K200, skip_quant_op(true),
+        // fc_precision_=int8(to use bert_int8), convert weight to int16
+        // 3 quant model skip op in R200, skip_quant_op(true),
+        // fc_precision_=int16, convert weight to int16
         std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
         paddle::lite::xpu::math::ConvertFP32ToInt8(weight_qkv_trans.get(),
                                                    weight_qkv_trans_int8.get(),
