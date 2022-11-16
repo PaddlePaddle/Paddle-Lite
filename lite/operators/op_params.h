@@ -2320,6 +2320,16 @@ struct SetValueParam : ParamBase {
   std::vector<int64_t> shape{};
 };
 
+struct ShareDataParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct RoundParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
