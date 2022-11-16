@@ -24,12 +24,15 @@ namespace xpu {
 template <typename InType, typename OutType, PrecisionType PType>
 void CalibCompute<InType, OutType, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   if (param.scale) {
-    std::vector<float> cpu_scale = {param.scale};
-    calib_max_guard_ = TargetWrapperXPU::MallocScratchPad(sizeof(float));
+    std::vector<float> cpu_scale(max_ptr_size, param.scale);
+    calib_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
     lite::TargetWrapperXPU::MemcpySync(calib_max_guard_->addr_,
                                        cpu_scale.data(),
-                                       sizeof(float),
+                                       max_ptr_size * sizeof(float),
                                        IoDirection::HtoD);
   }
 }
