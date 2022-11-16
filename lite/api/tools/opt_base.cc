@@ -419,7 +419,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|metal|xpu|mlu|"
+      "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
       "qualcomm_qnn|kunlunxin_xtcl)`\n"
@@ -439,13 +439,13 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "operators of "
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|mlu|"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
       "qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|mlu|"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
       "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
       "qualcomm_qnn|kunlunxin_xtcl)`"
@@ -526,7 +526,9 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
+                                                  "kBM",
                                                   "kMLU",
+                                                  "kIntelFPGA",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
                                                   "rockchip_npu",
@@ -784,13 +786,17 @@ void OptBase::InitSupportedOpInfo() {
   std::vector<std::string> collect_targets = {"kUnk",
                                               "kHost",
                                               "kX86",
+                                              "kCUDA",
                                               "kARM",
                                               "kOpenCL",
                                               "kAny",
+                                              "kFPGA",
                                               "kNPU",
                                               "kXPU",
+                                              "kBM",
                                               "kMLU",
                                               "kRKNPU",
+                                              "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
 
@@ -800,7 +806,9 @@ void OptBase::InitSupportedOpInfo() {
                                      "kMetal",
                                      "kXPU",
                                      "kHost",
+                                     "kIntelFPGA",
                                      "kX86",
+                                     "kBM",
                                      "kMLU",
                                      "huawei_ascend_npu",
                                      "mediatek_apu",
