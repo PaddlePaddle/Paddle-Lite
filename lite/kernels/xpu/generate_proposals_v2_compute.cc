@@ -210,15 +210,15 @@ void GenerateProposalsV2Compute::Run() {
                                  !pixel_offset,
                                  false);
     CHECK_EQ(r, 0);
-    // box_clips
-    int clip_offset = pixel_offset ? 1 : 0;
+    // box_clips (correct the h and w to support pixel_offset)
+    int clip_offset = pixel_offset ? 0 : 1;
     r = xdnn::clip_box_to_image<float>(
         ctx.GetRawContext(),
         box_decoder_pros,
         box_clip_pros,
         K,
-        im_shape->data<float>()[batch_idx * 2] - clip_offset,
-        im_shape->data<float>()[batch_idx * 2 + 1] - clip_offset);
+        im_shape->data<float>()[batch_idx * 2] + clip_offset,
+        im_shape->data<float>()[batch_idx * 2 + 1] + clip_offset);
     CHECK_EQ(r, 0);
     // box_remove_small
     // TODO(quwei03): refactor this
