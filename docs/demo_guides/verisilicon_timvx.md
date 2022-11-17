@@ -1,4 +1,4 @@
-# (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX 部署示例
+# (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX
 
 Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部署。
 其接入原理是与其他接入 Paddle Lite 的新硬件类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再通过 TIM-VX 的组网 API 进行网络构建，在线编译模型并执行模型。

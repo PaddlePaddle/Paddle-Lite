@@ -1,4 +1,4 @@
-# 昆仑芯 XPU 部署示例
+# 昆仑芯 XPU
 
 Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
 目前支持 Kernel 和子图两种接入方式。其中子图接入方式原理是，在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
