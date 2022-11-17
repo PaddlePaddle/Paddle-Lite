@@ -1,4 +1,4 @@
-# 英特尔 FPGA 部署示例
+# 英特尔 FPGA
 
 Paddle Lite 已支持英特尔 FPGA 平台的预测部署，Paddle Lite 通过调用底层驱动实现对 FPGA 硬件的调度。
 

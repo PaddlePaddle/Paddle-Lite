@@ -1,4 +1,4 @@
-# 百度 EdgeBoard 部署示例
+# 百度 EdgeBoard
 
 Paddle Lite 支持基于 ARM 的 FPGA zu3/zu5/zu9 的模型预测，提供 armv8 的交叉编译
 
