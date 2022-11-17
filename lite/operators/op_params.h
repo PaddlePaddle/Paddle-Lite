@@ -1759,6 +1759,7 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  int mask_dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 };
 
 struct XPUFcParam : ParamBase {
