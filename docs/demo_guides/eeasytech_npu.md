@@ -1,4 +1,4 @@
-# 亿智 NPU 部署示例
+# 亿智 NPU
 
 Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 其接入原理是使用亿智 NPU DDK(EEASYTECH DDK)。首先加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再调用 EEASYTECH DDK 组网 API 进行网络构建，在线生成并执行模型。

@@ -1,4 +1,4 @@
-# 寒武纪思元 MLU 部署示例
+# 寒武纪 MLU
 
 Paddle Lite 已支持寒武纪 MLU（MLU370-X4 MLU370-S4）在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 MagicMind 组网 API 进行网络构建，在线生成并执行模型。
 
