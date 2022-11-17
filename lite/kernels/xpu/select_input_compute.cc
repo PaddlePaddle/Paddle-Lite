@@ -35,6 +35,7 @@ void SelectInputCompute::Run() {
                              x_i->memory_size());
   CHECK_EQ(r, 0);
   output->set_lod(x_i->lod());
+  output->set_precision(x_i->precision());
 }
 
 }  // namespace xpu
