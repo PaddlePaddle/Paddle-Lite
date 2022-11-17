@@ -679,7 +679,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
         if (map_kernel.begin()->first.substr(0, 5) == "fetch") {
           if (map_kernel.begin()->second ==
               kernel.GetOutputDeclType(tmp)->precision()) {
-            score_tmp = 500;
+            score_tmp = 1000;
           }
           continue;
         }

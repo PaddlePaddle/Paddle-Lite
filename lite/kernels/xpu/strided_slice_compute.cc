@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
-=======
 // Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
->>>>>>> a65477dcc (add strided-slice op on XPU.)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,15 +104,16 @@ inline std::vector<int64_t> StridedSliceOutDims(
   return out_dims_vector;
 }
 
-inline void StridedSliceFunctor(int* starts,
-                                int* ends,
-                                int* strides,
-                                int* axes,
-                                int* reverse_axis,
-                                std::vector<int64_t> dims,
-                                const std::vector<int> infer_flags,
-                                const std::vector<int> decrease_axis,
-                                const size_t size) {
+inline std::vector<int> StridedSliceFunctor(
+    int* starts,
+    int* ends,
+    int* strides,
+    int* axes,
+    std::vector<int64_t> dims,
+    const std::vector<int> infer_flags,
+    const std::vector<int> decrease_axis,
+    const size_t size) {
+  std::vector<int> reverse_axis;
   for (size_t axis = 0; axis < size; axis++) {
     int64_t axis_size = dims[axes[axis]];
     if (ends[axis] > dims[axes[axis]]) {
@@ -157,7 +154,7 @@ inline void StridedSliceFunctor(int* starts,
     }
 
     if (strides[axis_index] < 0) {
-      reverse_axis[axis_index] = 1;
+      reverse_axis.push_back(*(axes + axis_index));
       strides[axis_index] = -strides[axis_index];
       if (starts[axis_index] > ends[axis_index]) {
         // swap the reverse
@@ -165,11 +162,9 @@ inline void StridedSliceFunctor(int* starts,
         ends[axis_index] = ends[axis_index] + 1;
       }
       std::swap(starts[axis_index], ends[axis_index]);
-    } else {
-      reverse_axis[axis_index] = 0;
-      strides[axis_index] = strides[axis_index];
     }
   }
+  return reverse_axis;
 }
 
 inline std::vector<int> get_new_data_from_tensorlist(
@@ -192,41 +187,9 @@ inline std::vector<int> get_new_data_from_tensor(
   return vec_new_data;
 }
 
-template <typename T>
-void reverse(const T* input,
-             T* out,
-             std::vector<int64_t> in_dims,
-             std::vector<bool> reverse_axis) {
-  const T* in_ptr = input;
-  T* out_ptr = out;
-  size_t in_dims_size = in_dims.size();
-  std::vector<int> src_step;
-  for (size_t i = 0; i < in_dims_size; ++i) {
-    src_step.push_back(1);
-  }
-  for (int i = in_dims_size - 2; i >= 0; i--) {
-    src_step[i] *= in_dims[i + 1] * src_step[i + 1];
-  }
-  for (size_t i = 0; i < reverse_axis.size(); i++) {
-    if (reverse_axis[i]) {
-      // reverse
-      for (int j = 0; j < in_dims[i]; j++) {
-        int size = 1;
-        if (i + 1 < in_dims_size) {
-          size = src_step[i + 1];
-        }
-        const T* in_ptr1 = in_ptr + j * size;
-        T* out_ptr1 = out_ptr + (in_dims[i] - 1 - j) * size;
-        memcpy(out_ptr1, in_ptr1, sizeof(T) * size);
-      }
-    }
-    in_ptr += src_step[i];
-    out_ptr += src_step[i];
-  }
-}
-
 template <typename T, PrecisionType PType>
 void StridedSliceCompute<T, PType>::Run() {
+  std::cout << "running in StridedSliceCompute<T, PType>::Run(): " << std::endl;
   auto& param = this->template Param<operators::StridedSliceParam>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto input = param.Input;
@@ -268,29 +231,26 @@ void StridedSliceCompute<T, PType>::Run() {
                                           axes.size(),
                                           true);
   }
-  auto out_dims = DDim(out_dims_vector);
-  std::vector<int> reverse_vector(starts.size(), 0);
 
-  StridedSliceFunctor(starts.data(),
-                      ends.data(),
-                      strides.data(),
-                      axes.data(),
-                      reverse_vector.data(),
-                      input_dims.data(),
-                      infer_flags,
-                      decrease_axis,
-                      starts.size());
+  auto out_dims = DDim(out_dims_vector);
+
+  std::vector<int> reverse_axis = StridedSliceFunctor(starts.data(),
+                                                      ends.data(),
+                                                      strides.data(),
+                                                      axes.data(),
+                                                      input_dims.data(),
+                                                      infer_flags,
+                                                      decrease_axis,
+                                                      starts.size());
 
   std::vector<int> starts_indices;
   std::vector<int> ends_indices;
   std::vector<int> strides_indices;
-  std::vector<bool> reverse_axis;
 
   for (size_t axis = 0; axis < input_dims.size(); axis++) {
     starts_indices.push_back(0);
     ends_indices.push_back(out_dims[axis]);
     strides_indices.push_back(1);
-    reverse_axis.push_back(false);
   }
 
   for (size_t axis = 0; axis < axes.size(); axis++) {
@@ -298,7 +258,6 @@ void StridedSliceCompute<T, PType>::Run() {
     starts_indices[axis_index] = starts[axis];
     ends_indices[axis_index] = ends[axis];
     strides_indices[axis_index] = strides[axis];
-    reverse_axis[axis_index] = (reverse_vector[axis] == 1) ? true : false;
   }
 
   auto out_dims_origin = out_dims;
@@ -321,12 +280,10 @@ void StridedSliceCompute<T, PType>::Run() {
     }
     out_dims_origin = DDim(new_out_shape);
   }
+
   bool need_reverse = false;
-  for (size_t axis = 0; axis < axes.size(); axis++) {
-    if (reverse_vector[axis] == 1) {
-      need_reverse = true;
-      break;
-    }
+  if (reverse_axis.size() > 0) {
+    need_reverse = true;
   }
 
   std::vector<int> x_shape;
@@ -351,7 +308,35 @@ void StridedSliceCompute<T, PType>::Run() {
                                    ends_indices,
                                    strides_indices);
     CHECK_EQ(r, 0);
-    reverse(tmp_t, out_t, out_dims.data(), reverse_axis);
+
+    std::vector<int> out_dims_int(out_dims.size(), 0);
+    auto out_dims_int64 = out_dims.data();
+    for (int i = 0; i < out_dims_int.size(); i++) {
+      out_dims_int[i] = out_dims_int64[i];
+    }
+
+    std::cout << "running in xpu, and copying data...: " << std::endl;
+    std::vector<float> vc(4, 0);
+    TargetWrapperXPU::MemcpySync(
+        vc.data(), tmp_t, sizeof(float) * 4, IoDirection::DtoH);
+    std::cout << "data in XPU before flip: " << std::endl;
+    for (int i = 0; i < vc.size(); i++) {
+      std::cout << vc[i] << " ";
+    }
+    std::cout << std::endl;
+
+    r = xdnn::flip<T>(
+        ctx.GetRawContext(), tmp_t, out_t, out_dims_int, reverse_axis);
+    CHECK_EQ(r, 0);
+
+    TargetWrapperXPU::MemcpySync(
+        vc.data(), out_t, sizeof(float) * 4, IoDirection::DtoH);
+    std::cout << "data in XPU after flip: " << std::endl;
+    for (int i = 0; i < vc.size(); i++) {
+      std::cout << vc[i] << " ";
+    }
+    std::cout << std::endl;
+
   } else {
     int r = xdnn::strided_slice<T>(ctx.GetRawContext(),
                                    in_t,
@@ -375,10 +360,6 @@ void StridedSliceCompute<T, PType>::Run() {
 
 using StridedSliceFloat32 =
     paddle::lite::kernels::xpu::StridedSliceCompute<float, PRECISION(kFloat)>;
-<<<<<<< HEAD
-
-=======
->>>>>>> a65477dcc (add strided-slice op on XPU.)
 REGISTER_LITE_KERNEL(
     strided_slice, kXPU, kFloat, kNCHW, StridedSliceFloat32, def)
     .BindInput("Input",
@@ -412,15 +393,9 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using StridedSliceInt32 =
-<<<<<<< HEAD
-    paddle::lite::kernels::xpu::StridedSliceCompute<int32_t, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(
-    strided_slice, kXPU, kInt32, kNCHW, StridedSliceInt32, def_int32)
-=======
     paddle::lite::kernels::xpu::StridedSliceCompute<int32_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(
     strided_slice, kXPU, kFloat, kNCHW, StridedSliceInt32, def_int32)
->>>>>>> a65477dcc (add strided-slice op on XPU.)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("StartsTensor",

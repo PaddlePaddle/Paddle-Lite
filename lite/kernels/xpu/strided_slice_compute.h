@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
-=======
 // Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
->>>>>>> a65477dcc (add strided-slice op on XPU.)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
