@@ -37,6 +37,7 @@ bool SelectInputOpLite::InferShapeImpl() const {
   const auto &output_dims = inputs[Mask]->dims();
   // Set output dims
   param_.Out->Resize(output_dims);
+  param_.Out->set_lod(inputs[Mask]->lod());
   return true;
 }
 
