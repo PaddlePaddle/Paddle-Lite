@@ -58,8 +58,8 @@ inline void CheckIsDimsMatch(const DDim& first, const DDim& second) {
   }
 
   if (first.size() - ignore_axis1 >= second.size() - ignore_axis2) {
-    auto idx1 = first.size() - 1;
-    auto idx2 = second.size() - 1;
+    int idx1 = first.size() - 1;
+    int idx2 = second.size() - 1;
     bool is_match = true;
     for (; idx2 >= ignore_axis2; idx2--) {
       if (first[idx1--] != second[idx2] && second[idx2] != 1) {
@@ -73,7 +73,7 @@ inline void CheckIsDimsMatch(const DDim& first, const DDim& second) {
   }
   LOG(FATAL) << "The shape of tensor assigned value must match the shape of "
                 "target shape: "
-             << second << "but now shape is " << first << ".";
+             << second << ", but now shape is " << first << ".";
 }
 
 template <typename T = int64_t>
