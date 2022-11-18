@@ -39,7 +39,7 @@ __kernel void concat2(__global const CL_DTYPE* x_data0,
   } else if (index < axis_size) {
     for (int i = 0; i < pre_size; i++) {
       int offset_out = index * post_size + i * total;
-      int offset_in = index * post_size + i * total1;
+      int offset_in = (index - size) * post_size + i * total1;
       // memcpy(out_data + offset_out, x_data1 + offset_in, post_size);
       __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
       __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data1 + offset_in);

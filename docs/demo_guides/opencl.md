@@ -544,10 +544,39 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 - 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
 - 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
+### 设置 OpenCL 混合内存对象推理
+OpenCL 大部分算子支持 cl::Image2D 数据排布，少部分算子支持 cl::Buffer（正在持续扩充），出于以下背景原因考虑
+1. 不同的设备采用 cl::Image2D 和 cl::Buffer 性能优势不同。
+2. 设备本身对 cl::Image2D 的 CL_DEVICE_IMAGE2D_MAX_HEIGHT 和 CL_DEVICE_IMAGE2D_MAX_WIDTH 有限制，导致部分 op 尺寸过大时会报错：malloc image is out of max image size(w,h)。
+3. 部分 op 采用 cl::Buffer 内存对象会有很好的性能，比如 reshape，transpose，keep_dims 为 false 的 argmax，reduce 等。
+支持两种内存对象可配置，通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』，实现人为指定部分 op使用 cl::Buffer 实现；
+### 设置 OpenCL 与 CPU 异构推理
+对于 cl::Image2D 和 cl::Buffer 均无法支持或者性能差的算子，可以人为指定部分 op 跑 CPU 的实现，可通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』实现。
+如下的例子使用 benchmark 工具，输入为 PaddlePaddle 的部署模型格式，网络模型为 ch_PP-OCRv3_rec_infer，其中 conv2d，depthwise_conv2d 和 pool2d 三个 op 指定为跑 CPU 实现，剩余 op 跑 OpenCL 后端默认实现(大部分为 cl::Image2D)。
+
+```shell
+$ cd /data/local/tmp/opencl
+$ cat ./ch_PP-OCRv3_rec_infer_buffer.txt
+device:cpu
+conv2d:elementwise_mul_2:batch_norm_51.tmp_4
+depthwise_conv2d:batch_norm_51.tmp_4:batch_norm_52.tmp_4
+pool2d:batch_norm_52.tmp_4:pool2d_4.tmp_0
+$ export OPENCL_MEMORY_CONFIG_FILE=./ch_PP-OCRv3_rec_infer_buffer.txt
+$ ./benchmark_bin  --model_file=./ch_PP-OCRv3_rec_infer/inference.pdmodel \
+    --param_file=./ch_PP-OCRv3_rec_infer/inference.pdiparams \
+    --input_shape=1,3,48,320 --backend=opencl --repeats=20 --warmup=2
+```
+
+如下的例子为基于 OpenCL 与 CPU 异构推理将 PaddlePaddle 的部署模型格式转化为 Paddle Lite 支持的模型格式，网络模型和 OpenCL 内存对象配置文件同上, 使用 opt 工具方法如下:
+
+```shell
+export OPENCL_MEMORY_CONFIG_FILE=./ch_PP-OCRv3_rec_infer_buffer.txt
+./opt --model_file=./ch_PP-OCRv3_rec_infer/inference.pdmodel --param_file=./ch_PP-OCRv3_rec_infer/inference.pdiparams --optimize_out=./ch_PP-OCRv3_rec_infer/opt.nb --valid_targets=opencl
+```
 
 ## 9. 常见问题
 
-1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会会在日志中输出超限提示。
+1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会在日志中输出超限提示。
 2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
 3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
