@@ -206,7 +206,7 @@ class ConvComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(with_depthwise_ ? "depthwise_conv2d" : "conv2d");
     op_desc->SetInput("Input", {input_});
     op_desc->SetInput("Filter", {filter_});

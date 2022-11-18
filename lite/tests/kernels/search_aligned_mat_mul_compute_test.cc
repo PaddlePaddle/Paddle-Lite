@@ -128,7 +128,7 @@ class SearchAlignedMatMulComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("search_aligned_mat_mul");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Y", {y_});

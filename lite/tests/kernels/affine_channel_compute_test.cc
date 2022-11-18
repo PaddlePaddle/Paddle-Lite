@@ -97,7 +97,7 @@ class AffineChannelComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("affine_channel");
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Scale", {scale_});

@@ -113,7 +113,7 @@ class ConcateComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("concat");
     op_desc->SetInput("X", x_vct_);
     op_desc->SetAttr("axis", axis_);

@@ -39,7 +39,7 @@ class SequenceConvComputeTester : public arena::TestCase {
         contextLength_(contextLength),
         kernel_num_(kernel_num) {}
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sequence_conv");
     op_desc->SetInput("X", {input_name_});
     op_desc->SetInput("Filter", {filter_name_});

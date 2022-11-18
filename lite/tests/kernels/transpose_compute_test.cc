@@ -112,7 +112,7 @@ class TransposeComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});

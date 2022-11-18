@@ -56,7 +56,7 @@ class SGDComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sgd");
     op_desc->SetInput("Param", {param_});
     op_desc->SetInput("Grad", {grad_});

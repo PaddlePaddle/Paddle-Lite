@@ -129,7 +129,7 @@ class CorrelationComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("correlation");
     op_desc->SetInput("Input1", {input1_});
     op_desc->SetInput("Input2", {input2_});

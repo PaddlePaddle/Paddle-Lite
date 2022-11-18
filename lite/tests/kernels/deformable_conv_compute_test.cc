@@ -158,7 +158,7 @@ class DeformableConvComputeTester : public arena::TestCase {
                                   fuse_relu);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("Input", {input_});
     op_desc->SetInput("Mask", {mask_});

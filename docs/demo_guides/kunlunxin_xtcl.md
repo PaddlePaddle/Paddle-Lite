@@ -1,4 +1,4 @@
-# 昆仑芯 XTCL 部署示例
+# 昆仑芯 XTCL
 
 Paddle Lite 已支持昆仑芯系列芯片及板卡 在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
 

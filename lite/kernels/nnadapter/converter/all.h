@@ -279,6 +279,10 @@ REGISTER_CONVERTER(equal,
                    ConvertComparisons,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_"
                    "openvino,nvidia_tensorrt,qualcomm_qnn,kunlunxin_xtcl");
+REGISTER_CONVERTER(
+    expand,
+    ConvertExpand,
+    "huawei_ascend_npu,huawei_kirin_npu,qualcomm_qnn,kunlunxin_xtcl");
 REGISTER_CONVERTER(expand_v2,
                    ConvertExpandV2,
                    "huawei_ascend_npu,cambricon_mlu,intel_openvino,kunlunxin_"
