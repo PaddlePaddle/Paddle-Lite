@@ -16,4 +16,4 @@ NNAdapter 支持瑞芯微 NPU
      - `rk_npu_ddk <https://github.com/airockchip/rknpu_ddk.git>`_
      - 空值
 
-详细请参考 `瑞芯微 NPU 部署示例 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/rockchip_npu.html>`_
+详细请参考 `瑞芯微 NPU 部署示例 <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/rockchip_npu.html>`_

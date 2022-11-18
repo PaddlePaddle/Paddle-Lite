@@ -13,7 +13,7 @@ Windows 环境下编译适用于 Windows 的库
 
   **说明：**
 
-  * 通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载Paddle Lite官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
+  * 通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载Paddle Lite官方发布的预编译包 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
   * 本文适用于 release/v2.9 及以上版本，面向对源代码有修改需求的开发者。目前只支持 x86 架构 CPU 的 Windows 操作系统平台，CPU需同时支持 AVX 及 FMA 指令集。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：

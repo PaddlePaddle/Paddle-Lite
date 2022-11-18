@@ -57,24 +57,6 @@ Paddle Lite 支持多种移动端 GPU，包括 ARM Mali、Qualcomm Adreno、Appl
 
 - [Paddle Lite 使用 OpenCL 预测部署](../demo_guides/opencl)
 
-## FPGA
-
-Paddle Lite 支持 **百度 FPGA**，支持列表如下：
-- 百度 Edgeboard 系列：ZU9, ZU5, ZU3
-
-Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
-- 支持芯片：英特尔 FPGA Cyclone V 系列芯片
-- 支持设备：
-  - 海运捷讯 C5MB（英特尔 FPGA Cyclone V）开发板
-  - 海运捷讯 C5CB（英特尔 FPGA Cyclone V）开发板
-  - 海运捷讯 C5TB（英特尔 FPGA Cyclone V）开发板
-
-### FPGA 环境准备及示例程序
-
-- 百度 FPGA: [Paddle Lite 使用 FPGA 预测部署](../demo_guides/fpga)
-- 英特尔 (Intel) FPGA: [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
-
-
 ## 昆仑芯 (kunlunxin) XPU
 
 Paddle Lite 支持昆仑芯 XPU，支持列表如下：
@@ -84,6 +66,16 @@ Paddle Lite 支持昆仑芯 XPU，支持列表如下：
 ### 昆仑芯 (kunlunxin) XPU 环境准备及示例程序
 
 - [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
+
+## 昆仑芯 (kunlunxin) XTCL
+
+Paddle Lite 支持 昆仑芯 (kunlunxin) XTCL，支持列表如下：
+- 支持芯片: 昆仑芯1代 AI 芯片 CK10 / CK20, 昆仑芯2代 AI 芯片 CR20
+- 支持加速卡: 昆仑芯 AI 加速卡 K100 / K200, 昆仑芯 AI 加速卡 R200
+
+### 昆仑芯 (kunlunxin) XTCL 环境准备及示例程序
+
+- [Paddle Lite 使用昆仑芯 XTCL 预测部署](../demo_guides/kunlunxin_xtcl)
 
 ## 华为 (Huawei) 麒麟 NPU
 
@@ -187,14 +179,30 @@ Paddle Lite 支持 颖脉 (Imagination) NNA，支持列表如下：
 
 - [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)
 
-## 比特大陆（Bitmain）TPU
+## 高通 (Qualcomm) QNN
 
-Paddle Lite 支持比特大陆（Bitmain）TPU，支持列表如下：
-- 支持芯片：Sophon BM1682，Sophon BM1684
-- 支持设备：
-  * Sophon SC3 加速卡 (BM1682 X86 PCI-E)
-  * Sophon SC5 加速卡 (BM1684 X86 PCI-E)
+Paddle Lite 支持 高通 QNN，支持列表如下：
+- 支持芯片: 高通 8295 芯片
 
-### 比特大陆（Bitmain）TPU 环境准备及示例程序
+### 高通 (Qualcomm) QNN 环境准备及示例程序
 
-- [Paddle Lite 使用 Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
+- [Paddle Lite 使用高通 QNN 预测部署](../demo_guides/qualcomm_qnn)
+
+## 寒武纪 (Cambricon) MLU
+
+Paddle Lite 支持 寒武纪 (Cambricon) MLU，支持列表如下：
+- 支持设备: 370-X4 （CNToolkit Version ≥  3.0.2）, 370-S4 （CNToolkit Version ≥  3.0.2)
+
+### 寒武纪 (Cambricon) MLU 环境准备及示例程序
+
+- [Paddle Lite 使用寒武纪 MLU 预测部署](../demo_guides/cambricon_mlu)
+
+## 亿智 (Eeasytech) NPU
+
+Paddle Lite 支持 亿智 (Eeasytech) NPU，支持列表如下：
+- 支持芯片: SH506, SH510, SV806, SV810
+- 支持设备: SH506/510 开发板, SV810/806 开发板
+
+### 亿智 (Eeasytech) NPU 环境准备及示例程序
+
+- [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)
