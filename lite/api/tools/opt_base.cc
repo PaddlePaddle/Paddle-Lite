@@ -175,10 +175,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "intel_fpga") {
-      valid_places_.emplace_back(TARGET(kIntelFPGA));
-      valid_places_.emplace_back(
-          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else if (target_repr == "rockchip_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(

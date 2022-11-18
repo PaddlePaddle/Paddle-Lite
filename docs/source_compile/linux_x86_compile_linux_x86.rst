@@ -15,10 +15,10 @@ Linux x86 环境下编译适用于 Linux x86 的库
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://www.paddlepaddle.org.cn/lite/develop/source_compile/v2.3_compile.html>`_\ 。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示:
 
@@ -28,7 +28,7 @@ Linux x86 环境下编译适用于 Linux x86 的库
    * - Host 环境
      - 目标硬件环境
    * - x86 Linux
-     - CPU x86_32/64 :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_hardware.html>`_\ 章节。
+     - CPU x86_32/64 :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
@@ -98,7 +98,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
