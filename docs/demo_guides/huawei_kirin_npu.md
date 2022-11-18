@@ -107,7 +107,7 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
-**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `HiAI IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/huawei_kirin_npu.html)**。
+**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `HiAI IR` 的方案可点击[链接](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/huawei_kirin_npu.html)**。
 
 ## 参考示例演示
 
