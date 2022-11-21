@@ -1,4 +1,4 @@
-# Metal 部署示例
+# Metal
 
 Paddle Lite 支持在 iOS 和 macOS 系统上运行基于 Metal 的程序
 

@@ -93,7 +93,7 @@ Paddle Lite 在执行模型推理之前需要使用[模型优化工具 opt](mode
 
 ## Lite子图方式下模型可视化
 
-当模型优化的目标硬件平台为 [华为 NPU](../demo_guides/huawei_kirin_npu), [昆仑芯 XPU](../demo_guides/kunlunxin_xpu), [瑞芯微 NPU](../demo_guides/rockchip_npu), [联发科 APU](../demo_guides/mediatek_apu) 等通过子图方式接入的硬件平台时，得到的优化后的`protobuf`格式模型中运行在这些硬件平台上的算子都由`subgraph`算子包含，无法查看具体的网络结构。
+当模型优化的目标硬件平台为 [华为 NPU](../demo_guides/huawei_kirin_npu), [昆仑芯 XPU](../demo_guides/kunlunxin_xpu), [联发科 APU](../demo_guides/mediatek_apu) 等通过子图方式接入的硬件平台时，得到的优化后的`protobuf`格式模型中运行在这些硬件平台上的算子都由`subgraph`算子包含，无法查看具体的网络结构。
 
 以[华为 NPU](../demo_guides/huawei_kirin_npu) 为例，运行以下命令进行模型优化，得到输出文件夹下的`model, params`两个文件。
 

@@ -1,4 +1,4 @@
-# OpenCL 部署示例
+# OpenCL
 
 Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行，以充分利用 GPU 硬件算力，提高推理性能。在执行时会优先在 GPU 上执行算子，如果算子没有 GPU 实现，则该算子会回退到 CPU 上执行。
 

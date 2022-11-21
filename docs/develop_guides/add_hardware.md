@@ -6,13 +6,13 @@
 ## 意义
 - 良好的软件生态是硬件获得成功的关键，硬件驱动的兼容性、成熟的编译工具链、完善的 SDK 、 API 和文档、更多第三方深度学习框架的支持，都是影响硬件能否积攒用户、建立完善的软件生态的重要因素。特别的，在实际的项目部署过程中，推理引擎对硬件的支持尤为关键，它能屏蔽底层硬件细节，提供统一的接口，实现同一个模型在多种硬件间无缝迁移和异构计算，帮助应用提供方降低迁移成本并获得更高的性能；
 - Paddle Lite 是一款支持服务器端、边缘端和移动端场景的推理引擎，在设计之初就考虑了如何友好的支持不同形态的硬件（例如 CPU 、 GPU 、 DSP 、 FPGA 和 ASIC 等），主要表现在推理框架与硬件解耦合，提出了统一的图优化 Pass 层、算子层和 Kernel 层接口，在实现灵活配置多硬件间异构执行的同时，最大限度地减少适配过程中对框架的修改，真正做到硬件细节对用户透明；
-- Paddle Lite 支持的硬件目前已多达十余种，这其中不乏像华为 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉（ Imagination ） NNA、昆仑芯 XPU 和寒武纪 MLU 等一线芯片（或 IP ）厂商研发的 ASIC 芯片，我们也希望更多的硬件（或 IP ）厂商与我们合作，共建 Paddle Lite 和 PaddlePaddle 的硬件生态。
+- Paddle Lite 支持的硬件目前已多达十余种，这其中不乏像华为 NPU 、芯原 NPU、联发科 APU 、颖脉（ Imagination ） NNA、昆仑芯 XPU 和寒武纪 MLU 等一线芯片（或 IP ）厂商研发的 ASIC 芯片，我们也希望更多的硬件（或 IP ）厂商与我们合作，共建 Paddle Lite 和 PaddlePaddle 的硬件生态。
 - 在阐述硬件接入的具体步骤前，我们将简单介绍下 Paddle Lite 的工作原理，即从读入模型文件到硬件执行过程中都经历了哪些步骤？
 
 ## Paddle Lite 是如何工作的？
 - 如下图所示， Paddle Lite 整个推理的过程，可以简单分成分析( Analysis phase )和执行( Execution phase )两个阶段，分析阶段包括 Paddle 模型文件的加载和解析、计算图的转化、图分析和优化、运行时程序的生成和执行等步骤。具体地，
 
-  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
+  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.jpg)
 
 - **模型文件的加载和解析** Paddle 模型由程序（ Program ）、块（ Block ）、算子（ Operator ）和变量（ Variable ）组成（如下图所示，程序由若干块组成，块由若干算子和变量组成，变量包括中间变量和持久化变量，如卷积的权值），经序列化保存后形成 Combined 和 Non-combined 两种形式的模型文件， Non-combined 形式的模型由一个网络拓扑结构文件 __model__ 和一系列以变量名命名的参数文件组成， Combined 形式的模型由一个网络拓扑结构文件 __model__ 和一个合并后的参数文件 __params__ 组成，其中网络拓扑结构文件是基于[ Protocol Buffers ](https://github.com/protocolbuffers/protobuf)格式以[ Paddle proto 文件](https://github.com/PaddlePaddle/Paddle/blob/c5f0293cf318a8d68b7b6c9bfab58cbd744000f7/paddle/fluid/framework/framework.proto)规则序列化后的文件。现在以 Non-combined 格式的 Paddle 模型为例，将网络拓扑结构文件（要求文件名必须是 __model__ ）拖入到[ Netron ](https://netron.app/)工具即可图形化显示整个网络拓扑结构。
 

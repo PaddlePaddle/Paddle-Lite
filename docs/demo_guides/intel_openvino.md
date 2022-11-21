@@ -1,6 +1,6 @@
-# 英特尔 OpenVINO
+# Intel OpenVINO
 
-Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持 Intel OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -227,7 +227,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
   $ ./build.sh linux amd64
   ```
 
-  ### 更新支持英特尔 OpenVINO 的 Paddle Lite 库
+  ### 更新支持 Intel OpenVINO 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
 
