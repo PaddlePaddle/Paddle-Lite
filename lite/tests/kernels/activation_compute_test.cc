@@ -623,6 +623,62 @@ TEST(Activation_prelu, precision) {
   }
 }
 
+TEST(Activation_tanh, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "tanh",
+            TANH,
+            abs_error);
+  }
+}
+
+
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -695,61 +751,6 @@ TEST(Activation_sigmoid, performance) {
                        "sigmoid",
                        SIGMOID,
                        abs_error);
-  }
-}
-
-TEST(Activation_tanh, precision) {
-  Place place;
-  float abs_error = 2e-5;
-  std::vector<std::vector<int64_t>> test_dims{
-      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 5e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 5e-2;
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-3;
-#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
-  abs_error = 2e-5;
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_error = 2e-5;
-#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-2;
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  abs_error = 1e-5;
-  for (auto& dims : test_dims) {
-    if (dims.size() == 1) {
-      dims.push_back(1);
-    }
-  }
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_OPENCL)
-  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
-  abs_error = 1e-2;  // Using fp16 in OPENCL
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kX86);
-#else
-  return;
-#endif
-
-  for (auto dims : test_dims) {
-    TestAct(place,
-            "def",
-            0.01,
-            6.,
-            "all",
-            0.,
-            1.0,
-            DDim(dims),
-            "tanh",
-            TANH,
-            abs_error);
   }
 }
 
