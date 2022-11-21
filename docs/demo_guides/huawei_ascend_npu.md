@@ -627,8 +627,6 @@ $ npu-smi info
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   ```
 
-  
-
 ## 其他说明
 
 - 华为达芬奇架构的 NPU 内部大量采用 `float16` 进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失。

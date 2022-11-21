@@ -1,4 +1,4 @@
-# Linux(ARM) 工程示例
+# Linux apps
 
 ## 多种应用场景
 

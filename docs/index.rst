@@ -84,10 +84,8 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/android_nnapi
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
-  demo_guides/qualcomm_qnn
   demo_guides/intel_openvino
   demo_guides/eeasytech_npu
-  demo_guides/rockchip_npu
 
 .. toctree::
   :maxdepth: 1

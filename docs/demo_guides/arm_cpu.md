@@ -1,4 +1,4 @@
-# ARM CPU 部署示例
+# Arm
 
 Lite 支持在 Android/IOS/ARMLinux 等移动端设备上运行高性能的 CPU 预测库，目前支持 Ubuntu 环境下 armv8、armv7 的交叉编译。
 

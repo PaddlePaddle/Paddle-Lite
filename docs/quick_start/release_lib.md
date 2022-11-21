@@ -147,22 +147,6 @@
 |armv8 |[v2.11-rc](https://paddlelite-data.bj.bcebos.com/release/v2.11-rc/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
 
 
-## 瑞芯微 NPU
-
-|Arch |下载链接 |
-|:-----:|:-----:|
-|armv7hf |[v2.11-rc](https://paddlelite-data.bj.bcebos.com/release/v2.11-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8   |[v2.11-rc](https://paddlelite-data.bj.bcebos.com/release/v2.11-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
-
-
-## 晶晨 NPU
-
-|Arch |下载链接 |适用的操作系统 |
-|:-----:|:-----:|:-----:|
-|armv7 |[v2.11-rc](https://paddlelite-data.bj.bcebos.com/release/v2.11-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
-|armv8 |[v2.11-rc](https://paddlelite-data.bj.bcebos.com/release/v2.11-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
-
-
 ## 联发科 APU
 
 |Arch |下载链接 |
