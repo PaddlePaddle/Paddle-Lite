@@ -264,6 +264,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                       const lite::KernelBase& kernel,
                       bool* type_match,
                       size_t* score);
+
+  void GeneralInt8OpScore(lite::mir::Node* node,
+                          const lite::KernelBase& kernel,
+                          bool* type_match,
+                          size_t* score);
+
   void InplaceOpScore(lite::mir::Node* node,
                       const lite::KernelBase& kernel,
                       bool* type_match,
@@ -300,7 +306,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "unsqueeze2"};
   bool xpu_use_int8_optimizer_{false};
   std::set<std::string> xpu_int8_special_op_{"__xpu__fc", "__xpu__conv2d"};
-
+  std::set<std::string> xpu_int8_general_op_{"pool2d"};
   bool local_quant_{false};
   std::string encode_precision_;
 };

@@ -168,10 +168,10 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
     param_.enable_int8 = true;
+    param_.per_channel = op_desc.GetAttr<bool>("per_channel");
     param_.quant_input_max =
         op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
-    param_.quant_w_max =
-        op_desc.GetAttr<std::vector<float>>("Filter0_scale")[0];
+    param_.quant_w_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
     param_.quant_output_max =
         op_desc.GetAttr<std::vector<float>>("Output0_scale")[0];
     if (op_desc.HasAttr("has_branch") && op_desc.GetAttr<bool>("has_branch")) {
@@ -185,8 +185,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.enable_int16 = true;
     param_.quant_input_max =
         op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
-    param_.quant_w_max =
-        op_desc.GetAttr<std::vector<float>>("Filter0_scale")[0];
+    param_.quant_w_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
   }
 
   if (op_desc.HasAttr("padding_algorithm")) {
