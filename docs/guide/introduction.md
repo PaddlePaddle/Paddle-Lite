@@ -50,7 +50,7 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
   - 亿智 NPU ：请浏览 [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)
   - Intel OpenVINO ：请浏览 [Paddle Lite 使用Intel OpenVINO 预测部署](../demo_guides/intel_openvino)
   - 安卓 NNAPI ：请浏览 [Paddle Lite 使用 Android NNAPI 预测部署](../demo_guides/android_nnapi)
-  - (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX：请浏览 [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
+  - 芯原 NPU：请浏览 [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
 
 ## 技术路线
 
