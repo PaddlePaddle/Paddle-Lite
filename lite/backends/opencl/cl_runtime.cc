@@ -174,6 +174,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
     return *(programs_[program_key]);
   } else {
     LOG(FATAL) << "GetProgram failed, program_key: " << program_key;
+    return *(programs_[program_key]);
   }
 }
 
