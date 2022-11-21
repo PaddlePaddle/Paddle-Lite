@@ -379,7 +379,16 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
                                         "squeeze2",
                                         "squeeze",
                                         "split"};
-  std::vector<std::string> x86_host_ops{"arg_max"};
+  std::vector<std::string> x86_host_ops{
+      "abs",      "arg_max",         "cos",
+      "exp",      "expand",          "flatten",
+      "flatten2", "greater_than",    "hard_sigmoid",
+      "log",      "pad2d",           "pixel_shuffle",
+      "prelu",    "reshape",         "reshape2",
+      "shape",    "shuffle_channel", "sin",
+      "split",    "squeeze",         "squeeze2",
+      "swish",    "unsqueeze",       "unsqueeze2",
+      "yolo_box"};
   auto& inst = x->AsStmt();
   auto new_place = inst.place();
   new_place.layout = DATALAYOUT(kNCHW);
