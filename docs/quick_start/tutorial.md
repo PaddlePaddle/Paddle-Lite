@@ -45,7 +45,7 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 此外，针对不同的硬件平台，Paddle Lite 提供了各个平台的完整示例：
 
 - [Android apps](../demo_guides/android_app_demo)
-- [IOS apps](../demo_guides/ios_app_demo)
+- [iOS apps](../demo_guides/ios_app_demo)
 - [Linux apps](../demo_guides/linux_arm_demo)
 - [Arm](../demo_guides/arm_cpu)
 - [x86](../demo_guides/x86)

@@ -52,11 +52,11 @@ Paddle-Lite 提供了多个应用场景的 iOS Demo:
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/ocr/docs_img/android/test.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/ocr/docs_img/ios/run_app.jpeg"/></p>
 
-## IOS Demo 部署方法
+## iOS Demo 部署方法
 
-下面我们以**目标检测( picodet_demo )** 为例讲解如何部署 IOS 工程。
+下面我们以**目标检测( picodet_demo )** 为例讲解如何部署 iOS 工程。
 
-**目的**：将基于 Paddle Lite 预测库的 IOS APP部署到苹果手机，实现物体检测。
+**目的**：将基于 Paddle Lite 预测库的 iOS APP部署到苹果手机，实现物体检测。
 
 **需要的环境**：Mac 电脑上安装 Xcode、苹果手机、下载到本地的[ Paddle-Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)工程
 
@@ -94,7 +94,7 @@ cd ..
   | ---     | --- |
   | ![app_pic](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/docs_img/ios/IOS_app.jpeg)    | ![app_res](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/docs_img/ios/app_run_res.jpg) |
 
-## IOS demo 结构讲解
+## iOS demo 结构讲解
 
 1.  `third-party`： 存放预测库、模型、测试图片等相关信息
       * `assets`: 存放预测资源
@@ -110,7 +110,7 @@ cd ..
     # 位置：
     detection_demo/third-party/
     example：
-    # IOS 预测库
+    # iOS 预测库
     detection_demo/third-party/PaddleLite/lib/libpaddle_api_light_bundled.a
     # 预测库头文件
     detection_demo/third-party/PaddleLite/include/paddle_api.h
@@ -140,7 +140,7 @@ cd ..
 
 ## 代码讲解 （如何使用 Paddle Lite `C++ API` 执行预测）
 
-IOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle Lite C++ API ](../api_reference/cxx_api_doc)。
+iOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle Lite C++ API ](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>

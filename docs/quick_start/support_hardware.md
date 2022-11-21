@@ -31,9 +31,9 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 
 ### ARM CPU 环境准备及示例程序
 
-- Android: [Android 工程示例](../demo_guides/android_app_demo)
-- IOS: [IOS 工程示例](../demo_guides/ios_app_demo)
-- Linux(ARM): [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
+- Android: [Android apps](../demo_guides/android_app_demo)
+- iOS: [iOS apps](../demo_guides/ios_app_demo)
+- Linux: [Linux apps](../demo_guides/linux_arm_demo)
 
 ## X86 CPU
 
@@ -112,13 +112,13 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 
 
 - [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)
 
-## 英特尔 (Intel) OpenVINO
+## Intel OpenVINO
 
-Paddle Lite 支持Intel OpenVINO 预测部署
+Paddle Lite 支持 Intel OpenVINO 预测部署
 - 支持设备:
   - CPU, CPU 型号可查看 OpenVINO [官方数据](https://github.com/openvinotoolkit/openvino#supported-hardware-matrix)
 
-### 英特尔 (Intel) OpenVINO 示例程序
+### Intel OpenVINO 示例程序
 
 - [Paddle Lite 使用Intel OpenVINO 预测部署](../demo_guides/intel_openvino)
 
