@@ -80,7 +80,7 @@ void ConcatCompute::Run() {
       if (type == PRECISION(kUnk)) {
         type = tensor->precision();
       } else {
-        VLOG(4) << "type: " << PrecisionRepr(type)
+        VLOG(7) << "type: " << PrecisionRepr(type)
                 << ", tensor: " << PrecisionRepr(tensor->precision());
 #ifdef ENABLE_ARM_FP16
         if (type != tensor->precision()) {

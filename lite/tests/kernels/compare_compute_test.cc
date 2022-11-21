@@ -137,7 +137,7 @@ class CompareComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_);
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Y", {y_});
@@ -168,8 +168,7 @@ void TestCompare(Place place,
                  std::vector<int64_t> y_dims,
                  int axis,
                  std::string alias = "def") {
-#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_NNADAPTER) && \
-    !defined(LITE_WITH_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_NNADAPTER)
   if (typeid(T) == typeid(float)) {
     place.precision = PRECISION(kFloat);
   } else if (typeid(T) == typeid(int32_t)) {
@@ -253,13 +252,6 @@ TEST(Compare, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;
-  TestCompare<float>(
-      place, abs_error, "less_than", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
-  TestCompare<float>(place, abs_error, "less_than", {2, 3, 4}, {2, 3, 4}, 0);
-  return;
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   TestCompare<float>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);

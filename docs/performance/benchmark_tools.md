@@ -411,12 +411,12 @@ adb shell "cd /data/local/tmp/benchmark;
 
 |No.| 新硬件名称 | Device HAL 库名称|编译指南 |
 |---|---|---|---|
-|1|Huawei Kirin NPU|libhuawei_kirin_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_kirin_npu.html) |
-|2|Huawei Ascend NPU|libhuawei_ascend_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_ascend_npu.html) |
-|3|Rockchip NPU|librockchip_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/rockchip_npu.html) |
-|4|Imagination NNA|libimagination_nna.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/imagination_nna.html) |
-|5|Mediatek APU|libmediatek_apu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/mediatek_apu.html) |
-|6|Amlogic NPU|libamlogic_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/amlogic_npu.html)|
+|1|Huawei Kirin NPU|libhuawei_kirin_npu.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/huawei_kirin_npu.html) |
+|2|Huawei Ascend NPU|libhuawei_ascend_npu.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/huawei_ascend_npu.html) |
+|3|Rockchip NPU|librockchip_npu.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/rockchip_npu.html) |
+|4|Imagination NNA|libimagination_nna.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/imagination_nna.html) |
+|5|Mediatek APU|libmediatek_apu.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/mediatek_apu.html) |
+|6|Amlogic NPU|libamlogic_npu.so| [点击进入](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/amlogic_npu.html)|
 
 编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
 

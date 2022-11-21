@@ -46,7 +46,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
@@ -274,7 +274,6 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \

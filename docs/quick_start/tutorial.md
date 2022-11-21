@@ -49,12 +49,21 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 - [ ARMLinux 示例](../demo_guides/linux_arm_demo)
 - [ X86 示例](../demo_guides/x86)
 - [ OpenCL 示例](../demo_guides/opencl)
-- [ FPGA 示例](../demo_guides/fpga)
-- [华为 NPU 示例](../demo_guides/huawei_kirin_npu)
+- [华为麒麟 NPU 示例](../demo_guides/huawei_kirin_npu)
+- [华为昇腾 NPU 示例](../demo_guides/huawei_ascend_npu)
 - [昆仑芯 XPU 示例](../demo_guides/kunlunxin_xpu)
 - [瑞芯微 NPU 示例](../demo_guides/rockchip_npu)
 - [晶晨 NPU 示例](../demo_guides/amlogic_npu)
 - [联发科 APU 示例](../demo_guides/mediatek_apu)
+- [高通 QNN 示例](../demo_guides/qualcomm_qnn)
+- [芯源 NPU 示例](../demo_guides/verisilicon_timvx)
+- [昆仑芯 XTCL 示例](../demo_guides/kunlunxin_xtcl)
+- [昆仑芯 XPU 示例](../demo_guides/kunlunxin_xpu)
+- [英特尔 OpenVINO 示例](../demo_guides/intel_openvino)
+- [颖脉 NNA 示例](../demo_guides/imagination_nna)
+- [安卓 NNAPI 示例](../demo_guides/android_nnapi)
+- [寒武纪 MLU 示例](../demo_guides/cambricon_mlu)
+- [亿智 NPU 示例](../demo_guides/eeasytech_npu)
 
 您也可以下载以下基于 Paddle Lite 开发的预测 APK 程序，安装到 Andriod 平台上，先睹为快：
 

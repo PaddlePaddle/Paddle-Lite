@@ -16,4 +16,4 @@ NNAdapter 支持颖脉 NNA
      - 用户自定义
      - 空值
 
-详细请参考 `颖脉 NNA 部署示例 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/imagination_nna.html>`_
+详细请参考 `颖脉 NNA 部署示例 <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/imagination_nna.html>`_

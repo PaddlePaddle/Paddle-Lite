@@ -28,9 +28,6 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/monitor.hpp"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -596,43 +593,13 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
-#ifdef LITE_WITH_NVTX
-  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
-  if (annotator.IsEnabled()) {
-    annotation_one_loop.generate(register_layer_names_.back(),
-                                 lite::Color::Engine);
-  }
-#endif
-
-#ifdef LITE_WITH_FPGA
-  Monitor& monitor = Monitor::get_instance();
-  monitor.inferStart();
-#endif
-
   int idx = -1;
 
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
-#endif
-#ifdef LITE_WITH_NVTX
-    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
-    nvtxStringHandle_t registered_name = register_layer_names_[idx];
-    if (annotator.IsEnabled()) {
-      annotation.generate(registered_name, lite::Color::Runner);
-    }
-#endif
-#ifdef LITE_WITH_CUDA
-    if (inst.need_sync()) {
-      inst.Sync();
-    }
-#endif
-
-#ifdef LITE_WITH_FPGA
-    monitor.preRun(inst);
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -641,19 +608,6 @@ void RuntimeProgram::Run() {
 #endif
 
     inst.Run();
-
-#ifdef LITE_WITH_FPGA
-    monitor.postRun(inst);
-#endif
-
-#ifdef LITE_WITH_PRECISION_PROFILE
-#ifndef LITE_WITH_FPGA
-    if (inst.op()->Type() != "while") {
-      precision_profiler_summary +=
-          inst_precision_profiler.GetInstPrecision(&inst);
-    }
-#endif
-#endif  // LITE_WITH_PRECISION_PROFILE
   }
 
 #ifdef LITE_WITH_METAL

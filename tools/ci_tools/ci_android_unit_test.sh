@@ -89,9 +89,7 @@ function build_android {
 
   cd $build_directory
   cmake .. \
-      -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \

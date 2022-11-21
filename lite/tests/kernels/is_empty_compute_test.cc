@@ -42,7 +42,7 @@ class IsEmptyComputeTester : public arena::TestCase {
     out_data[0] = (x->numel() == 0) ? true : false;
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("is_empty");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});

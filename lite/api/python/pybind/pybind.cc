@@ -263,12 +263,10 @@ void BindLitePlace(py::module *m) {
       .value("Unk", TargetType::kUnk)
       .value("Host", TargetType::kHost)
       .value("X86", TargetType::kX86)
-      .value("CUDA", TargetType::kCUDA)
       .value("ARM", TargetType::kARM)
       .value("OpenCL", TargetType::kOpenCL)
       .value("Any", TargetType::kAny)
       .value("FPGA", TargetType::kFPGA)
-      .value("NPU", TargetType::kNPU)
       .value("XPU", TargetType::kXPU)
       .value("BM", TargetType::kBM)
       .value("MLU", TargetType::kMLU)
@@ -357,8 +355,6 @@ void BindLiteTensor(py::module *m) {
          TargetType type = TargetType::kHost) {                          \
         if (type == TargetType::kHost || type == TargetType::kARM) {     \
           self.CopyFromCpu<data_type__, TargetType::kHost>(data.data()); \
-        } else if (type == TargetType::kCUDA) {                          \
-          self.CopyFromCpu<data_type__, TargetType::kCUDA>(data.data()); \
         }                                                                \
       },                                                                 \
       py::arg("data"),                                                   \

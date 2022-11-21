@@ -15,6 +15,10 @@ enum AttrType : int {
   LONG = 9,
   BLOCKS = 10,
   LONGS = 11,
+  FLOAT64S = 12,
+  VAR = 13,
+  VARS = 14,
+  FLOAT64 = 15
 }
 
 namespace paddle.lite.fbs.proto.VarType_;
@@ -84,6 +88,8 @@ table Attr {
   l:long;
   blocks_idx:[int];
   longs:[long];
+  float64:double;
+  float64s:[double];
 }
 
 table Var {

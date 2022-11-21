@@ -23,12 +23,6 @@ TEST(memory, test) {
   ASSERT_TRUE(buf);
   TargetFree(TARGET(kX86), buf);
 
-#ifdef LITE_WITH_CUDA
-  auto* buf_cuda = TargetMalloc(TARGET(kCUDA), 10);
-  ASSERT_TRUE(buf_cuda);
-  TargetFree(TARGET(kCUDA), buf_cuda);
-#endif
-
 #ifdef LITE_WITH_OPENCL
   auto* buf_cl = TargetMalloc(TARGET(kOpenCL), 10);
   ASSERT_TRUE(buf_cl);

@@ -105,7 +105,7 @@ class LayerNormComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {x_});
     if (has_scale_) {
@@ -162,9 +162,6 @@ TEST(LayerNorm, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
   abs_error = 6e-5;

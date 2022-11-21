@@ -43,6 +43,7 @@ class XPUMultiEncoderCompute
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> fc_input_max_;
+  std::vector<const float *> roformer_embedding_;
   std::vector<xdnn::QuantType> quant_types_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard input_max_guard_;
@@ -50,6 +51,7 @@ class XPUMultiEncoderCompute
   XPUScratchPadGuard cast_out_guard_;
   xdnn::Activation_t qkv_act = xdnn::Activation_t::RELU;
   int slice_idx = -1;
+  int relative_type_ = 0;
   bool local_quant_ = false;
 
   template <typename T>

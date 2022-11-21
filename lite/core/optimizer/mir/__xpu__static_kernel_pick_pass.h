@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 #include <limits>
 #include <map>
@@ -18,6 +19,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/types.h"
 
@@ -48,6 +52,36 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   }
 
  private:
+  void Init() {
+#ifdef LITE_WITH_XPU
+    // get xpu device type
+    int cur_dev_idx = 0;
+    uint64_t cur_dev_attr = 0;
+    XPU_CALL(xpu_current_device(&cur_dev_idx));
+    XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
+    if (cur_dev_attr <= 1) {
+      VLOG(4) << "Currents XPU device : XPU1";
+      xpu_disable_flag_ = "DISABLE_XPU1";
+    } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
+      VLOG(4) << "Currents XPU device : XPU2";
+      xpu_disable_flag_ = "DISABLE_XPU2";
+    } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
+      VLOG(4) << "Currents XPU device : XPU3";
+      xpu_disable_flag_ = "DISABLE_XPU3";
+    } else {
+      VLOG(4) << "invaid XPU device";
+      xpu_disable_flag_ = "NONE";
+    }
+    // init quant type, encode precision
+    local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
+                   lite::TargetWrapperXPU::local_quant;
+    encode_precision_ = lite::TargetWrapperXPU::multi_encoder_precision;
+    if (encode_precision_.empty()) {
+      encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION", "int16");
+    }
+#endif
+  }
+
   // Score the kernel.
   size_t KernelGrade(lite::mir::Node* node,
                      const lite::KernelBase& kernel,
@@ -120,7 +154,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       }
       VLOG(4) << "[score s3]:" << score;
 
-#ifdef LITE_WITH_XPU
       bool type_match = false;
       GradeXPUKernelScore(node,
                           kernel,
@@ -136,10 +169,8 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
         VLOG(4) << "[Input/Output precision compatible]: *2";
       }
       VLOG(4) << "[score s4]:" << score;
-#endif
 
-      // add new rules for datatype: When the input types are consistent
-      // with
+      // add new rules for datatype: When the input types are consistent with
       // kernel's input types, select the kernel of the datatype.
       if (instruct.op_info()->Type() != "conditional_block" &&
           instruct.op_info()->Type() != "while" &&
@@ -151,8 +182,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
           std::string argname;
           instruct.op_info()->GetInputArgname(in->AsArg().name, &argname);
           VLOG(5) << "intput var name : " << in->AsArg().name;
-          // only when datatype is LOD_TENSOR, LOD_TENSOR_ARRAY,
-          // STEP_SCOPES,
+          // only when datatype is LOD_TENSOR, LOD_TENSOR_ARRAY, STEP_SCOPES,
           // the type pointer is not null;
           if (in->AsArg().type) {
             VLOG(5) << "input datatype : "
@@ -194,16 +224,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     VLOG(4) << "[score(final)]:" << final_score;
     VLOG(4) << "------------------------------";
 
-    // The data layout is not considered, for the input and output arguments
-    // might have different data layout.
-    // TODO(Superjomn) reconsider the idea of taking the data layout as a
-    // kernel
-    // specification.
     return final_score;
   }
 
   // Compatible for PrecisionType.
-  // For cuda, in the process of choosing kernel, fp16 and fp32 are
+  // In the process of choosing kernel, fp16 and fp32 are
   // compatiable.
   // If kernel's declared type is kAny, it is matched.
   bool PrecTypeCompatible(const PrecisionType& p1, const PrecisionType& p2) {
@@ -216,7 +241,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       return false;
     }
   }
-#ifdef LITE_WITH_XPU
   void DataPrecisionDicide(const std::unique_ptr<SSAGraph>& graph);
   bool ForceUsePrecision(size_t* score,
                          const lite::KernelBase& kernel,
@@ -240,7 +264,6 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                       const lite::KernelBase& kernel,
                       bool* type_match,
                       size_t* score);
-  void GetXPUDeviceType();
   void InplaceOpScore(lite::mir::Node* node,
                       const lite::KernelBase& kernel,
                       bool* type_match,
@@ -256,13 +279,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       size_t* score,
       bool* type_match);
   void CollectXPUSpecialOPType(const std::unique_ptr<SSAGraph>& graph);
-#endif
 
  private:
   core::KernelPickFactor kernel_pick_factors_;
 
   bool xpu_use_fp16_optimizer_{false};
-#ifdef LITE_WITH_XPU
   std::multimap<std::string, std::vector<std::map<std::string, PrecisionType>>>
       xpu_input_type_{};
   std::map<std::string, PrecisionType> xpu_output_type_{};
@@ -277,10 +298,11 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "squeeze2",
                                               "unsqueeze",
                                               "unsqueeze2"};
-  // int8
   bool xpu_use_int8_optimizer_{false};
   std::set<std::string> xpu_int8_special_op_{"__xpu__fc", "__xpu__conv2d"};
-#endif
+
+  bool local_quant_{false};
+  std::string encode_precision_;
 };
 
 }  // namespace mir

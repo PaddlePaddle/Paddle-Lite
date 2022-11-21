@@ -123,8 +123,17 @@ class DeviceInfo {
 
   inline bool has_dot() const {
 #ifdef WITH_ARM_DOTPROD
-    std::vector<ARMArch> int8_arch = {
-        kX1, kX2, kA55, kA76, kA77, kA78, kGold, kGold_Prime, kSilver, kA710};
+    std::vector<ARMArch> int8_arch = {kX1,
+                                      kX2,
+                                      kA55,
+                                      kA76,
+                                      kA77,
+                                      kA78,
+                                      kGold,
+                                      kGold_Prime,
+                                      kSilver,
+                                      kA710,
+                                      kA510};
     for (int i = 0; i < core_num_; ++i) {
       auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
       if (iter == std::end(int8_arch)) {
@@ -252,97 +261,6 @@ class Env {
     LOG(INFO) << "dev size = " << devs.size();
   }
 };
-
-#ifdef LITE_WITH_BM
-template <>
-class Device<TARGET(kBM)> {
- public:
-  Device(int dev_id, int max_stream = 1)
-      : idx_(dev_id), max_stream_(max_stream) {}
-  void Init();
-
-  int id() { return idx_; }
-  int max_stream() { return 1; }
-  std::string name() { return "BM"; }
-  float max_memory() { return 16; }
-  int core_num();
-  void SetId(int idx);
-
-  int sm_version() { return 0; }
-  bool has_fp16() { return false; }
-  bool has_int8() { return false; }
-  bool has_hmma() { return false; }
-  bool has_imma() { return false; }
-  int runtime_version() { return 0; }
-
- private:
-  void CreateQueue() {}
-  void GetInfo() {}
-
- private:
-  int idx_{0};
-  int max_stream_{1};
-  std::string device_name_;
-  float max_memory_;
-
-  int sm_version_;
-  bool has_fp16_;
-  bool has_int8_;
-  bool has_hmma_;
-  bool has_imma_;
-  int runtime_version_;
-};
-
-template class Env<TARGET(kBM)>;
-#endif
-
-#ifdef LITE_WITH_CUDA
-template <>
-class Device<TARGET(kCUDA)> {
- public:
-  Device(int dev_id, int max_stream = 1)
-      : idx_(dev_id), max_stream_(max_stream) {}
-  void Init();
-
-  int id() { return idx_; }
-  int max_stream() { return max_stream_; }
-  void SetId(int idx) { idx_ = idx; }
-  std::string name() { return device_prop_.name; }
-  int core_num() { return device_prop_.multiProcessorCount; }
-  float max_memory() { return device_prop_.totalGlobalMem / 1048576.; }
-  const std::vector<cudaStream_t>& exec_streams() { return exec_stream_; }
-  const std::vector<cudaStream_t>& io_streams() { return io_stream_; }
-
-  int sm_version() { return sm_version_; }
-  bool has_fp16() { return has_fp16_; }
-  bool has_int8() { return has_fp16_; }
-  bool has_hmma() { return has_fp16_; }
-  bool has_imma() { return has_fp16_; }
-  int runtime_version() { return runtime_version_; }
-
- private:
-  void CreateStream();
-  void GetInfo();
-
- private:
-  int idx_{0};
-  int max_stream_;
-  cudaDeviceProp device_prop_;
-  std::string device_name_;
-  float max_memory_;
-
-  int sm_version_;
-  bool has_fp16_;
-  bool has_int8_;
-  bool has_hmma_;
-  bool has_imma_;
-  int runtime_version_;
-  std::vector<cudaStream_t> exec_stream_;
-  std::vector<cudaStream_t> io_stream_;
-};
-
-template class Env<TARGET(kCUDA)>;
-#endif
 
 #ifdef LITE_WITH_X86
 enum class SSEType {

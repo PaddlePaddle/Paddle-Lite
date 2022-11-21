@@ -58,6 +58,7 @@ add_operator(flatten_op basic SRCS flatten_op.cc)
 add_operator(write_back_op basic SRCS write_back_op.cc)
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc)
 add_operator(unbind_op basic SRCS unbind_op.cc)
+add_operator(set_value basic SRCS set_value_op.cc)
 
 add_operator(pow_op extra SRCS pow_op.cc)
 add_operator(sign_op extra SRCS sign_op.cc)
@@ -108,6 +109,7 @@ add_operator(fake_channel_wise_quantize_dequantize_abs_max_op extra SRCS fake_ch
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc)
 add_operator(quantize_linear_op extra SRCS quantize_linear_op.cc)
 add_operator(dequantize_linear_op extra SRCS dequantize_linear_op.cc)
+add_operator(dequantize_log_op extra SRCS dequantize_log_op.cc)
 add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc)
 add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc)
 add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc)
@@ -167,6 +169,8 @@ add_operator(gaussian_random_op extra SRCS gaussian_random_op.cc)
 add_operator(unfold_op extra SRCS unfold_op.cc)
 add_operator(log_softmax_op extra SRCS log_softmax_op.cc)
 add_operator(roll_op extra SRCS roll_op.cc)
+add_operator(share_data extra SRCS share_data_op.cc)
+add_operator(round extra SRCS round_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)
@@ -229,6 +233,7 @@ add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc)
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc)
+add_operator(__xpu__roformer_relative_embedding_op extra SRCS __xpu__roformer_relative_embedding_op.cc)
 add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc)
 add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc)
 add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc)
@@ -238,9 +243,6 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
-
-# Only for FPGA
-add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)

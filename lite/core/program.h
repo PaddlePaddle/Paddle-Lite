@@ -26,9 +26,6 @@
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#ifdef LITE_WITH_NVTX
-#include "lite/backends/cuda/nvtx_wrapper.h"
-#endif
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
@@ -136,18 +133,6 @@ struct Instruction {
 
   bool is_feed_fetch_op() const { return is_feed_fetch_op_; }
 
-#ifdef LITE_WITH_CUDA
-  bool need_sync() const {
-    if (kernel_->target() == TargetType::kCUDA) {
-      return kernel_->mutable_context()->As<CUDAContext>().need_sync();
-    } else {
-      // the io_copy kernel has synced, so cpu kernels don't need sync..
-      return false;
-    }
-  }
-  void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
-#endif
-
 #ifdef LITE_WITH_OPENCL
   void Flush(const int inst_idx) const {
     if (TargetType::kOpenCL == kernel_->target()) {
@@ -159,7 +144,7 @@ struct Instruction {
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
 #endif
       profile::OpCharacter ch;
@@ -172,7 +157,7 @@ struct Instruction {
       // append `ch.kernel_func_name` in StopTiming
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     }
 #endif
   }
@@ -232,15 +217,6 @@ class LITE_API RuntimeProgram {
     }
 #ifdef LITE_WITH_PROFILE
     set_profiler();
-#endif
-#ifdef LITE_WITH_NVTX
-    const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-    for (auto& inst : instructions_[kRootBlockIdx]) {
-      NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
-      register_layer_names_.push_back(annotator.RegisterString(
-          const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
-    }
-    register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -344,9 +320,6 @@ class LITE_API RuntimeProgram {
       inst.set_profiler(&profiler_);
     }
   }
-#endif
-#ifdef LITE_WITH_NVTX
-  std::vector<nvtxStringHandle_t> register_layer_names_;
 #endif
 };
 

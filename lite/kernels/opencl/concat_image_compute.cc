@@ -101,7 +101,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       // note: do layout transform between image and buffer,
       // before and after concat(buffer impl.)
       kernel_func_name_ = "concat_mul_buffer";  // buffer/concat_kernel.cl
-      build_options_ = " -DCL_DTYPE_float";
       auto in_dims = inputs[0]->dims();
       for (int i = 0; i < axis_; i++) {
         pre_size_ *= in_dims[i];
@@ -355,8 +354,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         img_to_buf_params[i].x = inputs[i];
         img_to_buf_params[i].y = &outputs_vec[i];
         outputs_vec[i].Resize(inputs_dims[i]);
-        outputs_buffer_pointers[i] =
-            outputs_vec[i].mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        outputs_buffer_pointers[i] = MUTABLE_BUFFER_GPU(&outputs_vec[i]);
         img_to_buf_kernel_->SetParam(img_to_buf_params[i]);
 
         std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
@@ -368,8 +366,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
       concat_mul_buf_output_t->Resize(concat_param_->output->dims());
       auto conat_mul_buf_output_data =
-          concat_mul_buf_output_t->mutable_data<float, cl::Buffer>(
-              TARGET(kOpenCL));
+          MUTABLE_BUFFER_GPU(concat_mul_buf_output_t);
       operators::LayoutParam buf_to_img_param;
       buf_to_img_param.x = concat_mul_buf_output_t.get();
       buf_to_img_param.y = concat_param_->output;

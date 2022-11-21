@@ -46,8 +46,8 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "Unsupported for op output var containing multiple producers";
+      VLOG(5) << "WARNING: Unsupported for op output var containing multiple "
+                 "producers";
       continue;
     }
 
@@ -59,8 +59,8 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
     auto x_var = scope->FindVar(op_desc->Input("X").front());
     auto x_t = x_var->GetMutable<lite::Tensor>();
     if (!x_t->persistable()) {
-      LOG(WARNING) << "ScaleCalcOfflinePass does not support input that is not "
-                      "persistable";
+      VLOG(5) << "WARNING: ScaleCalcOfflinePass does not support input that is "
+                 "not  persistable";
       continue;
     }
     auto x_data = x_t->mutable_data<float>();

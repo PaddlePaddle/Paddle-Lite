@@ -1,4 +1,4 @@
-# 华为麒麟 NPU 部署示例
+# 华为麒麟 NPU
 
 Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC 搭载的 NPU）的预测框架。
 原理是在线分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 HiAI IR，最后调用HiAI IR/Builder/Runtime APIs 生成并执行 HiAI 模型。
@@ -107,7 +107,7 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
-**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `HiAI IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/huawei_kirin_npu.html)**。
+**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `HiAI IR` 的方案可点击[链接](https://www.paddlepaddle.org.cn/lite/develop/demo_guides/huawei_kirin_npu.html)**。
 
 ## 参考示例演示
 
@@ -130,11 +130,16 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - mobilenet_v1_fp32_224 # Paddle non-combined 格式的 mobilenet_v1 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
@@ -144,12 +149,12 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.android.arm64-v8a # arm64-v8a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 amd64-v8a 的示例程序
+            - demo # 已编译好的，适用于 amd64-v8a 的示例程序
           - build.android.armeabi-v7a # armeabi-v7a 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run_with_adb.sh # 示例程序 adb 运行脚本
       - libs
@@ -165,13 +170,12 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
                   ...
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
-                - libc++_shared.so
             - armeabi-v7a
             	- include
               - lib
             ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - Android shell 端的示例程序
@@ -186,42 +190,32 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
   运行适用于 ARM CPU 的 mobilenetv1 模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a
-    ...
-  iter 0 cost: 30.349001 ms
-  iter 1 cost: 30.517000 ms
-  iter 2 cost: 30.040001 ms
-  iter 3 cost: 30.358000 ms
-  iter 4 cost: 30.187000 ms
-  warmup: 1 repeat: 5, average: 30.290200 ms, max: 30.517000 ms, min: 30.040001 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.529131
-  Top1  Egyptian cat - 0.419681
-  Top2  tiger cat - 0.045173
-  Preprocess time: 0.576000 ms
-  Prediction time: 30.290200 ms
-  Postprocess time: 0.100000 ms
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 4.716000 ms, avg 4.716000 ms, max 4.716000 ms, min 4.716000 ms
+    Prediction time: 33.408000 ms, avg 33.408000 ms, max 33.408000 ms, min 33.408000 ms
+    Postprocess time: 4.499000 ms, avg 4.499000 ms, max 4.499000 ms, min 4.499000 ms
 
   运行适用于华为 Kirin NPU 的 mobilenetv1 模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a huawei_kirin_npu
-    ...
-  iter 0 cost: 3.503000 ms
-  iter 1 cost: 3.406000 ms
-  iter 2 cost: 3.401000 ms
-  iter 3 cost: 3.402000 ms
-  iter 4 cost: 3.423000 ms
-  warmup: 1 repeat: 5, average: 3.427000 ms, max: 3.503000 ms, min: 3.401000 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.534180
-  Top1  Egyptian cat - 0.416016
-  Top2  tiger cat - 0.044525
-  Preprocess time: 0.572000 ms
-  Prediction time: 3.427000 ms
-  Postprocess time: 0.099000 ms
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a huawei_kirin_npu
+
+    Top1 Egyptian cat - 0.479004
+    Top2 tabby, tabby cat - 0.475342
+    Top3 tiger cat - 0.039642
+    Top4 lynx, catamount - 0.002363
+    Top5 ping-pong ball - 0.000499
+    Preprocess time: 5.132000 ms, avg 5.132000 ms, max 5.132000 ms, min 5.132000 ms
+    Prediction time: 3.154000 ms, avg 3.154000 ms, max 3.154000 ms, min 3.154000 ms
+    Postprocess time: 5.275000 ms, avg 5.275000 ms, max 5.275000 ms, min 5.275000 ms
   ```
-  - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh` 的 IMAGE_NAME 变量即可；
-  - 重新编译示例程序：  
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
+- 重新编译示例程序：  
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。
@@ -343,8 +337,8 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
     2. demo 中已经包含了类似 opt 工具优化生成 nb 模型的功能。
 
     # 如果不使用自定义子图分割配置文件，Kirin NPU 将得出错误的预测结果
-    $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
-    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
+    $ cd PaddleLite-generic-demo/object_detection_demo/shell
+    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 ssd_voc_300.txt test android arm64-v8a huawei_kirin_npu
     ...
     iter 0 cost: 14.114000 ms
     iter 1 cost: 14.051000 ms
@@ -367,9 +361,9 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
     --------------------------------------------------------------------
 
     # 如果使用自定义子图分割配置文件，Kirin NPU 将得出正确的预测结果
-    $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
+    $ cd PaddleLite-generic-demo/object_detection_demo/shell
     $ vim run_with_adb.sh 将'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt'行首'#'删除
-    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
+    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 ssd_voc_300.txt test android arm64-v8a huawei_kirin_npu
     ...
     iter 0 cost: 23.389999 ms
     iter 1 cost: 23.167999 ms

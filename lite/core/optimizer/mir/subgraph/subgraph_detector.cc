@@ -15,6 +15,7 @@
 #include "lite/core/optimizer/mir/subgraph/subgraph_detector.h"
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/optimizer/mir/dot.h"
@@ -578,12 +579,12 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(
 void SubgraphFuser::operator()() {
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph_, teller_, subgraph_partition_configs_)();
+  SubgraphVisualizer(graph_, subgraphs)();
   if (support_mixed_precision_) {
     MixedPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
         graph_, &subgraphs);
     mixed_precision_auto_insert_calib_fuser();
   }
-  SubgraphVisualizer(graph_, subgraphs)();
   ReplaceNodesWithSubgraphs(graph_, subgraphs, min_subgraph_size_);
 }
 
@@ -607,6 +608,21 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
   std::map<std::string, Node *> transed_arg_nodes;
   // Skip if pre op is calib, ...
   std::vector<std::string> skip_pre_ops{"calib"};
+  // Skip special ops' inputs.
+  // For example: "repeat_times_tensor" of "tile" op is int32 datatype and
+  // should not be quanted.
+  const std::unordered_map<std::string, std::vector<std::string>>
+      skip_op_inputs{
+          {"tile", {"RepeatTimes", "repeat_times_tensor"}},
+          {"bilinear_interp", {"OutSize", "SizeTensor", "scale"}},
+          {"nearest_interp", {"OutSize", "SizeTensor", "scale"}},
+          {"bilinear_interp_v2", {"OutSize", "SizeTensor", "scale"}},
+          {"nearest_interp_v2", {"OutSize", "SizeTensor", "scale"}},
+          {"expand", {"ExpandTimes", "expand_times_tensor"}},
+          {"concat", {"AxisTensor"}},
+          {"split", {"AxisTensor", "SectionsTensorList"}},
+          {"gather", {"Axis"}},
+      };
 
   std::vector<Node *> nodes_org = *nodes;
   for (auto node : nodes_org) {
@@ -614,6 +630,14 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
     auto in_nodes = node->inlinks;
     for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;
+      auto op_info = node->AsStmt().op_info();
+      auto op_type = op_info->Type();
+      if (skip_op_inputs.count(op_type)) {
+        std::string in_var_name = pre_arg_node->arg()->name;
+        std::string in_arg_name;
+        op_info->GetInputArgname(in_var_name, &in_arg_name);
+        if (HasItem(skip_op_inputs.at(op_type), in_arg_name)) continue;
+      }
       auto pre_inst_node = pre_arg_node->inlinks.front();
       auto pre_op_type = pre_inst_node->AsStmt().op_type();
       if (!HasItem(nodes_org, pre_inst_node) ||
@@ -644,7 +668,6 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
         transed_arg_nodes[calib_in_name] = calib_out_arg;
 
         // Create calib node
-        auto op_info = node->AsStmt().op_info();
         CHECK(op_info->HasInputScale(calib_in_name));
         auto scales = op_info->GetInputScale(calib_in_name);
         CHECK_EQ(scales.size(), 1UL);
@@ -672,12 +695,15 @@ void MixedPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
     SSAGraph *graph, std::vector<Node *> *nodes) {
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node *> transed_arg_nodes;
+  // Skip if op is shape, ...
+  std::vector<std::string> skip_ops{"shape"};
   // Skip if pre op is calib, ...
   std::vector<std::string> skip_pre_ops{"calib"};
 
   std::vector<Node *> nodes_org = *nodes;
   for (auto node : nodes_org) {
-    if (IsQuantInstNode(node)) continue;
+    auto op_type = node->AsStmt().op_info()->Type();
+    if (HasItem(skip_ops, op_type) || IsQuantInstNode(node)) continue;
     auto in_nodes = node->inlinks;
     for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;

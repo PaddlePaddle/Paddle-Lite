@@ -1118,6 +1118,50 @@ void mish(const float* din, float* dout, int size, float threshold) {
     dout[i] = x * std::tanh(sp);
   }
 }
+
+template <>
+void act_silu<float>(const float* din, float* dout, int size, int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
+  // float32x4_t vzero = vdupq_n_f32(0.f);
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
+    float32x4_t x_vec = vdupq_n_f32(0.0f);
+    float32x4_t exp_vec = vdupq_n_f32(0.0f);
+    float32x4_t recip = vdupq_n_f32(0.0f);
+    const float* ptr_in_thread = din + i * nums_per_thread;
+    float* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
+      x_vec = vld1q_f32(ptr_in_thread);
+      exp_vec = exp_ps(vnegq_f32(x_vec));
+      exp_vec = vaddq_f32(exp_vec, vdupq_n_f32(1.0f));
+      recip = vrecpeq_f32(exp_vec);
+      // Using Newton-Raphson step for finding the reciprocal
+      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
+      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
+      recip = vmulq_f32(x_vec, recip);
+      vst1q_f32(ptr_out_thread, recip);
+      ptr_out_thread += 4;
+      ptr_in_thread += 4;
+    }
+    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
+      ptr_out_thread[0] = ptr_in_thread[0] / (1 + expf(-ptr_in_thread[0]));
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  LITE_PARALLEL_END();
+  float* ptr_out = dout + threads * nums_per_thread;
+  const float* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = ptr_in[0] / (1 + expf(-ptr_in[0]));
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

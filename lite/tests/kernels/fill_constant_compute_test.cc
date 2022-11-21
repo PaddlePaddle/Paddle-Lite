@@ -128,7 +128,7 @@ class FillConstantComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("fill_constant");
     if (!tensor_value_.empty()) {
       op_desc->SetInput("ValueTensor", {value_tensor_});
@@ -287,9 +287,6 @@ TEST(fill_constant, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)

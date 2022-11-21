@@ -97,7 +97,7 @@ class ScatterComputeTester : public arena::TestCase {
                   overwrite_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("scatter");
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Ids", {indexs_});

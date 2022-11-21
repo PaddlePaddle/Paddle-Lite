@@ -1,4 +1,4 @@
-# 晶晨 NPU 部署示例
+# 晶晨 NPU
 
 Paddle Lite 已支持晶晨 NPU 的预测部署。
 其接入原理是与之前华为 Kirin NPU、瑞芯微 Rockchip NPU 等类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 Amlogic NPU 组网 API 进行网络构建，在线生成并执行模型。

@@ -99,7 +99,7 @@ class ExpandV2ComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("expand_v2");
     op_desc->SetInput("X", {x_});
     if (!shape_tensor_.empty()) {

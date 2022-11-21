@@ -71,8 +71,11 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   // process new quant op pass: quantize_linear and dequantize_linear
   // pass1: input+quantize_linear+dequantize_linear --> input
-  fusion::QuantDequantLinearOpFuser quant_dequant_linear_fuser;
-  quant_dequant_linear_fuser(graph.get());
+  for (auto share_zero_point : {true, false}) {
+    fusion::QuantDequantLinearOpFuser quant_dequant_linear_fuser(
+        share_zero_point);
+    quant_dequant_linear_fuser(graph.get());
+  }
   // pass2: weight+dequantize_linear --> weight
   fusion::DequantLinearOpFuser dequantize_linear_fuser;
   dequantize_linear_fuser(graph.get());

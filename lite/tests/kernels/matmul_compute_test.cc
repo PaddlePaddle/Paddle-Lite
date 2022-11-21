@@ -285,7 +285,7 @@ class MatMulComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("matmul");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Y", {y_});
@@ -470,9 +470,6 @@ TEST(Matmul2x2, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -496,9 +493,6 @@ TEST(Matmul2x2_x_transpose, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -525,9 +519,6 @@ TEST(Matmul2x2_y_transpose, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -551,9 +542,6 @@ TEST(Matmul2x2_transpose, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -647,9 +635,6 @@ TEST(Matmulnxn, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

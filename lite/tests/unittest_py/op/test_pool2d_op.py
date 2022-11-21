@@ -105,7 +105,6 @@ class TestPool2dOp(AutoScanTest):
         exclusive = draw(st.booleans())
         ceil_mode = draw(st.booleans())
         adaptive = draw(st.booleans())
-        use_cudnn = False
         use_mkldnn = False
         use_quantizer = False
         is_test = True
@@ -133,7 +132,6 @@ class TestPool2dOp(AutoScanTest):
                 "paddings": paddings,
                 "exclusive": exclusive,
                 "adaptive": adaptive,
-                "use_cudnn": use_cudnn,
                 "ceil_mode": ceil_mode,
                 "use_mkldnn": use_mkldnn,
                 "use_quantizer": use_quantizer,

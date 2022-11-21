@@ -214,7 +214,7 @@ class GridSamplerComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("grid_sampler");
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Grid", {grid_});

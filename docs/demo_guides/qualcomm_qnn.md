@@ -1,4 +1,4 @@
-# 高通 QNN 部署示例
+# 高通 QNN
 
 Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA8295P）上进行预测部署。
 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Qualcomm QNN 组网 API 进行网络构建，在线生成并执行模型。
@@ -46,11 +46,16 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -60,12 +65,12 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 linux amd64
-            - image_classification_demo # 已编译好的，适用于 linux amd64 的示例程序
+            - demo # 已编译好的，适用于 linux amd64 的示例程序
           - build.qnx.arm64 # 已编译好的，适用于 qnx arm64
-            - image_classification_demo # 已编译好的，适用于 qnx arm64 的示例程序
+            - demo # 已编译好的，适用于 qnx arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -111,8 +116,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
               - lib
             - armhf
               ...
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
-      - yolo_detection_demo # 基于 yolov3 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
       - model_test # 基于简单模型测试的示例程序
       - tools # 工具库，包含模型处理工具、编译脚本和代码风格检查工具
   ```
@@ -127,30 +131,32 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
       ```shell
       $ unset FILE_TRANSFER_COMMAND
-      $ ./run.sh mobilenet_v1_int8_224_per_layer linux amd64 qualcomm_qnn
-        warmup: 1 repeat: 5, average: 1644.109009 ms, max: 1660.884033 ms, min: 1625.844971 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.456282
-        Top1  Egyptian cat - 0.456282
-        Top2  tiger cat - 0.070197
-        Preprocess time: 1.345000 ms
-        Prediction time: 1644.109009 ms
-        Postprocess time: 0.112000 ms
+      $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 qualcomm_qnn
+
+        Top1 Egyptian cat - 0.491380
+        Top2 tabby, tabby cat - 0.397784
+        Top3 tiger cat - 0.093596
+        Top4 lynx, catamount - 0.011700
+        Top5 tiger shark, Galeocerdo cuvieri - 0.000000
+        Preprocess time: 4.351000 ms, avg 4.351000 ms, max 4.351000 ms, min 4.351000 ms
+        Prediction time: 1570.060000 ms, avg 1570.060000 ms, max 1570.060000 ms, min 1570.060000 ms
+        Postprocess time: 5.100000 ms, avg 5.100000 ms, max 5.100000 ms, min 5.100000 ms
       ```
 
     - Qualcomm 8295P EVB ( Android )
 
       ```shell
       $ adb -s 858e5789 root
-      $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android arm64-v8a qualcomm_qnn 858e5789
-        warmup: 1 repeat: 5, average: 1.659400 ms, max: 2.342000 ms, min: 1.446000 ms
-        results: 3
-        Top0  Egyptian cat - 0.456282
-        Top1  tabby, tabby cat - 0.456282
-        Top2  tiger cat - 0.070197
-        Preprocess time: 1.171000 ms
-        Prediction time: 1.659400 ms
-        Postprocess time: 0.187000 ms
+      $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
+
+        Top1 Egyptian cat - 0.491380
+        Top2 tabby, tabby cat - 0.397784
+        Top3 tiger cat - 0.093596
+        Top4 lynx, catamount - 0.011700
+        Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
+        Preprocess time: 5.510000 ms, avg 5.510000 ms, max 5.510000 ms, min 5.510000 ms
+        Prediction time: 1.029000 ms, avg 1.029000 ms, max 1.029000 ms, min 1.029000 ms
+        Postprocess time: 4.644000 ms, avg 4.644000 ms, max 4.644000 ms, min 4.644000 ms
       ```
 
     - Qualcomm 8295P EVB ( QNX )
@@ -160,17 +166,18 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       $ adb -s 858e5789 root
       $ rm -rf ../assets/models/cache
       # 用于生成 cache 和 nb
-      $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android arm64-v8a qualcomm_qnn 858e5789 null cache
+      $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 null cache
       # 上板远程执行
-      $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
-        warmup: 1 repeat: 5, average: 1.200000 ms, max: 2.000000 ms, min: 1.000000 ms
-        results: 3
-        Top0  Egyptian cat - 0.456282
-        Top1  tabby, tabby cat - 0.456282
-        Top2  tiger cat - 0.070197
-        Preprocess time: 1.000000 ms
-        Prediction time: 1.200000 ms
-        Postprocess time: 0.000000 ms
+      $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
+
+        Top1 Egyptian cat - 0.491380
+        Top2 tabby, tabby cat - 0.397784
+        Top3 tiger cat - 0.093596
+        Top4 lynx, catamount - 0.011700
+        Top5 great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias - 0.000000
+        Preprocess time: 9.265000 ms, avg 9.265000 ms, max 9.265000 ms, min 9.265000 ms
+        Prediction time: 1.009000 ms, avg 1.009000 ms, max 1.009000 ms, min 1.009000 ms
+        Postprocess time: 11.492000 ms, avg 11.492000 ms, max 11.492000 ms, min 11.492000 ms
       ```
 
   - 将测试模型改为 **mobilenet_v1_fp32_224**，执行命令：
@@ -179,41 +186,44 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
       ```shell
       $ unset FILE_TRANSFER_COMMAND
-      $ ./run.sh mobilenet_v1_fp32_224 linux amd64 qualcomm_qnn
-        warmup: 1 repeat: 5, average: 686.677405 ms, max: 693.025024 ms, min: 680.283020 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.529133
-        Top1  Egyptian cat - 0.419681
-        Top2  tiger cat - 0.045172
-        Preprocess time: 0.951000 ms
-        Prediction time: 686.677405 ms
-        Postprocess time: 0.110000 ms
+      $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 qualcomm_qnn
+
+        Top1 Egyptian cat - 0.482870
+        Top2 tabby, tabby cat - 0.471596
+        Top3 tiger cat - 0.039779
+        Top4 lynx, catamount - 0.002430
+        Top5 ping-pong ball - 0.000508
+        Preprocess time: 3.691000 ms, avg 3.691000 ms, max 3.691000 ms, min 3.691000 ms
+        Prediction time: 554.162000 ms, avg 554.162000 ms, max 554.162000 ms, min 554.162000 ms
+        Postprocess time: 5.210000 ms, avg 5.210000 ms, max 5.210000 ms, min 5.210000 ms
       ```
 
     - Qualcomm 8295P EVB ( Android )
 
       ```shell
       $ adb -s 858e5789 root
-      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789
-        warmup: 1 repeat: 5, average: 10893.910547 ms, max: 10955.571289 ms, min: 10795.490234 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.529133
-        Top1  Egyptian cat - 0.419681
-        Top2  tiger cat - 0.045172
-        Preprocess time: 1.193000 ms
-        Prediction time: 10893.910547 ms
-        Postprocess time: 0.213000 ms
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
+
+        Top1 Egyptian cat - 0.482869
+        Top2 tabby, tabby cat - 0.471597
+        Top3 tiger cat - 0.039779
+        Top4 lynx, catamount - 0.002430
+        Top5 ping-pong ball - 0.000508
+        Preprocess time: 11.663000 ms, avg 11.663000 ms, max 11.663000 ms, min 11.663000 ms
+        Prediction time: 8529.121000 ms, avg 8529.121000 ms, max 8529.121000 ms, min 8529.121000 ms
+        Postprocess time: 10.063000 ms, avg 10.063000 ms, max 10.063000 ms, min 10.063000 ms
       
       # 以 FP16 方式运行
-      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true"
-        warmup: 1 repeat: 5, average: 1.883000 ms, max: 1.977000 ms, min: 1.847000 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.531738
-        Top1  Egyptian cat - 0.417480
-        Top2  tiger cat - 0.045013
-        Preprocess time: 1.329000 ms
-        Prediction time: 1.883000 ms
-        Postprocess time: 0.110000 ms
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true"
+
+        Top1 Egyptian cat - 0.482910
+        Top2 tabby, tabby cat - 0.471924
+        Top3 tiger cat - 0.039612
+        Top4 lynx, catamount - 0.002340
+        Top5 ping-pong ball - 0.000490
+        Preprocess time: 5.511000 ms, avg 5.511000 ms, max 5.511000 ms, min 5.511000 ms
+        Prediction time: 1.805000 ms, avg 1.805000 ms, max 1.805000 ms, min 1.805000 ms
+        Postprocess time: 4.213000 ms, avg 4.213000 ms, max 4.213000 ms, min 4.213000 ms
       ```
 
     - Qualcomm 8295P EVB ( QNX )
@@ -223,34 +233,35 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       $ adb -s 858e5789 root
       $ rm -rf ../assets/models/cache
       # 用于生成 cache 和 nb
-      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 null cache
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 null cache
       # 上板远程执行
-      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
-        warmup: 1 repeat: 5, average: 10910.345508 ms, max: 11007.915039 ms, min: 10865.540039 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.529133
-        Top1  Egyptian cat - 0.419681
-        Top2  tiger cat - 0.045172
-        Preprocess time: 1.000000 ms
-        Prediction time: 10910.345508 ms
-        Postprocess time: 0.000000 ms
+      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
+
+        Top1 Egyptian cat - 0.482871
+        Top2 tabby, tabby cat - 0.471595
+        Top3 tiger cat - 0.039779
+        Top4 lynx, catamount - 0.002430
+        Top5 ping-pong ball - 0.000508
+        Preprocess time: 38.618000 ms, avg 38.618000 ms, max 38.618000 ms, min 38.618000 ms
+        Prediction time: 8472.844000 ms, avg 8472.844000 ms, max 8472.844000 ms, min 8472.844000 ms
+        Postprocess time: 13.605000 ms, avg 13.605000 ms, max 13.605000 ms, min 13.605000 ms
       
       # 以 FP16 方式运行
       $ rm -rf ../assets/models/cache
-      $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
-      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
-        warmup: 1 repeat: 5, average: 1.600000 ms, max: 2.000000 ms, min: 1.000000 ms
-        results: 3
-        Top0  tabby, tabby cat - 0.531738
-        Top1  Egyptian cat - 0.417480
-        Top2  tiger cat - 0.045013
-        Preprocess time: 1.000000 ms
-        Prediction time: 1.600000 ms
-        Postprocess time: 0.000000 ms
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
+      $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
+
+        Top1 Egyptian cat - 0.482910
+        Top2 tabby, tabby cat - 0.471924
+        Top3 tiger cat - 0.039612
+        Top4 lynx, catamount - 0.002340
+        Top5 ping-pong ball - 0.000490
+        Preprocess time: 8.393000 ms, avg 8.393000 ms, max 8.393000 ms, min 8.393000 ms
+        Prediction time: 1.689000 ms, avg 1.689000 ms, max 1.689000 ms, min 1.689000 ms
+        Postprocess time: 10.612000 ms, avg 10.612000 ms, max 10.612000 ms, min 10.612000 ms
       ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
@@ -422,6 +433,10 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   - QUALCOMM_QNN_DEVICE_TYPE:
 
     指定使用的高通设备，Options: "CPU", "GPU", "DSP", "HTP"。
+  
+  - QUALCOMM_QNN_DEVICE_ID:
+
+    指定使用选择的高通设备 "id" 号。
 
   - QUALCOMM_QNN_LOG_LEVEL:
 
@@ -435,6 +450,96 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
     指定是否开启 FP16 功能，Options:  "true", "false", "1", "0"。
 
+- 其他
+  - 子图分割配置
+    ```
+    Description:
+        Specify the configuration file path or buffer for the subgraph segmentation,
+    it lists the operators that are forced to use the CPU, an example is shown as
+    below:
+        op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+        op_type::out_var_name_0
+        op_type:in_var_name_0
+    ```
+
+    - SUBGRAPH_PARTITION_CONFIG_FILE 
+  
+      设置子图分割配置文件路径, 强制某些算子运行在 cpu 上。
+  
+    - SUBGRAPH_PARTITION_CONFIG_BUFFER
+    
+      设置子图分割配置缓冲区, 强制某些算子运行在 cpu 上。
+
+
+  - subgraph 算子参数保存设置
+     ```
+      Description:
+        The original weight/local/unused variables in the subblock of the subgraph op
+      will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to true(default) during
+      the analysis phase, it ensure the ops in the subblock can be converted to the
+      target device model online during the execution phase.
+    ```
+
+    - SUBGRAPH_ONLINE_MODE
+
+      当 SUBGRAPH_ONLINE_MODE 设置为 true 时, subgraph 算子会保存原始模型权重、变量等信息存储到 nb 模型中。  
+      当 SUBGRAPH_ONLINE_MODE 设置为 false 时, subgraph 算子不会保存原始模型权重、变量等信息存储到 nb 模型中。
+
+  - 量化相关配置
+    ```
+    Description:
+      Due to various reasons (such as bugs from PaddleSlim), some ops in the model
+    lack quantization parameters. Optionally, the missing quantization parameters
+    can be completed by the following rules.
+    (a) Complete the output scale from the input scale of its consumer ops.
+    (b) Complete the output scale from the user-defined configurations.
+    (c) Complete the output scale from its out_threshold attribute.
+    (d) Complete the input scale from the output scale of its producer op.
+    (e) Complete the output scale according to the input scale, or complete the
+    input scale according to the output scale, because the input scale and output
+    scale of some ops should be the same.
+    (f) Complete the output scale according to the formula of some special ops
+    themselves.
+    QUANT_AUTO_COMPLETE_SCALE_LEVEL support the following level:
+    "0", default to apply the rule (a)(c)(d);
+    "1", apply the rule (a)(c)(d) and set the output scale even if the op has no
+    out_thresold attribute;
+    "2", apply the rule (a)(c)(d)(e) and set the output scale even if the op has
+    no out_thresold attribute;
+    "3", apply the rule (a)(c)(d)(e)(f) and set the output scale even if the op
+    has no out_thresold attribute;
+    ```
+    - QUANT_AUTO_COMPLETE_SCALE_LEVEL
+
+      设置量化信息补全方式的算法。
+
+    - QUANT_AUTO_COMPLETE_SCALE_CONFIG_FILE
+
+      量化信息补全自定义配置文件路径设置。
+
+    - QUANT_AUTO_COMPLETE_SCALE_CONFIG_BUFFER
+
+      量化信息补全自定义配置缓冲区设置。
+
+  - 混合精度相关配置
+    ```
+    Description:
+      Specify the configuration file path or buffer for the mixed precision
+      quantization, it lists the operators that enforce fp32 precision, an example
+      is shown as below:
+      op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+      op_type::out_var_name_0
+      op_type:in_var_name_0
+      op_type
+    ```
+    - MIXED_PRECISION_QUANTIZATION_CONFIG_FILE
+
+      混合精度自定义配置文件路径设置。
+
+    - MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER
+    
+      混合精度自定义配置缓冲区设置。
+
 ## FAQ
 ### 1. 在 QNX 系统上面使用 HTP 推理, 设置 DSP 运行库路径变量
 - 指定 DSP 运行库设置如下变量
@@ -446,6 +551,19 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
   ```
 
 - 如果设置上述变量后，还是会有环境问题导致推理异常（非 Demo 本身问题），该问题一般发生在 QNN SDK 版本切换时(例如: QNN SDK v1.12 <-> QNN SDK v1.15 版本之间的切换)，可以将 <path/to/qnn-v1.15.0.220706112757_38277>/target/hexagon-v68/lib/unsigned/libQnnHtp* 拷贝到板子上 /mnt/etc/images/cdsp0 路径下。如果遇到权限问题拷贝失败，可以通过在 QNX 中执行 `mount -uw /mnt` 命令解决。
+
+### 2. 使用 UINTT8 类型和 NHWC 格式数据进行模型部署
+
+  - Step1. 使用 [insert_transpose_op_for_qnn_int8_nhwc_deploy.py](https://paddlelite-demo.bj.bcebos.com/devices/qualcomm_qnn/insert_transpose_op_for_qnn_int8_nhwc_deploy.py) 更改模型输入输出的 tensor 类型，将原始 float32 类型改写成 int8 类型，并且插入 transpose 算子。
+  - Step2. 部署 demo 中创建输入输出 tensor 时，使用 mutable_tensor<int8>() 分配 buffer, 然后将 uint8 类型的数据写入到该 tensor buffer 中。
+  - Step3.（可选）在执行部署 demo 时，根据实际情况，看是否需要对模型量化信息进行自动补全，设置相应的环境变量。例如： 
+    `export QUANT_AUTO_COMPLETE_SCALE_LEVEL=3`
+  - Step4. 额外设置 QUALCOMM_QNN_SKIP_SYMM2ASYMM=1, Demo 执行时通过 NNADAPTER_CONTEXT_PROPERTIES 变量设置。
+  
+### 3. 使用 cache 文件部署，减小模型运行时内存占用。
+  - Step1. 参考 demo 部署示例中相关接口 (set_nnadapter_model_cache_dir) 设置 model_cache_dir, 执行 demo 运行成功后，会生成目标硬件的 cache 文件(.nnc文件) 和未被精简优化的 nb 文件。
+  - Step2. 将生成的 cache 文件(.nnc 文件) 推送到目标硬件上进行部署，并且设置 SUBGRAPH_ONLINE_MODE=false (nb 模型不保存权重等信息，仅保留网络拓扑结构，因为权重相关信息已经在模型生成阶段存储到 cache 文件中), 生成精简过的 nb 文件，观察 nb 文件大小是否显著减小。
+  - Step3. 使用 Step2 执行后产生精简过的 nb 模型替换 Step1 未被精简优化过的模型再次进行加载推理，观察内存变化。
 
 ## 其它说明
 

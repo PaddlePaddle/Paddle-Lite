@@ -1,4 +1,4 @@
-# 华为昇腾 NPU 部署示例
+# 华为昇腾 NPU
 
 Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
 
@@ -290,11 +290,16 @@ $ npu-smi info
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -304,12 +309,12 @@ $ npu-smi info
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
           - build.linux.arm64 # 已编译好的，适用于 arm64
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -326,9 +331,6 @@ $ npu-smi info
                 - huawei_ascend_npu # 华为昇腾 NPU CANN 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libhuawei_ascend_npu.so # NNAdapter device HAL 库
-                - libiomp5.so # Intel OpenMP 库
-                - libmklml_intel.so # Intel MKL 库
-                - libmklml_gnu.so # GNU MKL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -337,7 +339,7 @@ $ npu-smi info
             - armhf
               ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
   
@@ -351,60 +353,65 @@ $ npu-smi info
     
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
-      warmup: 1 repeat: 1, average: 44.949001 ms, max: 44.949001 ms, min: 44.949001 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529132
-      Top1  Egyptian cat - 0.419680
-      Top2  tiger cat - 0.045172
-      Preprocess time: 1.017000 ms
-      Prediction time: 44.949001 ms
-      Postprocess time: 0.171000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 Egyptian cat - 0.482870
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 4.342000 ms, avg 4.342000 ms, max 4.342000 ms, min 4.342000 ms
+    Prediction time: 29.534000 ms, avg 29.534000 ms, max 29.534000 ms, min 29.534000 ms
+    Postprocess time: 5.343000 ms, avg 5.343000 ms, max 5.343000 ms, min 5.343000 ms
+
   (intel x86 cpu + ascend npu)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 huawei_ascend_npu
-      warmup: 1 repeat: 1, average: 2.079000 ms, max: 2.079000 ms, min: 2.079000 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529785
-      Top1  Egyptian cat - 0.418945
-      Top2  tiger cat - 0.045227
-      Preprocess time: 1.132000 ms
-      Prediction time: 2.079000 ms
-      Postprocess time: 0.251000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 huawei_ascend_npu
+
+    Top1 Egyptian cat - 0.481201
+    Top2 tabby, tabby cat - 0.473633
+    Top3 tiger cat - 0.039490
+    Top4 lynx, catamount - 0.002373
+    Top5 ping-pong ball - 0.000494
+    Preprocess time: 9.980000 ms, avg 9.980000 ms, max 9.980000 ms, min 9.980000 ms
+    Prediction time: 1.896000 ms, avg 1.896000 ms, max 1.896000 ms, min 1.896000 ms
+    Postprocess time: 12.735000 ms, avg 12.735000 ms, max 12.735000 ms, min 12.735000 ms
   
   For arm64
   (鲲鹏 920 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
-      warmup: 1 repeat: 1, average: 34.160999 ms, max: 34.160999 ms, min: 34.160999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529131
-      Top1  Egyptian cat - 0.419681
-      Top2  tiger cat - 0.045173
-      Preprocess time: 0.571000 ms
-      Prediction time: 34.160999 ms
-      Postprocess time: 0.081000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 5.275000 ms, avg 5.275000 ms, max 5.275000 ms, min 5.275000 ms
+    Prediction time: 34.873000 ms, avg 34.873000 ms, max 34.873000 ms, min 34.873000 ms
+    Postprocess time: 4.720000 ms, avg 4.720000 ms, max 4.720000 ms, min 4.720000 ms
+
   (鲲鹏 920 cpu + ascend npu)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 huawei_ascend_npu
-      warmup: 1 repeat: 1, average: 1.555000 ms, max: 1.555000 ms, min: 1.555000 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529785
-      Top1  Egyptian cat - 0.418945
-      Top2  tiger cat - 0.045227
-      Preprocess time: 0.605000 ms
-      Prediction time: 1.555000 ms
-      Postprocess time: 0.093000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 huawei_ascend_npu
+
+    Top1 Egyptian cat - 0.481201
+    Top2 tabby, tabby cat - 0.473633
+    Top3 tiger cat - 0.039490
+    Top4 lynx, catamount - 0.002373
+    Top5 ping-pong ball - 0.000494
+    Preprocess time: 5.237000 ms, avg 5.237000 ms, max 5.237000 ms, min 5.237000 ms
+    Prediction time: 1.442000 ms, avg 1.442000 ms, max 1.442000 ms, min 1.442000 ms
+    Postprocess time: 4.583000 ms, avg 4.583000 ms, max 4.583000 ms, min 4.583000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
 
   ```shell
   (intel x86 cpu + ascend npu)
-  $ ./run.sh resnet50_fp32_224 linux amd64 huawei_ascend_npu
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 huawei_ascend_npu
   (鲲鹏 920 cpu + ascend npu)
-  $ ./run.sh resnet50_fp32_224 linux arm64 huawei_ascend_npu
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 huawei_ascend_npu
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
@@ -490,7 +497,7 @@ $ npu-smi info
 
     CANN 早期版本实现的不是真正意义上的动态 shape，而是基于档位方式提供有限的模型输入 shape 范围。
 
-    **使用方式：**假设模型有三个输入，输入名分别为 x1、x2 和 x3（模型实际输入名需用 Netron 可视化模型后查看），模型想在 64，128，192，224 四个档位下推理。
+    **使用方式：** 假设模型有三个输入，输入名分别为 x1、x2 和 x3（模型实际输入名需用 Netron 可视化模型后查看），模型想在 64，128，192，224 四个档位下推理。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -507,7 +514,7 @@ $ npu-smi info
 
     在最新的 CANN 版本，昇腾提供了 Shape Range 特性，实现了更广泛意义上的动态 shape。但该特性还未成熟，调通的模型有限，开发者若有兴趣可自行尝试。
 
-    **使用方式一：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
+    **使用方式一：** 假设模型有两个输入，输入名分别为 x1 和 x2 ，设置模型输入 shape 范围时，注意第一列为 shape 最小值，第二列为 shape 最大值，需在nnadapter_context_properties里设置HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE =true 开启 shape range 特性。
 
     下例表示 x1 输入的最后一个维度在[100,150]的范围变化，x2 输入的最后一个维度在[25,50]的范围变化。
 
@@ -523,7 +530,7 @@ $ npu-smi info
     mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
     ```
 
-    **使用方式二：**假设模型有两个输入，输入名分别为 x1 和 x2 ，设置输入 shape 范围时，如果用户不想指定维度的取值，则可以将其设置为-1，表示此维度可以使用>=1的任意取值，需设置nnadapter_context_properties，开启DYNAMIC_SHAPE_RANGE特性。
+    **使用方式二：** 假设模型有两个输入，输入名分别为 x1 和 x2 ，设置输入 shape 范围时，如果用户不想指定维度的取值，则可以将其设置为-1，表示此维度可以使用>=1的任意取值，需设置nnadapter_context_properties，开启DYNAMIC_SHAPE_RANGE特性。
 
     ```c++
     // Run inference by using light api with MobileConfig
@@ -532,7 +539,7 @@ $ npu-smi info
     std::map<std::string, std::vector<std::vector<int64_t>>> dynamic_shape_info;
     std::string nnadapter_context_properties = "HUAWEI_ASCEND_NPU_ENABLE_DYNAMIC_SHAPE_RANGE=true"
     dynamic_shape_info["x1"] = {{1,3,32,-1}};
-    dynamic_shape_info["x2"] = {{1,3,-1};
+    dynamic_shape_info["x2"] = {{1,3,-1}};
     mobile_config.set_nnadapter_dynamic_shape_info(dynamic_shape_info);
     mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
     ```
