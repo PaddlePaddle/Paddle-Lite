@@ -8,9 +8,9 @@
 
 但良好的软件生态是 AI 硬件获得成功的关键，它不仅取决于硬件厂商自身软件栈的成熟度，更依赖于是否能够获得深度学习框架的广泛支持，因为后者能够帮助用户简化业务部署过程，降低因硬件差异带来的迁移成本，快速获得更高的性能和能效收益，但如何让厂商以较低成本快速完成硬件适配，又是对深度学习框架提出的一个考验。
 
-目前，飞桨推理框架根据硬件厂商提供的接口层级，将硬件适配分为算子和子图两种方式：前者一般适用于 CPU 、GPU 这类提供低级接口的如通用编程语言/指令集、数学库和算子库的硬件；后者则适用于提供图级别如模型组网、生成接口的硬件，例如：英伟达的 TensorRT、华为昇腾的 CANN 的 GE graph 和英特尔的 OpenVINO 等，它的优点是屏蔽了硬件细节，模型的优化、生成和执行均由厂商的 SDK 完成，对负责硬件适配的研发人员的能力要求较低，让推理框架更多关注通用优化方法的研究和框架的开发。
+目前，飞桨推理框架根据硬件厂商提供的接口层级，将硬件适配分为算子和子图两种方式：前者一般适用于 CPU 、GPU 这类提供低级接口的如通用编程语言/指令集、数学库和算子库的硬件；后者则适用于提供图级别如模型组网、生成接口的硬件，例如：英伟达的 TensorRT、华为昇腾的 CANN 的 GE graph 和 Intel OpenVINO 等，它的优点是屏蔽了硬件细节，模型的优化、生成和执行均由厂商的 SDK 完成，对负责硬件适配的研发人员的能力要求较低，让推理框架更多关注通用优化方法的研究和框架的开发。
 
-近两年来，飞桨轻量推理框架 Paddle Lite 基于子图方式完成了华为昇腾 NPU、华为麒麟 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 和比特大陆 NPU 等硬件的适配，但在与硬件厂商合作过程中，逐渐发现了该方案的一些不足之处，主要涉及以下两个方面：
+近两年来，飞桨轻量推理框架 Paddle Lite 基于子图方式完成了华为昇腾 NPU、华为麒麟 NPU 、芯原 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 等硬件的适配，但在与硬件厂商合作过程中，逐渐发现了该方案的一些不足之处，主要涉及以下两个方面：
 - 适配门槛高、沟通成本高
   - 要求硬件厂商深入了解推理框架的内部实现、运行机制和编译系统；
   - 硬件厂商获取推理框架的模型、算子定义、量化实现方式等信息所花费的沟通成本较高。
@@ -384,14 +384,14 @@ typedef struct Device {
 
 ## 基于 NNAdapter 的硬件适配实践
 ### 一般流程
-- 从 [driver](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver) 目录中的复制一份 HAL 作为参考（AI 加速卡类硬件可以参考华为昇腾 NPU `huawei_ascend_npu` ， SoC 类硬件可以参考晶晨 NPU `amlogic_npu` 或 华为麒麟 NPU `huawei_kirin_npu` ）。
+- 从 [driver](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver) 目录中的复制一份 HAL 作为参考（AI 加速卡类硬件可以参考华为昇腾 NPU `huawei_ascend_npu` ， SoC 类硬件可以参考华为麒麟 NPU `huawei_kirin_npu` ）。
 
 - 基于参考硬件的 HAL 代码开发目标硬件的 HAL ，主要涉及 cmake 脚本的修改、 设备接口的实现（设备初始化、模型转换、编译和执行）。
   - 模型转换：将 NNAdapter HAL 中的 `Model` 转成厂商 SDK 中的模型的表示，其工作主要在于实现 `Operation` 到厂商 SDK 中的算子的表示的转换器，例如：华为昇腾 NPU HAL 中的 `NNADAPTER_ADD` 操作符到 CANN SDK 的 `ge::op::Add` 的转换，代码涉及以下三个部分：
     - [NNADAPTER_ADD 到 ge::op::Add 的转换器的实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/converter/elementwise.cc#L23) 和 [NNADAPTER_ADD 到 ge::op::Add 的转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/backends/nnadapter/nnadapter/src/driver/huawei_ascend_npu/converter/all.h#L21) ：在 HAL 层的 `Model` 到厂商 SDK 模型转换步骤的 `Operation` 转换过程中，用于保证正确调用指定的转换器生成并添加厂商 SDK 的算子表示，进而基于厂商 SDK 完成模型转换。
     - [Paddle 算子 elementwise_add 到 NNADAPTER_ADD 转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/ede855cb5bf602cbfb3c4e5fb59997f78ec19b81/lite/kernels/nnadapter/converter/all.h#L98)  ：具体是在转换器注册的设备名称字串中添加目标硬件的名称，其主要用于在 Paddle 模型的子图分割阶段中告诉子图分割算法哪些 Paddle 算子可以放在哪些硬件上执行，即哪些算子可以融合成一个 NNAdapter 子图，且在 NNAdapter 算子 Kernel 执行时，能够该子图转换为 NNAdapter 模型，进而传递到硬件的 HAL 层做进一步的转换。
 
-- 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需开发一个 `NNADAPTER_SOFTMAX` 的转换器即可），需要验证 HAL 层到厂商 SDK 的链路是否打通，为方便厂商和用户测试，我们提供了包含图像分类和目标检测模型的 Demo 的压缩包，它支持 NNAdapter 目前已支持的所有硬件，覆盖 x86 Linux 、ARM Linux 和 Android 系统，可以本地执行或基于 ssh 或 adb 方式推送到远端设备上执行，各硬件的文档均涉及 Demo 的使用方法，具体可以访问：[华为昇腾 NPU](../demo_guides/huawei_ascend_npu) 、[华为麒麟 NPU](../demo_guides/huawei_kirin_npu) 、[晶晨 NPU](../demo_guides/amlogic_npu) 、[瑞芯微 NPU](../demo_guides/rockchip_npu) 、[联发科 APU](../demo_guides/mediatek_apu) 和[颖脉 NNA](../demo_guides/imagination_nna) 等。
+- 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需开发一个 `NNADAPTER_SOFTMAX` 的转换器即可），需要验证 HAL 层到厂商 SDK 的链路是否打通，为方便厂商和用户测试，我们提供了包含图像分类和目标检测模型的 Demo 的压缩包，它支持 NNAdapter 目前已支持的所有硬件，覆盖 x86 Linux 、ARM Linux 和 Android 系统，可以本地执行或基于 ssh 或 adb 方式推送到远端设备上执行，各硬件的文档均涉及 Demo 的使用方法，具体可以访问：[华为昇腾 NPU](../demo_guides/huawei_ascend_npu) 、[华为麒麟 NPU](../demo_guides/huawei_kirin_npu) 、[联发科 APU](../demo_guides/mediatek_apu) 和[颖脉 NNA](../demo_guides/imagination_nna) 等。
   - 模型、算子转换器调试方法：调试 Demo 中的模型有时候并不是一帆风顺，可能在模型转换过程中出现 `core dump` ，也可能在模型跑通后发现结果无法与 CPU 结果对齐，这些问题尝尝源于部分 NNAdapter 操作符到厂商 SDK 算子的转换器的 BUG 导致的，有效的解决办法是：先将模型中所有 Paddle 算子强制跑在 CPU 上，然后根据模型拓扑顺序，逐步将 Paddle 算子放在目标硬件上执行，通过二分法、排除法最终定位到有问题的算子转换器上，具体可以参考上一章节中『自定义子图分割』。
 
 - 添加算子、模型的单元测试
