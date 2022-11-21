@@ -112,25 +112,15 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 
 
 - [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)
 
-## 瑞芯微 (Rockchip) NPU
-
-Paddle Lite 支持 瑞芯微 (Rockchip) NPU，支持列表如下：
-- 支持芯片：RK1808, RK1806，暂不支持 RK3399Pro
-- 支持设备：RK1808/1806 EVB，TB-RK1808S0
-
-### 瑞芯微 (Rockchip) NPU 环境准备及示例程序
-
-- [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
-
 ## 英特尔 (Intel) OpenVINO
 
-Paddle Lite 支持英特尔 OpenVINO 预测部署
+Paddle Lite 支持Intel OpenVINO 预测部署
 - 支持设备:
   - CPU, CPU 型号可查看 OpenVINO [官方数据](https://github.com/openvinotoolkit/openvino#supported-hardware-matrix)
 
 ### 英特尔 (Intel) OpenVINO 示例程序
 
-- [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)
+- [Paddle Lite 使用Intel OpenVINO 预测部署](../demo_guides/intel_openvino)
 
 ## Android NNAPI
 
@@ -159,15 +149,6 @@ Paddle Lite 支持 芯原 TIM-VX，支持列表如下：
 ### 芯原 TIM-VX 环境准备及示例程序
 
 - [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
-
-## 晶晨（Amlogic）NPU
-
-Paddle Lite 支持 晶晨（Amlogic）NPU, 支持列表如下：
-- 支持芯片：C308X，A311D，S905D3(Android 版本)
-
-### 晶晨（Amlogic）NPU 环境准备及示例程序
-
-- [Paddle Lite 使用 Amlogic NPU 预测部署](../demo_guides/amlogic_npu)
 
 ## 颖脉 (Imagination) NNA
 

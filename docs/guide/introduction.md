@@ -34,25 +34,23 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
 
 根据目标设备，您可以参阅以下指南：
 
-- Android：请浏览 [Android 工程示例](../demo_guides/android_app_demo)
-- iOS：请浏览 [iOS 工程示例](../demo_guides/ios_app_demo)
-- 嵌入式 Linux：请浏览 [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
+- Android：请浏览 [Android apps](../demo_guides/android_app_demo)
+- iOS：请浏览 [iOS apps](../demo_guides/ios_app_demo)
+- 嵌入式 Linux：请浏览 [Linux apps](../demo_guides/linux_arm_demo)
 - windows、macOS、Linux 等 x86 架构的 CPU 主机： 请浏览 [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
 - AI 加速芯片
-  - 昆仑芯 XPU ：请浏览 [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
-  - 昆仑芯 XTCL ：请浏览 [Paddle Lite 使用昆仑芯 XTCL 预测部署](../demo_guides/kunlunxin_xtcl)
   - 华为麒麟 NPU ：请浏览 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)
   - 华为昇腾 NPU ：请浏览 [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)
-  - 瑞芯微 NPU ：请浏览 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
+  - 昆仑芯 XPU ：请浏览 [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
+  - 昆仑芯 XTCL ：请浏览 [Paddle Lite 使用昆仑芯 XTCL 预测部署](../demo_guides/kunlunxin_xtcl)
   - 联发科 APU ：请浏览 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)
   - 颖脉 NNA ：请浏览 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)
   - 高通 QNN ：请浏览 [Paddle Lite 使用高通 QNN 预测部署](../demo_guides/qualcomm_qnn)
   - 寒武纪 MLU ：请浏览 [Paddle Lite 使用寒武纪 MLU 预测部署](../demo_guides/cambricon_mlu)
   - 亿智 NPU ：请浏览 [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)
-  - 英特尔 OpenVINO ：请浏览 [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)
+  - Intel OpenVINO ：请浏览 [Paddle Lite 使用Intel OpenVINO 预测部署](../demo_guides/intel_openvino)
   - 安卓 NNAPI ：请浏览 [Paddle Lite 使用 Android NNAPI 预测部署](../demo_guides/android_nnapi)
-  - 芯原 NPU：请浏览 [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
-  - 晶晨 NPU ：请浏览 [Paddle Lite 使用 Amlogic NPU 预测部署](../demo_guides/amlogic_npu)
+  - (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX：请浏览 [Paddle Lite 使用 芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)
 
 ## 技术路线
 

@@ -169,11 +169,17 @@
 ## 华为麒麟 NPU 的性能数据
 请参考 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
 
-## 瑞芯微 NPU 的性能数据
-请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
+## 昆仑芯 XPU 的性能数据
+请参考 [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)的最新性能数据
 
-## 晶晨 NPU 的性能数据
-请参考 [Paddle Lite 使用晶晨 NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
+## 昆仑芯 XTCL 的性能数据
+请参考 [Paddle Lite 昆仑芯 XTCL 预测部署](../demo_guides/kunlunxin_xtcl)的最新性能数据
+
+## 高通 QNN 的性能数据
+请参考 [Paddle Lite 使用高通 QNN 预测部署](../demo_guides/qualcomm_qnn)的最新性能数据
+
+## 寒武纪 MLU 的性能数据
+请参考 [Paddle Lite 寒武纪 MLU 预测部署](../demo_guides/cambricon_mlu)的最新性能数据
 
 ## 芯原 TIM-VX 的性能数据
 请参考 [Paddle Lite 使用芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)的最新性能数据
@@ -187,8 +193,8 @@
 ## 颖脉 NNA 的性能数据
 请参考 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)的最新性能数据
 
-## 英特尔 OpenVINO 的性能数据
-请参考 [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)的最新性能数据
+## Intel OpenVINO 的性能数据
+请参考 [Paddle Lite 使用Intel OpenVINO 预测部署](../demo_guides/intel_openvino)的最新性能数据
 
 ## 亿智 NPU 的性能数据
 请参考 [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)的最新性能数据

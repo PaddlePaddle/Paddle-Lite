@@ -526,25 +526,21 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
-                                                  "kBM",
                                                   "kMLU",
-                                                  "kIntelFPGA",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
-                                                  "rockchip_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
-                                                  "amlogic_npu",
                                                   "verisilicon_timvx",
                                                   "eeasytech_npu",
                                                   "android_nnapi",
                                                   "qualcomm_qnn",
                                                   "kunlunxin_xtcl"};
   const std::vector<std::string> readable_valid_targets = {
-      "ARM",       "OpenCL",      "Metal",         "百度XPU",    "Host",
-      "X86",       "比特大陆NPU", "寒武纪MLU",     "英特尔FPGA", "华为昇腾NPU",
-      "联发科APU", "瑞芯微NPU",   "华为麒麟NPU",   "颖脉NNA",    "晶晨NPU",
-      "TIM-VX",    "亿智NPU",     "Android NNAPI", "高通QNN",    "昆仑芯XTCL"};
+      "ARM",       "OpenCL",      "Metal",         "百度XPU",      "Host",
+      "X86",       "寒武纪MLU",    "华为昇腾NPU",    "联发科APU",     "华为麒麟NPU", 
+      "颖脉NNA",    "TIM-VX",      "亿智NPU",     "Android NNAPI",  "高通QNN",
+      "昆仑芯XTCL"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
