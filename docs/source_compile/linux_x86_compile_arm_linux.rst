@@ -28,7 +28,7 @@ Linux x86 环境下编译适用于 ARM Linux 的库
    * - Host 环境
      - 目标硬件环境
    * - x86 Linux
-     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/support_hardware.html>`_\ 章节。
+     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://www.paddlepaddle.org.cn/lite/develop/quick_start/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
@@ -177,8 +177,6 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 
 .. include:: include/multi_device_support/opencl.rst
 
-.. include:: include/multi_device_support/intel_fpga.rst
-
 .. include:: include/multi_device_support/kunlunxin_xpu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_introduction.rst
@@ -186,10 +184,6 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_huawei_ascend_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_imagination_nna.rst
-
-.. include:: include/multi_device_support/nnadapter_support_rockchip_npu.rst
-
-.. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst
 
