@@ -121,7 +121,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
                           filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-  } else if (groups_ > 1 || dilation_h_ > 1 && dilation_w_ > 1) {
+  } else if (groups_ > 1 || (dilation_h_ > 1 && dilation_w_ > 1)) {
     CHECK_EQ(filter_tensor_n_ % groups_, 0);
     kernel_name_ = "group_conv2d_transpose";
     is_group_conv_ = true;
