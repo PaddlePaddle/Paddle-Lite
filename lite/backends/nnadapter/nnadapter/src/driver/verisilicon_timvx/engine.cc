@@ -42,16 +42,16 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // as -1.0f, user can modify the threshold by context_property or ENV
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-#define BN_FUSION_THRESHOLD \
-  VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
-  if (key_values.count(BN_FUSION_THRESHOLD)) {
-    batchnorm_fusion_max_allowed_quant_scale_deviation_ =
-        string_parse<double>(key_values[BN_FUSION_THRESHOLD]);
+  if (key_values.count(
+          VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {  // NOLINT
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = string_parse<double>(
+        key_values
+            [VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);  // NOLINT
   } else {
-    batchnorm_fusion_max_allowed_quant_scale_deviation_ =
-        GetDoubleFromEnv(BN_FUSION_THRESHOLD, -1.0f);
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = GetDoubleFromEnv(
+        VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION,
+        -1.0f);
   }
-#undef BN_FUSION_THRESHOLD
   NNADAPTER_LOG(INFO) << "bn_fusion_max_allowed_quant_scale_deviation: "
                       << batchnorm_fusion_max_allowed_quant_scale_deviation_;
 }
