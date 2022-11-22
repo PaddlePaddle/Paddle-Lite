@@ -38,18 +38,20 @@ namespace verisilicon_timvx {
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // By dafault, set the
-  // TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
-  // as 1000, user can modify the threshold by context_property or ENV
+  // VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
+  // as -1.0f, user can modify the threshold by context_property or ENV
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-  if (key_values.count(
-          TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {
-    batchnorm_fusion_max_allowed_quant_scale_deviation_ = string_parse<double>(
-        key_values[TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);
+#define VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION \
+  BN_FUSION_THRESHOLD
+  if (key_values.count(BN_FUSION_THRESHOLD)) {
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ =
+        string_parse<double>(key_values[BN_FUSION_THRESHOLD]);
   } else {
-    batchnorm_fusion_max_allowed_quant_scale_deviation_ = GetDoubleFromEnv(
-        TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION, 1000.f);
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ =
+        GetDoubleFromEnv(BN_FUSION_THRESHOLD, -1.0f);
   }
+#undef VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
   NNADAPTER_LOG(INFO) << "bn_fusion_max_allowed_quant_scale_deviation: "
                       << batchnorm_fusion_max_allowed_quant_scale_deviation_;
 }
