@@ -4,7 +4,7 @@ about: 您可以提问模型转换的使用报错等问题。You could use this 
 
 ---
 
-为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题: [历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://paddle-lite.readthedocs.io/zh/develop/quick_start/faq.html), [官方文档](https://paddle-lite.readthedocs.io/zh/develop/guide/introduction.html)
+为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题: [历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://www.paddlepaddle.org.cn/lite/develop/quick_start/faq.html), [官方文档](https://www.paddlepaddle.org.cn/lite/develop/guide/introduction.html)
 
 建立 issue 时，为快速解决问题，请您根据使用情况给出如下信息：
 - 标题：简洁、精准描述您的问题，例如“ssd 模型转换报错”

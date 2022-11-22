@@ -260,7 +260,7 @@ class MobileConfig;
 
 `MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、模型的内存地址（从内存加载模型时使用）、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用 [Model Optimize Tool](https://www.paddlepaddle.org.cn/lite/develop/user_guides/model_optimize_tool.html) 转化为 NaiveBuffer 格式的优化模型。*
+*注意：输入的模型需要使用 [Model Optimize Tool](../user_guides/model_optimize_tool) 转化为 NaiveBuffer 格式的优化模型。*
 
 示例：
 
@@ -646,7 +646,7 @@ virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const =
 
 根据名称获取输出Tensor的指针。
 
-**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](https://www.paddlepaddle.org.cn/lite/develop/user_guides/model_optimize_tool.html)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
+**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](../user_guides/model_optimize_tool)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
 
 
 - 参数
