@@ -4,7 +4,7 @@
 
 1、编译 Paddle Lite 报错怎么办？
 
-答：不推荐用户自己编译，推荐使用预编译库 [Paddle Lite 预编译库下载](https://www.paddlepaddle.org.cn/lite/develop/quick_start/release_lib.html)
+答：不推荐用户自己编译，推荐使用预编译库 [Paddle Lite 预编译库下载](./release_lib)
 
 2、遇到 Check failed: op: no Op found for xxx Aborted (core dumped) 问题怎么办？
 
@@ -32,7 +32,7 @@
 
 1、Paddle Lite 相关资料：
 
-答：Paddle Lite 文档 [Paddle Lite 文档链接](https://www.paddlepaddle.org.cn/lite/develop/)。  
+答：Paddle Lite 文档 [Paddle Lite 文档链接](https://www.paddlepaddle.org.cn/lite)。  
    Paddle Lite 各平台应用示例 [Paddle Lite 应用示例链接](https://github.com/PaddlePaddle/Paddle-Lite-Demo)。
 
 2、Paddle Lite 如何加载动态图模型？
