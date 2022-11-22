@@ -318,7 +318,7 @@ void reduce_sum_high_dim<int32_t>(const int32_t* src,
   int reduce_dim_rem = reduce_dim & 3;
   int stride = after_dim << 2;
   int stride_no_after_dim = 0;
-  int32x4_t vzero = vdupq_n_f32(0);
+  int32x4_t vzero = vdupq_n_s32(0);
   for (int i = 0; i < before_dim; ++i) {
     stride_no_after_dim = i * after_dim * reduce_dim;
     for (int k = 0; k < after_dim_n; ++k) {
