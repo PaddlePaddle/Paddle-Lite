@@ -165,6 +165,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_conv_fuse_pass",         //
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
+       "lite_sigmoid_elementmul_fuse_pass",           //
        "lite_conv_activation_fuse_pass",              //
        "lite_squeeze2_matmul_fuse_pass",              //
        "lite_reshape2_matmul_fuse_pass",              //

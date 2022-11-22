@@ -109,3 +109,4 @@ USE_MIR_PASS(scale_calc_offline_pass);
 USE_MIR_PASS(reshape_calc_offline_pass);
 USE_MIR_PASS(keepdims_convert_pass);
 USE_MIR_PASS(op_fusion_minimal_set_pass);
+USE_MIR_PASS(lite_sigmoid_elementmul_fuse_pass);
