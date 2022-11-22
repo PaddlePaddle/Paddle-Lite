@@ -7,7 +7,7 @@
 | LITE_WITH_EXCEPTION | 是否在错误发生时抛出异常 | OFF |
 | LITE_WITH_TRAIN |  打开[模型训练功能](../demo_guides/cpp_train_demo)，支持移动端模型训练 | OFF |
 | LITE_BUILD_EXTRA |  编译[全量预测库](../source_compile/library)，包含更多算子和模型支持 | OFF |
-| LITE_BUILD_TAILOR | 编译时[根据模型裁剪预测库](../source_compile/library_tailoring.rst)，缩小预测库大小 | OFF |
+| LITE_BUILD_TAILOR | 编译时[根据模型裁剪预测库](../source_compile/library_tailoring)，缩小预测库大小 | OFF |
 | WITH_SYSTEM_BLAS |  编译时强制使用 reference BLAS |  OFF |
 
 ### 轻量级编译选项
