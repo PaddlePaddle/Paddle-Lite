@@ -4,7 +4,7 @@ about: 如上述分类未包含您的问题，可在此提出。 You could use t
 
 ---
 
-为使您的问题得到快速解决，在建立 Issues 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://paddle-lite.readthedocs.io/zh/develop/quick_start/faq.html), [官方文档](https://paddle-lite.readthedocs.io/zh/develop/guide/introduction.html)
+为使您的问题得到快速解决，在建立 Issues 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://www.paddlepaddle.org.cn/lite/develop/quick_start/faq.html), [官方文档](https://www.paddlepaddle.org.cn/lite/develop/guide/introduction.html)
 
 如果您没有查询到相似问题，为快速解决您的提问，建立issue时请提供如下细节信息：
 - 标题：简洁、精准概括您的问题
