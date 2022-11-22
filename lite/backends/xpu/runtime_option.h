@@ -39,9 +39,14 @@ class XDNNContext {
   XDNNContext(const XDNNContext&) = delete;
   XDNNContext& operator=(const XDNNContext&) = delete;
 
-  void CreatXDNNContext() {
-    XPU_CALL(xpu_current_device(&devid_));
+  void CreatXDNNContext(int devid) {
+    int cur_dev_id = -1;
+    XPU_CALL(xpu_current_device(&cur_dev_id));
+    CHECK_EQ(cur_dev_id, devid)
+        << "XPU context config device id is :" << devid
+        << ",but we get current device id is : " << cur_dev_id;
     rawcontext_ = xdnn::create_context();
+    devid_ = devid;
   }
 
   xdnn::Context* GetXDNNContext() { return rawcontext_; }
@@ -61,6 +66,7 @@ class XPUStream {
               << " Destory context xpu stream: " << xpu_stream_;
       CHECK(xpu_stream_destroy(xpu_stream_) == 0)
           << "xpu stream destroy failed.";
+      xpu_stream_ = nullptr;
     }
   }
 
@@ -70,17 +76,47 @@ class XPUStream {
   // TODO(quwei): Only creat one non-default xpu stream in current case,but
   // maybe use more non-default xpu stream in the future.
   void CreatXPUStream() {
-    XPU_CALL(xpu_current_device(&devid_));
+    if (xpu_stream_ != nullptr) {
+      VLOG(3) << " xpu stream not null before create,so we will not creat new "
+                 "stream.Current stream addr is : "
+              << xpu_stream_;
+      return;
+    }
+
+    int cur_dev_id = -1;
+    XPU_CALL(xpu_current_device(&cur_dev_id));
+    CHECK_EQ(cur_dev_id, devid_)
+        << "XPU Stream config device id is :" << devid_
+        << ",but we get current device id is : " << cur_dev_id;
+
     CHECK(xpu_stream_create(&xpu_stream_) == 0) << "xpu stream_create failed.";
     VLOG(6) << "thread 0x" << std::hex << std::this_thread::get_id()
             << " Creat context xpu stream: " << xpu_stream_;
     CHECK(xpu_stream_ != nullptr);
+    xpu_stream_origin_ = xpu_stream_;
   }
 
   void* GetXPUStream() { return xpu_stream_; }
+  void SetXPUDevid(int devid) { devid_ = devid; }
+  void SetXPUStream(void* xpu_stream) {
+    CHECK(xpu_stream != nullptr) << "Not set default stream.";
+    // TODO(quwei): Check  devid in current stream.
+    if (xpu_stream_origin_ != nullptr) {
+      CHECK(xpu_stream_destroy(xpu_stream_origin_) == 0)
+          << "xpu stream destroy failed.";
+      VLOG(6) << "Thread 0x" << std::hex << std::this_thread::get_id()
+              << ",Destory origin xpu stream: " << xpu_stream_origin_
+              << ",which create by lite context.";
+      xpu_stream_origin_ = nullptr;
+    }
+
+    xpu_stream_ = xpu_stream;
+  }
 
  private:
   void* xpu_stream_{nullptr};
+  // used to record origin stream which create by lite.
+  void* xpu_stream_origin_{nullptr};
   int devid_{-1};
 };
 
@@ -93,6 +129,7 @@ struct XPURunTimeOption {
     xpu_sdnn_num = config->xpu_sdnn_num;
     xpu_enable_multi_stream = config->xpu_enable_multi_stream;
     xpu_dev_num = config->xpu_dev_num;
+    xpu_stream.SetXPUDevid(xpu_dev_num);
   }
 
   // set by config

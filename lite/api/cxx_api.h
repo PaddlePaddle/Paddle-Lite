@@ -242,15 +242,20 @@ class LITE_API Predictor {
   /////////////////////////////////////////////////////////////////////////////
   void CheckPaddleOpVersions(
       const std::shared_ptr<cpp::ProgramDesc>& program_desc);
-  void SetRunTimeOption(const lite_api::CxxConfig& config) {
 #ifdef LITE_WITH_XPU
-    if (config.get_runtime_option()) {
-      xpu_runtime_option_.Set(reinterpret_cast<lite::XPURunTimeOption*>(
-          config.get_runtime_option().get()));
+  void SetXPURunTimeOption(const lite_api::CxxConfig& config) {
+    if (config.get_xpu_runtime_option()) {
+      xpu_runtime_option_.Set(reinterpret_cast<const lite::XPURunTimeOption*>(
+          config.get_xpu_runtime_option()));
       XPU_CALL(xpu_set_device(xpu_runtime_option_.xpu_dev_num));
     }
-#endif
   }
+
+  void set_xpu_stream(void* stream) {
+    xpu_runtime_option_.xpu_stream.SetXPUStream(stream);
+  }
+
+#endif
 
   // #ifdef LITE_WITH_TRAIN
   //   void Run(const std::vector<framework::Tensor>& tensors) {
@@ -341,6 +346,9 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       const std::string& model_dir,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool record_info = false) override;
+#ifdef LITE_WITH_XPU
+  void set_xpu_stream(void* stream);
+#endif
 
  private:
   std::shared_ptr<Predictor> raw_predictor_;

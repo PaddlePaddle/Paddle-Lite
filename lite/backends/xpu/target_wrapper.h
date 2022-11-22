@@ -78,7 +78,8 @@ class TargetWrapper<TARGET(kXPU)> {
     }
 
     xpu_runtime_ptr->xpu_tls_raw_ctx.reset(new XDNNContext());
-    xpu_runtime_ptr->xpu_tls_raw_ctx->CreatXDNNContext();
+    xpu_runtime_ptr->xpu_tls_raw_ctx->CreatXDNNContext(
+        xpu_runtime_ptr->xpu_dev_num);
     CHECK(xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext());
 
     if (xpu_runtime_ptr->xpu_cluster_num != 0) {
@@ -98,9 +99,6 @@ class TargetWrapper<TARGET(kXPU)> {
       VLOG(3) << "all threads share the default xpu stream";
     } else {
       // use different stream per thread
-      CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream() == nullptr)
-          << " xpu stream not null before create: "
-          << xpu_runtime_ptr->xpu_stream.GetXPUStream();
       xpu_runtime_ptr->xpu_stream.CreatXPUStream();
       CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream());
     }

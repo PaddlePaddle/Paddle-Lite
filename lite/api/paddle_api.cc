@@ -479,13 +479,11 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
       CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
-    reinterpret_cast<lite::XPURunTimeOption *>(
-        runtime_option_[TARGET(kXPU)].get())
+    reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
         ->xpu_local_l3_size = 0;
     lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
-    reinterpret_cast<lite::XPURunTimeOption *>(
-        runtime_option_[TARGET(kXPU)].get())
+    reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
         ->xpu_local_l3_size = l3_size;
     lite::TargetWrapperXPU::need_l3_mutex = false;
   }
@@ -498,8 +496,7 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 
 void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_local_l3_autotune = autotune;
 #else
   LOG(WARNING) << "The invoking of the function "
@@ -510,8 +507,7 @@ void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 
 void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_local_gm_size = gm_size;
 #else
   LOG(WARNING) << "The invoking of the function "
@@ -522,8 +518,7 @@ void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_dev_num = dev_no;
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
@@ -533,8 +528,7 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 void CxxConfig::enable_xpu_multi_stream() {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_enable_multi_stream = true;
 #else
   LOG(WARNING)
@@ -604,8 +598,7 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 
 void CxxConfig::set_xpu_cluster_num(const int num) {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_cluster_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
@@ -616,8 +609,7 @@ void CxxConfig::set_xpu_cluster_num(const int num) {
 
 void CxxConfig::set_xpu_sdnn_num(const int num) {
 #ifdef LITE_WITH_XPU
-  reinterpret_cast<lite::XPURunTimeOption *>(
-      runtime_option_[TARGET(kXPU)].get())
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
       ->xpu_sdnn_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
@@ -682,18 +674,15 @@ _SetPreferredInputsForWarmup(int32_t);
 _SetPreferredInputsForWarmup(int64_t);
 #undef _SetPreferredInputsForWarmup
 
-void CxxConfig::set_valid_places(const std::vector<Place> &x) {
-  valid_places_ = x;
-  for (auto place : x) {
-    if (place.target == TARGET(kXPU)) {
-#ifdef LITE_WITH_XPU
-      std::shared_ptr<void> runtime_option =
-          std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
-      runtime_option_.emplace(TARGET(kXPU), std::move(runtime_option));
-      break;
-#endif
-    }
+void *CxxConfig::set_xpu_runtime_option() {
+  if (runtime_option_ != nullptr) {
+    return runtime_option_.get();
   }
+
+  runtime_option_ =
+      std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
+
+  return runtime_option_.get();
 }
 
 // set model data in combined format, `set_model_from_file` refers to loading

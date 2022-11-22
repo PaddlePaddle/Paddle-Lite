@@ -44,7 +44,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   mode_ = config.power_mode();
   threads_ = config.threads();
-  raw_predictor_->SetRunTimeOption(config);
+#ifdef LITE_WITH_XPU
+  raw_predictor_->SetXPURunTimeOption(config);
+#endif
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {
@@ -278,6 +280,12 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 bool CxxPaddleApiImpl::TryShrinkMemory() {
   return raw_predictor_->TryShrinkMemory();
 }
+
+#ifdef LITE_WITH_XPU
+void CxxPaddleApiImpl::set_xpu_stream(void *stream) {
+  raw_predictor_->set_xpu_stream(stream);
+}
+#endif
 
 }  // namespace lite
 
