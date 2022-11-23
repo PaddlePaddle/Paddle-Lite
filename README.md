@@ -20,45 +20,45 @@ Paddle Lite 框架直接支持模型结构为 [PaddlePaddle](https://github.com/
 **二. 模型优化**
 
 Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化、子图融合、Kernel 优选等优化手段。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
-这些优化通过 Paddle Lite 提供的 opt 工具实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通该 opt 工具做模型优化。opt 工具的下载和使用，请参考[模型优化方法](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/model_optimize_tool.html)。
+这些优化通过 Paddle Lite 提供的 opt 工具实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通该 opt 工具做模型优化。opt 工具的下载和使用，请参考[模型优化方法](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/model_optimize_tool.html)。
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 Android/iOS/x86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://www.paddlepaddle.org.cn/lite/release/v2.12/quick_start/release_lib.html)，或者从 Release notes 处获取最新的[预编译编译库](https://github.com/PaddlePaddle/Paddle-Lite/releases)。
+Paddle Lite 提供了 Android/iOS/x86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://www.paddlepaddle.org.cn/lite/v2.12/quick_start/release_lib.html)，或者从 Release notes 处获取最新的[预编译编译库](https://github.com/PaddlePaddle/Paddle-Lite/releases)。
 
-Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://www.paddlepaddle.org.cn/lite/release/v2.12/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译方法](https://www.paddlepaddle.org.cn/lite/release/v2.12/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
+Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://www.paddlepaddle.org.cn/lite/v2.12/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译方法](https://www.paddlepaddle.org.cn/lite/v2.12/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
 
 **四. 预测示例**
 
 Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API 的完整使用示例:
 
-- [C++ 完整示例](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/cpp_demo.html)
-- [Java 完整示例](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/java_demo.html)
-- [Python 完整示例](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/python_demo.html)
+- [C++ 完整示例](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/cpp_demo.html)
+- [Java 完整示例](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/java_demo.html)
+- [Python 完整示例](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/python_demo.html)
 
 您可以参考示例中的说明快速了解使用方法，并集成到您自己的项目中去。
 
 针对不同的硬件平台，Paddle Lite 提供了各个平台的完整示例：
 
-- [Android apps](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/android_app_demo.html) [[图像分类]](https://paddlelite-demo.bj.bcebos.com/apps/android/mobilenet_classification_demo.apk)  [[目标检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/yolo_detection_demo.apk) [[口罩检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/mask_detection_demo.apk)  [[人脸关键点]](https://paddlelite-demo.bj.bcebos.com/apps/android/face_keypoints_detection_demo.apk) [[人像分割]](https://paddlelite-demo.bj.bcebos.com/apps/android/human_segmentation_demo.apk)
-- [iOS apps](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/ios_app_demo.html)
-- [Linux apps](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/linux_arm_demo.html)
-- [Arm](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/arm_cpu.html)
-- [x86](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/x86.html)
-- [OpenCL](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/opencl.html)
-- [Metal](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/metal.html)
-- [华为麒麟 NPU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/huawei_kirin_npu.html)
-- [华为昇腾 NPU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/huawei_ascend_npu.html)
-- [昆仑芯 XPU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/kunlunxin_xpu.html)
-- [昆仑芯 XTCL](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/kunlunxin_xtcl.html)
-- [高通 QNN](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/qualcomm_qnn.html)
-- [寒武纪 MLU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/cambricon_mlu.html)
-- [(瑞芯微/晶晨/恩智浦) 芯原 TIM-VX](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/verisilicon_timvx.html)
-- [Android NNAPI](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/android_nnapi.html)
-- [联发科 APU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/mediatek_apu.html)
-- [颖脉 NNA](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/imagination_nna.html)
-- [Intel OpenVINO](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/intel_openvino.html)
-- [亿智 NPU](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/eeasytech_npu.html)
+- [Android apps](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/android_app_demo.html) [[图像分类]](https://paddlelite-demo.bj.bcebos.com/apps/android/mobilenet_classification_demo.apk)  [[目标检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/yolo_detection_demo.apk) [[口罩检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/mask_detection_demo.apk)  [[人脸关键点]](https://paddlelite-demo.bj.bcebos.com/apps/android/face_keypoints_detection_demo.apk) [[人像分割]](https://paddlelite-demo.bj.bcebos.com/apps/android/human_segmentation_demo.apk)
+- [iOS apps](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/ios_app_demo.html)
+- [Linux apps](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/linux_arm_demo.html)
+- [Arm](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/arm_cpu.html)
+- [x86](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/x86.html)
+- [OpenCL](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/opencl.html)
+- [Metal](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/metal.html)
+- [华为麒麟 NPU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/huawei_kirin_npu.html)
+- [华为昇腾 NPU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/huawei_ascend_npu.html)
+- [昆仑芯 XPU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/kunlunxin_xpu.html)
+- [昆仑芯 XTCL](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/kunlunxin_xtcl.html)
+- [高通 QNN](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/qualcomm_qnn.html)
+- [寒武纪 MLU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/cambricon_mlu.html)
+- [(瑞芯微/晶晨/恩智浦) 芯原 TIM-VX](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/verisilicon_timvx.html)
+- [Android NNAPI](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/android_nnapi.html)
+- [联发科 APU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/mediatek_apu.html)
+- [颖脉 NNA](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/imagination_nna.html)
+- [Intel OpenVINO](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/intel_openvino.html)
+- [亿智 NPU](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/eeasytech_npu.html)
 
 
 
@@ -103,23 +103,23 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 ### 文档和示例
 - 完整文档： [Paddle Lite 文档](https://www.paddlepaddle.org.cn/lite)
 -  API文档：
-	- [C++ API 文档](https://www.paddlepaddle.org.cn/lite/release/v2.12/api_reference/cxx_api_doc.html)
-	- [Java API 文档](https://www.paddlepaddle.org.cn/lite/release/v2.12/api_reference/java_api_doc.html)
-	- [Python API 文档](https://www.paddlepaddle.org.cn/lite/release/v2.12/api_reference/python_api_doc.html)
-	- [CV 图像处理 API 文档](https://www.paddlepaddle.org.cn/lite/release/v2.12/api_reference/cv.html)
+	- [C++ API 文档](https://www.paddlepaddle.org.cn/lite/v2.12/api_reference/cxx_api_doc.html)
+	- [Java API 文档](https://www.paddlepaddle.org.cn/lite/v2.12/api_reference/java_api_doc.html)
+	- [Python API 文档](https://www.paddlepaddle.org.cn/lite/v2.12/api_reference/python_api_doc.html)
+	- [CV 图像处理 API 文档](https://www.paddlepaddle.org.cn/lite/v2.12/api_reference/cv.html)
 - Paddle Lite 工程示例： [Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
 ### 关键技术
 - 模型量化：
-	- [静态离线量化](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/quant/quant_post_static.html)
-	- [动态离线量化](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/quant/quant_post_dynamic.html)
-- 调试分析：[调试和性能分析工具](https://www.paddlepaddle.org.cn/lite/release/v2.12/user_guides/profiler.html)
-- 移动端模型训练：点击[了解一下](https://www.paddlepaddle.org.cn/lite/release/v2.12/demo_guides/cpp_train_demo.html)
+	- [静态离线量化](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/quant/quant_post_static.html)
+	- [动态离线量化](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/quant/quant_post_dynamic.html)
+- 调试分析：[调试和性能分析工具](https://www.paddlepaddle.org.cn/lite/v2.12/user_guides/profiler.html)
+- 移动端模型训练：点击[了解一下](https://www.paddlepaddle.org.cn/lite/v2.12/demo_guides/cpp_train_demo.html)
 - 飞桨预训练模型库：试试在 [PaddleHub](https://www.paddlepaddle.org.cn/hublist?filter=hot&value=1) 浏览和下载 Paddle 的预训练模型
-- 飞桨推理 AI 硬件统一适配框架 NNAdapter：点击[了解一下](https://www.paddlepaddle.org.cn/lite/release/v2.12/develop_guides/nnadapter.html)
+- 飞桨推理 AI 硬件统一适配框架 NNAdapter：点击[了解一下](https://www.paddlepaddle.org.cn/lite/v2.12/develop_guides/nnadapter.html)
 ### FAQ
-- FAQ：常见问题，可以访问 [FAQ](https://www.paddlepaddle.org.cn/lite/release/v2.12/quick_start/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
+- FAQ：常见问题，可以访问 [FAQ](https://www.paddlepaddle.org.cn/lite/v2.12/quick_start/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
 ### 贡献代码
-- 贡献代码：如果您想一起参与 Paddle Lite 的开发，贡献代码，请访问[开发者共享文档](https://www.paddlepaddle.org.cn/lite/release/v2.12/develop_guides/for-developer.html)
+- 贡献代码：如果您想一起参与 Paddle Lite 的开发，贡献代码，请访问[开发者共享文档](https://www.paddlepaddle.org.cn/lite/v2.12/develop_guides/for-developer.html)
 
 
 ##  交流与反馈
