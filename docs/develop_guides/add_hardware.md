@@ -66,13 +66,13 @@
 - 提供这两类接口的硬件可分别按照如下两种接入方式接入到框架：
 
 ### 算子 Kernel 接入方式
-- 主要涉及 Paddle Lite 架构图中算子、Kernel层的硬件适配工作，具体是在 [lite/kernels](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels) 下增加待新增硬件的目录，为每个算子实现待新增硬件的 Kernel ，具体可参考[新增 OP ](./add_operation)中"添加 Argmax Kernel 并绑定"步骤；
+- 主要涉及 Paddle Lite 架构图中算子、Kernel层的硬件适配工作，具体是在 [lite/kernels](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/kernels) 下增加待新增硬件的目录，为每个算子实现待新增硬件的 Kernel ，具体可参考[新增 OP ](./add_operation)中"添加 Argmax Kernel 并绑定"步骤；
 
-  [ ARM Kernel 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels/arm)
+  [ ARM Kernel 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/kernels/arm)
 
 - 为了将硬件细节与 Kernel 的实现剥离，减少冗余代码，建议在 lite/backends 目录下增加待新增硬件的目录，利用硬件提供的编程接口实现诸如 gemm 等通用数学运算，向 Kernel 提供统一的数学运算接口；
 
-  [ ARM Backend 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/arm)
+  [ ARM Backend 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/backends/arm)
 
 - 其它诸如添加新增硬件的 Target 、 Place 、 Context 等方面的内容可参考即将详细介绍的"子图接入方式"中的相关章节。
 

@@ -3,7 +3,7 @@
 
 ## CreatePaddlePredictor
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 template <typename ConfigT>
@@ -33,7 +33,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 ## CxxConfig
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class CxxConfig;
@@ -252,7 +252,7 @@ int x86_math_num_threads() const;
 
 ## MobileConfig
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class MobileConfig;
@@ -503,7 +503,7 @@ bool metal_use_mps() const;
 
 ## PaddlePredictor
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class PaddlePredictor;
@@ -680,7 +680,7 @@ virtual std::string GetVersion() const = 0;
 
 ## TargetType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class TargetType;
@@ -691,7 +691,7 @@ class TargetType;
 
 ## PrecisionType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class PrecisionType;
@@ -704,7 +704,7 @@ class PrecisionType;
 
 ## DataLayoutType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class DataLayoutType;
@@ -717,7 +717,7 @@ class DataLayoutType;
 
 ## Place
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```C++
 struct Place;
@@ -732,7 +732,7 @@ Place{TargetType(ARM), PrecisionType(FP32), DataLayoutType(NCHW)}
 
 ## PowerMode
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 enum PowerMode;
@@ -766,7 +766,7 @@ PowerMode详细说明如下：
 
 
 ## Tensor
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 struct Tensor

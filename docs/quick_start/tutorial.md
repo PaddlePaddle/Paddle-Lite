@@ -5,7 +5,7 @@
 Paddle Lite 是一种轻量级、灵活性强、易于扩展的高性能的深度学习预测框架，它可以支持诸如 ARM、OpenCL 、NPU 等等多种终端，同时拥有强大的图优化及预测加速能力。如果您希望将 Paddle Lite 框架集成到自己的项目中，那么只需要如下几步简单操作即可。
 
 
-![workflow](https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/workflow.png)
+![workflow](https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.12/docs/images/workflow.png)
 
 ## 预测流程
 
@@ -24,7 +24,7 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 `Android/IOS/ArmLinux/Windows/MacOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的 [源码编译方法](../source_compile/compile_env)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/docker_env) 和 `lite/tools/` 文件夹 [脚本](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/tools) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
+Paddle Lite 提供了 `Android/IOS/ArmLinux/Windows/MacOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的 [源码编译方法](../source_compile/compile_env)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/docker_env) 和 `lite/tools/` 文件夹 [脚本](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/tools) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
 
 **四. 开发应用程序**
 

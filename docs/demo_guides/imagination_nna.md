@@ -44,7 +44,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 ### 已支持（或部分支持）的 Paddle 算子
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 

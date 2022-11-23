@@ -435,7 +435,7 @@ export GLOG_v=4
 
 ## 6. 如何在 Code 中使用
 
-即编译产物 `demo/cxx/mobile_light` 目录下的代码，在线版参考 GitHub 仓库[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)，其中也包括判断当前设备是否支持 OpenCL 的方法;
+即编译产物 `demo/cxx/mobile_light` 目录下的代码，在线版参考 GitHub 仓库[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)，其中也包括判断当前设备是否支持 OpenCL 的方法;
 
 注：这里给出的链接会跳转到线上最新 develop 分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于 `lite/demo/cxx/` 目录的代码，查看如何使用。
 
@@ -470,8 +470,8 @@ Windows x86 平台下：
 ## 8. 关键 API 接口
 ### 判断设备是否支持 OpenCL
 函数 `IsOpenCLBackendValid` 用来检查设备是否支持 OpenCL，该函数内部会依次进行 OpenCL 驱动库检查、库函数检查、精度检查，检查均通过后返回 `true`，否则返回 `false`.
-- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
-- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
 ### 设置 OpenCL kernel 缓存文件的路径
 函数 `set_opencl_binary_path_name` 用来开启 OpenCL kernel 缓存功能，并设置缓存文件名和存放路径。使用该函数可以避免在线编译 OpenCL kernel，进而提高首帧运行速度。推荐在工程代码中使用该函数。
@@ -490,8 +490,8 @@ Windows x86 平台下：
                                    const std::string& name);
 ```
 
-- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
-- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
 ### 设置 OpenCL Auto-tune 策略
 函数 `set_opencl_tune` 用来自动选择当前硬件和模型下的最优 OpenCL 卷积算子实现方案，并将找到的算法配置序列化到文件中。该函数通过预先试跑，找到最优的算法。推荐在 benchmark 时使用该函数。
@@ -520,8 +520,8 @@ Windows x86 平台下：
                        size_t lws_repeats = 4);
 ```
 
-- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
-- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
 ### 设置运行时精度
 函数 `set_opencl_precision` 用来设置 OpenCL 运行时精度为 fp32 或 fp16。
@@ -541,8 +541,8 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
 ```
 
-- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
-- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
+- 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)
+- 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
 ### 设置 OpenCL 混合内存对象推理
 OpenCL 大部分算子支持 cl::Image2D 数据排布，少部分算子支持 cl::Buffer（正在持续扩充），出于以下背景原因考虑
@@ -578,9 +578,9 @@ export OPENCL_MEMORY_CONFIG_FILE=./ch_PP-OCRv3_rec_infer_buffer.txt
 
 1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会在日志中输出超限提示。
 2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
-3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
-4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
-5. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
-6. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+5. 对精度要求较高的场景，可以考虑通过 API `config.set_opencl_precision(CL_PRECISION_FP32)` 强制使用 `FP32` 精度，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+6. 对首次加载耗时慢的问题，可以考虑使用 API `config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 7. Paddle Lite OpenCL 后端代码尚未完全支持动态 shape，因此在运行动态 shape 的模型时可能会报错。
 8. 使用 OpenCL 后端进行部署时，模型推理速度并不一定会比在 CPU 上执行快。GPU 适合运行较大计算强度的负载任务，如果模型本身的单位算子计算密度较低，则有可能出现 GPU 推理速度不及 CPU 的情况。在面向 GPU 设计模型结构时，需要尽量减少低计算密度算子的数量，比如 slice、concat 等，具体可参见[使用 GPU 获取最佳性能](../performance/gpu.md)中的【优化建议】章节。

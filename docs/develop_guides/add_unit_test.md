@@ -13,7 +13,7 @@
 
 Python 单测测试方法：通过 `sample_program_configs` 方法定义 OP 的输入 shape 和属性信息，并构建出一个网络；然后通过 `sample_predictor_configs` 方法确定运行后端的 config 信息；最好通过 `test` 方法，完成单测测试。精度对比方法：将 Paddle Lite 的输出结果和 PaddlePaddle 的输出结果进行比较，判断两者绝对误差和相对误差大小，以确定单测的正确性。
 
-在 Paddle-Lite/lite/tests/unittest_py/op 目录下新建 [test_arg_max_op.py](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tests/unittest_py/op/test_arg_max_op.py) 文件，定义 `TestArgMaxOp` 类，其继承自 `AutoScanTest`，重点介绍如下 4 个方法：
+在 Paddle-Lite/lite/tests/unittest_py/op 目录下新建 [test_arg_max_op.py](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/tests/unittest_py/op/test_arg_max_op.py) 文件，定义 `TestArgMaxOp` 类，其继承自 `AutoScanTest`，重点介绍如下 4 个方法：
 
 - `__init__` 方法设置 Place 属性，通过调用 `self.enable_testing_on_place` 方法激活特定后端；
 - `is_program_valid` 方法用于 Op 属性和输入的合法性规则检查；
@@ -185,7 +185,7 @@ Python 单测测试方法：通过 `sample_program_configs` 方法定义 OP 的�
 
 以 ARM CPU 为例：
 
-- 在 Paddle-Lite/lite/tests/kernels 目录下新建 [argmax_compute_test.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tests/kernels/argmax_compute_test.cc) 文件，声明并实现 `ArgmaxComputeTester` 类；
+- 在 Paddle-Lite/lite/tests/kernels 目录下新建 [argmax_compute_test.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/tests/kernels/argmax_compute_test.cc) 文件，声明并实现 `ArgmaxComputeTester` 类；
 
 - `ArgmaxComputeTester` 类中主要包括 `PrepareOpDesc`、`PrepareData` 和 `RunBaseline` 函数。`PrepareOpDesc` 函数设定单测 Op 的类型和输入输出参数，`PrepareData` 函数对输入 Tensor 进行初始化，`RunBaseline` 是基于输入计算得到输出，用于和框架计算的输出进行对比；
 
