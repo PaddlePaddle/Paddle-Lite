@@ -1,5 +1,5 @@
 
-# Docker 统一环境搭建
+# Docker 统一编译环境搭建
 
 本教程主要介绍基于 Docker 如何搭建 Paddle Lite 源码编译环境。
 
