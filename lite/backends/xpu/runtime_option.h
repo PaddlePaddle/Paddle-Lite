@@ -17,6 +17,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>  //NOLINT
+#include <string>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
@@ -130,6 +131,14 @@ struct XPURunTimeOption {
     xpu_enable_multi_stream = config->xpu_enable_multi_stream;
     xpu_dev_num = config->xpu_dev_num;
     xpu_stream.SetXPUDevid(xpu_dev_num);
+    if (!config->xpu_dump_log_path.empty()) {
+      xpu_dump_log_path = config->xpu_dump_log_path;
+      need_dump_xpu_info = true;
+    }
+    if (!config->xpu_dump_tensor_path.empty()) {
+      xpu_dump_tensor_path = config->xpu_dump_tensor_path;
+      need_dump_xpu_info = true;
+    }
   }
 
   // set by config
@@ -140,7 +149,10 @@ struct XPURunTimeOption {
   int xpu_sdnn_num{0};
   bool xpu_enable_multi_stream{false};
   int xpu_dev_num{0};
-
+  // dump tensor
+  std::string xpu_dump_tensor_path{""};
+  std::string xpu_dump_log_path{""};
+  bool need_dump_xpu_info{false};
   // Set in runtime
   std::vector<XPUL3CacheBlock*>
       xpu_l3_block_dict;  // l3 cache block used between op layers

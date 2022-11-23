@@ -55,13 +55,13 @@ class QuantDequantFusePass : public ProgramPass {
         }
 
         // pre link op is fused conv2d/fc.
-        if (pre_op_inst.op_info()->HasAttr("Output0_scale")) {
-          float pre_op_out_threshold =
-              pre_op_inst.op_info()->GetAttr<std::vector<float>>(
-                  "Output0_scale")[0];
-          instruct.mutable_op_info()->SetAttr<float>("input_threshold",
-                                                     pre_op_out_threshold);
-        }
+        // if (pre_op_inst.op_info()->HasAttr("Output0_scale")) {
+        //   float pre_op_out_threshold =
+        //       pre_op_inst.op_info()->GetAttr<std::vector<float>>(
+        //           "Output0_scale")[0];
+        //   instruct.mutable_op_info()->SetAttr<float>("input_threshold",
+        //                                              pre_op_out_threshold);
+        // }
       }
     }
   }

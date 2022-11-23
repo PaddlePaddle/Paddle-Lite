@@ -507,6 +507,10 @@ class XPUConv2dFuser : public FuseBase {
         return scale_name;
       };
 
+      // Set conv2d input max value,thanks to at quant_dequant_fuse_pass:
+      // scale_value = InScale/127 ,but in xpu conv2d int8 compute, we need
+      // origin InScale(slim provided FP32 precision),so we should
+      // scale_value*127 in there.
       op_desc.SetAttr<std::vector<float>>(
           get_scale_name(input_name),
           {127 *
@@ -517,6 +521,12 @@ class XPUConv2dFuser : public FuseBase {
       auto max_weight_vector =
           matched.at("conv")->stmt()->op_info()->GetInputScale(filter_name);
 
+      // Weight is already int8 preision after quant_dequant_fuse_pass. we only
+      // need set conv2d weight max value in there.
+      // quant_dequant_fuse_pass:weight_scale =
+      // channel_scale_data/127 ,but in xpu conv2d int8 compute, we need origin
+      // channel_scale_data(slim provided FP32 precision),so we should
+      // weight_scale*127 in there.
       if (is_per_tensor(max_weight_vector)) {
         per_channel = false;
         VLOG(4) << "xpu conv quant weight only use one  max value. ";
@@ -533,6 +543,8 @@ class XPUConv2dFuser : public FuseBase {
       op_desc.SetAttr<std::vector<float>>(get_scale_name(filter_name),
                                           weight_max);
 
+      // conv2d branch  max value,x is set by the out_threshold value which
+      // ementwise_add previous op provided.(slim provided FP32 precision)
       if (with_branch_) {
         std::string branch_name = matched.at("ew_branch_add_in")->arg()->name;
         op_desc.SetAttr<std::vector<float>>(
@@ -553,6 +565,8 @@ class XPUConv2dFuser : public FuseBase {
       } else {
         op_name = "conv";
       }
+
+      // Set conv2d output max value.(slim provided FP32 precision)
       op_desc.SetAttr<std::vector<float>>(
           "Output0_scale",
           {matched.at(op_name)->stmt()->op_info()->GetAttr<float>(

@@ -618,6 +618,28 @@ void CxxConfig::set_xpu_sdnn_num(const int num) {
 #endif
 }
 
+void CxxConfig::set_xpu_dump_tensor_path(const std::string dump_tensor_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
+      ->xpu_dump_tensor_path = dump_tensor_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_tensor_path' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dump_log_path(const std::string dump_log_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(set_xpu_runtime_option())
+      ->xpu_dump_log_path = dump_log_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_log_path' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 template <class T>
 void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
                                                 const int tensor_idx,
