@@ -213,7 +213,7 @@ Tensor0(kARM, kFloat, kNCHW) --pass-> IoCopyOp(kARM, kOpenCL) --pass-> Tensor1(k
 
 ### KernelContext
 
-[KernelContext](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h#L632) 是硬件支持的核心封装，主要用于为 Kernel 提供执行期的硬件上下文。
+[KernelContext](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h) 是硬件支持的核心封装，主要用于为 Kernel 提供执行期的硬件上下文。
 
 KernelContext 的设计类似于 OpParam，两者均没有基类；对于 KernelContext，其假定是，不同的硬件间的接口和逻辑可能完全不同，比如 kARM 和 kCUDA，因此不设定基类，也不需要提供统一的接口来封装不同硬件行为。
 
@@ -247,6 +247,6 @@ KernelContext 的行为可以被 MIR 在分析期确定和调度。
   - [Data Layout Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/type_layout_cast_pass.h#L27) 用于转化不同的 Data Layout
   - [Precision Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/type_precision_cast_pass.h#L34) 用于转化不同 Tensor 的量化精度
 - KernelContext，具体地可以参考
-  - [ARM Context](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h#L413)
+  - [ARM Context](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h#L294)
   - 需要注意的是，硬件 Context 的接口只服务于该硬件的 Kernel
   - Context 有分析期和执行期两个阶段，如果分析期没有特殊的优化，则无需考虑；否则，需要注意将分析期的信息整理并序列化到离线模型中，用于执行期直接加载。
