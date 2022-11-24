@@ -1,4 +1,4 @@
-昆仑芯 XPU
+NNAdapter 支持 昆仑芯 XPU
 ^^^^^^^^^^^^
 
 * 介绍
@@ -30,4 +30,4 @@ Paddle Lite 已通过算子方式支持昆仑芯 XPU 在 x86 和 ARM 服务器�
      - 用户自定义
      - 空值
 
-详细请参考 `昆仑芯 XPU 部署示例 <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/kunlunxin_xpu.html>`_
+详细请参考 `昆仑芯 XPU <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/kunlunxin_xpu.html>`_
