@@ -24,4 +24,4 @@ NNAdapter 支持芯原 TIM-VX
      - 设置芯原 TIM-VX 的本地路径
      - 用户自定义
      - 空值
-详细请参考 `芯原 TIM-VX 部署示例 <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/verisilicon_timvx.html>`_
+详细请参考 `芯原 TIM-VX <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/verisilicon_timvx.html>`_

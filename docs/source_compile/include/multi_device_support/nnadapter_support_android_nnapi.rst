@@ -12,4 +12,4 @@ NNAdapter 支持 Android NNAPI
      - OFF / ON
      - OFF
 
-详细请参考 `联发科 APU 部署示例 <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/android_nnapi.html>`_
+详细请参考 `联发科 APU <https://www.paddlepaddle.org.cn/lite/develop/demo_guides/android_nnapi.html>`_

@@ -126,7 +126,7 @@ inference_lite_lib.armmacos.armv8.metal
 - metal 文件中的 Metal 库文件 lite.metallib；
 
 详细 iOS demo 部署方法参考
-[ iOS工程示例 ](https://paddlelite.paddlepaddle.org.cn/v2.10/demo_guides/ios_app_demo.html#ios-demo)
+[ iOS apps ](https://paddlelite.paddlepaddle.org.cn/develop/demo_guides/ios_app_demo.html#ios-demo)
 
 ### 2.2 macOS demo 部署方法
 安装好 Xcode 后，在 demo 目录下添加由 opt 转换得到的 Metal 模型，并运行以下命令：
