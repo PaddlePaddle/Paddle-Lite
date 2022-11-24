@@ -507,6 +507,12 @@ REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "cambricon_mlu,kunlunxin_xtcl");
 REGISTER_CONVERTER(multiclass_nms3,
                    ConvertMulticlassNms,
                    "cambricon_mlu,intel_openvino");
+REGISTER_CONVERTER(sin, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(cos, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(silu, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(elementwise_floordiv,
+                   ConvertElementwise,
+                   "huawei_ascend_npu");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

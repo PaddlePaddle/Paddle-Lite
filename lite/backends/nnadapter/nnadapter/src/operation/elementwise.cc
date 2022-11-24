@@ -79,40 +79,15 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
 static std::unordered_map<NNAdapterOperationType, math::ElementwiseTypeCode>
     kSupportedElementwise = {{NNADAPTER_ADD, math::ADD},
                              {NNADAPTER_SUB, math::SUB},
-                             {NNADAPTER_MUL, math::MUL}};
+                             {NNADAPTER_MUL, math::MUL},
+                             {NNADAPTER_DIV, math::DIV},
+                             {NNADAPTER_MAX, math::MAX},
+                             {NNADAPTER_MIN, math::MIN},
+                             {NNADAPTER_POW, math::POW},
+                             {NNADAPTER_FLOOR_DIV, math::FLOOR_DIV}};
 
 NNADAPTER_EXPORT bool ValidateElementwise(const core::Operation* operation) {
   return kSupportedElementwise.count(operation->type) > 0;
-}
-
-NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
-  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  // Infer the shape and type of output operands
-  if (IsConstantOperand(input0_operand) && !IsConstantOperand(input1_operand)) {
-    input0_operand->type.dimensions.dynamic_count =
-        input1_operand->type.dimensions.dynamic_count;
-    for (size_t i = 0; i < input0_operand->type.dimensions.dynamic_count; i++) {
-      for (size_t j = 0; j < input1_operand->type.dimensions.count; j++) {
-        input0_operand->type.dimensions.dynamic_data[i][j] = 1;
-      }
-    }
-  } else if (IsConstantOperand(input1_operand) &&
-             !IsConstantOperand(input0_operand)) {
-    input1_operand->type.dimensions.dynamic_count =
-        input0_operand->type.dimensions.dynamic_count;
-    for (size_t i = 0; i < input1_operand->type.dimensions.dynamic_count; i++) {
-      for (size_t j = 0; j < input0_operand->type.dimensions.count; j++) {
-        input1_operand->type.dimensions.dynamic_data[i][j] = 1;
-      }
-    }
-  }
-
-  CalcEltwiseBinaryOperationsOutputSize(
-      input0_operand->type, input1_operand->type, &output_operand->type);
-  output_operand->type.precision = input0_operand->type.precision;
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-  return NNADAPTER_NO_ERROR;
 }
 
 NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
@@ -241,6 +216,41 @@ NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
                          << " is found!";
   }
   NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Infer the shape and type of output operands
+  if (IsConstantOperand(input0_operand) && !IsConstantOperand(input1_operand)) {
+    input0_operand->type.dimensions.dynamic_count =
+        input1_operand->type.dimensions.dynamic_count;
+    for (size_t i = 0; i < input0_operand->type.dimensions.dynamic_count; i++) {
+      for (size_t j = 0; j < input1_operand->type.dimensions.count; j++) {
+        input0_operand->type.dimensions.dynamic_data[i][j] = 1;
+      }
+    }
+  } else if (IsConstantOperand(input1_operand) &&
+             !IsConstantOperand(input0_operand)) {
+    input1_operand->type.dimensions.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    for (size_t i = 0; i < input1_operand->type.dimensions.dynamic_count; i++) {
+      for (size_t j = 0; j < input0_operand->type.dimensions.count; j++) {
+        input1_operand->type.dimensions.dynamic_data[i][j] = 1;
+      }
+    }
+  }
+
+  CalcEltwiseBinaryOperationsOutputSize(
+      input0_operand->type, input1_operand->type, &output_operand->type);
+  output_operand->type.precision = input0_operand->type.precision;
+  if (IsConstantOperand(input0_operand) && IsConstantOperand(input1_operand)) {
+    ExecuteElementwise(operation);
+    output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  } else {
+  }
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
