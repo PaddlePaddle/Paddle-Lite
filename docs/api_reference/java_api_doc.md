@@ -2,7 +2,7 @@
 
 ## MobileConfig
 
-import [com.baidu.paddle.lite.MobileConfig](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/MobileConfig.java);
+import [com.baidu.paddle.lite.MobileConfig](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/android/jni/src/com/baidu/paddle/lite/MobileConfig.java);
 
 ```java
 public class MobileConfig extends ConfigBase;
@@ -116,7 +116,7 @@ int getThreads();
 
 ## PaddlePredictor
 
-import [com.baidu.paddle.lite.PaddlePredictor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/PaddlePredictor.java);
+import [com.baidu.paddle.lite.PaddlePredictor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/android/jni/src/com/baidu/paddle/lite/PaddlePredictor.java);
 
 ```java
 public class PaddlePredictor;
@@ -240,7 +240,7 @@ String getVersion();
 
 ## PowerMode
 
-import [com.baidu.paddle.lite.PowerMode](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/PowerMode.java);
+import [com.baidu.paddle.lite.PowerMode](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/android/jni/src/com/baidu/paddle/lite/PowerMode.java);
 
 ```java
 public enum PowerMode;
@@ -275,7 +275,7 @@ PowerMode详细说明如下：
 
 ## Tensor
 
-import [com.baidu.paddle.lite.Tensor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/Tensor.java);
+import [com.baidu.paddle.lite.Tensor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/android/jni/src/com/baidu/paddle/lite/Tensor.java);
 
 ```c++
 public class Tensor;
