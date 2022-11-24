@@ -199,7 +199,8 @@ class XPUFcFuser : public FuseBase {
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
-                                       {"relu6", 17}};
+                                       {"relu6", 17},
+                                       {"__xpu__quick_gelu", 19}};
 
     float act_param_ = 0.0f;
     if (act_type_ == "leaky_relu") {
@@ -281,6 +282,7 @@ class XPUFcFusePass : public ProgramPass {
     for (auto with_bias : {true, false}) {
       for (auto act_type : {"relu",
                             "gelu",
+                            "__xpu__quick_gelu",
                             /*"sigmoid",
                             "tanh",
                             "leaky_relu",
