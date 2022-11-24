@@ -23,6 +23,9 @@ namespace arm {
 namespace math {
 namespace fp16 {
 
+#define HALF_FLT_MAX_VAL (65504)
+#define HALF_FLT_MIN_VAL (-65504)
+
 template <>
 void act_relu<float16_t>(const float16_t* din,
                          float16_t* dout,
@@ -332,6 +335,9 @@ void act_tanh<float16_t>(const float16_t* din,
   int neon_loop_remain_dim8 = nums_per_thread - (neon_loop_cnt_dim8 << 3);
   float16x8_t vmax_f16 = vdupq_n_f16(70.00008f);
   float16x8_t vmin_f16 = vdupq_n_f16(-70.00008f);
+  float32x4_t max_val_fp16 = vdupq_n_f32(HALF_FLT_MAX_VAL);
+  float32x4_t min_val_fp16 = vdupq_n_f32(HALF_FLT_MIN_VAL);
+
   LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float16_t* ptr_in_thread = din + i * nums_per_thread;
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
@@ -339,8 +345,10 @@ void act_tanh<float16_t>(const float16_t* din,
       float16x8_t data = vld1q_f16(ptr_in_thread);
       data = vminq_f16(data, vmax_f16);
       data = vmaxq_f16(data, vmin_f16);
-      float16x8_t exp_plus_vec = expq_ps_f16(data);
-      float16x8_t exp_minus_vec = expq_ps_f16(vnegq_f16(data));
+      float16x8_t exp_plus_vec =
+          expq_f16_saturated(data, max_val_fp16, min_val_fp16);
+      float16x8_t exp_minus_vec =
+          expq_f16_saturated(vnegq_f16(data), max_val_fp16, min_val_fp16);
       float16x8_t exp_sum_vec = vaddq_f16(exp_plus_vec, exp_minus_vec);
       float16x8_t exp_diff_vec = vsubq_f16(exp_plus_vec, exp_minus_vec);
       float16x8_t recip = divq_ps_f16(exp_diff_vec, exp_sum_vec);
@@ -349,8 +357,13 @@ void act_tanh<float16_t>(const float16_t* din,
       ptr_in_thread += 8;
     }
     for (int j = 0; j < neon_loop_remain_dim8; ++j) {
-      ptr_out_thread[0] = (expf(ptr_in_thread[0]) - expf(-ptr_in_thread[0])) /
-                          (expf(ptr_in_thread[0]) + expf(-ptr_in_thread[0]));
+      float tmp = (expf(static_cast<float>(ptr_in_thread[0])) -
+                   expf(static_cast<float>(-ptr_in_thread[0]))) /
+                  (expf(static_cast<float>(ptr_in_thread[0])) +
+                   expf(static_cast<float>(-ptr_in_thread[0])));
+      tmp = std::max(tmp, static_cast<float>(HALF_FLT_MIN_VAL));
+      tmp = std::min(tmp, static_cast<float>(HALF_FLT_MAX_VAL));
+      ptr_out_thread[0] = static_cast<float16_t>(tmp);
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -359,8 +372,13 @@ void act_tanh<float16_t>(const float16_t* din,
   float16_t* ptr_out = dout + threads * nums_per_thread;
   const float16_t* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = (expf(ptr_in[0]) - expf(-ptr_in[0])) /
-                 (expf(ptr_in[0]) + expf(-ptr_in[0]));
+    float tmp = (expf(static_cast<float>(ptr_in[0])) -
+                 expf(static_cast<float>(-ptr_in[0]))) /
+                (expf(static_cast<float>(ptr_in[0])) +
+                 expf(static_cast<float>(-ptr_in[0])));
+    tmp = std::max(tmp, static_cast<float>(HALF_FLT_MIN_VAL));
+    tmp = std::min(tmp, static_cast<float>(HALF_FLT_MAX_VAL));
+    ptr_out[0] = static_cast<float16_t>(tmp);
     ptr_in++;
     ptr_out++;
   }
@@ -375,15 +393,18 @@ void act_sigmoid<float16_t>(const float16_t* din,
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim8 = nums_per_thread >> 3;
   int neon_loop_remain_dim8 = nums_per_thread - (neon_loop_cnt_dim8 << 3);
-
   float16x8_t vzero = vdupq_n_f16(0.f);
+  float32x4_t max_val_fp16 = vdupq_n_f32(HALF_FLT_MAX_VAL);
+  float32x4_t min_val_fp16 = vdupq_n_f32(HALF_FLT_MIN_VAL);
+
   LITE_PARALLEL_BEGIN(i, tid, threads) {
     float16x8_t exp_vec = vdupq_n_f16(0.0f);
     float16x8_t recip = vdupq_n_f16(0.0f);
     const float16_t* ptr_in_thread = din + i * nums_per_thread;
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim8; ++k) {
-      exp_vec = expq_ps_f16(vnegq_f16(vld1q_f16(ptr_in_thread)));
+      exp_vec = expq_f16_saturated(
+          vnegq_f16(vld1q_f16(ptr_in_thread)), max_val_fp16, min_val_fp16);
       exp_vec = vaddq_f16(exp_vec, vdupq_n_f16(1.0f));
       recip = vrecpeq_f16(exp_vec);
       recip = vmulq_f16(vrecpsq_f16(exp_vec, recip), recip);
@@ -393,7 +414,10 @@ void act_sigmoid<float16_t>(const float16_t* din,
       ptr_in_thread += 8;
     }
     for (int j = 0; j < neon_loop_remain_dim8; ++j) {
-      ptr_out_thread[0] = 1.f / (1 + expf(-ptr_in_thread[0]));
+      float tmp = 1.f / (1.f + expf(-ptr_in_thread[0]));
+      tmp = std::max(tmp, static_cast<float>(HALF_FLT_MIN_VAL));
+      tmp = std::min(tmp, static_cast<float>(HALF_FLT_MAX_VAL));
+      ptr_out_thread[0] = static_cast<float16_t>(tmp);
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -402,7 +426,10 @@ void act_sigmoid<float16_t>(const float16_t* din,
   float16_t* ptr_out = dout + threads * nums_per_thread;
   const float16_t* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = 1.f / (1 + expf(-ptr_in[0]));
+    float tmp = 1.f / (1.f + expf(-ptr_in[0]));
+    tmp = std::max(tmp, static_cast<float>(HALF_FLT_MIN_VAL));
+    tmp = std::min(tmp, static_cast<float>(HALF_FLT_MAX_VAL));
+    ptr_out[0] = static_cast<float16_t>(tmp);
     ptr_in++;
     ptr_out++;
   }

@@ -69,6 +69,32 @@ inline float16x4_t exp_ps_f16(float16x4_t x) {
   return vresa;
 }
 
+// exp() computed for 8 float16 at once, saturated from float to fp16
+inline float16x8_t expq_f16_saturated(float16x8_t x,
+                                      float32x4_t vmax,
+                                      float32x4_t vmin) {
+  float32x4_t va = vcvt_f32_f16(vget_low_f16(x));
+  float32x4_t vb = vcvt_f32_f16(vget_high_f16(x));
+  float32x4_t vexpa = exp_ps(va);
+  float32x4_t vexpb = exp_ps(vb);
+  vexpa = vmaxq_f32(vexpa, vmin);
+  vexpa = vminq_f32(vexpa, vmax);
+  vexpb = vmaxq_f32(vexpa, vmin);
+  vexpb = vminq_f32(vexpa, vmax);
+  return vcombine_f16(vcvt_f16_f32(vexpa), vcvt_f16_f32(vexpb));
+}
+
+inline float16x4_t exp_f16_saturated(float16x4_t x,
+                                     float32x4_t vmax,
+                                     float32x4_t vmin) {
+  float32x4_t va = vcvt_f32_f16(x);
+  float32x4_t vexpa = exp_ps(va);
+  vexpa = vmaxq_f32(vexpa, vmin);
+  vexpa = vminq_f32(vexpa, vmax);
+  float16x4_t vresa = vcvt_f16_f32(vexpa);
+  return vresa;
+}
+
 // exp_log = expq_ps_f16(vmulq_f16(b, log_ps(a)))
 inline float16x8_t exp_logq_f16(float16x8_t a, float32x4_t b) {
   float32x4_t vsum_a_low = log_ps(vcvt_f32_f16(vget_low_f16(a)));
