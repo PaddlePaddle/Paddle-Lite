@@ -808,7 +808,9 @@ void OptBase::InitSupportedOpInfo() {
                                               "kNNAdapter"};
 
   // ignore some old targets
-  std::set<std::string> valid_target{"kARM", "kOpenCL", "kMetal",
+  std::set<std::string> valid_target{"kARM",
+                                     "kOpenCL",
+                                     "kMetal",
                                      "kXPU",
                                      "kHost",
                                      "kIntelFPGA",
