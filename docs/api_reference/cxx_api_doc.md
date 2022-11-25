@@ -774,7 +774,7 @@ struct Tensor
 
 Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置 Shape、数据、LoD 信息等。
 
-*注意：用户应使用 `PaddlePredictor` 的 `GetInput` 和 `GetOuput` 接口获取输入 / 输出的 `Tensor`。*
+*注意：用户应使用 `PaddlePredictor` 的 `GetInput` 和 `GetOutput` 接口获取输入 / 输出的 `Tensor`。*
 
 示例：
 

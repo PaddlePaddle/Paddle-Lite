@@ -112,7 +112,7 @@ $ paddle_lite_opt \
 如果想要查看 subgraph 中的具体模型结构和算子信息需要打开 Lite Debug Log，Lite 在优化过程中会以 .dot 文本形式输出模型的拓扑结构，将 .dot 的文本内容复制到 [webgraphviz](http://www.webgraphviz.com/) 即可查看模型结构。
 
 ```bash
-$ export GLOG_v=5 # 注意：这里打开Lite中Level为5及以下的的Debug Log信息
+$ export GLOG_v=5 # 注意：这里打开Lite中Level为5及以下的Debug Log信息
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \
       --valid_targets=huawei_kirin_npu,arm \
