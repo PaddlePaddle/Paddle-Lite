@@ -35,7 +35,7 @@ repos:
     -   id: cpplint-cpp-source
         name: cpplint
         description: Check C++ code style using cpplint.py.
-        entry: bash ./tools/codestyle/cpplint_pre_commit.hook
+        entry: bash ./tools/codestyle/cpplint_pre_commit.hook; git diff
         language: system
         files: \.(c|cc|cxx|cpp|cu|cl|h|hpp|hxx)$
         exclude: ^(third-party/) | ^(metal/) | ^(web/) | ^(lite/kernels/metal/|lite/backends/metal/)
