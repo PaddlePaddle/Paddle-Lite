@@ -35,7 +35,7 @@ repos:
     -   id: cpplint-cpp-source
         name: cpplint
         description: Check C++ code style using cpplint.py.
-        entry: bash ./tools/codestyle/cpplint_pre_commit.hook; git diff
+        entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
         files: \.(c|cc|cxx|cpp|cu|cl|h|hpp|hxx)$
         exclude: ^(third-party/) | ^(metal/) | ^(web/) | ^(lite/kernels/metal/|lite/backends/metal/)
@@ -52,6 +52,15 @@ repos:
     -   id: copyright_checker
         name: copyright_checker
         entry: python3 ./tools/codestyle/copyright.hook
+        language: system
+        files: \.(c|cc|cxx|cpp|cu|cl|h|hpp|hxx|proto|py|mm|m|metal)$
+        exclude: (?!.*third_party)^.*$|(?!.*book)^.*$
+        exclude: ^(third-party/|metal/|web/)
+-   repo: local
+    hooks:
+    -   id: gitdiff
+        name: gitdiff
+        entry: git diff
         language: system
         files: \.(c|cc|cxx|cpp|cu|cl|h|hpp|hxx|proto|py|mm|m|metal)$
         exclude: (?!.*third_party)^.*$|(?!.*book)^.*$
