@@ -1102,6 +1102,14 @@ typedef struct Device {
 
       W_out = (W_in - 1) * stride_width - padding_width_left - padding_width_right + (dilation_width * (filter_width - 1) + 1)) + 1 + output_padding_width
 
+- NNADAPTER_COS
+
+  逐元素取余弦值： `output` = cos(`input`) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
 - NNADAPTER_CUM_SUM
 
   沿给定 `axis` 轴计算累加和。
@@ -1221,6 +1229,16 @@ typedef struct Device {
     - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
   - 输出：
     - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
+- NNADAPTER_FLOOR_DIV
+
+  逐元素相除并向下取整： `output` = floor (`input0` / `input1`) ，广播规则与 Numpy https://numpy.org/doc/stable/user/basics.broadcasting.html 相同。
+  - 输入：
+    - 0 ： input0 ，输入操作数 0 ，类型： NNADAPTER_FLOAT32 、NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+    - 1 ： input1 ，输入操作数 1 ，类型与输入操作数 `input0` 相同。
+    - 2 ： fuse_code ，融合的激活函数类型，形状： [1] ，类型： NNADAPTER_INT32 ，取值： NNAdapterFuseCode 类型的任意值， NNADAPTER_FUSED_NONE 、 NNADAPTER_FUSED_RELU 、 NNADAPTER_FUSED_RELU1 、 NNADAPTER_FUSED_RELU6 。
+  - 输出：
+    - 0 ： output ，输出操作数，形状：由输入操作数 `input0` 和  `input1` 广播后的形状决定，类型与输入操作数 `input0` 和 `input1` 相同。
 
 - NNADAPTER_FULLY_CONNECTED
 
@@ -1673,6 +1691,14 @@ typedef struct Device {
 - NNADAPTER_SIGMOID
 
   逐元素计算 sigmoid 激活值： `output` = 1 / (1 + exp(-`input`)) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
+- NNADAPTER_SIN
+
+  逐元素取正弦值： `output` = sin(`input`) 。
   - 输入：
     - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
   - 输出：
