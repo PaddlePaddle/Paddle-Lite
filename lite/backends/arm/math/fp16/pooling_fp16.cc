@@ -298,8 +298,10 @@ void pooling_basic_fp16(POOLING_PARAM,
   "1: \n"                                   \
   "fadd v4.8h, v0.8h, v2.8h\n"              \
   "fadd v5.8h, v1.8h, v3.8h\n"              \
+  "fmul v4.8h, %[vsize].8h, v4.8h\n"        \
   "ldp q0, q1, [%[data_in_channel]], #32\n" \
   "fadd %[vsum].8h, %[vsum].8h, v4.8h\n"    \
+  "fmul v5.8h, %[vsize].8h, v5.8h\n"        \
   "ldp q2, q3, [%[data_in_channel]], #32\n" \
   "subs %w[cnt], %w[cnt], #1 \n"            \
   "fadd %[vsum].8h, %[vsum].8h, v5.8h\n"    \
@@ -324,6 +326,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "blt 3f\n"                                          \
   "2: \n"                                             \
   "subs %w[remain], %w[remain], #1 \n"                \
+  "fmul v0.8h, v0.8h, %[vsize].8h\n"                  \
   "fadd %[vsum].8h, %[vsum].8h, v0.8h\n"              \
   "ld1 {v0.8h}, [%[data_in_channel]], #16\n"          \
   "bne 2b \n"                                         \
@@ -572,8 +575,10 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vadd.f16 q4, q0, q2\n"                    \
   "vadd.f16 q5, q1, q3\n"                    \
   "vld1.16 {d0-d3}, [%[data_in_channel]]!\n" \
+  "vmul.f16 q4, q4, %q[vsize]\n"             \
   "vadd.f16 %q[vsum], %q[vsum], q4\n"        \
   "vld1.16 {d4-d7}, [%[data_in_channel]]!\n" \
+  "vmul.f16 q5, q5, %q[vsize]\n"             \
   "vadd.f16 %q[vsum], %q[vsum], q5\n"        \
   "subs %[cnt], %[cnt], #1\n"                \
   "bne 1b\n"
@@ -585,6 +590,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "blt 3f\n"                                          \
   "2:\n"                                              \
   "subs %[remain], %[remain], #1\n"                   \
+  "vmul.f16 q0, q0, %q[vsize]\n"                      \
   "vadd.f16 %q[vsum], %q[vsum], q0\n"                 \
   "vld1.16 {d0, d1}, [%[data_in_channel]]!\n"         \
   "bne 2b \n"                                         \
@@ -1316,11 +1322,13 @@ void pooling_global_max_fp16(POOLING_PARAM) {
 
 void pooling_global_avg_fp16(POOLING_PARAM) {
   int size_channel_in = win * hin;
-
   int cnt = size_channel_in >> 5;
   int remain = size_channel_in & 31;
   int cnt_8 = remain >> 3;
   int remain_8 = remain & 7;
+  float16_t size_channel_in_1 = 1.f / size_channel_in;
+  float16x8_t vec_size_channel = vdupq_n_f16(size_channel_in_1);
+
   for (int n = 0; n < num; ++n) {
     float16_t *data_out_batch = dout + n * chout;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
@@ -1336,7 +1344,7 @@ void pooling_global_avg_fp16(POOLING_PARAM) {
                      [cnt] "+r"(size_cnt),
                      [remain] "+r"(size_remain),
                      [vsum] "+w"(vsum)
-                   :
+                   : [vsize] "w"(vec_size_channel)
 #ifdef __aarch64__
                    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6");
 #else
@@ -1346,11 +1354,12 @@ void pooling_global_avg_fp16(POOLING_PARAM) {
       float16x4_t vsum_tmp = vadd_f16(vget_low_f16(vsum), vget_high_f16(vsum));
       float16x4_t vtmp1 = vpadd_f16(vsum_tmp, vsum_tmp);
       float16x4_t vtmp2 = vpadd_f16(vtmp1, vtmp1);
+      float16_t res = vtmp2[0];
       for (int i = 0; i < remain_8; i++) {
-        vtmp2[0] += data_in_channel[0];
+        res += data_in_channel[0] / size_channel_in;
         data_in_channel++;
       }
-      data_out_batch[c] = vtmp2[0] / size_channel_in;
+      data_out_batch[c] = res;
     }
     LITE_PARALLEL_END()
   }
