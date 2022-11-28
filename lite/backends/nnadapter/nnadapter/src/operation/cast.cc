@@ -64,6 +64,26 @@ NNADAPTER_EXPORT int ExecuteCast(core::Operation* operation) {
     auto output_data = reinterpret_cast<int32_t*>(output_buffer);
     std::transform(
         input_data, input_data + size, output_data, TransOp<int64_t, int32_t>);
+  } else if (input_precision == NNADAPTER_FLOAT32 && dtype == NNADAPTER_INT64) {
+    auto input_data = reinterpret_cast<float*>(input_operand->buffer);
+    auto output_data = reinterpret_cast<int64_t*>(output_buffer);
+    std::transform(
+        input_data, input_data + size, output_data, TransOp<float, int64_t>);
+  } else if (input_precision == NNADAPTER_INT64 && dtype == NNADAPTER_FLOAT32) {
+    auto input_data = reinterpret_cast<int64_t*>(input_operand->buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    std::transform(
+        input_data, input_data + size, output_data, TransOp<int64_t, float>);
+  } else if (input_precision == NNADAPTER_INT32 && dtype == NNADAPTER_FLOAT32) {
+    auto input_data = reinterpret_cast<int32_t*>(input_operand->buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    std::transform(
+        input_data, input_data + size, output_data, TransOp<int32_t, float>);
+  } else if (input_precision == NNADAPTER_FLOAT32 && dtype == NNADAPTER_INT32) {
+    auto input_data = reinterpret_cast<float*>(input_operand->buffer);
+    auto output_data = reinterpret_cast<int32_t*>(output_buffer);
+    std::transform(
+        input_data, input_data + size, output_data, TransOp<float, int32_t>);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported input precision code("
                          << OperandPrecisionCodeToString(input_precision) << ")"

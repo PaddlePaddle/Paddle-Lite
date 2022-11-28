@@ -18,6 +18,7 @@
 #include "core/types.h"
 #include "operation/math/elementwise.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -245,11 +246,125 @@ NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
   CalcEltwiseBinaryOperationsOutputSize(
       input0_operand->type, input1_operand->type, &output_operand->type);
   output_operand->type.precision = input0_operand->type.precision;
+  auto eltwise_type = kSupportedElementwise[operation->type];
   if (IsConstantOperand(input0_operand) && IsConstantOperand(input1_operand)) {
     ExecuteElementwise(operation);
     output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
-  } else {
+  } else if (IsTemporaryShapeOperand(input0_operand) &&
+             IsTemporaryShapeOperand(input1_operand)) {
+    auto& temporary_shape0 = *(GetTemporaryShape(input0_operand));
+    auto& temporary_shape1 = *(GetTemporaryShape(input1_operand));
+    NNADAPTER_CHECK(temporary_shape0.data);
+    NNADAPTER_CHECK(temporary_shape0.data[0]);
+    NNADAPTER_CHECK(temporary_shape1.data);
+    NNADAPTER_CHECK(temporary_shape1.data[0]);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        temporary_shape0.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape0.count)}),
+        temporary_shape1.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape1.count)}),
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          temporary_shape0.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape0.count)}),
+          temporary_shape1.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape1.count)}),
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  } else if (IsTemporaryShapeOperand(input0_operand) &&
+             IsConstantOperand(input1_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(input0_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    auto& input1_type = input1_operand->type;
+    auto input1_shape = std::vector<int32_t>(
+        input1_type.dimensions.data,
+        input1_type.dimensions.data + input1_type.dimensions.count);
+    const auto input1_buffer = input1_operand->buffer;
+    NNADAPTER_CHECK(input1_buffer);
+    const auto input1_data = reinterpret_cast<const int32_t*>(input1_buffer);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        input1_data,
+        input1_shape,
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          input1_data,
+          input1_shape,
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  } else if (IsTemporaryShapeOperand(input1_operand) &&
+             IsConstantOperand(input0_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(input0_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    auto& input0_type = input0_operand->type;
+    auto input0_shape = std::vector<int32_t>(
+        input0_type.dimensions.data,
+        input0_type.dimensions.data + input0_type.dimensions.count);
+    const auto input0_buffer = input0_operand->buffer;
+    NNADAPTER_CHECK(input0_buffer);
+    const auto input0_data = reinterpret_cast<const int32_t*>(input0_buffer);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        input0_data,
+        input0_shape,
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          input0_data,
+          input0_shape,
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
   }
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
