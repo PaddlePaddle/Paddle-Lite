@@ -196,6 +196,8 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   // prepare act_type
   if (param.act_type == "gelu") {
     qkv_act = xdnn::Activation_t::GELU;
+  } else if (param.act_type == "__xpu__quick_gelu") {
+    qkv_act = xdnn::Activation_t::QUICK_GELU;
   } else if (param.act_type != "relu") {
     CHECK(false) << "Invalid QKV Activation Type: " << param.act_type;
   }

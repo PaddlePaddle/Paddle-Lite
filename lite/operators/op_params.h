@@ -1768,6 +1768,11 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   int mask_dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 };
 
+struct XPUQuickGeluParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 struct XPUFcParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* w{nullptr};

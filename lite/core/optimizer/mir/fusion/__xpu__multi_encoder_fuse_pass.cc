@@ -1422,7 +1422,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
-    std::vector<std::string> act_types{"gelu", "relu"};
+    std::vector<std::string> act_types{"gelu", "relu", "__xpu__quick_gelu"};
     std::vector<std::string> input_poss{"X", "Y"};
     std::vector<std::string> qkv_ln_2_out_poss{"X", "Y"};
     std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
