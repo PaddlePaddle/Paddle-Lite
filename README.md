@@ -26,7 +26,7 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 
 Paddle Lite 提供了 Android/iOS/x86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://www.paddlepaddle.org.cn/lite/develop/quick_start/release_lib.html)，或者从 Release notes 处获取最新的[预编译编译库](https://github.com/PaddlePaddle/Paddle-Lite/releases)。
 
-Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://www.paddlepaddle.org.cn/lite/develop/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译方法](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
+Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://www.paddlepaddle.org.cn/lite/develop/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
 
 **四. 预测示例**
 

@@ -231,14 +231,17 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 
 - 安装驱动和固件包：
 
 ```shell
-# 增加可执行权限
+增加可执行权限
 $ chmod +x *.run
-# 安装驱动和固件包
+
+安装驱动和固件包
 $ ./A300-3010-npu-driver_21.0.4_linux-x86_64.run --full
 $ ./A300-3010-npu-firmware_1.80.22.2.220.run --full
-# 重启服务器
+
+重启服务器
 $ reboot
-# 查看驱动信息，确认安装成功
+
+查看驱动信息，确认安装成功
 $ npu-smi info
 ```
 
@@ -253,30 +256,38 @@ $ npu-smi info
 - for arm64
 
   ```shell
-  # 下载 Dockerfile
+  下载 Dockerfile
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/kunpeng920_arm/Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile
-  # 通过 Dockerfile 生成镜像
+  
+  通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_aarch64:cann_5.1.1.alpha001 .
-  # 创建容器
+  
+  创建容器
   $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_5.1.1.alpha001 /bin/bash
-  # 进入容器
+  
+  进入容器
   $ docker exec -it ascend-aarch64 /bin/bash
-  # 确认容器的 Ascend 环境是否创建成功
+  
+  确认容器的 Ascend 环境是否创建成功
   $ npu-smi info
   ```
 
 - for amd64
 
   ```shell
-  # 下载 Dockerfile
+  下载 Dockerfile
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/intel_x86/Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile
-  # 通过 Dockerfile 生成镜像
+  
+  通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_x86:cann_5.1.1.alpha001 .
-  # 创建容器
+  
+  创建容器
   $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_5.1.1.alpha001 /bin/bash
-  # 进入容器
+  
+  进入容器
   $ docker exec -it ascend-x86 /bin/bash
-  # 确认容器的 Ascend 环境是否创建成功
+  
+  确认容器的 Ascend 环境是否创建成功
   $ npu-smi info
   ```
 
@@ -415,9 +426,10 @@ $ npu-smi info
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # amd64
+  For amd64
   $ ./build.sh linux amd64
-  # arm64
+
+  For arm64
   $ ./build.sh linux arm64
   ```
 
@@ -444,17 +456,22 @@ $ npu-smi info
     - 替换头文件和库
 
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
       ```
 
@@ -469,17 +486,22 @@ $ npu-smi info
     - 替换头文件和库
 
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 

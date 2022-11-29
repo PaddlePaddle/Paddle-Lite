@@ -67,13 +67,15 @@ Paddle-Lite 提供了多个应用场景的 iOS Demo:
 3、`cd Paddle-Lite-Demo/object_detection/assets` 目录，运行 `download.sh` 脚本，下载 OPT 优化后模型
 
 ```shell
-cd Paddle-Lite-Demo/libs
-# 下载所需要的 Paddle Lite 预测库
-sh download.sh
-cd ../object_detection/assets
-# 下载OPT 优化后模型
-sh download.sh
-cd ..
+$ cd Paddle-Lite-Demo/libs
+
+下载所需要的 Paddle Lite 预测库
+$ sh download.sh
+$ cd ../object_detection/assets
+
+下载OPT 优化后模型
+$ sh download.sh
+$ cd ..
 ```
 
 下载完成后会出现提示： `Extract done `
@@ -107,12 +109,14 @@ cd ..
       * `opencv2.framework`：opencv  库和头文件
 
     ```shell
-    # 位置：
+    位置：
     detection_demo/third-party/
     example：
-    # iOS 预测库
+    
+    iOS 预测库
     detection_demo/third-party/PaddleLite/lib/libpaddle_api_light_bundled.a
-    # 预测库头文件
+    
+    预测库头文件
     detection_demo/third-party/PaddleLite/include/paddle_api.h
     detection_demo/third-party/PaddleLite/include/paddle_use_kernels.h
     detection_demo/third-party/PaddleLite/include/paddle_use_ops.h
@@ -121,7 +125,7 @@ cd ..
  2.  `ViewController.mm`：主要预测代码
 
     ```shell
-    # 位置
+    位置
     detection_demo/ViewController.mm
     ``` 
 
@@ -190,6 +194,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
    #include "include/paddle_use_kernels.h"
   ```
 - 如果想用 FP16 模型推理：
-  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[源码编译文档](../source_compile/macos_compile_ios)，自行编译。
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[macOS 环境下编译适用于 iOS 的库](../source_compile/macos_compile_ios)，自行编译。
   - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
   - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行

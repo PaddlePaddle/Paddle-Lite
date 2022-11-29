@@ -81,18 +81,22 @@ Paddle Lite 已支持寒武纪 MLU（MLU370-X4 MLU370-S4）在 X86 服务器上�
 - 安装驱动和固件包：
 
 ```shell
-# 增加可执行权限
+增加可执行权限
 $ chmod +x *.run
-# 安装驱动
-## CentOS7
+
+安装驱动
+For CentOS7
 $ yum install -y epel-release && yum makecache && yum install -y dkms
 $ rpm -i neuware-mlu370-driver-4.15.16-1.x86_64.rpm
-## Ubuntu1604/1804/2004
+
+For Ubuntu1604/1804/2004
 $ apt-get install -y dkms
 $ dpkg -i neuware-mlu370-driver-dkms_4.15.16_all.deb
-# 重启服务器
+
+重启服务器
 $ reboot
-# 查看驱动信息，确认安装成功
+
+查看驱动信息，确认安装成功
 $ cnmon 
 ```
 
@@ -105,12 +109,14 @@ $ cnmon
 
 - for amd64
   ```shell
-  # 下载 Dockerfile
+  下载 Dockerfile
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/cambricon_mlu/MagicMind_ubuntu18.04_x86.Dockerfile
-  # 获取 cntoolkit、magicmind和cnnl/cnnlextra 等寒武纪MLU370的SDK，放在当前路径下
-  # 通过 Dockerfile 生成镜像
+  
+  获取 cntoolkit、magicmind和cnnl/cnnlextra 等寒武纪MLU370的SDK，放在当前路径下
+  通过 Dockerfile 生成镜像
   $ docker build --network=host -f MagicMind_ubuntu18.04_x86.Dockerfile -t paddlelite/mlu370_x86_magicmind .
-  # 创建容器
+  
+  创建容器
   $ docker run -itd --name=mlu370-x86 --net=host \
     -v $PWD:/home/share -w /home/share -it --network=host --privileged \
     --device /dev/cambricon_ipcm0:/dev/cambricon_ipcm0 \
@@ -119,9 +125,11 @@ $ cnmon
     -v /dev/cambricon:/dev/cambricon \
     -v /usr/bin/cnmon:/usr/bin/cnmon \
     paddlelite/mlu370_x86_magicmind /bin/bash
-  # 进入容器
+  
+  进入容器
   $ docker exec -it mlu370-x86 /bin/bash
-  # 确认容器的 MLU370 环境是否创建成功
+  
+  确认容器的 MLU370 环境是否创建成功
   $ cnmon info
   ```
   
@@ -231,7 +239,7 @@ $ cnmon
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # amd64
+  For amd64
   $ ./build.sh linux amd64
   ```
 
@@ -258,17 +266,22 @@ $ cnmon
     - 替换头文件和库
 
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 include 目录
+
+      替换 include 目录
       $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/cambricon_mlu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libcambricon_mlu.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/cambricon_mlu/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
       ```
 

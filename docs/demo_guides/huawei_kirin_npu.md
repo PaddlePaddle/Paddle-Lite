@@ -219,10 +219,10 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 `Docker` 环境中编译。
 
-  # 对于 arm64-v8a
+  For arm64-v8a
   ./build.sh android arm64-v8a
 
-  # 对于 armeabi-v7a
+  For armeabi-v7a
   ./build.sh android armeabi-v7a
   ```
 
@@ -256,15 +256,19 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
-      # 替换 NNAdapter 运行时库
+
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/huawei_kirin_npu/
-      # 替换 NNAdapter device HAL 库
+
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libhuawei_kirin_npu.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/huawei_kirin_npu/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
@@ -281,15 +285,19 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/huawei_kirin_npu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libhuawei_kirin_npu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/huawei_kirin_npu/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
   
