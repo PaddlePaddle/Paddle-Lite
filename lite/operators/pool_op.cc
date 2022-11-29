@@ -35,8 +35,8 @@ bool PoolOpLite::CheckShape() const {
   CHECK_OR_FALSE(x_dims.size() - ksize.size() == 2U);
   // Strides size and pooling size should be the same.
   CHECK_OR_FALSE(ksize.size() == strides.size());
-  // Paddings size must be 4.
-  CHECK_OR_FALSE(paddings.size() == 4L);
+  // Paddings size must be 4 or 6.
+  CHECK_OR_FALSE(paddings.size() == 4L || paddings.size() == 6L);
 
   return true;
 }
@@ -63,7 +63,7 @@ int PoolOutputSize(int input_size,
 bool PoolOpLite::InferShapeImpl() const {
   const auto x_dims = param_.x->dims();
   std::vector<int>& ksize = param_.ksize;
-  // dynamic update 4-pad
+  // dynamic update 4-pad or 6-pad
   UpdatePadding(param_.paddings.get(),
                 param_.global_pooling,
                 param_.adaptive,
@@ -100,3 +100,4 @@ bool PoolOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(pool2d, paddle::lite::operators::PoolOpLite);
+REGISTER_LITE_OP(pool3d, paddle::lite::operators::PoolOpLite);

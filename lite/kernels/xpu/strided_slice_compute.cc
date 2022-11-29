@@ -189,7 +189,6 @@ inline std::vector<int> get_new_data_from_tensor(
 
 template <typename T, PrecisionType PType>
 void StridedSliceCompute<T, PType>::Run() {
-  std::cout << "running in StridedSliceCompute<T, PType>::Run(): " << std::endl;
   auto& param = this->template Param<operators::StridedSliceParam>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto input = param.Input;
@@ -315,15 +314,9 @@ void StridedSliceCompute<T, PType>::Run() {
       out_dims_int[i] = out_dims_int64[i];
     }
 
-    std::cout << "running in xpu, and copying data...: " << std::endl;
     std::vector<float> vc(4, 0);
     TargetWrapperXPU::MemcpySync(
         vc.data(), tmp_t, sizeof(float) * 4, IoDirection::DtoH);
-    std::cout << "data in XPU before flip: " << std::endl;
-    for (int i = 0; i < vc.size(); i++) {
-      std::cout << vc[i] << " ";
-    }
-    std::cout << std::endl;
 
     r = xdnn::flip<T>(
         ctx.GetRawContext(), tmp_t, out_t, out_dims_int, reverse_axis);
@@ -331,12 +324,6 @@ void StridedSliceCompute<T, PType>::Run() {
 
     TargetWrapperXPU::MemcpySync(
         vc.data(), out_t, sizeof(float) * 4, IoDirection::DtoH);
-    std::cout << "data in XPU after flip: " << std::endl;
-    for (int i = 0; i < vc.size(); i++) {
-      std::cout << vc[i] << " ";
-    }
-    std::cout << std::endl;
-
   } else {
     int r = xdnn::strided_slice<T>(ctx.GetRawContext(),
                                    in_t,

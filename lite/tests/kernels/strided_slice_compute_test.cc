@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -282,11 +282,6 @@ class StridedSliceComputeTester : public arena::TestCase {
     CHECK(input);
     const auto* input_data = input->data<float>();
     auto in_dims = input->dims();
-    std::cout << "input data in Base line: " << std::endl;
-    for (int i = 0; i < input->numel(); i++) {
-      std::cout << *(input_data + i) << " ";
-    }
-    std::cout << std::endl;
 
     std::vector<int64_t> out_dims_vector(in_dims.size(), -1);
     out_dims_vector = StridedSliceOutDims(starts_,
@@ -299,12 +294,6 @@ class StridedSliceComputeTester : public arena::TestCase {
                                           axes_.size(),
                                           true);
     auto out_dims = DDim(out_dims_vector);
-    std::cout << "out_dims after processing: " << std::endl;
-    auto out_dims_data = out_dims.data();
-    for (int i = 0; i < out_dims_data.size(); i++) {
-      std::cout << out_dims_data[i] << " ";
-    }
-    std::cout << std::endl;
     out->Resize(out_dims);
     auto* out_data = out->mutable_data<float>();
     std::vector<int> reverse_vector(starts_.size(), 0);
@@ -372,18 +361,7 @@ class StridedSliceComputeTester : public arena::TestCase {
                    starts_indices,
                    ends_indices,
                    strides_indices);
-      std::cout << "out data before reverse in baseline: " << std::endl;
-      for (int i = 0; i < out_dims.production(); i++) {
-        std::cout << *(tmp_t + i) << " ";
-      }
-      std::cout << std::endl;
       reverse(tmp_t, out_data, out_dims.data(), reverse_axis);
-      std::cout << "out data in baseline: " << std::endl;
-      for (int i = 0; i < out_dims.production(); i++) {
-        std::cout << *(out_data + i) << " ";
-      }
-      std::cout << std::endl;
-
     } else {
       stride_slice(input_data,
                    out_data,
@@ -636,7 +614,6 @@ TEST(StrideSlice, precision) {
 
   test_strided_slice(place, abs_error);
   test_strided_slice_axes(place, abs_error);
-  test_strided_slice_reverse(place, abs_error);
   // test_strided_slice_reverse(place, abs_error);
   test_strided_slice_decrease_axis(place, abs_error);
   test_strided_slice_tensor(place, abs_error);

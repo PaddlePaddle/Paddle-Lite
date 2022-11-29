@@ -23,7 +23,7 @@ namespace xpu {
 template <typename InType, PrecisionType PType>
 class Pool3DCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::Pool3DParam;
+  using param_t = operators::PoolParam;
 
   virtual void Run();
 
