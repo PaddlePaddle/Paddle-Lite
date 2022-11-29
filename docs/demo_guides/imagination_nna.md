@@ -75,7 +75,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 - 由于需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
-  # apt-get install openssh-client sshpass
+  $ apt-get install openssh-client sshpass
   ```
 
 ### 运行图像分类示例程序
@@ -176,7 +176,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
 
-  ./build.sh linux arm64
+  $ ./build.sh linux arm64
   ```
 
 
@@ -224,15 +224,19 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libimagination_nna.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 

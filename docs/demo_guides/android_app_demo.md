@@ -128,34 +128,30 @@ Android 示例的代码结构如下图所示：
    1、 `Predictor.java`： 预测代码
 
 ```shell
-# 位置：
 object_detection_demo/app/src/main/java/com/baidu/paddle/lite/demo/object_detection/Predictor.java
 ```
 
   2、 `model.nb` : 模型文件 (opt 工具转化后 Paddle Lite 模型), `pascalvoc_label_list`：训练模型时的 `labels` 文件
 
 ```shell
-# 位置：
 object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu/model.nb
 object_detection_demo/app/src/main/assets/labels/pascalvoc_label_list
-# 如果要替换模型，可以将新模型放到 `object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu` 目录下
+如果要替换模型，可以将新模型放到 `object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu` 目录下
 ```
 
   3、 `libpaddle_lite_jni.so、PaddlePredictor.jar`：Paddle Lite Java 预测库与 Jar 包 
 
 ```shell
-# 位置
 object_detection_demo/app/src/main/jniLibs/arm64-v8a/libpaddle_lite_jni.so
 object_detection_demo/app/libs/PaddlePredictor.jar
-# 如果要替换动态库 so 和 jar 文件，则将新的动态库 so 更新到 `object_detection_demo/app/src/main/jniLibs/arm64-v8a/` 目录下，新的 jar 文件更新至 `object_detection_demo/app/libs/` 目录下
+如果要替换动态库 so 和 jar 文件，则将新的动态库 so 更新到 `object_detection_demo/app/src/main/jniLibs/arm64-v8a/` 目录下，新的 jar 文件更新至 `object_detection_demo/app/libs/` 目录下
 ```
 
   4、`build.gradle` : 定义编译过程的 gradle 脚本。（不用改动，定义了自动下载 Paddle Lite 预测和模型的过程）
 
 ```shell
-# 位置
 object_detection_demo/app/build.gradle
-# 如果需要手动更新模型和预测库，则可将 gradle 脚本中的 `download*` 接口注释即可
+如果需要手动更新模型和预测库，则可将 gradle 脚本中的 `download*` 接口注释即可
 ```
 
 ## 代码讲解 （使用 Paddle Lite `Java API` 执行预测）
@@ -250,6 +246,6 @@ Tensor outputTensor = getOutput(0);
   - 多线程使用限制：线程数最大值是手机大核处理器的个数，如小米 9，它由 4 个 A76 大核组成，即最大运行 4 个线程。
   - 多线程预测库：GCC 编译，V7/V8 多线程均支持；clang 编译下，只支持V8 多线程，V7 多线程编译受限于 NDK，当前 NDK >= 17, 编译报错，问题来源 NDK 内部 clang 编译的寄存器数目限制。
 - 如果想用 FP16 模型推理：
-  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[源码编译文档](../source_compile/macos_compile_android.rst)，自行编译。
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[macOS 环境下编译适用于 Android 的库](../source_compile/macos_compile_android)，自行编译。
   - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
   - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行，即高端手机，如小米 9，华为 P30 等

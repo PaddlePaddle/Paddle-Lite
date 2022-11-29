@@ -24,19 +24,19 @@
 请按照 paddle lite 官方文档的教程编译 full_publish 的 paddle lite lib。以 Linux 上编译为例，其具体的命令为：
 
 ```shell
-## 配置环境
-wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz --no-check-certificate
-tar xzf cmake-3.10.3-Linux-x86_64.tar.gz
-export PATH=${PWD}'/cmake-3.10.3-Linux-x86_64/bin':$PATH
+配置环境
+$ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz --no-check-certificate
+$ tar xzf cmake-3.10.3-Linux-x86_64.tar.gz
+$ export PATH=${PWD}'/cmake-3.10.3-Linux-x86_64/bin':$PATH
 
-wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
-unzip android-ndk-r17c-linux-x86_64.zip
-export NDK_ROOT=/opt/android-ndk-r17c
+$ wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+$ unzip android-ndk-r17c-linux-x86_64.zip
+$ export NDK_ROOT=/opt/android-ndk-r17c
 
-## 编译
-git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+编译
+$ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite
-./lite/tools/build.sh \
+$ ./lite/tools/build.sh \
   --arm_os=android \
   --arm_abi=armv7 \
   --build_extra=ON \
@@ -54,8 +54,8 @@ Paddle-Lite/build.lite.android.armv7.gcc/inference_lite_lib.android.armv7/cxx/li
 ### Step2 编译 lr_trainer
 
 ```shell
-cd Paddle-Lite/lite/demo/cxx/train_demo/cplus_train/
-sh run_build.sh /path/to/your/Paddle-Lite/build.lite.android.armv7.gcc/ /path/to/your/android-ndk-r17c
+$ cd Paddle-Lite/lite/demo/cxx/train_demo/cplus_train/
+$ sh run_build.sh /path/to/your/Paddle-Lite/build.lite.android.armv7.gcc/ /path/to/your/android-ndk-r17c
 ```
 
 产物:
@@ -69,22 +69,22 @@ bin/
 在你的笔记本电脑上，用 usb 连接到手机，开启开发者模式，在任意目录下执行：
 
 ```shell
-local_path=/data/local/tmp/linear_regression
-adb shell "mkdir "${local_path}
+$ local_path=/data/local/tmp/linear_regression
+$ adb shell "mkdir "${local_path}
 
-# download model and push to mobile
-wget http://paddle-tar.bj.bcebos.com/paddle-lite/lite_lr_model.tar.gz
-tar -zxvf lite_lr_model.tar.gz
-adb push lite_lr_model/housing.data ${local_path}
-adb push lite_lr_model/model_dir ${local_path}
+Download model and push to mobile
+$ wget http://paddle-tar.bj.bcebos.com/paddle-lite/lite_lr_model.tar.gz
+$ tar -zxvf lite_lr_model.tar.gz
+$ adb push lite_lr_model/housing.data ${local_path}
+$ adb push lite_lr_model/model_dir ${local_path}
 
-# push lib and executable file to moblie
-adb push libpaddle_full_api_shared.so ${local_path}
-adb push demo_trainer ${local_path}
-adb shell chmod +x ${local_path}/demo_trainer
+Push lib and executable file to moblie
+$ adb push libpaddle_full_api_shared.so ${local_path}
+$ adb push demo_trainer ${local_path}
+$ adb shell chmod +x ${local_path}/demo_trainer
 
-# run it!
-adb shell "export LD_LIBRARY_PATH="${local_path}" && export LIBRARY_PATH="${local_path}" && cd "${local_path}" && ./demo_trainer true"
+Run it
+$ adb shell "export LD_LIBRARY_PATH="${local_path}" && export LIBRARY_PATH="${local_path}" && cd "${local_path}" && ./demo_trainer true"
 ```
 
 期望结果：
@@ -106,9 +106,9 @@ sample 9: Loss: 325.135
 上面提到的模型是直接下载得到的，如果你想自己生成，可以执行以下命令：
 
 ```shell
-git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite/lite/demo/cxx/train_demo/
-python train.py --save_model
+$ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+$ cd Paddle-Lite/lite/demo/cxx/train_demo/
+$ python train.py --save_model
 ```
 
 产物：
@@ -134,7 +134,7 @@ md5sum fc_0.w_0: 2c7b3649b2a9cf7bcd19f8b256ce795d
 python + paddle 命令:
 
 ```shell
-  fluid train.py --num_steps=10 --batch_size=1
+$ fluid train.py --num_steps=10 --batch_size=1
 ```
 
 python + paddle 结果:
@@ -154,7 +154,7 @@ Train cost, Step 9, Cost 325.135132
 
 c++ 与 paddle lite命令：
 ```
-./demo_trainer true
+$ ./demo_trainer true
 ```
 
 c++ 与 Paddle Lite 结果：
@@ -180,12 +180,12 @@ sample 9: Loss: 325.135
 如果想复现上述效果，paddle+python 的运行命令为：
 
 ```
-git clone https://github.com/PaddlePaddle/book.git
-cd book/01.fit_a_line
-python train.py
+$ git clone https://github.com/PaddlePaddle/book.git
+$ cd book/01.fit_a_line
+$ python train.py
 ```
 
 Paddle Lite + c++ 的运行命令为：
 ```
-./demo_trainer false
+$ ./demo_trainer false
 ```
