@@ -176,9 +176,10 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Postprocess time: 5.100000 ms, avg 5.100000 ms, max 5.100000 ms, min 5.100000 ms
       ```
 
-    - Android Arm64 CPU
+    - Qualcomm 8295P EVB ( Android )
 
       ```shell
+      (android arm64 cpu only)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a cpu 858e5789
 
@@ -190,11 +191,8 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Preprocess time: 9.461000 ms, avg 9.461000 ms, max 9.461000 ms, min 9.461000 ms
         Prediction time: 39.883000 ms, avg 39.883000 ms, max 39.883000 ms, min 39.883000 ms
         Postprocess time: 7.039000 ms, avg 7.039000 ms, max 7.039000 ms, min 7.039000 ms
-      ```
 
-    - Qualcomm 8295P EVB ( Android )
-
-      ```shell
+      (android arm64 cpu + qualcomm qnn)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
 
@@ -249,9 +247,10 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Postprocess time: 5.210000 ms, avg 5.210000 ms, max 5.210000 ms, min 5.210000 ms
       ```
 
-    - Android Arm64 CPU
+    - Qualcomm 8295P EVB ( Android )
 
       ```shell
+      (android arm64 cpu only)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a cpu 858e5789
 
@@ -263,11 +262,8 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Preprocess time: 8.733000 ms, avg 8.733000 ms, max 8.733000 ms, min 8.733000 ms
         Prediction time: 32.636000 ms, avg 32.636000 ms, max 32.636000 ms, min 32.636000 ms
         Postprocess time: 6.327000 ms, avg 6.327000 ms, max 6.327000 ms, min 6.327000 ms
-      ```
 
-    - Qualcomm 8295P EVB ( Android )
-
-      ```shell
+      (android arm64 cpu + qualcomm qnn)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
 

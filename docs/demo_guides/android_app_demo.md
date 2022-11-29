@@ -128,14 +128,12 @@ Android 示例的代码结构如下图所示：
    1、 `Predictor.java`： 预测代码
 
 ```shell
-位置：
 object_detection_demo/app/src/main/java/com/baidu/paddle/lite/demo/object_detection/Predictor.java
 ```
 
   2、 `model.nb` : 模型文件 (opt 工具转化后 Paddle Lite 模型), `pascalvoc_label_list`：训练模型时的 `labels` 文件
 
 ```shell
-位置：
 object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu/model.nb
 object_detection_demo/app/src/main/assets/labels/pascalvoc_label_list
 如果要替换模型，可以将新模型放到 `object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu` 目录下
@@ -144,7 +142,6 @@ object_detection_demo/app/src/main/assets/labels/pascalvoc_label_list
   3、 `libpaddle_lite_jni.so、PaddlePredictor.jar`：Paddle Lite Java 预测库与 Jar 包 
 
 ```shell
-位置
 object_detection_demo/app/src/main/jniLibs/arm64-v8a/libpaddle_lite_jni.so
 object_detection_demo/app/libs/PaddlePredictor.jar
 如果要替换动态库 so 和 jar 文件，则将新的动态库 so 更新到 `object_detection_demo/app/src/main/jniLibs/arm64-v8a/` 目录下，新的 jar 文件更新至 `object_detection_demo/app/libs/` 目录下
@@ -153,7 +150,6 @@ object_detection_demo/app/libs/PaddlePredictor.jar
   4、`build.gradle` : 定义编译过程的 gradle 脚本。（不用改动，定义了自动下载 Paddle Lite 预测和模型的过程）
 
 ```shell
-位置
 object_detection_demo/app/build.gradle
 如果需要手动更新模型和预测库，则可将 gradle 脚本中的 `download*` 接口注释即可
 ```

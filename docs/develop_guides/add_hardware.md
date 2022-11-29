@@ -121,7 +121,7 @@
   - 参考最近接入的 Imagination NNA 的 Pull Request(PR) 的代码修改[https://github.com/PaddlePaddle/Paddle-Lite/pull/4335](https://github.com/PaddlePaddle/Paddle-Lite/pull/4335)
 
 ## 代码提交、 Review 、合入机制、 CI 机制
-  - 参考[编译环境准备](../source_compile/compile_env)中的 Docker 开发环境（由于代码提交时会使用 git pre-commit hooks ，对 clang-format 版本约束）
+  - 参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境（由于代码提交时会使用 git pre-commit hooks ，对 clang-format 版本约束）
   - 注册 [github](https://www.github.com/) 账户，将 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码仓库 Fork 到自己的账户.
   - 将自己 github 账户的 Paddle Lite 仓库克隆到本地。
   ```

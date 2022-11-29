@@ -68,7 +68,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_env)中的 Docker 开发环境进行配置。
+- 为了保证编译环境一致，建议参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境进行配置。
 
 ### 运行图像分类示例程序
 

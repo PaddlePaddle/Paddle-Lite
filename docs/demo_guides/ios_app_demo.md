@@ -109,7 +109,6 @@ $ cd ..
       * `opencv2.framework`：opencv  库和头文件
 
     ```shell
-    位置：
     detection_demo/third-party/
     example：
     
@@ -125,7 +124,6 @@ $ cd ..
  2.  `ViewController.mm`：主要预测代码
 
     ```shell
-    位置
     detection_demo/ViewController.mm
     ``` 
 
