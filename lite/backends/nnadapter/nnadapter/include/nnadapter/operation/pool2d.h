@@ -64,9 +64,12 @@ namespace operation {
   auto kernel_width = kernel_buffer[1];                                        \
   NNADAPTER_VLOG(5) << "kernel = [" << kernel_height << ", " << kernel_width   \
                     << "]";                                                    \
-  bool global_pooling =                                                        \
-      kernel_height == input_operand->type.dimensions.data[2] &&               \
-      kernel_width == input_operand->type.dimensions.data[3];                  \
+  bool global_pooling = (kernel_height ==                                      \
+                         input_operand->type.dimensions.data[2] +              \
+                             pad_height_top + pad_height_bottom) &&            \
+                        (kernel_width ==                                       \
+                         input_operand->type.dimensions.data[3] +              \
+                             pad_width_left + pad_width_right);                \
   NNADAPTER_VLOG(5) << "global_pooling = " << global_pooling;                  \
   /* Strides */                                                                \
   uint32_t strides_size =                                                      \

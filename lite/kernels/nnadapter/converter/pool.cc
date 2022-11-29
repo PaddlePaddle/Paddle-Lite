@@ -100,24 +100,20 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Pool operation
   std::vector<NNAdapterOperand*> input_operands;
-  if (adaptive) {
-    input_operands.push_back(input_operand);
-    input_operands.push_back(kernel_shape_operand);
-  } else {
-    input_operands.push_back(input_operand);
-    input_operands.push_back(auto_pad_operand);
-    input_operands.push_back(pads_operand);
-    input_operands.push_back(kernel_shape_operand);
-    input_operands.push_back(strides_operand);
-    input_operands.push_back(ceil_mode_operand);
-    input_operands.push_back(fuse_code_operand);
-  }
-
+  input_operands.push_back(input_operand);
+  input_operands.push_back(auto_pad_operand);
+  input_operands.push_back(pads_operand);
+  input_operands.push_back(kernel_shape_operand);
+  input_operands.push_back(strides_operand);
+  input_operands.push_back(ceil_mode_operand);
+  input_operands.push_back(fuse_code_operand);
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
   std::string pooling_type = op->GetAttr<std::string>("pooling_type");
   if (adaptive && pooling_type == "avg") {
     pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
+    input_operands.insert(input_operands.begin() + 6,
+                          count_include_pad_operand);
   } else if (adaptive && pooling_type == "max") {
     pool2d_operation_type = NNADAPTER_ADAPTIVE_MAX_POOL_2D;
     input_operands.push_back(return_indices_operand);

@@ -351,7 +351,7 @@ REGISTER_CONVERTER(transpose2,
 REGISTER_CONVERTER(shape,
                    ConvertShape,
                    "huawei_ascend_npu,cambricon_mlu,nvidia_tensorrt,intel_"
-                   "openvino,qualcomm_qnn,kunlunxin_xtcl");
+                   "openvino,qualcomm_qnn,kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(slice,
                    ConvertSlice,
                    "huawei_ascend_npu,verisilicon_timvx,cambricon_mlu,nvidia_"

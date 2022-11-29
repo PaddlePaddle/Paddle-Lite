@@ -228,6 +228,7 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
       quant_scale_count = 1;
       break;
     case NNADAPTER_FLOAT32:
+    case NNADAPTER_INT32:
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can't add a tim::vx::Tensor with precision="
