@@ -57,11 +57,16 @@ int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
                                  input_operand->type.dimensions.data[2])
             : 0;
   }
+  bool half_pixel_centers =
+      (static_cast<float>(output_operand->type.dimensions.data[2] /
+                          input_operand->type.dimensions.data[2]) > 4) ||
+      (static_cast<float>(output_operand->type.dimensions.data[3] /
+                          input_operand->type.dimensions.data[3]) > 4);
   auto resize_op = converter->graph()->CreateOperation<tim::vx::ops::Resize>(
       tim::vx::ResizeType::NEAREST_NEIGHBOR,
       factor,
       align_corners,
-      false,
+      half_pixel_centers,
       output_operand->type.dimensions.data[2],
       output_operand->type.dimensions.data[3]);
   resize_op->BindInputs({input_tensor});
