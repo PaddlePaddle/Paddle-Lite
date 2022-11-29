@@ -34,8 +34,6 @@ class AdaptivePool2dIntoPool2dConverter : public PatternMatcher {
 };
 
 void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  00000 Apply AdaptivePool2dIntoPool2dConverter";
   // Operation patterns
   auto adaptive_pool2d_pattern =
       CreatePattern("adaptive_pool2d", NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D)
@@ -84,8 +82,6 @@ void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
 
 bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  1111111 Apply AdaptivePool2dIntoPool2dConverter";
   // Get the operands and operations from the matched subgraph nodes.
   auto adaptive_pool2d_input_operand =
       nodes.at("adaptive_pool2d_input")->operand;
@@ -104,33 +100,20 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
       nodes.at("adaptive_pool2d_fuse_code")->operand;
   auto adaptive_pool2d_output_operand =
       nodes.at("adaptive_pool2d_output")->operand;
-
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  1111111--0000 Apply AdaptivePool2dIntoPool2dConverter";
-
   auto input_height = adaptive_pool2d_input_operand->type.dimensions.data[2];
   auto input_width = adaptive_pool2d_input_operand->type.dimensions.data[3];
-
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  1111111--1111 Apply AdaptivePool2dIntoPool2dConverter";
   auto output_height = reinterpret_cast<int32_t*>(
       adaptive_pool2d_kernel_size_operand->buffer)[0];
   auto output_width = reinterpret_cast<int32_t*>(
       adaptive_pool2d_kernel_size_operand->buffer)[1];
-  NNADAPTER_VLOG(1) << "yingsheng in  1111111--222222 Apply "
-                       "AdaptivePool2dIntoPool2dConverter";
   auto pad_height =
       reinterpret_cast<int32_t*>(adaptive_pool2d_pads_operand->buffer)[0];
   auto pad_width =
       reinterpret_cast<int32_t*>(adaptive_pool2d_pads_operand->buffer)[1];
-  NNADAPTER_VLOG(1) << "yingsheng in  1111111--444444 Apply "
-                       "AdaptivePool2dIntoPool2dConverter";
   auto stride_height =
       reinterpret_cast<int32_t*>(adaptive_pool2d_strides_operand->buffer)[0];
   auto stride_width =
       reinterpret_cast<int32_t*>(adaptive_pool2d_strides_operand->buffer)[1];
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  222222 Apply AdaptivePool2dIntoPool2dConverter";
   // Calulate the kernel size
   int32_t kernel_height =
       input_height - ((output_height - 1) * stride_height - 2 * pad_height);
@@ -140,8 +123,6 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
       kernel_height;
   reinterpret_cast<int32_t*>(adaptive_pool2d_kernel_size_operand->buffer)[1] =
       kernel_width;
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  333333 Apply AdaptivePool2dIntoPool2dConverter";
   auto* pool2d_operation = AddOperation(model);
   pool2d_operation->type = NNADAPTER_AVERAGE_POOL_2D;
   pool2d_operation->input_operands = {adaptive_pool2d_input_operand,
@@ -153,8 +134,6 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
                                       adaptive_pool2d_count_include_pad_operand,
                                       adaptive_pool2d_fuse_code_operand};
   pool2d_operation->output_operands = {adaptive_pool2d_output_operand};
-  NNADAPTER_VLOG(1)
-      << "yingsheng in  4444444 Apply AdaptivePool2dIntoPool2dConverter";
   // The matched intermediate operands and operations will be deleted only when
   // it returns true.
   return true;
