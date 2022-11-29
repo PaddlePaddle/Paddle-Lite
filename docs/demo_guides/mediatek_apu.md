@@ -65,7 +65,7 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_env)中的 Docker 开发环境进行配置。
+- 为了保证编译环境一致，建议参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境进行配置。
 
 ### 运行图像分类示例程序
 
@@ -165,11 +165,11 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
   
-  # 对于 arm64-v8a
-  ./build.sh android arm64-v8a
+  For arm64-v8a
+  $ ./build.sh android arm64-v8a
   
-  # 对于 armeabi-v7a
-  ./build.sh android armeabi-v7a
+  For armeabi-v7a
+  $ ./build.sh android armeabi-v7a
   ```
 
 ### 更新模型
@@ -179,7 +179,7 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 MTK APU 模型，仅需要将 `valid_targets` 设置为 mediatek_apu, arm 即可。
 
   ```shell
-  # 注意：
+  注意：
   1）PaddleLite-generic-demo 中已经包含了类似 opt 工具优化生成 nb 模型的功能。
 
   $ cd PaddleLite-generic-demo/image_classification_demo/assets/models
@@ -218,15 +218,19 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
@@ -243,15 +247,19 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
 

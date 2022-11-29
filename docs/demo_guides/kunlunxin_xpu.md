@@ -1,7 +1,6 @@
 # 昆仑芯 XPU
 
-Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
-目前支持 Kernel 和子图两种接入方式。其中子图接入方式原理是，在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署, 支持 Kernel 接入方式。
 
 ## 支持现状
 
@@ -88,8 +87,12 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 
   ```shell
   $ cd PaddleLite-linux-demo/image_classification_demo/shell
-  $ ./run.sh amd64 # 默认已生成 amd64 版本的 build/image_classification_demo，因此，无需重新编译示例程序就可以执行。
-  $ ./run.sh arm64 # 需要在 arm64(FT-2000+/64) 服务器上执行 ./build.sh arm64 后才能执行该命令。
+
+  默认已生成 amd64 版本的 build/image_classification_demo，因此，无需重新编译示例程序就可以执行。
+  $ ./run.sh amd64
+
+  需要在 arm64(FT-2000+/64) 服务器上执行 ./build.sh arm64 后才能执行该命令。
+  $ ./run.sh arm64
   ...
   AUTOTUNE:(12758016, 16, 1, 2048, 7, 7, 512, 1, 1, 1, 1, 0, 0, 0) = 1by1_bsp(1, 32, 128, 128)
   Find Best Result in 150 choices, avg-conv-op-time = 40 us
@@ -128,8 +131,12 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 
   ```shell
   $ cd PaddleLite-linux-demo/image_classification_demo/shell
-  $ ./build.sh amd64 # For amd64
-  $ ./build.sh arm64 # For arm64(FT-2000+/64) 
+  
+  For amd64
+  $ ./build.sh amd64
+
+  For arm64(FT-2000+/64)
+  $ ./build.sh arm64 
   ```
 
 ### 更新模型
@@ -150,10 +157,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 - 编译 publish so for amd64 or arm64(FT-2000+/64)；
 
   ```shell
-  $ # For amd64，如果报找不到 cxx11:: 符号的编译错误，请将 gcc 切换到 4.8 版本。
+  For amd64，如果报找不到 cxx11:: 符号的编译错误，请将 gcc 切换到 4.8 版本。
   $ ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON
 
-  $ # For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+  For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
   $ export CC=<path_to_your_c_compiler>
   $ export CXX=<path_to_your_c++_compiler>
   $ ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON
@@ -162,51 +169,13 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 - 替换库文件和头文件
 
   ```shell
-  cd PaddleLite-linux-demo/image_classification_demo/shell
-  ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
-  # For amd64，lite_inference_dir 一般为编译生成的 build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
-  # For arm64，lite_inference_dir一般为编译生成的 build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
+  $ cd PaddleLite-linux-demo/image_classification_demo/shell
+  $ ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
+  
+  For amd64，lite_inference_dir 一般为编译生成的 build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
+  
+  For arm64，lite_inference_dir一般为编译生成的 build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
   ```
-
-  备注：替换头文件后需要重新编译示例程序
-
-## 子图方式接入
-
-### 运行图像分类示例程序
-
-### 更新模型
-
-### 更新支持昆仑芯 XPU XTCL 方式的 Paddle Lite 库
-
-- 下载 Paddle Lite 源码；
-
-  ```shell
-  $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-  $ cd Paddle-Lite
-  $ git checkout <release-version-tag>
-  ```
-
-- 编译 publish so for amd64 or arm64(FT-2000+/64)；
-
-  ```shell
-  $ # For amd64
-  $ ./lite/tools/build_linux.sh \
-  $     --arch=x86 \
-  $     --with_nnadapter=ON \
-  $     --nnadapter_with_kunlunxin_xtcl=ON \
-  $     --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root>
-
-  $ # For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
-  $ export CC=<path_to_your_c_compiler>
-  $ export CXX=<path_to_your_c++_compiler>
-  $ ./lite/tools/build_linux.sh \
-  $     --arch=armv8 \
-  $     --with_nnadapter=ON \
-  $     --nnadapter_with_kunlunxin_xtcl=ON \
-  $     --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root>
-  ```
-
-- 替换库文件和头文件
 
   备注：替换头文件后需要重新编译示例程序
 
@@ -219,7 +188,7 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
   $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_kunlunxin_xpu kunlunxin_xpu_sdk_root D:\\xpu_toolchain_windows\\output
   ```
 
-  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows)进行环境配置和查找相应编译参数
+  编译脚本 `build_windows.bat` 使用可参考[Windows 环境下编译适用于 Windows 的库](../source_compile/windows_compile_windows)进行环境配置和查找相应编译参数
 
 ## 其它说明
 

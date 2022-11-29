@@ -15,13 +15,46 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 
 ### 已支持的 Paddle 模型
 
-- [mobilenet_v1_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz)
-- [resnet50_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224.tar.gz)
-- [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
-- [yolov3_darknet53_270e_coco](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz)
-- [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
-- [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
-- [ssd_mobilenet_v1_relu_voc_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
+- 图像分类
+  - [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz)
+  - [DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DarkNet/DarkNet53.tar.gz)
+  - [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz)
+  - [DPN68](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/DPN/DPN68.tar.gz)
+  - [EfficientNetB0](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/EfficientNetB0.tgz)
+  - [GhostNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/GhostNet/GhostNet_x1_0.tar.gz)
+  - [GoogLeNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/GoogLeNet.tgz)
+  - [HRNet-W18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/HRNet/HRNet_W18_C.tar.gz)
+  - [Inception-v3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV3.tgz)
+  - [Inception-v4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV4.tgz)
+  - [MobileNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV1.tgz)
+  - [MobileNet-v2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV2.tgz)
+  - [MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_large_x1_0.tgz)
+  - [MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_small_x1_0.tgz)
+  - [PP-LCNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/PPLCNet/PPLCNet_x0_25.tar.gz)
+  - [Res2Net50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/Res2Net/Res2Net50_26w_4s.tar.gz)
+  - [ResNet-101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz)
+  - [ResNet-18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet18.tgz)
+  - [ResNet-50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz)
+  - [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz)
+  - [SE_ResNet50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/v2.3/SENet/SE_ResNet50_vd.tar.gz)
+  - [SqueezeNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/SqueezeNet1_0.tgz)
+  - [VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG16.tgz)
+  - [VGG19](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG19.tgz)
+  - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
+  - [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
+- 目标检测
+  - [PPYOLO_tiny](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/v2.3/ppyolo_tiny_650e_coco.tar.gz)
+  - [SSDLite-MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_large.tar.gz)
+  - [SSDLite-MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/static/ssdlite_mobilenet_v3_small.tar.gz)
+  - [SSD-MobileNetV1(1.8)](http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
+  - [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz)
+  - [YOLOv3-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v1_270e_coco.tgz)
+  - [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v3_large_270e_coco.tgz)
+  - [YOLOv3-ResNet50_vd](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz)
+- 自然语言处理 & 语义理解
+  - [BERT](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/bert_base_uncased.tgz)
+  - [ERNIE](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_1.0.tgz)
+  - [ERNIE-TINY](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_tiny.tar.gz)
 
 ### 已支持（或部分支持）的 Paddle 算子（ Kernel 接入方式）
 
@@ -146,6 +179,20 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
     - Qualcomm 8295P EVB ( Android )
 
       ```shell
+      (android arm64 cpu only)
+      $ adb -s 858e5789 root
+      $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a cpu 858e5789
+
+        Top1 Egyptian cat - 0.503239
+        Top2 tabby, tabby cat - 0.419854
+        Top3 tiger cat - 0.065506
+        Top4 lynx, catamount - 0.007992
+        Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+        Preprocess time: 9.461000 ms, avg 9.461000 ms, max 9.461000 ms, min 9.461000 ms
+        Prediction time: 39.883000 ms, avg 39.883000 ms, max 39.883000 ms, min 39.883000 ms
+        Postprocess time: 7.039000 ms, avg 7.039000 ms, max 7.039000 ms, min 7.039000 ms
+
+      (android arm64 cpu + qualcomm qnn)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
 
@@ -165,9 +212,11 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       $ export FILE_TRANSFER_COMMAND=lftp
       $ adb -s 858e5789 root
       $ rm -rf ../assets/models/cache
-      # 用于生成 cache 和 nb
+
+      推送到 EVK 开发板上在 android 执行生成 cache 和 nb 模型
       $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 null cache
-      # 上板远程执行
+      
+      推送到 EVK 开发板上在 QNX 上推理
       $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
 
         Top1 Egyptian cat - 0.491380
@@ -201,6 +250,20 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
     - Qualcomm 8295P EVB ( Android )
 
       ```shell
+      (android arm64 cpu only)
+      $ adb -s 858e5789 root
+      $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a cpu 858e5789
+
+        Top1 Egyptian cat - 0.482871
+        Top2 tabby, tabby cat - 0.471594
+        Top3 tiger cat - 0.039779
+        Top4 lynx, catamount - 0.002430
+        Top5 ping-pong ball - 0.000508
+        Preprocess time: 8.733000 ms, avg 8.733000 ms, max 8.733000 ms, min 8.733000 ms
+        Prediction time: 32.636000 ms, avg 32.636000 ms, max 32.636000 ms, min 32.636000 ms
+        Postprocess time: 6.327000 ms, avg 6.327000 ms, max 6.327000 ms, min 6.327000 ms
+
+      (android arm64 cpu + qualcomm qnn)
       $ adb -s 858e5789 root
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789
 
@@ -213,7 +276,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Prediction time: 8529.121000 ms, avg 8529.121000 ms, max 8529.121000 ms, min 8529.121000 ms
         Postprocess time: 10.063000 ms, avg 10.063000 ms, max 10.063000 ms, min 10.063000 ms
       
-      # 以 FP16 方式运行
+      以 FP16 方式运行
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true"
 
         Top1 Egyptian cat - 0.482910
@@ -232,9 +295,11 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       $ export FILE_TRANSFER_COMMAND=lftp
       $ adb -s 858e5789 root
       $ rm -rf ../assets/models/cache
-      # 用于生成 cache 和 nb
+
+      推送到 EVK 开发板上在 android 执行生成 cache 和 nb 模型
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 null cache
-      # 上板远程执行
+      
+      推送到 EVK 开发板上在 QNX 上推理
       $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root null cache
 
         Top1 Egyptian cat - 0.482871
@@ -246,7 +311,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
         Prediction time: 8472.844000 ms, avg 8472.844000 ms, max 8472.844000 ms, min 8472.844000 ms
         Postprocess time: 13.605000 ms, avg 13.605000 ms, max 13.605000 ms, min 13.605000 ms
       
-      # 以 FP16 方式运行
+      以 FP16 方式运行
       $ rm -rf ../assets/models/cache
       $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a qualcomm_qnn 858e5789 "QUALCOMM_QNN_ENABLE_FP16=true" cache
       $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test qnx arm64 qualcomm_qnn 192.168.1.1 22 root root "QUALCOMM_QNN_ENABLE_FP16=true" cache
@@ -265,11 +330,13 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # linux amd64
+  For linux amd64
   $ ./build.sh linux amd64
-  # android arm64-v8a  需设置 Android ndk 交叉编译环境
+  
+  For android arm64-v8a  需设置 Android ndk 交叉编译环境
   $ ./build.sh android arm64-v8a
-  # qnx arm64  需设置 qnx 交叉编译环境
+  
+  For qnx arm64  需设置 qnx 交叉编译环境
   $ ./build.sh qnx arm64
   ```
 
@@ -295,7 +362,7 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 - 获取 qualcomm_qnn 适配源码（暂未开源）；
 
   ```shell
-  # 在 Paddle-Lite/lite/backends/nnadapter/nnadapter/src/driver 目录里下载 qualcomm_qnn 代码
+  在 Paddle-Lite/lite/backends/nnadapter/nnadapter/src/driver 目录里下载 qualcomm_qnn 代码
   ```
 
 - 请向高通索取 QNN SDK ，解压后目录为 qnn-v1.15.0.220706112757_38277;
@@ -307,8 +374,8 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
 - **编译 Linux x86 simulator 预测库**
 
   ```shell
-  # 注：编译时 nnadapter_qualcomm_qnn_sdk_root 和 nnadapter_qualcomm_hexagon_sdk_root 两个变量需要使用绝对路径，采用相对路径可能会产生编译问题
-  # 注：请使用 clang 编译
+  注：编译时 nnadapter_qualcomm_qnn_sdk_root 和 nnadapter_qualcomm_hexagon_sdk_root 两个变量需要使用绝对路径，采用相对路径可能会产生编译问题
+  注：请使用 clang 编译
   $ export CC=<path/to/clang>
   $ export CXX=<path/to/clang++>
   $ cd Paddle-Lite
@@ -323,20 +390,22 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
       --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
       full_publish
-  # 替换 x86 simulator预测库
+
+  替换 x86 simulator预测库
   $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include
   $ cp -rf build.lite.linux.x86.clang/inference_lite_lib/cxx/include PaddleLite-generic-demo/libs/PaddleLite/linux/amd64
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
   $ cp build.lite.linux.x86.clang/inference_lite_lib/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn/
-  # 将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中 
+  
+  将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中 
   $ cp <path/to/qnn-v1.15.0.220706112757_38277>/target/x86_64-linux-clang/lib/* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/qualcomm_qnn
   ```
 
 - **编译 Android arm64-v8a/ameabi-v7a 预测库**
 
   ```shell
-  # Android arm64-v8a
+  For Android arm64-v8a
   $ cd Paddle-Lite
   $ ./lite/tools/build_android.sh \
       --arch=armv8 \
@@ -350,17 +419,19 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
       --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
       full_publish
-  # 替换 Android arm64-v8a 预测库
+
+  替换 Android arm64-v8a 预测库
   $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
-  # 将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
+
+  将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
   $ cp <path/to/qnn-v1.15.0.220706112757_38277>/target/aarch64-android/lib/*  PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn
   $ cp <path/to/qnn-v1.15.0.220706112757_38277>/target/hexagon-v68/lib/unsigned/* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/qualcomm_qnn/hexagon-v68/lib/unsigned
 
-  # Android ameabi-v7a
+  For Android ameabi-v7a
   $ cd Paddle-Lite
   $ ./lite/tools/build_android.sh \
       --arch=armv7 \
@@ -374,13 +445,15 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
       --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0> \
       full_publish
-  # 替换 Android ameabi-v7a 预测库
+
+  替换 Android ameabi-v7a 预测库
   $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libqualcomm_qnn* PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/
   $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-  #将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
+
+  将高通 QNN SDK 中的依赖的库拷贝到 demo 程序中
   $ cp <path/to/qnn-v1.15.0.220706112757_38277>/target/arm-android/lib/*  PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn
   $ cp <path/to/qnn-v1.15.0.220706112757_38277>/target/hexagon-v68/lib/unsigned/*  PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/qualcomm_qnn/hexagon-v68/lib/unsigned
   ```
@@ -412,7 +485,8 @@ Paddle Lite 已支持高通 QNN 在 x86 （模拟器）和 ARM 设备（例如SA
       --nnadapter_qualcomm_qnn_sdk_root=<path/to/qnn-v1.15.0.220706112757_38277> \
       --nnadapter_qualcomm_hexagon_sdk_root=<path/to/Hexagon_SDK/4.3.0.0>\
       full_publish
-  # 替换 QNX 预测库
+
+  替换 QNX 预测库
   $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/include
   $ cp -rf build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/include PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64
   $ cp build.lite.qnx.armv8.gcc/inference_lite_lib.qnx.armv8.nnadapter/cxx/lib/libpaddle*.so PaddleLite-generic-demo/libs/PaddleLite/qnx/arm64/lib/
