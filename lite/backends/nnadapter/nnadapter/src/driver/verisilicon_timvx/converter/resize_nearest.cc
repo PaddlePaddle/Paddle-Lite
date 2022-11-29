@@ -61,7 +61,7 @@ int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
       tim::vx::ResizeType::NEAREST_NEIGHBOR,
       factor,
       align_corners,
-      true,
+      false,
       output_operand->type.dimensions.data[2],
       output_operand->type.dimensions.data[3]);
   resize_op->BindInputs({input_tensor});
