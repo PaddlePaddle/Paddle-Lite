@@ -4,7 +4,7 @@
 
 本教程提供了用 Paddle Lite 执行推理的 Python 示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Python API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
 
-本教程以 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py` 为案例，介绍 Python API 推理流程，相关代码放置在 [lite/demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python) 文件夹中。
+本教程以 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py` 为案例，介绍 Python API 推理流程，相关代码放置在 [lite/demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/python) 文件夹中。
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
 
@@ -22,7 +22,7 @@
 
 其流程图如下：
 
-<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.12/docs/images/predict_workflow.png"/></p>
 
 ## Python 应用开发说明
 
@@ -92,7 +92,7 @@ PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台�
 python -m pip install paddlelite==2.10rc0
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/arm_linux_compile_arm_linux)编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux)编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 
@@ -157,7 +157,7 @@ a.run()
 
 ### 4. 下载和运行预测示例程序
 
-从 [demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python) 下载预测示例文件 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py`，并运行此程序。
+从 [demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/python) 下载预测示例文件 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py`，并运行此程序。
 
 ```py
 # light api 的输入为优化后模型文件 mobilenet_v1_opt.nb

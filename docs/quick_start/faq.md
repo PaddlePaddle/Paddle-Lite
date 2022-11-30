@@ -4,7 +4,7 @@
 
 1、编译 Paddle Lite 报错怎么办？
 
-答：不推荐用户自己编译，推荐使用预编译库 [Paddle Lite 预编译库下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)
+答：不推荐用户自己编译，推荐使用预编译库 [Paddle Lite 预编译库下载](./release_lib)
 
 2、遇到 Check failed: op: no Op found for xxx Aborted (core dumped) 问题怎么办？
 
@@ -32,7 +32,7 @@
 
 1、Paddle Lite 相关资料：
 
-答：Paddle Lite 文档 [Paddle Lite 文档链接](https://paddle-lite.readthedocs.io/zh/latest/)。  
+答：Paddle Lite 文档 [Paddle Lite 文档链接](https://www.paddlepaddle.org.cn/lite)。  
    Paddle Lite 各平台应用示例 [Paddle Lite 应用示例链接](https://github.com/PaddlePaddle/Paddle-Lite-Demo)。
 
 2、Paddle Lite 如何加载动态图模型？
@@ -55,5 +55,5 @@
 
 2、Paddle Lite 如何支持低版本的安卓？
 
-答：推荐用户下载预编译库，如不满足条件使用，可参考编译脚本 [build_android.sh](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_android.sh)
+答：推荐用户下载预编译库，如不满足条件使用，可参考编译脚本 [build_android.sh](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/tools/build_android.sh)
 进行编译。Android 版本低于6.0时，需要设置 `--android_api_level`，不支持低于 Android 5.0 的版本。

@@ -1,6 +1,6 @@
-# 英特尔 OpenVINO 部署示例
+# Intel OpenVINO
 
-Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持 Intel OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -101,7 +101,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
 
 ### 已支持（或部分支持）的 Paddle 算子
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
@@ -227,7 +227,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
   $ ./build.sh linux amd64
   ```
 
-  ### 更新支持英特尔 OpenVINO 的 Paddle Lite 库
+  ### 更新支持 Intel OpenVINO 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
 
@@ -246,17 +246,22 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
 
   - 替换头文件和库
     ```shell
-    # 清理原有 include 目录
+    清理原有 include 目录
     $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-    # 替换 include 目录
+    
+    替换 include 目录
     $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-    # 替换 NNAdapter 运行时库
+    
+    替换 NNAdapter 运行时库
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/intel_openvino/
-    # 替换 NNAdapter device HAL 库
+    
+    替换 NNAdapter device HAL 库
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libintel_openvino.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/intel_openvino/
-    # 替换 libpaddle_full_api_shared.so
+    
+    替换 libpaddle_full_api_shared.so
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-    # 替换 libpaddle_light_api_shared.so
+    
+    替换 libpaddle_light_api_shared.so
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
     ```
 

@@ -4,7 +4,7 @@
 
 本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Java API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
 
-本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
+本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
 
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
@@ -24,7 +24,7 @@
 其流程图如下：
 
 
-<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.12/docs/images/predict_workflow.png"/></p>
 
 
 ## Java 应用开发说明
@@ -76,7 +76,7 @@ Tensor output = predictor.getOutput(0);
 
 ## Android Studio 工程 Java 示例程序
 
-本章节展示的所有 Android Studio 工程代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/java) 。下面将要下载的预测库也已经包含了上述 Android Studio 工程。
+本章节展示的所有 Android Studio 工程代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/java) 。下面将要下载的预测库也已经包含了上述 Android Studio 工程。
 
 ### 1. 环境准备
 

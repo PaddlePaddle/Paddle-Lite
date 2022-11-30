@@ -3,7 +3,7 @@
 ## 概述
 本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 C++ API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
 
-本教程以 mobile_light demo 为案例，介绍 C++ API 推理流程，相关代码放置在[demo/c++/mobile_light](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx/mobile_light)目录。
+本教程以 mobile_light demo 为案例，介绍 C++ API 推理流程，相关代码放置在[demo/c++/mobile_light](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/cxx/mobile_light)目录。
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
 
@@ -20,7 +20,7 @@
 - 输出数据：推理执行结束后，通过 `predictor->GetOutput(num)` 接口获取第 `num` 个输出 tensor。
 
 其流程图如下：
-<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.12/docs/images/predict_workflow.png"/></p>
 
 ## C++ 应用开发说明
 
@@ -235,7 +235,7 @@ output tensor 0 mean value:0.001
 
 ## 更多C++示例
 
-更多 C++ 示例，请参考 [demo/c++](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx) 的详细说明。
+更多 C++ 示例，请参考 [demo/c++](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/cxx) 的详细说明。
 
 ### 图像分类示例
 

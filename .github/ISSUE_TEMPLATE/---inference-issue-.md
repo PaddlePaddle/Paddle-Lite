@@ -4,7 +4,7 @@ about: 您可以提问预测中报错、应用等问题。 You could use this te
 
 ---
 
-为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://paddle-lite.readthedocs.io/zh/develop/quick_start/faq.html), [官方文档](https://paddle-lite.readthedocs.io/zh/develop/guide/introduction.html)
+为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://www.paddlepaddle.org.cn/lite/develop/quick_start/faq.html), [官方文档](https://www.paddlepaddle.org.cn/lite/develop/guide/introduction.html)
 
 如果您没有查询到相似问题，为快速解决您的提问，建立 issue 时请提供如下细节信息：
 - 标题：简洁、精准描述您的问题，例如“最新预测库的 API 文档在哪儿 ”

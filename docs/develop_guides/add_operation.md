@@ -19,7 +19,7 @@
 
 ## 2. 添加 Argmax Op 并注册
 
-- 在 Paddle-Lite/lite/operators/ 目录下新建 [argmax_op.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/operators/argmax_op.h) 文件，主要代码如下：
+- 在 Paddle-Lite/lite/operators/ 目录下新建 [argmax_op.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/operators/argmax_op.h) 文件，主要代码如下：
     ```c++
     class ArgmaxOpLite : public OpLite {
     public:
@@ -58,7 +58,7 @@
     ```
     `ArgmaxOpLite` 继承 `OpLite` ，成员变量包括 `ArgmaxParam` 结构体，需要实现的接口包括 `CheckShape()` 、`InferShapeImpl()` 、`AttachImpl()` 、`AttachKernel()` 和 `DebugString()` 函数。`AttachKernel()` 和 `DebugString()` 函数较为简单，此处直接实现；
 
-- 在 `Paddle-Lite/lite/operators/` 目录下新建 [argmax_op.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/operators/argmax_op.cc) 文件，需要具体实现 `CheckShape()`、`InferShapeImpl()` 和 `AttachImpl()` 函数。`CheckShape()` 函数检查输入是否符合要求，`InferShape()` 函数基于输入推断得到输出的维度，`AttachImpl()` 函数绑定 Op 的输入输出。然后在 argmax_op.cc 文件中注册 Argmax，核心代码如下：
+- 在 `Paddle-Lite/lite/operators/` 目录下新建 [argmax_op.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/operators/argmax_op.cc) 文件，需要具体实现 `CheckShape()`、`InferShapeImpl()` 和 `AttachImpl()` 函数。`CheckShape()` 函数检查输入是否符合要求，`InferShape()` 函数基于输入推断得到输出的维度，`AttachImpl()` 函数绑定 Op 的输入输出。然后在 argmax_op.cc 文件中注册 Argmax，核心代码如下：
     
     ```c++
     bool ArgmaxOpLite::CheckShape() const {
@@ -117,7 +117,7 @@ Paddle Lite 有 Host, ARM, x86, OpenCL, Metal, NNAdapter 等多种后端，同�
 ### 3.1 Host 端
 
 Host 端算子用于添加无优化实现的算子，可以在各个硬件平台运行的算子。现以 Host 端 Argmax 实现为例说明：
-- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/host/activation_compute.h) 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
+- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/host/activation_compute.h) 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
 
     ```c++
     template <typename T>
@@ -136,7 +136,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     };
     ```
 
-- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/host/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/host/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
+- 在 Paddle-Lite/lite/kernels/host/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/host/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/host/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
 
     ```c++
     template <typename T>
@@ -196,7 +196,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 ### 3.2 ARM 端
 
 以 ARM 端 Argmax 实现为例说明：
-- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/arm/activation_compute.h) 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
+- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/arm/activation_compute.h) 文件，声明 ArgmaxCompute 类，并继承 KernelLite，主要代码如下：
 
     ```c++
     template <typename T>
@@ -215,7 +215,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
     };
     ```
 
-- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/arm/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
+- 在 Paddle-Lite/lite/kernels/arm/ 目录下新建 [argmax_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/arm/activation_compute.cc) 文件，主要实现 Run 函数。`Run()` 函数调用 Paddle-Lite/lite/backends/arm/math/argmax.h 中的 `argmax_func()` 函数，根据输入计算输出。最后在 argmax_compute.cc 文件中，我们绑定 Argmax 的输入输出（为 Tensor 的输入参数都需要绑定），代码如下：
 
     ```c++
     template <typename T>
@@ -275,7 +275,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 ### 3.3 OpenCL 端
 
 以 OpenCL 端 Argmax 实现为例说明：
-- 在 Paddle-Lite/lite/kernels/opencl/ 目录下新建 [argmax_image_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/opencl/argmax_image_compute.cc) 文件，定义 ArgmaxComputeImage2D 类，并继承 KernelLite，ArgmaxComputeImage2D 类主要代码如下：
+- 在 Paddle-Lite/lite/kernels/opencl/ 目录下新建 [argmax_image_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/opencl/argmax_image_compute.cc) 文件，定义 ArgmaxComputeImage2D 类，并继承 KernelLite，ArgmaxComputeImage2D 类主要代码如下：
 
     ```c++
     class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
@@ -305,7 +305,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 ### 3.4 Metal 端
 
 以 Metal 端 Argmax 实现为例说明：
-- 在 Paddle-Lite/lite/kernels/metal/image_op 目录下新建 [argmax_image_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/metal/image_op/argmax_image_compute.h) 文件，定义 ArgmaxImageCompute 类，并继承 KernelLite，ArgmaxImageCompute 类主要代码如下：
+- 在 Paddle-Lite/lite/kernels/metal/image_op 目录下新建 [argmax_image_compute.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/metal/image_op/argmax_image_compute.h) 文件，定义 ArgmaxImageCompute 类，并继承 KernelLite，ArgmaxImageCompute 类主要代码如下：
 
     ```c++
     class ArgmaxImageCompute
@@ -395,7 +395,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 
 ### 4.1 Host 端
 
-- 在 Paddle-Lite/lite/backends/host/math/ 目录下新建 [argmax.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/host/math/argmax.h) 文件，声明 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/backends/host/math/ 目录下新建 [argmax.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/host/math/argmax.h) 文件，声明 `argmax_func()` 函数，代码如下：
 
     ```c++
     template <typename InType, typename OutType>
@@ -404,7 +404,7 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
                      lite::Tensor* output);
     ```
 
-- 在 Paddle-Lite/lite/backends/host/math/ 目录下新建 [argmax.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/host/math/argmax.cc) 文件，具体实现 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/backends/host/math/ 目录下新建 [argmax.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/host/math/argmax.cc) 文件，具体实现 `argmax_func()` 函数，代码如下：
 
     ```c++
     template <typename InType, typename OutType>
@@ -445,14 +445,14 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 
 ### 4.2 ARM 端
 
-- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 [argmax.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/arm/math/argmax.h) 文件，声明 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 [argmax.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/arm/math/argmax.h) 文件，声明 `argmax_func()` 函数，代码如下：
     ```c++
     template <typename InType, typename OutType>
     void argmax_func(const lite::Tensor* input,
                      const int axis,
                      lite::Tensor* output);
     ```
-- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 [argmax.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/arm/math/argmax.cc) 文件，具体实现 `argmax_func()` 函数，代码如下：
+- 在 Paddle-Lite/lite/backends/arm/math/ 目录下新建 [argmax.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/arm/math/argmax.cc) 文件，具体实现 `argmax_func()` 函数，代码如下：
     
     ```c++
     template <typename InType, typename OutType>
@@ -493,11 +493,11 @@ Host 端算子用于添加无优化实现的算子，可以在各个硬件平台
 
 ### 4.3 OpenCL 端
 
-- 在 Paddle-Lite/lite/backends/opencl/cl_kernel/image/ 目录下新建 [argmax_kernel.cl](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/opencl/cl_kernel/image/argmax_kernel.cl) 文件，定义具体的 cl kernel 函数。
+- 在 Paddle-Lite/lite/backends/opencl/cl_kernel/image/ 目录下新建 [argmax_kernel.cl](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/opencl/cl_kernel/image/argmax_kernel.cl) 文件，定义具体的 cl kernel 函数。
 
 ### 4.4 Metal 端
 
-- 在 Paddle-Lite/lite/backends/metal/metal_kernel/texture/ 目录下新建 [MaxKernel.metal](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/metal/metal_kernel/texture/MaxKernel.metal) 文件，定义具体的 arg_max_c 函数，其中输入的数据格式为 texture2d_array 。
+- 在 Paddle-Lite/lite/backends/metal/metal_kernel/texture/ 目录下新建 [MaxKernel.metal](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/backends/metal/metal_kernel/texture/MaxKernel.metal) 文件，定义具体的 arg_max_c 函数，其中输入的数据格式为 texture2d_array 。
 
     ```c++
     kernel void arg_max_c(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
