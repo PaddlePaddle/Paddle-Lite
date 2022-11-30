@@ -39,10 +39,9 @@ NNADAPTER_EXPORT int PrepareSplit(core::Operation* operation) {
   for (size_t i = 0; i < output_count; i++) {
     CopyOperandTypeExceptQuantParams(&output_operands[i]->type,
                                      input_operand->type);
-
     auto& out_dimensions = output_operands[i]->type.dimensions;
     out_dimensions.data[axis] = split[i];
-    for (uint32_t j = 0; j < out_dimensions.dynamic_count; i++) {
+    for (uint32_t j = 0; j < out_dimensions.dynamic_count; j++) {
       out_dimensions.dynamic_data[j][axis] = split[i];
     }
 
