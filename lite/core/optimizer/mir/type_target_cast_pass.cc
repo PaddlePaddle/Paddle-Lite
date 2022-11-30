@@ -126,7 +126,12 @@ void TypeTargetTransformPass::AddOutputIoCopyInst(
   }
   // Create the new var manually.
   inst_node->AsStmt().op()->scope()->Var(new_name);
-  inst_node->AsStmt().op()->scope()->FindVar(new_name)->GetMutable<Tensor>();
+  auto* tensor = inst_node->AsStmt()
+                     .op()
+                     ->scope()
+                     ->FindVar(new_name)
+                     ->GetMutable<Tensor>();
+  tensor->set_precision(to.precision());
 
   RemoveDirectedLink(inst_node, out);
   DirectedLink(inst_node, new_var_node);
@@ -303,7 +308,9 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
     CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
     // CHECK(io_copy_op);
     // Create the new var manually.
-    inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+    auto new_var = inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+    auto* tensor = new_var->GetMutable<lite::Tensor>();
+    tensor->set_precision(from.precision());
 
     // Create IoCopy Instruction.
     cpp::OpDesc op_desc;
