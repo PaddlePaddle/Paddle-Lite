@@ -24,10 +24,10 @@ namespace operation {
   auto output_count = output_operands.size();                       \
   auto operation_type = operation->type;                            \
   if (operation_type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {       \
-    NNADAPTER_CHECK_EQ(input_count, 8);                             \
+    NNADAPTER_CHECK_EQ(input_count, 2);                             \
     NNADAPTER_CHECK_EQ(output_count, 1);                            \
   } else if (operation_type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {    \
-    NNADAPTER_CHECK_EQ(input_count, 9);                             \
+    NNADAPTER_CHECK_EQ(input_count, 4);                             \
     NNADAPTER_CHECK_EQ(output_count, 2);                            \
   } else {                                                          \
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "   \
@@ -39,9 +39,9 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand); \
   /* Output shape */                                                \
   auto output_height =                                              \
-      reinterpret_cast<int32_t*>(input_operands[3]->buffer)[0];     \
+      reinterpret_cast<int32_t*>(input_operands[1]->buffer)[0];     \
   auto output_width =                                               \
-      reinterpret_cast<int32_t*>(input_operands[3]->buffer)[1];     \
+      reinterpret_cast<int32_t*>(input_operands[1]->buffer)[1];     \
   NNADAPTER_VLOG(5) << "output_shape=[" << output_height << ","     \
                     << output_width << "]";                         \
   /* Output */                                                      \
