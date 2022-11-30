@@ -57,7 +57,6 @@ void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
 
 bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
     core::Model* model, const std::map<std::string, Node*>& nodes) {
-  NNADAPTER_VLOG(1) << "ysysysys match!!!! AdaptivePool2dIntoPool2dConverter";
   // Get the operands and operations from the matched subgraph nodes.
   auto adaptive_pool2d_input_operand =
       nodes.at("adaptive_pool2d_input")->operand;
