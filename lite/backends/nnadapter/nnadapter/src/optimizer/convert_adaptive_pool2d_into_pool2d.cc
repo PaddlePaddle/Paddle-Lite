@@ -44,7 +44,8 @@ void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
           ->IsOperationInputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 0);
   auto adaptive_pool2d_kernel_size_pattern =
       CreatePattern("adaptive_pool2d_kernel_size")
-          ->IsOperationInputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 1);
+          ->IsOperationInputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 1)
+          ->IsConstantOperand();
   auto adaptive_pool2d_output_pattern =
       CreatePattern("adaptive_pool2d_output")
           ->IsOperationOutputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 0);
@@ -66,30 +67,31 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
       nodes.at("adaptive_pool2d_output")->operand;
   auto input_height = adaptive_pool2d_input_operand->type.dimensions.data[2];
   auto input_width = adaptive_pool2d_input_operand->type.dimensions.data[3];
+  NNADAPTER_CHECK_NE(input_height, NNADAPTER_UNKNOWN);
+  NNADAPTER_CHECK_NE(input_width, NNADAPTER_UNKNOWN);
   auto output_height = reinterpret_cast<int32_t*>(
       adaptive_pool2d_kernel_size_operand->buffer)[0];
   auto output_width = reinterpret_cast<int32_t*>(
       adaptive_pool2d_kernel_size_operand->buffer)[1];
-  core::Operand* auto_pad_operand = AddInt32ConstantOperand(
+  auto auto_pad_operand = AddInt32ConstantOperand(
       model, static_cast<int32_t>(NNADAPTER_AUTO_PAD_NONE));
   std::vector<int32_t> paddings = {0, 0, 0, 0};
-  core::Operand* pads_operand = AddInt32ConstantOperand(model, paddings);
-  core::Operand* ceil_mode_operand = AddBool8ConstantOperand(model, false);
-  core::Operand* count_include_pad_operand =
-      AddBool8ConstantOperand(model, true);
-  core::Operand* fuse_code_operand = AddInt32ConstantOperand(
+  auto pads_operand = AddInt32ConstantOperand(model, paddings);
+  auto ceil_mode_operand = AddBool8ConstantOperand(model, false);
+  auto count_include_pad_operand = AddBool8ConstantOperand(model, true);
+  auto fuse_code_operand = AddInt32ConstantOperand(
       model, static_cast<int32_t>(NNADAPTER_FUSED_NONE));
-  auto stride_height = std::floor(input_height / output_height);
-  auto stride_width = std::floor(input_width / output_width);
+  int32_t stride_height = std::floor(input_height / output_height);
+  int32_t stride_width = std::floor(input_width / output_width);
   std::vector<int32_t> strides = {stride_height, stride_width};
-  core::Operand* strides_operand =
-      AddInt32ConstantOperand(model, strides.data(), {strides.size()});
+  auto strides_operand = AddInt32ConstantOperand(
+      model, strides.data(), {static_cast<int>(strides.size())});
   // Calulate the kernel size
   int32_t kernel_height = input_height - ((output_height - 1) * stride_height);
   int32_t kernel_width = input_width - ((output_width - 1) * stride_width);
   std::vector<int32_t> kernel_sizes = {kernel_height, kernel_width};
-  core::Operand* kernel_size_operand = AddInt32ConstantOperand(
-      model, kernel_sizes.data(), {kernel_sizes.size()});
+  auto kernel_size_operand = AddInt32ConstantOperand(
+      model, kernel_sizes.data(), {static_cast<int>(kernel_sizes.size())});
   auto* pool2d_operation = AddOperation(model);
   pool2d_operation->type = NNADAPTER_AVERAGE_POOL_2D;
   pool2d_operation->input_operands = {adaptive_pool2d_input_operand,
