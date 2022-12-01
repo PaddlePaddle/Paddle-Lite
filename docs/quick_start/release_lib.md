@@ -51,7 +51,7 @@
 |armv8 |gcc   |c++_static |ON  |ON  |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.with_cv.tar.gz)     |
 
 
-## IOS
+## iOS
 
 |Arch |with_cv |with_extra |with_log |下载链接 |
 |:-----:|:-----:|:-----:|:-----:|:-----:|
@@ -63,7 +63,7 @@
 |armv7 |ON  |OFF |ON  |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv7.with_cv.with_log.tiny_publish.tar.gz)               |
 |armv7 |ON  |ON  |OFF |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv7.with_cv.with_extra.tiny_publish.tar.gz)             |
 |armv7 |ON  |ON  |ON  |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv7.with_cv.with_extra.with_log.tiny_publish.tar.gz)    |
-|armv8 |OFF |OFF |OFF |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv7.tiny_publish.tar.gz)                                |
+|armv8 |OFF |OFF |OFF |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv8.tiny_publish.tar.gz)                                |
 |armv8 |OFF |OFF |ON  |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv8.with_log.tiny_publish.tar.gz)                       |
 |armv8 |OFF |ON  |OFF |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv8.with_extra.tiny_publish.tar.gz)                     |
 |armv8 |OFF |ON  |ON  |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ios.armv8.with_extra.with_log.tiny_publish.tar.gz)            |
