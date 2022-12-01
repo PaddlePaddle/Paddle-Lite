@@ -28,7 +28,7 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
   - 执行预测，只需要调用 `predictor->Run()`
   - 获得输出，使用 `predictor->GetOutput(i)` 获取输出变量，并通过 `data<T>` 取得输出值
 
-在有 GPU 的设备上，您可以使用 [Paddle Lite 的 OpenCL 后端](../demo_guides/opencl)加速来提升性能。
+在有 GPU 的设备上，您可以使用 [OpenCL](../demo_guides/opencl)加速来提升性能。
 
 ## 开始使用
 
