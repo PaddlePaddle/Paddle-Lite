@@ -211,14 +211,14 @@ void GenerateProposalsV2Compute::Run() {
                                  false);
     CHECK_EQ(r, 0);
     // box_clips
-    int clip_offset = pixel_offset ? 1 : 0;
     r = xdnn::clip_box_to_image<float>(
         ctx.GetRawContext(),
         box_decoder_pros,
         box_clip_pros,
         K,
-        im_shape->data<float>()[batch_idx * 2] - clip_offset,
-        im_shape->data<float>()[batch_idx * 2 + 1] - clip_offset);
+        im_shape->data<float>()[batch_idx * 2],
+        im_shape->data<float>()[batch_idx * 2 + 1],
+        pixel_offset);
     CHECK_EQ(r, 0);
     // box_remove_small
     // TODO(quwei03): refactor this
@@ -265,7 +265,8 @@ void GenerateProposalsV2Compute::Run() {
                                   index_after_nms,
                                   nms_n_keep_cpu,
                                   remove_small_boxes_n_keep_cpu,
-                                  nms_thresh);
+                                  nms_thresh,
+                                  pixel_offset);
       CHECK_EQ(r, 0);
 
       nms_n_keep_cpu = std::min(nms_n_keep_cpu, post_nms_top_n);
@@ -278,7 +279,7 @@ void GenerateProposalsV2Compute::Run() {
                                    nms_n_keep_cpu,
                                    0);
       CHECK_EQ(r, 0);
-      rpn_rois_ptr = rpn_rois_ptr + nms_n_keep_cpu * 4;
+
       r = xdnn::gather<float, int>(ctx.GetRawContext(),
                                    scores_after_filter,
                                    index_after_nms,
@@ -288,9 +289,16 @@ void GenerateProposalsV2Compute::Run() {
                                    0);
       CHECK_EQ(r, 0);
     } else {
-      nms_n_keep_cpu = 0;
+      nms_n_keep_cpu = 1;
+      r = xdnn::constant<float>(
+          ctx.GetRawContext(), rpn_rois_ptr, nms_n_keep_cpu * 4, 0.0f);
+      CHECK_EQ(r, 0);
+      r = xdnn::constant<float>(
+          ctx.GetRawContext(), rpn_roi_probs_ptr, nms_n_keep_cpu, 0.0f);
+      CHECK_EQ(r, 0);
     }
 
+    rpn_rois_ptr = rpn_rois_ptr + nms_n_keep_cpu * 4;
     rpn_roi_probs_ptr = rpn_roi_probs_ptr + nms_n_keep_cpu;
     num_proposals += nms_n_keep_cpu;
     lod0.push_back(num_proposals);
