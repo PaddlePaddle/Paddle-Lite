@@ -451,7 +451,7 @@ struct PoolParam : ParamBase {
   std::vector<int> ksize{};
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
-  std::vector<int> strides{1, 1};
+  std::vector<int> strides;
   /* paddings type change
    * from std::vector<int> to std::shared_ptr<std::vector<int>>
    * to support dynamically modify padding

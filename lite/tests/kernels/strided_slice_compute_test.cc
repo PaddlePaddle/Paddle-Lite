@@ -79,7 +79,6 @@ void reverse(const T* input,
   }
   for (size_t i = 0; i < reverse_axis.size(); i++) {
     if (reverse_axis[i]) {
-      // reverse
       for (int j = 0; j < in_dims[i]; j++) {
         int size = 1;
         if (i + 1 < in_dims_size) {
@@ -437,7 +436,7 @@ class StridedSliceComputeTester : public arena::TestCase {
   }
 };
 
-void test_slice(Place place, float abs_error) {
+void test_strided_slice(Place place, float abs_error) {
   std::vector<int> axes({1, 2});
   std::vector<int> starts({2, 2});
   std::vector<int> strides({1, 1});
@@ -461,7 +460,7 @@ void test_slice(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-void test_slice_axes(Place place, float abs_error) {
+void test_strided_slice_axes(Place place, float abs_error) {
   std::vector<int> axes({1, 2});
   std::vector<int> starts({1, 1});
   std::vector<int> strides({1, 1});
@@ -485,7 +484,31 @@ void test_slice_axes(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-void test_slice_decrease_axis(Place place, float abs_error) {
+void test_strided_slice_reverse(Place place, float abs_error) {
+  std::vector<int> axes({1, 2});
+  std::vector<int> starts({0, 1});
+  std::vector<int> strides({1, -1});
+  std::vector<int> ends({2, -1});
+  std::vector<int> infer_flags({1, 1});
+  std::vector<int> decrease_axis({});
+  DDim dims({1, 2, 2});
+  std::unique_ptr<arena::TestCase> tester(
+      new StridedSliceComputeTester(place,
+                                    "def",
+                                    axes,
+                                    starts,
+                                    ends,
+                                    strides,
+                                    decrease_axis,
+                                    dims,
+                                    false,
+                                    false,
+                                    infer_flags));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+}
+
+void test_strided_slice_decrease_axis(Place place, float abs_error) {
   std::vector<int> axes({1});
   std::vector<int> starts({0});
   std::vector<int> ends({1});
@@ -509,7 +532,7 @@ void test_slice_decrease_axis(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-void test_slice_tensor(Place place, float abs_error) {
+void test_strided_slice_tensor(Place place, float abs_error) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
   std::vector<int> ends({5, 6, 7});
@@ -533,7 +556,7 @@ void test_slice_tensor(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-void test_slice_tensor_list(Place place, float abs_error) {
+void test_strided_slice_tensor_list(Place place, float abs_error) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
   std::vector<int> ends({5, 6, 7});
@@ -564,34 +587,37 @@ TEST(StrideSlice, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  test_slice(place, abs_error);
-  test_slice_axes(place, abs_error);
-  test_slice_decrease_axis(place, abs_error);
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
   return;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
-  test_slice(place, abs_error);
-  test_slice_axes(place, abs_error);
-  test_slice_decrease_axis(place, abs_error);
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
   return;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 1e-2;
-  test_slice(place, abs_error);
-  test_slice_axes(place, abs_error);
-  test_slice_decrease_axis(place, abs_error);
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
   return;
 #else
   return;
 #endif
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #endif
 
-  test_slice(place, abs_error);
-  test_slice_axes(place, abs_error);
-  test_slice_decrease_axis(place, abs_error);
-  test_slice_tensor(place, abs_error);
-  test_slice_tensor_list(place, abs_error);
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  // test_strided_slice_reverse(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
+  test_strided_slice_tensor(place, abs_error);
+  test_strided_slice_tensor_list(place, abs_error);
 }
 
 }  // namespace lite

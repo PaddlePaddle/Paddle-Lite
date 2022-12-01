@@ -27,11 +27,15 @@ void BatchNormCompute::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   float epsilon = param.epsilon;
   auto& x_dims = param.x->dims();
-  CHECK_LE(x_dims.size(), 4);
-  std::vector<int> x_shape(4, 1);
+  CHECK_LE(x_dims.size(), 5);
+  std::vector<int> x_shape(5, 1);
   for (int i = 0; i < x_dims.size(); i++) {
     x_shape[i] = x_dims[i];
   }
+  if (x_dims.size() == 5) {
+    x_shape[3] *= x_shape[4];
+  }
+
   int r =
       xdnn::batch_norm_infer<float>(ctx.GetRawContext(),
                                     param.x->data<float>(),
