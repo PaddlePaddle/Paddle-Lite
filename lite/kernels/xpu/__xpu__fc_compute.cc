@@ -237,6 +237,15 @@ using XPUFC_Int8_FP32_FP32 =
 using XPUFC_FP32_LOCAL_QUANT =
     xpu::XPUFcCompute<float, float, float, float, PRECISION(kFloat)>;
 
+using XPUFC_Int8_Int8_FP32 =
+    xpu::XPUFcCompute<int8_t, int8_t, int8_t, float, PRECISION(kInt8)>;
+
+using XPUFC_Int8_Int8_Int8 =
+    xpu::XPUFcCompute<int8_t, int8_t, int8_t, int8_t, PRECISION(kInt8)>;
+
+using XPUFC_Int8_Int8_FP32_Int8 =
+    xpu::XPUFcCompute<int8_t, int8_t, float, int8_t, PRECISION(kInt8)>;
+
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kFloat, kNCHW, XPUFC_FP32, XPU_Real_kFloat)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -302,8 +311,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-using XPUFC_Int8_Int8_Int8 =
-    xpu::XPUFcCompute<int8_t, int8_t, int8_t, int8_t, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_Int8_Int8, XPU_Int8_Int8_Int8)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
@@ -315,8 +322,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-using XPUFC_Int8_Int8_FP32 =
-    xpu::XPUFcCompute<int8_t, int8_t, int8_t, float, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_Int8_FP32, XPU_Int8_Int8_FP32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
@@ -339,5 +344,21 @@ REGISTER_LITE_KERNEL(__xpu__fc,
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__fc,
+                     kXPU,
+                     kInt8,
+                     kNCHW,
+                     XPUFC_Int8_Int8_FP32_Int8,
+                     XPU_Int8_Int8_FP32_Int8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
