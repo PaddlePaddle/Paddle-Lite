@@ -42,8 +42,8 @@ void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
   auto adaptive_pool2d_input_pattern =
       CreatePattern("adaptive_pool2d_input")
           ->IsOperationInputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 0);
-  auto adaptive_pool2d_kernel_size_pattern =
-      CreatePattern("adaptive_pool2d_kernel_size")
+  auto adaptive_pool2d_output_shape_pattern =
+      CreatePattern("adaptive_pool2d_output_shape")
           ->IsOperationInputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 1)
           ->IsConstantOperand();
   auto adaptive_pool2d_output_pattern =
@@ -51,7 +51,7 @@ void AdaptivePool2dIntoPool2dConverter::BuildPattern() {
           ->IsOperationOutputOperand(NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D, 0);
   // Create the topological ,connections for the above patterns
   std::vector<Pattern*> adaptive_pool2d_input_patterns{
-      adaptive_pool2d_input_pattern, adaptive_pool2d_kernel_size_pattern};
+      adaptive_pool2d_input_pattern, adaptive_pool2d_output_shape_pattern};
   adaptive_pool2d_input_patterns >> *adaptive_pool2d_pattern >>
       *adaptive_pool2d_output_pattern;
 }
@@ -61,8 +61,8 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
   // Get the operands and operations from the matched subgraph nodes.
   auto adaptive_pool2d_input_operand =
       nodes.at("adaptive_pool2d_input")->operand;
-  auto adaptive_pool2d_kernel_size_operand =
-      nodes.at("adaptive_pool2d_kernel_size")->operand;
+  auto adaptive_pool2d_output_shape_operand =
+      nodes.at("adaptive_pool2d_output_shape")->operand;
   auto adaptive_pool2d_output_operand =
       nodes.at("adaptive_pool2d_output")->operand;
   auto input_height = adaptive_pool2d_input_operand->type.dimensions.data[2];
@@ -70,9 +70,9 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
   NNADAPTER_CHECK_NE(input_height, NNADAPTER_UNKNOWN);
   NNADAPTER_CHECK_NE(input_width, NNADAPTER_UNKNOWN);
   auto output_height = reinterpret_cast<int32_t*>(
-      adaptive_pool2d_kernel_size_operand->buffer)[0];
+      adaptive_pool2d_output_shape_operand->buffer)[0];
   auto output_width = reinterpret_cast<int32_t*>(
-      adaptive_pool2d_kernel_size_operand->buffer)[1];
+      adaptive_pool2d_output_shape_operand->buffer)[1];
   auto auto_pad_operand = AddInt32ConstantOperand(
       model, static_cast<int32_t>(NNADAPTER_AUTO_PAD_NONE));
   std::vector<int32_t> paddings = {0, 0, 0, 0};
