@@ -404,7 +404,7 @@ typedef struct Device {
 - 添加用户说明文档，示例：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/docs/demo_guides/huawei_ascend_npu.md?plain=1#L3)。
 
 - 提交代码和文档：当代码和文档都已经准备好了后，就可以向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite) 发起 Pull request 了，但只有飞桨研发同学完成 code reivew 后方可合入主线，具体方法如下：
-  - 参考[Docker 统一编译环境搭建](../source_compile/docker_env)准备 Docker 开发环境（注意：必须使用 Paddle Lite Docker 容器环境，因为代码提交时将使用 git pre-commit hooks 进行代码风格检查，而它使用的 clang-format 被严格限制在 3.8 版本）
+  - 参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 准备 Docker 开发环境（注意：必须使用 Paddle Lite Docker 容器环境，因为代码提交时将使用 git pre-commit hooks 进行代码风格检查，而它使用的 clang-format 被严格限制在 3.8 版本）
   - 注册 [github](https://www.github.com/) 账户，将 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码仓库 Fork 到自己的账户.
   - 将自己 github 账户的 Paddle Lite 仓库克隆到本地。
     ```

@@ -18,7 +18,7 @@ Paddle Lite 框架直接支持模型结构为[ PaddlePaddle ](https://www.paddle
 **二. 模型优化**
 
 Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化、子图融合、Kernel 优选等优化手段。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
-这些优化通过 Paddle Lite 提供的[ opt 工具](../user_guides/model_optimize_tool) 实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通过 opt 工具做模型优化。opt 工具的下载和使用，请参考 [模型优化方法](../user_guides/model_optimize_tool)。
+这些优化通过 Paddle Lite 提供的 opt 工具实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通过 opt 工具做模型优化。opt 工具的下载和使用，请参考 [模型优化方法](../user_guides/model_optimize_tool)。
 
 >> **注意**: 为了减少第三方库的依赖、提高 Paddle Lite 预测框架的通用性，在移动端使用 Paddle Lite API 您需要准备 Naive Buffer 存储格式的模型。
 

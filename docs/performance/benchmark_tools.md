@@ -411,10 +411,10 @@ adb shell "cd /data/local/tmp/benchmark;
 
 |No.| 新硬件名称 | Device HAL 库名称|编译指南 |
 |---|---|---|---|
-|1|Huawei Kirin NPU|libhuawei_kirin_npu.so| [点击进入](../demo_guides/huawei_kirin_npu) |
-|2|Huawei Ascend NPU|libhuawei_ascend_npu.so| [点击进入](../demo_guides/huawei_ascend_npu) |
-|3|Imagination NNA|libimagination_nna.so| [点击进入](../demo_guides/imagination_nna) |
-|4|Mediatek APU|libmediatek_apu.so| [点击进入](../demo_guides/mediatek_apu) |
+|1|Huawei Kirin NPU|libhuawei_kirin_npu.so| [点击进入](../demo_guides/huawei_kirin_npu.html) |
+|2|Huawei Ascend NPU|libhuawei_ascend_npu.so| [点击进入](../demo_guides/huawei_ascend_npu.html) |
+|3|Imagination NNA|libimagination_nna.so| [点击进入](../demo_guides/imagination_nna.html) |
+|4|Mediatek APU|libmediatek_apu.so| [点击进入](../demo_guides/mediatek_apu.html) |
 
 编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
 
