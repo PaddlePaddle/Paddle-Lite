@@ -4,34 +4,34 @@
 
 Paddle-Lite 提供了多个应用场景的 Android Demo：
 * 图像分类
-    * 基于 [mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz) 模型 [Android 示例](./image_classification/android/)
+    * 基于 [mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/image_classification/android)
      
 * 目标检测
-    * 基于 [ssd_mobilenetv1](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) 模型 [Android 示例](./object_detection/android/app/cxx/ssd_mobilenetv1_detection_demo/)
+    * 基于 [ssd_mobilenetv1](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/ssd_mobilenetv1_detection_demo)
 
-    * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [Android 示例](./object_detection/android/app/cxx/yolo_detection_demo/)
+    * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/yolo_detection_demo)
      
-    * 基于 [yolov5](https://paddlelite-demo.bj.bcebos.com/models/yolov5n/yolov5n.zip) 模型 [Android 示例](./object_detection/android/app/cxx/yolov5n_detection_demo/)
+    * 基于 [yolov5](https://paddlelite-demo.bj.bcebos.com/models/yolov5n/yolov5n.zip) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/yolov5n_detection_demo)
 
-    * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [Android 示例](./object_detection/android/app/cxx/picodet_detection_demo/)
+    * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/picodet_detection_demo)
     
 * 文字识别
-    * 基于 [pp_ocr_det](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_det_slim_infer.tar)、[pp_ocr_rec](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_rec_slim_infer.tar) 和 [pp_ocr_cls](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_cls_slim_infer.tar) 模型 [Android 示例](./ocr/android/)
+    * 基于 [pp_ocr_det](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_det_slim_infer.tar)、[pp_ocr_rec](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_rec_slim_infer.tar) 和 [pp_ocr_cls](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_cls_slim_infer.tar) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/ocr/android)
     
 * 人脸检测
-    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 模型 [Android 示例](./face_detection/android/)
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_detection/android)
      
 * 人脸关键点检测
-    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 和 [face-keypoint](https://paddlelite-demo.bj.bcebos.com/models/facekeypoints_detector_fp32_60_60_fluid.tar.gz) 模型 [Android 示例](./face_keypoints_detection/android/)
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 和 [face-keypoint](https://paddlelite-demo.bj.bcebos.com/models/facekeypoints_detector_fp32_60_60_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_keypoints_detection/android)
     
 * 口罩识别
-    * 基于 [pyramidbox](https://paddlelite-demo.bj.bcebos.com/models/pyramidbox_lite_fp32_fluid.tar.gz) + [mask_detect](https://paddlelite-demo.bj.bcebos.com/models/mask_detector_fp32_128_128_fluid.tar.gz) 模型 [Android 示例](./mask_detection/android/)
+    * 基于 [pyramidbox](https://paddlelite-demo.bj.bcebos.com/models/pyramidbox_lite_fp32_fluid.tar.gz) + [mask_detect](https://paddlelite-demo.bj.bcebos.com/models/mask_detector_fp32_128_128_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/mask_detection/android)
     
 * 人像分割
-    * 基于 [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/deeplab_mobilenet_fp32_fluid.tar.gz) 模型 [Android 示例](./human_segmentation/android/)
+    * 基于 [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/deeplab_mobilenet_fp32_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/human_segmentation/android)
 
 * PP 识图
-   * 基于 [PPLCNet](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/lite/ppshitu_lite_models_v1.0.tar) 两个模型模型 [Android 示例](./PP_shitu/android/)
+   * 基于 [PPLCNet](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/lite/ppshitu_lite_models_v1.0.tar) 两个模型模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/PP_shitu/android)
 
 
 ### 1. 人脸识别

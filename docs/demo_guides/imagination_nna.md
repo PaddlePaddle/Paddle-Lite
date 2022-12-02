@@ -63,7 +63,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/docker_env)中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -183,7 +183,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 更新模型
 
 - 通过 Paddle Fluid 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Imagination NNA 模型，仅需要将 `valid_targets` 设置为 imagination_nna,arm 即可。
 
   ```shell

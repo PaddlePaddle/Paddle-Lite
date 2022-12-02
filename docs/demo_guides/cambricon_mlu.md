@@ -105,7 +105,7 @@ $ cnmon
 
 ### 准备本地编译环境
 
-- 为了保证编译环境一致，建议参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境进行配置；
+- 为了保证编译环境一致，建议参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境进行配置；
 
 - for amd64
   ```shell
