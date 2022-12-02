@@ -39,19 +39,23 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const size_t x_size = greater_than_param_->X->numel();
     const size_t y_size = greater_than_param_->Y->numel();
     bool fuse_greater_than = greater_than_param_->fuse_greater_than;
-    if (y_size != 1 || x_size == y_size || greater_than_param_->axis != -1 ||
-        !fuse_greater_than) {
+    if (y_size == 1) {
+      kernel_select = 0;
+    } else if (x_size == y_size) {
+      kernel_select = 1;
+    } else if (greater_than_param_->axis != -1 || !fuse_greater_than) {
       LOG(FATAL) << "opencl not unsupported this condition now!";
     }
     y_ = greater_than_param_->Y->data<float>()[0];
-    context.cl_context()->AddKernel(kernel_func_name_,
+    context.cl_context()->AddKernel(kernel_func_name_[kernel_select],
                                     "image/greater_than_kernel.cl",
                                     build_options_,
                                     time_stamp_);
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_[kernel_select];
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_key << kernel_func_name_[kernel_select] << build_options_
+               << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
@@ -94,7 +98,11 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
     cl_int status;
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, y_);
+    if (kernel_select == 0) {
+      status = kernel.setArg(1, y_);
+    } else if (kernel_select == 1) {
+      status = kernel.setArg(1, *y_img);
+    }
     CL_CHECK_FATAL(status);
     status = kernel.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
@@ -110,7 +118,7 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
+    ch->kernel_func_name = kernel_func_name_[kernel_select];
     ch->global_work_size = ch->NDRangeToStr(global_work_size_);
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -118,12 +126,14 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #endif
 
  private:
-  std::string kernel_func_name_{"greater_than"};
+  std::vector<std::string> kernel_func_name_{"greater_than",
+                                             "greater_than_same_size"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* greater_than_param_{nullptr};
   cl::Kernel kernel_;
+  cl::Kernel kernel_same_size;
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
@@ -131,6 +141,7 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   float y_ = 0.0f;
+  int kernel_select = 0;
 };
 
 }  // namespace opencl

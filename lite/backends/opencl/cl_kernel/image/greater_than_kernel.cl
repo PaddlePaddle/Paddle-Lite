@@ -43,3 +43,34 @@ __kernel void greater_than(__read_only image2d_t input_x,
   }
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
+
+__kernel void greater_than_same_size(__read_only image2d_t input_x,
+                                     __read_only image2d_t input_y,
+                                     __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+  CL_DTYPE4 in_x = READ_IMG_TYPE(CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(x, y));
+  CL_DTYPE4 in_y = READ_IMG_TYPE(CL_DTYPE_CHAR, input_y, SAMPLER, (int2)(x, y));
+  CL_DTYPE4 out;
+  if (in_x.x > in_y.x) {
+    out.x = ((CL_DTYPE)(1.0));
+  } else {
+    out.x = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.y > in_y.y) {
+    out.y = ((CL_DTYPE)(1.0));
+  } else {
+    out.y = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.z > in_y.z) {
+    out.z = ((CL_DTYPE)(1.0));
+  } else {
+    out.z = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.w > in_y.w) {
+    out.w = ((CL_DTYPE)(1.0));
+  } else {
+    out.w = ((CL_DTYPE)(0.0));
+  }
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
+}

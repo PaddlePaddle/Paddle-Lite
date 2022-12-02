@@ -64,6 +64,8 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
         build_options_ += " -DGELU";
       } else if (act_t == "tanh") {
         build_options_ += " -DTANH";
+      } else if (act_t == "abs") {
+        build_options_ += " -DABS";
       } else {
         LOG(FATAL) << "Unsupported Activation type: " << act_t;
       }
