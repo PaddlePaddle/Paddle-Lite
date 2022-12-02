@@ -45,10 +45,10 @@ $ sh download_models_and_libs.sh
 3、执行用例(保证 linux_arm 环境准备完成，参考[ Paddle-Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo) 要求-ARMLinux 小节)
 ```shell
 1. 终端中进入 object_detection_demo
-cd object_detection_demo
+$ cd object_detection_demo
 
 2. 执行脚本编译并执行物体检测 demo，输出预测数据和运行时间
-sh run.sh
+$ sh run.sh
 ```
 demo 结果如下:
 <img width="836" alt="image" src="https://user-images.githubusercontent.com/50474132/82852558-da228580-9f35-11ea-837c-e4d71066da57.png">

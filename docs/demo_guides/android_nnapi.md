@@ -68,7 +68,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境进行配置。
+- 为了保证编译环境一致，建议参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境进行配置。
 
 ### 运行图像分类示例程序
 
@@ -171,7 +171,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 更新模型
 
 - 通过 Paddle 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[ mobilenet_v1_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 如果需要使用量化模型，则参考[模型量化-静态离线量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 DSP 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)；
+- 如果需要使用量化模型，则参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 DSP 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Android NNAPI 模型，仅需要将 `valid_targets` 设置为 andriod_nnapi, arm 即可。
 
   ```shell

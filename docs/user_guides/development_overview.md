@@ -6,7 +6,7 @@
 
 您可以通过以下方式生成 Paddle Lite 模型：
 
-- 将 Paddle 模型转换为 Paddle Lite 模型：使用 [Paddle Lite opt 工具](model_optimize_tool) 将 Paddle 模型转换为 Paddle Lite 模型。在转换过程中，您可以应用量化等优化措施，以缩减模型大小和缩短延时，并最大限度降低或完全避免准确率损失。
+- 将 Paddle 模型转换为 Paddle Lite 模型：使用 [opt 工具](model_optimize_tool) 将 Paddle 模型转换为 Paddle Lite 模型。在转换过程中，您可以应用量化等优化措施，以缩减模型大小和缩短延时，并最大限度降低或完全避免准确率损失。
 
 ### 2. 运行推断
 

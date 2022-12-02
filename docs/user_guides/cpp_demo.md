@@ -15,7 +15,7 @@
 
 - 输入数据：推理之前需要向输入 Tensor 中填充数据。即通过 `predictor->GetInput(num)` 接口获取第 `num` 个输入 tensor ，先做 `Resize` 处理，给 tensor 分配相应的空间；然后通过获取 `input_tensor->mutable_data<Dtype>()` 输入数据地址进行赋值处理。（如果输入数据是图片，则需要进行预处理，再将预处理后的数据赋值给输入 tensor ）
 
-- 执行推理：使用 Predictor 对像的成员函数 `Run` 进行模型推理
+- 执行推理：使用 Predictor 对象的成员函数 `Run` 进行模型推理
 
 - 输出数据：推理执行结束后，通过 `predictor->GetOutput(num)` 接口获取第 `num` 个输出 tensor。
 
@@ -83,18 +83,12 @@ auto output_data=output_tensor->data<float>();
 ### 1. 环境准备
 编译和运行 Android C++ 示例程序，你需要准备：
 
-* 一台可以编译 Paddle Lite 的电脑，具体环境配置，请参考 [编译文档](../source_compile/compile_env)，推荐使用 docker。
+* 一台可以编译 Paddle Lite 的电脑，具体环境配置，请参考 [源码编译](../source_compile/compile_env)，推荐使用 docker。
 * 一台安卓手机，并在电脑上安装 adb 工具 ，以确保电脑和手机可以通过 adb 连接。
 
 ### 2. 下载或者编译预测库
 （1） 下载预测库
 在预测库[ Lite 预编译库下载](../quick_start/release_lib)下载界面，可根据您的手机型号和运行需求选择合适版本。
-
-以**Android-ARMv8 架构**为例，可以下载以下版本：
-
-| Arch  | with_extra | arm_stl | with_cv | 下载 |
-|:-------:|:-----:|:-----:|:-----:|:-------:|
-| armv8 | OFF | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -128,7 +122,7 @@ tar zxf mobilenet_v1.tar.gz
 
 （2) 模型转换：Paddle 的原生模型需要经过 [opt](../user_guides/model_optimize_tool) 工具转化为 Paddle Lite 可以支持的 naive_buffer 格式。
 
-方式一: 下载 [opt 工具](../user_guides/model_optimize_tool)，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
+方式一: 下载 opt 工具，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
 
 ```shell
 # Linux
@@ -156,8 +150,6 @@ paddle_lite_opt --model_dir=./mobilenet_v1 \
 ```
 
 以上命令执行成功之后将在同级目录生成名为 `mobilenet_v1_opt.nb` 的优化后模型文件。
-
->> 更多的 OPT 工具使用信息，请见 [OPT 工具使用文档](../user_guides/model_optimize_tool)
 
 ### 4. 编译预测示例程序
 
