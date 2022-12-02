@@ -32,7 +32,7 @@
 
   了解更多细节，可以访问具体[代码实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/lite/core/optimizer/optimizer.cc#L137)
   
-  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass](./add_new_pass) ， [Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/lite/core/optimizer/optimizer.cc#L137)是指按照规定的顺序处理的 Pass 的集合，它使用 std::vector<<std::string>> 存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为 [graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/lite/core/optimizer/mir/graph_visualize_pass.h#L30) 的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
+  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass](./add_new_pass) ， [Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/lite/core/optimizer/optimizer.cc#L137)是指按照规定的顺序处理的 Pass 的集合，它使用 std::vector<<std\:\:string>> 存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为 [graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/lite/core/optimizer/mir/graph_visualize_pass.h#L30) 的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
 
     ```cpp
     diff --git a/lite/core/optimizer/optimizer.cc b/lite/core/optimizer/optimizer.cc
@@ -121,7 +121,7 @@
   - 参考最近接入的 Imagination NNA 的 Pull Request(PR) 的代码修改[https://github.com/PaddlePaddle/Paddle-Lite/pull/4335](https://github.com/PaddlePaddle/Paddle-Lite/pull/4335)
 
 ## 代码提交、 Review 、合入机制、 CI 机制
-  - 参考[Docker 统一编译环境搭建](../source_compile/docker_env)中的 Docker 开发环境（由于代码提交时会使用 git pre-commit hooks ，对 clang-format 版本约束）
+  - 参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境（由于代码提交时会使用 git pre-commit hooks ，对 clang-format 版本约束）
   - 注册 [github](https://www.github.com/) 账户，将 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码仓库 Fork 到自己的账户.
   - 将自己 github 账户的 Paddle Lite 仓库克隆到本地。
   ```

@@ -4,20 +4,20 @@
 
 Paddle-Lite 提供了多个应用场景的 iOS Demo:
 * 图像分类
-    * 基于 [mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz) 模型 [iOS 示例](./image_classification/ios/)    
+    * 基于 [mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/image_classification/ios)    
 * 目标检测
-    * 基于 [ssd_mobilenetv1](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) 模型 [iOS 示例](./object_detection/ios/ssd_mobilenetv1_demo/)
-    * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [iOS 示例](./object_detection/ios/yolov3_mobilenet_v3_demo/)
+    * 基于 [ssd_mobilenetv1](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/ios/ssd_mobilenetv1_demo)
+    * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/ios/yolov3_mobilenet_v3_demo)
   
-    * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [iOS 示例](./object_detection/ios/picodet_demo/)
+    * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/ios/picodet_demo)
 * 文字识别
-    * 基于 [pp_ocr_det](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_det_slim_infer.tar)、[pp_ocr_rec](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_rec_slim_infer.tar) 和 [pp_ocr_cls](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_cls_slim_infer.tar) 模型 [iOS 示例](./ocr/ios/)
+    * 基于 [pp_ocr_det](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_det_slim_infer.tar)、[pp_ocr_rec](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_rec_slim_infer.tar) 和 [pp_ocr_cls](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_cls_slim_infer.tar) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/ocr/ios/ppocr_demo)
 * 人脸检测
-    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 模型 [iOS 示例]((./face_detection/ios/face_detection))
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_detection/ios/face_detection)
 * 人脸关键点检测
-    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 和 [face-keypoint](https://paddlelite-demo.bj.bcebos.com/models/facekeypoints_detector_fp32_60_60_fluid.tar.gz) 模型 [iOS 示例](./face_keypoints_detection/ios/face_keypoints_detection)
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 和 [face-keypoint](https://paddlelite-demo.bj.bcebos.com/models/facekeypoints_detector_fp32_60_60_fluid.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_keypoints_detection/ios/face_keypoints_detection)
 * 人像分割
-    * 基于 [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/deeplab_mobilenet_fp32_fluid.tar.gz) 模型 [iOS 示例](./human_segmentation/ios/human_segmentation)
+    * 基于 [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/deeplab_mobilenet_fp32_fluid.tar.gz) 模型 [iOS 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/human_segmentation/ios/human_segmentation)
 
 ### 1. 人脸识别
 
@@ -192,6 +192,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
    #include "include/paddle_use_kernels.h"
   ```
 - 如果想用 FP16 模型推理：
-  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[macOS 环境下编译适用于 iOS 的库](../source_compile/macos_compile_ios)，自行编译。
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考 [macOS 环境下编译适用于 iOS 的库](../source_compile/macos_compile_ios)，自行编译。
   - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
   - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行
