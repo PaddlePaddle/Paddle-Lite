@@ -118,6 +118,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+    ConvertFillLikeIntoMulAdd(model);
     ConstantFoldOperations(model);
     FuseConv2DBatchNormIntoConv2D(
         model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
@@ -128,7 +129,6 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseMatMulAddIntoFullyConnected(model);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     FuseSigmoidMulIntoSwish(model);
-    ConvertFillLikeIntoMulAdd(model);
     ConvertAdaptivePool2dIntoPool2d(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
