@@ -921,93 +921,108 @@ void conv_im2col_gemm(const float* i_data,
 #ifdef __aarch64__
 
 // only support 3x3s1p1
-static void padding_zero(const int8_t *data_in, int iw, int ih, int8_t *data_out) {
+static void padding_zero(const int8_t* data_in,
+                         int iw,
+                         int ih,
+                         int8_t* data_out) {
   int ow = iw + 2;
   int oh = ih + 2;
   memset(data_out, 0, ow);
   memset(data_out + (oh - 1) * ow, 0, ow);
   auto data_out_ptr = data_out + ow;
-  for(int row = 0;row<ih;row++) {
+  for (int row = 0; row < ih; row++) {
     data_out_ptr[0] = 0;
     memcpy(data_out_ptr + 1, data_in + row * iw, iw);
-    data_out_ptr[ow-1] = 0;
+    data_out_ptr[ow - 1] = 0;
     data_out_ptr += ow;
   }
 }
 
-#define transfer4x12(line1, line2, line3, line4, data_out) \
-  line_1_2 = vtrnq_s8(line1, line2);\
-  line_3_4 = vtrnq_s8(line3, line4);\
-  out0 = vtrnq_s16(line_1_2.val[0], line_3_4.val[0]);\
-  out1 = vtrnq_s16(line_1_2.val[1], line_3_4.val[1]);\
-  line_1_2_int32 = vtrnq_s32(out0.val[0], out1.val[0]);\
-  line_3_4_int32 = vtrnq_s32(out0.val[1], out1.val[1]);\
-  vst1q_s32((int*)data_out, vcombine_s32(vget_low_s32(line_1_2_int32.val[0]), vget_low_s32(line_3_4_int32.val[0])));\
-  vst1q_s32((int*)(data_out+16), vcombine_s32(vget_low_s32(line_1_2_int32.val[1]), vget_low_s32(line_3_4_int32.val[1])));\
-  vst1q_s32((int*)(data_out+32), vcombine_s32(vget_high_s32(line_1_2_int32.val[0]), vget_high_s32(line_3_4_int32.val[0])));
+#define transfer4x12(line1, line2, line3, line4, data_out)      \
+  line_1_2 = vtrnq_s8(line1, line2);                            \
+  line_3_4 = vtrnq_s8(line3, line4);                            \
+  out0 = vtrnq_s16(line_1_2.val[0], line_3_4.val[0]);           \
+  out1 = vtrnq_s16(line_1_2.val[1], line_3_4.val[1]);           \
+  line_1_2_int32 = vtrnq_s32(out0.val[0], out1.val[0]);         \
+  line_3_4_int32 = vtrnq_s32(out0.val[1], out1.val[1]);         \
+  vst1q_s32(reinterpret_cast<int*>(data_out),                   \
+            vcombine_s32(vget_low_s32(line_1_2_int32.val[0]),   \
+                         vget_low_s32(line_3_4_int32.val[0]))); \
+  vst1q_s32(reinterpret_cast<int*>(data_out + 16),              \
+            vcombine_s32(vget_low_s32(line_1_2_int32.val[1]),   \
+                         vget_low_s32(line_3_4_int32.val[1]))); \
+  vst1q_s32(reinterpret_cast<int*>(data_out + 32),              \
+            vcombine_s32(vget_high_s32(line_1_2_int32.val[0]),  \
+                         vget_high_s32(line_3_4_int32.val[0])));
 
-#define transfer4x8(line1, line2, line3, line4, data_out)\
-  line_1_2 = vtrn_s8(line1, line2);\
-  line_3_4 = vtrn_s8(line3, line4);\
-  out0 = vtrn_s16(line_1_2.val[0], line_3_4.val[0]);\
-  out1 = vtrn_s16(line_1_2.val[1], line_3_4.val[1]);\
-  line_1_2_int32 = vtrn_s32(out0.val[0], out1.val[0]);\
-  line_3_4_int32 = vtrn_s32(out0.val[1], out1.val[1]);\
-  vst1q_s32((int*)data_out, vcombine_s32(line_1_2_int32.val[0], line_3_4_int32.val[0]));\
-  vst1q_s32((int*)(data_out+16), vcombine_s32(line_1_2_int32.val[1], line_3_4_int32.val[1]));
+#define transfer4x8(line1, line2, line3, line4, data_out)                \
+  line_1_2 = vtrn_s8(line1, line2);                                      \
+  line_3_4 = vtrn_s8(line3, line4);                                      \
+  out0 = vtrn_s16(line_1_2.val[0], line_3_4.val[0]);                     \
+  out1 = vtrn_s16(line_1_2.val[1], line_3_4.val[1]);                     \
+  line_1_2_int32 = vtrn_s32(out0.val[0], out1.val[0]);                   \
+  line_3_4_int32 = vtrn_s32(out0.val[1], out1.val[1]);                   \
+  vst1q_s32(reinterpret_cast<int*>(data_out),                            \
+            vcombine_s32(line_1_2_int32.val[0], line_3_4_int32.val[0])); \
+  vst1q_s32(reinterpret_cast<int*>(data_out + 16),                       \
+            vcombine_s32(line_1_2_int32.val[1], line_3_4_int32.val[1]));
 
 #define transfer4x4(line1, line2, line3, line4, data_out) \
-  cnt = 0;\
-  for(int i = 0; i < 4;i++) {\
-    res[cnt++] = line1[i];\
-    res[cnt++] = line2[i];\
-    res[cnt++] = line3[i];\
-    res[cnt++] = line4[i];\
-  }\
+  cnt = 0;                                                \
+  for (int i = 0; i < 4; i++) {                           \
+    res[cnt++] = line1[i];                                \
+    res[cnt++] = line2[i];                                \
+    res[cnt++] = line3[i];                                \
+    res[cnt++] = line4[i];                                \
+  }                                                       \
   vst1q_s8(data_out, res);
 
-#define LOAD_36x12_K3(vec_k0, vec_k1, vec_k2, data_input)\
-      vec_k0 = vld1q_s8((data_input));\
-      vec_k1 = vextq_s8(vec_k0, vec_zero, 1);\
-      vec_k2 = vextq_s8(vec_k0, vec_zero, 2);
+#define LOAD_36x12_K3(vec_k0, vec_k1, vec_k2, data_input) \
+  vec_k0 = vld1q_s8((data_input));                        \
+  vec_k1 = vextq_s8(vec_k0, vec_zero, 1);                 \
+  vec_k2 = vextq_s8(vec_k0, vec_zero, 2);
 
-#define LOAD_36x12_K3_B8(vec_k0, vec_k1, vec_k2, data_input)\
-      vec_h = vld1_s8((data_input));\
-      vec_tmp = vld1_s8((data_input) + 8);\
-      vec_k0 = vcombine_s8(vec_h, vtbl1_s8(vec_tmp, vec_idx));\
-      vec_k1 = vcombine_s8(vext_s8(vec_h, vec_tmp, 1), vtbl1_s8(vec_tmp, vec_idx1));\
-      vec_k2 = vcombine_s8(vext_s8(vec_h, vec_tmp, 2), vtbl1_s8(vec_tmp, vec_idx2));
+#define LOAD_36x12_K3_B8(vec_k0, vec_k1, vec_k2, data_input)                \
+  vec_h = vld1_s8((data_input));                                            \
+  vec_tmp = vld1_s8((data_input) + 8);                                      \
+  vec_k0 = vcombine_s8(vec_h, vtbl1_s8(vec_tmp, vec_idx));                  \
+  vec_k1 =                                                                  \
+      vcombine_s8(vext_s8(vec_h, vec_tmp, 1), vtbl1_s8(vec_tmp, vec_idx1)); \
+  vec_k2 = vcombine_s8(vext_s8(vec_h, vec_tmp, 2), vtbl1_s8(vec_tmp, vec_idx2));
 
-#define LOAD_36x12_K3_B4(vec_k0, vec_k1, vec_k2, data_input)\
-      vec_h = vld1_s8((data_input));\
-      vec_tmp = vld1_s8((data_input) + 8);\
-      vec_k0 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx3), vec_tmp, 2), vext_s8(vec_tmp, vec_zero_h, 2));\
-      vec_k1 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx4), vec_tmp, 3), vext_s8(vec_tmp, vec_zero_h, 3));\
-      vec_k2 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx5), vec_tmp, 4), vext_s8(vec_tmp, vec_zero_h, 4));
+#define LOAD_36x12_K3_B4(vec_k0, vec_k1, vec_k2, data_input)           \
+  vec_h = vld1_s8((data_input));                                       \
+  vec_tmp = vld1_s8((data_input) + 8);                                 \
+  vec_k0 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx3), vec_tmp, 2), \
+                       vext_s8(vec_tmp, vec_zero_h, 2));               \
+  vec_k1 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx4), vec_tmp, 3), \
+                       vext_s8(vec_tmp, vec_zero_h, 3));               \
+  vec_k2 = vcombine_s8(vext_s8(vtbl1_s8(vec_h, vec_idx5), vec_tmp, 4), \
+                       vext_s8(vec_tmp, vec_zero_h, 4));
 
-#define LOAD_36x8_K3(vec_k0, vec_k1, vec_k2, data_input)\
-      vec_k0 = vld1_s8((data_input));\
-      vec_h = vld1_s8((data_input) + 8);\
-      vec_k1 = vext_s8(vec_k0, vec_h, 1);\
-      vec_k2 = vext_s8(vec_k0, vec_h, 2);
+#define LOAD_36x8_K3(vec_k0, vec_k1, vec_k2, data_input) \
+  vec_k0 = vld1_s8((data_input));                        \
+  vec_h = vld1_s8((data_input) + 8);                     \
+  vec_k1 = vext_s8(vec_k0, vec_h, 1);                    \
+  vec_k2 = vext_s8(vec_k0, vec_h, 2);
 
-#define LOAD_36x8_K3_B4(vec_k0, vec_k1, vec_k2, data_input)\
-      vec_h = vld1_s8((data_input));\
-      vec_tmp = vld1_s8((data_input) + 8);\
-      vec_k0 = vext_s8(vtbl1_s8(vec_h, vec_idx3), vec_tmp, 2);\
-      vec_k1 = vext_s8( vtbl1_s8(vec_h, vec_idx4), vec_tmp, 3);\
-      vec_k2 = vext_s8(vtbl1_s8(vec_h, vec_idx5), vec_tmp, 4);
+#define LOAD_36x8_K3_B4(vec_k0, vec_k1, vec_k2, data_input) \
+  vec_h = vld1_s8((data_input));                            \
+  vec_tmp = vld1_s8((data_input) + 8);                      \
+  vec_k0 = vext_s8(vtbl1_s8(vec_h, vec_idx3), vec_tmp, 2);  \
+  vec_k1 = vext_s8(vtbl1_s8(vec_h, vec_idx4), vec_tmp, 3);  \
+  vec_k2 = vext_s8(vtbl1_s8(vec_h, vec_idx5), vec_tmp, 4);
 
-#define LOAD_36x4\
-      out_k00 = data_input;\
-      out_k01 = data_input + 1;\
-      out_k02 = data_input + 2;\
-      out_k10 = data_input + win;\
-      out_k11 = data_input + win + 1;\
-      out_k12 = data_input + win + 2;\
-      out_k20 = data_input + 2 * win;\
-      out_k21 = data_input + 2 * win + 1;\
-      out_k22 = data_input + 2 * win + 2;
+#define LOAD_36x4                     \
+  out_k00 = data_input;               \
+  out_k01 = data_input + 1;           \
+  out_k02 = data_input + 2;           \
+  out_k10 = data_input + win;         \
+  out_k11 = data_input + win + 1;     \
+  out_k12 = data_input + win + 2;     \
+  out_k20 = data_input + 2 * win;     \
+  out_k21 = data_input + 2 * win + 1; \
+  out_k22 = data_input + 2 * win + 2;
 
 /* condition: ow % 8 == 0, ic % 4 == 0, 3x3s1p1d1g1
  workspace needs 4 * (width+2) * (height+2) + 16bytes(overread)*/
@@ -1028,293 +1043,301 @@ void im2col_packb_3x3s1p1(const int8_t* data_im,
   const int output_w = width;
   int8x16_t vec_zero = vdupq_n_s8(0);
   int8x8_t vec_zero_h = vdup_n_s8(0);
-  int8x8_t vec_idx = {2,3,4,5,2,3,4,5};   // for vtbl1
-  int8x8_t vec_idx1 = {3,4,5,6,3,4,5,6};
-  int8x8_t vec_idx2 = {4,5,6,7,4,5,6,7};
-  int8x8_t vec_idx3 = {0,0,0,1,2,3,6,7};
-  int8x8_t vec_idx4 = {0,0,0,1,2,3,4,7};
-  int8x8_t vec_idx5 = {0,0,0,0,2,3,4,5};
+  int8x8_t vec_idx = {2, 3, 4, 5, 2, 3, 4, 5};  // for vtbl1
+  int8x8_t vec_idx1 = {3, 4, 5, 6, 3, 4, 5, 6};
+  int8x8_t vec_idx2 = {4, 5, 6, 7, 4, 5, 6, 7};
+  int8x8_t vec_idx3 = {0, 0, 0, 1, 2, 3, 6, 7};
+  int8x8_t vec_idx4 = {0, 0, 0, 1, 2, 3, 4, 7};
+  int8x8_t vec_idx5 = {0, 0, 0, 0, 2, 3, 4, 5};
 
-  auto loop_func_36x12 = [&](int8_t* data_im_block, int loop_row, int loop_col, 
+  auto loop_func_36x12 = [&](int8_t* data_im_block,
+                             int loop_row,
+                             int loop_col,
                              int8_t* data_out_block) {
     auto cur_ow = loop_col % output_w;
     auto cur_oh = loop_col / output_w;
     int input_idx = cur_oh * win + cur_ow;
     int8_t* data_input = data_im_block;
     int8_t* data_output = data_out_block;
-    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, 
-        vec_k11, vec_k12, vec_k20, vec_k21, vec_k22;
+    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, vec_k11, vec_k12, vec_k20,
+        vec_k21, vec_k22;
     int8x8_t vec_tmp, vec_h;
     int8x16x2_t line_1_2, line_3_4;
     int16x8x2_t out0, out1;
     int32x4x2_t line_1_2_int32, line_3_4_int32;
 
     // for ow % 8 == 0, (ow*oh)%12 must be 4/8/12
-    if(cur_ow + 11 < output_w) { // overread 2bytes(16(neon) - 12(block) - 2(pad))
+    if (cur_ow + 11 <
+        output_w) {  // overread 2bytes(16(neon) - 12(block) - 2(pad))
       // OC1
       data_input = data_im_block + input_idx;
       LOAD_36x12_K3(vec_k00, vec_k01, vec_k02, data_input);
       LOAD_36x12_K3(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k00,vec_k01,vec_k02,vec_k10,data_output);
+      transfer4x12(vec_k00, vec_k01, vec_k02, vec_k10, data_output);
       data_output += 48;
       LOAD_36x12_K3(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k11,vec_k12,vec_k20,vec_k21,data_output);
+      transfer4x12(vec_k11, vec_k12, vec_k20, vec_k21, data_output);
       data_output += 48;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
       LOAD_36x12_K3(vec_k00, vec_k01, vec_k02, data_input);
       LOAD_36x12_K3(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k22,vec_k00,vec_k01,vec_k02,data_output);
+      transfer4x12(vec_k22, vec_k00, vec_k01, vec_k02, data_output);
       data_output += 48;
       LOAD_36x12_K3(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k10,vec_k11,vec_k12,vec_k20,data_output);
+      transfer4x12(vec_k10, vec_k11, vec_k12, vec_k20, data_output);
       data_output += 48;
       // OC3
       data_input = data_im_block + input_idx + padding_size * 2;
       LOAD_36x12_K3(vec_k00, vec_k01, vec_k02, data_input);
       LOAD_36x12_K3(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k21,vec_k22,vec_k00,vec_k01,data_output);
+      transfer4x12(vec_k21, vec_k22, vec_k00, vec_k01, data_output);
       data_output += 48;
       LOAD_36x12_K3(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k02,vec_k10,vec_k11,vec_k12,data_output);
+      transfer4x12(vec_k02, vec_k10, vec_k11, vec_k12, data_output);
       data_output += 48;
       // OC4
       data_input = data_im_block + input_idx + padding_size * 3;
       LOAD_36x12_K3(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k20,vec_k21,vec_k22,vec_k00,data_output);
+      transfer4x12(vec_k20, vec_k21, vec_k22, vec_k00, data_output);
       data_output += 48;
       LOAD_36x12_K3(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k01,vec_k02,vec_k10,vec_k11,data_output);
+      transfer4x12(vec_k01, vec_k02, vec_k10, vec_k11, data_output);
       data_output += 48;
       LOAD_36x12_K3(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k12,vec_k20,vec_k21,vec_k22,data_output);
+      transfer4x12(vec_k12, vec_k20, vec_k21, vec_k22, data_output);
       data_output += 48;
-    } else if(cur_ow + 7 < output_w) { // current line fetch 8 and next line fetch 4
+    } else if (cur_ow + 7 <
+               output_w) {  // current line fetch 8 and next line fetch 4
       // OC1
       data_input = data_im_block + input_idx;
       LOAD_36x12_K3_B8(vec_k00, vec_k01, vec_k02, data_input);
       LOAD_36x12_K3_B8(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k00,vec_k01,vec_k02,vec_k10,data_output);
+      transfer4x12(vec_k00, vec_k01, vec_k02, vec_k10, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k11,vec_k12,vec_k20,vec_k21,data_output);
+      transfer4x12(vec_k11, vec_k12, vec_k20, vec_k21, data_output);
       data_output += 48;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
       LOAD_36x12_K3_B8(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k22,vec_k00,vec_k01,vec_k02,data_output);
+      transfer4x12(vec_k22, vec_k00, vec_k01, vec_k02, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k10, vec_k11, vec_k12, data_input + win);
       LOAD_36x12_K3_B8(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k10,vec_k11,vec_k12,vec_k20,data_output);
+      transfer4x12(vec_k10, vec_k11, vec_k12, vec_k20, data_output);
       data_output += 48;
       // OC3
       data_input = data_im_block + input_idx + 2 * padding_size;
       LOAD_36x12_K3_B8(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k21,vec_k22,vec_k00,vec_k01,data_output);
+      transfer4x12(vec_k21, vec_k22, vec_k00, vec_k01, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k02,vec_k10,vec_k11,vec_k12,data_output);
+      transfer4x12(vec_k02, vec_k10, vec_k11, vec_k12, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
       // OC4
       data_input = data_im_block + input_idx + 3 * padding_size;
       LOAD_36x12_K3_B8(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k20,vec_k21,vec_k22,vec_k00,data_output);
+      transfer4x12(vec_k20, vec_k21, vec_k22, vec_k00, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k01,vec_k02,vec_k10,vec_k11,data_output);
+      transfer4x12(vec_k01, vec_k02, vec_k10, vec_k11, data_output);
       data_output += 48;
       LOAD_36x12_K3_B8(vec_k20, vec_k21, vec_k22, data_input + 2 * win);
-      transfer4x12(vec_k12,vec_k20,vec_k21,vec_k22,data_output);
+      transfer4x12(vec_k12, vec_k20, vec_k21, vec_k22, data_output);
       data_output += 48;
-    } else { // 4, current line fetch 4 and next line fetch 8
+    } else {  // 4, current line fetch 4 and next line fetch 8
       // OC1
       data_input = data_im_block + input_idx;
       LOAD_36x12_K3_B4(vec_k00, vec_k01, vec_k02, data_input);
       LOAD_36x12_K3_B4(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k00,vec_k01,vec_k02,vec_k10,data_output);
+      transfer4x12(vec_k00, vec_k01, vec_k02, vec_k10, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k20, vec_k21, vec_k22, data_input + win * 2);
-      transfer4x12(vec_k11,vec_k12,vec_k20,vec_k21,data_output);
+      transfer4x12(vec_k11, vec_k12, vec_k20, vec_k21, data_output);
       data_output += 48;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
       LOAD_36x12_K3_B4(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k22,vec_k00,vec_k01,vec_k02,data_output);
+      transfer4x12(vec_k22, vec_k00, vec_k01, vec_k02, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k10, vec_k11, vec_k12, data_input + win);
       LOAD_36x12_K3_B4(vec_k20, vec_k21, vec_k22, data_input + win * 2);
-      transfer4x12(vec_k10,vec_k11,vec_k12,vec_k20,data_output);
+      transfer4x12(vec_k10, vec_k11, vec_k12, vec_k20, data_output);
       data_output += 48;
       // OC3
       data_input = data_im_block + input_idx + 2 * padding_size;
       LOAD_36x12_K3_B4(vec_k00, vec_k01, vec_k02, data_input);
-      transfer4x12(vec_k21,vec_k22,vec_k00,vec_k01,data_output);
+      transfer4x12(vec_k21, vec_k22, vec_k00, vec_k01, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k02,vec_k10,vec_k11,vec_k12,data_output);
+      transfer4x12(vec_k02, vec_k10, vec_k11, vec_k12, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k20, vec_k21, vec_k22, data_input + win * 2);
       // OC4
       data_input = data_im_block + input_idx + 3 * padding_size;
-      LOAD_36x12_K3_B4(vec_k00, vec_k01, vec_k02, data_input); 
-      transfer4x12(vec_k20,vec_k21,vec_k22,vec_k00,data_output);
+      LOAD_36x12_K3_B4(vec_k00, vec_k01, vec_k02, data_input);
+      transfer4x12(vec_k20, vec_k21, vec_k22, vec_k00, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k10, vec_k11, vec_k12, data_input + win);
-      transfer4x12(vec_k01,vec_k02,vec_k10,vec_k11,data_output);
+      transfer4x12(vec_k01, vec_k02, vec_k10, vec_k11, data_output);
       data_output += 48;
       LOAD_36x12_K3_B4(vec_k20, vec_k21, vec_k22, data_input + win * 2);
-      transfer4x12(vec_k12,vec_k20,vec_k21,vec_k22,data_output);
+      transfer4x12(vec_k12, vec_k20, vec_k21, vec_k22, data_output);
       data_output += 48;
     }
   };
 
-  auto loop_func_36x8 = [&](int8_t* data_im_block, int loop_row, int loop_col, 
-                             int8_t* data_out_block) {
+  auto loop_func_36x8 = [&](int8_t* data_im_block,
+                            int loop_row,
+                            int loop_col,
+                            int8_t* data_out_block) {
     auto cur_ow = loop_col % output_w;
     auto cur_oh = loop_col / output_w;
     int input_idx = cur_oh * win + cur_ow;
     auto data_output = data_out_block;
     auto data_input = data_im_block;
-    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, 
-        vec_k11, vec_k12, vec_k20, vec_k21, vec_k22;
-    int8x8_t vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, 
-        vec_k11_h, vec_k12_h, vec_k20_h, vec_k21_h, vec_k22_h;
+    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, vec_k11, vec_k12, vec_k20,
+        vec_k21, vec_k22;
+    int8x8_t vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, vec_k11_h, vec_k12_h,
+        vec_k20_h, vec_k21_h, vec_k22_h;
     int8x8_t vec_h, vec_tmp;
     int8x8x2_t line_1_2, line_3_4;
     int16x4x2_t out0, out1;
     int32x2x2_t line_1_2_int32, line_3_4_int32;
 
-    if(cur_ow + 7 < output_w) {
+    if (cur_ow + 7 < output_w) {
       // OC1
       data_input = data_im_block + input_idx;
       LOAD_36x8_K3(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
       LOAD_36x8_K3(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
-      transfer4x8(vec_k00_h,vec_k01_h,vec_k02_h,vec_k10_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, data_output);
+      data_output += 32;
       LOAD_36x8_K3(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
-      transfer4x8(vec_k11_h,vec_k12_h,vec_k20_h,vec_k21_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k11_h, vec_k12_h, vec_k20_h, vec_k21_h, data_output);
+      data_output += 32;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
       LOAD_36x8_K3(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
-      transfer4x8(vec_k22_h,vec_k00_h,vec_k01_h,vec_k02_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k22_h, vec_k00_h, vec_k01_h, vec_k02_h, data_output);
+      data_output += 32;
       LOAD_36x8_K3(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
       LOAD_36x8_K3(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
-      transfer4x8(vec_k10_h,vec_k11_h,vec_k12_h,vec_k20_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k10_h, vec_k11_h, vec_k12_h, vec_k20_h, data_output);
+      data_output += 32;
       // OC3
       data_input = data_im_block + input_idx + 2 * padding_size;
       LOAD_36x8_K3(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
-      transfer4x8(vec_k21_h,vec_k22_h,vec_k00_h,vec_k01_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k21_h, vec_k22_h, vec_k00_h, vec_k01_h, data_output);
+      data_output += 32;
       LOAD_36x8_K3(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
       LOAD_36x8_K3(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
-      transfer4x8(vec_k02_h,vec_k10_h,vec_k11_h,vec_k12_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k02_h, vec_k10_h, vec_k11_h, vec_k12_h, data_output);
+      data_output += 32;
       // OC4
       data_input = data_im_block + input_idx + 3 * padding_size;
       LOAD_36x8_K3(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
-      transfer4x8(vec_k20_h,vec_k21_h,vec_k22_h,vec_k00_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k20_h, vec_k21_h, vec_k22_h, vec_k00_h, data_output);
+      data_output += 32;
       LOAD_36x8_K3(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
       LOAD_36x8_K3(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
-      transfer4x8(vec_k01_h,vec_k02_h,vec_k10_h,vec_k11_h,data_output);
-      data_output+=32;
-      transfer4x8(vec_k12_h,vec_k20_h,vec_k21_h,vec_k22_h,data_output);
-      data_output+=32;
+      transfer4x8(vec_k01_h, vec_k02_h, vec_k10_h, vec_k11_h, data_output);
+      data_output += 32;
+      transfer4x8(vec_k12_h, vec_k20_h, vec_k21_h, vec_k22_h, data_output);
+      data_output += 32;
     } else {
       // OC1
       data_input = data_im_block + input_idx;
-      LOAD_36x8_K3_B4(vec_k00_h,vec_k01_h,vec_k02_h,data_input);
-      LOAD_36x8_K3_B4(vec_k10_h,vec_k11_h,vec_k12_h,data_input + win);
-      transfer4x8(vec_k00_h,vec_k01_h,vec_k02_h,vec_k10_h,data_output);
-      data_output+=32;
-      LOAD_36x8_K3_B4(vec_k20_h,vec_k21_h,vec_k22_h,data_input + 2*win);
-      transfer4x8(vec_k11_h,vec_k12_h,vec_k20_h,vec_k21_h,data_output);
-      data_output+=32;
+      LOAD_36x8_K3_B4(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
+      LOAD_36x8_K3_B4(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
+      transfer4x8(vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, data_output);
+      data_output += 32;
+      LOAD_36x8_K3_B4(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
+      transfer4x8(vec_k11_h, vec_k12_h, vec_k20_h, vec_k21_h, data_output);
+      data_output += 32;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
-      LOAD_36x8_K3_B4(vec_k00_h,vec_k01_h,vec_k02_h,data_input);
-      transfer4x8(vec_k22_h,vec_k00_h,vec_k01_h,vec_k02_h,data_output);
-      data_output+=32;
-      LOAD_36x8_K3_B4(vec_k10_h,vec_k11_h,vec_k12_h,data_input + win);
-      LOAD_36x8_K3_B4(vec_k20_h,vec_k21_h,vec_k22_h,data_input + 2*win);
-      transfer4x8(vec_k10_h,vec_k11_h,vec_k12_h,vec_k20_h,data_output);
-      data_output+=32;
+      LOAD_36x8_K3_B4(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
+      transfer4x8(vec_k22_h, vec_k00_h, vec_k01_h, vec_k02_h, data_output);
+      data_output += 32;
+      LOAD_36x8_K3_B4(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
+      LOAD_36x8_K3_B4(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
+      transfer4x8(vec_k10_h, vec_k11_h, vec_k12_h, vec_k20_h, data_output);
+      data_output += 32;
       // OC3
       data_input = data_im_block + input_idx + padding_size * 2;
-      LOAD_36x8_K3_B4(vec_k00_h,vec_k01_h,vec_k02_h,data_input);
-      transfer4x8(vec_k21_h,vec_k22_h,vec_k00_h,vec_k01_h,data_output);
-      data_output+=32;
-      LOAD_36x8_K3_B4(vec_k10_h,vec_k11_h,vec_k12_h,data_input + win);
-      LOAD_36x8_K3_B4(vec_k20_h,vec_k21_h,vec_k22_h,data_input + 2*win);
-      transfer4x8(vec_k02_h,vec_k10_h,vec_k11_h,vec_k12_h,data_output);
-      data_output+=32;
+      LOAD_36x8_K3_B4(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
+      transfer4x8(vec_k21_h, vec_k22_h, vec_k00_h, vec_k01_h, data_output);
+      data_output += 32;
+      LOAD_36x8_K3_B4(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
+      LOAD_36x8_K3_B4(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
+      transfer4x8(vec_k02_h, vec_k10_h, vec_k11_h, vec_k12_h, data_output);
+      data_output += 32;
       // OC4
       data_input = data_im_block + input_idx + padding_size * 3;
-      LOAD_36x8_K3_B4(vec_k00_h,vec_k01_h,vec_k02_h,data_input);
-      transfer4x8(vec_k20_h,vec_k21_h,vec_k22_h,vec_k00_h,data_output);
-      data_output+=32;
-      LOAD_36x8_K3_B4(vec_k10_h,vec_k11_h,vec_k12_h,data_input + win);
-      transfer4x8(vec_k01_h,vec_k02_h,vec_k10_h,vec_k11_h,data_output);
-      data_output+=32;
-      LOAD_36x8_K3_B4(vec_k20_h,vec_k21_h,vec_k22_h,data_input + 2*win);
-      transfer4x8(vec_k12_h,vec_k20_h,vec_k21_h,vec_k22_h,data_output);
-      data_output+=32;
+      LOAD_36x8_K3_B4(vec_k00_h, vec_k01_h, vec_k02_h, data_input);
+      transfer4x8(vec_k20_h, vec_k21_h, vec_k22_h, vec_k00_h, data_output);
+      data_output += 32;
+      LOAD_36x8_K3_B4(vec_k10_h, vec_k11_h, vec_k12_h, data_input + win);
+      transfer4x8(vec_k01_h, vec_k02_h, vec_k10_h, vec_k11_h, data_output);
+      data_output += 32;
+      LOAD_36x8_K3_B4(vec_k20_h, vec_k21_h, vec_k22_h, data_input + 2 * win);
+      transfer4x8(vec_k12_h, vec_k20_h, vec_k21_h, vec_k22_h, data_output);
+      data_output += 32;
     }
   };
 
-  auto loop_func_36x4 = [&](int8_t* data_im_block, int loop_row, int loop_col, 
-                             int8_t* data_out_block) {
+  auto loop_func_36x4 = [&](int8_t* data_im_block,
+                            int loop_row,
+                            int loop_col,
+                            int8_t* data_out_block) {
     auto cur_ow = loop_col % output_w;
     auto cur_oh = loop_col / output_w;
     int input_idx = cur_oh * win + cur_ow;
     auto data_input = data_im_block;
     auto data_output = data_out_block;
-    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, 
-        vec_k11, vec_k12, vec_k20, vec_k21, vec_k22;
-    int8x8_t vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, 
-        vec_k11_h, vec_k12_h, vec_k20_h, vec_k21_h, vec_k22_h;
+    int8x16_t vec_k00, vec_k01, vec_k02, vec_k10, vec_k11, vec_k12, vec_k20,
+        vec_k21, vec_k22;
+    int8x8_t vec_k00_h, vec_k01_h, vec_k02_h, vec_k10_h, vec_k11_h, vec_k12_h,
+        vec_k20_h, vec_k21_h, vec_k22_h;
     int8x8_t vec_h, vec_tmp, vec_tmp1;
-    int8_t *out_k00, *out_k01,*out_k02,*out_k10,*out_k11,
-      *out_k12,*out_k20,*out_k21,*out_k22;
+    int8_t *out_k00, *out_k01, *out_k02, *out_k10, *out_k11, *out_k12, *out_k20,
+        *out_k21, *out_k22;
     int8x16_t res;
     int cnt = 0;
 
-    if(cur_ow + 3 < output_w) {
+    if (cur_ow + 3 < output_w) {
       // OC1
       data_input = data_im_block + input_idx;
       LOAD_36x4;
-      transfer4x4(out_k00,out_k01,out_k02,out_k10,data_output);
-      data_output+=16;
-      transfer4x4(out_k11,out_k12,out_k20,out_k21,data_output);
-      data_output+=16;
+      transfer4x4(out_k00, out_k01, out_k02, out_k10, data_output);
+      data_output += 16;
+      transfer4x4(out_k11, out_k12, out_k20, out_k21, data_output);
+      data_output += 16;
       // OC2
       data_input = data_im_block + input_idx + padding_size;
       LOAD_36x4;
-      transfer4x4(out_k22,out_k00,out_k01,out_k02,data_output);
-      data_output+=16;
-      transfer4x4(out_k10,out_k11,out_k12,out_k20,data_output);
-      data_output+=16;
+      transfer4x4(out_k22, out_k00, out_k01, out_k02, data_output);
+      data_output += 16;
+      transfer4x4(out_k10, out_k11, out_k12, out_k20, data_output);
+      data_output += 16;
       // OC3
       data_input = data_im_block + input_idx + 2 * padding_size;
       LOAD_36x4;
-      transfer4x4(out_k21,out_k22,out_k00,out_k01,data_output);
-      data_output+=16;
-      transfer4x4(out_k02,out_k10,out_k11,out_k12,data_output);
-      data_output+=16;
+      transfer4x4(out_k21, out_k22, out_k00, out_k01, data_output);
+      data_output += 16;
+      transfer4x4(out_k02, out_k10, out_k11, out_k12, data_output);
+      data_output += 16;
       // OC4
       data_input = data_im_block + input_idx + 3 * padding_size;
       LOAD_36x4;
-      transfer4x4(out_k20,out_k21,out_k22,out_k00,data_output);
-      data_output+=16;
-      transfer4x4(out_k01,out_k02,out_k10,out_k11,data_output);
-      data_output+=16;
-      transfer4x4(out_k12,out_k20,out_k21,out_k22,data_output);
-      data_output+=16;
+      transfer4x4(out_k20, out_k21, out_k22, out_k00, data_output);
+      data_output += 16;
+      transfer4x4(out_k01, out_k02, out_k10, out_k11, data_output);
+      data_output += 16;
+      transfer4x4(out_k12, out_k20, out_k21, out_k22, data_output);
+      data_output += 16;
     }
   };
 
@@ -1322,20 +1345,23 @@ void im2col_packb_3x3s1p1(const int8_t* data_im,
   for (int loop_row = 0; loop_row + 35 < looph; loop_row += 36) {
     int cur_ic = loop_row / kernel_size;
     // padding 4C per cycle
-    for(int c = 0; c < 4; c++)
-      padding_zero(data_im + (cur_ic + c) * channel_size, width, height, workspace + c * padding_size);
+    for (int c = 0; c < 4; c++)
+      padding_zero(data_im + (cur_ic + c) * channel_size,
+                   width,
+                   height,
+                   workspace + c * padding_size);
     auto data_im_pad = workspace;
-    
-    int loop_col = 0; // only support ow % 8 == 0, tail must be 12/8/4
-    for(;loop_col + 11 < loopw; loop_col += 12) {
+
+    int loop_col = 0;  // only support ow % 8 == 0, tail must be 12/8/4
+    for (; loop_col + 11 < loopw; loop_col += 12) {
       auto data_col_12_block = data_col + loop_col * looph + 12 * loop_row;
       loop_func_36x12(data_im_pad, loop_row, loop_col, data_col_12_block);
     }
-    for(;loop_col + 7 < loopw; loop_col += 8) {
+    for (; loop_col + 7 < loopw; loop_col += 8) {
       auto data_col_8_block = data_col + loop_col * looph + 8 * loop_row;
       loop_func_36x8(data_im_pad, loop_row, loop_col, data_col_8_block);
     }
-    for(;loop_col + 3 < loopw; loop_col += 4) {
+    for (; loop_col + 3 < loopw; loop_col += 4) {
       auto data_col_4_block = data_col + loop_col * looph + 4 * loop_row;
       loop_func_36x4(data_im_pad, loop_row, loop_col, data_col_4_block);
     }
@@ -1344,19 +1370,20 @@ void im2col_packb_3x3s1p1(const int8_t* data_im,
 
 template <typename Dtype>
 void conv_im2col_gemm_int8_fast(const int8_t* i_data,
-                           Dtype* o_data,
-                           int num,
-                           int oc,
-                           int oh,
-                           int ow,
-                           int ic,
-                           int ih,
-                           int win,
-                           const int8_t* weights,
-                           const float* bias,
-                           const operators::ConvParam& param,
-                           ARMContext* ctx,
-                           const float* scale) {
+                                Dtype* o_data,
+                                int num,
+                                int oc,
+                                int oh,
+                                int ow,
+                                int ic,
+                                int ih,
+                                int win,
+                                const int8_t* weights,
+                                const float* bias,
+                                const operators::ConvParam& param,
+                                ARMContext* ctx,
+                                const float* scale) {
+  LOG(INFO) << "==================in";
   int group = 1;
   auto filter_dims = param.filter->dims();
   auto paddings = *param.paddings;
@@ -1388,33 +1415,31 @@ void conv_im2col_gemm_int8_fast(const int8_t* i_data,
 
   int8_t* tmp_work_space =
       ctx->workspace_data<int8_t>() + ctx->llc_size() / sizeof(int8_t);
-  auto pad_b =
-      static_cast<int8_t*>(TargetMalloc(TARGET(kARM), 4 * (ih + 2) * (win + 2) + 16));
+  auto pad_b = static_cast<int8_t*>(
+      TargetMalloc(TARGET(kARM), 4 * (ih + 2) * (win + 2) + 16));
 
   for (int b = 0; b < num; ++b) {
     Dtype* dout_group = o_data + (b * oc) * channel_size_out;
-    const int8_t* din_group = static_cast<const int8_t*>(i_data) +
-                              (b * ic) * channel_size_in;
-    const int8_t* weights_group =
-        static_cast<const int8_t*>(weights);
+    const int8_t* din_group =
+        static_cast<const int8_t*>(i_data) + (b * ic) * channel_size_in;
+    const int8_t* weights_group = static_cast<const int8_t*>(weights);
     const float* bias_group = bias;
     int8_t* dB = tmp_work_space;
     const float* scale_group = scale;
-    
+
     im2col_packb_3x3s1p1(din_group, chin_per_group, ih, win, dB, pad_b);
     gemm_prepack_int8_nopack(weights_group,
-                      dB,
-                      bias_group,
-                      dout_group,
-                      m,
-                      n,
-                      k,
-                      flag_bias,
-                      false,
-                      scale_group,
-                      act_param,
-                      ctx);
-
+                             dB,
+                             bias_group,
+                             dout_group,
+                             m,
+                             n,
+                             k,
+                             flag_bias,
+                             false,
+                             scale_group,
+                             act_param,
+                             ctx);
   }
   TargetFree(TARGET(kARM), pad_b);
 }
@@ -1485,14 +1510,29 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   bool ker_3 = (kernel_h == kernel_w) && (kernel_w == 3);
   bool stride_1 = (stride_h == stride_w) && (stride_h == 1);
   bool dila_1 = (dila_h == dila_w) && (dila_h == 1);
-  bool pad_1 = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) && (paddings[0] == paddings[2]) && (paddings[0] == 1);
+  bool pad_1 = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
+               (paddings[0] == paddings[2]) && (paddings[0] == 1);
   bool mod_cond = (ic % 4 == 0) && (win % 8 == 0);
-  if(ker_3 && stride_1 && dila_1 && pad_1 && mod_cond) {
-    conv_im2col_gemm_int8_fast(i_data, o_data, num, oc, oh, ow, ic, ih, win, weights, bias, param, ctx, scale); 
+  bool group_1 = (group == 1);
+  bool mn_gt_1 = (m > 1) && (n > 1);
+  if (ker_3 && stride_1 && dila_1 && pad_1 && group_1 && mn_gt_1 && mod_cond) {
+    conv_im2col_gemm_int8_fast(i_data,
+                               o_data,
+                               num,
+                               oc,
+                               oh,
+                               ow,
+                               ic,
+                               ih,
+                               win,
+                               weights,
+                               bias,
+                               param,
+                               ctx,
+                               scale);
     return;
   }
 #endif
-
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
