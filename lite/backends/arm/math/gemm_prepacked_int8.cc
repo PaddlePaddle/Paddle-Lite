@@ -5704,8 +5704,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
   }
 }
 
-// used to fuse im2col and packB
-// ic % 4 == 0 && ow % 8 == 0
+// used to fuse im2col and packB, ic % 4 == 0 && ow % 8 == 0
 template <typename Dtype>
 void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
                                       const int8_t* B_packed,
@@ -7713,7 +7712,7 @@ GEMM_PREPACK_INT8(int8_t);
 GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);
 
-#ifdef __aarch64__
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
 template <typename dtype>
 void gemm_prepack_int8_nopack(const int8_t* A_packed,
                               const int8_t* B,
@@ -7776,11 +7775,11 @@ void gemm_prepack_int8_nopack(const int8_t* A_packed,
       ARMContext* ctx);
 GEMM_PREPACK_INT8_NOPACK(int8_t);
 GEMM_PREPACK_INT8_NOPACK(float_t);
-
-#endif
+#endif  // __aarch64__ && WITH_ARM_DOTPROD
 
 #undef IN_PARAMS
 #undef GEMM_PREPACK_INT8
+#undef GEMM_PREPACK_INT8_NOPACK
 
 }  // namespace math
 }  // namespace arm

@@ -917,10 +917,8 @@ void conv_im2col_gemm(const float* i_data,
   }
 }
 
-// fuse im2col and packB
-#ifdef __aarch64__
-
-// only support 3x3s1p1
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+// fuse im2col and packB, only support 3x3s1p1
 static void padding_zero(const int8_t* data_in,
                          int iw,
                          int ih,
@@ -1383,7 +1381,6 @@ void conv_im2col_gemm_int8_fast(const int8_t* i_data,
                                 const operators::ConvParam& param,
                                 ARMContext* ctx,
                                 const float* scale) {
-  LOG(INFO) << "==================in";
   int group = 1;
   auto filter_dims = param.filter->dims();
   auto paddings = *param.paddings;
@@ -1506,16 +1503,18 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   int8_t* tmp_work_space =
       ctx->workspace_data<int8_t>() + ctx->llc_size() / sizeof(int8_t);
 
-#ifdef __aarch64__
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  // only support 3x3s1p1d1 sdot, win == ow && ih == oh
   bool ker_3 = (kernel_h == kernel_w) && (kernel_w == 3);
   bool stride_1 = (stride_h == stride_w) && (stride_h == 1);
   bool dila_1 = (dila_h == dila_w) && (dila_h == 1);
   bool pad_1 = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
                (paddings[0] == paddings[2]) && (paddings[0] == 1);
-  bool mod_cond = (ic % 4 == 0) && (win % 8 == 0);
+  bool mod_cond = (ic % 4 == 0) && (ow % 8 == 0);
   bool group_1 = (group == 1);
   bool mn_gt_1 = (m > 1) && (n > 1);
-  if (ker_3 && stride_1 && dila_1 && pad_1 && group_1 && mn_gt_1 && mod_cond) {
+  if (ker_3 && stride_1 && dila_1 && pad_1 && group_1 && mn_gt_1 && mod_cond &&
+      ctx->has_dot()) {
     conv_im2col_gemm_int8_fast(i_data,
                                o_data,
                                num,
