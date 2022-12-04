@@ -375,7 +375,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
   const int new_input_size =
       ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
   const int temp_size = (tile_block * (ic_pad + oc_pad) * wino_iw * wino_iw +
-                         8 * wino_iw * wino_iw) *
+                         2 * 8 * wino_iw * wino_iw) *
                         threads;
   workspace_size_ = (temp_size + new_input_size) * sizeof(float16_t);
 
