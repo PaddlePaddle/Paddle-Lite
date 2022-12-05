@@ -107,6 +107,7 @@ add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.
 add_kernel(multiclass_nms_compute_xpu XPU extra SRCS multiclass_nms_compute.cc)
 add_kernel(lod_reset_compute_xpu XPU extra SRCS lod_reset_compute.cc)
 add_kernel(select_input_compute_xpu XPU extra SRCS select_input_compute.cc)
+add_kernel(group_norm_compute_xpu XPU extra SRCS group_norm_compute.cc)
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
