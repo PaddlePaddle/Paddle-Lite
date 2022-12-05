@@ -67,8 +67,8 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
       nodes.at("adaptive_pool2d_output")->operand;
   auto input_height = adaptive_pool2d_input_operand->type.dimensions.data[2];
   auto input_width = adaptive_pool2d_input_operand->type.dimensions.data[3];
-  NNADAPTER_CHECK_NE(input_height, NNADAPTER_UNKNOWN);
-  NNADAPTER_CHECK_NE(input_width, NNADAPTER_UNKNOWN);
+  if (input_height == NNADAPTER_UNKNOWN || input_width == NNADAPTER_UNKNOWN)
+    return false;
   auto output_height = reinterpret_cast<int32_t*>(
       adaptive_pool2d_output_shape_operand->buffer)[0];
   auto output_width = reinterpret_cast<int32_t*>(
