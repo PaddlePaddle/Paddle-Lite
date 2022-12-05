@@ -154,13 +154,13 @@ void act_swish<float16_t>(
       float16x8_t v_p2 = vld1q_f16(ptr_in_thread + 16);
       float16x8_t v_p3 = vld1q_f16(ptr_in_thread + 24);
       v_p0 = vdivq_f16(
-          v_p0, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
+          v_p0, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
       v_p1 = vdivq_f16(
-          v_p1, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p1)))));
+          v_p1, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p1)))));
       v_p2 = vdivq_f16(
-          v_p2, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p2)))));
+          v_p2, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p2)))));
       v_p3 = vdivq_f16(
-          v_p3, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p3)))));
+          v_p3, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p3)))));
       vst1q_f16(ptr_out_thread, v_p0);
       vst1q_f16(ptr_out_thread + 8, v_p1);
       vst1q_f16(ptr_out_thread + 16, v_p2);
@@ -172,9 +172,9 @@ void act_swish<float16_t>(
       float16x8_t v_p0 = vld1q_f16(ptr_in_thread);
       float16x8_t v_p1 = vld1q_f16(ptr_in_thread + 8);
       v_p0 = vdivq_f16(
-          v_p0, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
+          v_p0, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
       v_p1 = vdivq_f16(
-          v_p1, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p1)))));
+          v_p1, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p1)))));
       vst1q_f16(ptr_out_thread, v_p0);
       vst1q_f16(ptr_out_thread + 8, v_p1);
       ptr_in_thread += 16;
@@ -183,7 +183,7 @@ void act_swish<float16_t>(
     for (; i + 7 < nums_per_thread; i += 8) {
       float16x8_t v_p0 = vld1q_f16(ptr_in_thread);
       v_p0 = vdivq_f16(
-          v_p0, vaddq_f16(vone, exp_ps(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
+          v_p0, vaddq_f16(vone, exp_ps_naive(vnegq_f16(vmulq_f16(vbeta, v_p0)))));
       vst1q_f16(ptr_out_thread, v_p0);
       ptr_in_thread += 8;
       ptr_out_thread += 8;
@@ -193,7 +193,7 @@ void act_swish<float16_t>(
       float16x4_t _one = vdup_n_f16(1.f16);
       float16x4_t v_p0 = vld1_f16(ptr_in_thread);
       v_p0 = vdiv_f16(v_p0,
-                      vadd_f16(_one, exp_ps(vneg_f16(vmul_f16(_beta, v_p0)))));
+                      vadd_f16(_one, exp_ps_naive(vneg_f16(vmul_f16(_beta, v_p0)))));
       vst1_f16(ptr_out_thread, v_p0);
       ptr_in_thread += 4;
       ptr_out_thread += 4;
@@ -500,10 +500,10 @@ void act_sigmoid<float16_t>(const float16_t* din,
       float16x8_t v_p1 = vld1q_f16(ptr_in_thread + 8);
       float16x8_t v_p2 = vld1q_f16(ptr_in_thread + 16);
       float16x8_t v_p3 = vld1q_f16(ptr_in_thread + 24);
-      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p0))));
-      v_p1 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p1))));
-      v_p2 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p2))));
-      v_p3 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p3))));
+      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p0))));
+      v_p1 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p1))));
+      v_p2 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p2))));
+      v_p3 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p3))));
       vst1q_f16(ptr_out_thread, v_p0);
       vst1q_f16(ptr_out_thread + 8, v_p1);
       vst1q_f16(ptr_out_thread + 16, v_p2);
@@ -514,8 +514,8 @@ void act_sigmoid<float16_t>(const float16_t* din,
     for (; i + 15 < nums_per_thread; i += 16) {
       float16x8_t v_p0 = vld1q_f16(ptr_in_thread);
       float16x8_t v_p1 = vld1q_f16(ptr_in_thread + 8);
-      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p0))));
-      v_p1 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p1))));
+      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p0))));
+      v_p1 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p1))));
       vst1q_f16(ptr_out_thread, v_p0);
       vst1q_f16(ptr_out_thread + 8, v_p1);
       ptr_in_thread += 16;
@@ -523,7 +523,7 @@ void act_sigmoid<float16_t>(const float16_t* din,
     }
     for (; i + 7 < nums_per_thread; i += 8) {
       float16x8_t v_p0 = vld1q_f16(ptr_in_thread);
-      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps(vnegq_f16(v_p0))));
+      v_p0 = vdivq_f16(vone, vaddq_f16(vone, exp_ps_naive(vnegq_f16(v_p0))));
       vst1q_f16(ptr_out_thread, v_p0);
       ptr_in_thread += 8;
       ptr_out_thread += 8;
@@ -531,7 +531,7 @@ void act_sigmoid<float16_t>(const float16_t* din,
     for (; i + 3 < nums_per_thread; i += 4) {
       float16x4_t _one = vdup_n_f16(1.f);
       float16x4_t v_p0 = vld1_f16(ptr_in_thread);
-      v_p0 = vdiv_f16(_one, vadd_f16(_one, exp_ps(vneg_f16(v_p0))));
+      v_p0 = vdiv_f16(_one, vadd_f16(_one, exp_ps_naive(vneg_f16(v_p0))));
       vst1_f16(ptr_out_thread, v_p0);
       ptr_in_thread += 4;
       ptr_out_thread += 4;

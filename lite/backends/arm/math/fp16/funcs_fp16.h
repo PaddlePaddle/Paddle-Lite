@@ -82,7 +82,7 @@ static inline float16x8_t reciprocalq_ps_f16(const float16x8_t& x) {
 #define c_cephes_exp_p5 5.0000001201E-1
 
 /* exp() computed for 4 float at once */
-static inline float16x4_t exp_ps(float16x4_t x) {
+static inline float16x4_t exp_ps_naive(float16x4_t x) {
   float16x4_t tmp, fx;
 
   float16x4_t one = vdup_n_f16(1);
@@ -129,7 +129,7 @@ static inline float16x4_t exp_ps(float16x4_t x) {
   return y;
 }
 
-static inline float16x8_t exp_ps(float16x8_t x) {
+static inline float16x8_t exp_ps_naive(float16x8_t x) {
   float16x8_t tmp, fx;
 
   float16x8_t one = vdupq_n_f16(1);
