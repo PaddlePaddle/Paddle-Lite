@@ -89,12 +89,6 @@ Tensor output = predictor.getOutput(0);
 
 预测库下载界面位于[Lite预编译库下载](../quick_start/release_lib)，可根据您的手机型号选择合适版本。
 
-以**Android-ARMv8 架构**为例，可以下载以下版本：
-
-| Arch  |with_extra|arm_stl|with_cv|下载|
-|:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[2.9-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
-
 **解压后内容结构如下：**
 
 ```shell
@@ -186,4 +180,4 @@ time: xxx ms
 
 该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于 0.001 。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
->> **注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考 [Andriod 示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
+>> **注意：** 在这一步中，如果遇到 Android Studio 编译/安装失败等问题，请参考 [Android apps](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
