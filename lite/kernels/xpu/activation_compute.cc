@@ -375,13 +375,11 @@ using siluFP32 =
     paddle::lite::kernels::xpu::SiluCompute<float, PRECISION(kFloat)>;
 using siluFP16 =
     paddle::lite::kernels::xpu::SiluCompute<float16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(
-    silu, kXPU, kFloat, kNCHW,siluFP32, def)
+REGISTER_LITE_KERNEL(silu, kXPU, kFloat, kNCHW, siluFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    silu, kXPU, kFP16, kNCHW,siluFP16, def)
+REGISTER_LITE_KERNEL(silu, kXPU, kFP16, kNCHW, siluFP16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
