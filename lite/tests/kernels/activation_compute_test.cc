@@ -29,6 +29,7 @@ enum activation_type_test {
   RELU_CLIPPED,
   PRELU,
   SIGMOID,
+  SILU,
   TANH,
   SWISH,
   RELU6,
@@ -162,6 +163,12 @@ class ActivationComputeTester : public arena::TestCase {
       case SIGMOID: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] = 1.f / (1.f + std::exp(-x_data[i]));
+        }
+        break;
+      }
+      case SILU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] / (1.f + std::exp(-x_data[i]));
         }
         break;
       }
@@ -313,7 +320,7 @@ class ActivationComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -695,6 +702,32 @@ TEST(Activation_prelu, precision) {
               PRELU,
               abs_error);
     }
+  }
+}
+
+TEST(Activation_silu, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "silu",
+            SILU,
+            abs_error);
   }
 }
 
