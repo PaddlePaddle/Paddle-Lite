@@ -34,6 +34,7 @@ void GatherCompute<DataType, IndexType, PType>::Run() {
   auto out = param.Out;
   if (out->numel() == 0) {
     out->set_target(TARGET(kXPU));
+    out->template mutable_data<DataType>(TARGET(kXPU));
     return;
   }
   int axis = 0;
