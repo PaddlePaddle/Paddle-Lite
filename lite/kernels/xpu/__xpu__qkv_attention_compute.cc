@@ -135,7 +135,6 @@ void XPUQkvAttentionCompute<TQ, TK, TQK, TGEMM, TZ>::Run() {
                     {shape[0], shape[2], shape[1], shape[3]},
                     permute);
     CHECK_EQ(r, 0);
-
     CHECK_EQ(xpu_free(qk_output), 0);
     CHECK_EQ(xpu_free(q_input), 0);
     CHECK_EQ(xpu_free(k_input), 0);
