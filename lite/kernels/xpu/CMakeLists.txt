@@ -127,3 +127,4 @@ add_kernel(__xpu__squeeze_excitation_compute_xpu XPU extra SRCS __xpu__squeeze_e
 add_kernel(__xpu__bigru_compute_xpu XPU extra SRCS __xpu__bigru_compute.cc)
 add_kernel(__xpu__dynamic_lstm_compute_xpu XPU extra SRCS __xpu__dynamic_lstm_compute.cc)
 add_kernel(__xpu__multi_softmax_compute_xpu XPU extra SRCS __xpu__multi_softmax_compute.cc)
+add_kernel(__xpu__qkv_attention_compute_xpu XPU extra SRCS __xpu__qkv_attention_compute.cc)

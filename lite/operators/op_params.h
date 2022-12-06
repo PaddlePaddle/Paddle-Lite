@@ -1773,6 +1773,22 @@ struct XPUQuickGeluParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct XPUQkvAttentionParam : ParamBase {
+  lite::Tensor* input_q{};
+  lite::Tensor* input_k{};
+  lite::Tensor* input_v{};
+  
+  lite::Tensor* max_q{};
+  lite::Tensor* max_k{};
+  lite::Tensor* max_qk{};
+
+  float scale_bias = 0;
+  float scale_scale = 0.125;
+  std::vector<int> transpose_axis{0, 1, 3, 2};
+
+  lite::Tensor* output{nullptr};
+};
+
 struct XPUFcParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* w{nullptr};
