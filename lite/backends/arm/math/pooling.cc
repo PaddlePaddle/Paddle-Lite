@@ -3350,6 +3350,108 @@ void pooling5x5s1p2_max(const float* din,
   }
 }
 
+static void padding_zero(const float* data_in,
+                         int iw,
+                         int ih,
+                         int pad_w,
+                         int pad_h,
+                         float* data_out) {
+  int ow = iw + 2 * pad_w;
+  int oh = ih + 2 * pad_h;
+  memset(data_out, 0, ow * pad_h * sizeof(float));
+  memset(data_out + (oh - pad_h) * ow, 0, ow * pad_h * sizeof(float));
+  auto data_out_ptr = data_out + ow;
+  for (int row = 0; row < ih; row++) {
+    memset(data_out_ptr, 0, pad_w * sizeof(float));
+    data_out_ptr += pad_w;
+    memcpy(data_out_ptr, data_in + row * iw, iw * sizeof(float));
+    data_out_ptr += iw;
+    memset(data_out_ptr, 0, pad_w * sizeof(float));
+    data_out_ptr += pad_w;
+  }
+}
+
+#define COMMON_LOOP_KW_KH                                 \
+  data_in_ptr = pad_input + loop_h * padding_w + loop_w;  \
+  float32x4_t max_res = vdupq_n_f32(min_val);             \
+  for (int j = 0; j < kh; j++) {                          \
+    for (int i = 0; i < loop_kw; i++) {                   \
+      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);     \
+      vec_4 = vld1q_f32(data_in_ptr + j * padding_w + 4); \
+      data_in_ptr += 5;                                   \
+      vec_1 = vextq_s32(vec_0, vec_4, 1);                 \
+      vec_2 = vextq_s32(vec_0, vec_4, 2);                 \
+      vec_3 = vextq_s32(vec_0, vec_4, 3);                 \
+      float32x4_t res0 = vmaxq_f32(vec_0, vec_4);         \
+      float32x4_t res1 = vmaxq_f32(vec_1, vec_3);         \
+      max_res = vmaxq_f32(max_res, vec_2);                \
+      res0 = vmaxq_f32(res0, res1);                       \
+      max_res = vmaxq_f32(max_res, res0);                 \
+    }                                                     \
+    for (int i = 0; i < remain_kw; i++) {                 \
+      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);     \
+      data_in_ptr++;                                      \
+      max_res = vmaxq_f32(max_res, vec_0);                \
+    }                                                     \
+  }
+
+// s1 && kw == kh && pad_left == pad_right && pad_top == pad_bottom
+void pooling_common_padding_s1_max(const float* din,
+                                   float* dout,
+                                   int num,
+                                   int chout,
+                                   int hout,
+                                   int wout,
+                                   int chin,
+                                   int hin,
+                                   int win,
+                                   int kh,
+                                   int kw,
+                                   int pad_bottom,
+                                   int pad_right) {
+  int padding_h = hin + 2 * pad_bottom;
+  int padding_w = win + 2 * pad_right;
+  auto pad_input = static_cast<float*>(
+      TargetMalloc(TARGET(kARM), (8 + padding_h * padding_w) * sizeof(float)));
+  auto data_out = static_cast<float*>(dout);
+  auto data_in = static_cast<const float*>(din);
+  int size_channel_out = wout * hout;
+  int size_channel_in = win * hin;
+  int loop_kw = kw / 5;
+  int remain_kw = kw - loop_kw * 5;
+  float min_val = std::numeric_limits<float>::lowest();
+  float32x4_t vec_0, vec_1, vec_2, vec_3, vec_4;
+
+  for (int n = 0; n < num; ++n) {
+    float* data_out_batch = data_out + n * chout * size_channel_out;
+    const float* data_in_batch = data_in + n * chin * size_channel_in;
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
+      float* data_out_channel = data_out_batch + c * size_channel_out;
+      const float* data_in_channel = data_in_batch + c * size_channel_in;
+      padding_zero(data_in_channel, win, hin, pad_right, pad_bottom, pad_input);
+      auto data_in_ptr = pad_input;
+      int loop_h = 0, loop_w = 0;
+      for (; loop_h < hout; loop_h++) {
+        for (; loop_w + 3 < wout; loop_w += 4) {
+          COMMON_LOOP_KW_KH;
+          vst1q_f32(data_out_channel + loop_h * wout + loop_w, max_res);
+        }
+        if (loop_w < wout) {
+          COMMON_LOOP_KW_KH;
+          int cnt = 0;
+          for (; loop_w < wout; loop_w++) {
+            *(data_out_channel + loop_h * wout + loop_w) = max_res[cnt++];
+          }
+        }
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+  TargetFree(TARGET(kARM), pad_input);
+}
+
+#undef COMMON_LOOP_KW_KH
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
