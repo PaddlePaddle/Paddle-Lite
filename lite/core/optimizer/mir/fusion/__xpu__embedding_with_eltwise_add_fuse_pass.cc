@@ -40,7 +40,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     PMNode* preproces_out1 = nullptr;
     PMNode* preproces_xshape1 = nullptr;
     PMNode* embedding0 = nullptr;
-    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
       x0 = VarNode("x0")->assert_is_op_input(pre_op_type_, "X")->AsInput();
       preproces0 = OpNode("preproces0", pre_op_type_);
       preproces_out0 = VarNode("preproces_out0")
