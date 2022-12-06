@@ -77,7 +77,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                    lite::TargetWrapperXPU::local_quant;
     encode_precision_ = lite::TargetWrapperXPU::multi_encoder_precision;
     if (encode_precision_.empty()) {
-      encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION", "int16");
+      encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION");
     }
 #endif
   }

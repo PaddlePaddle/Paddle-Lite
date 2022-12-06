@@ -195,11 +195,13 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
       << "You can only specify one quant type for an OP!";
 
   if (instruct.op_type() == "__xpu__fc") {
-    if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
+    if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32" &&
+        !encode_precision_.empty()) {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT8: *4";
       return true;
-    } else if (int16_quant && kernel.alias() == "XPUFC_INT16_FP32_FP32") {
+    } else if (int16_quant && kernel.alias() == "XPUFC_INT16_FP32_FP32" &&
+               !encode_precision_.empty()) {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT16: *4";
       return true;
