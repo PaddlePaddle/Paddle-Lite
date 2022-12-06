@@ -85,7 +85,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     auto* ewadd01_out = VarNode("ewadd01_out")
                             ->assert_is_op_output("elementwise_add", "Out")
                             ->AsIntermediate();
-    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
       preproces0->LinksFrom({x0});
       preproces0->LinksTo({preproces_out0, preproces_xshape0});
       embedding0->LinksFrom({preproces_out0, table0});
@@ -119,7 +119,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
                                     ->assert_is_op_output(op_type_, "Out")
                                     ->assert_is_op_input("elementwise_add", "Y")
                                     ->AsIntermediate();
-      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
         new_x = VarNode(x_name)->assert_is_op_input(pre_op_type_, "X")->AsInput();
         auto* new_preproces = OpNode(preproces_name, pre_op_type_)->AsIntermediate();  
         auto* new_preproces_out = VarNode(preproces_out_name)
@@ -177,7 +177,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
         "padding_idx", embedding0_op_info->GetAttr<int64_t>("padding_idx"));
     
     auto* new_stmt = matched.at("embedding0")->stmt();
-    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
       new_stmt = matched.at("preproces0")->stmt();
     }
     
@@ -191,7 +191,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     for (int i = 0; i < n_embedding_; ++i) {
       auto x_name = paddle::lite::string_format("x%d", i);
       auto table_name = paddle::lite::string_format("table%d", i);
-      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
         DirectedLink(matched.at(x_name), matched.at("preproces0"));
         DirectedLink(matched.at(table_name), matched.at("preproces0"));
       } else {
@@ -199,7 +199,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
         DirectedLink(matched.at(table_name), matched.at("embedding0"));
       }
     }
-    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape") {
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
       IR_OP_VAR_LINK(matched.at("preproces0"), matched.at(output_name));
     } else {
       IR_OP_VAR_LINK(matched.at("embedding0"), matched.at(output_name));
