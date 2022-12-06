@@ -51,7 +51,7 @@ class MeanComputeTester : public arena::TestCase {
     output_data[0] = sum / x_size;
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("mean");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -109,7 +109,7 @@ class MeanGradComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("mean_grad");
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Out@GRAD", {output_grad_});

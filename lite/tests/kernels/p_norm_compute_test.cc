@@ -102,7 +102,7 @@ class PNormComputeTester : public arena::TestCase {
     p_norm_compute(x_data, pre_n, n, post_n, epsilon_, out_data, porder_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("p_norm");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});

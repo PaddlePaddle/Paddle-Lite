@@ -262,7 +262,7 @@ TEST(TestPoolRand, test_pool_rand) {
 }
 #endif  /// random param conv
 
-#ifdef LITE_WITH_ARM8_SVE2  /// global_pool
+#if 1  /// global_pool
 TEST(TesPoolGlobal, test_pool_fp16_global) {
   for (auto& h : {51})
     test_pool_fp16({DDim({1, 64, h, h})},

@@ -1,18 +1,19 @@
-# 昆仑芯 XTCL 部署示例
+# 昆仑芯 XTCL
 
 Paddle Lite 已支持昆仑芯系列芯片及板卡 在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
+
 XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实践而提供的图编译引擎库，可提供基于昆仑芯硬件相关的图层分析框架和加速优化能力。
 
 ## 支持现状
 
 ### 已支持的芯片
 
-- 昆仑芯1代AI芯片CK10/CK20
-- 昆仑芯2代AI芯片CR20
+- 昆仑芯1代 AI 芯片 CK10 / CK20
+- 昆仑芯2代 AI 芯片 CR20
 
-### 已支持的AI加速卡
+### 已支持的 AI 加速卡
 
-- 昆仑芯 AI 加速卡 K100/K200
+- 昆仑芯 AI 加速卡 K100 / K200
 - 昆仑芯 AI 加速卡 R200
 
 ### 已验证支持的 Paddle 模型
@@ -73,14 +74,15 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 - [开源模型支持列表](../quick_start/support_model_list.md)
 
-**Note: 以上全部模型目前只在R200上测试验证通过，部分模型支持K100/K200.**
+**Note: 以上全部模型目前只在 R200 上测试验证通过，部分模型支持 K100 / K200.**
 
 
 
 #### 性能
 
 性能仅供参考,以实际运行效果为准。
-| 模型                                                         | Intel CPU性能 (ms) | x86 + R200 性能 (ms） |
+
+| 模型                                                         | Intel CPU 性能 (ms) | x86 + R200 性能 (ms） |
 | ------------------------------------------------------------ | ------------------ | -------------------------- |
 | [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz) | 37.777400              | 0.689400                     |
 | [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz) | 76.767599             | 4.015600                      |
@@ -121,18 +123,18 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ## 参考示例演示
 
-### 测试设备( 昆仑芯AI加速卡R200)
+### 测试设备(昆仑芯 AI 加速卡 R200)
 
-<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 33%;" />
+<img src="https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200.jpg" alt="kunlunxin_xtcl" style="zoom: 100%;" />
 
 ### 准备设备环境
 
-- 昆仑芯AI加速卡R200[产品手册](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200%20%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C%E5%A4%96%E9%83%A8%E7%89%88_0923.pdf)；
+- 昆仑芯 AI 加速卡 R200 [产品手册](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/R200%20%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C%E5%A4%96%E9%83%A8%E7%89%88_0923.pdf)；
 - R200 为全高全长 PCI-E 卡，要求使用 PCIe4.0 x16 插槽，且需要单独的 8 针供电线进行供电；
 - 安装 [R200 XRE 驱动](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/XRE%20%E5%AE%89%E8%A3%85%E6%89%8B%E5%86%8C_v1.0.pdf)，目前支持 Ubuntu 和 CentOS 系统，由于驱动依赖 Linux kernel 版本，请正确安装对应版本的驱动安装包。
 
 ### 准备本地编译环境
-- 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译](../source_compile/linux_x86_compile_linux_x86.rst)或[ linux(ARM) 编译](../source_compile/arm_linux_compile_arm_linux.rst)中的``准备编译环境``进行环境配置
+- 为了保证编译环境一致，建议根据机器的实际情况参考[ Linux x86 环境下编译适用于 Linux x86 的库](../source_compile/linux_x86_compile_linux_x86)或[ ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux)中的``准备编译环境``进行环境配置
 
 ### 运行图像分类示例程序
 
@@ -142,11 +144,16 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -156,12 +163,12 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
           - build.linux.arm64 # 已编译好的，适用于 arm64
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -179,10 +186,11 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
                   - libiomp5.so # Intel OpenMP 库
                   - libmklml_intel.so # Intel MKL 库
                   - libmklml_gnu.so # GNU MKL 库
-                - kunlunxin_xtcl #昆仑芯 XTCL 库、NNAdapter 运行时库、device HAL 库
+                - kunlunxin_xtcl # 昆仑芯 XTCL 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libkunlunxin_xtcl.so # NNAdapter device HAL 库
-                  - libxtcl.so #昆仑芯 XTCL 库
+                  - libxtcl.so # 昆仑芯 XTCL 库
+                  ...
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -191,7 +199,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
             - armhf
               ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
@@ -202,41 +210,68 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 Egyptian cat - 0.482870
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 3.133000 ms, avg 3.133000 ms, max 3.133000 ms, min 3.133000 ms
+    Prediction time: 12.594000 ms, avg 12.594000 ms, max 12.594000 ms, min 12.594000 ms
+    Postprocess time: 4.235000 ms, avg 4.235000 ms, max 4.235000 ms, min 4.235000 ms
 
   (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 kunlunxin_xtcl
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 kunlunxin_xtcl
+
+    Top1 Egyptian cat - 0.482607
+    Top2 tabby, tabby cat - 0.471841
+    Top3 tiger cat - 0.039819
+    Top4 lynx, catamount - 0.002419
+    Top5 ping-pong ball - 0.000505
+    Preprocess time: 2.653000 ms, avg 2.653000 ms, max 2.653000 ms, min 2.653000 ms
+    Prediction time: 0.524000 ms, avg 0.524000 ms, max 0.524000 ms, min 0.524000 ms
+    Postprocess time: 4.077000 ms, avg 4.077000 ms, max 4.077000 ms, min 4.077000 ms
 
    For arm64
   (arm cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 8.241000 ms, avg 8.241000 ms, max 8.241000 ms, min 8.241000 ms
+    Prediction time: 78.550000 ms, avg 78.550000 ms, max 78.550000 ms, min 78.550000 ms
+    Postprocess time: 8.621000 ms, avg 8.621000 ms, max 8.621000 ms, min 8.621000 ms
 
   (arm cpu + kunlunxin xtcl)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 kunlunxin_xtcl
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
 
   ```shell
   (intel x86 cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux amd64 kunlunxin_xtcl
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 kunlunxin_xtcl
 
   (arm cpu + kunlunxin xtcl)
-  $ ./run.sh resnet50_fp32_224 linux arm64 kunlunxin_xtcl
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # amd64
+  For amd64
   $ ./build.sh linux amd64
-  # arm64
+  
+  For arm64
   $ ./build.sh linux arm64
   ```
 
-### 更新支持昆仑芯XTCL的Paddle Lite库
+### 更新支持昆仑芯 XTCL 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
   ```shell
@@ -245,35 +280,40 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
   $ git checkout <release-version-tag>
   ```
 
-- 编译并生成 PaddleLite+NNAdapter+kunlunxin_xtcl for amd64 and arm64 的部署库
+- 编译并生成 PaddleLite + NNAdapter + kunlunxin_xtcl for amd64 and arm64 的部署库
 	- For amd64
 	    - full_publish 编译
       ```shell
-      # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+      默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
       $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
       ```
 
 	    - 替换头文件和库
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.x86.gcc/lite/backends/nnadapter/nnadapter/src/driver/kunlunxin_xtcl/*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
       ```
 
   - For arm64
 	  - full_publish 编译
     ```shell
-    # arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
-    # 默认自动从云上下载kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+    arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+    默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
     $ export CC=<path_to_your_c_compiler>
     $ export CXX=<path_to_your_c++_compiler>
     $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
@@ -281,35 +321,41 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 	  - 替换头文件和库
     ```shell
-    # 清理原有 include 目录
+    清理原有 include 目录
     $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-    # 替换 include 目录
+    
+    替换 include 目录
     $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-    # 替换 NNAdapter 运行时库
+    
+    替换 NNAdapter 运行时库
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
-    # 替换 NNAdapter device HAL 库
+    
+    替换 NNAdapter device HAL 库
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libkunlunxin_xtcl.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
-    # 替换 libpaddle_full_api_shared.so
+    
+    替换 libpaddle_full_api_shared.so
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-    # 替换 libpaddle_light_api_shared.so
+    
+    替换 libpaddle_light_api_shared.so
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
     ```
 
 ## 高级特性
-本节主要说明在不同的昆仑芯AI加速卡上如何设置不同的参数。以下列出了paddle lite下支持的两种高级参数。
+本节主要说明在不同的昆仑芯AI加速卡上如何设置不同的参数。以下列出了 Paddle Lite 下支持的两种高级参数。
 
 - 高级参数
 
   - KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS
-    指定昆仑芯产品的 ID号。例如KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0或KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0,1,2,3
+
+    指定昆仑芯产品的 ID 号。例如 KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0 或 KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0,1,2,3
 
   - KUNLUNXIN_XTCL_DEVICE_TARGET
-    指定昆仑芯的不同类型的AI加速卡。例如KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1或者KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2
-    XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括K100和K200；XPU2 用在昆仑芯 2 代系列产品，包括R200等。
+
+    指定昆仑芯的不同类型的 AI 加速卡。例如 KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu1 或者 KUNLUNXIN_XTCL_DEVICE_TARGET=xpu -libs=xdnn -device-type=xpu2。XPU 代指昆仑芯自主研发的芯片硬件架构，XPU1 用在昆仑芯 1 代系列产品，包括 K100 和 K200；XPU2 用在昆仑芯 2 代系列产品，包括 R200 等。
 
 
 - 使用方式
-  -  c++代码示例
+  -  c++ 代码示例
   ```c++
   // Run inference by using light api with MobileConfig
   paddle::lite_api::MobileConfig mobile_config;
@@ -318,7 +364,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   ```
 
-  - shell脚本示例
+  - shell 脚本示例
   ```shell
   export KUNLUNXIN_XTCL_SELECTED_DEVICE_IDS=0
   export KUNLUNXIN_XTCL_DEVICE_TARGET="xpu -libs=xdnn -device-type=xpu1"

@@ -1,4 +1,4 @@
-# 亿智 NPU 部署示例
+# 亿智 NPU
 
 Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 其接入原理是使用亿智 NPU DDK(EEASYTECH DDK)。首先加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再调用 EEASYTECH DDK 组网 API 进行网络构建，在线生成并执行模型。
@@ -55,11 +55,11 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的 Docker 开发环境进行配置；
+- 为了保证编译环境一致，建议参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境进行配置；
 - 由于有些设备只提供网络访问方式(具体看开发板的实际情况)，需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
-  # apt-get install openssh-client sshpass
+  $ apt-get install openssh-client sshpass
   ```
 
 ### 运行图像分类示例程序
@@ -70,11 +70,16 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - mobilenet_v1_int8_per_layer_log2
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
@@ -85,11 +90,11 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.arm64 # arm64 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
           - build.linux.armhf # armhf编译工作目录
-            - image_classification_demo # 已编译好的，适用于 armhf 的示例程序
+            - demo # 已编译好的，适用于 armhf 的示例程序
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序ssh运行脚本
@@ -113,7 +118,7 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
             ...
           - android
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 按照以下命令分别运行转换后的 ARM CPU 模型和 亿智 NPU 模型，比较它们的性能和结果；
@@ -131,16 +136,16 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For SH506 CPU
-  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 linux armhf cpu adb设备号
+  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 imagenet_224.txt test linux armhf cpu adb设备号
     (RK1808 EVB)
-    warmup: 1 repeat: 5, average: 517.333008 ms, max: 519.331000 ms, min: 516.848999 ms
-    results: 3
-    Top0  tabby, tabby cat - 0.638649
-    Top1  Egyptian cat - 0.289704
-    Top2  tiger cat - 0.051178
-    Preprocess time: 6.928000 ms
-    Prediction time: 517.333008 ms
-    Postprocess time: 0.538000 ms
+    Top1 tabby, tabby cat - 0.751034
+    Top2 Egyptian cat - 0.183955
+    Top3 tiger cat - 0.045455
+    Top4 lynx, catamount - 0.003305
+    Top5 ping-pong ball - 0.002057
+    Preprocess time: 59.751000 ms, avg 59.751000 ms, max 59.751000 ms, min 59.751000 ms
+    Prediction time: 679.279000 ms, avg 679.279000 ms, max 679.279000 ms, min 679.279000 ms
+    Postprocess time: 58.927000 ms, avg 58.927000 ms, max 58.927000 ms, min 58.927000 ms
 
   ------------------------------
 
@@ -148,26 +153,26 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For SH506 NPU
-  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 linux armhf eeasytech_npu adb设备号
-    (SH596)
-    warmup: 1 repeat: 5, average: 52.715000 ms, max: 54.652100 ms, min: 51.233000 ms
-    results: 3
-    Top0  tabby, tabby cat - 0.708991
-    Top1  Egyptian cat - 0.125688
-    Top2  tiger cat - 0.051297
-    Preprocess time: 6.935000 ms
-    Prediction time: 50.715000 ms
-    Postprocess time: 0.897000 ms
+  $ ./run_with_adb.sh mobilenet_v1_int8_per_layer_log2 imagenet_224.txt test linux armhf eeasytech_npu adb设备号
+
+    Top1 tabby, tabby cat - 0.725007
+    Top2 Egyptian cat - 0.183262
+    Top3 tiger cat - 0.054423
+    Top4 ping-pong ball - 0.003798
+    Top5 lynx, catamount - 0.003338
+    Preprocess time: 61.407000 ms, avg 61.407000 ms, max 61.407000 ms, min 61.407000 ms
+    Prediction time: 48.100000 ms, avg 48.100000 ms, max 48.100000 ms, min 48.100000 ms
+    Postprocess time: 59.201000 ms, avg 59.201000 ms, max 59.201000 ms, min 59.201000 ms
   ```
 
-- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh`、`run_with_ssh.sh` 的 IMAGE_NAME 变量即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 重新编译示例程序：  
   ```shell
   注意：
   1）请根据 `buid.sh`配置正确的参数值。
   2）需在 Docker 环境中编译。
 
-  ./build.sh linux armhf
+  $ ./build.sh linux armhf
   ```
 
 ### 更新模型
@@ -280,15 +285,19 @@ Paddle Lite 已支持 亿智 NPU (eeasytech NPU) 的预测部署。
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      # 替换 NNAdapter 运行时库
+
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/eeasytech_npu/
-      # 替换 NNAdapter device HAL 库
+
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libeeasytech_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/eeasytech_npu/
-      # 替换 libpaddle_light_api_shared.so
+
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
       ```
   

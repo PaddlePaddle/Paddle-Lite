@@ -88,7 +88,7 @@ class SumComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sum");
     op_desc->SetInput("X", {input1_, input2_, input3_});
     op_desc->SetOutput("Out", {output_});

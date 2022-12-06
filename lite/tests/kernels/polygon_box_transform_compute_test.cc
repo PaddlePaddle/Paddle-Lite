@@ -59,7 +59,7 @@ class PolygonBoxTransformComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("polygon_box_transform");
     op_desc->SetInput("Input", {x_});
     op_desc->SetOutput("Output", {out_});

@@ -63,6 +63,16 @@ NNADAPTER_EXPORT int ExecuteSlice(core::Operation* operation) {
                            steps,
                            reinterpret_cast<int32_t*>(output_buffer));
       break;
+    case NNADAPTER_INT64:
+      status = math::slice(reinterpret_cast<int64_t*>(input_operand->buffer),
+                           input_shape,
+                           axes_count,
+                           axes,
+                           starts,
+                           ends,
+                           steps,
+                           reinterpret_cast<int64_t*>(output_buffer));
+      break;
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported precision code("
                            << OperandPrecisionCodeToString(input_precision)

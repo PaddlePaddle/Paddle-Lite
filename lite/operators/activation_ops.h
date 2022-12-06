@@ -109,6 +109,9 @@ class ActivationOp : public OpLite {
       case lite_api::ActivationType::kSoftPlus:
         ch->macs = param_.X->numel();
         break;
+      case lite_api::ActivationType::kSilu:
+        ch->macs = param_.X->numel();
+        break;
       default:
         LOG(FATAL) << "This Type of Activation:"
                    << static_cast<int>(param_.active_type)

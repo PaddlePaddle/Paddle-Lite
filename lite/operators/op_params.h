@@ -451,7 +451,7 @@ struct PoolParam : ParamBase {
   std::vector<int> ksize{};
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
-  std::vector<int> strides{1, 1};
+  std::vector<int> strides;
   /* paddings type change
    * from std::vector<int> to std::shared_ptr<std::vector<int>>
    * to support dynamically modify padding
@@ -665,6 +665,12 @@ struct QuantizeLinearParam : ParamBase {
   lite::Tensor* y{};
   int quant_axis;
   int bit_length;
+};
+
+struct QuantizeLogParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Dict{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- sgd operators ----------------------
@@ -1740,6 +1746,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int head_num{};
   int size_per_head{};
   int hidden_dim{};
+  int ffn_hidden_dim_scale{4};
   std::string act_type{};
   int relative_type{0};
   int max_pos_len{512};  // relative embedding [max_pos_len, head_dim]
@@ -1758,6 +1765,12 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  int mask_dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+};
+
+struct XPUQuickGeluParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 struct XPUFcParam : ParamBase {
@@ -2311,6 +2324,16 @@ struct SetValueParam : ParamBase {
   std::vector<double> fp64_values{};
   std::vector<float> fp16_values{};
   std::vector<int64_t> shape{};
+};
+
+struct ShareDataParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct RoundParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

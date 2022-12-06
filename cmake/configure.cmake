@@ -64,15 +64,6 @@ if(WIN32)
 
 endif(WIN32)
 
-if(WITH_AMD_GPU)
-    add_definitions(-DPADDLE_WITH_HIP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__HIP_PLATFORM_HCC__")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__HIP_PLATFORM_HCC__")
-else()
-    add_definitions(-DHPPL_STUB_FUNC)
-    list(APPEND CMAKE_CXX_SOURCE_FILE_EXTENSIONS cu)
-endif()
-
 if (WITH_MKLML AND MKLML_IOMP_LIB)
     message(STATUS "Enable Intel OpenMP with ${MKLML_IOMP_LIB}")
     if(WIN32 OR APPLE)

@@ -1,4 +1,4 @@
-# Linux(ARM) 工程示例
+# Linux apps
 
 ## 多种应用场景
 
@@ -33,16 +33,22 @@ Paddle Lite 提供的物体检测 demo ，在移动端上提供了检测多个�
 2、终端中执行 `download_models_and_libs.sh` 脚本自动下载模型和 Paddle Lite 预测库
 
 ```shell
-cd PaddleLite-armlinux-demo          # 1. 终端中进入 Paddle-Lite-Demo\PaddleLite-armlinux-demo
-sh download_models_and_libs.sh       # 2. 执行脚本下载依赖项 （需要联网）
+1. 终端中进入 Paddle-Lite-Demo\PaddleLite-armlinux-demo
+$ cd PaddleLite-armlinux-demo
+
+2. 执行脚本下载依赖项 （需要联网）
+$ sh download_models_and_libs.sh
 ```
 
 下载完成后会出现提示： `Download successful!`
 
 3、执行用例(保证 linux_arm 环境准备完成，参考[ Paddle-Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo) 要求-ARMLinux 小节)
 ```shell
-cd object_detection_demo    # 1. 终端中进入
-sh run.sh                   # 2. 执行脚本编译并执行物体检测 demo，输出预测数据和运行时间
+1. 终端中进入 object_detection_demo
+$ cd object_detection_demo
+
+2. 执行脚本编译并执行物体检测 demo，输出预测数据和运行时间
+$ sh run.sh
 ```
 demo 结果如下:
 <img width="836" alt="image" src="https://user-images.githubusercontent.com/50474132/82852558-da228580-9f35-11ea-837c-e4d71066da57.png">

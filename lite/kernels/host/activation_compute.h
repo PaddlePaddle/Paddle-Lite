@@ -203,6 +203,15 @@ class SoftplusCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~SoftplusCompute() = default;
 };
 
+class SiluCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SiluCompute() = default;
+};
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

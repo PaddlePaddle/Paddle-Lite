@@ -156,7 +156,7 @@ class DecodeBboxesComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("decode_bboxes");
     op_desc->SetInput("Loc", {loc_});
     op_desc->SetInput("Prior", {prior_});

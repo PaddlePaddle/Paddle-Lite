@@ -116,7 +116,7 @@ class TileComputeTester : public arena::TestCase {
     out->CopyDataFrom(tmp_dst_tensor);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("tile");
     op_desc->SetInput("X", {x_});
     if (!repeat_times_tensor_.empty()) {

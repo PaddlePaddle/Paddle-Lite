@@ -87,6 +87,9 @@ void pooling_global_avg_fp16_sve(const float16_t* din,
   int size_channel_in = win * hin;
   auto data_out = static_cast<float16_t*>(dout);
   auto data_in = static_cast<const float16_t*>(din);
+  float16_t size_channel_in_1 = 1.f / size_channel_in;
+  svfloat16_t vsize = svdup_n_f16(size_channel_in_1);
+
   for (int n = 0; n < num; ++n) {
     float16_t* data_out_batch = data_out + n * chout;
     const float16_t* data_in_batch = data_in + n * chin * size_channel_in;
@@ -104,6 +107,7 @@ void pooling_global_avg_fp16_sve(const float16_t* din,
           "add x0, x0, %x[cnth]\n"
           "ld1h {z0.h}, p0/Z, [%x[data_in_channel]]\n"
           "add %x[data_in_channel], %x[data_in_channel], %x[cntb]\n"
+          "fmul z0.h, p0/M, z0.h, %[vsize].h\n"
           "fadd z1.h, p0/M, z1.h, z0.h\n"
           "whilelt p0.h, x0, %x[size_channel_in]\n"
           "b.any 1b\n"
@@ -114,14 +118,13 @@ void pooling_global_avg_fp16_sve(const float16_t* din,
           : [size_channel_in] "r"(size_channel_in),
             [cnth] "r"(cnth),
             [cntb] "r"(cntb),
-            [data_out_channel] "r"(data_out_channel)
+            [data_out_channel] "r"(data_out_channel),
+            [vsize] "w"(vsize)
           : "cc", "memory", "z0", "z1", "p0", "x0");
-      data_out_channel[0] = data_out_channel[0] / size_channel_in;
     }
     LITE_PARALLEL_END();
   }
 }
-
 #endif
 
 }  // namespace math

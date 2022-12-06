@@ -31,7 +31,8 @@ int ConvertReduce(Converter* converter, core::Operation* operation) {
   auto output_tensor = converter->ConvertOperand(output_operand);
   std::vector<int32_t> axis;
   for (int i = 0; i < axes_size; i++) {
-    axis.push_back(axes_data[i] - 2);
+    axis.push_back(ConvertToTimVXAxis(
+        axes_data[i], output_operand->type.dimensions.count) /* WHCN */);
   }
   switch (operation->type) {
 #define CONVERT_REDUCE(type, class_name)                               \

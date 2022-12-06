@@ -1,4 +1,4 @@
-# 华为昇腾 NPU 部署示例
+# 华为昇腾 NPU
 
 Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
 
@@ -231,14 +231,17 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 
 - 安装驱动和固件包：
 
 ```shell
-# 增加可执行权限
+增加可执行权限
 $ chmod +x *.run
-# 安装驱动和固件包
+
+安装驱动和固件包
 $ ./A300-3010-npu-driver_21.0.4_linux-x86_64.run --full
 $ ./A300-3010-npu-firmware_1.80.22.2.220.run --full
-# 重启服务器
+
+重启服务器
 $ reboot
-# 查看驱动信息，确认安装成功
+
+查看驱动信息，确认安装成功
 $ npu-smi info
 ```
 
@@ -253,30 +256,38 @@ $ npu-smi info
 - for arm64
 
   ```shell
-  # 下载 Dockerfile
+  下载 Dockerfile
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/kunpeng920_arm/Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile
-  # 通过 Dockerfile 生成镜像
+  
+  通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_aarch64:cann_5.1.1.alpha001 .
-  # 创建容器
+  
+  创建容器
   $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_5.1.1.alpha001 /bin/bash
-  # 进入容器
+  
+  进入容器
   $ docker exec -it ascend-aarch64 /bin/bash
-  # 确认容器的 Ascend 环境是否创建成功
+  
+  确认容器的 Ascend 环境是否创建成功
   $ npu-smi info
   ```
 
 - for amd64
 
   ```shell
-  # 下载 Dockerfile
+  下载 Dockerfile
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/huawei/ascend/intel_x86/Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile
-  # 通过 Dockerfile 生成镜像
+  
+  通过 Dockerfile 生成镜像
   $ docker build --network=host -f Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_x86:cann_5.1.1.alpha001 .
-  # 创建容器
+  
+  创建容器
   $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_5.1.1.alpha001 /bin/bash
-  # 进入容器
+  
+  进入容器
   $ docker exec -it ascend-x86 /bin/bash
-  # 确认容器的 Ascend 环境是否创建成功
+  
+  确认容器的 Ascend 环境是否创建成功
   $ npu-smi info
   ```
 
@@ -290,11 +301,16 @@ $ npu-smi info
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -304,12 +320,12 @@ $ npu-smi info
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
           - build.linux.arm64 # 已编译好的，适用于 arm64
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -326,9 +342,6 @@ $ npu-smi info
                 - huawei_ascend_npu # 华为昇腾 NPU CANN 库、NNAdapter 运行时库、device HAL 库
                   - libnnadapter.so # NNAdapter 运行时库
                   - libhuawei_ascend_npu.so # NNAdapter device HAL 库
-                - libiomp5.so # Intel OpenMP 库
-                - libmklml_intel.so # Intel MKL 库
-                - libmklml_gnu.so # GNU MKL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -337,7 +350,7 @@ $ npu-smi info
             - armhf
               ...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
   
@@ -351,66 +364,72 @@ $ npu-smi info
     
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
-      warmup: 1 repeat: 1, average: 44.949001 ms, max: 44.949001 ms, min: 44.949001 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529132
-      Top1  Egyptian cat - 0.419680
-      Top2  tiger cat - 0.045172
-      Preprocess time: 1.017000 ms
-      Prediction time: 44.949001 ms
-      Postprocess time: 0.171000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 Egyptian cat - 0.482870
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 4.342000 ms, avg 4.342000 ms, max 4.342000 ms, min 4.342000 ms
+    Prediction time: 29.534000 ms, avg 29.534000 ms, max 29.534000 ms, min 29.534000 ms
+    Postprocess time: 5.343000 ms, avg 5.343000 ms, max 5.343000 ms, min 5.343000 ms
+
   (intel x86 cpu + ascend npu)
-  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 huawei_ascend_npu
-      warmup: 1 repeat: 1, average: 2.079000 ms, max: 2.079000 ms, min: 2.079000 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529785
-      Top1  Egyptian cat - 0.418945
-      Top2  tiger cat - 0.045227
-      Preprocess time: 1.132000 ms
-      Prediction time: 2.079000 ms
-      Postprocess time: 0.251000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux amd64 huawei_ascend_npu
+
+    Top1 Egyptian cat - 0.481201
+    Top2 tabby, tabby cat - 0.473633
+    Top3 tiger cat - 0.039490
+    Top4 lynx, catamount - 0.002373
+    Top5 ping-pong ball - 0.000494
+    Preprocess time: 9.980000 ms, avg 9.980000 ms, max 9.980000 ms, min 9.980000 ms
+    Prediction time: 1.896000 ms, avg 1.896000 ms, max 1.896000 ms, min 1.896000 ms
+    Postprocess time: 12.735000 ms, avg 12.735000 ms, max 12.735000 ms, min 12.735000 ms
   
   For arm64
   (鲲鹏 920 cpu only)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
-      warmup: 1 repeat: 1, average: 34.160999 ms, max: 34.160999 ms, min: 34.160999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529131
-      Top1  Egyptian cat - 0.419681
-      Top2  tiger cat - 0.045173
-      Preprocess time: 0.571000 ms
-      Prediction time: 34.160999 ms
-      Postprocess time: 0.081000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 5.275000 ms, avg 5.275000 ms, max 5.275000 ms, min 5.275000 ms
+    Prediction time: 34.873000 ms, avg 34.873000 ms, max 34.873000 ms, min 34.873000 ms
+    Postprocess time: 4.720000 ms, avg 4.720000 ms, max 4.720000 ms, min 4.720000 ms
+
   (鲲鹏 920 cpu + ascend npu)
-  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 huawei_ascend_npu
-      warmup: 1 repeat: 1, average: 1.555000 ms, max: 1.555000 ms, min: 1.555000 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.529785
-      Top1  Egyptian cat - 0.418945
-      Top2  tiger cat - 0.045227
-      Preprocess time: 0.605000 ms
-      Prediction time: 1.555000 ms
-      Postprocess time: 0.093000 ms
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 huawei_ascend_npu
+
+    Top1 Egyptian cat - 0.481201
+    Top2 tabby, tabby cat - 0.473633
+    Top3 tiger cat - 0.039490
+    Top4 lynx, catamount - 0.002373
+    Top5 ping-pong ball - 0.000494
+    Preprocess time: 5.237000 ms, avg 5.237000 ms, max 5.237000 ms, min 5.237000 ms
+    Prediction time: 1.442000 ms, avg 1.442000 ms, max 1.442000 ms, min 1.442000 ms
+    Postprocess time: 4.583000 ms, avg 4.583000 ms, max 4.583000 ms, min 4.583000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
 
   ```shell
   (intel x86 cpu + ascend npu)
-  $ ./run.sh resnet50_fp32_224 linux amd64 huawei_ascend_npu
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 huawei_ascend_npu
   (鲲鹏 920 cpu + ascend npu)
-  $ ./run.sh resnet50_fp32_224 linux arm64 huawei_ascend_npu
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 huawei_ascend_npu
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # amd64
+  For amd64
   $ ./build.sh linux amd64
-  # arm64
+
+  For arm64
   $ ./build.sh linux arm64
   ```
 
@@ -437,17 +456,22 @@ $ npu-smi info
     - 替换头文件和库
 
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
       ```
 
@@ -462,17 +486,22 @@ $ npu-smi info
     - 替换头文件和库
 
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 
@@ -619,8 +648,6 @@ $ npu-smi info
   std::string nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;HUAWEI_ASCEND_NPU_OP_SELECT_IMPL_MODE=high_precision;HUAWEI_ASCEND_NPU_OPTYPELIST_FOR_IMPLMODE=LayerNorm;HUAWEI_ASCEND_NPU_ENABLE_COMPRESS_WEIGHT=true;"
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   ```
-
-  
 
 ## 其他说明
 

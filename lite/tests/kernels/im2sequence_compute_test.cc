@@ -182,7 +182,7 @@ class Im2SequenceComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("im2sequence");
     op_desc->SetInput("X", {input0_, input1_});
     op_desc->SetOutput("Out", {output_});

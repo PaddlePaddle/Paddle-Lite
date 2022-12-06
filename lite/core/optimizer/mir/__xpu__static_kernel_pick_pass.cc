@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
 #include <algorithm>
 #include <list>
@@ -19,11 +20,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-#ifdef LITE_WITH_XPU
-#include "lite/backends/xpu/target_wrapper.h"
-#endif
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace mir {
@@ -34,6 +33,8 @@ bool XPUKernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
 }
 
 void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  Init();
+
   kernel_pick_factors_.ConsiderTarget();
   kernel_pick_factors_.ConsiderPrecision();
   kernel_pick_factors_.ConsiderDataLayout();
@@ -41,11 +42,9 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       << "kernel_pick_factors should be specified first";
   CHECK(graph) << "graph not valid";
 
-// Collect input data precision for each node in the graph
-// Collect XPU op type,which used in fp16/in8;
-#ifdef LITE_WITH_XPU
+  // Collect input data precision for each node in the graph
+  // Collect XPU op type,which used in fp16/in8;
   DataPrecisionDicide(graph);
-  GetXPUDeviceType();
   if (xpu_use_fp16_optimizer_ || xpu_use_int8_optimizer_) {
     CollectXPUSpecialOPType(graph);
     for (auto& node : graph->StmtTopologicalOrder()) {
@@ -75,9 +74,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       InplaceNodeInputPrecision(node);
     }
   }
-#endif
 
-#ifdef LITE_WITH_XPU
   // sort kernels by the factors.
   VLOG(2) << "graph block_idx: " << graph->blockIdx();
   VLOG(2) << "graph->mutable_nodes().size(): " << graph->mutable_nodes().size();
@@ -155,10 +152,8 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     instruct.mutable_op_info()->SetAttr<std::string>(
         "kernel_summary", instruct.kernels().front()->summary());
   }
-#endif
 }
 
-#ifdef LITE_WITH_XPU
 void XPUStaticKernelPickPass::DataPrecisionDicide(
     const std::unique_ptr<SSAGraph>& graph) {
   if (GetStringFromEnv("XPUForceUseFP16", "false") == "true") {
@@ -198,8 +193,6 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
                      op_info->GetAttr<bool>("enable_int16");
   CHECK(!(int8_quant && int16_quant))
       << "You can only specify one quant type for an OP!";
-  bool xpu_local_quant =
-      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
 
   if (instruct.op_type() == "__xpu__fc") {
     if (int8_quant && kernel.alias() == "XPU_Int8_FP32_FP32") {
@@ -210,12 +203,11 @@ bool XPUStaticKernelPickPass::ForceUsePrecision(
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT16: *4";
       return true;
-    } else if (xpu_local_quant && kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
+    } else if (local_quant_ && kernel.alias() == "XPU_FP32_LOCAL_QUANT") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use LOCAL QUANT: *4";
       return true;
-    } else if ((GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-                lite::TargetWrapperXPU::multi_encoder_precision == "int31") &&
+    } else if (encode_precision_ == "int31" &&
                kernel.alias() == "XPU_Real_kFloat") {
       *score *= 4;
       VLOG(6) << "__xpu__fc: force use PRECISON INT31: *4";
@@ -687,7 +679,7 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
         if (map_kernel.begin()->first.substr(0, 5) == "fetch") {
           if (map_kernel.begin()->second ==
               kernel.GetOutputDeclType(tmp)->precision()) {
-            score_tmp = 500;
+            score_tmp = 1000;
           }
           continue;
         }
@@ -721,27 +713,6 @@ void XPUStaticKernelPickPass::SpecialOpScore(lite::mir::Node* node,
   }
 
   *score += score_tmp_all;
-}
-
-void XPUStaticKernelPickPass::GetXPUDeviceType() {
-  int cur_dev_idx = 0;
-  uint64_t cur_dev_attr = 0;
-
-  XPU_CALL(xpu_current_device(&cur_dev_idx));
-  XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
-  if (cur_dev_attr <= 1) {
-    VLOG(4) << "Currents XPU device : XPU1";
-    xpu_disable_flag_ = "DISABLE_XPU1";
-  } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
-    VLOG(4) << "Currents XPU device : XPU2";
-    xpu_disable_flag_ = "DISABLE_XPU2";
-  } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
-    VLOG(4) << "Currents XPU device : XPU3";
-    xpu_disable_flag_ = "DISABLE_XPU3";
-  } else {
-    VLOG(4) << "invaid XPU device";
-    xpu_disable_flag_ = "NONE";
-  }
 }
 
 void XPUStaticKernelPickPass::GradeXPUKernelScore(
@@ -846,7 +817,6 @@ void XPUStaticKernelPickPass::CollectXPUSpecialOPType(
   return;
 }
 
-#endif
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

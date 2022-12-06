@@ -241,7 +241,7 @@ class ElementwiseComputeTester : public arena::TestCase {
 #endif
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     std::string op_type = "elementwise_" + elt_type_;
     if (!act_type_.empty()) {
       op_type = "fusion_" + op_type + "_activation";

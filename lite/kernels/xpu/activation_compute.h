@@ -70,6 +70,16 @@ class SigmoidCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~SigmoidCompute() = default;
 };
 
+template <typename T, PrecisionType PType>
+class SiluCompute : public KernelLite<TARGET(kXPU), PType> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SiluCompute() = default;
+};
+
 class AbsCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;

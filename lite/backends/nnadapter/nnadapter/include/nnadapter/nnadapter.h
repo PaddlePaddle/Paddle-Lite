@@ -541,6 +541,21 @@ typedef enum {
   NNADAPTER_CONV_2D_TRANSPOSE,
 
   /**
+   * Performs element-wise cosine calculation.
+   * The output is calculated using this formula: `output` = cos(`input`)
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_COS,
+
+  /**
    * Performs cumulative sum of the input elements along the given `axis`.
    *
    * Inputs:
@@ -783,6 +798,28 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_FLOOR,
+
+  /**
+   * Performs element-wise binary floor divide(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = floor (`input0` / `input1`)
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FLOOR_DIV,
 
   /**
    * Add a fully connected layer.
@@ -1758,6 +1795,21 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_SIGMOID,
+
+  /**
+   * Performs element-wise sine calculation.
+   * The output is calculated using this formula: `output` = sin(`input`)
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SIN,
 
   /**
    * Produces a slice of `input` along multiple axes. Similar to numpy:

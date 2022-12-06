@@ -48,18 +48,22 @@ class XPUSingleEncoderFuser : public FuseBase {
                                  const std::string& input_pos = "Y",
                                  const std::string& qkv_ln_2_out_pos = "Y",
                                  const std::string& matmul_type = "matmul",
+                                 const std::string& matmul2_type = "matmul_v2",
                                  const std::string& mul_type = "mul",
                                  bool with_q_scale = true,
                                  bool norm_before = false,
-                                 const std::string& relative_type = "")
+                                 const std::string& relative_type = "",
+                                 bool with_mask = true)
       : act_type_(act_type),
         input_pos_(input_pos),
         qkv_ln_2_out_pos_(qkv_ln_2_out_pos),
         matmul_type_(matmul_type),
+        matmul2_type_(matmul2_type),
         mul_type_(mul_type),
         with_q_scale_(with_q_scale),
         norm_before_(norm_before),
-        relative_emb_type_(relative_type) {}
+        relative_emb_type_(relative_type),
+        with_mask_(with_mask) {}
 
   void BuildPattern() override {
     auto* input = VarNode("input")
@@ -213,18 +217,25 @@ class XPUSingleEncoderFuser : public FuseBase {
             ->AsIntermediate();
 
     auto* qk_matmul = OpNode("qk_matmul", matmul_type_)->AsIntermediate();
+    std::string op_after_qk_matmul = with_mask_ ? "elementwise_add" : "softmax";
     auto* qk_matmul_out = VarNode("qk_matmul_out")
                               ->assert_is_op_output(matmul_type_, "Out")
-                              ->assert_is_op_input("elementwise_add", "X")
+                              ->assert_is_op_input(op_after_qk_matmul, "X")
                               ->AsIntermediate();
-    auto* qk_mask = VarNode("qk_mask")
-                        ->assert_is_op_input("elementwise_add", "Y")
-                        ->AsInput();
-    auto* qk_add = OpNode("qk_add", "elementwise_add")->AsIntermediate();
-    auto* qk_add_out = VarNode("qk_add_out")
-                           ->assert_is_op_output("elementwise_add", "Out")
-                           ->assert_is_op_input("softmax", "X")
-                           ->AsIntermediate();
+    PMNode* qk_mask = nullptr;
+    PMNode* qk_add = nullptr;
+    PMNode* qk_add_out = nullptr;
+    if (with_mask_) {
+      qk_mask = VarNode("qk_mask")
+                    ->assert_is_op_input("elementwise_add", "Y")
+                    ->AsInput();
+      qk_add = OpNode("qk_add", "elementwise_add")->AsIntermediate();
+      qk_add_out = VarNode("qk_add_out")
+                       ->assert_is_op_output("elementwise_add", "Out")
+                       ->assert_is_op_input("softmax", "X")
+                       ->AsIntermediate();
+    }
+
     auto* qk_softmax = OpNode("qk_softmax", "softmax")->AsIntermediate();
     auto* qk_softmax_out = VarNode("qk_softmax_out")
                                ->assert_is_op_output("softmax", "Out")
@@ -256,16 +267,16 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* v_transpose2 = OpNode("v_transpose2", "transpose2")->AsIntermediate();
     auto* v_transpose2_out = VarNode("v_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
-                                 ->assert_is_op_input(matmul_type_, "Y")
+                                 ->assert_is_op_input(matmul2_type_, "Y")
                                  ->AsIntermediate();
     auto* v_transpose2_xshape =
         VarNode("v_transpose2_xshape")
             ->assert_is_op_output("transpose2", "XShape")
             ->AsIntermediate();
 
-    auto* qkv_matmul = OpNode("qkv_matmul", matmul_type_)->AsIntermediate();
+    auto* qkv_matmul = OpNode("qkv_matmul", matmul2_type_)->AsIntermediate();
     auto* qkv_matmul_out = VarNode("qkv_matmul_out")
-                               ->assert_is_op_output(matmul_type_, "Out")
+                               ->assert_is_op_output(matmul2_type_, "Out")
                                ->assert_is_op_input("transpose2", "X")
                                ->AsIntermediate();
     auto* qkv_transpose2 =
@@ -340,9 +351,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     };
     auto* qkv_mul_3_y =
         VarNode("qkv_mul_3_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)
-                          ->assert_node_satisfied(qkv_weight_teller)
-                          ->AsIntermediate();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)->AsIntermediate();
     auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
                               ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
@@ -461,9 +470,14 @@ class XPUSingleEncoderFuser : public FuseBase {
     *k_reshape2 >> *k_reshape2_xshape;
     *k_transpose2 >> *k_transpose2_xshape;
 
-    *qk_matmul >> *qk_matmul_out >> *qk_add >> *qk_add_out >> *qk_softmax >>
-        *qk_softmax_out >> *qkv_matmul;
-    *qk_mask >> *qk_add;
+    if (with_mask_) {
+      *qk_matmul >> *qk_matmul_out >> *qk_add >> *qk_add_out >> *qk_softmax >>
+          *qk_softmax_out >> *qkv_matmul;
+      *qk_mask >> *qk_add;
+    } else {
+      *qk_matmul >> *qk_matmul_out >> *qk_softmax >> *qk_softmax_out >>
+          *qkv_matmul;
+    }
 
     if (norm_before_) {
       *ln_before_out >> *v_mul;
@@ -515,7 +529,9 @@ class XPUSingleEncoderFuser : public FuseBase {
     cpp::OpDesc op_desc;
     op_desc.SetType("single_encoder");
     op_desc.SetInput("Inputs", {matched.at("input")->arg()->name});
-    op_desc.SetInput("Mask", {matched.at("qk_mask")->arg()->name});
+    if (with_mask_) {
+      op_desc.SetInput("Mask", {matched.at("qk_mask")->arg()->name});
+    }
     op_desc.SetInput("FCWeight",
                      {
                          matched.at("q_mul_y")->arg()->name,
@@ -572,8 +588,17 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* scope = matched.at("q_mul")->stmt()->op()->scope();
     auto q_mul_y_shape = scope->FindMutableTensor(q_mul_input_y_name)->dims();
     hidden_dim = q_mul_y_shape[0];
+    int scale_hidden_dim = 4;
+    {
+      auto* ffn0_mul_op_info = matched.at("qkv_mul_3")->stmt()->op_info();
+      auto ffn0_mul_y_name = ffn0_mul_op_info->Input("Y").front();
+      auto ffn0_mul_y_shape = scope->FindMutableTensor(ffn0_mul_y_name)->dims();
+      CHECK_EQ(ffn0_mul_y_shape.size(), 2);
+      scale_hidden_dim = ffn0_mul_y_shape[1] / ffn0_mul_y_shape[0];
+    }
     VLOG(3) << "q mul Y shape: " << q_mul_y_shape
-            << ", hidden_dim:" << hidden_dim;
+            << ", hidden_dim:" << hidden_dim
+            << ", ffn0 Y shape[1]/shape[0]:" << scale_hidden_dim;
     auto* qkv_mul_op_info = matched.at("qkv_mul")->stmt()->op_info();
     auto qkv_mul_input_y_name = qkv_mul_op_info->Input("Y").front();
     auto qkv_mul_y_shape =
@@ -625,6 +650,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     } else {
       op_desc.SetAttr<int>("relative_type", 0);
     }
+    op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
+
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
     sub_program_desc->AddBlock<cpp::BlockDesc>();
@@ -636,7 +663,6 @@ class XPUSingleEncoderFuser : public FuseBase {
     single_encoder_stmt->SetOp(fake_subgraph_op);
 
     std::vector<std::string> froms = {
-        "qk_mask",
         "k_mul_y",
         "v_mul_y",
         "qkv_mul_y",
@@ -651,6 +677,9 @@ class XPUSingleEncoderFuser : public FuseBase {
         "qkv_ln_2_scale",
         "qkv_ln_2_bias",
     };
+    if (with_mask_) {
+      froms.push_back("qk_mask");
+    }
     if (relative_emb_type_ == "__xpu__roformer_relative_embedding") {
       froms.push_back("q_cos_embedding");
       froms.push_back("q_sin_embedding");
@@ -678,10 +707,12 @@ class XPUSingleEncoderFuser : public FuseBase {
   std::string input_pos_;
   std::string qkv_ln_2_out_pos_;
   std::string matmul_type_;
+  std::string matmul2_type_;
   std::string mul_type_;
   bool with_q_scale_;
   bool norm_before_;
   const std::string relative_emb_type_;
+  bool with_mask_;
   // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
   // * 2
   void set_quant_info(Scope* scope,
@@ -782,7 +813,8 @@ class XPUSingleEncoderFuser : public FuseBase {
             weight_max.push_back(127 * weight_scales[j]);
           }
           // create max tensor
-          weight_max_tensor = scope->NewTensor(weight_max_tensor_name[i]);
+          weight_max_tensor =
+              scope->MutableParent()->NewTensor(weight_max_tensor_name[i]);
           weight_max_tensor->Resize({weight_scale_size});
           memcpy(weight_max_tensor->mutable_data<float>(),
                  weight_max.data(),
@@ -945,7 +977,7 @@ class XPUMultiEncoderFuser {
       std::string mask_name;
       for (auto* encoder : all_encoders) {
         auto* op_info = encoder->stmt()->op_info();
-        if (mask_name.empty()) {
+        if (mask_name.empty() && op_info->HasInput("Mask")) {
           mask_name = op_info->Input("Mask").front();
         } else {
           // CHECK(mask_name == op_info->Input("Mask").front());
@@ -961,6 +993,8 @@ class XPUMultiEncoderFuser {
         per_channel = first_encoder_op_info->GetAttr<bool>("per_channel");
       }
       const int hidden_dim = first_encoder_op_info->GetAttr<int>("hidden_dim");
+      const int scale_hidden_dim =
+          first_encoder_op_info->GetAttr<int>("ffn_hidden_dim_scale");
       std::string in_name, out_name;
       std::vector<std::string> arg_names{
           "FCWeight", "FCBias", "LNScale", "LNBias"};
@@ -1014,13 +1048,11 @@ class XPUMultiEncoderFuser {
         if (all_encoders.size() == 1) {
           // take care of only one encoder
           in_name = op_info->Input("Inputs").front();
-          mask_name = op_info->Input("Mask").front();
           out_name = op_info->Output("Outputs").front();
         } else if (i == 0) {
           // first encoder
           to_remove.insert(cur_out);
           in_name = op_info->Input("Inputs").front();
-          mask_name = op_info->Input("Mask").front();
         } else if (i == all_encoders.size() - 1) {
           // last encoder
           to_remove.insert(cur_encoder);
@@ -1032,6 +1064,14 @@ class XPUMultiEncoderFuser {
         }
       }
       GraphSafeRemoveNodes(graph, to_remove);
+      bool skip_quant_op = false;
+      CHECK_GT(quant_types.size(), 1);
+      for (int i = 1; i < quant_types.size(); ++i) {
+        if (quant_types[i] != quant_types[0]) {
+          skip_quant_op = true;
+          break;
+        }
+      }
 
       cpp::OpDesc op_desc;
       op_desc.SetType("__xpu__multi_encoder");
@@ -1039,7 +1079,9 @@ class XPUMultiEncoderFuser {
       for (auto kv : arg_map) {
         op_desc.SetInput(kv.first, kv.second);
       }
-      op_desc.SetInput("Mask", {mask_name});
+      if (!mask_name.empty()) {
+        op_desc.SetInput("Mask", {mask_name});
+      }
       op_desc.SetOutput("Output", {out_name});
       op_desc.SetAttr<int>("xpu", 1);
       op_desc.SetAttr<int>(
@@ -1073,6 +1115,7 @@ class XPUMultiEncoderFuser {
       op_desc.SetAttr<int>("hidden_dim", hidden_dim);
       op_desc.SetAttr<int>("head_num",
                            first_encoder_op_info->GetAttr<int>("head_num"));
+      op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
       op_desc.SetAttr<int>(
           "size_per_head",
           first_encoder_op_info->GetAttr<int>("size_per_head"));
@@ -1107,8 +1150,13 @@ class XPUMultiEncoderFuser {
           scope->NewTensor(update_tag);
           // Update weight, including tranpose\convert type\fuse qkv
           // weight\findmax.
-          update_weight(
-              scope, fc_weight_names, start, end, quant_type, max_tensor_name);
+          update_weight(scope,
+                        fc_weight_names,
+                        start,
+                        end,
+                        quant_type,
+                        max_tensor_name,
+                        skip_quant_op);
         }
       }
 
@@ -1225,7 +1273,8 @@ class XPUMultiEncoderFuser {
                      int start,
                      int end,
                      std::string quant_type,
-                     std::string max_tensor_name) {
+                     std::string max_tensor_name,
+                     bool skip_quant_op = false) {
     CHECK(start >= 0 && end <= fc_weight_names.size());
     CHECK(start < end) << " start:" << start << ", end:" << end;
     std::vector<Tensor*> weight_tensor_vec(end - start, nullptr);
@@ -1310,7 +1359,7 @@ class XPUMultiEncoderFuser {
       weight_tensor_vec[0]->Resize({weight_dim1_acc, weight_dims_vec[0][0]});
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_qkv_trans.get(), qkv_len);
-      auto max_tensor = scope->NewTensor(max_tensor_name);
+      auto max_tensor = scope->MutableParent()->NewTensor(max_tensor_name);
       max_tensor->mutable_data<float>(TargetType::kHost, 1)[0] = max_f;
       VLOG(3) << "Lite find max: " << start << "th fc , weight_max:" << max_f;
       VLOG(3) << "Set " << max_tensor_name << " " << max_f;
@@ -1318,8 +1367,16 @@ class XPUMultiEncoderFuser {
         memcpy(weight_tensor_vec[0]->mutable_data<float>(),
                weight_qkv_trans.get(),
                qkv_len * sizeof(float));
-      } else if (fc_precision_ == "int8") {
+      } else if (fc_precision_ == "int8" && !skip_quant_op) {
         // quant the weight here, not from the quanted-model
+        // quant model without skip op or fp32 model, skip_quant_op=false;
+        // why check skip_quant_op here? we need to distinguish 3 cases
+        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find scale
+        // in xdnn), convert weight to int8
+        // 2 quant model skip op in K200, skip_quant_op(true),
+        // fc_precision_=int8(to use bert_int8), convert weight to int16
+        // 3 quant model skip op in R200, skip_quant_op(true),
+        // fc_precision_=int16, convert weight to int16
         std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
         paddle::lite::xpu::math::ConvertFP32ToInt8(weight_qkv_trans.get(),
                                                    weight_qkv_trans_int8.get(),
@@ -1365,13 +1422,15 @@ class XPUMultiEncoderFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
-    std::vector<std::string> act_types{"gelu", "relu"};
+    std::vector<std::string> act_types{"gelu", "relu", "__xpu__quick_gelu"};
     std::vector<std::string> input_poss{"X", "Y"};
     std::vector<std::string> qkv_ln_2_out_poss{"X", "Y"};
     std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
+    std::vector<std::string> matmul2_types{"matmul", "matmul_v2"};
     std::vector<std::string> mul_types{"mul", "matmul", "matmul_v2"};
     std::vector<bool> with_q_scales{true, false};
     std::vector<bool> norm_befores{true, false};
+    std::vector<bool> with_mask{true, false};
     std::vector<std::string> relative_embedding_type{
         "", "__xpu__roformer_relative_embedding"};
 
@@ -1410,23 +1469,29 @@ class XPUMultiEncoderFusePass : public ProgramPass {
       for (auto& input_pos : input_poss) {
         for (auto& qkv_ln_2_out_pos : qkv_ln_2_out_poss) {
           for (auto& matmul_type : matmul_types) {
-            for (auto& mul_type : mul_types) {
-              for (auto with_q_scale : with_q_scales) {
-                for (auto norm_before : norm_befores) {
-                  for (auto relative_type : relative_embedding_type) {
-                    fusion::XPUSingleEncoderFuser single_encoder_fuser(
-                        act_type,
-                        input_pos,
-                        qkv_ln_2_out_pos,
-                        matmul_type,
-                        mul_type,
-                        with_q_scale,
-                        norm_before,
-                        relative_type);
-                    single_encoder_fuser(graph.get());
-                    fusion::XPUMultiEncoderFuser multi_encoder_fuser(
-                        fc_precision, adaptive_seqlen);
-                    multi_encoder_fuser(graph.get());
+            for (auto& matmul2_type : matmul2_types) {
+              for (auto& mul_type : mul_types) {
+                for (auto with_q_scale : with_q_scales) {
+                  for (auto norm_before : norm_befores) {
+                    for (auto relative_type : relative_embedding_type) {
+                      for (auto mask : with_mask) {
+                        fusion::XPUSingleEncoderFuser single_encoder_fuser(
+                            act_type,
+                            input_pos,
+                            qkv_ln_2_out_pos,
+                            matmul_type,
+                            matmul2_type,
+                            mul_type,
+                            with_q_scale,
+                            norm_before,
+                            relative_type,
+                            mask);
+                        single_encoder_fuser(graph.get());
+                        fusion::XPUMultiEncoderFuser multi_encoder_fuser(
+                            fc_precision, adaptive_seqlen);
+                        multi_encoder_fuser(graph.get());
+                      }
+                    }
                   }
                 }
               }

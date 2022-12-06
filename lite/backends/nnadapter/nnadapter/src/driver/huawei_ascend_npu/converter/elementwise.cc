@@ -49,6 +49,7 @@ int ConvertElementwise(Converter* converter, core::Operation* operation) {
     CONVERT_ELEMENTWISE(MAX, Maximum);
     CONVERT_ELEMENTWISE(MIN, Minimum);
     CONVERT_ELEMENTWISE(POW, Pow);
+    CONVERT_ELEMENTWISE(FLOOR_DIV, FloorDiv);
 #undef CONVERT_ELEMENTWISE
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "

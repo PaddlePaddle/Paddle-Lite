@@ -121,7 +121,7 @@ class GroupNormComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("group_norm");
     op_desc->SetInput("X", {x_});
     if (has_scale_bias_) {

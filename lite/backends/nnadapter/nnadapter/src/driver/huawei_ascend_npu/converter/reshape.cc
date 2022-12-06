@@ -73,10 +73,17 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   }
   std::shared_ptr<Operator> shape_operator = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
-    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
-    auto shape_count = temporary_shape.count;
-    auto shape = GetShape(input_operand, output_operand, shape_count);
-    shape_operator = converter->AddInt32ConstantOperator(shape);
+    if (IsOperandWithDynamicShape(shape_operand)) {
+      shape_operator = converter->GetMappedOperator(shape_operand);
+      if (!shape_operator) {
+        shape_operator = converter->ConvertOperand(shape_operand);
+      }
+    } else {
+      auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+      auto shape_count = temporary_shape.count;
+      auto shape = GetShape(input_operand, output_operand, shape_count);
+      shape_operator = converter->AddInt32ConstantOperator(shape);
+    }
   } else if (IsConstantOperand(shape_operand)) {
     auto shape_count = shape_operand->length / sizeof(int32_t);
     auto shape = GetShape(input_operand, output_operand, shape_count);

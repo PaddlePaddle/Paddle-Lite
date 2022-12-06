@@ -17,6 +17,7 @@
 
 USE_MIR_PASS(demo);
 USE_MIR_PASS(static_kernel_pick_pass);
+USE_MIR_PASS(opencl_memory_object_config_pass);
 USE_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass);
 USE_MIR_PASS(op_transformation_pass);
 USE_MIR_PASS(variable_place_inference_pass);
@@ -81,11 +82,13 @@ USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);
+USE_MIR_PASS(__xpu__quick_gelu_fuse_pass);
 USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_affine_channel_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_fuse_pass);
+USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass);
 USE_MIR_PASS(__xpu__roformer_relative_pos_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_slice_link_fuse_pass);
 USE_MIR_PASS(__xpu__generate_sequence_fuse_pass);
@@ -107,3 +110,4 @@ USE_MIR_PASS(scale_calc_offline_pass);
 USE_MIR_PASS(reshape_calc_offline_pass);
 USE_MIR_PASS(keepdims_convert_pass);
 USE_MIR_PASS(op_fusion_minimal_set_pass);
+USE_MIR_PASS(lite_sigmoid_elementmul_fuse_pass);

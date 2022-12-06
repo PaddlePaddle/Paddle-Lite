@@ -246,6 +246,24 @@ TEST(TesPoolGlobal, test_pool_fp32_global) {
 }
 #endif  // global_pool
 
+#if 1  /// 5x5s1p2Max
+TEST(TesPool5x5s1p2Max, test_pool_fp32_5x5s1p2_max) {
+  for (int h = 1; h <= 50; h++)
+    test_pool_fp32({DDim({1, 1, h, h})},
+                   {5, 5},
+                   {1, 1},
+                   {2, 2, 2, 2},
+                   FLAGS_ceil_mode,
+                   false,
+                   FLAGS_exclusive,
+                   FLAGS_adaptive,
+                   FLAGS_use_quantizer,
+                   "max",
+                   {1, 2, 4},
+                   {FLAGS_power_mode});
+}
+#endif  // 5x5s1p2Max
+
 #if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp32_custom_size) {
   test_pool_fp32(

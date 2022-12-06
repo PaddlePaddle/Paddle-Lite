@@ -18,13 +18,13 @@ Paddle Lite 框架直接支持模型结构为[ PaddlePaddle ](https://www.paddle
 **二. 模型优化**
 
 Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化、子图融合、Kernel 优选等优化手段。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
-这些优化通过 Paddle Lite 提供的[ opt 工具](../user_guides/model_optimize_tool) 实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通过 opt 工具做模型优化。opt 工具的下载和使用，请参考 [模型优化方法](../user_guides/model_optimize_tool)。
+这些优化通过 Paddle Lite 提供的 opt 工具实现。opt 工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下 Paddle Lite 的支持情况。您获取 PaddlePaddle 格式的模型之后，一般需要通过 opt 工具做模型优化。opt 工具的下载和使用，请参考 [模型优化方法](../user_guides/model_optimize_tool)。
 
 >> **注意**: 为了减少第三方库的依赖、提高 Paddle Lite 预测框架的通用性，在移动端使用 Paddle Lite API 您需要准备 Naive Buffer 存储格式的模型。
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 `Android/IOS/ArmLinux/Windows/MacOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的 [源码编译方法](../source_compile/compile_env)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/docker_env) 和 `lite/tools/` 文件夹 [脚本](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/tools) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
+Paddle Lite 提供了 `Android/IOS/ArmLinux/Windows/MacOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的 [源码编译](../source_compile/compile_env)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/docker_env) 和 `lite/tools/` 文件夹 [脚本](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/tools) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
 
 **四. 开发应用程序**
 
@@ -38,23 +38,31 @@ Paddle Lite提供了 `C++` 、`Java` 、`Python` 三种 `API` ，只需简单五
 
 Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用示例和开发说明文档，您可以参考示例中的说明文档进行快速学习，并集成到您自己的项目中去。
 
-- [ C++ 完整示例](../user_guides/cpp_demo)
-- [ Java 完整示例](../user_guides/java_demo)
-- [ Python 完整示例](../user_guides/python_demo)
+- [C++ 完整示例](../user_guides/cpp_demo)
+- [Java 完整示例](../user_guides/java_demo)
+- [Python 完整示例](../user_guides/python_demo)
 
 此外，针对不同的硬件平台，Paddle Lite 提供了各个平台的完整示例：
 
-- [ Android 示例](../demo_guides/android_app_demo)
-- [ IOS 示例](../demo_guides/ios_app_demo)
-- [ ARMLinux 示例](../demo_guides/linux_arm_demo)
-- [ X86 示例](../demo_guides/x86)
-- [ OpenCL 示例](../demo_guides/opencl)
-- [ FPGA 示例](../demo_guides/fpga)
-- [华为 NPU 示例](../demo_guides/huawei_kirin_npu)
-- [昆仑芯 XPU 示例](../demo_guides/kunlunxin_xpu)
-- [瑞芯微 NPU 示例](../demo_guides/rockchip_npu)
-- [晶晨 NPU 示例](../demo_guides/amlogic_npu)
-- [联发科 APU 示例](../demo_guides/mediatek_apu)
+- [Android apps](../demo_guides/android_app_demo)
+- [iOS apps](../demo_guides/ios_app_demo)
+- [Linux apps](../demo_guides/linux_arm_demo)
+- [Arm](../demo_guides/arm_cpu)
+- [x86](../demo_guides/x86)
+- [OpenCL](../demo_guides/opencl)
+- [Metal](../demo_guides/metal)
+- [华为麒麟 NPU](../demo_guides/huawei_kirin_npu)
+- [华为昇腾 NPU](../demo_guides/huawei_ascend_npu)
+- [昆仑芯 XPU](../demo_guides/kunlunxin_xpu)
+- [昆仑芯 XTCL](../demo_guides/kunlunxin_xtcl)
+- [高通 QNN](../demo_guides/qualcomm_qnn)
+- [寒武纪 MLU](../demo_guides/cambricon_mlu)
+- [(瑞芯微/晶晨/恩智浦) 芯原 TIM-VX](../demo_guides/verisilicon_timvx)
+- [Android NNAPI](../demo_guides/android_nnapi)
+- [联发科 APU](../demo_guides/mediatek_apu)
+- [颖脉 NNA](../demo_guides/imagination_nna)
+- [Intel OpenVINO](../demo_guides/intel_openvino)
+- [亿智 NPU](../demo_guides/eeasytech_npu)
 
 您也可以下载以下基于 Paddle Lite 开发的预测 APK 程序，安装到 Andriod 平台上，先睹为快：
 

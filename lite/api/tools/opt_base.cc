@@ -175,10 +175,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "intel_fpga") {
-      valid_places_.emplace_back(TARGET(kIntelFPGA));
-      valid_places_.emplace_back(
-          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else if (target_repr == "rockchip_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -530,25 +526,32 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
-                                                  "kBM",
                                                   "kMLU",
-                                                  "kIntelFPGA",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
-                                                  "rockchip_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
-                                                  "amlogic_npu",
                                                   "verisilicon_timvx",
                                                   "eeasytech_npu",
                                                   "android_nnapi",
                                                   "qualcomm_qnn",
                                                   "kunlunxin_xtcl"};
-  const std::vector<std::string> readable_valid_targets = {
-      "ARM",       "OpenCL",      "Metal",         "百度XPU",    "Host",
-      "X86",       "比特大陆NPU", "寒武纪MLU",     "英特尔FPGA", "华为昇腾NPU",
-      "联发科APU", "瑞芯微NPU",   "华为麒麟NPU",   "颖脉NNA",    "晶晨NPU",
-      "TIM-VX",    "亿智NPU",     "Android NNAPI", "高通QNN",    "昆仑芯XTCL"};
+  const std::vector<std::string> readable_valid_targets = {"ARM",
+                                                           "OpenCL",
+                                                           "Metal",
+                                                           "百度 XPU",
+                                                           "Host",
+                                                           "x86",
+                                                           "寒武纪 MLU",
+                                                           "华为昇腾 NPU",
+                                                           "联发科 APU",
+                                                           "华为麒麟 NPU",
+                                                           "颖脉 NNA",
+                                                           "TIM-VX",
+                                                           "亿智 NPU",
+                                                           "Android NNAPI",
+                                                           "高通 QNN",
+                                                           "昆仑芯 XTCL"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";

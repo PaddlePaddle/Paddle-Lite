@@ -171,7 +171,7 @@ class SliceComputeTester : public arena::TestCase {
     out->Resize(out_dims);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("slice");
     op_desc->SetInput("Input", {input_});
 
