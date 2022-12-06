@@ -107,26 +107,46 @@ void GRUUnitCompute::Run() {
   const float* bias_ptr = (bias == nullptr) ? nullptr : bias->data<float>();
 
   float* hidden_ptr = hidden->mutable_data<float>(TARGET(kXPU));
-  int ret = xdnn::gru_core<float, int16_t, float, int16_t>(
-      ctx.GetRawContext(),
-      input_ptr,
-      hidden_prev_ptr,
-      weight_ptr,
-      hidden_ptr,
-      batch_size,
-      1,
-      frame_size,
-      nullptr,
-      nullptr,
-      weight_maxptr,
-      nullptr,
-      bias_ptr,
-      xdnn::Activation_t::TANH,
-      xdnn::Activation_t::SIGMOID,
-      origin_mode,
-      false,
-      false);
-  CHECK_EQ(ret, 0) << "call xdnn::gru_unit failed!";
+  if (ctx.GetRawContext()->dev().type() == xdnn::kXPU1) {
+    int ret = xdnn::gru_unit<float, int16_t, float, int16_t>(
+        ctx.GetRawContext(),
+        input_ptr,
+        hidden_prev_ptr,
+        weight_ptr,
+        hidden_ptr,
+        batch_size,
+        frame_size,
+        nullptr,
+        nullptr,
+        weight_maxptr,
+        nullptr,
+        bias_ptr,
+        xdnn::Activation_t::TANH,
+        xdnn::Activation_t::SIGMOID,
+        origin_mode);
+    CHECK_EQ(ret, 0) << "call xdnn::gru_unit failed!";
+  } else {
+    int ret = xdnn::gru_core<float, int16_t, float, int16_t>(
+        ctx.GetRawContext(),
+        input_ptr,
+        hidden_prev_ptr,
+        weight_ptr,
+        hidden_ptr,
+        batch_size,
+        1,
+        frame_size,
+        nullptr,
+        nullptr,
+        weight_maxptr,
+        nullptr,
+        bias_ptr,
+        xdnn::Activation_t::TANH,
+        xdnn::Activation_t::SIGMOID,
+        origin_mode,
+        false,
+        false);
+    CHECK_EQ(ret, 0) << "call xdnn::gru_unit failed!";
+  }
 }
 
 }  // namespace xpu

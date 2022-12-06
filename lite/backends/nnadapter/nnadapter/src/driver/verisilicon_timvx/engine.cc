@@ -20,6 +20,7 @@
 #include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include "optimizer/constant_fold_operations.h"
+#include "optimizer/convert_adaptive_pool2d_into_pool2d.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
 #include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
@@ -117,6 +118,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+    ConvertFillLikeIntoMulAdd(model);
+    ConstantFoldOperations(model);
     FuseConv2DBatchNormIntoConv2D(
         model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DAddIntoConv2D(model);
@@ -126,8 +129,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseMatMulAddIntoFullyConnected(model);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     FuseSigmoidMulIntoSwish(model);
-    ConvertFillLikeIntoMulAdd(model);
-    ConstantFoldOperations(model);
+    ConvertAdaptivePool2dIntoPool2d(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);

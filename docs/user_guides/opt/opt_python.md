@@ -6,8 +6,8 @@
 ### 安装 Paddle Lite
 
 ```
-# 当前最新版本是 2.9
-pip install paddlelite==2.9
+# 当前最新版本是 2.12
+pip install paddlelite==2.12
 ```
 
 ![install](https://paddlelite-data.bj.bcebos.com/doc_images/opt/install.gif)

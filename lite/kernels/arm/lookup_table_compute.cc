@@ -53,28 +53,10 @@ void LookupTableCompute<T_W, T_IDS>::Run() {
       CHECK_LT(ids_data[i], row_number)
           << "look uptable ids[i] < row_number check failed";
       CHECK_GE(ids_data[i], 0) << "lookuptable ids[i] >= 0 check failed";
-#ifdef ENABLE_ARM_FP16
-      if (w->precision() != PRECISION(kFP16)) {
-        auto table_data = w->template data<float>();
-        memcpy(dout + i * row_width,
-               table_data + ids_int * row_width,
-               row_width * sizeof(float));
-      } else {
-        const float16_t* in_data = w->template data<float16_t>();
-        Tensor tmp_tensor;
-        tmp_tensor.Resize(std::vector<int64_t>({1, row_width}));
-        tmp_tensor.set_precision(PrecisionType::kFloat);
-        float* table_data = tmp_tensor.mutable_data<float>();
-        lite::arm::math::fp16::fp16_to_fp32(
-            in_data + ids_int * row_width, table_data, tmp_tensor.numel());
-        memcpy(dout + i * row_width, table_data, row_width * sizeof(float));
-      }
-#else
       auto table_data = w->template data<T_W>();
       memcpy(dout + i * row_width,
              table_data + ids_int * row_width,
              row_width * sizeof(T_W));
-#endif
     }
   }
   *(out->mutable_lod()) = ids->lod();
