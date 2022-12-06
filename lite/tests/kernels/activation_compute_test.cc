@@ -1405,7 +1405,6 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
   }
 }
 
-
 TEST(Activation_sigmoid_fp32, precision) {
   Place place;
   float abs_error = 2e-5;
