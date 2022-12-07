@@ -132,10 +132,18 @@ function build_opt {
     rm -rf build.opt
     mkdir -p build.opt
     cd build.opt
+    opt_arch=$(echo `uname -p`)
+    with_x86=OFF
+    if [ $opt_arch == "aarch64" ]; then
+        with_x86=OFF
+    else
+       with_x86=ON
+    fi
     cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
+      -DLITE_WITH_X86=${with_x86} \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
 }
