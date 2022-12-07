@@ -38,20 +38,20 @@ void GroupNormCompute<InType, PType>::Run() {
   int width = param.x->dims()[3];
 
   int r = xdnn::group_norm<InType>(
-      ctx.GetRawContext(),                                      /* context */
-      param.x->template data<InType>(),                         /* in */
-      param.out->template mutable_data<InType>(TARGET(kXPU)),   /* out */
-      n,                                                        /* n */
-      c,                                                        /* c */
-      height,                                                   /* h */
-      width,                                                    /* w */
-      groups,                                                   /* groups */
-      epsilon,                                                  /* epsilon */
-      scale,                                                    /* scale */
-      bias,                                                     /* bias */
-      nullptr,                                                  /* mean */
-      nullptr,                                                  /* var */
-      true);                                                    /* is_nchw */
+      ctx.GetRawContext(),                                    /* context */
+      param.x->template data<InType>(),                       /* in */
+      param.out->template mutable_data<InType>(TARGET(kXPU)), /* out */
+      n,                                                      /* n */
+      c,                                                      /* c */
+      height,                                                 /* h */
+      width,                                                  /* w */
+      groups,                                                 /* groups */
+      epsilon,                                                /* epsilon */
+      scale,                                                  /* scale */
+      bias,                                                   /* bias */
+      nullptr,                                                /* mean */
+      nullptr,                                                /* var */
+      true);                                                  /* is_nchw */
 
   CHECK_EQ(r, 0);
 }
