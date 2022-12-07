@@ -842,7 +842,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     VLOG(3) << "max_qkv_input: " << max_qkv_input
             << ", max_qkv_output: " << max_qkv_output;
 
-    if (act_type_ == "gelu") {
+    if (op_quant_types[5] == "enable_int8" && act_type_ == "gelu") {
       // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
       float gelu_limit_value =
           GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD", 10.f);
@@ -858,13 +858,13 @@ class XPUSingleEncoderFuser : public FuseBase {
       if (op_is_quantized[matmul_offset + 0]) {
         auto qk_matmul_op_info = matched.at("qk_matmul")->stmt()->op_info();
         input_max[matmul_offset * 2 + 0] =
-            max_qkv_output != 0
+            max_qkv_output != 0 && relative_emb_type_.empty()
                 ? max_qkv_output
                 : 127 *
                       qk_matmul_op_info->GetAttr<std::vector<float>>(
                           "X0_scale")[0];
         input_max[matmul_offset * 2 + 1] =
-            max_qkv_output != 0
+            max_qkv_output != 0 && relative_emb_type_.empty()
                 ? max_qkv_output
                 : 127 *
                       qk_matmul_op_info->GetAttr<std::vector<float>>(
@@ -894,7 +894,7 @@ class XPUSingleEncoderFuser : public FuseBase {
         input_max[matmul_offset * 2 + 5] =
             qkv_matmul_op_info->GetAttr<float>("out_threshold");
 
-        VLOG(3) << "qk_matmul X_max: " << input_max[matmul_offset * 2 + 3]
+        VLOG(3) << "qk_v_matmul X_max: " << input_max[matmul_offset * 2 + 3]
                 << "          Y_max: " << input_max[matmul_offset * 2 + 4]
                 << "        Out_max: " << input_max[matmul_offset * 2 + 5];
       }
@@ -1141,7 +1141,7 @@ class XPUMultiEncoderFuser {
         if (tag_tensor != nullptr) {
           auto max_tensor = scope->FindTensor(max_tensor_name);
           CHECK(max_tensor != nullptr);
-          CHECK_EQ(max_tensor->numel(), 1);
+          CHECK_GT(max_tensor->numel(), 0);
           VLOG(3) << "Get " << max_tensor_name << " "
                   << max_tensor->data<float>()[0];
         } else {
