@@ -374,7 +374,7 @@ if (LITE_WITH_X86)
 
         if (MSVC)
             add_dependencies(publish_inference_x86_cxx_demos dirent)
-        endif
+        endif()
   else()
     add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
