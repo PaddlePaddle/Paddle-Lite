@@ -1514,7 +1514,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   bool group_1 = (group == 1);
   bool mn_gt_1 = (m > 1) && (n > 1);
   if (ker_3 && stride_1 && dila_1 && pad_1 && group_1 && mn_gt_1 && mod_cond &&
-      ctx->has_dot()) {
+      ctx->has_dot() && !ctx->has_sve2_i8mm()) {
     conv_im2col_gemm_int8_fast(i_data,
                                o_data,
                                num,
@@ -1532,7 +1532,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
     return;
   }
 #endif
-
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
