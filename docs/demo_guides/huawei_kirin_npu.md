@@ -122,7 +122,7 @@ Paddle Lite 是首款支持华为自研达芬奇架构 NPU（Kirin 810/990 SoC �
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo

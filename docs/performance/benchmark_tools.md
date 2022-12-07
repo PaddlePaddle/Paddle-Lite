@@ -419,7 +419,7 @@ adb shell "cd /data/local/tmp/benchmark;
 编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
 
 ##### 步骤 3：获取新硬件 DDK
-请下载 [Paddle Lite 通用示例程序](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，并参照下表路径，获取新硬件所需的 DDK。
+请下载 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，并参照下表路径，获取新硬件所需的 DDK。
 
 |No.| 新硬件名称 | DDK 路径 |
 |---|---|---|
