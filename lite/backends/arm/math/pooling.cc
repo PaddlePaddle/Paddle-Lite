@@ -3350,49 +3350,62 @@ void pooling5x5s1p2_max(const float* din,
   }
 }
 
-static void padding_zero(const float* data_in,
-                         int iw,
-                         int ih,
-                         int pad_w,
-                         int pad_h,
-                         float* data_out) {
+static void fill_val(float* data_in, float val, int size) {
+  int i = 0;
+  float32x4_t res = vdupq_n_f32(val);
+  for (; i + 3 < size; i += 4) {
+    vst1q_f32(data_in + i, res);
+  }
+  for (; i < size; i++) *(data_in + i) = val;
+}
+
+static void padding_val(const float* data_in,
+                        int iw,
+                        int ih,
+                        int pad_w,
+                        int pad_h,
+                        float* data_out,
+                        float val) {
   int ow = iw + 2 * pad_w;
   int oh = ih + 2 * pad_h;
-  memset(data_out, 0, ow * pad_h * sizeof(float));
-  memset(data_out + (oh - pad_h) * ow, 0, ow * pad_h * sizeof(float));
-  auto data_out_ptr = data_out + ow;
+  fill_val(data_out, val, ow * pad_h);
+  fill_val(data_out + (oh - pad_h) * ow, val, ow * pad_h);
+  auto data_out_ptr = data_out + ow * pad_h;
   for (int row = 0; row < ih; row++) {
-    memset(data_out_ptr, 0, pad_w * sizeof(float));
+    fill_val(data_out_ptr, val, pad_w);
     data_out_ptr += pad_w;
     memcpy(data_out_ptr, data_in + row * iw, iw * sizeof(float));
     data_out_ptr += iw;
-    memset(data_out_ptr, 0, pad_w * sizeof(float));
+    fill_val(data_out_ptr, val, pad_w);
     data_out_ptr += pad_w;
   }
 }
 
-#define COMMON_LOOP_KW_KH                                 \
-  data_in_ptr = pad_input + loop_h * padding_w + loop_w;  \
-  float32x4_t max_res = vdupq_n_f32(min_val);             \
-  for (int j = 0; j < kh; j++) {                          \
-    for (int i = 0; i < loop_kw; i++) {                   \
-      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);     \
-      vec_4 = vld1q_f32(data_in_ptr + j * padding_w + 4); \
-      data_in_ptr += 5;                                   \
-      vec_1 = vextq_s32(vec_0, vec_4, 1);                 \
-      vec_2 = vextq_s32(vec_0, vec_4, 2);                 \
-      vec_3 = vextq_s32(vec_0, vec_4, 3);                 \
-      float32x4_t res0 = vmaxq_f32(vec_0, vec_4);         \
-      float32x4_t res1 = vmaxq_f32(vec_1, vec_3);         \
-      max_res = vmaxq_f32(max_res, vec_2);                \
-      res0 = vmaxq_f32(res0, res1);                       \
-      max_res = vmaxq_f32(max_res, res0);                 \
-    }                                                     \
-    for (int i = 0; i < remain_kw; i++) {                 \
-      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);     \
-      data_in_ptr++;                                      \
-      max_res = vmaxq_f32(max_res, vec_0);                \
-    }                                                     \
+#define COMMON_LOOP_KW_KH                                                  \
+  float32x4_t max_res = vdupq_n_f32(min_val);                              \
+  for (int j = 0; j < kh; j++) {                                           \
+    data_in_ptr = pad_input + loop_h * padding_w + loop_w;                 \
+    for (int i = 0; i < loop_kw; i++) {                                    \
+      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);                      \
+      vec_4 = vld1q_f32(data_in_ptr + j * padding_w + 4);                  \
+      data_in_ptr += 5;                                                    \
+      vec_1 = vreinterpretq_f32_s32(vextq_s32(                             \
+          vreinterpretq_s32_f32(vec_0), vreinterpretq_s32_f32(vec_4), 1)); \
+      vec_2 = vreinterpretq_f32_s32(vextq_s32(                             \
+          vreinterpretq_s32_f32(vec_0), vreinterpretq_s32_f32(vec_4), 2)); \
+      vec_3 = vreinterpretq_f32_s32(vextq_s32(                             \
+          vreinterpretq_s32_f32(vec_0), vreinterpretq_s32_f32(vec_4), 3)); \
+      float32x4_t res0 = vmaxq_f32(vec_0, vec_4);                          \
+      float32x4_t res1 = vmaxq_f32(vec_1, vec_3);                          \
+      max_res = vmaxq_f32(max_res, vec_2);                                 \
+      res0 = vmaxq_f32(res0, res1);                                        \
+      max_res = vmaxq_f32(max_res, res0);                                  \
+    }                                                                      \
+    for (int i = 0; i < remain_kw; i++) {                                  \
+      vec_0 = vld1q_f32(data_in_ptr + j * padding_w);                      \
+      data_in_ptr++;                                                       \
+      max_res = vmaxq_f32(max_res, vec_0);                                 \
+    }                                                                      \
   }
 
 // s1 && kw == kh && pad_left == pad_right && pad_top == pad_bottom
@@ -3428,10 +3441,11 @@ void pooling_common_padding_s1_max(const float* din,
     LITE_PARALLEL_BEGIN(c, tid, chout) {
       float* data_out_channel = data_out_batch + c * size_channel_out;
       const float* data_in_channel = data_in_batch + c * size_channel_in;
-      padding_zero(data_in_channel, win, hin, pad_right, pad_bottom, pad_input);
+      padding_val(
+          data_in_channel, win, hin, pad_right, pad_bottom, pad_input, min_val);
       auto data_in_ptr = pad_input;
-      int loop_h = 0, loop_w = 0;
-      for (; loop_h < hout; loop_h++) {
+      for (int loop_h = 0; loop_h < hout; loop_h++) {
+        int loop_w = 0;
         for (; loop_w + 3 < wout; loop_w += 4) {
           COMMON_LOOP_KW_KH;
           vst1q_f32(data_out_channel + loop_h * wout + loop_w, max_res);
