@@ -936,30 +936,38 @@ static void padding_zero(const int8_t* data_in,
   }
 }
 
-#define transfer4x12(line1, line2, line3, line4, data_out)      \
-  line_1_2 = vtrnq_s8(line1, line2);                            \
-  line_3_4 = vtrnq_s8(line3, line4);                            \
-  out0 = vtrnq_s16(line_1_2.val[0], line_3_4.val[0]);           \
-  out1 = vtrnq_s16(line_1_2.val[1], line_3_4.val[1]);           \
-  line_1_2_int32 = vtrnq_s32(out0.val[0], out1.val[0]);         \
-  line_3_4_int32 = vtrnq_s32(out0.val[1], out1.val[1]);         \
-  vst1q_s32(reinterpret_cast<int*>(data_out),                   \
-            vcombine_s32(vget_low_s32(line_1_2_int32.val[0]),   \
-                         vget_low_s32(line_3_4_int32.val[0]))); \
-  vst1q_s32(reinterpret_cast<int*>(data_out + 16),              \
-            vcombine_s32(vget_low_s32(line_1_2_int32.val[1]),   \
-                         vget_low_s32(line_3_4_int32.val[1]))); \
-  vst1q_s32(reinterpret_cast<int*>(data_out + 32),              \
-            vcombine_s32(vget_high_s32(line_1_2_int32.val[0]),  \
+#define transfer4x12(line1, line2, line3, line4, data_out)        \
+  line_1_2 = vtrnq_s8(line1, line2);                              \
+  line_3_4 = vtrnq_s8(line3, line4);                              \
+  out0 = vtrnq_s16(vreinterpretq_s16_s8(line_1_2.val[0]),         \
+                   vreinterpretq_s16_s8(line_3_4.val[0]));        \
+  out1 = vtrnq_s16(vreinterpretq_s16_s8(line_1_2.val[1]),         \
+                   vreinterpretq_s16_s8(line_3_4.val[1]));        \
+  line_1_2_int32 = vtrnq_s32(vreinterpretq_s32_s16(out0.val[0]),  \
+                             vreinterpretq_s32_s16(out1.val[0])); \
+  line_3_4_int32 = vtrnq_s32(vreinterpretq_s32_s16(out0.val[1]),  \
+                             vreinterpretq_s32_s16(out1.val[1])); \
+  vst1q_s32(reinterpret_cast<int*>(data_out),                     \
+            vcombine_s32(vget_low_s32(line_1_2_int32.val[0]),     \
+                         vget_low_s32(line_3_4_int32.val[0])));   \
+  vst1q_s32(reinterpret_cast<int*>(data_out + 16),                \
+            vcombine_s32(vget_low_s32(line_1_2_int32.val[1]),     \
+                         vget_low_s32(line_3_4_int32.val[1])));   \
+  vst1q_s32(reinterpret_cast<int*>(data_out + 32),                \
+            vcombine_s32(vget_high_s32(line_1_2_int32.val[0]),    \
                          vget_high_s32(line_3_4_int32.val[0])));
 
 #define transfer4x8(line1, line2, line3, line4, data_out)                \
   line_1_2 = vtrn_s8(line1, line2);                                      \
   line_3_4 = vtrn_s8(line3, line4);                                      \
-  out0 = vtrn_s16(line_1_2.val[0], line_3_4.val[0]);                     \
-  out1 = vtrn_s16(line_1_2.val[1], line_3_4.val[1]);                     \
-  line_1_2_int32 = vtrn_s32(out0.val[0], out1.val[0]);                   \
-  line_3_4_int32 = vtrn_s32(out0.val[1], out1.val[1]);                   \
+  out0 = vtrn_s16(vreinterpret_s16_s8(line_1_2.val[0]),                  \
+                  vreinterpret_s16_s8(line_3_4.val[0]));                 \
+  out1 = vtrn_s16(vreinterpret_s16_s8(line_1_2.val[1]),                  \
+                  vreinterpret_s16_s8(line_3_4.val[1]));                 \
+  line_1_2_int32 = vtrn_s32(vreinterpret_s32_s16(out0.val[0]),           \
+                            vreinterpret_s32_s16(out1.val[0]));          \
+  line_3_4_int32 = vtrn_s32(vreinterpret_s32_s16(out0.val[1]),           \
+                            vreinterpret_s32_s16(out1.val[1]));          \
   vst1q_s32(reinterpret_cast<int*>(data_out),                            \
             vcombine_s32(line_1_2_int32.val[0], line_3_4_int32.val[0])); \
   vst1q_s32(reinterpret_cast<int*>(data_out + 16),                       \
