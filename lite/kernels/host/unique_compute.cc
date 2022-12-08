@@ -1,19 +1,5 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "lite/kernels/host/unique_compute.h"
-#include "lite/backends/host/math/concat.h"
+#include "lite/core/tensor.h"
 
 #include <algorithm>
 #include <cmath>
@@ -55,11 +41,11 @@ void UniqueFunc(const lite::Tensor* x,
   if (count != nullptr) {
     // Resize the count tensor dims to allocate the memory
     count->Resize({static_cast<int64_t>(uniq.size())});
-    IndexT* count_data = count->template mutable<IndexT>();
+    IndexT* count_data = count->template mutable_data<IndexT>();
     // init count_data to 0
     memset(count_data, 0, uniq.size() * sizeof(IndexT));
 
-    if (IndexT == int32_t) {
+    if (typeid(IndexT).name() == typeid(int32_t).name()) {
       for (auto i = 0; i < x->numel(); ++i) {
         const IndexT& index = index_data[i];
         count_data[static_cast<int32_t>(index)] += static_cast<IndexT>(1);
@@ -108,7 +94,7 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
 
   if (return_inverse) {
     auto* inverse = index;
-    inverse->Resize{{out->numel()}};
+    inverse->Resize({out->numel()});
     auto inverse_data = inverse->mutable_data<IndexT>();
     std::unordered_map<InT, IndexT> inverse_map;
     for (int64_t i = 0; i < out->numel(); ++i) {
@@ -136,11 +122,12 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
   }
 }
 
+template <typename T>
 static std::vector<lite::Tensor> Unbind(const lite::Tensor& in) {
   int64_t size = in.dims()[0];
   std::vector<lite::Tensor> tensors(size);
   for (int64_t i = 0; i < size; ++i) {
-    tensors[i] = in.Slice(i, i + 1);
+    tensors[i] = in.Slice<T>(i, i + 1);
   }
   return tensors;
 }
@@ -213,26 +200,26 @@ void TransCompute(const Tensor &input,
   const T *din = input.data<T>();
   T *dout = output->mutable_data<T>();
 
-  std::vector<int> old_temp;
+  std::vector<int> old_temps;
   int temp = 1;
   for (int i = 0; i < num_axes; ++i) {
-    old_temp.push_back(temp);
+    old_temps.push_back(temp);
     temp *= in_dims[num_axes - 1 - i];
   }
-  std::vector<int> old_step;
+  std::vector<int> old_steps;
   for (int i = 0; i < num_axes; i++) {
-    old_step.push_back(old_temp[num_axes - 1 - i]);
+    old_steps.push_back(old_temps[num_axes - 1 - i]);
   }
 
-  std::vector<int> new_temp;
+  std::vector<int> new_temps;
   temp = 1;
   for (int i = 0; i < num_axes; ++i) {
-    new_temp.push_back(temp);
+    new_temps.push_back(temp);
     temp *= out_dims[num_axes - 1 - i];
   }
-  std::vector<int> new_step;
+  std::vector<int> new_steps;
   for (int i = 0; i < num_axes; i++) {
-    new_step.push_back(new_temp[num_axes - 1 - i]);
+    new_steps.push_back(new_temps[num_axes - 1 - i]);
   }
 
   // std::vector<int> old_steps(
@@ -259,8 +246,43 @@ void TransCompute(const Tensor &input,
 }
 
 lite::DDim FlattenTo2d(const lite::DDim& src, int num_col_dims) {
-  return lite::DDim((src.Slice(0, num_col_dims)).production(),
-                    (src.Slice(num_col_dims, src.size())).production());
+  return DDim(std::vector<DDim::value_type>{
+              src.Slice(0, num_col_dims).production(),
+              src.Slice(num_col_dims, src.size()).production()});
+}
+
+template <typename T>
+void concat_func(const std::vector<lite::Tensor>& input,
+                 const int axis,
+                 lite::Tensor* output) {
+  size_t num = input.size();
+  auto dim_0 = input[0].dims();
+  int64_t concat_input_size = 1;
+  int64_t num_cancats = 1;
+  for (int i = axis + 1; i < dim_0.size(); i++) {
+    concat_input_size *= dim_0[i];
+  }
+  for (int i = 0; i < axis; i++) {
+    num_cancats *= dim_0[i];
+  }
+
+  auto* dst_ptr = output->mutable_data<T>();
+  const int out_concat_axis = output->dims()[axis];
+  int64_t offset_concat_axis = 0;
+  int64_t out_sum = out_concat_axis * concat_input_size;
+  for (int n = 0; n < num; n++) {
+    auto dims = input[n].dims();
+    auto* src_ptr = input[n].data<T>();
+    int64_t in_concat_axis = dims[axis];
+    auto* dout_ptr = dst_ptr + offset_concat_axis * concat_input_size;
+    int64_t in_sum = in_concat_axis * concat_input_size;
+    for (int i = 0; i < num_cancats; i++) {
+      std::memcpy(dout_ptr, src_ptr, sizeof(T) * in_sum);
+      dout_ptr += out_sum;
+      src_ptr += in_sum;
+    }
+    offset_concat_axis += in_concat_axis;
+  }
 }
 
 template <typename InT, typename IndexT>
@@ -278,11 +300,11 @@ void UniqueDimFunc(const lite::Tensor& in,
   std::iota(permute.begin(), permute.end(), 0);
   permute[axis] = 0;
   permute[0] = axis;
-  std::vector<int64_t> in_trans_dim_vec(in.dims());
+  std::vector<int64_t> in_trans_dim_vec(in.dims().Vectorize());
   in_trans_dim_vec[axis] = in.dims()[0];
   in_trans_dim_vec[0] = in.dims()[axis];
   lite::Tensor in_trans;
-  lite::DDim in_trans_dims = in_trans_dim_vec;
+  lite::DDim in_trans_dims = DDim(in_trans_dim_vec);
   in_trans.Resize(in_trans_dims);
   in_trans.mutable_data<InT>();
   TransCompute<InT>(in, &in_trans, permute);
@@ -314,7 +336,7 @@ void UniqueDimFunc(const lite::Tensor& in,
   lite::Tensor input_sorted;
   input_sorted.Resize(in_trans_dims);
   input_sorted.mutable_data<InT>();
-  InT* input_sorted_data = input_sorted.data<InT>();
+  InT* input_sorted_data = const_cast<InT*>(input_sorted.data<InT>());
   for (size_t i = 0; i < sorted_indices_vec.size(); ++i) {
     memcpy(input_sorted_data + i * col,
            in_trans_data + static_cast<int64_t>(sorted_indices_vec[i]) * col,
@@ -322,11 +344,11 @@ void UniqueDimFunc(const lite::Tensor& in,
 
   }
 
-  std::vector<lite::Tensor> input_unbind = Unbind(input_sorted);
+  std::vector<lite::Tensor> input_unbind = Unbind<InT>(input_sorted);
   std::vector<IndexT> inverse_vec(sorted_indices_vec.size(), 0);
   std::vector<IndexT> counts_vec(sorted_indices_vec.size(), 0);
   std::vector<IndexT> indices_vec(sorted_indices_vec.size(), 0);
-  auto last = UniqueDimImpl<std::vector<lite::Tensor>::iterator, InT, int32_t>(
+  auto last = UniqueDimImpl<std::vector<lite::Tensor>::iterator, InT, IndexT>(
     input_unbind.begin(),
     input_unbind.end(),
     sorted_indices_vec,
@@ -345,7 +367,7 @@ void UniqueDimFunc(const lite::Tensor& in,
   std::swap(out_trans_dims_vec[0], out_trans_dims_vec[axis]);
   out->Resize(out_trans_dims_vec);
   out->mutable_data<InT>();
-  lite::host::math::concat_func<InT>(input_unbind, 0, &out_trans);
+  concat_func<InT>(input_unbind, 0, &out_trans);
   TransCompute<InT>(out_trans, out, permute);
 
   if (return_inverse) {
@@ -375,8 +397,7 @@ void UniqueCompute::Run() {
   auto axis_vec = param.axis;
   auto is_sorted = param.is_sorted;
 
-  // lite_api::PrecisionType index_type = index->precision();
-  lite_api::PrecisionType index_type = dtype;
+  lite_api::PrecisionType index_type = index->precision();
   bool index_type_match = index_type == PRECISION(kInt32) || index_type == PRECISION(kInt64);
   lite_api::PrecisionType type = x->precision();
   CHECK_EQ(index_type_match, true) << "Index holds the wrong type, it holds "
@@ -420,21 +441,36 @@ void UniqueCompute::Run() {
     return;
   }
 
-  if (x->numel() = 0) {
-    out->template mutable_data<T>();
+  if (x->numel() == 0) {
+    switch (type) {
+      case PRECISION(kFloat):
+        output->template mutable_data<float>();
+        break;
+      case PRECISION(kInt32):
+        output->template mutable_data<int32_t>();
+        break;
+      case PRECISION(kInt64):
+        output->template mutable_data<int64_t>();
+        break;
+      default:
+        LOG(FATAL) << "unique does not implement for the "
+                   << "input type:" << static_cast<int>(type);
+        break;
+    }
+    
     return;
   }
   if (axis_vec.empty()) {
     if (index_type == PRECISION(kInt32)) {
       switch (type) {
         case PRECISION(kFloat):
-          UniqueFlattendTensorFunc<float, int32_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<float, int32_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt32):
-          UniqueFlattendTensorFunc<int32_t, int32_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<int32_t, int32_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt64):
-          UniqueFlattendTensorFunc<int64_t, int32_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<int64_t, int32_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         default:
           LOG(FATAL) << "unique does not implement for the "
@@ -444,13 +480,13 @@ void UniqueCompute::Run() {
     } else {
       switch (type) {
         case PRECISION(kFloat):
-          UniqueFlattendTensorFunc<float, int64_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<float, int64_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt32):
-          UniqueFlattendTensorFunc<int32_t, int64_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<int32_t, int64_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt64):
-          UniqueFlattendTensorFunc<int64_t, int64_t>(x, output, index, indices, count, return_index, return_inverse, return_counts);
+          UniqueFlattendTensorFunc<int64_t, int64_t>(*x, output, index, indices, count, return_index, return_inverse, return_counts);
           break;
         default:
           LOG(FATAL) << "unique does not implement for the "
@@ -463,13 +499,13 @@ void UniqueCompute::Run() {
     if (index_type == PRECISION(kInt32)) {
       switch (type) {
         case PRECISION(kFloat):
-          UniqueDimFunc<float, int32_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<float, int32_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt32):
-          UniqueDimFunc<int32_t, int32_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<int32_t, int32_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt64):
-          UniqueDimFunc<int64_t, int32_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<int64_t, int32_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         default:
           LOG(FATAL) << "unique does not implement for the "
@@ -478,13 +514,13 @@ void UniqueCompute::Run() {
     } else {
       switch (type) {
         case PRECISION(kFloat):
-          UniqueDimFunc<float, int64_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<float, int64_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt32):
-          UniqueDimFunc<int32_t, int64_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<int32_t, int64_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         case PRECISION(kInt64):
-          UniqueDimFunc<int64_t, int64_t>(x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
+          UniqueDimFunc<int64_t, int64_t>(*x, output, index, indices, count, axis, return_index, return_inverse, return_counts);
           break;
         default:
           LOG(FATAL) << "unique does not implement for the "
@@ -523,7 +559,7 @@ REGISTER_LITE_KERNEL(unique,
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
-    .BindOutput("Count",
+    .BindOutput("Counts",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
