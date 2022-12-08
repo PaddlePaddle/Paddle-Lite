@@ -374,8 +374,8 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|metal|xpu|mlu|huawei_ascend_npu|"
-      "imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "`set_valid_places(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
       "eeasytech_npu|android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
@@ -418,8 +418,8 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|metal|xpu|mlu|huawei_ascend_npu|"
-      "imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "`--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
       "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
@@ -437,13 +437,13 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "operators of "
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|mlu|huawei_ascend_npu|"
-      "imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
       "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|mlu|huawei_ascend_npu|"
-      "imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
       "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
@@ -522,7 +522,7 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
-                                                  "kMLU",
+                                                  "cambricon_mlu",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
                                                   "huawei_kirin_npu",
@@ -803,7 +803,7 @@ void OptBase::InitSupportedOpInfo() {
                                      "kXPU",
                                      "kHost",
                                      "kX86",
-                                     "kMLU",
+                                     "cambricon_mlu",
                                      "huawei_ascend_npu",
                                      "mediatek_apu",
                                      "huawei_kirin_npu",

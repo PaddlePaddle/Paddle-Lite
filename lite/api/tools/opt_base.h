@@ -87,7 +87,7 @@ class LITE_API OptBase {
                          "kXPU",
                          "kHost",
                          "kX86",
-                         "kMLU",
+                         "cambricon_mlu",
                          "huawei_ascend_npu",
                          "mediatek_apu",
                          "huawei_kirin_npu",
