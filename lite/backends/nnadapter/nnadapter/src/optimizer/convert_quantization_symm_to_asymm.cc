@@ -110,6 +110,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CLIP:
       case NNADAPTER_CUM_SUM:
       case NNADAPTER_EXP:
+      case NNADAPTER_EXPAND:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_FLOOR:
@@ -135,6 +136,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_SLICE:
       case NNADAPTER_SOFTPLUS:
       case NNADAPTER_SQUEEZE:
+      case NNADAPTER_SQUARE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
       case NNADAPTER_TILE:
