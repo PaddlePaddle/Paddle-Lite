@@ -71,12 +71,12 @@ class TargetType:
     kUnk = 0
     kHost = 1
     kX86 = 2
-    kARM = 3
-    kOpenCL = 4
-    kAny = 5  # any target
-    kXPU = 6
-    kMetal = 7
-    kNNAdapter = 8
+    kARM = 4
+    kOpenCL = 5
+    kAny = 6  # any target
+    kXPU = 9
+    kMetal = 17
+    kNNAdapter = 18
 
 
 # record op_info of valid kernels into `valid_ops` according to different target type
