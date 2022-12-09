@@ -38,6 +38,10 @@ message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: ${CMAKE_C_COMPILER_ID}
 message(STATUS "AR tools: ${CMAKE_AR}")
 message(STATUS "CMAKE GENERATOR: ${CMAKE_GENERATOR}")
 
+# Thirdparty
+set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
+  "A path setting third party libraries download & build directories.")
+
 if(WIN32)
   include(os/windows)
 endif()
@@ -81,10 +85,6 @@ lite_option(LITE_WITH_ARM8_SVE2                "Enable SVE2 instructions in ARMv
 lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8, it's ON."                            OFF)
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
-
-# Thirdparty
-set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
-  "A path setting third party libraries download & build directories.")
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
