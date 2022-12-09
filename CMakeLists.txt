@@ -45,6 +45,11 @@ set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
 if(WIN32)
   include(os/windows)
 endif()
+
+# Remove -g in CMAKE_C_FLAGS & CMAKE_CXX_FLAGS
+STRING(REGEX REPLACE "-g " " " CMAKE_C_FLAGS    ${CMAKE_C_FLAGS})
+STRING(REGEX REPLACE "-g " " " CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS})
+
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO                           "Compile PaddlePaddle with dynamic linked CUDA"                        ON)
 lite_option(WITH_AVX                           "Compile PaddlePaddle with AVX intrinsics"                             ON IF ${AVX_FOUND})
