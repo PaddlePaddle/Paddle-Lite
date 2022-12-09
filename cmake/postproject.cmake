@@ -209,11 +209,11 @@ if(LITE_WITH_OPENMP)
 endif()
 
 if (CMAKE_CXX_FLAGS)
-string(REGEX REPLACE " \\-g " " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+string(REGEX REPLACE "-g " " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
 if (CMAKE_C_FLAGS)
-string(REGEX REPLACE " \\-g " " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+string(REGEX REPLACE "-g " " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
 endif ()
 
 
