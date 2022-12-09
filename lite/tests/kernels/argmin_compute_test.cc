@@ -205,9 +205,6 @@ TEST(Argmin, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   TestArgmin(place, aliases, {2});
   return;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  TestArgmin(place, aliases, {2});
-  return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   TestArgmin(place, aliases, {2});
   return;
