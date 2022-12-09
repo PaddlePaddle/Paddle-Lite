@@ -203,16 +203,9 @@ TEST(Argmin, precision) {
   place = TARGET(kNNAdapter);
   aliases = {"def"};
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  TestArgmin(place, aliases, {2});
+  return;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  TestArgmin(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  TestArgmin(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  TestArgmin(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   TestArgmin(place, aliases, {2});
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
@@ -224,15 +217,9 @@ TEST(Argmin, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kHost);
 #else
   return;
 #endif
-
-  TestArgmin(place, aliases, {-1, 2, 3});
 }
 
 }  // namespace lite
