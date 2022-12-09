@@ -1940,6 +1940,14 @@ void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
   TargetFree(TARGET(kARM), zero_ptr);
 }
 
+void pooling5x5s1p2_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
+  
+}
+
+void pooling2x2s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
+  
+}
+
 #undef CHANGEED_REG_0_11
 #undef GLOBAL_INIT
 #undef GLOBAL_MAX
