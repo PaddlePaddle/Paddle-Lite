@@ -22,26 +22,35 @@ void XPUScratchPad::Reserve(size_t new_size) {
   if (new_size <= size_) {
     return;
   }
-  XPUMemory::Free(addr_);
+
+  XPU_CALL(xpu_set_device(devid_));
+  XPU_CALL(xpu_wait(xpu_stream_));
+  XPU_CALL(xpu_free(addr_));
+  addr_ = nullptr;
+
   addr_ = XPUMemory::Malloc(new_size);
   size_ = new_size;
 }
 
-void XPUScratchPadDeleter::operator()(XPUScratchPad* sp) const {
-  XPUMemory::Free(sp->addr_);
-  sp->addr_ = nullptr;
-  sp->size_ = 0;
-  delete sp;
+XPUScratchPad::~XPUScratchPad() {
+  XPU_CALL(xpu_set_device(devid_));
+  XPU_CALL(xpu_wait(xpu_stream_));
+  XPU_CALL(xpu_free(addr_));
+  addr_ = nullptr;
+  size_ = 0;
 }
 
 void* XPUMemory::Malloc(size_t size) {
   void* ptr{nullptr};
   if (size > 0) {
+    int devid = -1;
+    XPU_CALL(xpu_current_device(&devid));
     XPU_CALL(xpu_malloc(&ptr, size));
   }
   return ptr;
 }
 
+// Only used to free temporary buffer in the runtime.
 void XPUMemory::Free(void* ptr) {
   XPU_CALL(xpu_wait(TargetWrapperXPU::get_xpu_stream()));
   XPU_CALL(xpu_free(ptr));
@@ -59,9 +68,18 @@ void XPUMemory::MemcpyDtoHSync(void* dst, const void* src, size_t size) {
 }
 
 XPUScratchPadGuard XPUMemory::MallocScratchPad(size_t size) {
-  void* ptr = XPUMemory::Malloc(size);
-  CHECK(ptr) << "XPU Malloc Fail, Malloc Size is: " << size;
-  return XPUScratchPadGuard(new XPUScratchPad(ptr, size));
+  void* ptr = nullptr;
+  if (size > 0) {
+    ptr = XPUMemory::Malloc(size);
+    CHECK(ptr) << "XPU Malloc Fail, Malloc Size is: " << size;
+  }
+
+  int devid = -1;
+  XPU_CALL(xpu_current_device(&devid));
+  void* xpu_stream = TargetWrapperXPU::get_xpu_stream();
+  VLOG(6) << "thread 0x" << std::hex << std::this_thread::get_id()
+          << " set context xpu stream: " << xpu_stream;
+  return XPUScratchPadGuard(new XPUScratchPad(ptr, size, devid, xpu_stream));
 }
 
 int XPUMemory::get_max_ptr_size() {
