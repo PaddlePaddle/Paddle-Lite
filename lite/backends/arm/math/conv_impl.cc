@@ -1374,6 +1374,16 @@ void im2col_packb_3x3s1p1(const int8_t* data_im,
   }
 }
 
+#undef transfer4x12
+#undef transfer4x8
+#undef transfer4x4
+#undef LOAD_36x12_K3
+#undef LOAD_36x12_K3_B8
+#undef LOAD_36x12_K3_B4
+#undef LOAD_36x8_K3
+#undef LOAD_36x8_K3_B4
+#undef LOAD_36x4
+
 template <typename Dtype>
 void conv_im2col_gemm_int8_fast(const int8_t* i_data,
                                 Dtype* o_data,
