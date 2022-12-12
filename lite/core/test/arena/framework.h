@@ -45,6 +45,9 @@ class TestCase {
         inst_scope_(new Scope),
         base_scope_(new Scope) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::xpu_runtime_ptr = &xpu_runtime_option_;
+#endif
   }
   virtual ~TestCase() {}
 
@@ -193,6 +196,9 @@ class TestCase {
   std::shared_ptr<Scope> base_scope_;
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
+#ifdef LITE_WITH_XPU
+  lite::XPURunTimeOption xpu_runtime_option_;
+#endif
 };
 
 class Arena {
