@@ -60,8 +60,8 @@ ops_lines = []
 
 # valid targets and valid_ops
 valid_targets = [
-    "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA",
-    "kNPU", "kXPU", "kBM", "kMLU", "kIntelFPGA", "kMetal", "kNNAdapter"
+    "kUnk", "kHost", "kX86", "kARM", "kOpenCL", "kAny", "kXPU", "kMetal",
+    "kNNAdapter"
 ]
 valid_ops = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
              [], [], []]
@@ -71,17 +71,10 @@ class TargetType:
     kUnk = 0
     kHost = 1
     kX86 = 2
-    kCUDA = 3
     kARM = 4
     kOpenCL = 5
     kAny = 6  # any target
-    kFPGA = 7
-    kNPU = 8
     kXPU = 9
-    kBM = 10
-    kMLU = 11
-    kRKNPU = 12
-    kIntelFPGA = 16
     kMetal = 17
     kNNAdapter = 18
 
