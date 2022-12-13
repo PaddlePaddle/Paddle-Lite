@@ -91,6 +91,13 @@ java 环境
    echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
    source ~/.bashrc
 
+   # 6. (可选) 删除 debug 编译参数，减小二进制体积 参照 https://github.com/android/ndk/issues/243
+   # 用编辑器打开 $ANDROID_NDK/build/cmake/android.toolchain.cmake 删除 "-g" 这行
+   list(APPEND ANDROID_COMPILER_FLAGS
+     -g
+     -DANDROID
+     ...
+
 了解基础编译参数
 ----------------
 
