@@ -142,6 +142,11 @@ TEST(unstack, precision) {
   TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
   TestUnstack<float>(place, abs_error, {1, 3, 4});
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
+  TestUnstack<float>(place, abs_error, {1, 3, 4});
+  return;
 #else
   return;
 #endif
