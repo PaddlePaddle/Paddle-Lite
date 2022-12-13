@@ -35,10 +35,10 @@ bool UniqueOp::CheckShape() const {
 
 bool UniqueOp::InferShapeImpl() const {
   DDim in_dims = param_.X->dims();
-  param_.Out->Resize(in_dims);
-  param_.Index->Resize(in_dims);
-  param_.Indices->Resize(in_dims);
-  param_.Counts->Resize(in_dims);
+  if (param_.Out) param_.Out->Resize(in_dims);
+  if (param_.Index) param_.Index->Resize(in_dims);
+  if (param_.Indices) param_.Indices->Resize(in_dims);
+  if (param_.Counts) param_.Counts->Resize(in_dims);
   return true;
 }
 

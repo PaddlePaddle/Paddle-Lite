@@ -1,3 +1,17 @@
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "lite/kernels/host/unique_compute.h"
 #include "lite/core/tensor.h"
 
@@ -8,6 +22,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 namespace paddle {
 namespace lite {
@@ -18,7 +33,7 @@ template <typename InT, typename IndexT>
 void UniqueFunc(const lite::Tensor* x, 
                       lite::Tensor* out,
                       lite::Tensor* index,
-                      lite::Tensor* count) {
+                      lite::Tensor* count = nullptr) {
   const InT* in_data = x->template data<InT>();
   IndexT* index_data = index->mutable_data<IndexT>();
 
@@ -31,6 +46,7 @@ void UniqueFunc(const lite::Tensor* x,
     auto it = dict.find(in_data[i]);
     if (it == dict.end()) {
       dict.emplace(std::make_pair(in_data[i], j));
+      uniq.emplace_back(in_data[i]);
       index_data[i] = static_cast<IndexT>(j);
       j++;
     } else {
@@ -44,20 +60,11 @@ void UniqueFunc(const lite::Tensor* x,
     IndexT* count_data = count->template mutable_data<IndexT>();
     // init count_data to 0
     memset(count_data, 0, uniq.size() * sizeof(IndexT));
-
-    if (typeid(IndexT).name() == typeid(int32_t).name()) {
-      for (auto i = 0; i < x->numel(); ++i) {
-        const IndexT& index = index_data[i];
-        count_data[static_cast<int32_t>(index)] += static_cast<IndexT>(1);
-      }
-    } else {
-      for (auto i = 0; i < x->numel(); ++i) {
-        const IndexT& index = index_data[i];
-        count_data[static_cast<int64_t>(index)] += static_cast<IndexT>(1);
-      }
+    for (auto i = 0; i < x->numel(); ++i) {
+      const IndexT& index = index_data[i];
+      count_data[index] += static_cast<IndexT>(1);
     }
   }
-
   out->Resize({static_cast<int64_t>(uniq.size())});
   auto out_data = out->mutable_data<InT>();
   std::memcpy(out_data, uniq.data(), uniq.size() * sizeof(InT));
@@ -221,17 +228,6 @@ void TransCompute(const Tensor &input,
   for (int i = 0; i < num_axes; i++) {
     new_steps.push_back(new_temps[num_axes - 1 - i]);
   }
-
-  // std::vector<int> old_steps(
-  //     {static_cast<int>(in_dims[1] * in_dims[2] * in_dims[3]),
-  //      static_cast<int>(in_dims[2] * in_dims[3]),
-  //      static_cast<int>(in_dims[3]),
-  //      1});
-  // std::vector<int> new_steps(
-  //     {static_cast<int>(out_dims[1] * out_dims[2] * out_dims[3]),
-  //      static_cast<int>(out_dims[2] * out_dims[3]),
-  //      static_cast<int>(out_dims[3]),
-  //      1});
 
   for (int i = 0; i < count; ++i) {
     int old_idx = 0;
@@ -422,24 +418,24 @@ void UniqueCompute::Run() {
           break;
       }
     } else {
-        switch (type) {
-          case PRECISION(kFloat):
-            UniqueFunc<float, int64_t>(x, output, index, count);
-            break;
-          case PRECISION(kInt32):
-            UniqueFunc<int32_t, int64_t>(x, output, index, count);
-            break;
-          case PRECISION(kInt64):
-            UniqueFunc<int64_t, int64_t>(x, output, index, count);
-            break;
-          default:
-            LOG(FATAL) << "unique does not implement for the "
-                       << "input type:" << static_cast<int>(type);
-            break;
+      switch (type) {
+        case PRECISION(kFloat):
+          UniqueFunc<float, int64_t>(x, output, index, count);
+          break;
+        case PRECISION(kInt32):
+          UniqueFunc<int32_t, int64_t>(x, output, index, count);
+          break;
+        case PRECISION(kInt64):
+          UniqueFunc<int64_t, int64_t>(x, output, index, count);
+          break;
+        default:
+          LOG(FATAL) << "unique does not implement for the "
+                     << "input type:" << static_cast<int>(type);
+          break;
         }
-    }
-    return;
-  }
+     }
+     return;
+  } 
 
   if (x->numel() == 0) {
     switch (type) {

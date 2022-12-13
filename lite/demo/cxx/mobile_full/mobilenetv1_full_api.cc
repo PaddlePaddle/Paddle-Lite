@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <gflags/gflags.h>
 #include <iostream>
 #include <vector>
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
-
 /////////////////////////////////////////////////////////////////////////
 // If this demo is linked to static library:libpaddle_api_full_bundled.a
 // , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
@@ -27,9 +25,7 @@
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
 #endif
-
 using namespace paddle::lite_api;  // NOLINT
-
 DEFINE_string(model_dir,
               "",
               "Model dir path. Set it when the model is uncombined format.");
@@ -54,13 +50,11 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 10, "warmup times");
 DEFINE_int32(repeats, 100, "repeats times");
 DEFINE_bool(use_gpu, false, "use opencl backend");
-
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
   return res;
 }
-
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
@@ -72,7 +66,6 @@ void RunModel() {
   }
   config.set_power_mode((paddle::lite_api::PowerMode)FLAGS_power_mode);
   config.set_threads(FLAGS_threads);
-
   std::vector<Place> valid_places;
   if (FLAGS_use_gpu) {
     valid_places.emplace_back(
@@ -93,51 +86,167 @@ void RunModel() {
   } else {
     valid_places.emplace_back(Place{TARGET(kARM), PRECISION(kFloat)});
   }
-
   if (FLAGS_prefer_int8_kernel) {
     valid_places.insert(valid_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
   }
   config.set_valid_places(valid_places);
-
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
-
   // 3. Save the optimized model
   // WARN: The `predictor->SaveOptimizedModel` method must be executed
   // before the `predictor->Run` method. Because some kernels' `PrepareForRun`
   // method maybe change some parameters' values.
   predictor->SaveOptimizedModel(FLAGS_optimized_model_dir,
                                 LiteModelType::kNaiveBuffer);
-
   // 4. Prepare input data
-  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(shape_t({1, 3, 224, 224}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    data[i] = 1;
+  const lod_t lodd = {{0,1},{0,1}};
+  {
+    // src_ids
+    int64_t pre_data[100] = {41, 2, 69, 2, 68, 2, 78, 2, 83, 2, 22, 29, 21, 28,
+    27, 18, 8, 2, 788, 342, 6431, 17, 2, 788, 96, 6431, 6622};
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+    input_tensor->Resize(shape_t({1,27,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = pre_data[i];
+    }
   }
-
+  {
+    // pos_ids
+    int64_t pre_data[100] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(1)));
+    input_tensor->Resize(shape_t({1,27,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = pre_data[i];
+    }
+  }
+  {
+    // input_mask
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(2)));
+    input_tensor->Resize(shape_t({1,27,27}));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 1;
+    }
+  }
+  {
+    // pos_ids_extra
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(3)));
+    input_tensor->Resize(shape_t({1,27,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 0;
+    }
+  }
+  {
+    // tgt_ids
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(4)));
+    input_tensor->Resize(shape_t({1,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 6621;
+    }
+    input_tensor->SetLoD(lodd);
+  }
+  {
+    // tgt_pos
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(5)));
+    input_tensor->Resize(shape_t({1,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 26;
+    }
+    input_tensor->SetLoD(lodd);
+  }
+  {
+    // init_score
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(6)));
+    input_tensor->Resize(shape_t({1,1}));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 0;
+    }
+    input_tensor->SetLoD(lodd);
+  }
+  {
+    // parent_idx
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(7)));
+    input_tensor->Resize(shape_t({1,1}));
+    auto* data = input_tensor->mutable_data<int>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 0;
+    }
+  }
+  {
+    // tgt_generation_mask
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(8)));
+    input_tensor->Resize(shape_t({1,1,27}));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 1;
+    }
+  }
+  {
+    // max_dec_len
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(9)));
+    input_tensor->Resize(shape_t({1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 10;
+    }
+  }
+  {
+    // tgt_pos_extra
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(10)));
+    input_tensor->Resize(shape_t({1,1}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = 1;
+    }
+    input_tensor->SetLoD(lodd);
+  }
+  {
+    // cand_ids
+    int64_t cand[500]={41, 6623, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 69, 6623, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 6623, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 78, 6623, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83, 6623, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(11)));
+    input_tensor->Resize(shape_t({5,32}));
+    auto* data = input_tensor->mutable_data<int64_t>();
+    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+      data[i] = cand[i];
+    }
+  }
+ 
   // 5. Run predictor
-  for (int i = 0; i < FLAGS_warmup; ++i) {
+  for (int j = 0; j < 1; ++j) {
     predictor->Run();
   }
-
-  for (int j = 0; j < FLAGS_repeats; ++j) {
-    predictor->Run();
-  }
-
   // 6. Get output
+  double sum = 0;
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
-  std::cout << "Output shape " << output_tensor->shape()[1] << std::endl;
+  std::cout << "Output0 shape " << output_tensor->shape()[0] <<","<< output_tensor->shape()[1] << std::endl;
   for (int i = 0; i < ShapeProduction(output_tensor->shape()); i++) {
-    std::cout << "Output[" << i << "]: " << output_tensor->data<float>()[i]
-              << std::endl;
+    sum += output_tensor->data<int64_t>()[i] * 1.f;
   }
+  std::cout << "output0 mean is "<<sum / ShapeProduction(output_tensor->shape())<<"\n";
+  sum = 0;
+  std::unique_ptr<const Tensor> output_tensor1(
+      std::move(predictor->GetOutput(0)));
+  std::cout << "Output1 shape " << output_tensor1->shape()[0] <<","<< output_tensor1->shape()[1] << std::endl;
+  for (int i = 0; i < ShapeProduction(output_tensor1->shape()); i++) {
+    sum += output_tensor1->data<float>()[i] * 1.f;
+  }
+  std::cout << "output1 mean is "<<sum / ShapeProduction(output_tensor1->shape())<<"\n";
 }
-
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_model_dir.empty() &&
@@ -162,7 +271,6 @@ int main(int argc, char** argv) {
         << " --use_gpu=false              bool    Use gpu or not.\n";
     exit(1);
   }
-
   RunModel();
   return 0;
 }
