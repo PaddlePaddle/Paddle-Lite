@@ -240,7 +240,7 @@ void RunModel() {
   std::cout << "output0 mean is "<<sum / ShapeProduction(output_tensor->shape())<<"\n";
   sum = 0;
   std::unique_ptr<const Tensor> output_tensor1(
-      std::move(predictor->GetOutput(0)));
+      std::move(predictor->GetOutput(1)));
   std::cout << "Output1 shape " << output_tensor1->shape()[0] <<","<< output_tensor1->shape()[1] << std::endl;
   for (int i = 0; i < ShapeProduction(output_tensor1->shape()); i++) {
     sum += output_tensor1->data<float>()[i] * 1.f;
