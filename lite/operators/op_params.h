@@ -2336,6 +2336,59 @@ struct RoundParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct FusionDecodingParam : ParamBase {
+  const lite::Tensor* Input{};
+  const lite::Tensor* Memseqlen{};
+  const lite::Tensor* word_embedding{};
+  const lite::Tensor* position_embedding{};
+  std::vector<const lite::Tensor*> self_ln_weight{};
+  std::vector<const lite::Tensor*> self_ln_bias{};
+  std::vector<const lite::Tensor*> self_q_weight{};
+  std::vector<const lite::Tensor*> self_q_bias{};
+  std::vector<const lite::Tensor*> self_k_weight{};
+  std::vector<const lite::Tensor*> self_k_bias{};
+  std::vector<const lite::Tensor*> self_v_weight{};
+  std::vector<const lite::Tensor*> self_v_bias{};
+  std::vector<const lite::Tensor*> self_out_weight{};
+  std::vector<const lite::Tensor*> self_out_bias{};
+  std::vector<const lite::Tensor*> cross_ln_weight{};
+  std::vector<const lite::Tensor*> cross_ln_bias{};
+  std::vector<const lite::Tensor*> cross_q_weight{};
+  std::vector<const lite::Tensor*> cross_q_bias{};
+  std::vector<const lite::Tensor*> cross_k_weight{};
+  std::vector<const lite::Tensor*> cross_k_bias{};
+  std::vector<const lite::Tensor*> cross_v_weight{};
+  std::vector<const lite::Tensor*> cross_v_bias{};
+  std::vector<const lite::Tensor*> cross_out_weight{};
+  std::vector<const lite::Tensor*> cross_out_bias{};
+  std::vector<const lite::Tensor*> ffn_ln_weight{};
+  std::vector<const lite::Tensor*> ffn_ln_bias{};
+  std::vector<const lite::Tensor*> ffn_inter_weight{};
+  std::vector<const lite::Tensor*> ffn_inter_bias{};
+  std::vector<const lite::Tensor*> ffn_out_weight{};
+  std::vector<const lite::Tensor*> ffn_out_bias{};
+  const lite::Tensor* decoder_ln_weight{};
+  const lite::Tensor* decoder_ln_bias{};
+  const lite::Tensor* emb_weight{};
+  const lite::Tensor* emb_bias{};
+  lite::Tensor* OutIds{};
+  lite::Tensor* ParentIds{};
+  lite::Tensor* SequenceLength{};
+  float alpha;
+  float beam_search_diversity_rate;
+  int beam_size;
+  int bos_id;
+  std::string decoding_strategy;
+  int eos_id;
+  int64_t max_len;
+  int num_layer;
+  int n_head;
+  bool rel_len;
+  int size_per_head;
+  int topk;
+  float topp;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
