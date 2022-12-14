@@ -158,7 +158,8 @@ std::string SubgraphVisualizer::operator()() {
     } else {
       exists_ops[op_type]++;
     }
-    auto op_name = op_type + "_" + paddle::lite::to_string(exists_ops[op_type]);
+    auto op_name =
+        op_type + "_" + paddle::lite::to_string(exists_ops[op_type]) + "_op";
     std::string op_color = "white";
     if (subgraph_indices.count(node)) {
       auto subgraph_idx = subgraph_indices[node];
