@@ -17,6 +17,7 @@ sys.path.append('../')
 
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
+import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
@@ -26,7 +27,7 @@ import random
 import numpy as np
 
 
-class TestUniqueWithCountsOp(AutoScanTest):
+class TestUniqueOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_places = [
@@ -58,7 +59,7 @@ class TestUniqueWithCountsOp(AutoScanTest):
 
         unique_op = OpConfig(
             type = "unique",
-            input = {"X": ["input_data"]},
+            inputs = {"X": ["input_data"]},
             outputs = {
                 "Out": ["Out_data"],
                 "Index": ["Index_data"],

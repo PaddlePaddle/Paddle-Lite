@@ -811,7 +811,7 @@ void Instruction::Run() {
 
 
 
-#if 1
+#if 0
   // clang-format off
   /*
   time_t t;
