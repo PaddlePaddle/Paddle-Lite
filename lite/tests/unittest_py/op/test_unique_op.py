@@ -46,50 +46,71 @@ class TestUniqueOp(AutoScanTest):
                 st.integers(
                     min_value=2, max_value=100),
                 min_size=1,
-                max_size=3))
+                max_size=1))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
-
+                
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         def generate_IndexTensor():
             return np.random.randint(1, 5, size=in_shape).astype(np.int32)
 
+        dtype = 2
+        is_sorted = draw(st.sampled_from([True, False]))
+        return_index = draw(st.sampled_from([False]))
+        if is_sorted: 
+            return_inverse = draw(st.sampled_from([True, False]))
+        else:
+            return_inverse = True
+        return_counts = draw(st.sampled_from([False]))
+        outputs = [
+            "Out_data"
+        ]
+        outputs_config = {
+            "Out": ["Out_data"]
+        }
+        outputs_dtype = {
+            "Out_data": in_dtype
+        }
+        if return_inverse:
+            outputs.append("Index_data")
+            outputs_config["Index"] = ["Index_data"]
+            outputs_dtype["Index_data"] = np.int32
+        if return_index:
+            outputs.append("Indices_data")
+            outputs_config["Indices"] = ["Indices_data"]
+            outputs_dtype["Indices_data"] = np.int32
+        if return_counts:
+            outputs.append("Counts_data")
+            outputs_config["Counts"] = ["Counts_data"] 
+            outputs_dtype["Counts_data"] = np.int32
+
         axis = draw(st.sampled_from([[0, 1, 2], [1], [0, 2], [2, 1], [0, 1]]))
+        axis = []        
 
         unique_op = OpConfig(
             type = "unique",
             inputs = {"X": ["input_data"]},
-            outputs = {
-                "Out": ["Out_data"],
-                "Index": ["Index_data"],
-                "Indices": ["Indices_data"],
-                "Counts": ["Counts_data"]
-            },
+            outputs = outputs_config,
             attrs={
                 "dtype": 2,
-                "return_index": False,
-                "return_inverse": False,
-                "return_counts": False,
+                "return_index": return_index,
+                "return_inverse": return_inverse,
+                "return_counts": return_counts,
                 "axis": axis,
-                "is_sorted": False
+                "is_sorted": is_sorted
             }
         )
 
-        unique_op.outputs_dtype = {"Out_data": in_dtype}
-        unique_op.outputs_dtype = {"Index_data": np.int32}
-        unique_op.outputs_dtype = {"Counts_data":np.int32}
+        unique_op.outputs_dtype = outputs_dtype
 
         program_config = ProgramConfig(
             ops=[unique_op],
-            weights={
-                "Index_data":
-                TensorConfig(data_gen=partial(generate_IndexTensor))
-            },
+            weights={},
             inputs={
                 "input_data": TensorConfig(data_gen=partial(generate_X_data))
             },
-            outputs=["Out_data", "Index_data", "Counts_data"]
+            outputs=outputs
         )
         return program_config
 
