@@ -242,12 +242,21 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
     Top3 tiger cat - 0.039779
     Top4 lynx, catamount - 0.002430
     Top5 ping-pong ball - 0.000508
-    Preprocess time: 8.241000 ms, avg 8.241000 ms, max 8.241000 ms, min 8.241000 ms
-    Prediction time: 78.550000 ms, avg 78.550000 ms, max 78.550000 ms, min 78.550000 ms
-    Postprocess time: 8.621000 ms, avg 8.621000 ms, max 8.621000 ms, min 8.621000 ms
+    Preprocess time: 8.123000 ms, avg 8.123000 ms, max 8.123000 ms, min 8.123000 ms
+    Prediction time: 78.482000 ms, avg 78.482000 ms, max 78.482000 ms, min 78.482000 ms
+    Postprocess time: 8.023000 ms, avg 8.023000 ms, max 8.023000 ms, min 8.023000 ms
 
   (arm cpu + kunlunxin xtcl)
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
+
+    Top1 Egyptian cat - 0.482583
+    Top2 tabby, tabby cat - 0.471810
+    Top3 tiger cat - 0.039866
+    Top4 lynx, catamount - 0.002433
+    Top5 ping-pong ball - 0.000506
+    Preprocess time: 8.135000 ms, avg 8.135000 ms, max 8.135000 ms, min 8.135000 ms
+    Prediction time: 3.223000 ms, avg 3.223000 ms, max 3.223000 ms, min 3.223000 ms
+    Postprocess time: 8.605000 ms, avg 8.605000 ms, max 8.605000 ms, min 8.605000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
@@ -300,7 +309,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
       
       替换 NNAdapter device HAL 库
-      $ cp build.lite.linux.x86.gcc/lite/backends/nnadapter/nnadapter/src/driver/kunlunxin_xtcl/*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
+      $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libkunlunxin_xtcl.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
       
       替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
