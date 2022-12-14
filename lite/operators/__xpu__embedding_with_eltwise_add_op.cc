@@ -92,6 +92,11 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
       }
     }
   }
+  // find optional mask dtype
+  if (op_desc.HasAttr("mask_dtype")) {
+    param_.mask_dtype = op_desc.GetAttr<int>("mask_dtype");
+  }
+
   std::vector<std::string> output_arg_names = op_desc.OutputArgumentNames();
   if (std::find(output_arg_names.begin(), output_arg_names.end(), "SeqLod") !=
       output_arg_names.end()) {

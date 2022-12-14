@@ -61,11 +61,23 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
     auto* seq_lod = param.SeqLod;
     seq_lod->Resize({batch_size + 1});
     std::vector<int> cpu_seq_lod{0};
-    auto* mask_ptr = param.Mask->data<float>();
+
+    const void* mask_ptr = nullptr;
+    if (param.mask_dtype == static_cast<int>(VarDescAPI::VarDataType::INT64)) {
+      mask_ptr = param.Mask->data<int64_t>();
+    } else {
+      mask_ptr = param.Mask->data<float>();
+    }
+
     for (auto batch_idx = 0; batch_idx < batch_size; batch_idx++) {
       int cur_batch_seq_len = 0;
       for (auto seq_idx = 0; seq_idx < pad_seq_len; seq_idx++) {
-        if (mask_ptr[batch_idx * pad_seq_len + seq_idx] > 1e-7) {
+        if ((param.mask_dtype ==
+                 static_cast<int>(VarDescAPI::VarDataType::INT64) &&
+             reinterpret_cast<const int64_t*>(
+                 mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 0) ||
+            reinterpret_cast<const float*>(
+                mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 1e-7) {
           cur_batch_seq_len += 1;
         } else {
           break;

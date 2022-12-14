@@ -421,46 +421,108 @@ class PrecisionProfiler {
           return;
         }
         case DATALAYOUT(kNCHW): {
-          auto* in_data_v =
-              use_fp16
-                  ? static_cast<void*>(calloc(in->numel(), sizeof(uint16_t)))
-                  : static_cast<void*>(calloc(in->numel(), sizeof(float)));
-          std::vector<float> real_out_v(in->numel());
-          TargetWrapperCL::MemcpySync(
-              in_data_v,
-              use_fp16 ? in->data<half_t, cl::Buffer>()
-                       : in->data<float, cl::Buffer>(),
-              in->numel() * (use_fp16 ? sizeof(uint16_t) : sizeof(float)),
-              IoDirection::DtoH);
-          VLOG(1) << name << ":" << in->numel();
-          if (use_fp16) {
-            HalfArray2FloatArray(static_cast<half_t*>(in_data_v),
-                                 real_out_v.data(),
-                                 in->numel());
-          } else {
-            memcpy(real_out_v.data(), in_data_v, in->numel() * sizeof(float));
+          switch (precision_type) {
+            case PRECISION(kInt64): {
+              std::vector<int64_t> in_data_v(in->numel(), 0);
+              TargetWrapperCL::MemcpySync(in_data_v.data(),
+                                          in->data<int64_t, cl::Buffer>(),
+                                          in->numel() * sizeof(int64_t),
+                                          IoDirection::DtoH);
+              *mean = compute_mean<int64_t>(in_data_v.data(), in->numel());
+              *std_dev = compute_standard_deviation<int64_t>(
+                  in_data_v.data(), in->numel(), true, *mean);
+              *ave_grow_rate = compute_average_grow_rate<int64_t>(
+                  in_data_v.data(), in->numel());
+              std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+              real_out_t->Resize(in->dims());
+              int64_t* real_out_data = real_out_t->mutable_data<int64_t>();
+              memcpy(real_out_data,
+                     in_data_v.data(),
+                     in_data_v.size() * sizeof(int64_t));
+              if (write_result_to_file) {
+                write_tensorfile<int64_t>(real_out_t.get(), name, log_dir_);
+              }
+              return;
+            }
+            case PRECISION(kInt32): {
+              std::vector<int32_t> in_data_v(in->numel(), 0);
+              TargetWrapperCL::MemcpySync(in_data_v.data(),
+                                          in->data<int32_t, cl::Buffer>(),
+                                          in->numel() * sizeof(int32_t),
+                                          IoDirection::DtoH);
+              *mean = compute_mean<int32_t>(in_data_v.data(), in->numel());
+              *std_dev = compute_standard_deviation<int32_t>(
+                  in_data_v.data(), in->numel(), true, *mean);
+              *ave_grow_rate = compute_average_grow_rate<int32_t>(
+                  in_data_v.data(), in->numel());
+              std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+              real_out_t->Resize(in->dims());
+              int32_t* real_out_data = real_out_t->mutable_data<int32_t>();
+              memcpy(real_out_data,
+                     in_data_v.data(),
+                     in_data_v.size() * sizeof(int32_t));
+              if (write_result_to_file) {
+                write_tensorfile<int32_t>(real_out_t.get(), name, log_dir_);
+              }
+              return;
+            }
+            default: {
+              // TODO(sprouteer) mutable precision
+              if (op_name == "io_copy" || op_name == "layout") {
+                *mean = -3333333;
+                *std_dev = -3333333;
+                *ave_grow_rate = -3333333;
+                LOG(INFO) << op_name + "has wrong mean, std_dev, ave_grow_rate";
+                return;
+              } else {
+                auto* in_data_v = use_fp16 ? static_cast<void*>(calloc(
+                                                 in->numel(), sizeof(uint16_t)))
+                                           : static_cast<void*>(calloc(
+                                                 in->numel(), sizeof(float)));
+                std::vector<float> real_out_v(in->numel());
+                TargetWrapperCL::MemcpySync(
+                    in_data_v,
+                    use_fp16 ? in->data<half_t, cl::Buffer>()
+                             : in->data<float, cl::Buffer>(),
+                    in->numel() * (use_fp16 ? sizeof(uint16_t) : sizeof(float)),
+                    IoDirection::DtoH);
+                VLOG(1) << name << ":" << in->numel();
+                if (use_fp16) {
+                  HalfArray2FloatArray(static_cast<half_t*>(in_data_v),
+                                       real_out_v.data(),
+                                       in->numel());
+                } else {
+                  memcpy(real_out_v.data(),
+                         in_data_v,
+                         in->numel() * sizeof(float));
+                }
+                *mean =
+                    compute_mean<float>(real_out_v.data(), real_out_v.size());
+                *std_dev = compute_standard_deviation<float>(
+                    real_out_v.data(), in->numel(), true, *mean);
+                *ave_grow_rate = compute_average_grow_rate<float>(
+                    real_out_v.data(), real_out_v.size());
+                std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+                real_out_t->Resize(in->dims());
+                float* real_out_data = real_out_t->mutable_data<float>();
+                memcpy(real_out_data,
+                       real_out_v.data(),
+                       real_out_v.size() * sizeof(float));
+                if (write_result_to_file) {
+                  write_tensorfile<float>(real_out_t.get(), name, log_dir_);
+                }
+                return;
+              }
+            }
           }
-          *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
-          *std_dev = compute_standard_deviation<float>(
-              real_out_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
-                                                            real_out_v.size());
-          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
-          real_out_t->Resize(in->dims());
-          float* real_out_data = real_out_t->mutable_data<float>();
-          memcpy(real_out_data,
-                 real_out_v.data(),
-                 real_out_v.size() * sizeof(float));
-          if (write_result_to_file) {
-            write_tensorfile<float>(real_out_t.get(), name, log_dir_);
-          }
-          return;
         }
         default:
           *mean = -222222222222;
           *std_dev = -22222222222;
           *ave_grow_rate = -22222222222;
-          LOG(ERROR) << unsupported_error_log;
+          LOG(INFO)
+              << "Unsupported data layout profile for kernel registered on " +
+                     DataLayoutToStr(layout_type);
           return;
       }
 #endif

@@ -24,7 +24,6 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // TODO(zhupengyang): support by reshape or squeeze
   NNADAPTER_CHECK_NE(x_operand->type.dimensions.count, 1);
-  NNADAPTER_CHECK_NE(y_operand->type.dimensions.count, 1);
 
   // Convert to GE operators
   auto x_operator = converter->GetMappedOperator(x_operand);

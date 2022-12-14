@@ -58,6 +58,32 @@ static int elementwise(ElementwiseTypeCode eltwise_type,
     for (int64_t i = 0; i < output_count; i++) {
       output_data[i] = broadcasted_input0_data[i] * broadcasted_input1_data[i];
     }
+  } else if (eltwise_type == FLOOR_DIV) {
+    for (int64_t i = 0; i < output_count; i++) {
+      output_data[i] = static_cast<T>(
+          ::trunc(broadcasted_input0_data[i] / broadcasted_input1_data[i]));
+    }
+  } else if (eltwise_type == DIV) {
+    for (int64_t i = 0; i < output_count; i++) {
+      output_data[i] = broadcasted_input0_data[i] / broadcasted_input1_data[i];
+    }
+  } else if (eltwise_type == MAX) {
+    for (int64_t i = 0; i < output_count; i++) {
+      output_data[i] = broadcasted_input0_data[i] > broadcasted_input1_data[i]
+                           ? broadcasted_input0_data[i]
+                           : broadcasted_input1_data[i];
+    }
+  } else if (eltwise_type == MIN) {
+    for (int64_t i = 0; i < output_count; i++) {
+      output_data[i] = broadcasted_input0_data[i] > broadcasted_input1_data[i]
+                           ? broadcasted_input1_data[i]
+                           : broadcasted_input0_data[i];
+    }
+  } else if (eltwise_type == POW) {
+    for (int64_t i = 0; i < output_count; i++) {
+      output_data[i] =
+          ::pow(broadcasted_input0_data[i], broadcasted_input1_data[i]);
+    }
   } else {
     return -1;
   }

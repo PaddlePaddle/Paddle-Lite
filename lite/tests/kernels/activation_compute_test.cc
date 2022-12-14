@@ -762,60 +762,6 @@ TEST(Activation_tanh, precision) {
   }
 }
 
-TEST(Activation_swish, precision) {
-  Place place;
-  float abs_error = 2e-5;
-  std::vector<float> coefs{0.01, 0.1};
-  std::vector<std::vector<int64_t>> test_dims{
-      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  abs_error = 1e-5;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_error = 2e-5;
-  coefs = {1.};
-  for (auto& dims : test_dims) {
-    if (dims.size() == 1) {
-      dims.push_back(1);
-    }
-  }
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-
-  for (auto dims : test_dims) {
-    for (auto coef : coefs) {
-      TestAct(place,
-              "def",
-              0.01,
-              6,
-              "all",
-              coef,
-              1.0,
-              DDim(dims),
-              "swish",
-              SWISH,
-              abs_error);
-    }
-  }
-}
-
 TEST(Activation_relu6, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -882,6 +828,8 @@ TEST(Activation_log, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
@@ -930,6 +878,8 @@ TEST(Activation_exp, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
@@ -974,6 +924,8 @@ TEST(Activation_floor, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-2;
@@ -1080,6 +1032,8 @@ TEST(Activation_square, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #else
   return;
 #endif
@@ -1124,6 +1078,8 @@ TEST(Activation_gelu, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
 #else
   return;
@@ -1366,6 +1322,8 @@ TEST(Activation_abs, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
@@ -1456,6 +1414,162 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
                               "hard_sigmoid",
                               HARD_SIGMOID,
                               abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp32, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    TestAct(place,
+            "sigmoid_fp32_precision",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "sigmoid",
+            SIGMOID,
+            abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp32, performance) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    TestActPerformance(place,
+                       "sigmoid_fp32_performance",
+                       0.01,
+                       6,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_swish, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  coefs = {1.};
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    for (auto coef : coefs) {
+      TestAct(place,
+              "def",
+              0.01,
+              6,
+              "all",
+              coef,
+              1.0,
+              DDim(dims),
+              "swish",
+              SWISH,
+              abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish, performance) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
+    }
   }
 }
 

@@ -81,18 +81,18 @@ Paddle Lite Python 版本支持的平台包括：Windows X86_CPU / macOS X86_CPU
 
 如果是 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
 
-如果是 ARM Linux 平台，需要编译 Paddle Lite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
+如果是 ARM Linux 平台，需要编译 Paddle Lite ，环境配置参考 [源码编译](../source_compile/compile_env)，推荐使用 docker。
 
 ### 2. 安装python预测库
 
 PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台的 pip 安装包，执行如下命令。
 
 ```shell
-# 当前最新版本是 2.10rc0
-python -m pip install paddlelite==2.10rc0
+# 当前最新版本是 2.12
+python -m pip install paddlelite==2.12
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/arm_linux_compile_arm_linux)编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考 [ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux) 编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 

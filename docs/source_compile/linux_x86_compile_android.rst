@@ -15,10 +15,10 @@ Linux x86 环境下编译适用于 Android 的库
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <../quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <./v2.3_compile.html>`_\ 。
 
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
@@ -34,7 +34,7 @@ Linux x86 环境下编译适用于 Android 的库
      - Android 4.1 及以上（芯片版本为 ARM v7 时）\ :raw-html-m2r:`<br>` Android 5.0 及以上（芯片版本为 ARM v8 时）
    * - **芯片层**
      - x86 架构
-     - arm64-v8a / armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/support_hardware.html>`_\ 章节。
+     - arm64-v8a / armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <../quick_start/support_hardware.html>`_\ 章节。
 
 
 [1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
@@ -91,6 +91,13 @@ java 环境
    echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
    source ~/.bashrc
 
+   # 6. (可选) 删除 debug 编译参数，减小二进制体积 参照 https://github.com/android/ndk/issues/243
+   # 用编辑器打开 $ANDROID_NDK/build/cmake/android.toolchain.cmake 删除 "-g" 这行
+   list(APPEND ANDROID_COMPILER_FLAGS
+     -g
+     -DANDROID
+     ...
+
 了解基础编译参数
 ----------------
 
@@ -136,7 +143,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <../quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
@@ -248,8 +255,6 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
 .. include:: include/multi_device_support/nnadapter_support_huawei_kirin_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_mediatek_apu.rst
-
-.. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_verisilicon_timvx.rst
 

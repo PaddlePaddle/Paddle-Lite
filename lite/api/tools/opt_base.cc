@@ -175,10 +175,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "intel_fpga") {
-      valid_places_.emplace_back(TARGET(kIntelFPGA));
-      valid_places_.emplace_back(
-          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else if (target_repr == "rockchip_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -378,9 +374,8 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|"
-      "mediatek_apu|huawei_kirin_npu|amlogic_npu|verisilicon_timvx|"
+      "`set_valid_places(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
       "eeasytech_npu|android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
@@ -423,10 +418,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
-      "qualcomm_qnn|kunlunxin_xtcl)`\n"
+      "`--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -443,16 +437,14 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "operators of "
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
-      "qualcomm_qnn|kunlunxin_xtcl)`"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi|"
-      "qualcomm_qnn|kunlunxin_xtcl)`"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
       "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
@@ -530,25 +522,32 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
-                                                  "kBM",
-                                                  "kMLU",
-                                                  "kIntelFPGA",
+                                                  "cambricon_mlu",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
-                                                  "rockchip_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
-                                                  "amlogic_npu",
                                                   "verisilicon_timvx",
                                                   "eeasytech_npu",
                                                   "android_nnapi",
                                                   "qualcomm_qnn",
                                                   "kunlunxin_xtcl"};
-  const std::vector<std::string> readable_valid_targets = {
-      "ARM",       "OpenCL",      "Metal",         "百度XPU",    "Host",
-      "X86",       "比特大陆NPU", "寒武纪MLU",     "英特尔FPGA", "华为昇腾NPU",
-      "联发科APU", "瑞芯微NPU",   "华为麒麟NPU",   "颖脉NNA",    "晶晨NPU",
-      "TIM-VX",    "亿智NPU",     "Android NNAPI", "高通QNN",    "昆仑芯XTCL"};
+  const std::vector<std::string> readable_valid_targets = {"ARM",
+                                                           "OpenCL",
+                                                           "Metal",
+                                                           "百度 XPU",
+                                                           "Host",
+                                                           "x86",
+                                                           "寒武纪 MLU",
+                                                           "华为昇腾 NPU",
+                                                           "联发科 APU",
+                                                           "华为麒麟 NPU",
+                                                           "颖脉 NNA",
+                                                           "TIM-VX",
+                                                           "亿智 NPU",
+                                                           "Android NNAPI",
+                                                           "高通 QNN",
+                                                           "昆仑芯 XTCL"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
@@ -790,17 +789,10 @@ void OptBase::InitSupportedOpInfo() {
   std::vector<std::string> collect_targets = {"kUnk",
                                               "kHost",
                                               "kX86",
-                                              "kCUDA",
                                               "kARM",
                                               "kOpenCL",
                                               "kAny",
-                                              "kFPGA",
-                                              "kNPU",
                                               "kXPU",
-                                              "kBM",
-                                              "kMLU",
-                                              "kRKNPU",
-                                              "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
 
@@ -810,16 +802,12 @@ void OptBase::InitSupportedOpInfo() {
                                      "kMetal",
                                      "kXPU",
                                      "kHost",
-                                     "kIntelFPGA",
                                      "kX86",
-                                     "kBM",
-                                     "kMLU",
+                                     "cambricon_mlu",
                                      "huawei_ascend_npu",
                                      "mediatek_apu",
-                                     "rockchip_npu",
                                      "huawei_kirin_npu",
                                      "imagination_nna",
-                                     "amlogic_npu",
                                      "verisilicon_timvx",
                                      "eeasytech_npu",
                                      "android_nnapi",

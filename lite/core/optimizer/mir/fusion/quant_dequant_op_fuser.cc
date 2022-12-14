@@ -707,24 +707,24 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
 
   // 2. Update op_info of the quantized op
   for (auto* quantized_node : output_var_node->outlinks) {
-    auto* op_info = quantized_node->stmt()->mutable_op_info();
-    op_info->UpdateAllInputs(output_var_name, input_var_name);
-    op_info->SetAttr<int>("bit_length", bit_length);
-    std::string op_type = op_info->Type();
+    auto op_info = *quantized_node->stmt()->mutable_op_info();
+    op_info.UpdateAllInputs(output_var_name, input_var_name);
+    op_info.SetAttr<int>("bit_length", bit_length);
+    std::string op_type = op_info.Type();
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
-      op_info->SetAttr("enable_int8", true);
+      op_info.SetAttr("enable_int8", true);
     }
-    op_info->SetInputScale(input_var_name, scales);
+    op_info.SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
       CHECK(op_out_var_node->IsArg());
       for (auto out_scale_node : op_out_var_node->outlinks) {
         if (!out_scale_node->IsStmt()) continue;
         auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
-        auto* out_scale_op_info = out_scale_node->stmt()->op_info();
-        if (out_scale_op_info->Type() != "quantize_linear") continue;
-        if (!out_scale_op_info->HasInput("Scale")) continue;
-        std::string out_scale_name = out_scale_op_info->Input("Scale").front();
+        auto out_scale_op_info = *out_scale_node->stmt()->op_info();
+        if (out_scale_op_info.Type() != "quantize_linear") continue;
+        if (!out_scale_op_info.HasInput("Scale")) continue;
+        std::string out_scale_name = out_scale_op_info.Input("Scale").front();
         auto* out_scale_tensor =
             out_scale_scope->FindMutableTensor(out_scale_name);
         auto* out_scale_data = out_scale_tensor->data<float>();
@@ -739,11 +739,11 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
                        [&out_bit_length](float x) {
                          return x / ((1 << (out_bit_length - 1)) - 1);
                        });
-        op_info->SetOutputScale(op_out_var_node->arg()->name, out_scales);
+        op_info.SetOutputScale(op_out_var_node->arg()->name, out_scales);
         break;
       }
     }
-    quantized_node->stmt()->op()->Attach(*op_info, scope);
+    quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
   // 3. Delete nodes and edges
@@ -801,9 +801,10 @@ void DequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
   auto out_name = output_node->arg()->name;
   for (auto quantized_node : output_node->outlinks) {
     // save input scale in quantized op by input argname + index
-    auto* op_info = quantized_node->stmt()->mutable_op_info();
-    op_info->UpdateAllInputs(out_name, in_name);
-    op_info->SetInputScale(in_name, scales);
+    auto op_info = *quantized_node->stmt()->mutable_op_info();
+    op_info.UpdateAllInputs(out_name, in_name);
+    op_info.SetInputScale(in_name, scales);
+    quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
     IR_NODE_LINK_TO(input_node, quantized_node)
   }
 

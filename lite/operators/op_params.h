@@ -451,7 +451,7 @@ struct PoolParam : ParamBase {
   std::vector<int> ksize{};
   bool global_pooling{
       false};  // if true, knernel size and paddings will be ignored
-  std::vector<int> strides{1, 1};
+  std::vector<int> strides;
   /* paddings type change
    * from std::vector<int> to std::shared_ptr<std::vector<int>>
    * to support dynamically modify padding
@@ -1765,6 +1765,12 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  int mask_dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+};
+
+struct XPUQuickGeluParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 struct XPUFcParam : ParamBase {
@@ -2318,6 +2324,16 @@ struct SetValueParam : ParamBase {
   std::vector<double> fp64_values{};
   std::vector<float> fp16_values{};
   std::vector<int64_t> shape{};
+};
+
+struct ShareDataParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct RoundParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

@@ -73,7 +73,7 @@ Paddle 模型量化包含三种量化方法，分别是[动态离线量化](./qu
 
 #### 3.2 量化模型预测
 
-和 FP32 模型一样，转换后的量化模型可以在 Android/IOS APP 中加载预测，建议参考[C++ Demo](./cpp_demo)、[Java Demo](./java_demo)、[Android/IOS Demo](../demo_guides/android_app_demo)。
+和 FP32 模型一样，转换后的量化模型可以在 Android/iOS APP 中加载预测，建议参考[C++ Demo](./cpp_demo)、[Java Demo](./java_demo)、[Android/iOS Demo](../demo_guides/android_app_demo)。
 
 
 ### FAQ

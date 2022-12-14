@@ -97,6 +97,27 @@ void ExpandV2Compute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+using expand_v2_bool =
+    paddle::lite::kernels::host::ExpandV2Compute<bool, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_bool, def_bool)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_shapes_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
 using expand_v2_float =
     paddle::lite::kernels::host::ExpandV2Compute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_float, def)

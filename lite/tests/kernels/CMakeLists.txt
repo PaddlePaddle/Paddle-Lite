@@ -15,6 +15,7 @@ lite_cc_test(test_kernel_decode_bboxes_compute SRCS decode_bboxes_compute_test.c
 lite_cc_test(test_kernel_box_coder_compute SRCS box_coder_compute_test.cc)
 lite_cc_test(test_kernel_activation_compute SRCS activation_compute_test.cc)
 lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc)
+lite_cc_test(test_kernel_argmin_compute SRCS argmin_compute_test.cc)
 lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc)
 lite_cc_test(test_kernel_reverse_compute SRCS reverse_compute_test.cc)
 lite_cc_test(test_kernel_index_select_compute SRCS index_select_compute_test.cc)

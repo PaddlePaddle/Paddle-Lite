@@ -4,7 +4,7 @@
 
 2. 编译
 
-参考[编译环境准备](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)准备编译环境。
+参考[编译环境准备](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_env.html)准备编译环境。
 
 执行下面命令，下载PaddleLite代码，切换到特定版本分支。
 

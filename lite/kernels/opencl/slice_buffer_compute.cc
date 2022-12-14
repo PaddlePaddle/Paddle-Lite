@@ -53,14 +53,15 @@ void SliceCompute<T, PType>::PrepareForRun() {
   slice_param_ = this->param_.template get_mutable<param_t>();
   auto param = *slice_param_;
 
-  if (std::is_same<T, float>::value) {
-    build_options_ += " -DDTYPE=" + std::string{"float"};
-  } else if (std::is_same<T, int>::value) {
+  if (std::is_same<T, int>::value) {
     build_options_ += " -DDTYPE=" + std::string{"int"};
   } else if (std::is_same<T, int64_t>::value) {
     build_options_ += " -DDTYPE=" + std::string{"long"};
   } else {
-    LOG(FATAL) << "Not support data type";
+    build_options_ +=
+        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+            ? " -DDTYPE=half"
+            : " -DDTYPE=float";
   }
 
   VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -169,10 +170,6 @@ template <typename T, PrecisionType PType>
 void SliceCompute<T, PType>::Run() {
   auto& context = this->ctx_->template As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  auto* x_buf = slice_param_->X->template data<T, cl::Buffer>();
-  auto* out_buf =
-      slice_param_->Out->template mutable_data<T, cl::Buffer>(TARGET(kOpenCL));
-
   auto in = slice_param_->X;
   std::vector<int> in_dims(in->dims().size());
   for (auto i = 0; i < in->dims().size(); i++) {
@@ -183,10 +180,22 @@ void SliceCompute<T, PType>::Run() {
   cl_int status;
   int arg_idx = 0;
   auto kernel = kernel_;
-  status = kernel.setArg(arg_idx++, *x_buf);
-  CL_CHECK_FATAL(status);
-  status = kernel.setArg(arg_idx++, *out_buf);
-  CL_CHECK_FATAL(status);
+  if (std::is_same<T, int>::value || std::is_same<T, int64_t>::value) {
+    auto* x_buf = slice_param_->X->template data<T, cl::Buffer>();
+    auto* out_buf = slice_param_->Out->template mutable_data<T, cl::Buffer>(
+        TARGET(kOpenCL));
+    status = kernel.setArg(arg_idx++, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, *out_buf);
+    CL_CHECK_FATAL(status);
+  } else {
+    auto* x_buf = GET_BUFFER_GPU(slice_param_->X);
+    auto* out_buf = MUTABLE_BUFFER_GPU(slice_param_->Out);
+    status = kernel.setArg(arg_idx++, *x_buf);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(arg_idx++, *out_buf);
+    CL_CHECK_FATAL(status);
+  }
   status = kernel.setArg(arg_idx++, *src_step_buf_);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(arg_idx++, *dst_step_buf_);
@@ -228,6 +237,23 @@ REGISTER_LITE_KERNEL(slice, kOpenCL, kFloat, kNCHW, slice_float, def)
                {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kFloat))})
+    .Finalize();
+
+using slice_fp16 =
+    paddle::lite::kernels::opencl::SliceCompute<uint16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(slice, kOpenCL, kFP16, kNCHW, slice_fp16, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kFP16))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kFP16))})
     .Finalize();
 
 using slice_int32 =

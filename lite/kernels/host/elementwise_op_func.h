@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstring>
 #include <functional>
 #include <utility>
@@ -410,6 +411,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
       }
       break;
     }
+
     default: {
       return;  // code should never goes to here
     }
@@ -525,6 +527,7 @@ void common_elmentwise_op_naive_cpu(
       }
       break;
     }
+    default: { return; }
   }
 }
 

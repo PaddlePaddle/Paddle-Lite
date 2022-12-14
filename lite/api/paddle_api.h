@@ -185,6 +185,7 @@ class LITE_API ConfigBase {
   bool metal_use_memory_reuse_{false};
 
   std::vector<std::string> discarded_passes_{};
+  std::map<TargetType, std::shared_ptr<void>> target_configs_;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -346,6 +347,10 @@ class LITE_API ConfigBase {
   const std::vector<std::string> get_discarded_passes() const {
     return discarded_passes_;
   }
+
+  std::map<TargetType, std::shared_ptr<void>> target_configs() const {
+    return target_configs_;
+  }
 };
 
 class LITE_API CxxModelBuffer {
@@ -455,6 +460,8 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_sdnn_num(const int num);
   void set_xpu_local_quant(bool local_quant = false);
   void set_xpu_compute_precision(const std::string& precision = "int16");
+  void set_xpu_dump_tensor_path(const std::string dump_tensor_path = "");
+  void set_xpu_dump_log_path(const std::string dump_log_path = "");
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

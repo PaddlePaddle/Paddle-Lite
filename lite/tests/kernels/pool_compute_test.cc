@@ -315,7 +315,8 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
   for (auto pooling_type : {"max", "avg"}) {
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
-#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) && \
+    !defined(LITE_WITH_OPENCL)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {1, 1}, {2, 2});
     TestPoolHelper(place,
@@ -353,7 +354,8 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
                      {1, 1},
                      {0, 0},
                      {ksize, ksize});
-#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) && \
+    !defined(LITE_WITH_OPENCL)
       TestPoolHelper(place,
                      abs_error,
                      {2, 3, 6, 7},
@@ -398,10 +400,12 @@ TEST(Pool, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
 #else
   return;
 #endif
-
   TestPoolGlobal(place, abs_error);
   TestPoolAlgorithm(place, abs_error);
   TestPoolStrides(place, abs_error);

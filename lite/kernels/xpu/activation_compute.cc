@@ -81,6 +81,18 @@ void SigmoidCompute<T, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
+template <typename T, PrecisionType PType>
+void SiluCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  int r = xdnn::swish(ctx.GetRawContext(),
+                      param.X->template data<T>(),
+                      param.Out->template mutable_data<T>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 void AbsCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
@@ -357,6 +369,19 @@ REGISTER_LITE_KERNEL(sigmoid, kXPU, kFloat, kNCHW, sigmoidFP32, def)
 REGISTER_LITE_KERNEL(sigmoid, kXPU, kFP16, kNCHW, sigmoidFP16, sigmoidFP16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+using siluFP32 =
+    paddle::lite::kernels::xpu::SiluCompute<float, PRECISION(kFloat)>;
+using siluFP16 =
+    paddle::lite::kernels::xpu::SiluCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(silu, kXPU, kFloat, kNCHW, siluFP32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(silu, kXPU, kFP16, kNCHW, siluFP16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

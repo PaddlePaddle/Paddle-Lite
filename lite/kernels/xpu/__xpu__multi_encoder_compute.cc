@@ -196,6 +196,8 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   // prepare act_type
   if (param.act_type == "gelu") {
     qkv_act = xdnn::Activation_t::GELU;
+  } else if (param.act_type == "__xpu__quick_gelu") {
+    qkv_act = xdnn::Activation_t::QUICK_GELU;
   } else if (param.act_type != "relu") {
     CHECK(false) << "Invalid QKV Activation Type: " << param.act_type;
   }
@@ -255,6 +257,50 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
         arg_ln_bias_,
         qkv_attn_param);
     CHECK_EQ(r, 0);
+  } else if (param.mask == nullptr) {
+    // When no mask input, like VIT, create LOD to act as vsl.
+    int batch = static_cast<int>(param.input->dims()[0]);
+    int max_seqlen = static_cast<int>(param.input->dims()[1]);
+    std::vector<int> lod;
+    for (int i = 0; i < batch + 1; i++) {
+      lod.push_back(i * max_seqlen);
+    }
+    query_lod = {lod.data(), static_cast<int>(lod.size()), nullptr};
+    // No need to pad, no matter slice or not
+    int max_pad_seqlen = -1;
+    xdnn::QKVAttnParam qkv_attn_param(query_lod, /* lod */
+                                      param.head_num,
+                                      param.size_per_head,
+                                      qkv_act,
+                                      slice_idx,
+                                      true /* qkv fusion */,
+                                      max_pad_seqlen,
+                                      param.hidden_dim,
+                                      param.norm_before, /*is_pre_norm*/
+                                      param.per_channel);
+    qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
+    if (relative_type_ == 1) {
+      qkv_attn_param.relative_type = relative_type_;
+      qkv_attn_param.max_pos_len = param.max_pos_len;
+      qkv_attn_param.relative_pos.assign(roformer_embedding_.begin(),
+                                         roformer_embedding_.end());
+    }
+    qkv_attn_param.scale_of_hidden_units = param.ffn_hidden_dim_scale;
+    if (std::is_same<TGEMM, int8_t>::value) {
+      CHECK_GT(fc_input_max_.size(), 0);
+    }
+    int r = xdnn::transformer_encoder<T, TW, TGEMM>(
+        ctx.GetRawContext(),
+        in,
+        *(XPUMultiEncoderCompute::get_weight<TW>()),
+        out,
+        fc_input_max_,
+        fc_weight_max_,
+        arg_fc_bias_,
+        arg_ln_scale_,
+        arg_ln_bias_,
+        qkv_attn_param);
+    CHECK_EQ(r, 0);
   } else {
     // no vsl
     int batch = static_cast<int>(param.input->dims()[0]);
@@ -262,8 +308,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());
-    CHECK_EQ(param.ffn_hidden_dim_scale, 4)
-        << "xpu don't support ffn_hidden_dim_scale!=4 when no vsl";
+    // xpu1 don't support ffn_hidden_dim_scale!=4 when no vsl
+    if (ctx.GetRawContext()->dev().type() == xdnn::kXPU1) {
+      CHECK_EQ(param.ffn_hidden_dim_scale, 4)
+          << "xpu don't support ffn_hidden_dim_scale!=4 when no vsl";
+    }
     xdnn::QKVAttnParam qkv_attn_param(batch,
                                       max_seqlen,
                                       param.head_num,
@@ -282,6 +331,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
       qkv_attn_param.relative_pos.assign(roformer_embedding_.begin(),
                                          roformer_embedding_.end());
     }
+    qkv_attn_param.scale_of_hidden_units = param.ffn_hidden_dim_scale;
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,

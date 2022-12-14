@@ -1,4 +1,4 @@
-# OpenCL 部署示例
+# OpenCL
 
 Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行，以充分利用 GPU 硬件算力，提高推理性能。在执行时会优先在 GPU 上执行算子，如果算子没有 GPU 实现，则该算子会回退到 CPU 上执行。
 
@@ -23,15 +23,18 @@ Paddle Lite 同时支持在 Linux x86 环境和 macOS 环境下编译适用于 A
 重点编译命令为：
 
 ```shell
-# 有 2 种编译方式，tiny_publish 方式编译，适用于实际部署；full_publish 方式编译，会生成更多编译产物。
-# 编译时二选一即可。
-# 方式 1：tiny_publish 方式编译，适用于部署
-./lite/tools/build_android.sh --with_opencl=ON
-# 方式 2：full_publish 方式编译，会生成更多编译产物
-./lite/tools/build_android.sh --with_opencl=ON full_publish
-# 注：
-#    编译帮助请执行: ./lite/tools/build_android.sh help
-#    为了方便调试，建议在编译时加入选项 --with_log=ON
+有 2 种编译方式，tiny_publish 方式编译，适用于实际部署；full_publish 方式编译，会生成更多编译产物。
+
+编译时二选一即可。
+方式 1：tiny_publish 方式编译，适用于部署
+$ ./lite/tools/build_android.sh --with_opencl=ON
+
+方式 2：full_publish 方式编译，会生成更多编译产物
+$ ./lite/tools/build_android.sh --with_opencl=ON full_publish
+
+注：
+编译帮助请执行: ./lite/tools/build_android.sh help
+为了方便调试，建议在编译时加入选项 --with_log=ON
 ```
 
 
@@ -87,64 +90,64 @@ mobile_light 示例为使用 `MobileConfig` 加载并解析 `opt` 优化过的 `
 
 具体执行步骤如下：
 ```shell
-# 1. 准备 .nb 模型
-# 使用 opt 工具手动转换
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
-./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
+1. 准备 .nb 模型
+使用 opt 工具手动转换
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+$ ./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
                          --valid_targets=opencl,arm \
                          --optimize_out=mobilenetv1_opt_opencl
 
-# 2. 编译
-cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light
-make
-cd -
+2. 编译
+$ cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light
+$ make
+$ cd -
 
-# 3. 推送可执行文件、预测库、模型文件到手机（请提前确保手机已连接到宿主机并可通过 adb devices 命令查询到设备）
-adb shell mkdir /data/local/tmp/opencl
-adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api /data/local/tmp/opencl/
-adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/opencl/
-adb push mobilenetv1_opt_opencl.nb data/local/tmp/opencl/
+3. 推送可执行文件、预测库、模型文件到手机（请提前确保手机已连接到宿主机并可通过 adb devices 命令查询到设备）
+$ adb shell mkdir /data/local/tmp/opencl
+$ adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_light/mobilenetv1_light_api /data/local/tmp/opencl/
+$ adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/opencl/
+$ adb push mobilenetv1_opt_opencl.nb data/local/tmp/opencl/
 
-# 4. 在宿主机上运行
-adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
-           export GLOG_v=4; \
-           /data/local/tmp/opencl/mobilenetv1_light_api \
-           /data/local/tmp/opencl/mobilenetv1_opt_opencl.nb \
-           1,3,224,224 \
-           100 10 0 1 1 0"
-           # repeats=100
-           # warmup=10
-           # power_mode=0 绑定大核
-           # thread_num=1
-           # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
-           # print_output=0 不打印模型输出 tensors 详细数据
+4. 在宿主机上运行
+$ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
+            export GLOG_v=4; \
+            /data/local/tmp/opencl/mobilenetv1_light_api \
+            /data/local/tmp/opencl/mobilenetv1_opt_opencl.nb \
+            1,3,224,224 \
+            100 10 0 1 1 0"
+            # repeats=100
+            # warmup=10
+            # power_mode=0 绑定大核
+            # thread_num=1
+            # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
+            # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 #### mobile_full 示例
 ```shell
-# 1. 准备 Paddle 模型
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+1. 准备 Paddle 模型
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
 
-# 2. 编译
-cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full
-make
-cd -
+2. 编译
+$ cd build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full
+$ make
+$ cd -
 
-# 3. 推送可执行文件、预测库、模型文件到手机（请提前确保手机已连接到宿主机并可通过 adb devices 命令查询到设备）
-adb shell mkdir /data/local/tmp/opencl
-adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api /data/local/tmp/opencl/
-adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/opencl/
-adb push mobilenet_v1 /data/local/tmp/opencl/
+3. 推送可执行文件、预测库、模型文件到手机（请提前确保手机已连接到宿主机并可通过 adb devices 命令查询到设备）
+$ adb shell mkdir /data/local/tmp/opencl
+$ adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/demo/cxx/mobile_full/mobilenetv1_full_api /data/local/tmp/opencl/
+$ adb push build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so /data/local/tmp/opencl/
+$ adb push mobilenet_v1 /data/local/tmp/opencl/
 
-# 4. 在宿主机上运行
-adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
-           export GLOG_v=4; \
-           /data/local/tmp/opencl/mobilenetv1_full_api \
-               --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
-               --optimized_model_dir=/data/local/tmp/opencl/mobilenetv1_opt_opencl \
-               --warmup=10 \
-               --repeats=100 \
-               --use_gpu=true"
+4. 在宿主机上运行
+$ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
+             export GLOG_v=4; \
+             /data/local/tmp/opencl/mobilenetv1_full_api \
+             --model_dir=/data/local/tmp/opencl/mobilenet_v1 \
+             --optimized_model_dir=/data/local/tmp/opencl/mobilenetv1_opt_opencl \
+             --warmup=10 \
+             --repeats=100 \
+             --use_gpu=true"
 ```
 
 ## 3. 在 ARMLinux 系统上运行
@@ -156,18 +159,19 @@ Paddle Lite 同时支持在 Linux x86 环境下和 ARMLinux 环境下编译适�
 重点编译命令为：
 
 ```shell
-# 有 2 种编译方式，tiny_publish 方式编译，适用于实际部署；full_publish 方式编译，会生成更多编译产物。
-# 编译时二选一即可。
-#
-# 宿主机是 Linux x86 环境或 ARMLinux 环境时
-# 方式 1：tiny_publish 方式编译，适用于部署
-./lite/tools/build_linux.sh --with_opencl=ON
-# 方式 2：full_publish 方式编译，会生成更多编译产物
-./lite/tools/build_linux.sh --with_opencl=ON full_publish
-#
-# 注：
-#    编译帮助请执行: ./lite/tools/build_linux.sh help
-#    build_linux.sh 脚本中默认已开启 LOG
+有 2 种编译方式，tiny_publish 方式编译，适用于实际部署；full_publish 方式编译，会生成更多编译产物。
+编译时二选一即可。
+
+宿主机是 Linux x86 环境或 ARMLinux 环境时
+方式 1：tiny_publish 方式编译，适用于部署
+$ ./lite/tools/build_linux.sh --with_opencl=ON
+
+方式 2：full_publish 方式编译，会生成更多编译产物
+$ ./lite/tools/build_linux.sh --with_opencl=ON full_publish
+
+注：
+编译帮助请执行: ./lite/tools/build_linux.sh help
+build_linux.sh 脚本中默认已开启 LOG
 ```
 
 编译成功后，会在`Paddle-Lite/build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl`目录下生成编译产物，主要目录结构如下：
@@ -201,32 +205,32 @@ mobilenetv1_light 示例为使用 `MobileConfig` 加载并解析 `opt` 优化过
 
 以宿主机为 Linux x86 环境为例，具体执行步骤如下：
 ```shell
-# 1. 准备 .nb 模型
-# 使用 opt 工具手动转换
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
-./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
-                         --valid_targets=opencl,arm \
-                         --optimize_out=mobilenetv1_opt_opencl
+1. 准备 .nb 模型
+使用 opt 工具手动转换
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+$ ./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
+                           --valid_targets=opencl,arm \
+                           --optimize_out=mobilenetv1_opt_opencl
 
-# 2. 编译
-cd build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_light
-bash build.sh
-cd -
+2. 编译
+$ cd build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_light
+$ bash build.sh
+$ cd -
 
-# 3. 拷贝可执行文件、预测库、模型文件到设备：可通过 scp 或其他方式将三个文件拷贝到开发板
-ssh name@ip
-mkdir ~/opencl
-exit
-scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_light/mobilenetv1_light_api name@ip:~/opencl
-scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so name@ip:~/opencl
-scp -r mobilenetv1_opt_opencl.nb name@ip:~/opencl
+3. 拷贝可执行文件、预测库、模型文件到设备：可通过 scp 或其他方式将三个文件拷贝到开发板
+$ ssh name@ip
+$ mkdir ~/opencl
+$ exit
+$ scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_light/mobilenetv1_light_api name@ip:~/opencl
+$ scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so name@ip:~/opencl
+$ scp -r mobilenetv1_opt_opencl.nb name@ip:~/opencl
 
-# 4. 在设备上运行
-ssh name@ip
-cd ~/opencl
-export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH; \
-export GLOG_v=4; \
-./mobilenetv1_light_api \
+4. 在设备上运行
+$ ssh name@ip
+$ cd ~/opencl
+$ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+$ export GLOG_v=4
+$ ./mobilenetv1_light_api \
     mobilenetv1_opt_opencl.nb \
     1,3,224,224 \
     100 10 0 1 1 0
@@ -240,28 +244,28 @@ export GLOG_v=4; \
 
 #### mobilenetv1_full 示例
 ```shell
-# 1. 准备 Paddle 模型
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+1. 准备 Paddle 模型
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
 
-# 2. 编译
-cd build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_full
-bash build.sh
-cd -
+2. 编译
+$ cd build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_full
+$ bash build.sh
+$ cd -
 
-# 3. 拷贝可执行文件、预测库、模型文件到设备：可通过 scp 或其他方式将三个文件拷贝到开发板
-ssh name@ip
-mkdir ~/opencl
-exit
-scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_full/mobilenetv1_full_api name@ip:~/opencl
-scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so name@ip:~/opencl
-scp -r mobilenet_v1 name@ip:~/opencl
+3. 拷贝可执行文件、预测库、模型文件到设备：可通过 scp 或其他方式将三个文件拷贝到开发板
+$ ssh name@ip
+$ mkdir ~/opencl
+$ exit
+$ scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/demo/cxx/mobilenetv1_full/mobilenetv1_full_api name@ip:~/opencl
+$ scp build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so name@ip:~/opencl
+$ scp -r mobilenet_v1 name@ip:~/opencl
 
-# 4. 在设备上运行
-ssh name@ip
-cd ~/opencl
-export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH; \
-export GLOG_v=4; \
-./mobilenetv1_full_api \
+4. 在设备上运行
+$ ssh name@ip
+$ cd ~/opencl
+$ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+$ export GLOG_v=4
+$ ./mobilenetv1_full_api \
     --model_dir=./mobilenet_v1 \
     --optimized_model_dir=mobilenetv1_opt_opencl \
     --warmup=10 \
@@ -276,14 +280,15 @@ Paddle Lite 支持在 macOS 环境下编译适用于 macOS 的库。宿主机必
 重点编译命令为：
 
 ```shell
-# 宿主机是 macOS x86 环境时
-./lite/tools/build_macos.sh --with_opencl=ON x86
-# 宿主机是 macOS arm64 环境时
-./lite/tools/build_macos.sh --with_opencl=ON arm64
-#
-# 注：
-#    编译帮助请执行: ./lite/tools/build_macos.sh help
-#    build_linux.sh 脚本中默认已开启 LOG
+宿主机是 macOS x86 环境时
+$ ./lite/tools/build_macos.sh --with_opencl=ON x86
+
+宿主机是 macOS arm64 环境时
+$ ./lite/tools/build_macos.sh --with_opencl=ON arm64
+
+注：
+编译帮助请执行: ./lite/tools/build_macos.sh help
+build_linux.sh 脚本中默认已开启 LOG
 ```
 
 以宿主机为 macOS x86 环境为例，编译成功后，会在`Paddle-Lite/build.lite.x86.opencl/inference_lite_lib`目录下生成编译产物，主要目录结构如下：
@@ -319,49 +324,49 @@ mobilenetv1_light 示例为使用 `MobileConfig` 加载并解析 `opt` 优化过
 
 以宿主机为 macOS x86 环境为例，具体执行步骤如下：
 ```shell
-# 1. 准备 .nb 模型
-# 使用 opt 工具手动转换
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
-./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
-                         --valid_targets=opencl,x86 \
-                         --optimize_out=mobilenetv1_opt_x86_opencl
-# 备注：当宿主机为 macOS arm64 环境时，如上命令中的 --valid_targets 应设置为 opencl,arm，其他命令保持不变。
+1. 准备 .nb 模型
+使用 opt 工具手动转换
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+$ ./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
+                           --valid_targets=opencl,x86 \
+                           --optimize_out=mobilenetv1_opt_x86_opencl
+备注：当宿主机为 macOS arm64 环境时，如上命令中的 --valid_targets 应设置为 opencl,arm，其他命令保持不变。
 
-# 2. 编译
-cd build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light
-bash build.sh
-cd -
+2. 编译
+$ cd build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light
+$ bash build.sh
+$ cd -
 
-# 3. 运行
-export GLOG_v=4
-./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light/mobilenet_light_api \
-    ./mobilenetv1_opt_x86_opencl.nb \
-    1,3,224,224 \
-    100 10 0
-    # repeats=100
-    # warmup=10
-    # print_output=0 不打印模型输出 tensors 详细数据
+3. 运行
+$ export GLOG_v=4
+$ ./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light/mobilenet_light_api \
+      ./mobilenetv1_opt_x86_opencl.nb \
+      1,3,224,224 \
+      100 10 0
+      # repeats=100
+      # warmup=10
+      # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 #### mobilenetv1_full 示例
 ```shell
-# 1. 准备 Paddle 模型
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+1. 准备 Paddle 模型
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
 
-# 2. 编译
-cd build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full
-bash build.sh
-cd -
+2. 编译
+$ cd build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full
+$ bash build.sh
+$ cd -
 
-# 3. 运行
-export GLOG_v=4
-./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full/mobilenet_full_api \
-    ./mobilenet_v1 \
-    1,3,224,224 \
-    100 10 0
-    # repeats=100
-    # warmup=10
-    # print_output=0 不打印模型输出 tensors 详细数据
+3. 运行
+$ export GLOG_v=4
+$ ./build.lite.x86.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full/mobilenet_full_api \
+      ./mobilenet_v1 \
+      1,3,224,224 \
+      100 10 0
+      # repeats=100
+      # warmup=10
+      # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 ## 5. 在 Windows 64 位系统上运行
@@ -371,10 +376,10 @@ Paddle Lite 支持在 Windows 环境下编译适用于 Windows 的库。请根�
 重点编译命令为：
 
 ```shell
-lite\tools\build_windows.bat with_opencl
-# 注：
-#    编译帮助请执行: lite\tools\build_windows.bat help
-#    build_windows.bat 中默认已开启 LOG
+$ lite\tools\build_windows.bat with_opencl
+注：
+编译帮助请执行: lite\tools\build_windows.bat help
+build_windows.bat 中默认已开启 LOG
 ```
 
 编译成功后，会在`Paddle-Lite\build.lite.x86.opencl\inference_lite_lib`目录下生成编译产物。
@@ -389,48 +394,48 @@ mobilenetv1_light 示例为使用 `MobileConfig` 加载并解析 `opt` 优化过
 
 具体执行步骤如下：
 ```shell
-# 1. 准备 .nb 模型
-# 使用 opt 工具手动转换
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
-build.opt\lite\api\opt --model_dir=./mobilenet_v1 \
-                       --valid_targets=opencl,x86 \
-                       --optimize_out=mobilenetv1_opt_x86_opencl
+1. 准备 .nb 模型
+使用 opt 工具手动转换
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+$ build.opt\lite\api\opt --model_dir=./mobilenet_v1 \
+                         --valid_targets=opencl,x86 \
+                         --optimize_out=mobilenetv1_opt_x86_opencl
 
-# 2. 编译
-cd build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_light
-build.bat
-cd -
+2. 编译
+$ cd build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_light
+$ build.bat
+$ cd -
 
-# 3. 运行
-export GLOG_v=4
-.\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_light\mobilenet_light_api \
-    ./mobilenetv1_opt_x86_opencl.nb \
-    1,3,224,224 \
-    100 10 0
-    # repeats=100
-    # warmup=10
-    # print_output=0 不打印模型输出 tensors 详细数据
+3. 运行
+$ export GLOG_v=4
+$ .\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_light\mobilenet_light_api \
+      ./mobilenetv1_opt_x86_opencl.nb \
+      1,3,224,224 \
+      100 10 0
+      # repeats=100
+      # warmup=10
+      # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 #### mobilenetv1_full 示例
 ```shell
-# 1. 准备 Paddle 模型
-wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+1. 准备 Paddle 模型
+$ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
 
-# 2. 编译
-cd build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_full
-build.bat
-cd -
+2. 编译
+$ cd build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_full
+$ build.bat
+$ cd -
 
-# 3. 运行
-export GLOG_v=4
-.\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_full\mobilenet_full_api \
-    ./mobilenet_v1 \
-    1,3,224,224 \
-    100 10 0
-    # repeats=100
-    # warmup=10
-    # print_output=0 不打印模型输出 tensors 详细数据
+3. 运行
+$ export GLOG_v=4
+$ .\build.lite.x86.opencl\inference_lite_lib\demo\cxx\mobilenetv1_full\mobilenet_full_api \
+      ./mobilenet_v1 \
+      1,3,224,224 \
+      100 10 0
+      # repeats=100
+      # warmup=10
+      # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 ## 6. 如何在 Code 中使用
@@ -445,26 +450,29 @@ export GLOG_v=4
 在编译预测库时，使能性能分析和精度分析功能的命令如下：
 Android 平台下：
 ```shell
-# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_profile=ON full_publish
-# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_precision_profile=ON full_publish
+开启性能分析，会打印出每个 op 耗时信息和汇总信息
+$ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_profile=ON full_publish
+
+开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+$ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_precision_profile=ON full_publish
 ```
 
 macOS x86 平台下：
 ```shell
-# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_profile=ON x86
-# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_precision_profile=ON x86
+开启性能分析，会打印出每个 op 耗时信息和汇总信息
+$ ./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_profile=ON x86
+
+开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+$ ./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_precision_profile=ON x86
 ```
 
 Windows x86 平台下：
 ```shell
-# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-.\lite\tools\build_windows.bat with_opencl with_extra with_profile
-# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-.\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
+开启性能分析，会打印出每个 op 耗时信息和汇总信息
+$ .\lite\tools\build_windows.bat with_opencl with_extra with_profile
+
+开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+$ .\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
 
 ## 8. 关键 API 接口
@@ -544,10 +552,39 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 - 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
 - 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
+### 设置 OpenCL 混合内存对象推理
+OpenCL 大部分算子支持 cl::Image2D 数据排布，少部分算子支持 cl::Buffer（正在持续扩充），出于以下背景原因考虑
+1. 不同的设备采用 cl::Image2D 和 cl::Buffer 性能优势不同。
+2. 设备本身对 cl::Image2D 的 CL_DEVICE_IMAGE2D_MAX_HEIGHT 和 CL_DEVICE_IMAGE2D_MAX_WIDTH 有限制，导致部分 op 尺寸过大时会报错：malloc image is out of max image size(w,h)。
+3. 部分 op 采用 cl::Buffer 内存对象会有很好的性能，比如 reshape，transpose，keep_dims 为 false 的 argmax，reduce 等。
+支持两种内存对象可配置，通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』，实现人为指定部分 op使用 cl::Buffer 实现；
+### 设置 OpenCL 与 CPU 异构推理
+对于 cl::Image2D 和 cl::Buffer 均无法支持或者性能差的算子，可以人为指定部分 op 跑 CPU 的实现，可通过环境变量 `OPENCL_MEMORY_CONFIG_FILE` 设置『OpenCL 内存对象配置文件』实现。
+如下的例子使用 benchmark 工具，输入为 PaddlePaddle 的部署模型格式，网络模型为 ch_PP-OCRv3_rec_infer，其中 conv2d，depthwise_conv2d 和 pool2d 三个 op 指定为跑 CPU 实现，剩余 op 跑 OpenCL 后端默认实现(大部分为 cl::Image2D)。
+
+```shell
+$ cd /data/local/tmp/opencl
+$ cat ./ch_PP-OCRv3_rec_infer_buffer.txt
+device:cpu
+conv2d:elementwise_mul_2:batch_norm_51.tmp_4
+depthwise_conv2d:batch_norm_51.tmp_4:batch_norm_52.tmp_4
+pool2d:batch_norm_52.tmp_4:pool2d_4.tmp_0
+$ export OPENCL_MEMORY_CONFIG_FILE=./ch_PP-OCRv3_rec_infer_buffer.txt
+$ ./benchmark_bin  --model_file=./ch_PP-OCRv3_rec_infer/inference.pdmodel \
+    --param_file=./ch_PP-OCRv3_rec_infer/inference.pdiparams \
+    --input_shape=1,3,48,320 --backend=opencl --repeats=20 --warmup=2
+```
+
+如下的例子为基于 OpenCL 与 CPU 异构推理将 PaddlePaddle 的部署模型格式转化为 Paddle Lite 支持的模型格式，网络模型和 OpenCL 内存对象配置文件同上, 使用 opt 工具方法如下:
+
+```shell
+$ export OPENCL_MEMORY_CONFIG_FILE=./ch_PP-OCRv3_rec_infer_buffer.txt
+$ ./opt --model_file=./ch_PP-OCRv3_rec_infer/inference.pdmodel --param_file=./ch_PP-OCRv3_rec_infer/inference.pdiparams --optimize_out=./ch_PP-OCRv3_rec_infer/opt.nb --valid_targets=opencl
+```
 
 ## 9. 常见问题
 
-1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会会在日志中输出超限提示。
+1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会在日志中输出超限提示。
 2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
 3. 部署时需考虑不支持 OpenCL 的情况，可预先使用 API `bool ::IsOpenCLBackendValid()` 判断，对于不支持的情况加载 CPU 模型，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
 4. 对性能不满足需求的场景，可以考虑使用调优 API `config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。

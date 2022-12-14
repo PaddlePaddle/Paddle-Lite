@@ -218,6 +218,9 @@ TEST(Argmax, precision) {
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   TestArgmax(place, aliases, {2});
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  TestArgmax(place, aliases, {2});
+  return;
 #else
   return;
 #endif

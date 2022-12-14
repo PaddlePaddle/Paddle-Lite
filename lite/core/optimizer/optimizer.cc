@@ -165,6 +165,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_conv_fuse_pass",         //
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
+       "lite_sigmoid_elementmul_fuse_pass",           //
        "lite_conv_activation_fuse_pass",              //
        "lite_squeeze2_matmul_fuse_pass",              //
        "lite_reshape2_matmul_fuse_pass",              //
@@ -190,7 +191,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fill_range_fuse_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
-       "keepdims_convert_pass",
+       //  "keepdims_convert_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
@@ -200,11 +201,13 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
        "__xpu__roformer_relative_pos_fuse_pass",
+       "__xpu__quick_gelu_fuse_pass",
        "__xpu__multi_encoder_fuse_pass",
        "__xpu__embedding_with_eltwise_add_fuse_pass",
        "__xpu__fc_fuse_pass",
        "__xpu__softmax_topk_fuse_pass",
        "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
+       "__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass",
        "__xpu__multi_encoder_slice_link_fuse_pass",
        "__xpu__generate_sequence_fuse_pass",
        "__xpu__logit_fuse_pass",
@@ -216,6 +219,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "static_kernel_pick_pass",
        // xpu pick original kernel from graph
        "__xpu__static_kernel_pick_pass",
+       "opencl_memory_object_config_pass",
        "remove_tf_redundant_ops_pass",
        // inference arg/var's info(target/precision/layout/device)
        "variable_place_inference_pass",

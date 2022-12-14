@@ -14,6 +14,7 @@
 
 #include "lite/backends/xpu/xpu_quantizer.h"
 #include <algorithm>
+#include <mutex>  //NOLINT
 #include <string>
 #include "lite/backends/xpu/math.h"
 #include "lite/utils/hash.h"
@@ -180,13 +181,18 @@ void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
     cpu_ptr = cpu_data;
   }
   // copy to XPU
-  XPUScratchPadGuard weight_max_guard(new XPUScratchPad(nullptr, 0));
+  int devid = -1;
+  XPU_CALL(xpu_current_device(&devid));
+  void* xpu_stream = TargetWrapperXPU::get_xpu_stream();
+  XPUScratchPadGuard weight_max_guard(
+      new XPUScratchPad(nullptr, 0, devid, xpu_stream));
   if (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value) {
     // prepare max_w space for slim int8 quant
     // just allocate buffer, set max value in kernel
     weight_max_guard =
         std::move(XPUMemory::MallocScratchPad(max_ptr_size * sizeof(float)));
   }
+
   XPUScratchPadGuard quant_weight_guard;
   quant_weight_guard =
       std::move(XPUMemory::MallocScratchPad(numel * sizeof(T)));
@@ -202,6 +208,8 @@ XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
                                  const DDimLite& dims,
                                  bool data_transpose,
                                  size_t max_ptr_len) {
+  static std::mutex mutex_quant;
+  std::unique_lock<std::mutex> lck(mutex_quant);
   int numel = dims.production();
   const std::string cpu_dtype = CppTypeToString<Tcpu>();
   const std::string xpu_dtype = CppTypeToString<Txpu>();
