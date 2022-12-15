@@ -693,7 +693,7 @@ if(LITE_WITH_NNADAPTER)
   foreach(device_name ${NNADAPTER_DEVICES})
     add_custom_target(publish_inference_nnadapter_${device_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/${device_name}/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/${device_name}/*.so*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       DEPENDS ${device_name}
       )
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})
