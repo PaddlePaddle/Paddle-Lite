@@ -80,6 +80,16 @@ class SiluCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~SiluCompute() = default;
 };
 
+template <typename T, PrecisionType PType>
+class EluCompute : public KernelLite<TARGET(kXPU), PType> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~EluCompute() = default;
+};
+
 class AbsCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
