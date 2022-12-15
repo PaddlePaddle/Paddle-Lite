@@ -93,6 +93,7 @@ java 环境
 
    # 6. (可选) 删除 debug 编译参数，减小二进制体积 参照 https://github.com/android/ndk/issues/243
    # 用编辑器打开 $ANDROID_NDK/build/cmake/android.toolchain.cmake 删除 "-g" 这行
+   # Android NDK r23c及以上版本请打开 $ANDROID_NDK/build/cmake/android-legacy.toolchain.cmake 执行同样的操作
    list(APPEND ANDROID_COMPILER_FLAGS
      -g
      -DANDROID
