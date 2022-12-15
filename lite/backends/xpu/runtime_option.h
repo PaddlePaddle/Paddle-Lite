@@ -61,13 +61,13 @@ class XPUStream {
  public:
   XPUStream() {}
   ~XPUStream() {
-    if (xpu_stream_ != nullptr) {
+    if (xpu_stream_origin_ != nullptr) {
       XPU_CALL(xpu_set_device(devid_));
       VLOG(6) << "thread 0x" << std::hex << std::this_thread::get_id()
-              << " Destory context xpu stream: " << xpu_stream_;
-      CHECK(xpu_stream_destroy(xpu_stream_) == 0)
+              << " Destory context xpu stream: " << xpu_stream_origin_;
+      CHECK(xpu_stream_destroy(xpu_stream_origin_) == 0)
           << "xpu stream destroy failed.";
-      xpu_stream_ = nullptr;
+      xpu_stream_origin_ = nullptr;
     }
   }
 

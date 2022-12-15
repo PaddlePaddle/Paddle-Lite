@@ -56,6 +56,9 @@ class XPUBuffer : public Buffer {
         data_ = global_mem_data_;
         space_ = global_mem_space_;
       }
+    } else {
+      data_ = global_mem_data_;
+      space_ = global_mem_space_;
     }
   }
 
