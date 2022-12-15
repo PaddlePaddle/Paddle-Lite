@@ -58,7 +58,7 @@ int CreateContext(void* device,
 }
 
 void DestroyContext(void* context) {
-  if (!context) {
+  if (context) {
     auto c = reinterpret_cast<Context*>(context);
     delete c;
   }
