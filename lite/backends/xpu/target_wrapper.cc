@@ -21,6 +21,9 @@ namespace paddle {
 namespace lite {
 
 XPUL3CacheBlock* TargetWrapperXPU::CreateL3CacheBlock() {
+  if (xpu_runtime_ptr == nullptr) {
+    return nullptr;
+  }
   xpu_runtime_ptr->xpu_l3_block_dict.push_back(new XPUL3CacheBlock());
   return xpu_runtime_ptr->xpu_l3_block_dict.back();
 }
