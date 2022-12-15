@@ -115,7 +115,7 @@ if(NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT)
   endif()
 else()
   if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_URL)
-    set(NNADAPTER_KUNLUNXIN_XTCL_SDK_URL "http://baidu-kunlun-product.su.bcebos.com/KL-SDK/klsdk-dev/20221201")
+    set(NNADAPTER_KUNLUNXIN_XTCL_SDK_URL "http://baidu-kunlun-product.su.bcebos.com/KL-SDK/klsdk-dev_paddle")
   endif()
   if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV)
     # Detect NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV automatically
