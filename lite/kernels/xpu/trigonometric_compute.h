@@ -20,32 +20,24 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-template <typename TGEMM,
-          typename TW,
-          typename DX,
-          typename DY,
-          PrecisionType PType>
-class MatMulCompute : public KernelLite<TARGET(kXPU), PType> {
+template<typename T, PrecisionType PType>
+class CosCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::MatMulParam;
+  using param_t = operators::CosParam;
 
   virtual void Run();
 
-  virtual ~MatMulCompute() = default;
+  virtual ~CosCompute() = default;
 };
 
-template <typename TGEMM,
-          typename TW,
-          typename DX,
-          typename DY,
-          PrecisionType PType>
-class BmmCompute : public KernelLite<TARGET(kXPU), PType> {
+template<typename T, PrecisionType PType>
+class SinCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::BmmParam;
+  using param_t = operators::SinParam;
 
   virtual void Run();
 
-  virtual ~BmmCompute() = default;
+  virtual ~SinCompute() = default;
 };
 
 }  // namespace xpu

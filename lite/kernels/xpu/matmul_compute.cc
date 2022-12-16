@@ -169,6 +169,58 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
+void BmmCompute<TGEMM, TW, DX, DY, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  auto* x = param.X;
+  auto* y = param.Y;
+  auto* out = param.Out;
+
+  const float* x_maxptr = nullptr;
+  const float* w_maxptr = nullptr;
+
+  auto& x_dims = x->dims();
+  auto& y_dims = y->dims();
+  auto mat_dim_a =
+      math::CreateMatrixDescriptor(math::RowMatrixFromVector(x_dims), 0, false);
+  auto mat_dim_b = math::CreateMatrixDescriptor(
+      math::ColumnMatrixFromVector(y_dims), 0, false);
+
+  // bmm op has a restrict that input and ouput dims should be equal to 3.
+  CHECK_EQ(x_dims.size(), 3);
+  CHECK_EQ(x_dims.size(), y_dims.size());
+  CHECK_EQ(mat_dim_a.width_, mat_dim_b.height_);
+  CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
+
+  int r = 0;
+  // batch matmul
+  r = xdnn::fc_batched<DX, TW, DY, TGEMM>(
+      ctx.GetRawContext(),                           // context
+      mat_dim_a.batch_size_,                         // batch_size
+      false,                                         // TransA
+      false,                                         // TransB
+      mat_dim_a.height_,                             // M
+      mat_dim_b.width_,                              // N
+      mat_dim_a.width_,                              // K
+      1.0f,                                          // alpha
+      x->template data<DX>(),                        // A
+      mat_dim_a.stride_,                             // stride_a
+      y->template data<TW>(),                        // B
+      mat_dim_b.stride_,                             // stride_b
+      0.0f,                                          // beta
+      out->template mutable_data<DY>(TARGET(kXPU)),  // C
+      mat_dim_a.height_ * mat_dim_b.width_,          // stride_c
+      x_maxptr,                                      // x_maxptr
+      w_maxptr);                                     // w_maxptrs
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -183,6 +235,9 @@ using XPUMATMUL_FP32 =
 using XPUMATMUL_Int8_FP32_FP32 =
     xpu::MatMulCompute<int8_t, float, float, float, PRECISION(kInt8)>;
 
+using XPUBMM_FP32 =
+    xpu::BmmCompute<int16_t, float, float, float, PRECISION(kFloat)>;
+
 REGISTER_LITE_KERNEL(matmul, kXPU, kFloat, kNCHW, XPUMATMUL_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -196,6 +251,12 @@ REGISTER_LITE_KERNEL(matmul, kXPU, kInt8, kNCHW, XPUMATMUL_Int8_FP32_FP32, int8)
     .Finalize();
 
 REGISTER_LITE_KERNEL(matmul_v2, kXPU, kFloat, kNCHW, XPUMATMUL_FP32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(bmm, kXPU, kFloat, kNCHW, XPUBMM_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

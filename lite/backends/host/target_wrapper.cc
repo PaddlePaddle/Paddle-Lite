@@ -15,6 +15,9 @@
 #include "lite/core/target_wrapper.h"
 #include <cstring>
 #include <memory>
+#ifdef LITE_WITH_XPU
+#include <xpu/runtime.h>
+#endif
 
 namespace paddle {
 namespace lite {
@@ -29,7 +32,15 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t extra_size = sizeof(int8_t) * MALLOC_EXTRA;
   auto sum_size = offset + size;
   CHECK_GT(sum_size + extra_size, sum_size);
+//
+#ifdef LITE_WITH_XPU
+  void* pp = nullptr;
+  int r1 = xpu_host_alloc(&pp, sum_size + extra_size, 0);
+  char* p = static_cast<char*>(pp);
+  CHECK_EQ(r1, 0);
+#else
   char* p = static_cast<char*>(malloc(sum_size + extra_size));
+#endif
   CHECK(p) << "Error occurred in TargetWrapper::Malloc period: no enough for "
               "mallocing "
            << size << " bytes.";
@@ -40,7 +51,12 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
 }
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
   if (ptr) {
+#ifdef LITE_WITH_XPU
+    int r = xpu_host_free(static_cast<void**>(ptr)[-1]);
+    CHECK_EQ(r, 0);
+#else
     free(static_cast<void**>(ptr)[-1]);
+#endif
   }
 }
 void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
