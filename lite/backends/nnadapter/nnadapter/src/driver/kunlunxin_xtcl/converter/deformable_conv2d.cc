@@ -22,9 +22,6 @@ namespace kunlunxin_xtcl {
 
 int ConvertDeformableConv2d(Converter* converter, core::Operation* operation) {
   DEFORMABLE_CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // https://www.paddlepaddle.org.cn/documentation/docs/zh/develop/api/paddle/static/nn/deform_conv2d_cn.html#deform-conv2d
-  // deform_conv2d v1: mask is none, deform_conv2d v2: mask is not none
-  NNADAPTER_CHECK(mask_operand == nullptr) << "XTCL not support mask";
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
@@ -42,6 +39,10 @@ int ConvertDeformableConv2d(Converter* converter, core::Operation* operation) {
   auto bias_expr = converter->GetMappedExpr(bias_operand);
   if (!bias_expr.defined()) {
     bias_expr = converter->ConvertOperand(bias_operand);
+  }
+  auto mask_expr = converter->GetMappedExpr(mask_operand);
+  if (!mask_expr.defined()) {
+    mask_expr = converter->ConvertOperand(mask_operand);
   }
   auto conv_attrs = xtcl::make_object<xtcl::network::DeformableConv2DAttrs>();
   auto stride_height = strides[0];
@@ -68,7 +69,7 @@ int ConvertDeformableConv2d(Converter* converter, core::Operation* operation) {
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";
   auto conv_expr = converter->builder()->CreateConv2DDeformable(
-      input_expr, filter_expr, offset_expr, conv_attrs);
+      input_expr, filter_expr, offset_expr, mask_expr, conv_attrs);
   auto bias_add_expr =
       converter->builder()->CreateBiasAdd(conv_expr, 1, bias_expr);
   converter->UpdateExprMap(output_operand, bias_add_expr);
