@@ -47,7 +47,6 @@ void DeformableConvCompute<TGEMM, TW, TX, TY, PType>::Run() {
   auto* out = param.output;
   const int groups = param.conv_param.groups;
   const int deformable_groups = param.deformable_groups;
-  const int im2col_step = param.im2col_step;
   const std::vector<int>& strides = param.conv_param.strides;
   const std::vector<int>& paddings = *param.conv_param.paddings;
   const std::vector<int>& dilations = *param.conv_param.dilations;
