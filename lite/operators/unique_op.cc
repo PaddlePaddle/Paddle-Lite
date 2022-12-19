@@ -21,24 +21,45 @@ namespace operators {
 bool UniqueOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  if (param_.return_index) {
-    CHECK_OR_FALSE(param_.Indices);
-  }
-  if (param_.return_inverse) {
+  if (!param_.is_sorted) {
     CHECK_OR_FALSE(param_.Index);
-  }
-  if (param_.return_counts) {
-    CHECK_OR_FALSE(param_.Counts)
+  } else {
+    if (param_.return_index) {
+      CHECK_OR_FALSE(param_.Indices);
+    }
+    if (param_.return_inverse) {
+      CHECK_OR_FALSE(param_.Index);
+    }
+    if (param_.return_counts) {
+      CHECK_OR_FALSE(param_.Counts)
+    }
   }
   return true;
 }
 
 bool UniqueOp::InferShapeImpl() const {
-  DDim in_dims = param_.X->dims();
-  if (param_.Out) param_.Out->Resize(in_dims);
-  if (param_.Index) param_.Index->Resize(in_dims);
-  if (param_.Indices) param_.Indices->Resize(in_dims);
-  if (param_.Counts) param_.Counts->Resize(in_dims);
+  if (!param_.is_sorted) {
+    DDim in_dims = param_.X->dims();
+    if (param_.Out) param_.Out->Resize({-1});
+    if (param_.Index) param_.Index->Resize(in_dims);
+  } else {
+    DDim in_dims = param_.X->dims();
+    if (param_.axis.empty()) {
+      if (param_.Out) param_.Out->Resize(in_dims);
+      if (param_.return_inverse) param_.Index->Resize(in_dims);
+    } else {
+      int axis_value = param_.axis[0];
+      if (axis_value < 0) {
+        axis_value += in_dims.size();
+      }
+      DDim out_dims = in_dims;
+      out_dims[axis_value] = -1;
+      if (param_.Out) param_.Out->Resize(out_dims);
+      if (param_.return_inverse) param_.Index->Resize({in_dims[axis_value]});
+    }
+    if (param_.return_index) param_.Indices->Resize({-1});
+    if (param_.return_counts) param_.Counts->Resize({-1});
+  }
   return true;
 }
 
@@ -50,11 +71,11 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc,
   CHECK(param_.Out) << "Output(Out) of UniqueOp should not be null.";
   if (opdesc.HasOutput("Index")) {
     param_.Index = scope->FindMutableTensor(opdesc.Output("Index").front());
-    CHECK(param_.Out) << "Output(Index) of UniqueOp should not be null.";
+    CHECK(param_.Index) << "Output(Index) of UniqueOp should not be null.";
   }
   if (opdesc.HasOutput("Indices")) {
     param_.Indices = scope->FindMutableTensor(opdesc.Output("Indices").front());
-    CHECK(param_.Out) << "Output(Indices) of UniqueOp should not be null.";
+    CHECK(param_.Indices) << "Output(Indices) of UniqueOp should not be null.";
   }
   if (opdesc.HasOutput("Counts")) {
     param_.Counts = scope->FindMutableTensor(opdesc.Output("Counts").front());
@@ -67,7 +88,7 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc,
   if (opdesc.HasAttr("return_index")) {
     param_.return_index = opdesc.GetAttr<bool>("return_index");
   }
-  if (opdesc.HasAttr("return_reverse")) {
+  if (opdesc.HasAttr("return_inverse")) {
     param_.return_inverse = opdesc.GetAttr<bool>("return_inverse");
   }
   if (opdesc.HasAttr("return_counts")) {

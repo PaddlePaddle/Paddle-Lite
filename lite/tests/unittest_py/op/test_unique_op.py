@@ -47,22 +47,33 @@ class TestUniqueOp(AutoScanTest):
                     min_value=2, max_value=100),
                 min_size=1,
                 max_size=1))
+        print(in_shape)
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
                 
         def generate_X_data():
-            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
+            t = np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
+            print(t)
+            return t
 
-        def generate_IndexTensor():
-            return np.random.randint(1, 5, size=in_shape).astype(np.int32)
+        dtype = draw(st.sampled_from([2,3]))
+        is_sorted = draw(st.booleans())
+        return_index = draw(st.booleans())
+        return_inverse = draw(st.sampled_from([True]))
+        return_counts = draw(st.booleans())
 
-        dtype = 2
-        is_sorted = draw(st.sampled_from([True, False]))
-        return_index = draw(st.sampled_from([False]))
-        if is_sorted: 
-            return_inverse = draw(st.sampled_from([True, False]))
-        else:
-            return_inverse = True
-        return_counts = draw(st.sampled_from([False]))
+        if is_sorted == False:
+            return_index = False
+            return_counts = False
+
+        param_is_sorted = is_sorted
+        param_return_index = return_index
+        param_return_inverse = return_inverse
+        param_return_counts = return_counts
+  
+        axis = draw(st.sampled_from([[2], [1], [0], []]))
+        while len(axis) > 0 and axis[0] >= len(in_shape):
+            axis[0] = axis[0] - 1       
+
         outputs = [
             "Out_data"
         ]
@@ -85,18 +96,15 @@ class TestUniqueOp(AutoScanTest):
             outputs_config["Counts"] = ["Counts_data"] 
             outputs_dtype["Counts_data"] = np.int32
 
-        axis = draw(st.sampled_from([[0, 1, 2], [1], [0, 2], [2, 1], [0, 1]]))
-        axis = []        
-
         unique_op = OpConfig(
             type = "unique",
             inputs = {"X": ["input_data"]},
             outputs = outputs_config,
             attrs={
-                "dtype": 2,
-                "return_index": return_index,
-                "return_inverse": return_inverse,
-                "return_counts": return_counts,
+                "dtype": dtype,
+                "return_index": param_return_index,
+                "return_inverse": param_return_inverse,
+                "return_counts": param_return_counts,
                 "axis": axis,
                 "is_sorted": is_sorted
             }

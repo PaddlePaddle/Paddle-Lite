@@ -24,6 +24,7 @@
 #include <vector>
 #include <iostream>
 
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -33,7 +34,7 @@ template <typename InT, typename IndexT>
 void UniqueFunc(const lite::Tensor* x, 
                       lite::Tensor* out,
                       lite::Tensor* index,
-                      lite::Tensor* count = nullptr) {
+                      lite::Tensor* count) {
   const InT* in_data = x->template data<InT>();
   IndexT* index_data = index->mutable_data<IndexT>();
 
@@ -100,10 +101,10 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
   }
 
   if (return_inverse) {
-    auto* inverse = index;
-    inverse->Resize({out->numel()});
-    auto inverse_data = inverse->mutable_data<IndexT>();
+    index->Resize({in.numel()});
+    auto inverse_data = index->mutable_data<IndexT>();
     std::unordered_map<InT, IndexT> inverse_map;
+    inverse_map.reserve(out->numel());
     for (int64_t i = 0; i < out->numel(); ++i) {
       inverse_map[out_data[i]] = i;
     }
@@ -296,11 +297,11 @@ void UniqueDimFunc(const lite::Tensor& in,
   std::iota(permute.begin(), permute.end(), 0);
   permute[axis] = 0;
   permute[0] = axis;
-  std::vector<int64_t> in_trans_dim_vec(in.dims().Vectorize());
-  in_trans_dim_vec[axis] = in.dims()[0];
-  in_trans_dim_vec[0] = in.dims()[axis];
+  std::vector<int64_t> in_trans_dims_vec(in.dims().Vectorize());
+  in_trans_dims_vec[axis] = in.dims()[0];
+  in_trans_dims_vec[0] = in.dims()[axis];
   lite::Tensor in_trans;
-  lite::DDim in_trans_dims = DDim(in_trans_dim_vec);
+  lite::DDim in_trans_dims = DDim(in_trans_dims_vec);
   in_trans.Resize(in_trans_dims);
   in_trans.mutable_data<InT>();
   TransCompute<InT>(in, &in_trans, permute);
@@ -356,7 +357,7 @@ void UniqueDimFunc(const lite::Tensor& in,
   indices_vec.erase(indices_vec.begin() + input_unbind.size(), indices_vec.end());
   
   lite::Tensor out_trans;
-  std::vector<int64_t> out_trans_dims_vec = in_trans_dim_vec;
+  std::vector<int64_t> out_trans_dims_vec = in_trans_dims_vec;
   out_trans_dims_vec[0] = input_unbind.size();
   out_trans.Resize(out_trans_dims_vec);
   out_trans.mutable_data<InT>();
@@ -367,16 +368,20 @@ void UniqueDimFunc(const lite::Tensor& in,
   TransCompute<InT>(out_trans, out, permute);
 
   if (return_inverse) {
+    index->Resize({in.numel()});
     TensorFromVector(inverse_vec, index);
   }
 
   if (return_counts) {
+    count->Resize({out->numel()});
     TensorFromVector(counts_vec, count);
   }
 
   if (return_index) {
+    indices->Resize({out->numel()});
     TensorFromVector(indices_vec, indices);
   }
+
 }
 
 void UniqueCompute::Run() {
@@ -387,9 +392,9 @@ void UniqueCompute::Run() {
   auto indices = param.Indices;
   auto count = param.Counts;
   auto dtype = param.dtype;
-  auto return_index = param.return_index;
-  auto return_inverse = param.return_inverse;
-  auto return_counts = param.return_counts;
+  bool return_index = param.return_index;
+  bool return_inverse = param.return_inverse;
+  bool return_counts = param.return_counts;
   auto axis_vec = param.axis;
   auto is_sorted = param.is_sorted;
 
@@ -399,7 +404,7 @@ void UniqueCompute::Run() {
   CHECK_EQ(index_type_match, true) << "Index holds the wrong type, it holds "
                                    << static_cast<int>(type)
                                    << "but desires to be int32 or int64";
-    
+
   if (!is_sorted) {
     if (index_type == PRECISION(kInt32)) {
       switch (type) {
@@ -560,3 +565,4 @@ REGISTER_LITE_KERNEL(unique,
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
