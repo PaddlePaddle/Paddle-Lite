@@ -1275,18 +1275,20 @@ TEST(Activation_thresholded_relu, precision) {
 }
 
 TEST(Activation_elu, precision) {
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_XPU)
+  Place place(TARGET(kXPU));
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "elu", ELU);
+  }
+#elif defined(LITE_WITH_ARM)
   // "This operator's definition is different from Paddle."
   // "So the output has diff with Paddle. We need to fix it as soon as
   // possible."
   // "Host is fix, but arm is not."
   return;
-  Place place(TARGET(kARM));
-
-  for (auto dims : std::vector<std::vector<int64_t>>{
-           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "elu", ELU);
-  }
+#else
+  return;
 #endif
 }
 
