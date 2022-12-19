@@ -138,6 +138,7 @@ class LITE_API PaddlePredictor {
       const std::string& model_dir,
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
+  virtual void SetStream(TargetType target, void* stream) {}
 
   virtual ~PaddlePredictor() = default;
 

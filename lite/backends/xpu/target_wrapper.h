@@ -93,9 +93,6 @@ class TargetWrapper<TARGET(kXPU)> {
     }
 
     if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
-      CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream() == nullptr)
-          << " xpu default stream should be nullptr: "
-          << xpu_runtime_ptr->xpu_stream.GetXPUStream();
       VLOG(3) << "all threads share the default xpu stream";
     } else {
       // use different stream per thread
